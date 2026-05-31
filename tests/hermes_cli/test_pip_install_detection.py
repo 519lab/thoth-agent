@@ -59,4 +59,7 @@ def test_docker_detected_via_dockerenv(tmp_path):
 
 def test_recommended_update_command_docker():
     from hermes_cli.config import recommended_update_command_for_method
-    assert "docker pull" in recommended_update_command_for_method("docker")
+    # No Thoth Docker image is published yet, so the docker update guidance
+    # points at rebuilding from source rather than `docker pull` (see the
+    # Docker-machinery removal in the 519lab/thoth-agent move).
+    assert "Rebuild" in recommended_update_command_for_method("docker")
