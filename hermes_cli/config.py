@@ -249,7 +249,7 @@ def recommended_update_command_for_method(method: str) -> str:
     if method == "homebrew":
         return "brew upgrade hermes-agent"
     if method == "docker":
-        return "docker pull nousresearch/hermes-agent:latest"
+        return "Rebuild your image from the latest source (no published Thoth image yet)"
     if method == "pip":
         import shutil
         uv = shutil.which("uv")
