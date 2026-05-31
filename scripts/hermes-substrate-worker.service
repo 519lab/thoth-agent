@@ -48,7 +48,7 @@ WorkingDirectory=%h/.hermes/hermes-agent
 EnvironmentFile=%h/.hermes/.env
 
 # Single foreground process; systemd captures stdout/stderr to journal.
-ExecStart=%h/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main substrate worker run
+ExecStart=%h/.hermes/hermes-agent/venv/bin/python -m thoth_cli.main substrate worker run
 
 # Graceful shutdown sequence:
 #   1. SIGTERM → ``substrate worker run`` trips its stop_event

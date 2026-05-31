@@ -5734,7 +5734,7 @@ def _module_hermes_argv() -> list[str]:
     # ``hermes_cli.main`` is the console-script target declared in
     # pyproject.toml, NOT a top-level ``hermes`` package — there is no
     # ``hermes`` package to import.
-    return [sys.executable, "-m", "hermes_cli.main"]
+    return [sys.executable, "-m", "thoth_cli.main"]
 
 
 def _absolute_hermes_path(path: str) -> str:

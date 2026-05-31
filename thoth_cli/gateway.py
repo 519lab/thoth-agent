@@ -299,6 +299,12 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
     exclude_pids = exclude_pids | _get_ancestor_pids()
     pids: list[int] = []
     patterns = [
+        "thoth_cli.main gateway",
+        "thoth_cli.main --profile",
+        "thoth_cli.main -p",
+        "thoth_cli/main.py gateway",
+        "thoth_cli/main.py --profile",
+        "thoth_cli/main.py -p",
         "hermes_cli.main gateway",
         "hermes_cli.main --profile",
         "hermes_cli.main -p",
@@ -563,7 +569,7 @@ def find_profile_gateway_processes(
 
 
 def _gateway_run_args_for_profile(profile: str) -> list[str]:
-    args = [get_python_path(), "-m", "hermes_cli.main"]
+    args = [get_python_path(), "-m", "thoth_cli.main"]
     if profile != "default":
         args.extend(["--profile", profile])
     args.extend(["gateway", "run", "--replace"])
@@ -1584,6 +1590,8 @@ _LEGACY_SERVICE_NAMES: tuple[str, ...] = ("hermes.service",)
 # ExecStart content markers that identify a unit as running our gateway.
 # A legacy unit is only flagged when its file contains one of these.
 _LEGACY_UNIT_EXECSTART_MARKERS: tuple[str, ...] = (
+    "thoth_cli.main gateway",
+    "thoth_cli/main.py gateway",
     "hermes_cli.main gateway",
     "hermes_cli/main.py gateway",
     "gateway/run.py",
@@ -2202,7 +2210,7 @@ StartLimitIntervalSec=0
 Type=simple
 User={username}
 Group={group_name}
-ExecStart={python_path} -m hermes_cli.main{f" {profile_arg}" if profile_arg else ""} gateway run --replace
+ExecStart={python_path} -m thoth_cli.main{f" {profile_arg}" if profile_arg else ""} gateway run --replace
 WorkingDirectory={working_dir}
 Environment="HOME={home_dir}"
 Environment="USER={username}"
@@ -2241,7 +2249,7 @@ StartLimitIntervalSec=0
 
 [Service]
 Type=simple
-ExecStart={python_path} -m hermes_cli.main{f" {profile_arg}" if profile_arg else ""} gateway run --replace
+ExecStart={python_path} -m thoth_cli.main{f" {profile_arg}" if profile_arg else ""} gateway run --replace
 WorkingDirectory={working_dir}
 Environment="PATH={sane_path}"
 Environment="VIRTUAL_ENV={venv_dir}"
@@ -2840,7 +2848,7 @@ def generate_launchd_plist() -> str:
     prog_args = [
         f"<string>{python_path}</string>",
         "<string>-m</string>",
-        "<string>hermes_cli.main</string>",
+        "<string>thoth_cli.main</string>",
     ]
     if profile_arg:
         for part in profile_arg.split():
