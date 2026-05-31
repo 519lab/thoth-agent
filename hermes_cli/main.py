@@ -9354,6 +9354,11 @@ def _cmd_update_impl(args, gateway_mode: bool):
         except Exception:
             pass  # honcho plugin not installed or not configured
 
+        # Thoth rename: create ~/.thoth → ~/.hermes symlink for existing installs.
+        from hermes_cli.config import migrate_home_to_thoth as _migrate_home
+        if _migrate_home(quiet=False):
+            print()
+
         # Check for config migrations
         print()
         print("→ Checking configuration for new options...")
