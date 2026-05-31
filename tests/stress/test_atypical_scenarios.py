@@ -236,7 +236,7 @@ def _(home, kb):
     ]
     for bad in bad_metas:
         r = subprocess.run(
-            [sys.executable, "-m", "hermes_cli.main", "kanban",
+            [sys.executable, "-m", "thoth_cli.main", "kanban",
              "complete", tid, "--metadata", bad],
             capture_output=True, text=True, env=env,
         )

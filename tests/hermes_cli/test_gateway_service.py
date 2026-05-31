@@ -2162,7 +2162,7 @@ class TestMigrateLegacyCommand:
             project_root = gw.PROJECT_ROOT
 
         result = subprocess.run(
-            [sys.executable, "-m", "hermes_cli.main", "gateway", "--help"],
+            [sys.executable, "-m", "thoth_cli.main", "gateway", "--help"],
             cwd=str(project_root),
             capture_output=True,
             text=True,
@@ -2200,7 +2200,7 @@ class TestGatewayStatusParser:
         import sys
 
         result = subprocess.run(
-            [sys.executable, "-m", "hermes_cli.main", "gateway", "status", "-l", "--help"],
+            [sys.executable, "-m", "thoth_cli.main", "gateway", "status", "-l", "--help"],
             cwd=str(gateway_cli.PROJECT_ROOT),
             capture_output=True,
             text=True,

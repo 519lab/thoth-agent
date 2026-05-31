@@ -705,6 +705,7 @@ def _live_system_guard(request, monkeypatch):
                 # whose cmdline contains "python -m hermes_cli.main".
                 if (
                     "hermes" in low
+                    or "thoth" in low
                     or "gateway" in low
                     or ("python" in low and "-f" in tokens)
                 ):

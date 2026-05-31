@@ -930,7 +930,7 @@ class TestReadProcessCmdlinePsFallback:
 
         monkeypatch.setattr(status.Path, "read_bytes", fake_read_bytes)
         result = status._read_process_cmdline(12345)
-        assert "hermes_cli/main.py" in result
+        assert ("thoth_cli/main.py" in result) or ("hermes_cli/main.py" in result)
         assert calls == ["proc"]
 
     def test_ps_fallback_used_when_proc_returns_empty(self, monkeypatch):
@@ -940,4 +940,4 @@ class TestReadProcessCmdlinePsFallback:
             lambda args, **kwargs: SimpleNamespace(returncode=0, stdout="python hermes_cli/main.py gateway run\n"),
         )
         result = status._read_process_cmdline(12345)
-        assert "hermes_cli/main.py" in result
+        assert ("thoth_cli/main.py" in result) or ("hermes_cli/main.py" in result)

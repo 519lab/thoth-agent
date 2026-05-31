@@ -472,7 +472,7 @@ def _cli(args: list[str], env_extra: dict | None = None) -> subprocess.Completed
     if env_extra:
         env.update(env_extra)
     return subprocess.run(
-        [sys.executable, "-m", "hermes_cli.main", "kanban"] + args,
+        [sys.executable, "-m", "thoth_cli.main", "kanban"] + args,
         env=env,
         capture_output=True,
         text=True,
