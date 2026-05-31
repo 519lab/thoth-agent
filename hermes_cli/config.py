@@ -448,6 +448,36 @@ def _ensure_default_soul_md(home: Path) -> None:
     _secure_file(soul_path)
 
 
+def migrate_home_to_thoth(quiet: bool = False) -> bool:
+    """Create ~/.thoth → ~/.hermes symlink when upgrading from a pre-rename install.
+
+    Conditions: ~/.hermes exists (real dir) AND ~/.thoth does not yet exist.
+    The symlink lets new code resolve data via ~/.thoth while the on-disk
+    layout stays at ~/.hermes until a future phase does the full rename.
+
+    Returns True if the symlink was created, False if nothing was done.
+    """
+    user_home = Path.home()
+    hermes_dir = user_home / ".hermes"
+    thoth_dir = user_home / ".thoth"
+
+    # Already migrated or fresh install — nothing to do.
+    if thoth_dir.exists() or thoth_dir.is_symlink():
+        return False
+    if not hermes_dir.is_dir():
+        return False
+
+    try:
+        thoth_dir.symlink_to(hermes_dir)
+        if not quiet:
+            print(f"  ✓ Created ~/.thoth → ~/.hermes (Thoth rename migration)")
+        return True
+    except OSError as exc:
+        if not quiet:
+            print(f"  ⚠ Could not create ~/.thoth symlink: {exc}")
+        return False
+
+
 def ensure_hermes_home():
     """Ensure ~/.hermes directory structure exists with secure permissions.
 
@@ -455,6 +485,9 @@ def ensure_hermes_home():
     setgid + group-writable (2770). We skip mkdir and set umask(0o007) so
     any files created (e.g. SOUL.md) are group-writable (0660).
     """
+    # Silently create ~/.thoth → ~/.hermes symlink for existing installs upgrading
+    # to Thoth. Non-destructive: only runs when ~/.hermes exists but ~/.thoth doesn't.
+    migrate_home_to_thoth(quiet=True)
     home = get_hermes_home()
     if is_managed():
         old_umask = os.umask(0o007)
