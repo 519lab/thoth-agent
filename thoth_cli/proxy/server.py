@@ -26,7 +26,7 @@ except ImportError:
     web = None  # type: ignore[assignment]
     AIOHTTP_AVAILABLE = False
 
-from hermes_cli.proxy.adapters.base import UpstreamAdapter, UpstreamCredential
+from thoth_cli.proxy.adapters.base import UpstreamAdapter, UpstreamCredential
 
 logger = logging.getLogger(__name__)
 

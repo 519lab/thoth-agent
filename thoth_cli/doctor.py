@@ -11,9 +11,9 @@ import shutil
 import importlib.util
 from pathlib import Path
 
-from hermes_cli.cli_name import cli_name
-from hermes_cli.config import get_project_root, get_hermes_home, get_env_path
-from hermes_cli.env_loader import load_hermes_dotenv
+from thoth_cli.cli_name import cli_name
+from thoth_cli.config import get_project_root, get_hermes_home, get_env_path
+from thoth_cli.env_loader import load_hermes_dotenv
 from hermes_constants import display_hermes_home
 
 PROJECT_ROOT = get_project_root()
@@ -24,9 +24,9 @@ _DHH = display_hermes_home()  # user-facing display path (e.g. ~/.hermes or ~/.h
 _env_path = get_env_path()
 load_hermes_dotenv(hermes_home=_env_path.parent, project_env=PROJECT_ROOT / ".env")
 
-from hermes_cli.colors import Colors, color
-from hermes_cli.models import _HERMES_USER_AGENT
-from hermes_cli.vercel_auth import describe_vercel_auth
+from thoth_cli.colors import Colors, color
+from thoth_cli.models import _HERMES_USER_AGENT
+from thoth_cli.vercel_auth import describe_vercel_auth
 from hermes_constants import OPENROUTER_MODELS_URL
 from utils import base_url_host_matches
 
@@ -164,19 +164,19 @@ def _has_healthy_oauth_fallback_for_apikey_provider(provider_label: str) -> bool
     normalized = (provider_label or "").strip().lower()
     if normalized in {"google / gemini", "gemini"}:
         try:
-            from hermes_cli.auth import get_gemini_oauth_auth_status
+            from thoth_cli.auth import get_gemini_oauth_auth_status
             return bool((get_gemini_oauth_auth_status() or {}).get("logged_in"))
         except Exception:
             return False
     if normalized == "minimax":
         try:
-            from hermes_cli.auth import get_minimax_oauth_auth_status
+            from thoth_cli.auth import get_minimax_oauth_auth_status
             return bool((get_minimax_oauth_auth_status() or {}).get("logged_in"))
         except Exception:
             return False
     if normalized == "xai":
         try:
-            from hermes_cli.auth import get_xai_oauth_auth_status
+            from thoth_cli.auth import get_xai_oauth_auth_status
             return bool((get_xai_oauth_auth_status() or {}).get("logged_in"))
         except Exception:
             return False
@@ -211,7 +211,7 @@ def _fail_and_issue(text: str, detail: str, fix: str, issues: list[str]) -> None
 def _check_gateway_service_linger(issues: list[str]) -> None:
     """Warn when a systemd user gateway service will stop after logout."""
     try:
-        from hermes_cli.gateway import (
+        from thoth_cli.gateway import (
             get_systemd_linger_status,
             get_systemd_unit_path,
             is_linux,
@@ -296,7 +296,7 @@ def _build_apikey_providers_list() -> list:
         from providers import list_providers
         from providers.base import ProviderProfile as _PP
         try:
-            from hermes_cli.providers import normalize_provider as _normalize_provider
+            from thoth_cli.providers import normalize_provider as _normalize_provider
         except Exception:  # pragma: no cover - normalization is best-effort
             def _normalize_provider(_name: str) -> str:
                 return (_name or "").strip().lower()
@@ -348,7 +348,7 @@ def run_doctor(args):
     # return without running the rest of the diagnostics — the user has
     # already seen the advisory and just wants to silence it.
     if ack_target:
-        from hermes_cli.security_advisories import (
+        from thoth_cli.security_advisories import (
             ADVISORIES,
             ack_advisory,
         )
@@ -386,7 +386,7 @@ def run_doctor(args):
 
     _section("Security Advisories")
     try:
-        from hermes_cli.security_advisories import (
+        from thoth_cli.security_advisories import (
             detect_compromised,
             filter_unacked,
             full_remediation_text,
@@ -532,7 +532,7 @@ def run_doctor(args):
 
             known_providers: set = set()
             try:
-                from hermes_cli.auth import (
+                from thoth_cli.auth import (
                     PROVIDER_REGISTRY,
                     resolve_provider as _resolve_auth_provider,
                 )
@@ -541,8 +541,8 @@ def run_doctor(args):
                 _resolve_auth_provider = None
                 pass
             try:
-                from hermes_cli.config import get_compatible_custom_providers as _compatible_custom_providers
-                from hermes_cli.providers import (
+                from thoth_cli.config import get_compatible_custom_providers as _compatible_custom_providers
+                from thoth_cli.providers import (
                     normalize_provider as _normalize_catalog_provider,
                     resolve_provider_full as _resolve_provider_full,
                 )
@@ -654,14 +654,14 @@ def run_doctor(args):
             if runtime_provider and runtime_provider not in ("auto", "custom"):
                 try:
                     if runtime_provider == "openrouter":
-                        from hermes_cli.config import get_env_value
+                        from thoth_cli.config import get_env_value
 
                         configured = bool(
                             str(get_env_value("OPENROUTER_API_KEY") or "").strip()
                             or str(get_env_value("OPENAI_API_KEY") or "").strip()
                         )
                     else:
-                        from hermes_cli.auth import PROVIDER_REGISTRY, get_auth_status
+                        from thoth_cli.auth import PROVIDER_REGISTRY, get_auth_status
 
                         pconfig = PROVIDER_REGISTRY.get(runtime_provider)
                         configured = True
@@ -700,7 +700,7 @@ def run_doctor(args):
                     shutil.copy2(str(example_config), str(config_path))
                     check_ok(f"Created {_DHH}/config.yaml from cli-config.yaml.example")
                 else:
-                    from hermes_cli.config import DEFAULT_CONFIG, save_config
+                    from thoth_cli.config import DEFAULT_CONFIG, save_config
                     save_config(DEFAULT_CONFIG)
                     check_ok(f"Created {_DHH}/config.yaml from defaults")
                 fixed_count += 1
@@ -711,7 +711,7 @@ def run_doctor(args):
     config_path = HERMES_HOME / 'config.yaml'
     if config_path.exists():
         try:
-            from hermes_cli.config import check_config_version, migrate_config
+            from thoth_cli.config import check_config_version, migrate_config
             current_ver, latest_ver = check_config_version()
             if current_ver < latest_ver:
                 check_warn(
@@ -762,7 +762,7 @@ def run_doctor(args):
 
         # Validate config structure (catches malformed custom_providers, etc.)
         try:
-            from hermes_cli.config import validate_config_structure
+            from thoth_cli.config import validate_config_structure
             config_issues = validate_config_structure()
             if config_issues:
                 _section("Config Structure")
@@ -781,8 +781,8 @@ def run_doctor(args):
     _section("xAI Model Retirement (May 15, 2026)")
 
     try:
-        from hermes_cli.config import load_config
-        from hermes_cli.xai_retirement import (
+        from thoth_cli.config import load_config
+        from thoth_cli.xai_retirement import (
             MIGRATION_GUIDE_URL,
             find_retired_xai_refs,
             format_issue,
@@ -806,7 +806,7 @@ def run_doctor(args):
     _section("Auth Providers")
 
     try:
-        from hermes_cli.auth import (
+        from thoth_cli.auth import (
             get_nous_auth_status,
             get_codex_auth_status,
             get_gemini_oauth_auth_status,
@@ -863,7 +863,7 @@ def run_doctor(args):
     # xAI OAuth — separate try/except so an import failure here cannot
     # disrupt the already-printed Nous/Codex/Gemini/MiniMax rows above.
     try:
-        from hermes_cli.auth import get_xai_oauth_auth_status
+        from thoth_cli.auth import get_xai_oauth_auth_status
         xai_oauth_status = get_xai_oauth_auth_status() or {}
         if xai_oauth_status.get("logged_in"):
             check_ok("xAI OAuth", "(logged in)")
@@ -1434,7 +1434,7 @@ def run_doctor(args):
             )
 
     def _probe_anthropic() -> _ConnectivityResult:
-        from hermes_cli.auth import get_anthropic_key
+        from thoth_cli.auth import get_anthropic_key
         key = get_anthropic_key()
         if not key:
             return _ConnectivityResult("Anthropic API", [], [])
@@ -1651,7 +1651,7 @@ def run_doctor(args):
         """
         label = "Azure Foundry (Entra ID)".ljust(28)
         try:
-            from hermes_cli.config import load_config
+            from thoth_cli.config import load_config
             cfg = load_config()
             model_cfg = cfg.get("model") if isinstance(cfg, dict) else {}
             if not isinstance(model_cfg, dict):
@@ -1830,7 +1830,7 @@ def run_doctor(args):
     else:
         check_warn("Skills Hub directory not initialized", "(run: hermes skills list)")
 
-    from hermes_cli.config import get_env_value
+    from thoth_cli.config import get_env_value
 
     def _gh_authenticated() -> bool:
         """Check if gh CLI is authenticated via token file or device flow."""
@@ -1941,7 +1941,7 @@ def run_doctor(args):
             check_warn(f"{_active_memory_provider} check failed", str(_e))
 
     try:
-        from hermes_cli.profiles import list_profiles, _get_wrapper_dir, profile_exists
+        from thoth_cli.profiles import list_profiles, _get_wrapper_dir, profile_exists
         import re as _re
 
         named_profiles = [p for p in list_profiles() if not p.is_default]

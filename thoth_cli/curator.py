@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from hermes_cli.cli_name import cli_name
+from thoth_cli.cli_name import cli_name
 
 
 def _fmt_ts(ts: Optional[str]) -> str:

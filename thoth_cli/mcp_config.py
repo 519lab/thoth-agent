@@ -15,7 +15,7 @@ import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from hermes_cli.config import (
+from thoth_cli.config import (
     cfg_get,
     load_config,
     save_config,
@@ -23,7 +23,7 @@ from hermes_cli.config import (
     save_env_value,
     get_hermes_home,  # noqa: F401 — used by test mocks
 )
-from hermes_cli.colors import Colors, color
+from thoth_cli.colors import Colors, color
 from hermes_constants import display_hermes_home
 from tools.mcp_tool import _ENV_VAR_PATTERN
 
@@ -68,7 +68,7 @@ def _confirm(question: str, default: bool = True) -> bool:
 
 
 def _prompt(question: str, *, password: bool = False, default: str = "") -> str:
-    from hermes_cli.cli_output import prompt as _shared_prompt
+    from thoth_cli.cli_output import prompt as _shared_prompt
     return _shared_prompt(question, default=default, password=password)
 
 
@@ -382,7 +382,7 @@ def cmd_mcp_add(args):
 
     if choice in {"s", "select"}:
         # Interactive tool selection
-        from hermes_cli.curses_ui import curses_checklist
+        from thoth_cli.curses_ui import curses_checklist
 
         labels = [f"{t[0]}  —  {t[1]}" for t in tools]
         pre_selected = set(range(len(tools)))
@@ -644,7 +644,7 @@ def cmd_mcp_login(args):
 def cmd_mcp_configure(args):
     """Reconfigure which tools are enabled for an existing MCP server."""
     import sys as _sys
-    from hermes_cli.cli_name import cli_name
+    from thoth_cli.cli_name import cli_name
     if not _sys.stdin.isatty():
         print(f"Error: '{cli_name()} mcp configure' requires an interactive terminal.", file=_sys.stderr)
         _sys.exit(1)
@@ -704,7 +704,7 @@ def cmd_mcp_configure(args):
     print()
 
     # Interactive checklist
-    from hermes_cli.curses_ui import curses_checklist
+    from thoth_cli.curses_ui import curses_checklist
 
     labels = [f"{t[0]}  —  {t[1]}" for t in all_tools]
 

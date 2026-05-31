@@ -23,7 +23,7 @@ from gateway.restart import (
     GATEWAY_SERVICE_RESTART_EXIT_CODE,
     parse_restart_drain_timeout,
 )
-from hermes_cli.config import (
+from thoth_cli.config import (
     get_env_value,
     get_hermes_home,
     is_managed,
@@ -33,12 +33,12 @@ from hermes_cli.config import (
 )
 # display_hermes_home is imported lazily at call sites to avoid ImportError
 # when hermes_constants is cached from a pre-update version during `hermes update`.
-from hermes_cli.setup import (
+from thoth_cli.setup import (
     print_header, print_info, print_success, print_warning, print_error,
     prompt, prompt_choice, prompt_yes_no,
 )
-from hermes_cli.colors import Colors, color
-from hermes_cli.cli_name import cli_name
+from thoth_cli.colors import Colors, color
+from thoth_cli.cli_name import cli_name
 
 logger = logging.getLogger(__name__)
 
@@ -551,7 +551,7 @@ def find_profile_gateway_processes(
     processes: list[ProfileGatewayProcess] = []
     try:
         from gateway.status import get_running_pid
-        from hermes_cli.profiles import list_profiles
+        from thoth_cli.profiles import list_profiles
     except Exception:
         return processes
 
@@ -598,7 +598,7 @@ def launch_detached_profile_gateway_restart(profile: str, old_pid: int) -> bool:
     #
     # ``windows_detach_popen_kwargs()`` returns the right kwargs for the
     # host platform and is a no-op on POSIX (just ``start_new_session=True``).
-    from hermes_cli._subprocess_compat import windows_detach_popen_kwargs
+    from thoth_cli._subprocess_compat import windows_detach_popen_kwargs
 
     watcher = textwrap.dedent(
         """
@@ -1044,7 +1044,7 @@ def _print_other_profiles_gateway_status() -> None:
     avoid confusing another profile's process with the current one.
     """
     try:
-        from hermes_cli.profiles import get_active_profile_name
+        from thoth_cli.profiles import get_active_profile_name
 
         current = get_active_profile_name()
         other_processes = [
@@ -1070,7 +1070,7 @@ def _gateway_list() -> None:
     check each profile individually.
     """
     try:
-        from hermes_cli.profiles import list_profiles, get_active_profile_name
+        from thoth_cli.profiles import list_profiles, get_active_profile_name
     except Exception:
         print("Unable to list profiles.")
         return
@@ -3751,7 +3751,7 @@ def _all_platforms() -> list[dict]:
     # User-installed platform plugins under ~/.hermes/plugins/ still require
     # opt-in via ``plugins.enabled`` (untrusted code).
     try:
-        from hermes_cli.plugins import discover_plugins
+        from thoth_cli.plugins import discover_plugins
         discover_plugins()
     except Exception as e:
         logger.debug("plugin discovery failed during platform enumeration: %s", e)
@@ -3992,7 +3992,7 @@ def _setup_standard_platform(platform: dict):
 
 def _setup_whatsapp():
     """Delegate to the existing WhatsApp setup flow."""
-    from hermes_cli.main import cmd_whatsapp
+    from thoth_cli.main import cmd_whatsapp
     import argparse
     cmd_whatsapp(argparse.Namespace())
 
@@ -4011,7 +4011,7 @@ def _setup_sms():
 
 def _setup_dingtalk():
     """Configure DingTalk — QR scan (recommended) or manual credential entry."""
-    from hermes_cli.setup import (
+    from thoth_cli.setup import (
         prompt_choice, prompt_yes_no, print_success, print_warning,
     )
 
@@ -4042,7 +4042,7 @@ def _setup_dingtalk():
     if method == 0:
         # ── QR-code device-flow authorization ──
         try:
-            from hermes_cli.dingtalk_auth import dingtalk_qr_auth
+            from thoth_cli.dingtalk_auth import dingtalk_qr_auth
         except ImportError as exc:
             print_warning(f"  QR auth module failed to load ({exc}), falling back to manual input.")
             _setup_standard_platform(dingtalk_platform)
@@ -4198,7 +4198,7 @@ def _is_service_installed() -> bool:
     elif is_macos():
         return get_launchd_plist_path().exists()
     elif is_windows():
-        from hermes_cli import gateway_windows
+        from thoth_cli import gateway_windows
         return gateway_windows.is_installed()
     return False
 
@@ -4242,7 +4242,7 @@ def _is_service_running() -> bool:
         except subprocess.TimeoutExpired:
             return False
     elif is_windows():
-        from hermes_cli import gateway_windows
+        from thoth_cli import gateway_windows
         if gateway_windows.is_installed():
             # "installed" doesn't necessarily mean "running" on Windows. The
             # canonical check is whether a gateway process actually exists.
@@ -4783,7 +4783,7 @@ def _builtin_setup_fn(key: str):
     Late-bound to avoid a circular import with ``hermes_cli.setup`` (which
     imports from this module for the remaining bespoke flows).
     """
-    from hermes_cli import setup as _s
+    from thoth_cli import setup as _s
     return {
         "telegram": _s._setup_telegram,
         "discord": _s._setup_discord,
@@ -4949,7 +4949,7 @@ def gateway_setup():
                     elif is_macos():
                         launchd_restart()
                     elif is_windows():
-                        from hermes_cli import gateway_windows
+                        from thoth_cli import gateway_windows
                         gateway_windows.restart()
                     else:
                         stop_profile_gateway()
@@ -4973,7 +4973,7 @@ def gateway_setup():
                     elif is_macos():
                         launchd_start()
                     elif is_windows():
-                        from hermes_cli import gateway_windows
+                        from thoth_cli import gateway_windows
                         gateway_windows.start()
                 except UserSystemdUnavailableError as e:
                     print_error("  Start failed — user systemd not reachable:")
@@ -5012,7 +5012,7 @@ def gateway_setup():
                             launchd_install(force=False)
                             did_install = True
                         else:
-                            from hermes_cli import gateway_windows
+                            from thoth_cli import gateway_windows
                             gateway_windows.install(force=False)
                             did_install = True
                         print()
@@ -5023,7 +5023,7 @@ def gateway_setup():
                                 elif is_macos():
                                     launchd_start()
                                 elif is_windows():
-                                    from hermes_cli import gateway_windows
+                                    from thoth_cli import gateway_windows
                                     gateway_windows.start()
                             except UserSystemdUnavailableError as e:
                                 print_error("  Start failed — user systemd not reachable:")
@@ -5131,7 +5131,7 @@ def _gateway_command_inner(args):
         elif is_macos():
             launchd_install(force)
         elif is_windows():
-            from hermes_cli import gateway_windows
+            from thoth_cli import gateway_windows
             gateway_windows.install(
                 force=force,
                 start_now=getattr(args, 'start_now', None),
@@ -5175,7 +5175,7 @@ def _gateway_command_inner(args):
         elif is_macos():
             launchd_uninstall()
         elif is_windows():
-            from hermes_cli import gateway_windows
+            from thoth_cli import gateway_windows
             gateway_windows.uninstall()
         elif is_container():
             print("Service uninstall is not applicable inside a Docker container.")
@@ -5208,7 +5208,7 @@ def _gateway_command_inner(args):
         elif is_macos():
             launchd_start()
         elif is_windows():
-            from hermes_cli import gateway_windows
+            from thoth_cli import gateway_windows
             gateway_windows.start()
         elif is_wsl():
             print("WSL detected but systemd is not available.")
@@ -5253,7 +5253,7 @@ def _gateway_command_inner(args):
                 except subprocess.CalledProcessError:
                     pass
             elif is_windows():
-                from hermes_cli import gateway_windows
+                from thoth_cli import gateway_windows
                 if gateway_windows.is_installed():
                     try:
                         gateway_windows.stop()
@@ -5282,7 +5282,7 @@ def _gateway_command_inner(args):
                 except subprocess.CalledProcessError:
                     pass
             elif is_windows():
-                from hermes_cli import gateway_windows
+                from thoth_cli import gateway_windows
                 if gateway_windows.is_installed():
                     try:
                         gateway_windows.stop()
@@ -5322,7 +5322,7 @@ def _gateway_command_inner(args):
                 except subprocess.CalledProcessError:
                     pass
             elif is_windows():
-                from hermes_cli import gateway_windows
+                from thoth_cli import gateway_windows
                 if gateway_windows.is_installed():
                     try:
                         gateway_windows.stop()
@@ -5342,7 +5342,7 @@ def _gateway_command_inner(args):
             elif is_macos() and get_launchd_plist_path().exists():
                 launchd_start()
             elif is_windows():
-                from hermes_cli import gateway_windows
+                from thoth_cli import gateway_windows
                 # On Windows, even without a registered Scheduled Task / Startup
                 # entry, gateway_windows.start() uses the safe detached
                 # pythonw.exe launcher.  Do not fall back to run_gateway() here:
@@ -5369,7 +5369,7 @@ def _gateway_command_inner(args):
             except subprocess.CalledProcessError:
                 pass
         elif is_windows():
-            from hermes_cli import gateway_windows
+            from thoth_cli import gateway_windows
             # Prefer the Windows-specific restart path: it supports both
             # registered Scheduled Task / Startup installs and no-service
             # detached restarts.  In the normal successful Telegram-triggered
@@ -5427,7 +5427,7 @@ def _gateway_command_inner(args):
         # Check for service first
         _windows_service_installed = False
         if is_windows():
-            from hermes_cli import gateway_windows
+            from thoth_cli import gateway_windows
             _windows_service_installed = gateway_windows.is_installed()
         if supports_systemd_services() and (get_systemd_unit_path(system=False).exists() or get_systemd_unit_path(system=True).exists()):
             systemd_status(deep, system=system, full=full)
@@ -5436,7 +5436,7 @@ def _gateway_command_inner(args):
             launchd_status(deep)
             _print_gateway_process_mismatch(snapshot)
         elif _windows_service_installed:
-            from hermes_cli import gateway_windows
+            from thoth_cli import gateway_windows
             gateway_windows.status(deep=deep)
             _print_gateway_process_mismatch(snapshot)
         else:

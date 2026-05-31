@@ -12,14 +12,14 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 
-from hermes_cli.auth import AuthError, resolve_provider
-from hermes_cli.cli_name import cli_name
-from hermes_cli.colors import Colors, color
-from hermes_cli.config import get_env_path, get_env_value, get_hermes_home, load_config
-from hermes_cli.models import provider_label
-from hermes_cli.nous_subscription import get_nous_subscription_features
-from hermes_cli.runtime_provider import resolve_requested_provider
-from hermes_cli.vercel_auth import describe_vercel_auth
+from thoth_cli.auth import AuthError, resolve_provider
+from thoth_cli.cli_name import cli_name
+from thoth_cli.colors import Colors, color
+from thoth_cli.config import get_env_path, get_env_value, get_hermes_home, load_config
+from thoth_cli.models import provider_label
+from thoth_cli.nous_subscription import get_nous_subscription_features
+from thoth_cli.runtime_provider import resolve_requested_provider
+from thoth_cli.vercel_auth import describe_vercel_auth
 from hermes_constants import OPENROUTER_MODELS_URL
 from tools.tool_backend_helpers import managed_nous_tools_enabled
 
@@ -167,7 +167,7 @@ def show_status(args):
         display = redact_key(value) if not show_all else value
         print(f"  {name:<12}  {check_mark(has_key)} {display}")
 
-    from hermes_cli.auth import get_anthropic_key
+    from thoth_cli.auth import get_anthropic_key
     anthropic_value = get_anthropic_key()
     anthropic_display = redact_key(anthropic_value) if not show_all else anthropic_value
     print(f"  {'Anthropic':<12}  {check_mark(bool(anthropic_value))} {anthropic_display}")
@@ -179,7 +179,7 @@ def show_status(args):
     print(color("◆ Auth Providers", Colors.CYAN, Colors.BOLD))
 
     try:
-        from hermes_cli.auth import (
+        from thoth_cli.auth import (
             get_nous_auth_status,
             get_codex_auth_status,
             get_qwen_auth_status,
@@ -263,7 +263,7 @@ def show_status(args):
     # xAI OAuth — separate try/except so an import failure here cannot
     # disrupt the already-printed Nous/Codex/Qwen/MiniMax rows above.
     try:
-        from hermes_cli.auth import get_xai_oauth_auth_status
+        from thoth_cli.auth import get_xai_oauth_auth_status
         xai_oauth_status = get_xai_oauth_auth_status() or {}
     except Exception:
         xai_oauth_status = {}
@@ -345,7 +345,7 @@ def show_status(args):
     # users with foreign configs don't see noise. Auth rejection vs. silent
     # empty list is the most common LM Studio support case.
     if _effective_provider_label() == "LM Studio":
-        from hermes_cli.models import probe_lmstudio_models
+        from thoth_cli.models import probe_lmstudio_models
         model_cfg = config.get("model")
         base = (model_cfg.get("base_url") if isinstance(model_cfg, dict) else None) or get_env_value("LM_BASE_URL") or "http://127.0.0.1:1234/v1"
         try:
@@ -461,7 +461,7 @@ def show_status(args):
     print(color("◆ Gateway Service", Colors.CYAN, Colors.BOLD))
 
     try:
-        from hermes_cli.gateway import get_gateway_runtime_snapshot, _format_gateway_pids
+        from thoth_cli.gateway import get_gateway_runtime_snapshot, _format_gateway_pids
 
         snapshot = get_gateway_runtime_snapshot()
         is_running = snapshot.running

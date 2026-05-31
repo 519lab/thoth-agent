@@ -10,8 +10,8 @@ import queue
 import time as _time
 import getpass
 
-from hermes_cli.banner import cprint, _DIM, _RST
-from hermes_cli.config import save_env_value_secure
+from thoth_cli.banner import cprint, _DIM, _RST
+from thoth_cli.config import save_env_value_secure
 from hermes_constants import display_hermes_home
 
 

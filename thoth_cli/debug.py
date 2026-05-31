@@ -358,7 +358,7 @@ class LogSnapshot:
 
 def _primary_log_path(log_name: str) -> Optional[Path]:
     """Where *log_name* would live if present. Doesn't check existence."""
-    from hermes_cli.logs import LOG_FILES
+    from thoth_cli.logs import LOG_FILES
 
     filename = LOG_FILES.get(log_name)
     return (get_hermes_home() / "logs" / filename) if filename else None
@@ -515,7 +515,7 @@ def _capture_default_log_snapshots(
 
 def _capture_dump() -> str:
     """Run ``hermes dump`` and return its stdout as a string."""
-    from hermes_cli.dump import run_dump
+    from thoth_cli.dump import run_dump
 
     class _FakeArgs:
         show_keys = False

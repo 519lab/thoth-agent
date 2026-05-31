@@ -146,9 +146,9 @@ _EXTRA_ENV_KEYS = frozenset({
 })
 import yaml
 
-from hermes_cli.cli_name import cli_name
-from hermes_cli.colors import Colors, color
-from hermes_cli.default_soul import DEFAULT_SOUL_MD
+from thoth_cli.cli_name import cli_name
+from thoth_cli.colors import Colors, color
+from thoth_cli.default_soul import DEFAULT_SOUL_MD
 
 
 # =============================================================================
@@ -5095,7 +5095,7 @@ def show_config():
     for env_key, name in keys:
         value = get_env_value(env_key)
         print(f"  {name:<14} {redact_key(value)}")
-    from hermes_cli.auth import get_anthropic_key
+    from thoth_cli.auth import get_anthropic_key
     anthropic_value = get_anthropic_key()
     print(f"  {'Anthropic':<14} {redact_key(anthropic_value)}")
     

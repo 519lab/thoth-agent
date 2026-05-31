@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Sequence
 
-from hermes_cli.cli_name import cli_name
+from thoth_cli.cli_name import cli_name
 from hermes_constants import get_hermes_home, display_hermes_home
 
 # Known log files (name → filename)

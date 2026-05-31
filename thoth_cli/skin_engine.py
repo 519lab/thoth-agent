@@ -86,7 +86,7 @@ USAGE
 
 .. code-block:: python
 
-    from hermes_cli.skin_engine import get_active_skin, list_skins, set_active_skin
+    from thoth_cli.skin_engine import get_active_skin, list_skins, set_active_skin
 
     skin = get_active_skin()
     print(skin.colors["banner_title"])    # "#FFD700"

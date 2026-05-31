@@ -49,7 +49,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from hermes_constants import get_hermes_home
 from utils import env_var_enabled
-from hermes_cli.config import cfg_get
+from thoth_cli.config import cfg_get
 
 
 def get_bundled_plugins_dir() -> Path:
@@ -185,7 +185,7 @@ def _get_disabled_plugins() -> set:
     ``plugins.enabled``.
     """
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         config = load_config()
         disabled = cfg_get(config, "plugins", "disabled", default=[])
         return set(disabled) if isinstance(disabled, list) else set()
@@ -208,7 +208,7 @@ def _get_enabled_plugins() -> Optional[set]:
     * ``set(...)`` — the concrete allow-list.
     """
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         config = load_config()
         plugins_cfg = config.get("plugins")
         if not isinstance(plugins_cfg, dict):
@@ -444,7 +444,7 @@ class PluginContext:
 
         # Reject if it conflicts with a built-in command
         try:
-            from hermes_cli.commands import resolve_command
+            from thoth_cli.commands import resolve_command
             if resolve_command(clean) is not None:
                 logger.warning(
                     "Plugin '%s' tried to register command '/%s' which conflicts "

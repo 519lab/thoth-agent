@@ -32,7 +32,7 @@ def _build_full_manifest(bot_name: str, bot_description: str) -> dict:
     for a Hermes deployment — users can tweak them in the Slack UI after
     pasting.
     """
-    from hermes_cli.commands import slack_app_manifest
+    from thoth_cli.commands import slack_app_manifest
 
     partial = slack_app_manifest()
     slashes = partial["features"]["slash_commands"]
@@ -118,7 +118,7 @@ def slack_manifest_command(args) -> int:
     description = getattr(args, "description", None) or "Your Hermes agent on Slack"
 
     if getattr(args, "slashes_only", False):
-        from hermes_cli.commands import slack_app_manifest
+        from thoth_cli.commands import slack_app_manifest
 
         manifest = slack_app_manifest()["features"]["slash_commands"]
     else:

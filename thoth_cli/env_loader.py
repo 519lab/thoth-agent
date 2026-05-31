@@ -201,7 +201,7 @@ def _sanitize_env_file_if_needed(path: Path) -> None:
     if not path.exists():
         return
     try:
-        from hermes_cli.config import _sanitize_env_lines
+        from thoth_cli.config import _sanitize_env_lines
     except ImportError:
         return  # early bootstrap — config module not available yet
 

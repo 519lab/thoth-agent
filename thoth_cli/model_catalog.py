@@ -52,7 +52,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from hermes_cli import __version__ as _HERMES_VERSION
+from thoth_cli import __version__ as _HERMES_VERSION
 from utils import atomic_replace
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ _catalog_cache_source_mtime: float = 0.0
 def _load_catalog_config() -> dict[str, Any]:
     """Load the ``model_catalog`` config block with defaults filled in."""
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         cfg = load_config() or {}
     except Exception:
         cfg = {}

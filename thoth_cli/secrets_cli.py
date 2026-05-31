@@ -24,7 +24,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from agent.secret_sources import bitwarden as bw
-from hermes_cli.config import (
+from thoth_cli.config import (
     get_env_path,
     load_config,
     save_config,

@@ -747,7 +747,7 @@ def create_profile(
     soul_path = profile_dir / "SOUL.md"
     if not soul_path.exists():
         try:
-            from hermes_cli.default_soul import DEFAULT_SOUL_MD
+            from thoth_cli.default_soul import DEFAULT_SOUL_MD
             soul_path.write_text(DEFAULT_SOUL_MD, encoding="utf-8")
         except Exception:
             pass  # best-effort — don't fail profile creation over this
@@ -975,7 +975,7 @@ def _cleanup_gateway_service(name: str, profile_dir: Path) -> None:
     old_home = os.environ.get("HERMES_HOME")
     try:
         os.environ["HERMES_HOME"] = str(profile_dir)
-        from hermes_cli.gateway import get_service_name, get_launchd_plist_path
+        from thoth_cli.gateway import get_service_name, get_launchd_plist_path
 
         if _platform.system() == "Linux":
             svc_name = get_service_name()

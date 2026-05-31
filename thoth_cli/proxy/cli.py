@@ -7,8 +7,8 @@ import logging
 import sys
 from typing import Any
 
-from hermes_cli.proxy.adapters import ADAPTERS, get_adapter
-from hermes_cli.proxy.server import (
+from thoth_cli.proxy.adapters import ADAPTERS, get_adapter
+from thoth_cli.proxy.server import (
     AIOHTTP_AVAILABLE,
     DEFAULT_HOST,
     DEFAULT_PORT,

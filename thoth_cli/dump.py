@@ -13,8 +13,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from hermes_cli.config import get_hermes_home, get_env_path, get_project_root, load_config
-from hermes_cli.env_loader import load_hermes_dotenv
+from thoth_cli.config import get_hermes_home, get_env_path, get_project_root, load_config
+from thoth_cli.env_loader import load_hermes_dotenv
 from hermes_constants import display_hermes_home
 from agent.skill_utils import is_excluded_skill_path
 
@@ -48,7 +48,7 @@ def _redact(value: str) -> str:
 def _gateway_status() -> str:
     """Return a short gateway status string."""
     try:
-        from hermes_cli.gateway import get_gateway_runtime_snapshot
+        from thoth_cli.gateway import get_gateway_runtime_snapshot
 
         snapshot = get_gateway_runtime_snapshot()
         if snapshot.running:
@@ -148,7 +148,7 @@ def _config_overrides(config: dict) -> dict[str, str]:
     
     Returns a flat dict of dotpath -> value for interesting overrides.
     """
-    from hermes_cli.config import DEFAULT_CONFIG
+    from thoth_cli.config import DEFAULT_CONFIG
 
     overrides = {}
 
@@ -209,7 +209,7 @@ def run_dump(args):
     hermes_home = get_hermes_home()
 
     try:
-        from hermes_cli import __version__, __release_date__
+        from thoth_cli import __version__, __release_date__
     except ImportError:
         __version__ = "(unknown)"
         __release_date__ = ""
@@ -225,7 +225,7 @@ def run_dump(args):
 
     # Profile
     try:
-        from hermes_cli.profiles import get_active_profile_name
+        from thoth_cli.profiles import get_active_profile_name
         profile = get_active_profile_name() or "(default)"
     except Exception:
         profile = "(default)"

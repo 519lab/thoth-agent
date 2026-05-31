@@ -47,8 +47,8 @@ from urllib.parse import parse_qs, urlencode, urlparse
 import httpx
 import yaml
 
-from hermes_cli.cli_name import cli_name
-from hermes_cli.config import get_hermes_home, get_config_path, read_raw_config
+from thoth_cli.cli_name import cli_name
+from thoth_cli.config import get_hermes_home, get_config_path, read_raw_config
 from hermes_constants import OPENROUTER_BASE_URL, secure_parent_dir
 from utils import atomic_replace, atomic_yaml_write, is_truthy_value
 
@@ -505,7 +505,7 @@ def get_anthropic_key() -> str:
 
         ANTHROPIC_API_KEY -> ANTHROPIC_TOKEN -> CLAUDE_CODE_OAUTH_TOKEN
     """
-    from hermes_cli.config import get_env_value
+    from thoth_cli.config import get_env_value
 
     for var in PROVIDER_REGISTRY["anthropic"].api_key_env_vars:
         value = get_env_value(var) or os.getenv(var, "")
@@ -582,7 +582,7 @@ def _resolve_api_key_provider_secret(
     if provider_id == "copilot":
         # Use the dedicated copilot auth module for proper token validation
         try:
-            from hermes_cli.copilot_auth import resolve_copilot_token, get_copilot_api_token
+            from thoth_cli.copilot_auth import resolve_copilot_token, get_copilot_api_token
             token, source = resolve_copilot_token()
             if token:
                 return get_copilot_api_token(token), source
@@ -592,7 +592,7 @@ def _resolve_api_key_provider_secret(
             pass
         return "", ""
 
-    from hermes_cli.config import get_env_value
+    from thoth_cli.config import get_env_value
     for env_var in pconfig.api_key_env_vars:
         # Check both os.environ and ~/.hermes/.env file
         val = (get_env_value(env_var) or "").strip()
@@ -1276,7 +1276,7 @@ def is_provider_explicitly_configured(provider_id: str) -> bool:
 
     # 2. Check config.yaml model.provider
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         cfg = load_config()
         model_cfg = cfg.get("model")
         if isinstance(model_cfg, dict):
@@ -1365,7 +1365,7 @@ def _get_config_hint_for_unknown_provider(provider_name: str) -> str:
     and returns a human-readable diagnostic, or empty string if nothing found.
     """
     try:
-        from hermes_cli.config import validate_config_structure
+        from thoth_cli.config import validate_config_structure
         issues = validate_config_structure()
         if not issues:
             return ""
@@ -2119,7 +2119,7 @@ def _spotify_client_id(
     explicit: Optional[str] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> str:
-    from hermes_cli.config import get_env_value
+    from thoth_cli.config import get_env_value
 
     candidates = (
         explicit,
@@ -2142,7 +2142,7 @@ def _spotify_redirect_uri(
     explicit: Optional[str] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> str:
-    from hermes_cli.config import get_env_value
+    from thoth_cli.config import get_env_value
 
     candidates = (
         explicit,
@@ -2159,7 +2159,7 @@ def _spotify_redirect_uri(
 
 
 def _spotify_api_base_url(state: Optional[Dict[str, Any]] = None) -> str:
-    from hermes_cli.config import get_env_value
+    from thoth_cli.config import get_env_value
 
     candidates = (
         get_env_value("HERMES_SPOTIFY_API_BASE_URL"),
@@ -2174,7 +2174,7 @@ def _spotify_api_base_url(state: Optional[Dict[str, Any]] = None) -> str:
 
 
 def _spotify_accounts_base_url(state: Optional[Dict[str, Any]] = None) -> str:
-    from hermes_cli.config import get_env_value
+    from thoth_cli.config import get_env_value
 
     candidates = (
         get_env_value("HERMES_SPOTIFY_ACCOUNTS_BASE_URL"),
@@ -2737,7 +2737,7 @@ def _spotify_interactive_setup(redirect_uri_hint: str) -> str:
 
     Raises SystemExit if the user aborts or submits an empty value.
     """
-    from hermes_cli.config import save_env_value
+    from thoth_cli.config import save_env_value
 
     print()
     print("=" * 70)
@@ -5686,7 +5686,7 @@ def _get_azure_foundry_auth_status() -> Dict[str, Any]:
     """
     info: Dict[str, Any] = {"provider": "azure-foundry"}
     try:
-        from hermes_cli.config import load_config, get_env_value
+        from thoth_cli.config import load_config, get_env_value
         cfg = load_config()
     except Exception:
         cfg = {}
@@ -5983,7 +5983,7 @@ def _prompt_model_selection(
     If *unavailable_models* is provided, those models are shown grayed out
     and unselectable, with an upgrade link to *portal_url*.
     """
-    from hermes_cli.models import _format_price_per_mtok
+    from thoth_cli.models import _format_price_per_mtok
 
     _unavailable = unavailable_models or []
 
@@ -6093,7 +6093,7 @@ def _prompt_model_selection(
             title=effective_title,
         )
         idx = menu.show()
-        from hermes_cli.curses_ui import flush_stdin
+        from thoth_cli.curses_ui import flush_stdin
         flush_stdin()
         if idx is None:
             return None
@@ -6150,7 +6150,7 @@ def _save_model_choice(model_id: str) -> None:
     The model is stored in config.yaml only — NOT in .env.  This avoids
     conflicts in multi-agent setups where env vars would stomp each other.
     """
-    from hermes_cli.config import save_config, load_config
+    from thoth_cli.config import save_config, load_config
 
     config = load_config()
     # Always use dict format so provider/base_url can be stored alongside
@@ -7346,7 +7346,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                     code="invalid_token",
                 )
 
-            from hermes_cli.models import (
+            from thoth_cli.models import (
                 get_curated_nous_model_ids, get_pricing_for_provider,
                 check_nous_free_tier, partition_nous_models_by_tier,
                 union_with_portal_free_recommendations,

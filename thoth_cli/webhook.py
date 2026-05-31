@@ -19,8 +19,8 @@ from typing import Dict
 
 from hermes_constants import display_hermes_home
 from utils import atomic_replace
-from hermes_cli.cli_name import cli_name
-from hermes_cli.config import cfg_get
+from thoth_cli.cli_name import cli_name
+from thoth_cli.config import cfg_get
 
 
 _SUBSCRIPTIONS_FILENAME = "webhook_subscriptions.json"
@@ -60,7 +60,7 @@ def _save_subscriptions(subs: Dict[str, dict]) -> None:
 def _get_webhook_config() -> dict:
     """Load webhook platform config. Returns {} if not configured."""
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         cfg = load_config()
         return cfg_get(cfg, "platforms", "webhook", default={})
     except Exception:

@@ -82,7 +82,7 @@ def load_picker_context() -> ConfigContext:
     Replaces the inline 17-LOC config-slice that ``web_server.py`` and
     ``tui_gateway/server.py`` (×2 sites) used to do.
     """
-    from hermes_cli.config import get_compatible_custom_providers, load_config
+    from thoth_cli.config import get_compatible_custom_providers, load_config
 
     cfg = load_config()
     model_cfg = cfg.get("model", {})
@@ -129,7 +129,7 @@ def build_models_payload(
       ``CANONICAL_PROVIDERS`` declaration order; truly-custom rows go
       last (TUI display order).
     """
-    from hermes_cli.model_switch import list_authenticated_providers
+    from thoth_cli.model_switch import list_authenticated_providers
 
     rows = list_authenticated_providers(
         current_provider=ctx.current_provider,
@@ -159,7 +159,7 @@ def build_models_payload(
 
 def _append_unconfigured_rows(rows: list[dict], ctx: ConfigContext) -> list[dict]:
     """Build skeleton rows for canonical providers missing from ``rows``."""
-    from hermes_cli.models import CANONICAL_PROVIDERS, _PROVIDER_LABELS
+    from thoth_cli.models import CANONICAL_PROVIDERS, _PROVIDER_LABELS
 
     seen = {r["slug"].lower() for r in rows}
     cur = (ctx.current_provider or "").lower()
@@ -189,7 +189,7 @@ def _apply_picker_hints(rows: list[dict]) -> None:
     the unconfigured skeleton rows from ``_append_unconfigured_rows`` get
     the picker's setup-hint shape.
     """
-    from hermes_cli.auth import PROVIDER_REGISTRY
+    from thoth_cli.auth import PROVIDER_REGISTRY
 
     for row in rows:
         if "authenticated" in row:
@@ -229,7 +229,7 @@ def _reorder_canonical(rows: list[dict]) -> list[dict]:
     canonical. Keying on the flag would silently demote canonical
     providers configured via the new keyed schema.
     """
-    from hermes_cli.models import CANONICAL_PROVIDERS
+    from thoth_cli.models import CANONICAL_PROVIDERS
 
     order = {e.slug: i for i, e in enumerate(CANONICAL_PROVIDERS)}
     canon = sorted(

@@ -13,11 +13,11 @@ import shutil
 import sys
 from typing import Optional, Sequence
 
-from hermes_cli._parser import (
+from thoth_cli._parser import (
     PRE_ARGPARSE_INHERITED_FLAGS,
     build_top_level_parser,
 )
-from hermes_cli.cli_name import cli_name
+from thoth_cli.cli_name import cli_name
 
 
 def _build_inherited_flag_table() -> list[tuple[str, bool]]:

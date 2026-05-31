@@ -46,7 +46,7 @@ def cprint(text: str):
 def _skin_color(key: str, fallback: str) -> str:
     """Get a color from the active skin, or return fallback."""
     try:
-        from hermes_cli.skin_engine import get_active_skin
+        from thoth_cli.skin_engine import get_active_skin
         return get_active_skin().get_color(key, fallback)
     except Exception:
         return fallback
@@ -55,7 +55,7 @@ def _skin_color(key: str, fallback: str) -> str:
 def _skin_branding(key: str, fallback: str) -> str:
     """Get a branding string from the active skin, or return fallback."""
     try:
-        from hermes_cli.skin_engine import get_active_skin
+        from thoth_cli.skin_engine import get_active_skin
         return get_active_skin().get_branding(key, fallback)
     except Exception:
         return fallback
@@ -65,7 +65,7 @@ def _skin_branding(key: str, fallback: str) -> str:
 # ASCII Art & Branding
 # =========================================================================
 
-from hermes_cli import __version__ as VERSION, __release_date__ as RELEASE_DATE
+from thoth_cli import __version__ as VERSION, __release_date__ as RELEASE_DATE
 
 HERMES_AGENT_LOGO = """[bold #FFD700]██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗[/]
 [bold #FFD700]██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝[/]
@@ -499,7 +499,7 @@ def build_welcome_banner(console: Console, model: str, cwd: str,
 
     # Use skin's custom caduceus art if provided
     try:
-        from hermes_cli.skin_engine import get_active_skin
+        from thoth_cli.skin_engine import get_active_skin
         _bskin = get_active_skin()
         _hero = _bskin.banner_hero if hasattr(_bskin, 'banner_hero') and _bskin.banner_hero else HERMES_CADUCEUS
     except Exception:
@@ -631,8 +631,8 @@ def build_welcome_banner(console: Console, model: str, cwd: str,
     # understand why tool counts may not match what's actually reachable
     # (codex builds its own tool list inside the spawned subprocess).
     try:
-        from hermes_cli.codex_runtime_switch import get_current_runtime
-        from hermes_cli.config import load_config as _load_cfg
+        from thoth_cli.codex_runtime_switch import get_current_runtime
+        from thoth_cli.config import load_config as _load_cfg
         if get_current_runtime(_load_cfg()) == "codex_app_server":
             right_lines.append(
                 f"[bold {accent}]Runtime:[/] [{text}]codex app-server[/] "
@@ -642,7 +642,7 @@ def build_welcome_banner(console: Console, model: str, cwd: str,
         pass
     # Show active profile name when not 'default'
     try:
-        from hermes_cli.profiles import get_active_profile_name
+        from thoth_cli.profiles import get_active_profile_name
         _profile_name = get_active_profile_name()
         if _profile_name and _profile_name != "default":
             right_lines.append(f"[bold {accent}]Profile:[/] [{text}]{_profile_name}[/]")
@@ -655,7 +655,7 @@ def build_welcome_banner(console: Console, model: str, cwd: str,
     try:
         behind = get_update_result(timeout=0.5)
         if behind is not None and behind != 0:
-            from hermes_cli.config import get_managed_update_command, recommended_update_command
+            from thoth_cli.config import get_managed_update_command, recommended_update_command
             if behind > 0:
                 commits_word = "commit" if behind == 1 else "commits"
                 right_lines.append(

@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from hermes_cli.cli_name import cli_name
+from thoth_cli.cli_name import cli_name
 from hermes_constants import get_default_hermes_root, get_hermes_home, display_hermes_home
 
 logger = logging.getLogger(__name__)
@@ -413,7 +413,7 @@ def run_import(args) -> None:
         restored_profiles = []
         if profiles_dir.is_dir():
             try:
-                from hermes_cli.profiles import (
+                from thoth_cli.profiles import (
                     create_wrapper_script, check_alias_collision,
                     _is_wrapper_dir_in_path, _get_wrapper_dir,
                 )

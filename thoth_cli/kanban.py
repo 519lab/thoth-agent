@@ -23,10 +23,10 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
-from hermes_cli import kanban_db as kb
-from hermes_cli import kanban_swarm as ks
-from hermes_cli.cli_name import cli_name
-from hermes_cli.profiles import get_active_profile_name, get_profile_dir, seed_profile_skills
+from thoth_cli import kanban_db as kb
+from thoth_cli import kanban_swarm as ks
+from thoth_cli.cli_name import cli_name
+from thoth_cli.profiles import get_active_profile_name, get_profile_dir, seed_profile_skills
 
 
 # ---------------------------------------------------------------------------
@@ -158,7 +158,7 @@ def _check_dispatcher_presence() -> tuple[bool, str]:
 
     # Even if the gateway is up, dispatch_in_gateway may be off.
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         cfg = load_config()
         dispatch_on = bool(cfg.get("kanban", {}).get("dispatch_in_gateway", True))
     except Exception:
@@ -961,7 +961,7 @@ def _profile_author() -> str:
         if v:
             return v
     try:
-        from hermes_cli.profiles import get_active_profile_name
+        from thoth_cli.profiles import get_active_profile_name
         return get_active_profile_name() or "user"
     except Exception:
         return "user"
@@ -1506,7 +1506,7 @@ def _cmd_show(args: argparse.Namespace) -> int:
         print(f"  max-retries: {task.max_retries} (task)")
     else:
         try:
-            from hermes_cli.config import load_config
+            from thoth_cli.config import load_config
             cfg = load_config()
             cfg_val = (cfg.get("kanban", {}) or {}).get("failure_limit")
         except Exception:
@@ -1520,7 +1520,7 @@ def _cmd_show(args: argparse.Namespace) -> int:
     # Diagnostics section — surface active distress signals at the top
     # of show output so CLI users see them before scrolling through
     # comments / runs.
-    from hermes_cli import kanban_diagnostics as kd
+    from thoth_cli import kanban_diagnostics as kd
     diags = kd.compute_task_diagnostics(task, events, runs)
     if diags:
         sev_marker = {"warning": "⚠", "error": "!!", "critical": "!!!"}
@@ -1648,8 +1648,8 @@ def _cmd_diagnostics(args: argparse.Namespace) -> int:
     """List active diagnostics on the board. Wraps the same rule engine
     the dashboard uses, so CLI output matches what the UI shows.
     """
-    from hermes_cli import kanban_diagnostics as kd
-    from hermes_cli.config import load_config
+    from thoth_cli import kanban_diagnostics as kd
+    from thoth_cli.config import load_config
 
     diag_config = kd.config_from_runtime_config(load_config())
 
@@ -2400,7 +2400,7 @@ def _cmd_context(args: argparse.Namespace) -> int:
 def _cmd_specify(args: argparse.Namespace) -> int:
     """Flesh out a triage task (or all of them) via auxiliary LLM,
     then promote to todo. Thin wrapper over ``kanban_specify``."""
-    from hermes_cli import kanban_specify as spec
+    from thoth_cli import kanban_specify as spec
 
     all_flag = bool(getattr(args, "all_triage", False))
     tenant = getattr(args, "tenant", None)
@@ -2474,7 +2474,7 @@ def _cmd_decompose(args: argparse.Namespace) -> int:
     """Fan a triage task (or all of them) out into a graph of child
     tasks via the auxiliary LLM, routed to specialist profiles by
     description. Thin wrapper over ``kanban_decompose``."""
-    from hermes_cli import kanban_decompose as decomp
+    from thoth_cli import kanban_decompose as decomp
 
     all_flag = bool(getattr(args, "all_triage", False))
     tenant = getattr(args, "tenant", None)

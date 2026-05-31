@@ -21,7 +21,7 @@ import json
 import sqlite3
 from typing import Any, Iterable, Optional
 
-from hermes_cli import kanban_db as kb
+from thoth_cli import kanban_db as kb
 
 BLACKBOARD_PREFIX = "[swarm:blackboard] "
 

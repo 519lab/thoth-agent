@@ -12,7 +12,7 @@ because its dispatch is tightly coupled to module-level ``cmd_*`` functions.
 
 import argparse
 
-from hermes_cli.cli_name import cli_name
+from thoth_cli.cli_name import cli_name
 
 
 # `--profile` / `-p` is consumed by ``main._apply_profile_override`` before

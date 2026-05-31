@@ -198,7 +198,7 @@ def apply(
         # browser/web/delegate_task/vision/memory tools (#7 fix).
         # Failures are non-fatal — the runtime change still proceeds.
         try:
-            from hermes_cli.codex_runtime_plugin_migration import migrate
+            from thoth_cli.codex_runtime_plugin_migration import migrate
             mig_report = migrate(config)
             # Tools/MCP servers (excluding the hermes-tools callback,
             # which is internal plumbing — surface separately).

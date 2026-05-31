@@ -205,7 +205,7 @@ def get_acked_ids() -> set[str]:
     config is repaired, which is fine).
     """
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         cfg = load_config()
     except Exception:
         logger.debug("Could not load config for advisory acks", exc_info=True)
@@ -226,7 +226,7 @@ def ack_advisory(advisory_id: str) -> bool:
     if not advisory_id:
         return False
     try:
-        from hermes_cli.config import load_config, save_config
+        from thoth_cli.config import load_config, save_config
     except Exception:
         logger.warning("Could not import config module to persist ack")
         return False

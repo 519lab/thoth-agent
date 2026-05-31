@@ -8,7 +8,7 @@ Usage:
     hermes pairing clear-pending     # Clear all expired/pending codes
 """
 
-from hermes_cli.cli_name import cli_name
+from thoth_cli.cli_name import cli_name
 
 
 def pairing_command(args):

@@ -43,8 +43,8 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
-from hermes_cli import kanban_db as kb
-from hermes_cli import profiles as profiles_mod
+from thoth_cli import kanban_db as kb
+from thoth_cli import profiles as profiles_mod
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +171,7 @@ def _profile_author() -> str:
 
 def _load_config() -> dict:
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         return load_config() or {}
     except Exception:
         return {}

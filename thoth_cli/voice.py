@@ -247,7 +247,7 @@ def _debug(msg: str) -> None:
 def _beeps_enabled() -> bool:
     """CLI parity: voice.beep_enabled in config.yaml (default True)."""
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
 
         voice_cfg = load_config().get("voice", {})
         if isinstance(voice_cfg, dict):

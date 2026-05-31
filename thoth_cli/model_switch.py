@@ -25,14 +25,14 @@ import re
 from dataclasses import dataclass
 from typing import List, NamedTuple, Optional
 
-from hermes_cli.providers import (
+from thoth_cli.providers import (
     custom_provider_slug,
     determine_api_mode,
     get_label,
     is_aggregator,
     resolve_provider_full,
 )
-from hermes_cli.model_normalize import (
+from thoth_cli.model_normalize import (
     normalize_model_for_provider,
 )
 from agent.models_dev import (
@@ -198,7 +198,7 @@ def _load_direct_aliases() -> dict[str, DirectAlias]:
     """
     merged = dict(_BUILTIN_DIRECT_ALIASES)
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         cfg = load_config()
 
         # --- model_aliases (dict-based format) ---
@@ -489,7 +489,7 @@ def resolve_alias(
     # yet synced to the registry).
     catalog = list_provider_models(current_provider)
     try:
-        from hermes_cli.models import _PROVIDER_MODELS
+        from thoth_cli.models import _PROVIDER_MODELS
         static = _PROVIDER_MODELS.get(current_provider, [])
         if static:
             seen = {m.lower() for m in catalog}
@@ -660,13 +660,13 @@ def switch_model(
     Returns:
         ModelSwitchResult with all information the caller needs.
     """
-    from hermes_cli.models import (
+    from thoth_cli.models import (
         copilot_model_api_mode,
         detect_provider_for_model,
         validate_requested_model,
         opencode_model_api_mode,
     )
-    from hermes_cli.runtime_provider import resolve_runtime_provider
+    from thoth_cli.runtime_provider import resolve_runtime_provider
 
     resolved_alias = ""
     new_model = raw_input.strip()
@@ -690,7 +690,7 @@ def switch_model(
             )
             # Check for common config issues that cause provider resolution failures
             try:
-                from hermes_cli.config import validate_config_structure
+                from thoth_cli.config import validate_config_structure
                 _cfg_issues = validate_config_structure()
                 if _cfg_issues:
                     _switch_err += "\n\nRun 'hermes doctor' — config issues detected:"
@@ -709,7 +709,7 @@ def switch_model(
         # If no model specified, try auto-detect from endpoint
         if not new_model:
             if pdef.base_url:
-                from hermes_cli.runtime_provider import _auto_detect_local_model
+                from thoth_cli.runtime_provider import _auto_detect_local_model
                 detected = _auto_detect_local_model(pdef.base_url)
                 if detected:
                     new_model = detected
@@ -1075,8 +1075,8 @@ def list_authenticated_providers(
         fetch_models_dev,
         get_provider_info as _mdev_pinfo,
     )
-    from hermes_cli.auth import PROVIDER_REGISTRY
-    from hermes_cli.models import (
+    from thoth_cli.auth import PROVIDER_REGISTRY
+    from thoth_cli.models import (
         OPENROUTER_MODELS, _PROVIDER_MODELS,
         _MODELS_DEV_PREFERRED, _merge_with_models_dev, provider_model_ids,
         get_curated_nous_model_ids,
@@ -1102,7 +1102,7 @@ def list_authenticated_providers(
         static inference_base_url so the dedup matches what a user typing
         that URL into custom_providers would actually hit."""
         try:
-            from hermes_cli.auth import PROVIDER_REGISTRY as _reg
+            from thoth_cli.auth import PROVIDER_REGISTRY as _reg
         except Exception:
             return
         pcfg = _reg.get(slug)
@@ -1169,7 +1169,7 @@ def list_authenticated_providers(
     curated["nous"] = get_curated_nous_model_ids()
     # Ollama Cloud uses dynamic discovery (no static curated list)
     if "ollama-cloud" not in curated:
-        from hermes_cli.models import fetch_ollama_cloud_models
+        from thoth_cli.models import fetch_ollama_cloud_models
         curated["ollama-cloud"] = fetch_ollama_cloud_models()
     # LM Studio has no static catalog — probe its native /api/v1/models
     # endpoint live so the picker reflects whatever the user has loaded.
@@ -1180,8 +1180,8 @@ def list_authenticated_providers(
     if "lmstudio" not in curated and (
         os.environ.get("LM_API_KEY") or os.environ.get("LM_BASE_URL") or current_provider.strip().lower() == "lmstudio"
     ):
-        from hermes_cli.models import fetch_lmstudio_models
-        from hermes_cli.auth import AuthError
+        from thoth_cli.models import fetch_lmstudio_models
+        from thoth_cli.auth import AuthError
         is_current_lmstudio = current_provider.strip().lower() == "lmstudio"
         lm_base = (
             os.environ.get("LM_BASE_URL")
@@ -1230,7 +1230,7 @@ def list_authenticated_providers(
         has_creds = any(os.environ.get(ev) for ev in env_vars)
         if not has_creds:
             try:
-                from hermes_cli.auth import _load_auth_store
+                from thoth_cli.auth import _load_auth_store
                 store = _load_auth_store()
                 if store and store.get("credential_pool", {}).get(hermes_id):
                     has_creds = True
@@ -1267,8 +1267,8 @@ def list_authenticated_providers(
         _record_builtin_endpoint(slug)
 
     # --- 2. Check Hermes-only providers (nous, openai-codex, copilot, opencode-go) ---
-    from hermes_cli.providers import HERMES_OVERLAYS
-    from hermes_cli.auth import PROVIDER_REGISTRY as _auth_registry
+    from thoth_cli.providers import HERMES_OVERLAYS
+    from thoth_cli.auth import PROVIDER_REGISTRY as _auth_registry
 
     # Build reverse mapping: models.dev ID → Hermes provider ID.
     # HERMES_OVERLAYS keys may be models.dev IDs (e.g. "github-copilot")
@@ -1304,7 +1304,7 @@ def list_authenticated_providers(
         # OAuth via external credential files).
         if not has_creds:
             try:
-                from hermes_cli.auth import _load_auth_store
+                from thoth_cli.auth import _load_auth_store
                 store = _load_auth_store()
                 providers_store = store.get("providers", {})
                 if store and (pid in providers_store or hermes_slug in providers_store):
@@ -1391,7 +1391,7 @@ def list_authenticated_providers(
     # in PROVIDER_TO_MODELS_DEV or HERMES_OVERLAYS (keeps /model in sync
     # with `hermes model`).
     try:
-        from hermes_cli.models import CANONICAL_PROVIDERS as _canon_provs
+        from thoth_cli.models import CANONICAL_PROVIDERS as _canon_provs
     except ImportError:
         _canon_provs = []
 
@@ -1407,7 +1407,7 @@ def list_authenticated_providers(
         # Also check auth store and credential pool
         if not _cp_has_creds:
             try:
-                from hermes_cli.auth import _load_auth_store
+                from thoth_cli.auth import _load_auth_store
                 _cp_store = _load_auth_store()
                 _cp_providers_store = _cp_store.get("providers", {})
                 if _cp_store and _cp.slug in _cp_providers_store:
@@ -1528,7 +1528,7 @@ def list_authenticated_providers(
                 discover = discover.lower() not in {"false", "no", "0"}
             if api_url and api_key and discover:
                 try:
-                    from hermes_cli.models import fetch_api_models
+                    from thoth_cli.models import fetch_api_models
                     live_models = fetch_api_models(api_key, api_url)
                     if live_models:
                         models_list = live_models
@@ -1709,7 +1709,7 @@ def list_authenticated_providers(
             should_probe = bool(api_url) and (bool(api_key) or not grp["models"])
             if should_probe:
                 try:
-                    from hermes_cli.models import fetch_api_models
+                    from thoth_cli.models import fetch_api_models
 
                     live_models = fetch_api_models(api_key, api_url)
                     if live_models:
@@ -1766,7 +1766,7 @@ def list_picker_providers(
     The typed ``/model <name>`` path is unaffected -- only the interactive
     picker payload is narrowed.
     """
-    from hermes_cli.models import fetch_openrouter_models
+    from thoth_cli.models import fetch_openrouter_models
 
     providers = list_authenticated_providers(
         current_provider=current_provider,

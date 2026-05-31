@@ -31,9 +31,9 @@ PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from hermes_cli import __version__, __release_date__
-from hermes_cli.cli_name import cli_name
-from hermes_cli.config import (
+from thoth_cli import __version__, __release_date__
+from thoth_cli.cli_name import cli_name
+from thoth_cli.config import (
     cfg_get,
     DEFAULT_CONFIG,
     OPTIONAL_ENV_VARS,
@@ -997,7 +997,7 @@ def get_model_options():
     can share the same types.
     """
     try:
-        from hermes_cli.inventory import build_models_payload, load_picker_context
+        from thoth_cli.inventory import build_models_payload, load_picker_context
 
         return build_models_payload(load_picker_context(), max_models=50)
     except Exception:
@@ -1470,7 +1470,7 @@ def _resolve_provider_status(provider_id: str, status_fn) -> Dict[str, Any]:
         except Exception as e:
             return {"logged_in": False, "error": str(e)}
     try:
-        from hermes_cli import auth as hauth
+        from thoth_cli import auth as hauth
         if provider_id == "nous":
             raw = hauth.get_nous_auth_status()
             return {
@@ -1575,7 +1575,7 @@ async def disconnect_oauth_provider(provider_id: str, request: Request):
             pass
         # Also clear the credential pool entry if present.
         try:
-            from hermes_cli.auth import clear_provider_auth
+            from thoth_cli.auth import clear_provider_auth
             clear_provider_auth("anthropic")
         except Exception:
             pass
@@ -1583,7 +1583,7 @@ async def disconnect_oauth_provider(provider_id: str, request: Request):
         return {"ok": True, "provider": provider_id}
 
     try:
-        from hermes_cli.auth import clear_provider_auth
+        from thoth_cli.auth import clear_provider_auth
         cleared = clear_provider_auth(provider_id)
         _log.info("oauth/disconnect: %s (cleared=%s)", provider_id, cleared)
         return {"ok": bool(cleared), "provider": provider_id}
@@ -1824,7 +1824,7 @@ async def _start_device_code_flow(provider_id: str) -> Dict[str, Any]:
     so the UI can render the verification page link + user code.
     """
     if provider_id == "nous":
-        from hermes_cli.auth import (
+        from thoth_cli.auth import (
             _nous_device_scope_with_env_override,
             _request_nous_device_code_with_scope_fallback,
             PROVIDER_REGISTRY,
@@ -1919,7 +1919,7 @@ async def _start_device_code_flow(provider_id: str) -> Dict[str, Any]:
         # flow; the PKCE bit (verifier + challenge from
         # _minimax_pkce_pair) is a security extension that binds the
         # token exchange to the original session.
-        from hermes_cli.auth import (
+        from thoth_cli.auth import (
             _minimax_pkce_pair,
             _minimax_request_user_code,
             MINIMAX_OAUTH_CLIENT_ID,
@@ -1993,7 +1993,7 @@ async def _start_device_code_flow(provider_id: str) -> Dict[str, Any]:
 
 def _nous_poller(session_id: str) -> None:
     """Background poller that drives a Nous device-code flow to completion."""
-    from hermes_cli.auth import (
+    from thoth_cli.auth import (
         NOUS_INFERENCE_AUTH_MODE_FRESH,
         _poll_for_token,
         refresh_nous_oauth_from_state,
@@ -2045,7 +2045,7 @@ def _nous_poller(session_id: str) -> None:
             force_refresh=False,
             inference_auth_mode=NOUS_INFERENCE_AUTH_MODE_FRESH,
         )
-        from hermes_cli.auth import persist_nous_credentials
+        from thoth_cli.auth import persist_nous_credentials
         persist_nous_credentials(full_state)
         with _oauth_sessions_lock:
             sess["status"] = "approved"
@@ -2068,7 +2068,7 @@ def _minimax_poller(session_id: str) -> None:
     path leaves the system in the same state as
     ``hermes auth add minimax-oauth``.
     """
-    from hermes_cli.auth import (
+    from thoth_cli.auth import (
         _minimax_poll_token,
         _minimax_resolve_token_expiry_unix,
         _minimax_save_auth_state,
@@ -2157,7 +2157,7 @@ def _codex_full_login_worker(session_id: str) -> None:
     """
     try:
         import httpx
-        from hermes_cli.auth import (
+        from thoth_cli.auth import (
             CODEX_OAUTH_CLIENT_ID,
             CODEX_OAUTH_TOKEN_URL,
             DEFAULT_CODEX_BASE_URL,
@@ -2505,7 +2505,7 @@ async def get_logs(
     component: Optional[str] = None,
     search: Optional[str] = None,
 ):
-    from hermes_cli.logs import _read_tail, LOG_FILES
+    from thoth_cli.logs import _read_tail, LOG_FILES
 
     log_name = LOG_FILES.get(file)
     if not log_name:
@@ -2571,7 +2571,7 @@ _CRON_PROFILE_LOCK = threading.RLock()
 
 def _cron_profile_dicts() -> List[Dict[str, Any]]:
     """Return dashboard profile records, falling back to a directory scan."""
-    from hermes_cli import profiles as profiles_mod
+    from thoth_cli import profiles as profiles_mod
     try:
         return [_profile_to_dict(p) for p in profiles_mod.list_profiles()]
     except Exception:
@@ -2581,7 +2581,7 @@ def _cron_profile_dicts() -> List[Dict[str, Any]]:
 
 def _cron_profile_home(profile: Optional[str]) -> Tuple[str, Path]:
     """Resolve a profile query value to (profile_name, HERMES_HOME)."""
-    from hermes_cli import profiles as profiles_mod
+    from thoth_cli import profiles as profiles_mod
 
     raw = (profile or "default").strip() or "default"
     try:
@@ -2825,7 +2825,7 @@ def _fallback_profile_dicts(profiles_mod) -> List[Dict[str, Any]]:
 
 def _resolve_profile_dir(name: str) -> Path:
     """Validate ``name`` and resolve to its directory or raise an HTTPException."""
-    from hermes_cli import profiles as profiles_mod
+    from thoth_cli import profiles as profiles_mod
     try:
         profiles_mod.validate_profile_name(name)
     except ValueError as e:
@@ -2843,7 +2843,7 @@ def _profile_setup_command(name: str) -> str:
 
 @app.get("/api/profiles")
 async def list_profiles_endpoint():
-    from hermes_cli import profiles as profiles_mod
+    from thoth_cli import profiles as profiles_mod
     try:
         return {"profiles": [_profile_to_dict(p) for p in profiles_mod.list_profiles()]}
     except Exception:
@@ -2853,7 +2853,7 @@ async def list_profiles_endpoint():
 
 @app.post("/api/profiles")
 async def create_profile_endpoint(body: ProfileCreate):
-    from hermes_cli import profiles as profiles_mod
+    from thoth_cli import profiles as profiles_mod
     try:
         path = profiles_mod.create_profile(
             name=body.name,
@@ -2943,7 +2943,7 @@ async def open_profile_terminal_endpoint(name: str):
 
 @app.patch("/api/profiles/{name}")
 async def rename_profile_endpoint(name: str, body: ProfileRename):
-    from hermes_cli import profiles as profiles_mod
+    from thoth_cli import profiles as profiles_mod
     try:
         path = profiles_mod.rename_profile(name, body.new_name)
     except FileNotFoundError as e:
@@ -2961,7 +2961,7 @@ async def delete_profile_endpoint(name: str):
     """Delete a profile. The dashboard collects the user's confirmation in
     its own dialog before this request, so we always pass ``yes=True`` to
     skip the CLI's interactive prompt."""
-    from hermes_cli import profiles as profiles_mod
+    from thoth_cli import profiles as profiles_mod
     try:
         path = profiles_mod.delete_profile(name, yes=True)
     except FileNotFoundError as e:
@@ -3009,7 +3009,7 @@ class SkillToggle(BaseModel):
 @app.get("/api/skills")
 async def get_skills():
     from tools.skills_tool import _find_all_skills
-    from hermes_cli.skills_config import get_disabled_skills
+    from thoth_cli.skills_config import get_disabled_skills
     config = load_config()
     disabled = get_disabled_skills(config)
     skills = _find_all_skills(skip_disabled=True)
@@ -3020,7 +3020,7 @@ async def get_skills():
 
 @app.put("/api/skills/toggle")
 async def toggle_skill(body: SkillToggle):
-    from hermes_cli.skills_config import get_disabled_skills, save_disabled_skills
+    from thoth_cli.skills_config import get_disabled_skills, save_disabled_skills
     config = load_config()
     disabled = get_disabled_skills(config)
     if body.enabled:
@@ -3033,7 +3033,7 @@ async def toggle_skill(body: SkillToggle):
 
 @app.get("/api/tools/toolsets")
 async def get_toolsets():
-    from hermes_cli.tools_config import (
+    from thoth_cli.tools_config import (
         _get_effective_configurable_toolsets,
         _get_platform_tools,
         _toolset_has_keys,
@@ -3291,7 +3291,7 @@ import asyncio
 # the dashboard (sessions, jobs, metrics, config editor) still loads and the
 # /api/pty endpoint cleanly refuses with a WSL-suggested message.
 try:
-    from hermes_cli.pty_bridge import PtyBridge, PtyUnavailableError
+    from thoth_cli.pty_bridge import PtyBridge, PtyUnavailableError
     _PTY_BRIDGE_AVAILABLE = True
 except ImportError as _pty_import_err:  # pragma: no cover - Windows-only path
     PtyBridge = None  # type: ignore[assignment]
@@ -3354,7 +3354,7 @@ def _resolve_chat_argv(
     the spawned ``tui_gateway.entry`` can mirror dispatcher emits to the
     dashboard's ``/api/pub`` endpoint (see :func:`pub_ws`).
     """
-    from hermes_cli.main import PROJECT_ROOT, _make_tui_argv
+    from thoth_cli.main import PROJECT_ROOT, _make_tui_argv
 
     argv, cwd = _make_tui_argv(PROJECT_ROOT / "ui-tui", tui_dev=False)
     env = os.environ.copy()
@@ -4071,7 +4071,7 @@ def _discover_dashboard_plugins() -> list:
     plugins = []
     seen_names: set = set()
 
-    from hermes_cli.plugins import get_bundled_plugins_dir
+    from thoth_cli.plugins import get_bundled_plugins_dir
     bundled_root = get_bundled_plugins_dir()
     search_dirs = [
         (get_hermes_home() / "plugins", "user"),
@@ -4186,7 +4186,7 @@ def _strip_dashboard_manifest(p: Dict[str, Any]) -> Dict[str, Any]:
 
 def _merged_plugins_hub() -> Dict[str, Any]:
     """Agent discovery + dashboard manifests + optional provider picker metadata."""
-    from hermes_cli.plugins_cmd import (
+    from thoth_cli.plugins_cmd import (
         _discover_all_plugins,
         _get_current_context_engine,
         _get_current_memory_provider,
@@ -4313,7 +4313,7 @@ async def get_plugins_hub(request: Request):
 @app.post("/api/dashboard/agent-plugins/install")
 async def post_agent_plugin_install(request: Request, body: _AgentPluginInstallBody):
     _require_token(request)
-    from hermes_cli.plugins_cmd import dashboard_install_plugin
+    from thoth_cli.plugins_cmd import dashboard_install_plugin
 
     result = dashboard_install_plugin(
         body.identifier.strip(),
@@ -4342,7 +4342,7 @@ def _validate_plugin_name(name: str) -> str:
 async def post_agent_plugin_enable(request: Request, name: str):
     _require_token(request)
     name = _validate_plugin_name(name)
-    from hermes_cli.plugins_cmd import dashboard_set_agent_plugin_enabled
+    from thoth_cli.plugins_cmd import dashboard_set_agent_plugin_enabled
 
     result = dashboard_set_agent_plugin_enabled(name, enabled=True)
     if not result.get("ok"):
@@ -4354,7 +4354,7 @@ async def post_agent_plugin_enable(request: Request, name: str):
 async def post_agent_plugin_disable(request: Request, name: str):
     _require_token(request)
     name = _validate_plugin_name(name)
-    from hermes_cli.plugins_cmd import dashboard_set_agent_plugin_enabled
+    from thoth_cli.plugins_cmd import dashboard_set_agent_plugin_enabled
 
     result = dashboard_set_agent_plugin_enabled(name, enabled=False)
     if not result.get("ok"):
@@ -4366,7 +4366,7 @@ async def post_agent_plugin_disable(request: Request, name: str):
 async def post_agent_plugin_update(request: Request, name: str):
     _require_token(request)
     name = _validate_plugin_name(name)
-    from hermes_cli.plugins_cmd import dashboard_update_user_plugin
+    from thoth_cli.plugins_cmd import dashboard_update_user_plugin
 
     result = dashboard_update_user_plugin(name)
     if not result.get("ok"):
@@ -4379,7 +4379,7 @@ async def post_agent_plugin_update(request: Request, name: str):
 async def delete_agent_plugin(request: Request, name: str):
     _require_token(request)
     name = _validate_plugin_name(name)
-    from hermes_cli.plugins_cmd import dashboard_remove_user_plugin
+    from thoth_cli.plugins_cmd import dashboard_remove_user_plugin
 
     result = dashboard_remove_user_plugin(name)
     if not result.get("ok"):
@@ -4397,7 +4397,7 @@ class _PluginProvidersPutBody(BaseModel):
 async def put_plugin_providers(request: Request, body: _PluginProvidersPutBody):
     """Persist memory provider / context engine selection (writes config.yaml)."""
     _require_token(request)
-    from hermes_cli.plugins_cmd import (
+    from thoth_cli.plugins_cmd import (
         _save_context_engine,
         _save_memory_provider,
     )

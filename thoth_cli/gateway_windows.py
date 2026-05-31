@@ -38,7 +38,7 @@ import sys
 import time
 from pathlib import Path
 
-from hermes_cli.cli_name import cli_name
+from thoth_cli.cli_name import cli_name
 
 # Short timeouts: schtasks occasionally wedges and we don't want to hang forever.
 _SCHTASKS_TIMEOUT_S = 15
@@ -146,7 +146,7 @@ def _is_running_as_admin() -> bool:
 
 def _current_profile_cli_args() -> list[str]:
     """Return CLI args that preserve the current Hermes profile."""
-    from hermes_cli.gateway import _profile_arg
+    from thoth_cli.gateway import _profile_arg
 
     profile_arg = _profile_arg()
     return shlex.split(profile_arg) if profile_arg else []
@@ -237,7 +237,7 @@ def get_task_name() -> str:
     """
     _assert_windows()
     # Local import to avoid circular module initialization during hermes_cli boot.
-    from hermes_cli.gateway import _profile_suffix
+    from thoth_cli.gateway import _profile_suffix
 
     suffix = _profile_suffix()
     if not suffix:
@@ -258,7 +258,7 @@ def get_task_script_path() -> Path:
     Hermes installs stay self-contained).
     """
     _assert_windows()
-    from hermes_cli.config import get_hermes_home
+    from thoth_cli.config import get_hermes_home
 
     script_dir = Path(get_hermes_home()) / "gateway-service"
     script_dir.mkdir(parents=True, exist_ok=True)
@@ -354,8 +354,8 @@ def _write_task_script() -> Path:
     """Generate and write the gateway.cmd wrapper. Return its absolute path."""
     _assert_windows()
     # Local imports to avoid circular-init at module load time.
-    from hermes_cli.config import get_hermes_home
-    from hermes_cli.gateway import (
+    from thoth_cli.config import get_hermes_home
+    from thoth_cli.gateway import (
         PROJECT_ROOT,
         _profile_arg,
         get_python_path,
@@ -517,8 +517,8 @@ def _build_gateway_argv() -> tuple[list[str], str, dict[str, str]]:
     layer in between.
     """
     _assert_windows()
-    from hermes_cli.config import get_hermes_home
-    from hermes_cli.gateway import (
+    from thoth_cli.config import get_hermes_home
+    from thoth_cli.gateway import (
         PROJECT_ROOT,
         _profile_arg,
         get_python_path,
@@ -583,7 +583,7 @@ def _spawn_detached(script_path: Path | None = None) -> int:
     # logging module writes to gateway.log through a FileHandler, so the
     # real gateway logs still land there — this just captures anything
     # that goes to print() or native stderr.
-    from hermes_cli.config import get_hermes_home
+    from thoth_cli.config import get_hermes_home
 
     log_dir = Path(get_hermes_home()) / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -647,7 +647,7 @@ def _prompt_install_choices(
     if start_now is not None and start_on_login is not None:
         return start_now, start_on_login
 
-    from hermes_cli.setup import prompt_yes_no
+    from thoth_cli.setup import prompt_yes_no
 
     if start_now is None:
         start_now = prompt_yes_no("Start the gateway now after install?", True)
@@ -670,7 +670,7 @@ def _install_startup_fallback(script_path: Path, start_now: bool, detail: str) -
     # Startup-folder fallback only installs login persistence. Starting is
     # controlled by the pre-UAC start_now answer so all user decisions happen
     # before any elevation prompt.
-    from hermes_cli.gateway import find_gateway_pids, _profile_arg
+    from thoth_cli.gateway import find_gateway_pids, _profile_arg
 
     running_pids = list(find_gateway_pids())
     if running_pids:
@@ -724,7 +724,7 @@ def install(
     # Access Denied. We already collected all intent questions above, so avoid
     # a mysterious post-question pause: ask for UAC before touching schtasks.
     if not _is_running_as_admin() and not elevated_handoff:
-        from hermes_cli.setup import prompt_yes_no
+        from thoth_cli.setup import prompt_yes_no
 
         print("↻ Scheduled Task install may need administrator approval on this Windows account.")
         print("  UAC is Windows' admin approval prompt; it is needed to create/update the Scheduled Task.")
@@ -765,7 +765,7 @@ def install(
     # users a UAC prompt instead of silently installing a less reliable login
     # item, and keeps the fallback for locked-down boxes / cancelled prompts.
     if _is_access_denied(detail) and not _is_running_as_admin():
-        from hermes_cli.setup import prompt_yes_no
+        from thoth_cli.setup import prompt_yes_no
 
         print(f"↻ Scheduled Task install needs administrator approval ({detail.splitlines()[0]})")
         print("  UAC is Windows' admin approval prompt; it is needed to create/update the Scheduled Task.")
@@ -792,7 +792,7 @@ def install(
         # Startup-folder fallback only installs login persistence. Starting is
         # controlled by the pre-UAC start_now answer so all user decisions happen
         # before any elevation prompt.
-        from hermes_cli.gateway import find_gateway_pids, _profile_arg
+        from thoth_cli.gateway import find_gateway_pids, _profile_arg
 
         running_pids = list(find_gateway_pids())
         if running_pids:
@@ -818,7 +818,7 @@ def _wait_for_gateway_ready(timeout_s: float = 6.0, interval_s: float = 0.4) -> 
     Returns the list of PIDs found. Empty list means nothing came up in
     time — the caller should surface that to the user as a failed start.
     """
-    from hermes_cli.gateway import find_gateway_pids
+    from thoth_cli.gateway import find_gateway_pids
 
     deadline = time.time() + timeout_s
     while time.time() < deadline:
@@ -836,13 +836,13 @@ def _report_gateway_start(via: str) -> None:
     else:
         print(f"⚠ Launched gateway via {via}, but no process detected after 6s.")
         print("  Check the log for startup errors:")
-        from hermes_cli.config import get_hermes_home
+        from thoth_cli.config import get_hermes_home
         print(f"    type {Path(get_hermes_home()).resolve()}\\logs\\gateway.log")
         print(f"    type {Path(get_hermes_home()).resolve()}\\logs\\gateway-stdio.log")
 
 
 def _print_next_steps() -> None:
-    from hermes_cli.config import get_hermes_home
+    from thoth_cli.config import get_hermes_home
 
     hermes_home = Path(get_hermes_home()).resolve()
     print()
@@ -866,7 +866,7 @@ def uninstall() -> None:
             scheduled_task_removed = True
             print(f"✓ Removed Scheduled Task {task_name!r}")
         elif _is_access_denied(detail) and not _is_running_as_admin():
-            from hermes_cli.setup import prompt_yes_no
+            from thoth_cli.setup import prompt_yes_no
 
             print(f"↻ Scheduled Task uninstall needs administrator approval ({detail or 'access denied'})")
             print("  UAC is Windows' admin approval prompt; it is needed to remove the Scheduled Task.")
@@ -934,7 +934,7 @@ def query_task_status() -> dict[str, str]:
 
 def _gateway_pids() -> list[int]:
     """Reuse the cross-platform PID scanner in gateway.py."""
-    from hermes_cli.gateway import find_gateway_pids
+    from thoth_cli.gateway import find_gateway_pids
 
     return list(find_gateway_pids())
 
@@ -988,7 +988,7 @@ def start() -> None:
     startup_installed = is_startup_entry_installed()
 
     if not task_installed and not startup_installed:
-        from hermes_cli.setup import prompt_yes_no
+        from thoth_cli.setup import prompt_yes_no
 
         print("✗ Gateway service is not installed")
         if not prompt_yes_no("  Install it now so the gateway starts on login?", True):
@@ -1017,7 +1017,7 @@ def start() -> None:
 def stop() -> None:
     """Stop the gateway. Tries /End on the scheduled task, then kills any stragglers."""
     _assert_windows()
-    from hermes_cli.gateway import kill_gateway_processes
+    from thoth_cli.gateway import kill_gateway_processes
 
     stopped_any = False
     if is_task_registered():

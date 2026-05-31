@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Set
 
-from hermes_cli.auth import get_nous_auth_status
-from hermes_cli.config import get_env_value, load_config
+from thoth_cli.auth import get_nous_auth_status
+from thoth_cli.config import get_env_value, load_config
 from tools.managed_tool_gateway import is_managed_tool_gateway_ready
 from utils import is_truthy_value
 from tools.tool_backend_helpers import (
@@ -709,7 +709,7 @@ def prompt_enable_tool_gateway(config: Dict[str, object]) -> set[str]:
         return set()
 
     try:
-        from hermes_cli.setup import prompt_choice
+        from thoth_cli.setup import prompt_choice
     except Exception:
         return set()
 
@@ -787,7 +787,7 @@ def prompt_enable_tool_gateway(config: Dict[str, object]) -> set[str]:
 
     changed = apply_gateway_defaults(config, to_apply)
     if changed:
-        from hermes_cli.config import save_config
+        from thoth_cli.config import save_config
         save_config(config)
         # Only report the tools that actually switched (not already-managed ones)
         newly_switched = changed - set(already_managed)

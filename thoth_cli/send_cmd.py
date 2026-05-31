@@ -32,7 +32,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from hermes_cli.cli_name import cli_name
+from thoth_cli.cli_name import cli_name
 
 
 _USAGE_EXIT = 2
@@ -223,7 +223,7 @@ def _load_hermes_env() -> None:
         load_dotenv = None  # type: ignore[assignment]
 
     try:
-        from hermes_cli.config import get_hermes_home
+        from thoth_cli.config import get_hermes_home
         home = get_hermes_home()
     except Exception:
         return
@@ -260,7 +260,7 @@ def _load_hermes_env() -> None:
         return
 
     try:
-        from hermes_cli.config import _expand_env_vars
+        from thoth_cli.config import _expand_env_vars
         raw = _expand_env_vars(raw)
     except Exception:
         pass

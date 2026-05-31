@@ -22,8 +22,8 @@ import copy
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from hermes_cli.cli_name import cli_name
-from hermes_cli.nous_subscription import get_nous_subscription_features
+from thoth_cli.cli_name import cli_name
+from thoth_cli.nous_subscription import get_nous_subscription_features
 from tools.tool_backend_helpers import managed_nous_tools_enabled
 from utils import base_url_hostname
 from hermes_constants import get_optional_skills_dir
@@ -62,7 +62,7 @@ def _supports_same_provider_pool_setup(provider: str) -> bool:
         return False
     if provider == "openrouter":
         return True
-    from hermes_cli.auth import PROVIDER_REGISTRY
+    from thoth_cli.auth import PROVIDER_REGISTRY
 
     pconfig = PROVIDER_REGISTRY.get(provider)
     if not pconfig:
@@ -132,7 +132,7 @@ def _set_reasoning_effort(config: Dict[str, Any], effort: str) -> None:
 
 
 # Import config helpers
-from hermes_cli.config import (
+from thoth_cli.config import (
     cfg_get,
     DEFAULT_CONFIG,
     get_hermes_home,
@@ -147,7 +147,7 @@ from hermes_cli.config import (
 )
 # display_hermes_home imported lazily at call sites (stale-module safety during hermes update)
 
-from hermes_cli.colors import Colors, color
+from thoth_cli.colors import Colors, color
 
 
 def print_header(title: str):
@@ -156,7 +156,7 @@ def print_header(title: str):
     print(color(f"◆ {title}", Colors.CYAN, Colors.BOLD))
 
 
-from hermes_cli.cli_output import (  # noqa: E402
+from thoth_cli.cli_output import (  # noqa: E402
     print_error,
     print_info,
     print_success,
@@ -228,7 +228,7 @@ def _sanitize_pasted_input(value: str) -> str:
 
 def _curses_prompt_choice(question: str, choices: list, default: int = 0, description: str | None = None) -> int:
     """Single-select menu using curses. Delegates to curses_radiolist."""
-    from hermes_cli.curses_ui import curses_radiolist
+    from thoth_cli.curses_ui import curses_radiolist
     return curses_radiolist(question, choices, selected=default, cancel_returns=-1, description=description)
 
 
@@ -318,7 +318,7 @@ def prompt_checklist(title: str, items: list, pre_selected: list = None) -> list
     if pre_selected is None:
         pre_selected = []
 
-    from hermes_cli.curses_ui import curses_checklist
+    from thoth_cli.curses_ui import curses_checklist
 
     chosen = curses_checklist(
         title,
@@ -436,7 +436,7 @@ def _print_setup_summary(config: dict, hermes_home):
         _img_backend = None
         try:
             from agent.image_gen_registry import list_providers
-            from hermes_cli.plugins import _ensure_plugins_discovered
+            from thoth_cli.plugins import _ensure_plugins_discovered
 
             _ensure_plugins_discovered()
             for _p in list_providers():
@@ -460,7 +460,7 @@ def _print_setup_summary(config: dict, hermes_home):
     # users who don't care about video gen with a "missing" status line.
     try:
         from agent.video_gen_registry import list_providers as _list_video_providers
-        from hermes_cli.plugins import _ensure_plugins_discovered as _ensure_plugins
+        from thoth_cli.plugins import _ensure_plugins_discovered as _ensure_plugins
         _ensure_plugins()
         _video_backend = None
         for _vp in _list_video_providers():
@@ -529,7 +529,7 @@ def _print_setup_summary(config: dict, hermes_home):
 
     # Spotify (OAuth via hermes auth spotify — check auth.json, not env vars)
     try:
-        from hermes_cli.auth import get_provider_auth_state
+        from thoth_cli.auth import get_provider_auth_state
         _spotify_state = get_provider_auth_state("spotify") or {}
         if _spotify_state.get("access_token") or _spotify_state.get("refresh_token"):
             tool_status.append(("Spotify (PKCE OAuth)", True, None))
@@ -798,7 +798,7 @@ def setup_model_provider(config: dict, *, quick: bool = False):
     When *quick* is True, skips credential rotation, vision, and TTS
     configuration — used by the streamlined first-time quick setup.
     """
-    from hermes_cli.config import load_config, save_config
+    from thoth_cli.config import load_config, save_config
 
     print_header("Inference Provider")
     print_info("Choose how to connect to your main chat model.")
@@ -807,7 +807,7 @@ def setup_model_provider(config: dict, *, quick: bool = False):
 
     # Delegate to the shared hermes model flow — handles provider picker,
     # credential prompting, model selection, and config persistence.
-    from hermes_cli.main import select_provider_and_model
+    from thoth_cli.main import select_provider_and_model
     try:
         select_provider_and_model()
     except (SystemExit, KeyboardInterrupt):
@@ -839,7 +839,7 @@ def setup_model_provider(config: dict, *, quick: bool = False):
         try:
             from types import SimpleNamespace
             from agent.credential_pool import load_pool
-            from hermes_cli.auth_commands import auth_add_command
+            from thoth_cli.auth_commands import auth_add_command
 
             pool = load_pool(selected_provider)
             entries = pool.entries()
@@ -1098,7 +1098,7 @@ def _xai_oauth_logged_in_for_setup() -> bool:
     through ``hermes model`` -> xAI Grok OAuth (SuperGrok Subscription).
     """
     try:
-        from hermes_cli.auth import get_xai_oauth_auth_status
+        from thoth_cli.auth import get_xai_oauth_auth_status
 
         return bool(get_xai_oauth_auth_status().get("logged_in"))
     except Exception:
@@ -1112,7 +1112,7 @@ def _run_xai_oauth_login_from_setup() -> bool:
     to whatever the user picked next, e.g. Edge TTS).
     """
     try:
-        from hermes_cli.auth import (
+        from thoth_cli.auth import (
             DEFAULT_XAI_OAUTH_BASE_URL,
             _is_remote_session,
             _save_xai_oauth_tokens,
@@ -2182,7 +2182,7 @@ def _write_slack_manifest_and_instruct():
     the whole Slack setup.
     """
     try:
-        from hermes_cli.slack_cli import _build_full_manifest
+        from thoth_cli.slack_cli import _build_full_manifest
         from hermes_constants import get_hermes_home
 
         manifest = _build_full_manifest(
@@ -2411,7 +2411,7 @@ def _setup_bluebubbles():
 
 def _setup_qqbot():
     """Configure QQ Bot (Official API v2) via gateway setup."""
-    from hermes_cli.gateway import _setup_qqbot as _gateway_setup_qqbot
+    from thoth_cli.gateway import _setup_qqbot as _gateway_setup_qqbot
     _gateway_setup_qqbot()
 
 
@@ -2464,7 +2464,7 @@ def _setup_webhooks():
 
 def setup_gateway(config: dict):
     """Configure messaging platform integrations."""
-    from hermes_cli.gateway import _all_platforms, _platform_status, _configure_platform
+    from thoth_cli.gateway import _all_platforms, _platform_status, _configure_platform
 
     print_header("Messaging Platforms")
     print_info("Connect to messaging platforms to chat with Hermes from anywhere.")
@@ -2548,7 +2548,7 @@ def setup_gateway(config: dict):
         _is_macos = _platform.system() == "Darwin"
         _is_windows = _platform.system() == "Windows"
 
-        from hermes_cli.gateway import (
+        from thoth_cli.gateway import (
             _is_service_installed,
             _is_service_running,
             supports_systemd_services,
@@ -2592,7 +2592,7 @@ def setup_gateway(config: dict):
                     elif _is_macos:
                         launchd_restart()
                     elif _is_windows:
-                        from hermes_cli import gateway_windows
+                        from thoth_cli import gateway_windows
                         gateway_windows.restart()
                 except UserSystemdUnavailableError as e:
                     print_error("  Restart failed — user systemd not reachable:")
@@ -2617,7 +2617,7 @@ def setup_gateway(config: dict):
                     elif _is_macos:
                         launchd_start()
                     elif _is_windows:
-                        from hermes_cli import gateway_windows
+                        from thoth_cli import gateway_windows
                         gateway_windows.start()
                 except UserSystemdUnavailableError as e:
                     print_error("  Start failed — user systemd not reachable:")
@@ -2653,7 +2653,7 @@ def setup_gateway(config: dict):
                         # Task AND starts it immediately (via schtasks /Run
                         # or a direct spawn fallback), so no separate start
                         # prompt is needed here.
-                        from hermes_cli import gateway_windows
+                        from thoth_cli import gateway_windows
                         gateway_windows.install(force=False)
                         did_install = True
                         started_inline = True
@@ -2712,7 +2712,7 @@ def setup_tools(config: dict, first_install: bool = False):
         first_install: When True, uses the simplified first-install flow
             (no platform menu, prompts for all unconfigured API keys).
     """
-    from hermes_cli.tools_config import tools_command
+    from thoth_cli.tools_config import tools_command
 
     tools_command(first_install=first_install, config=config)
 
@@ -2734,14 +2734,14 @@ def _model_section_has_credentials(config: dict) -> bool:
         ``OPENAI_API_KEY`` / ``OPENROUTER_API_KEY`` values through OpenRouter.
     """
     try:
-        from hermes_cli.auth import get_active_provider
+        from thoth_cli.auth import get_active_provider
         if get_active_provider():
             return True
     except Exception:
         pass
 
     try:
-        from hermes_cli.auth import PROVIDER_REGISTRY
+        from thoth_cli.auth import PROVIDER_REGISTRY
     except Exception:
         PROVIDER_REGISTRY = {}  # type: ignore[assignment]
 
@@ -2816,7 +2816,7 @@ def _get_section_config_summary(config: dict, section_key: str) -> Optional[str]
         return f"max turns: {max_turns}"
 
     elif section_key == "gateway":
-        from hermes_cli.gateway import _all_platforms, _platform_status
+        from thoth_cli.gateway import _all_platforms, _platform_status
         # Count any non-empty status other than the "not configured" sentinel —
         # platforms like WhatsApp ("enabled, not paired"), Matrix ("configured
         # + E2EE"), and Signal ("partially configured") all indicate the user
@@ -3141,7 +3141,7 @@ def run_setup_wizard(args):
       hermes setup tools     — just tool configuration
       hermes setup agent     — just agent settings
     """
-    from hermes_cli.config import is_managed, managed_error
+    from thoth_cli.config import is_managed, managed_error
     if is_managed():
         managed_error("run setup wizard")
         return
@@ -3214,7 +3214,7 @@ def run_setup_wizard(args):
         return
 
     # Check if this is an existing installation with a provider configured
-    from hermes_cli.auth import get_active_provider
+    from thoth_cli.auth import get_active_provider
 
     active_provider = get_active_provider()
     is_existing = (
@@ -3394,7 +3394,7 @@ def _run_first_time_quick_setup(config: dict, hermes_home, is_existing: bool):
 
 def _run_quick_setup(config: dict, hermes_home):
     """Quick setup — only configure items that are missing."""
-    from hermes_cli.config import (
+    from thoth_cli.config import (
         get_missing_env_vars,
         get_missing_config_fields,
         check_config_version,
