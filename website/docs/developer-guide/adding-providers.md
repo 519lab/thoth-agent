@@ -358,15 +358,15 @@ After tests, run a real smoke test.
 
 ```bash
 source venv/bin/activate
-python -m hermes_cli.main chat -q "Say hello" --provider your-provider --model your-model
+python -m thoth_cli.main chat -q "Say hello" --provider your-provider --model your-model
 ```
 
 Also test the interactive flows if you changed menus:
 
 ```bash
 source venv/bin/activate
-python -m hermes_cli.main model
-python -m hermes_cli.main setup
+python -m thoth_cli.main model
+python -m thoth_cli.main setup
 ```
 
 For native providers, verify at least one tool call too, not just a plain text response.
