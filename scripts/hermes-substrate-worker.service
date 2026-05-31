@@ -27,7 +27,7 @@
 # ``~/.config/systemd/user/hermes-substrate-worker.service.d/override.conf``.
 
 Description=Hermes Substrate Sub-Agent Worker (Sentinel, Curator, etc.)
-Documentation=https://github.com/ggrace519/hermes-agent#substrate
+Documentation=https://github.com/519lab/thoth-agent#substrate
 After=network-online.target
 Wants=network-online.target
 

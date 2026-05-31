@@ -15,7 +15,7 @@ metadata:
 
 Operator and power-user playbook for the substrate layer — the PostgreSQL-backed
 perception/memory infrastructure that sits underneath the conversation loop in
-this fork of Hermes (`ggrace519/hermes-agent`, the Substrate Edition). Use this
+this fork of Hermes (`519lab/thoth-agent`, the Substrate Edition). Use this
 when you want to see what the agent is perceiving, why recall returned (or did
 not return) a given slice, whether the background sub-agents are keeping up,
 or what to do when substrate boot fails.

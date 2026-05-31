@@ -13,8 +13,7 @@ metadata:
       The single-project workspace layout, profile-config patching pattern,
       SOUL.md-per-profile model, TEAM.md task-graph convention, and
       `--workspace dir:<path>` discipline are adapted from alt-glitch's
-      original multi-agent video pipeline at
-      https://github.com/NousResearch/kanban-video-pipeline.
+      original multi-agent video pipeline.
 ---
 
 # Kanban Video Orchestrator

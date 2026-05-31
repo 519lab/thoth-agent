@@ -610,7 +610,7 @@ class TestWriteInvalidatesDedup(unittest.TestCase):
     cache for the written path.  Without this, a read→write→read sequence
     within the same mtime second returns a stale 'File unchanged' stub.
 
-    Regression test for https://github.com/NousResearch/hermes-agent/issues/13144
+    Regression test for https://github.com/519lab/thoth-agent/issues/13144
     """
 
     def setUp(self):

@@ -7,7 +7,7 @@
 <p align="center"><i>The self-improving AI agent with a memory that actually remembers.</i></p>
 
 <p align="center">
-  <a href="https://github.com/ggrace519/hermes-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/519lab/thoth-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/PostgreSQL-17-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL 17">
   <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11">
 </p>
@@ -38,17 +38,17 @@ Use any model you want — [OpenRouter](https://openrouter.ai) (200+ models), [N
 ### Linux, macOS, WSL2, Termux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ggrace519/hermes-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | bash
 ```
 
 The installer brings up everything you need, including a `docker compose` PostgreSQL 17 service (port 5432, database `hermes`) and runs the schema migrations. Pass `--reset-db` if you want it to start from a clean database, or `--skip-postgres` to point at your own PostgreSQL.
 
 ### Windows (native, PowerShell) — Early Beta
 
-> **Heads up:** Native Windows support is **early beta**. It installs and runs, but hasn't been road-tested as broadly as the Linux/macOS/WSL2 paths. Please [file issues](https://github.com/ggrace519/hermes-agent/issues) when you hit rough edges. For the most battle-tested Windows setup today, run the Linux/macOS one-liner above inside **WSL2**.
+> **Heads up:** Native Windows support is **early beta**. It installs and runs, but hasn't been road-tested as broadly as the Linux/macOS/WSL2 paths. Please [file issues](https://github.com/519lab/thoth-agent/issues) when you hit rough edges. For the most battle-tested Windows setup today, run the Linux/macOS one-liner above inside **WSL2**.
 
 ```powershell
-iex (irm https://raw.githubusercontent.com/ggrace519/hermes-agent/main/scripts/install.ps1)
+iex (irm https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.ps1)
 ```
 
 The installer handles everything: uv, Python 3.11, Node.js, ripgrep, ffmpeg, **and a portable Git Bash** (MinGit, unpacked to `%LOCALAPPDATA%\hermes\git` — no admin required, fully isolated from any system Git install) used to run shell commands. If you already have Git installed, it detects and uses that instead.
@@ -209,7 +209,7 @@ What gets imported: persona file (**SOUL.md**), memories (MEMORY.md / USER.md), 
 Contributions are welcome. Clone and go:
 
 ```bash
-git clone https://github.com/ggrace519/hermes-agent.git
+git clone https://github.com/519lab/thoth-agent.git
 cd hermes-agent
 ./setup-hermes.sh     # installs uv, creates venv, installs .[all], symlinks ~/.local/bin/hermes
 ./hermes              # auto-detects the venv, no need to `source` first
@@ -232,7 +232,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup and PR process, a
 ## Community
 
 - 📚 [Skills Hub](https://agentskills.io) — the `agentskills.io` open skill standard
-- 🐛 [Issues](https://github.com/ggrace519/hermes-agent/issues)
+- 🐛 [Issues](https://github.com/519lab/thoth-agent/issues)
 - 🔌 [computer-use-linux](https://github.com/avifenesh/computer-use-linux) — Linux desktop-control MCP server with AT-SPI accessibility trees, Wayland/X11 input, screenshots, and compositor window targeting
 
 ---

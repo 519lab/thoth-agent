@@ -834,8 +834,8 @@ def _run_chrome_fallback_command(
         if _running_in_docker():
             hint = (
                 "Chrome fallback requires Chromium, but it is missing. "
-                "You're running in Docker — pull the latest image: "
-                "docker pull ghcr.io/nousresearch/hermes-agent:latest"
+                "You're running in Docker — install it with: "
+                "npx agent-browser install --with-deps"
             )
         else:
             hint = (
@@ -1916,9 +1916,8 @@ def _run_browser_command(
     if _is_local_mode() and not _chromium_installed() and _get_browser_engine() != "lightpanda":
         if _running_in_docker():
             hint = (
-                "Chromium browser is missing. You're running in Docker — pull "
-                "the latest image to get the bundled Chromium: "
-                "docker pull ghcr.io/nousresearch/hermes-agent:latest"
+                "Chromium browser is missing. You're running in Docker — "
+                "install it with: npx agent-browser install --with-deps"
             )
         else:
             hint = (
@@ -3679,11 +3678,8 @@ if __name__ == "__main__":
                 searched = ", ".join(_chromium_search_roots()) or "(no candidate paths)"
                 print(f"     Searched: {searched}")
                 if _running_in_docker():
-                    print(
-                        "     Docker: pull the latest image — the current one "
-                        "predates the bundled Chromium install"
-                    )
-                    print("       docker pull ghcr.io/nousresearch/hermes-agent:latest")
+                    print("     Docker: install Chromium with:")
+                    print("       npx agent-browser install --with-deps")
                 else:
                     print("     Install it with:")
                     print("       npx agent-browser install --with-deps")

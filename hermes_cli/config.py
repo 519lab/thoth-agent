@@ -249,7 +249,7 @@ def recommended_update_command_for_method(method: str) -> str:
     if method == "homebrew":
         return "brew upgrade hermes-agent"
     if method == "docker":
-        return "docker pull nousresearch/hermes-agent:latest"
+        return "Rebuild your image from the latest source (no published Thoth image yet)"
     if method == "pip":
         import shutil
         uv = shutil.which("uv")
@@ -1641,7 +1641,7 @@ DEFAULT_CONFIG = {
     # The default URL is served by the docs site GitHub Pages deploy.
     "model_catalog": {
         "enabled": True,
-        "url": "https://hermes-agent.nousresearch.com/docs/api/model-catalog.json",
+        "url": "https://thoth.519lab.com/docs/api/model-catalog.json",
         # Disk cache TTL in hours.  Beyond this, the CLI refetches on the
         # next /model or `hermes model` invocation; network failures
         # silently fall back to the stale cache.
