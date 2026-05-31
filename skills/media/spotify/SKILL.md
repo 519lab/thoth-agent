@@ -15,7 +15,7 @@ metadata:
 
 # Spotify
 
-Control the user's Spotify account via the Hermes Spotify toolset (7 tools). Setup guide: https://hermes-agent.nousresearch.com/docs/user-guide/features/spotify
+Control the user's Spotify account via the Hermes Spotify toolset (7 tools). Setup guide: https://thoth.519lab.com/docs/user-guide/features/spotify
 
 ## When to use this skill
 

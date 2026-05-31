@@ -1,8 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-  - name: 💬 Nous Research Discord
-    url: https://discord.gg/NousResearch
-    about: For quick questions, showcasing projects, sharing skills, and community chat.
   - name: 📖 Documentation
     url: https://github.com/519lab/thoth-agent/blob/main/README.md
     about: Check the README and docs before opening an issue.

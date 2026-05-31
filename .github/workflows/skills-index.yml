@@ -89,7 +89,7 @@ jobs:
           mkdir -p _site/docs
           cp -r landingpage/* _site/
           cp -r website/build/* _site/docs/
-          echo "hermes-agent.nousresearch.com" > _site/CNAME
+          echo "thoth.519lab.com" > _site/CNAME
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa  # v3

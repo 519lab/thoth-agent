@@ -149,9 +149,9 @@ hermes webhook subscribe pr-review \
   --deliver github_comment
 ```
 
-Full automation templates gallery: [hermes-agent.nousresearch.com/docs/guides/automation-templates](https://hermes-agent.nousresearch.com/docs/guides/automation-templates)
+Full automation templates gallery: [thoth.519lab.com/docs/guides/automation-templates](https://thoth.519lab.com/docs/guides/automation-templates)
 
-Documentation: [hermes-agent.nousresearch.com](https://hermes-agent.nousresearch.com)
+Documentation: [thoth.519lab.com](https://thoth.519lab.com)
 
 GitHub: [github.com/519lab/thoth-agent](https://github.com/519lab/thoth-agent)
 
