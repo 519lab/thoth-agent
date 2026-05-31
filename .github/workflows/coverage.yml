@@ -1,0 +1,125 @@
+name: Coverage
+
+# Informational coverage baseline. This workflow is intentionally
+# NON-BLOCKING: it never fails the PR on a coverage number. The goal is to
+# (1) make coverage visible on every PR via the job summary + artifact, and
+# (2) give the team a measured baseline to agree a floor against. Once a
+# floor is agreed, set ``fail_under`` in [tool.coverage.report] (pyproject)
+# and/or add a ratchet check here, then make this a required check.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    # Never block the merge queue on the coverage job while it's a baseline.
+    continue-on-error: true
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: hermes
+          POSTGRES_PASSWORD: hermes
+          POSTGRES_DB: hermes
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hermes -d hermes"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Install ripgrep (prebuilt binary)
+        run: |
+          set -euo pipefail
+          RG_VERSION=15.1.0
+          RG_SHA256=1c9297be4a084eea7ecaedf93eb03d058d6faae29bbc57ecdaf5063921491599
+          RG_TARBALL=ripgrep-${RG_VERSION}-x86_64-unknown-linux-musl.tar.gz
+          curl -sSfL -o "$RG_TARBALL" \
+            "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/${RG_TARBALL}"
+          echo "${RG_SHA256}  ${RG_TARBALL}" | sha256sum -c -
+          tar -xzf "$RG_TARBALL"
+          sudo mv "ripgrep-${RG_VERSION}-x86_64-unknown-linux-musl/rg" /usr/local/bin/rg
+          rm -rf "$RG_TARBALL" "ripgrep-${RG_VERSION}-x86_64-unknown-linux-musl"
+          rg --version
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86  # v5
+
+      - name: Set up Python 3.11
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: |
+          uv venv .venv --python 3.11
+          source .venv/bin/activate
+          uv pip install -e ".[all,dev]"
+
+      - name: Migrate PG schema
+        run: |
+          source .venv/bin/activate
+          uv run alembic -c migrations/alembic.ini upgrade head
+        env:
+          HERMES_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
+
+      - name: Run tests with coverage
+        # --coverage wraps each per-file pytest subprocess in
+        # ``coverage run --parallel-mode`` then combines + reports + writes
+        # coverage.xml. The script's exit code reflects test pass/fail; the
+        # job-level continue-on-error keeps a red suite from masking the
+        # coverage artifact, and coverage numbers never gate on their own.
+        run: |
+          source .venv/bin/activate
+          python scripts/run_tests_parallel.py --coverage | tee coverage-run.log
+        env:
+          HERMES_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
+          POSTGRES_USER: hermes
+          POSTGRES_PASSWORD: hermes
+          HERMES_TEST_POSTGRES_PORT: "5432"
+          OPENROUTER_API_KEY: ""
+          OPENAI_API_KEY: ""
+          NOUS_API_KEY: ""
+
+      - name: Publish coverage to job summary
+        if: always()
+        run: |
+          {
+            echo "## Coverage report"
+            echo ""
+            echo '```'
+            # The textual ``coverage report`` table is the tail of the run
+            # log, fenced after the "=== Coverage ===" marker.
+            sed -n '/=== Coverage ===/,$p' coverage-run.log || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage.xml
+        if: always()
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: warn

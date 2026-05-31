@@ -101,6 +101,11 @@ dev = [
   "mcp==1.26.0",
   "ty==0.0.21",
   "ruff==0.15.10",
+  # Coverage measurement. Enabled opt-in by scripts/run_tests_parallel.py
+  # (HERMES_TEST_COVERAGE=1) which wraps each per-file pytest subprocess in
+  # ``coverage run --parallel-mode`` then combines the data files. The
+  # ``[toml]`` extra lets coverage read its config from pyproject.toml.
+  "coverage[toml]==7.6.10",
 ]
 messaging = ["python-telegram-bot[webhooks]==22.6", "discord.py[voice]==2.7.1", "aiohttp==3.13.5", "brotlicffi==1.2.0.1", "slack-bolt==1.27.0", "slack-sdk==3.40.1", "qrcode==7.4.2"]
 cron = []  # croniter is now a core dependency; this extra kept for back-compat
@@ -272,6 +277,54 @@ addopts = "-m 'not integration' --timeout=30 --timeout-method=signal"
 # session before any test runs. Skipping the upfront drop is safe because
 # pytest-postgresql calls CREATE DATABASE in ``with janitor:`` itself and
 # the per-subprocess names never collide.
+
+[tool.coverage.run]
+# The test runner (scripts/run_tests_parallel.py) spawns one pytest
+# subprocess per file, so coverage MUST run in parallel mode: every
+# subprocess writes a uniquely-suffixed ``.coverage.<host>.<pid>.<rand>``
+# data file, which ``coverage combine`` merges afterwards. Without this
+# the subprocesses would race on a single ``.coverage`` SQLite file.
+parallel = true
+branch = true
+# Measure the first-party packages/modules only — third-party deps in
+# .venv and the tests themselves are noise for a "what's under-tested"
+# signal.
+source = [
+  "agent",
+  "gateway",
+  "tools",
+  "hermes_cli",
+  "substrate",
+  "acp_adapter",
+  "cron",
+  "tui_gateway",
+  "providers",
+]
+omit = [
+  "*/__main__.py",
+  "*/migrations/*",
+  "tests/*",
+]
+
+[tool.coverage.paths]
+# Collapse the GH-Actions checkout path and local paths onto one logical
+# tree so ``coverage combine`` merges data files produced under different
+# working directories.
+source = ["agent", "*/agent"]
+
+[tool.coverage.report]
+# Don't fail the build yet — this is an informational baseline. Flip
+# ``fail_under`` on (and bump it) once the team has agreed a floor to
+# ratchet against. See .github/workflows/coverage.yml.
+show_missing = true
+skip_covered = false
+precision = 1
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+  "@(abc\\.)?abstractmethod",
+]
 
 [tool.ty.environment]
 python-version = "3.13"

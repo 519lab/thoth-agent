@@ -84,3 +84,10 @@ models-dev-upstream/
 hermes_cli/tui_dist/*
 hermes_cli/scripts/
 docs/superpowers/*
+
+# Coverage (scripts/run_tests_parallel.py --coverage)
+.coverage
+.coverage.*
+coverage.xml
+coverage-run.log
+htmlcov/

@@ -241,6 +241,7 @@ def _run_one_file(
     pytest_args: List[str],
     repo_root: Path,
     file_timeout: float,
+    coverage: bool = False,
 ) -> Tuple[Path, int, str, dict[str, int]]:
     """Run ``python -m pytest <file> <pytest_args>`` in a fresh subprocess.
 
@@ -268,7 +269,19 @@ def _run_one_file(
     timeouts inside the subprocess; this outer timeout exists only to
     bound a pathologically slow or hung file as a whole.
     """
-    cmd = [sys.executable, "-m", "pytest", str(file), *pytest_args]
+    # When coverage is enabled, wrap pytest in ``coverage run
+    # --parallel-mode`` so each subprocess writes its own uniquely-suffixed
+    # ``.coverage.*`` data file (combined by the caller after the pool
+    # drains). ``--parallel-mode`` on the CLI mirrors ``parallel = true`` in
+    # pyproject; passing it explicitly keeps the behaviour correct even if a
+    # contributor runs the script against a stripped-down config.
+    if coverage:
+        cmd = [
+            sys.executable, "-m", "coverage", "run", "--parallel-mode",
+            "-m", "pytest", str(file), *pytest_args,
+        ]
+    else:
+        cmd = [sys.executable, "-m", "pytest", str(file), *pytest_args]
     # Inject a unique PYTEST_XDIST_WORKER per subprocess so pytest-postgresql
     # routes each one onto its own template / test DB (e.g.
     # ``hermes_tmplrun_42``) instead of racing on the shared ``hermes_tmpl``.
@@ -505,6 +518,17 @@ def main() -> int:
         help="Don't skip integration/ e2e/ during discovery",
     )
     parser.add_argument(
+        "--coverage",
+        action="store_true",
+        default=bool(os.environ.get("HERMES_TEST_COVERAGE")),
+        help=(
+            "Measure line+branch coverage. Wraps each per-file pytest run in "
+            "``coverage run --parallel-mode`` and prints a combined report "
+            "(+ writes coverage.xml) after the suite finishes. "
+            "Env: HERMES_TEST_COVERAGE=1."
+        ),
+    )
+    parser.add_argument(
         "--file-timeout",
         type=float,
         default=float(
@@ -559,6 +583,16 @@ def main() -> int:
     if not files:
         print(f"No test files discovered under {[str(r) for r in roots]}", file=sys.stderr)
         return 1
+
+    # Wipe any stale coverage data from a previous run so ``combine`` only
+    # sees this run's per-subprocess files.
+    if args.coverage:
+        subprocess.run(
+            [sys.executable, "-m", "coverage", "erase"],
+            cwd=repo_root,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     # Count individual tests per file via a single pytest --co pass.
     test_counts = _count_tests(files, repo_root, pytest_passthrough)
@@ -627,7 +661,8 @@ def main() -> int:
         for file in files:
             t0 = time.monotonic()
             fut = pool.submit(
-                _run_one_file, file, pytest_passthrough, repo_root, args.file_timeout
+                _run_one_file, file, pytest_passthrough, repo_root,
+                args.file_timeout, args.coverage,
             )
             fut.add_done_callback(lambda f, file=file, t0=t0: _on_done(file, t0, f))
             futures.append(fut)
@@ -641,6 +676,31 @@ def main() -> int:
     print()
     pct = (tests_done / total_tests * 100) if total_tests else 0
     print(f"=== Summary: {len(files)} files, {tests_passed} tests passed, {tests_failed} failed ({pct:.0f}% complete) in {elapsed:.1f}s ({args.jobs} workers) ===")
+
+    # Combine the per-subprocess coverage data and emit a report. Done
+    # unconditionally on the data files this run produced — a non-zero test
+    # exit shouldn't suppress the coverage signal (partial coverage of a
+    # failing suite is still useful). Failures here never change the run's
+    # exit code; coverage is informational tooling, not a gate (yet).
+    if args.coverage:
+        print()
+        print("=== Coverage ===")
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "coverage", "combine"],
+                cwd=repo_root, check=False,
+            )
+            subprocess.run(
+                [sys.executable, "-m", "coverage", "report"],
+                cwd=repo_root, check=False,
+            )
+            # Machine-readable artifact for CI upload / diff-coverage tools.
+            subprocess.run(
+                [sys.executable, "-m", "coverage", "xml", "-o", "coverage.xml"],
+                cwd=repo_root, check=False,
+            )
+        except OSError as exc:
+            print(f"(coverage post-processing failed: {exc!r})", flush=True)
 
     if failures:
         print()
