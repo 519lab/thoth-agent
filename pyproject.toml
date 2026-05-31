@@ -234,7 +234,7 @@ all = [
 # back-compat with existing installs/scripts during the hermes→thoth
 # rename (see docs/architecture / the rename phases). Same targets, so
 # both invocations are identical.
-thoth = "hermes_cli.main:main"
+thoth = "thoth_cli.main:main"
 thoth-agent = "run_agent:_cli_main"
 thoth-acp = "acp_adapter.entry:main"
 hermes = "hermes_cli.main:main"
@@ -242,10 +242,10 @@ hermes-agent = "run_agent:_cli_main"
 hermes-acp = "acp_adapter.entry:main"
 
 [tool.setuptools]
-py-modules = ["run_agent", "model_tools", "toolsets", "batch_runner", "trajectory_compressor", "toolset_distributions", "cli", "hermes_bootstrap", "hermes_constants", "hermes_db", "hermes_env", "hermes_state", "hermes_time", "hermes_logging", "utils"]
+py-modules = ["run_agent", "model_tools", "toolsets", "batch_runner", "trajectory_compressor", "toolset_distributions", "cli", "hermes_bootstrap", "hermes_constants", "hermes_db", "hermes_env", "hermes_state", "hermes_time", "hermes_logging", "thoth_bootstrap", "thoth_constants", "thoth_db", "thoth_env", "thoth_state", "thoth_time", "thoth_logging", "utils"]
 
 [tool.setuptools.package-data]
-hermes_cli = ["web_dist/**/*", "tui_dist/**/*", "scripts/install.sh", "scripts/install.ps1"]
+thoth_cli = ["web_dist/**/*", "tui_dist/**/*", "scripts/install.sh", "scripts/install.ps1"]
 gateway = ["assets/**/*"]
 plugins = [
   "*/dashboard/manifest.json",
@@ -254,7 +254,7 @@ plugins = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["agent", "agent.*", "tools", "tools.*", "hermes_cli", "gateway", "gateway.*", "tui_gateway", "tui_gateway.*", "cron", "acp_adapter", "plugins", "plugins.*", "providers", "providers.*", "substrate", "substrate.*"]
+include = ["agent", "agent.*", "tools", "tools.*", "hermes_cli", "thoth_cli", "thoth_cli.*", "gateway", "gateway.*", "tui_gateway", "tui_gateway.*", "cron", "acp_adapter", "plugins", "plugins.*", "providers", "providers.*", "substrate", "substrate.*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
