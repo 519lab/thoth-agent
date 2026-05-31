@@ -32,7 +32,7 @@ Create a professional infographic following these specifications:
 - 7 helper cells in a 2x4 or 3x3 grid showing each extracted helper as its own modular block — each cell has the helper name in all-caps, its complexity number, and one-line role
 - Metrics strip cell: BEFORE/AFTER table with deltas (185 statements → ~70, 79 C → 18 C, +5 violations intentional)
 - Test validation cell: "152/152 + 213/213 PASS" with checkmark stencil
-- Footer strip across bottom: "PR #27784 · agent/anthropic_adapter.py · @kshitijk4poor · NousResearch/hermes-agent"
+- Footer strip across bottom: "PR #27784 · agent/anthropic_adapter.py · @kshitijk4poor · 519lab/thoth-agent"
 
 ## Content to render
 
@@ -71,7 +71,7 @@ Create a professional infographic following these specifications:
 "ZERO LOGIC CHANGES · ANTHROPIC + KIMI + DEEPSEEK + MINIMAX + AZURE FOUNDRY + BEDROCK SEMANTICS PRESERVED"
 
 **Footer strip:**
-"PR #27784 · agent/anthropic_adapter.py · cherry-picked from #23968 · @kshitijk4poor · NousResearch/hermes-agent"
+"PR #27784 · agent/anthropic_adapter.py · cherry-picked from #23968 · @kshitijk4poor · 519lab/thoth-agent"
 
 ## Text Requirements
 

@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [hermes, setup, configuration, multi-agent, spawning, cli, gateway, development]
-    homepage: https://github.com/NousResearch/hermes-agent
+    homepage: https://github.com/519lab/thoth-agent
     related_skills: [claude-code, codex, opencode, substrate]
 ---
 
@@ -35,7 +35,7 @@ People use Hermes for software development, research, system administration, dat
 
 ```bash
 # Install
-curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | bash
 
 # Interactive chat (default)
 hermes
@@ -715,7 +715,7 @@ User docs: https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban
 
 ### Cognitive Substrate (this fork only)
 
-**Substrate Edition (`ggrace519/hermes-agent`)** adds a PostgreSQL-backed
+**Substrate Edition (`519lab/thoth-agent`)** adds a PostgreSQL-backed
 perception/memory layer that runs alongside the conversation loop. The
 substrate is **additional** infrastructure — persistent memory, skills,
 session search, and Honcho all keep working exactly as upstream describes;

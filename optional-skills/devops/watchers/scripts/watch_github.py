@@ -6,7 +6,7 @@ Usage (via cron with --no-agent):
     hermes cron create hermes-issues \\
       --schedule "*/5 * * * *" --no-agent \\
       --script "$HERMES_HOME/skills/devops/watchers/scripts/watch_github.py" \\
-      --script-args "--name hermes-issues --repo NousResearch/hermes-agent --scope issues"
+      --script-args "--name hermes-issues --repo 519lab/thoth-agent --scope issues"
 
 Set GITHUB_TOKEN (or GH_TOKEN) in ~/.hermes/.env to avoid the 60 req/hr
 anonymous rate limit.

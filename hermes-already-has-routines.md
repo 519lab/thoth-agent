@@ -153,7 +153,7 @@ Full automation templates gallery: [hermes-agent.nousresearch.com/docs/guides/au
 
 Documentation: [hermes-agent.nousresearch.com](https://hermes-agent.nousresearch.com)
 
-GitHub: [github.com/NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)
+GitHub: [github.com/519lab/thoth-agent](https://github.com/519lab/thoth-agent)
 
 ---
 

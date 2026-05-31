@@ -81,7 +81,7 @@ This isn't a quality bar — it's a coupling-and-maintenance decision. Memory pr
 ### Clone and install
 
 ```bash
-git clone --recurse-submodules https://github.com/ggrace519/hermes-agent.git
+git clone --recurse-submodules https://github.com/519lab/thoth-agent.git
 cd hermes-agent
 
 # Create venv with Python 3.11
@@ -901,7 +901,7 @@ test(tools): add unit tests for file_operations
 
 ## Reporting Issues
 
-- Use [GitHub Issues](https://github.com/ggrace519/hermes-agent/issues)
+- Use [GitHub Issues](https://github.com/519lab/thoth-agent/issues)
 - Include: OS, Python version, Thoth version (`hermes version`), full error traceback
 - Include steps to reproduce
 - Check existing issues before creating duplicates
@@ -911,7 +911,7 @@ test(tools): add unit tests for file_operations
 
 ## Community
 
-- **GitHub Issues**: [github.com/ggrace519/hermes-agent/issues](https://github.com/ggrace519/hermes-agent/issues) — for questions, bug reports, and showcasing projects
+- **GitHub Issues**: [github.com/519lab/thoth-agent/issues](https://github.com/519lab/thoth-agent/issues) — for questions, bug reports, and showcasing projects
 - **GitHub Discussions**: For design proposals and architecture discussions
 - **Skills Hub**: Upload specialized skills to a registry such as [agentskills.io](https://agentskills.io) and share them with the community
 

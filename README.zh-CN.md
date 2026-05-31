@@ -7,7 +7,7 @@
 <p align="center"><i>真正能记住事情的自进化 AI 代理。</i></p>
 
 <p align="center">
-  <a href="https://github.com/ggrace519/hermes-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/519lab/thoth-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/PostgreSQL-17-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL 17">
   <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11">
   <a href="README.md"><img src="https://img.shields.io/badge/Lang-English-lightgrey?style=for-the-badge" alt="English"></a>
@@ -39,17 +39,17 @@
 ### Linux、macOS、WSL2、Termux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ggrace519/hermes-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | bash
 ```
 
 安装程序会为你准备好所需的一切，包括一个 `docker compose` 的 PostgreSQL 17 服务（端口 5432，数据库 `hermes`），并运行 schema 迁移。如果你希望从干净的数据库开始，可传入 `--reset-db`；若要指向你自己的 PostgreSQL，可传入 `--skip-postgres`。
 
 ### Windows（原生，PowerShell）— 早期 Beta
 
-> **请注意：** 原生 Windows 支持目前处于**早期 Beta** 阶段。它能安装并运行，但尚未像 Linux/macOS/WSL2 路径那样经过广泛实战检验。遇到问题请[提交 issue](https://github.com/ggrace519/hermes-agent/issues)。如果想要当前最稳妥的 Windows 体验，请在 **WSL2** 中运行上面的 Linux/macOS 一行命令。
+> **请注意：** 原生 Windows 支持目前处于**早期 Beta** 阶段。它能安装并运行，但尚未像 Linux/macOS/WSL2 路径那样经过广泛实战检验。遇到问题请[提交 issue](https://github.com/519lab/thoth-agent/issues)。如果想要当前最稳妥的 Windows 体验，请在 **WSL2** 中运行上面的 Linux/macOS 一行命令。
 
 ```powershell
-iex (irm https://raw.githubusercontent.com/ggrace519/hermes-agent/main/scripts/install.ps1)
+iex (irm https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.ps1)
 ```
 
 安装程序会处理一切：uv、Python 3.11、Node.js、ripgrep、ffmpeg，**以及一个便携版 Git Bash**（MinGit，解压到 `%LOCALAPPDATA%\hermes\git`——无需管理员权限，与任何系统 Git 安装完全隔离），用于运行 shell 命令。如果你已经安装了 Git，它会检测并改用你的安装。
@@ -210,7 +210,7 @@ hermes claw migrate --overwrite  # 覆盖已有冲突
 欢迎贡献。克隆即可开始：
 
 ```bash
-git clone https://github.com/ggrace519/hermes-agent.git
+git clone https://github.com/519lab/thoth-agent.git
 cd hermes-agent
 ./setup-hermes.sh     # 安装 uv、创建 venv、安装 .[all]、创建符号链接 ~/.local/bin/hermes
 ./hermes              # 自动检测 venv，无需先 source
@@ -233,7 +233,7 @@ scripts/run_tests.sh
 ## 社区
 
 - 📚 [技能中心](https://agentskills.io) — `agentskills.io` 开放技能标准
-- 🐛 [问题反馈](https://github.com/ggrace519/hermes-agent/issues)
+- 🐛 [问题反馈](https://github.com/519lab/thoth-agent/issues)
 - 🔌 [computer-use-linux](https://github.com/avifenesh/computer-use-linux) — Linux 桌面控制 MCP 服务器，提供 AT-SPI 无障碍树、Wayland/X11 输入、截图，以及合成器窗口定位
 
 ---

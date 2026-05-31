@@ -63,4 +63,4 @@ Plus 7 single-responsibility helpers:
 File: agent/anthropic_adapter.py
 Original PR: #27784 (cherry-pick of #23968)
 Salvage commit: 9c102b937 (kshitijk4poor authorship preserved)
-Repo: NousResearch/hermes-agent
+Repo: 519lab/thoth-agent

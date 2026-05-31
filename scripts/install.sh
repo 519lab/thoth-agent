@@ -13,13 +13,13 @@
 #   - PostgreSQL:   docker compose service on port 5432, db `hermes`
 #
 # If you are installing on a machine that already has an upstream
-# NousResearch/hermes-agent install and want to coexist without overwriting
+# 519lab/thoth-agent install and want to coexist without overwriting
 # it, override the defaults explicitly:
 #
 #   curl ... | bash -s -- --cli-name hermes-substrate --hermes-home ~/.hermes-substrate
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/ggrace519/hermes-agent/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | bash
 #
 # Or with options:
 #   curl -fsSL ... | bash -s -- --skip-postgres --skip-setup
@@ -55,8 +55,8 @@ NC='\033[0m'
 BOLD='\033[1m'
 
 # ── Configuration ───────────────────────────────────────────────────────────
-REPO_URL_SSH="git@github.com:ggrace519/hermes-agent.git"
-REPO_URL_HTTPS="https://github.com/ggrace519/hermes-agent.git"
+REPO_URL_SSH="git@github.com:519lab/thoth-agent.git"
+REPO_URL_HTTPS="https://github.com/519lab/thoth-agent.git"
 
 HERMES_HOME_DEFAULT="$HOME/.hermes"
 CLI_NAME_DEFAULT="hermes"
@@ -412,7 +412,7 @@ detect_os() {
         CYGWIN*|MINGW*|MSYS*)
             OS="windows"; DISTRO="windows"
             log_error "Windows detected. Please use the PowerShell installer:"
-            log_info "  iex (irm https://raw.githubusercontent.com/ggrace519/hermes-agent/main/scripts/install.ps1)"
+            log_info "  iex (irm https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.ps1)"
             exit 1
             ;;
         *) OS="unknown"; DISTRO="unknown"; log_warn "Unknown operating system" ;;
@@ -1622,7 +1622,7 @@ setup_substrate_worker_service() {
 # substrate/cli/worker.py for the 2026-05-26 incident).
 
 Description=Hermes Substrate Sub-Agent Worker (Sentinel, Curator, etc.)
-Documentation=https://github.com/ggrace519/hermes-agent#substrate
+Documentation=https://github.com/519lab/thoth-agent#substrate
 After=network-online.target
 Wants=network-online.target
 After=hermes-gateway.service
