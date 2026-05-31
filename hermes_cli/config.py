@@ -451,12 +451,19 @@ def _ensure_default_soul_md(home: Path) -> None:
 def migrate_home_to_thoth(quiet: bool = False) -> bool:
     """Create ~/.thoth → ~/.hermes symlink when upgrading from a pre-rename install.
 
-    Conditions: ~/.hermes exists (real dir) AND ~/.thoth does not yet exist.
-    The symlink lets new code resolve data via ~/.thoth while the on-disk
-    layout stays at ~/.hermes until a future phase does the full rename.
+    Conditions (POSIX only): ~/.hermes exists (real dir) AND ~/.thoth does not
+    yet exist.  The symlink lets new code resolve data via ~/.thoth while the
+    on-disk layout stays at ~/.hermes until a future phase does the full rename.
+
+    Windows is skipped: symlinks require elevation or Developer Mode, and
+    Windows installs are env-driven (the installer sets HERMES_HOME/THOTH_HOME
+    explicitly) so _disk_default_home() is never the authoritative source there.
 
     Returns True if the symlink was created, False if nothing was done.
     """
+    if sys.platform == "win32":
+        return False
+
     user_home = Path.home()
     hermes_dir = user_home / ".hermes"
     thoth_dir = user_home / ".thoth"

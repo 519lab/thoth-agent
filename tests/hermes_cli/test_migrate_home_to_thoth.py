@@ -1,5 +1,6 @@
 """Tests for migrate_home_to_thoth() — P3c of the Hermes→Thoth rename."""
 
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -112,3 +113,14 @@ class TestMigrateHomeToThoth:
         # Silent: no output about migration
         assert "symlink" not in captured.lower()
         assert "thoth" not in captured.lower()
+
+    def test_noop_on_windows(self, tmp_path):
+        """Windows is skipped regardless of filesystem state (symlinks need elevation)."""
+        (tmp_path / ".hermes").mkdir()
+
+        with patch("hermes_cli.config.Path.home", return_value=tmp_path), \
+             patch("hermes_cli.config.sys.platform", "win32"):
+            result = migrate_home_to_thoth(quiet=True)
+
+        assert result is False
+        assert not (tmp_path / ".thoth").exists()
