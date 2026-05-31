@@ -175,14 +175,14 @@ def init_db_sync() -> None:
     global _db_initialized
     import atexit
     import os
-    import hermes_db
+    import thoth_db
 
     # Re-check ``_pool`` directly each call. Some test fixtures close
     # the pool between tests (e.g. ``hermes_db_initialized_sync`` in
     # ``tests/conftest.py``); the module-level ``_db_initialized`` flag
     # would otherwise short-circuit and leave the next test running
     # against a closed pool.
-    if _db_initialized and hermes_db._pool is not None:
+    if _db_initialized and thoth_db._pool is not None:
         return
 
     dsn = os.environ.get("HERMES_PG_DSN")
@@ -190,13 +190,13 @@ def init_db_sync() -> None:
         raise RuntimeError(
             "HERMES_PG_DSN must be set; export from .env or configure in environment"
         )
-    if hermes_db._pool is None:
-        hermes_db.run_sync(hermes_db.init(dsn))
+    if thoth_db._pool is None:
+        thoth_db.run_sync(thoth_db.init(dsn))
 
     def _close_pool_atexit():
-        if hermes_db._pool is not None:
+        if thoth_db._pool is not None:
             try:
-                hermes_db.run_sync(hermes_db.close())
+                thoth_db.run_sync(thoth_db.close())
             except Exception:
                 # Interpreter teardown: the DB loop thread may already be
                 # gone. Postgres reaps the idle connections regardless.
@@ -276,9 +276,9 @@ async def _record_boot_status(mode: str, *, ok: bool, error_text=None, log=None)
     _last_boot_status[mode] = status
 
     try:
-        import hermes_db
+        import thoth_db
 
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             await conn.execute(
                 """
                 INSERT INTO state_meta (key, value) VALUES ($1, $2)
@@ -366,6 +366,6 @@ def bootstrap_substrate_sync(log=None, *, mode: str = "writer"):
     a running event loop — async entry points should ``await
     bootstrap_substrate(log, mode=...)`` directly.
     """
-    import hermes_db
+    import thoth_db
 
-    return hermes_db.run_sync(bootstrap_substrate(log=log, mode=mode))
+    return thoth_db.run_sync(bootstrap_substrate(log=log, mode=mode))
