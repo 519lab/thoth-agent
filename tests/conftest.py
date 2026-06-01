@@ -856,13 +856,13 @@ from alembic.config import Config
 
 # ── Pre-session template DB cleanup ──────────────────────────────────────────
 #
-# pytest-postgresql 8.1 creates a template DB (``hermes_tmpl`` here, derived
-# from ``dbname="hermes"`` below) the first time the ``postgresql`` fixture
+# pytest-postgresql 8.1 creates a template DB (``thoth_tmpl`` here, derived
+# from ``dbname="thoth"`` below) the first time the ``postgresql`` fixture
 # is requested, then clones it for each per-test DB. The template is meant
 # to survive across pytest sessions for speed.
 #
 # An earlier revision of this conftest dropped the template at session start
-# to work around a ``DuplicateDatabase: hermes_tmpl already exists`` error
+# to work around a ``DuplicateDatabase: thoth_tmpl already exists`` error
 # on local reruns against the same Docker cluster — but that ALTERed an empty
 # (or absent) DB which then either raced with pytest-postgresql's own
 # create-template path (CI) or left a hole pytest-postgresql never refilled
@@ -874,17 +874,19 @@ from alembic.config import Config
 # template creation is idempotent (CREATE DATABASE IF NOT EXISTS-style
 # via DatabaseJanitor at the fixture level). If a stale template is
 # blocking your local run, drop it once by hand:
-#     psql -U hermes -h localhost -c "DROP DATABASE IF EXISTS hermes_tmpl"
+#     psql -U hermes -h localhost -c "DROP DATABASE IF EXISTS thoth_tmpl"
 
 
 # Default to the dedicated `postgres-test` docker-compose service
-# (port 5433), NOT the real `postgres` service the developer's Hermes
+# (port 5433), NOT the real `postgres` service the developer's Thoth
 # install runs against (port 5432). The override env var honours
-# HERMES_TEST_POSTGRES_PORT first (matches the compose variable name),
-# then POSTGRES_PORT, then falls back to 5433. Overriding to 5432 is
-# only safe in CI where there is no real install to collide with.
+# THOTH_TEST_POSTGRES_PORT first (matches the compose variable name),
+# then the HERMES_TEST_POSTGRES_PORT legacy fallback, then POSTGRES_PORT,
+# then falls back to 5433. Overriding to 5432 is only safe in CI where
+# there is no real install to collide with.
 _TEST_PG_PORT = int(
-    os.environ.get("HERMES_TEST_POSTGRES_PORT")
+    os.environ.get("THOTH_TEST_POSTGRES_PORT")
+    or os.environ.get("HERMES_TEST_POSTGRES_PORT")
     or os.environ.get("POSTGRES_PORT")
     or "5433"
 )
@@ -893,7 +895,8 @@ _TEST_PG_PORT = int(
 # test-runner container ``localhost`` is the container itself, so the
 # override env vars route to the ``postgres-test`` compose service.
 _TEST_PG_HOST = (
-    os.environ.get("HERMES_TEST_POSTGRES_HOST")
+    os.environ.get("THOTH_TEST_POSTGRES_HOST")
+    or os.environ.get("HERMES_TEST_POSTGRES_HOST")
     or os.environ.get("POSTGRES_HOST")
     or "localhost"
 )
@@ -902,7 +905,7 @@ postgresql_noproc = pg_factories.postgresql_noproc(
     port=_TEST_PG_PORT,
     user=os.environ.get("POSTGRES_USER", "hermes"),
     password=os.environ.get("POSTGRES_PASSWORD", "hermes"),
-    dbname="hermes",
+    dbname="thoth",
 )
 # Note: we deliberately don't pass ``dbname="hermes_test"`` here. The
 # ``postgresql`` factory uses ``proc_fixture.dbname`` when ``dbname`` is
