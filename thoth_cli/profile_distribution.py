@@ -1,22 +1,22 @@
-"""Profile distributions — shareable, packaged Hermes profiles via git.
+"""Profile distributions — shareable, packaged Thoth profiles via git.
 
-A distribution is a Hermes profile published as a git repository (or
+A distribution is a Thoth profile published as a git repository (or
 installed from a local directory for development). Install with one command
 from a git URL, update in place, and keep your local memories / sessions /
 credentials untouched.
 
 Where this fits relative to the existing pieces:
 
-* ``hermes profile export/import`` — local backup / restore for a profile
+* ``thoth profile export/import`` — local backup / restore for a profile
   on your own machine. NOT a distribution format. Stays as-is.
-* ``hermes skills install <url>`` — the URL install pattern we're mirroring,
+* ``thoth skills install <url>`` — the URL install pattern we're mirroring,
   but at the profile granularity.
 
-Subcommands (all live under ``hermes profile``, not a parallel tree):
+Subcommands (all live under ``thoth profile``, not a parallel tree):
 
-    hermes profile install <source> [--name N] [--alias] [--force] [--yes]
-    hermes profile update  <name>  [--force-config] [--yes]
-    hermes profile info    <name>
+    thoth profile install <source> [--name N] [--alias] [--force] [--yes]
+    thoth profile update  <name>  [--force-config] [--yes]
+    thoth profile info    <name>
 
 ``<source>`` is one of:
 
@@ -322,7 +322,7 @@ def check_hermes_requires(spec: str, current_version: str) -> None:
     }[op]
     if not ok:
         raise DistributionError(
-            f"This distribution requires Hermes {op}{target}, "
+            f"This distribution requires Thoth {op}{target}, "
             f"but you have {current_version}."
         )
 
@@ -335,7 +335,7 @@ def check_hermes_requires(spec: str, current_version: str) -> None:
 def _env_template_from_manifest(manifest: DistributionManifest) -> str:
     """Generate a ``.env.template`` body from env_requires."""
     lines = [
-        "# Environment variables required by this Hermes distribution.",
+        "# Environment variables required by this Thoth distribution.",
         "# Copy to `.env` and fill in your own values before running.",
         "",
     ]
@@ -393,7 +393,7 @@ def _stage_source(source: str, workdir: Path) -> Tuple[Path, str]:
     """Resolve *source* to a local directory containing distribution.yaml.
 
     Returns ``(staged_dir, provenance)`` where ``provenance`` is stored in the
-    installed manifest's ``source:`` field so ``hermes profile update`` can
+    installed manifest's ``source:`` field so ``thoth profile update`` can
     re-pull from the same place.
 
     Accepts:
@@ -412,7 +412,7 @@ def _stage_source(source: str, workdir: Path) -> Tuple[Path, str]:
         if not (cloned / MANIFEST_FILENAME).is_file():
             raise DistributionError(
                 f"No {MANIFEST_FILENAME} at the root of {src_str!r}. "
-                "This repository is not a Hermes profile distribution."
+                "This repository is not a Thoth profile distribution."
             )
         return cloned, src_str
 
@@ -488,7 +488,7 @@ def plan_install(
     if manifest is None:
         raise DistributionError(
             f"No {MANIFEST_FILENAME} found at the distribution root — "
-            "this source is not a Hermes distribution."
+            "this source is not a Thoth distribution."
         )
 
     # Version check up-front so we fail fast
@@ -605,7 +605,7 @@ def install_distribution(
         if plan.existing and not force:
             raise DistributionError(
                 f"Profile '{plan.manifest.name}' already exists at {plan.target_dir}. "
-                "Use `hermes profile update` to upgrade in place, "
+                "Use `thoth profile update` to upgrade in place, "
                 "or pass --force to overwrite."
             )
 
@@ -653,12 +653,12 @@ def update_distribution(
     if existing_manifest is None:
         raise DistributionError(
             f"Profile '{canon}' is not a distribution (no {MANIFEST_FILENAME}). "
-            "Only profiles installed via `hermes profile install` can be updated."
+            "Only profiles installed via `thoth profile install` can be updated."
         )
     if not existing_manifest.source:
         raise DistributionError(
             f"Profile '{canon}' has no recorded source.  Re-install with "
-            "`hermes profile install <source> --name {canon} --force`."
+            "`thoth profile install <source> --name {canon} --force`."
         )
 
     with tempfile.TemporaryDirectory(prefix="hermes_dist_update_") as tmp:

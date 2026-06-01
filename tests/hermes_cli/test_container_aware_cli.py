@@ -35,7 +35,7 @@ def container_env(tmp_path, monkeypatch):
         "backend=podman\n"
         "container_name=hermes-agent\n"
         "exec_user=hermes\n"
-        "hermes_bin=/data/current-package/bin/hermes\n"
+        "hermes_bin=/data/current-package/bin/thoth\n"
     )
     return hermes_home
 
@@ -49,7 +49,7 @@ def test_get_container_exec_info_returns_metadata(container_env):
     assert info["backend"] == "podman"
     assert info["container_name"] == "hermes-agent"
     assert info["exec_user"] == "hermes"
-    assert info["hermes_bin"] == "/data/current-package/bin/hermes"
+    assert info["hermes_bin"] == "/data/current-package/bin/thoth"
 
 
 def test_get_container_exec_info_none_inside_container(container_env):
@@ -114,7 +114,7 @@ def test_get_container_exec_info_defaults():
         assert info["backend"] == "docker"
         assert info["container_name"] == "hermes-agent"
         assert info["exec_user"] == "hermes"
-        assert info["hermes_bin"] == "/data/current-package/bin/hermes"
+        assert info["hermes_bin"] == "/data/current-package/bin/thoth"
 
 
 def test_get_container_exec_info_docker_backend(container_env):
@@ -123,7 +123,7 @@ def test_get_container_exec_info_docker_backend(container_env):
         "backend=docker\n"
         "container_name=hermes-custom\n"
         "exec_user=myuser\n"
-        "hermes_bin=/opt/hermes/bin/hermes\n"
+        "hermes_bin=/opt/thoth/bin/thoth\n"
     )
 
     with patch("hermes_constants.is_container", return_value=False):
@@ -132,7 +132,7 @@ def test_get_container_exec_info_docker_backend(container_env):
     assert info["backend"] == "docker"
     assert info["container_name"] == "hermes-custom"
     assert info["exec_user"] == "myuser"
-    assert info["hermes_bin"] == "/opt/hermes/bin/hermes"
+    assert info["hermes_bin"] == "/opt/thoth/bin/thoth"
 
 
 def test_get_container_exec_info_crashes_on_permission_error(container_env):
@@ -154,7 +154,7 @@ def docker_container_info():
         "backend": "docker",
         "container_name": "hermes-agent",
         "exec_user": "hermes",
-        "hermes_bin": "/data/current-package/bin/hermes",
+        "hermes_bin": "/data/current-package/bin/thoth",
     }
 
 
@@ -164,7 +164,7 @@ def podman_container_info():
         "backend": "podman",
         "container_name": "hermes-agent",
         "exec_user": "hermes",
-        "hermes_bin": "/data/current-package/bin/hermes",
+        "hermes_bin": "/data/current-package/bin/thoth",
     }
 
 
@@ -196,7 +196,7 @@ def test_exec_in_container_calls_execvp(docker_container_info):
     assert "TERM=xterm-256color" in e_values
     assert "LANG=en_US.UTF-8" in e_values
     assert "hermes-agent" in cmd
-    assert "/data/current-package/bin/hermes" in cmd
+    assert "/data/current-package/bin/thoth" in cmd
     assert "chat" in cmd
 
 

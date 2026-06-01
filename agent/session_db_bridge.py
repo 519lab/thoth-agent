@@ -1,6 +1,6 @@
 """Small sync bridge helpers for SessionDB calls.
 
-Hermes can run with either the SQLite ``SessionDB`` (sync methods) or an
+Thoth can run with either the SQLite ``SessionDB`` (sync methods) or an
 async-backed SessionDB implementation (for example Postgres).  Some agent
 paths are intentionally synchronous: CLI/gateway initialization, the main
 conversation loop, and background threads.  Calling an async SessionDB method

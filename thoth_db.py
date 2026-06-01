@@ -1,6 +1,6 @@
-"""Process-wide asyncpg pool + sync bridge helpers for Hermes's PG storage.
+"""Process-wide asyncpg pool + sync bridge helpers for Thoth's PG storage.
 
-Owns the single `asyncpg.Pool` instance. All DB-accessing code in Hermes
+Owns the single `asyncpg.Pool` instance. All DB-accessing code in Thoth
 goes through `connection()` or `transaction()`. Sync callers use
 `run_sync(coro)` until they can be refactored to async.
 
@@ -28,7 +28,7 @@ _pool_lock = threading.Lock()
 
 # The single, continuously-running event loop that owns all DB access for
 # this process ("the DB loop"). asyncpg pools bind to whichever loop creates
-# them, so Hermes keeps ONE loop, bound to the pool, running forever on its
+# them, so Thoth keeps ONE loop, bound to the pool, running forever on its
 # own daemon thread. Every sync caller bridges to it via ``run_sync``
 # (``run_coroutine_threadsafe``); async callers on a *different* loop (e.g.
 # the gateway's main I/O loop) route to it via ``run_on_pool_loop``. Because
@@ -280,7 +280,7 @@ def reset_pool_for_new_loop() -> None:
     """Discard the current pool synchronously, without awaiting ``close()``.
 
     asyncpg pools are bound to the event loop that created them. A process
-    that runs its own loop via ``asyncio.run`` (e.g. ``hermes substrate
+    that runs its own loop via ``asyncio.run`` (e.g. ``thoth substrate
     worker run``) must not inherit the pool that a sync entry point —
     ``main()``'s ``ensure_pool_sync()`` — bound to ``_sync_loop``: every DB
     call on the new loop would raise ``got Future ... attached to a
@@ -302,7 +302,7 @@ def pool() -> asyncpg.Pool:
 
     # Lazy bootstrap: if a DSN is in the environment but init() was never
     # called, initialise the pool on first use. This lets CLI subcommands
-    # that don't touch the DB (e.g. ``hermes --help``, ``hermes version``)
+    # that don't touch the DB (e.g. ``thoth --help``, ``thoth version``)
     # run in environments without a live PG instance, while DB-touching
     # subcommands still get a working pool without an explicit init step
     # at the entry point.
@@ -313,7 +313,7 @@ def pool() -> asyncpg.Pool:
     # Lazy bootstrap is ONLY safe from a pure-sync context (no running event
     # loop on this thread). asyncpg pools are loop-bound: binding a fresh
     # pool to the persistent ``_sync_loop`` here while the caller is awaiting
-    # on a *different* loop (an own-loop entry point like ``hermes substrate
+    # on a *different* loop (an own-loop entry point like ``thoth substrate
     # worker run``, the gateway's main loop, a pytest-asyncio test) makes the
     # caller's next ``acquire()`` raise ``got Future ... attached to a
     # different loop`` — and ``_sync_loop.run_until_complete`` from inside a

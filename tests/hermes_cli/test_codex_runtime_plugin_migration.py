@@ -490,10 +490,10 @@ class TestMigrate:
     def test_expose_hermes_tools_writes_callback_mcp_entry(self, tmp_path):
         """When expose_hermes_tools=True (production default), an
         [mcp_servers.hermes-tools] entry is written so codex calls back
-        into Hermes for browser/web/delegate_task/vision/memory tools.
+        into Thoth for browser/web/delegate_task/vision/memory tools.
 
         This is the fix for 'all other tools that codex doesn't provide
-        should be useable by hermes' — quirk #7."""
+        should be useable by thoth' — quirk #7."""
         report = migrate({}, codex_home=tmp_path,
                          discover_plugins=False,
                          default_permission_profile=None,
@@ -576,7 +576,7 @@ class TestMigrate:
         assert MIGRATION_MARKER in new_text
 
     def test_managed_root_keys_stay_top_level_when_config_ends_in_table(self, tmp_path):
-        """TOML has no explicit 'leave current table' syntax. If Hermes appends
+        """TOML has no explicit 'leave current table' syntax. If Thoth appends
         root keys like default_permissions after a user table such as [features],
         Codex parses them as features.default_permissions and rejects the config.
         The managed block must therefore be inserted before the first table."""
@@ -598,7 +598,7 @@ class TestMigrate:
 
     def test_preserves_user_mcp_server_outside_managed_block(self, tmp_path):
         """Quirk #6: when a user adds their own MCP server entry directly
-        to ~/.codex/config.toml outside Hermes' managed block, re-running
+        to ~/.codex/config.toml outside Thoth's managed block, re-running
         migration must preserve it. Tested both above and below the
         managed block."""
         target = tmp_path / "config.toml"
@@ -670,7 +670,7 @@ class TestStripUnmanagedPluginTables:
 
     When codex itself writes ``[plugins."<name>@<marketplace>"]`` tables
     (via the user running ``codex plugins enable`` directly), re-running
-    ``hermes codex-runtime migrate`` would re-emit them inside the managed
+    ``thoth codex-runtime migrate`` would re-emit them inside the managed
     block and the resulting duplicate-table-header would crash codex.
     """
 
@@ -811,7 +811,7 @@ class TestHermesHomeLeakGuard:
             "/private/var/folders/abc/pytest-of-kshitij/pytest-137/popen-gw2/test_X/hermes_test"
         )
         assert _looks_like_test_tempdir(
-            "/tmp/pytest-of-user/pytest-12/test_X/hermes"
+            "/tmp/pytest-of-user/pytest-12/test_X/thoth"
         )
         assert _looks_like_test_tempdir(
             "/private/var/folders/zz/T/pytest-of-bob/pytest-1"
@@ -820,7 +820,7 @@ class TestHermesHomeLeakGuard:
     def test_tempdir_detector_accepts_real_hermes_home(self):
         assert not _looks_like_test_tempdir("/Users/alice/.hermes")
         assert not _looks_like_test_tempdir("/home/bob/.hermes")
-        assert not _looks_like_test_tempdir("/opt/hermes")
+        assert not _looks_like_test_tempdir("/opt/thoth")
         assert not _looks_like_test_tempdir("")
 
     def test_pytest_tempdir_not_burned_into_mcp_env(self, monkeypatch):

@@ -1,6 +1,6 @@
 """StreamRepo — registration and lookup for ``substrate_streams``.
 
-Streams are write-rare / read-hot: a single Hermes session emits
+Streams are write-rare / read-hot: a single Thoth session emits
 hundreds of slices per minute against a handful of streams, and each
 :func:`commit_slice` call needs to know the stream's modality + lifecycle
 state. So this repo caches every fetched stream in a bounded in-process
@@ -55,7 +55,7 @@ def is_perceptual(stream_name: str) -> bool:
     ``substrate.*`` streams are the substrate's own operational telemetry
     and must be excluded from every awareness-loop query (backlog forecast,
     consolidation/pending counts, the Sentinel pending selector, recall).
-    Everything else — ``hermes.*`` — is genuine perception.
+    Everything else — ``thoth.*`` — is genuine perception.
     """
     return not stream_name.startswith("substrate.")
 

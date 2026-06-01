@@ -1,24 +1,24 @@
-"""``hermes substrate`` — substrate state inspection commands.
+"""``thoth substrate`` — substrate state inspection commands.
 
-Surface (flattened from earlier ``hermes substrate inspect <thing>``;
+Surface (flattened from earlier ``thoth substrate inspect <thing>``;
 the redundant ``inspect`` verb was removed 2026-05-26):
 
-    hermes substrate                       # default summary
-    hermes substrate streams               # list streams + slice counts
-    hermes substrate slices --stream NAME --limit 20
-    hermes substrate pending               # current pending-queue depth
-    hermes substrate profiles              # decay profiles
-    hermes substrate curator [SUB]         # Curator subtree (Phase B)
-    hermes substrate recall  [SUB]         # Recall subtree (Phase C)
+    thoth substrate                       # default summary
+    thoth substrate streams               # list streams + slice counts
+    thoth substrate slices --stream NAME --limit 20
+    thoth substrate pending               # current pending-queue depth
+    thoth substrate profiles              # decay profiles
+    thoth substrate curator [SUB]         # Curator subtree (Phase B)
+    thoth substrate recall  [SUB]         # Recall subtree (Phase C)
 
 The CLI does not boot the full substrate (no sub-agent loops) — it just
 initialises the asyncpg pool, runs read-only queries against the substrate
-tables, and prints a fixed-format report. Safe to run against a Hermes
+tables, and prints a fixed-format report. Safe to run against a Thoth
 deployment that is already booted in another process.
 
-Wired into Hermes's top-level argparse via :func:`register_subparser`
+Wired into Thoth's top-level argparse via :func:`register_subparser`
 called from ``hermes_cli/main.py``. Mutating/admin operations on
-embeddings live under the separate ``hermes embed`` namespace; see
+embeddings live under the separate ``thoth embed`` namespace; see
 ``substrate/cli/embed.py``.
 """
 
@@ -40,7 +40,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def register_subparser(subparsers: argparse._SubParsersAction) -> None:
-    """Add the ``hermes substrate`` subcommand tree to ``subparsers``.
+    """Add the ``thoth substrate`` subcommand tree to ``subparsers``.
 
     Matches the pattern used by other optional CLI modules (e.g.
     ``agent.lsp.cli.register_subparser``) so the import is contained and
@@ -52,11 +52,11 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
         description="Read-only inspection of the substrate's perception "
         "streams, slices, decay profiles, pending queue, and the Curator + "
         "recall subsystems. With no subcommand, prints the default summary. "
-        "Embedding admin (reshape, backfill) lives under ``hermes embed``.",
+        "Embedding admin (reshape, backfill) lives under ``thoth embed``.",
     )
     substrate_sub = substrate_parser.add_subparsers(dest="substrate_command")
-    # Default for ``hermes substrate`` with no subcommand: print the summary
-    # (the same content the old ``hermes substrate inspect`` printed).
+    # Default for ``thoth substrate`` with no subcommand: print the summary
+    # (the same content the old ``thoth substrate inspect`` printed).
     substrate_parser.set_defaults(func=_cmd_inspect_summary)
 
     substrate_sub.add_parser(
@@ -194,7 +194,7 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
         "sample", help="Last recall log row for a given session"
     )
     recall_sample.add_argument(
-        "--session-id", required=True, help="Hermes session id"
+        "--session-id", required=True, help="Thoth session id"
     )
     recall_sample.set_defaults(func=_cmd_inspect_recall_sample)
 
@@ -307,7 +307,7 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
     conductor_p.set_defaults(func=_cmd_inspect_conductor)
 
     # ── Sub-agent worker subprocess ────────────────────────────────────
-    # ``hermes substrate worker run`` blocks while running Sentinel +
+    # ``thoth substrate worker run`` blocks while running Sentinel +
     # Curator + ForceRejectWorker + PartitionMaintenanceWorker in a
     # dedicated process. Managed by the systemd unit
     # ``hermes-substrate-worker.service``; rare for operators to invoke
@@ -319,7 +319,7 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 # ---------------------------------------------------------------------------
 # Command handlers — each one is sync and bridges via hermes_db.run_sync.
-# This matches the rest of the Hermes CLI, where command callbacks are
+# This matches the rest of the Thoth CLI, where command callbacks are
 # synchronous and call asyncio.run / run_sync as needed.
 # ---------------------------------------------------------------------------
 
@@ -523,7 +523,7 @@ def _run_inspect(action) -> int:
     if not hermes_db.ensure_pool_sync():
         print(
             "error: THOTH_PG_DSN is not set and no pool is initialised; "
-            "configure it before running `hermes substrate`.",
+            "configure it before running `thoth substrate`.",
             file=sys.stderr,
         )
         return 1
@@ -540,7 +540,7 @@ def _run_inspect(action) -> int:
     try:
         return hermes_db.run_sync(_go())
     finally:
-        # The Hermes CLI process is one-shot; release the pool so it
+        # The Thoth CLI process is one-shot; release the pool so it
         # doesn't hold a connection open past the subcommand's exit.
         try:
             hermes_db.run_sync(hermes_db.close())
@@ -602,7 +602,7 @@ async def _print_summary(conn: "asyncpg.Connection") -> None:
             "reported a heartbeat."
         )
         print(
-            "     Start it with `hermes substrate worker run` (or the "
+            "     Start it with `thoth substrate worker run` (or the "
             "hermes-substrate-worker systemd unit)."
         )
 
@@ -833,7 +833,7 @@ def _format_agent_lines(rows: list[dict]) -> list[str]:
 
 
 async def _print_agents(conn: "asyncpg.Connection") -> None:
-    """``hermes substrate agents`` — full sub-agent liveness report."""
+    """``thoth substrate agents`` — full sub-agent liveness report."""
     now = datetime.now(timezone.utc)
     print(f"Sub-agent liveness @ {now.isoformat()}")
     print(
@@ -855,7 +855,7 @@ async def _print_agents(conn: "asyncpg.Connection") -> None:
             "embeddings never backfill."
         )
         print(
-            "  Start it with `hermes substrate worker run` (or the "
+            "  Start it with `thoth substrate worker run` (or the "
             "hermes-substrate-worker systemd unit)."
         )
     else:
@@ -881,8 +881,8 @@ async def _layer_counts(conn: "asyncpg.Connection") -> dict:
     # awaiting consolidation — counting the historical ``substrate.self_state``
     # ghost rows here is what made `health` report a permanent 100% backlog.
     # See ``substrate.storage.streams.is_perceptual``. (The raw physical table
-    # state stays visible via the default ``hermes substrate`` summary and
-    # ``hermes substrate streams``.)
+    # state stays visible via the default ``thoth substrate`` summary and
+    # ``thoth substrate streams``.)
     try:
         l0 = await conn.fetchrow(
             """
@@ -962,7 +962,7 @@ async def _print_health(conn: "asyncpg.Connection") -> None:
     live = sum(1 for a in agents if a["status"] == "live")
     print(f"Worker: ", end="")
     if _all_agents_down(agents):
-        print("⚠ DOWN — no sub-agent heartbeat (run `hermes substrate worker run`)")
+        print("⚠ DOWN — no sub-agent heartbeat (run `thoth substrate worker run`)")
     else:
         print(f"✓ up — {live}/{len(agents)} sub-agents live")
 
@@ -1094,7 +1094,7 @@ def _format_boot_lines(status_by_mode: dict) -> list[str]:
 
 
 async def _print_boot_status(conn: "asyncpg.Connection") -> None:
-    """``hermes substrate boot`` — last boot outcome per process role."""
+    """``thoth substrate boot`` — last boot outcome per process role."""
     now = datetime.now(timezone.utc)
     print(f"Substrate boot status @ {now.isoformat()}")
     print()
@@ -1515,7 +1515,7 @@ def _short_payload(payload) -> str:
 
 
 async def _print_curator_summary(conn: "asyncpg.Connection") -> None:
-    """Default ``hermes substrate curator`` output. Matches the
+    """Default ``thoth substrate curator`` output. Matches the
     format documented in Phase B spec §9.2."""
     now = datetime.now(timezone.utc)
     print(f"Curator state @ {now.isoformat()}")

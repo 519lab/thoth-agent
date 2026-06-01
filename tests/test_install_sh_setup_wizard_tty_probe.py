@@ -9,7 +9,7 @@ existence-based check that guards a subsequent ``< /dev/tty`` redirect with
 an open-based probe so the skip kicks in correctly.
 
 In the substrate-edition rewrite the gateway install moved out of
-``install.sh`` (now driven by ``hermes setup``) and ``install_system_packages``
+``install.sh`` (now driven by ``thoth setup``) and ``install_system_packages``
 no longer reads ``/dev/tty`` directly — it delegates to ``prompt_yes_no``,
 which gates on readability before redirecting. So the only function that
 still both opens ``/dev/tty`` itself *and* needs the gate is

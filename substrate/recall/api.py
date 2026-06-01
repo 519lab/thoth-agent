@@ -47,7 +47,7 @@ _log = logging.getLogger("substrate.recall.api")
 # In-process reinforcement rate-limit (spec §5.4).
 #
 # Bounded by an LRU of recent timestamps per slice_id. ``_REINFORCE_LRU``
-# is process-wide — correct for single-process Hermes (the gateway loops
+# is process-wide — correct for single-process Thoth (the gateway loops
 # 128 AIAgents inside one process). Multi-process scale-out would need
 # this to move to PG; that's Phase G.
 # ---------------------------------------------------------------------------
@@ -168,7 +168,7 @@ async def recall(
     returned projection has ``text=""`` and ``empty_reason`` set
     explaining why (no_candidates / budget_zero / all_truncated /
     timeout / db_error). The caller (SubstrateMemoryProvider) never
-    needs to try/except — substrate failures never reach Hermes's call
+    needs to try/except — substrate failures never reach Thoth's call
     site (mirrors the Phase A hook discipline).
     """
     t_now = t_now or datetime.now(timezone.utc)

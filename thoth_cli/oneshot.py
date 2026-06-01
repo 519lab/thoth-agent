@@ -4,12 +4,12 @@ Bypasses cli.py entirely.  No banner, no spinner, no session_id line,
 no stderr chatter.  Just the agent's final text to stdout.
 
 Toolsets = explicit --toolsets when provided, otherwise whatever the user has
-configured for "cli" in `hermes tools`.
+configured for "cli" in `thoth tools`.
 Rules / memory / AGENTS.md / preloaded skills = same as a normal chat turn.
 Approvals = auto-bypassed (HERMES_YOLO_MODE=1 is set for the call).
 Working directory = the user's CWD (AGENTS.md etc. resolve from there as usual).
 
-Model / provider selection mirrors `hermes chat`:
+Model / provider selection mirrors `thoth chat`:
     - Both optional. If omitted, use the user's configured default.
     - If both given, pair them exactly as given.
     - If only --model given, auto-detect the provider that serves it.
@@ -55,7 +55,7 @@ def _validate_explicit_toolsets(toolsets: object = None) -> tuple[list[str] | No
     try:
         from toolsets import validate_toolset
     except Exception as exc:
-        return None, f"hermes -z: failed to validate --toolsets: {exc}\n"
+        return None, f"thoth -z: failed to validate --toolsets: {exc}\n"
 
     built_in = [name for name in normalized if validate_toolset(name)]
     unresolved = [name for name in normalized if name not in built_in]
@@ -77,7 +77,7 @@ def _validate_explicit_toolsets(toolsets: object = None) -> tuple[list[str] | No
         ignored = [name for name in normalized if name not in {"all", "*"}]
         if ignored:
             sys.stderr.write(
-                "hermes -z: --toolsets all enables every toolset; "
+                "thoth -z: --toolsets all enables every toolset; "
                 f"ignoring additional entries: {', '.join(ignored)}\n"
             )
         return None, None
@@ -108,15 +108,15 @@ def _validate_explicit_toolsets(toolsets: object = None) -> tuple[list[str] | No
     valid = built_in + mcp_valid
 
     if unknown:
-        sys.stderr.write(f"hermes -z: ignoring unknown --toolsets entries: {', '.join(unknown)}\n")
+        sys.stderr.write(f"thoth -z: ignoring unknown --toolsets entries: {', '.join(unknown)}\n")
     if disabled:
         sys.stderr.write(
-            "hermes -z: ignoring disabled MCP servers (set enabled: true in config.yaml to use): "
+            "thoth -z: ignoring disabled MCP servers (set enabled: true in config.yaml to use): "
             f"{', '.join(disabled)}\n"
         )
 
     if not valid:
-        return None, "hermes -z: --toolsets did not contain any valid toolsets.\n"
+        return None, "thoth -z: --toolsets did not contain any valid toolsets.\n"
 
     return valid, None
 
@@ -155,7 +155,7 @@ def run_oneshot(
     env_model_early = os.getenv("HERMES_INFERENCE_MODEL", "").strip()
     if provider and not ((model or "").strip() or env_model_early):
         sys.stderr.write(
-            "hermes -z: --provider requires --model (or HERMES_INFERENCE_MODEL). "
+            "thoth -z: --provider requires --model (or HERMES_INFERENCE_MODEL). "
             "Pass both explicitly, or neither to use your configured defaults.\n"
         )
         return 2
@@ -200,7 +200,7 @@ def run_oneshot(
 
 
 def _create_session_db_for_oneshot():
-    """Best-effort SessionDB for ``hermes -z`` / oneshot mode.
+    """Best-effort SessionDB for ``thoth -z`` / oneshot mode.
 
     Oneshot bypasses ``HermesCLI._init_agent()``, so it must wire the SQLite
     session store itself. Without this, the ``session_search``/recall tool is
@@ -224,7 +224,7 @@ def _run_agent(
 ) -> str:
     """Build an AIAgent exactly like a normal CLI chat turn would, then
     run a single conversation.  Returns the final response string."""
-    # Imports are local so they don't run when hermes is invoked for
+    # Imports are local so they don't run when thoth is invoked for
     # other commands (keeps top-level CLI startup cheap).
     from thoth_cli.config import load_config
     from thoth_cli.models import detect_provider_for_model
@@ -304,7 +304,7 @@ def _run_agent(
     # Read fallback chain from profile config — supports both the new list
     # format (fallback_providers) and the legacy single-dict (fallback_model).
     # Mirrors the same normalization in cli.py so oneshot workers (e.g. kanban
-    # workers spawned via `hermes -p <profile> chat -q ...`) honour the
+    # workers spawned via `thoth -p <profile> chat -q ...`) honour the
     # profile's fallback chain just like interactive sessions do.
     _fb = cfg.get("fallback_providers") or cfg.get("fallback_model") or []
     if isinstance(_fb, dict):

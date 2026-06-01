@@ -1,4 +1,4 @@
-"""``hermes substrate worker run`` — substrate sub-agent worker subprocess.
+"""``thoth substrate worker run`` — substrate sub-agent worker subprocess.
 
 Runs Sentinel + Curator + ForceRejectWorker + PartitionMaintenanceWorker
 (plus the Conductor handle) in a dedicated process with its own asyncpg
@@ -19,7 +19,7 @@ loop and one pool — no cross-loop contention possible.
 
 Surface:
 
-    hermes substrate worker run    # blocks until SIGINT/SIGTERM
+    thoth substrate worker run    # blocks until SIGINT/SIGTERM
 
 Lifecycle:
 
@@ -42,7 +42,7 @@ import sys
 
 
 def register_subparser(subparsers: argparse._SubParsersAction) -> None:
-    """Add the ``hermes substrate worker`` subcommand tree.
+    """Add the ``thoth substrate worker`` subcommand tree.
 
     Wired into the existing ``substrate`` parser by
     :func:`substrate.cli.inspect.register_subparser`.
@@ -72,7 +72,7 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 def _cmd_worker_help(args: argparse.Namespace) -> int:
     print(
-        "usage: hermes substrate worker run",
+        "usage: thoth substrate worker run",
         file=sys.stderr,
     )
     return 2

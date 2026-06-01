@@ -84,7 +84,7 @@ model couldn't produce valid JSON, `result.parsed` is `None` and
   objects.
 * **Host-owned credentials.** OAuth tokens, refresh flows, the
   credential pool, per-task aux overrides — every credential
-  concept Hermes already has applies. The plugin never sees a
+  concept Thoth already has applies. The plugin never sees a
   token; the host attributes the call back through `result.audit`.
 * **Bounded.** Single sync or async call. No streaming, no tool
   loops, no conversation state to manage. State the input, get the
@@ -213,7 +213,7 @@ timeout, vision routing — is the same across all four.
 ```python
 result = ctx.llm.complete(
     messages=[{"role": "user", "content": "Hi"}],
-    provider=None,         # optional, gated — Hermes provider id (e.g. "openrouter")
+    provider=None,         # optional, gated — Thoth provider id (e.g. "openrouter")
     model=None,            # optional, gated — whatever string that provider expects
     temperature=None,
     max_tokens=None,
@@ -333,9 +333,9 @@ plugins:
   entries:
     my-plugin:
       llm:
-        # Allow this plugin to choose a different Hermes provider
-        # (must be one Hermes already knows about — same names as
-        # `hermes model` and config.yaml model.provider).
+        # Allow this plugin to choose a different Thoth provider
+        # (must be one Thoth already knows about — same names as
+        # `thoth model` and config.yaml model.provider).
         allow_provider_override: true
 
         # Optionally restrict which providers. Use ["*"] for any.
@@ -348,7 +348,7 @@ plugins:
 
         # Optionally restrict which models. Use ["*"] for any.
         # Models are matched literally against whatever string the
-        # plugin sends — Hermes does not look anything up.
+        # plugin sends — Thoth does not look anything up.
         allowed_models:
           - openai/gpt-4o-mini
           - anthropic/claude-3-5-haiku
@@ -406,7 +406,7 @@ don't have to:
   active text model is text-only, the host falls back to the
   configured vision model automatically.
 * **Fallback chain.** If the user's primary provider 5xxs or 429s,
-  the request goes through Hermes' usual aggregator-aware fallback
+  the request goes through Thoth's usual aggregator-aware fallback
   before it returns an error to the plugin.
 * **Timeout.** Honours your `timeout=` argument, falling back to
   `auxiliary.<task>.timeout` config or the global aux default.
@@ -436,7 +436,7 @@ don't have to:
 
 ## Where this fits in the plugin surface
 
-Existing `ctx.*` methods extend an existing Hermes subsystem:
+Existing `ctx.*` methods extend an existing Thoth subsystem:
 
 | `ctx.register_tool` | adds a tool the agent can call |
 | `ctx.register_platform` | wires a new gateway adapter |

@@ -89,7 +89,7 @@ class VideoGenProvider(abc.ABC):
 
     @property
     def display_name(self) -> str:
-        """Human-readable label shown in ``hermes tools``. Defaults to ``name.title()``."""
+        """Human-readable label shown in ``thoth tools``. Defaults to ``name.title()``."""
         return self.name.title()
 
     def is_available(self) -> bool:
@@ -101,7 +101,7 @@ class VideoGenProvider(abc.ABC):
         return True
 
     def list_models(self) -> List[Dict[str, Any]]:
-        """Return catalog entries for ``hermes tools`` model picker.
+        """Return catalog entries for ``thoth tools`` model picker.
 
         Each entry represents a **model family** that supports text-to-video
         and/or image-to-video routing internally::
@@ -120,7 +120,7 @@ class VideoGenProvider(abc.ABC):
         return []
 
     def get_setup_schema(self) -> Dict[str, Any]:
-        """Return provider metadata for the ``hermes tools`` picker."""
+        """Return provider metadata for the ``thoth tools`` picker."""
         return {
             "name": self.display_name,
             "badge": "",
@@ -151,7 +151,7 @@ class VideoGenProvider(abc.ABC):
                 "max_reference_images": 7,
             }
 
-        Used by the tool layer for soft validation and by ``hermes tools``
+        Used by the tool layer for soft validation and by ``thoth tools``
         for the picker. Default: text-only.
         """
         return {

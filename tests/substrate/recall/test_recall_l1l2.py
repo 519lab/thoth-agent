@@ -56,11 +56,11 @@ def test_render_l1_header_formats_entities():
     out = render_l1_header([
         {"name": "Greg", "entity_type": "person", "summary": "maintainer",
          "cites": ["a1b2c3", "d4e5f6"]},
-        {"name": "Hermes", "entity_type": "project", "summary": "", "cites": []},
+        {"name": "Thoth", "entity_type": "project", "summary": "", "cites": []},
     ])
     assert "## Known entities (2)" in out
     assert "- Greg (person) — maintainer (cites: a1b2c3, d4e5f6)" in out
-    assert "- Hermes (project)" in out
+    assert "- Thoth (project)" in out
 
 
 # ---------------------------------------------------------------------------
@@ -75,7 +75,7 @@ async def test_recall_prepends_l1_header_when_entities_match(booted, monkeypatch
     monkeypatch.setattr(cfg, "RECALL_INCLUDE_L1", True)
 
     await store.upsert_entity(
-        "PostgreSQL migration", "concept", summary="moving Hermes to PG"
+        "PostgreSQL migration", "concept", summary="moving Thoth to PG"
     )
     await _seed_passed_slice(booted, "we discussed the postgresql migration today")
 

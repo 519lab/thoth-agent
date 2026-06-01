@@ -705,7 +705,7 @@ def _lightpanda_fallback_reason(engine: str, command: str, result: Dict[str, Any
     """Return the user-visible reason a Lightpanda result needs Chrome fallback.
 
     ``None`` means no fallback should run.  The returned string is copied into
-    the fallback result so CLI/TUI/gateway users can see when Hermes silently
+    the fallback result so CLI/TUI/gateway users can see when Thoth silently
     switched from Lightpanda to Chrome for completeness.
     """
     if engine != "lightpanda":
@@ -888,7 +888,7 @@ def _run_chrome_fallback_command(
             #   and that grandchild's CreateProcess dies silently
             #   ("Daemon process exited during startup with no error output")
             #   when inherited parent handles are in a weird state. Observed
-            #   in the Hermes CLI where sys.stdout and sys.stderr both report
+            #   in the Thoth CLI where sys.stdout and sys.stderr both report
             #   fileno=1 (stderr dup'd onto stdout at the OS level).
             # * close_fds=True → block inheritance of every other handle.
             #   (Default on POSIX; must be explicit on Windows for stdio.)
@@ -1199,7 +1199,7 @@ def _emergency_cleanup_all_sessions():
     Called on process exit or interrupt to prevent orphaned sessions.
 
     Also runs the orphan reaper to clean up daemons left behind by previously
-    crashed hermes processes — this way every clean hermes exit sweeps
+    crashed thoth processes — this way every clean thoth exit sweeps
     accumulated orphans, not just ones that actively used the browser tool.
     """
     global _cleanup_done
@@ -1222,9 +1222,9 @@ def _emergency_cleanup_all_sessions():
                 _session_last_activity.clear()
                 _recording_sessions.clear()
 
-    # Sweep orphans from other crashed hermes processes.  Safe even if we
+    # Sweep orphans from other crashed thoth processes.  Safe even if we
     # never used the browser — uses owner_pid liveness to avoid reaping
-    # daemons owned by other live hermes processes.
+    # daemons owned by other live thoth processes.
     try:
         _reap_orphaned_browser_sessions()
     except Exception as e:
@@ -1273,10 +1273,10 @@ def _cleanup_inactive_browser_sessions():
 
 
 def _write_owner_pid(socket_dir: str, session_name: str) -> None:
-    """Record the current hermes PID as the owner of a browser socket dir.
+    """Record the current thoth PID as the owner of a browser socket dir.
 
     Written atomically to ``<socket_dir>/<session_name>.owner_pid`` so the
-    orphan reaper can distinguish daemons owned by a live hermes process
+    orphan reaper can distinguish daemons owned by a live thoth process
     (don't reap) from daemons whose owner crashed (reap).  Best-effort —
     an OSError here just falls back to the legacy ``tracked_names``
     heuristic in the reaper.
@@ -1299,13 +1299,13 @@ def _reap_orphaned_browser_sessions():
 
     This function scans the tmp directory for ``agent-browser-*`` socket dirs
     left behind by previous runs, reads the daemon PID files, and kills any
-    daemons whose owning hermes process is no longer alive.
+    daemons whose owning thoth process is no longer alive.
 
     Ownership detection priority:
       1. ``<session>.owner_pid`` file (written by current code) — if the
-         referenced hermes PID is alive, leave the daemon alone regardless
+         referenced thoth PID is alive, leave the daemon alone regardless
          of whether it's in *this* process's ``_active_sessions``.  This is
-         cross-process safe: two concurrent hermes instances won't reap each
+         cross-process safe: two concurrent thoth instances won't reap each
          other's daemons.
       2. Fallback for daemons that predate owner_pid: check
          ``_active_sessions`` in the current process.  If not tracked here,
@@ -1356,7 +1356,7 @@ def _reap_orphaned_browser_sessions():
                 owner_alive = None  # corrupt file — fall through
 
         if owner_alive is True:
-            # Owner is alive — this session belongs to a live hermes process.
+            # Owner is alive — this session belongs to a live thoth process.
             continue
 
         if owner_alive is None:
@@ -1751,7 +1751,7 @@ def _find_agent_browser() -> str:
     """
     Find the agent-browser CLI executable.
 
-    Checks in order: current PATH, Homebrew/common bin dirs, Hermes-managed
+    Checks in order: current PATH, Homebrew/common bin dirs, Thoth-managed
     node, local node_modules/.bin/, npx fallback.
 
     Returns:
@@ -1782,7 +1782,7 @@ def _find_agent_browser() -> str:
         _agent_browser_resolved = True
         return which_result
 
-    # Build an extended search PATH including Hermes-managed Node, macOS
+    # Build an extended search PATH including Thoth-managed Node, macOS
     # versioned Homebrew installs, and fallback system dirs like Termux.
     extended_path = _merge_browser_path("")
     if extended_path:
@@ -1983,7 +1983,7 @@ def _run_browser_command(
             f"agent-browser-{session_info['session_name']}"
         )
         os.makedirs(task_socket_dir, mode=0o700, exist_ok=True)
-        # Record this hermes PID as the session owner (cross-process safe
+        # Record this thoth PID as the session owner (cross-process safe
         # orphan detection — see _write_owner_pid).
         _write_owner_pid(task_socket_dir, session_info['session_name'])
         logger.debug("browser cmd=%s task=%s socket_dir=%s (%d chars)",

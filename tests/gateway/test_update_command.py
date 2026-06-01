@@ -100,7 +100,7 @@ class TestHandleUpdateCommand:
 
     @pytest.mark.asyncio
     async def test_no_hermes_binary(self, tmp_path):
-        """Returns error when hermes is not on PATH and hermes_cli is not importable."""
+        """Returns error when thoth is not on PATH and hermes_cli is not importable."""
         runner = _make_runner()
         event = _make_event()
 
@@ -123,7 +123,7 @@ class TestHandleUpdateCommand:
 
     @pytest.mark.asyncio
     async def test_fallback_to_sys_executable(self, tmp_path):
-        """Falls back to sys.executable -m hermes_cli.main when hermes not on PATH."""
+        """Falls back to sys.executable -m hermes_cli.main when thoth not on PATH."""
         runner = _make_runner()
         event = _make_event()
 
@@ -157,10 +157,10 @@ class TestHandleUpdateCommand:
         """_resolve_hermes_bin returns argv parts from shutil.which when available."""
         from gateway.run import _resolve_hermes_bin
 
-        with patch("shutil.which", return_value="/custom/path/hermes"):
+        with patch("shutil.which", return_value="/custom/path/thoth"):
             result = _resolve_hermes_bin()
 
-        assert result == ["/custom/path/hermes"]
+        assert result == ["/custom/path/thoth"]
 
     @pytest.mark.asyncio
     async def test_resolve_hermes_bin_fallback(self):
@@ -205,7 +205,7 @@ class TestHandleUpdateCommand:
 
         with patch("gateway.run._hermes_home", hermes_home), \
              patch("gateway.run.__file__", fake_file), \
-             patch("shutil.which", side_effect=lambda x: "/usr/bin/hermes" if x == "hermes" else "/usr/bin/setsid"), \
+             patch("shutil.which", side_effect=lambda x: "/usr/bin/thoth" if x == "hermes" else "/usr/bin/setsid"), \
              patch("subprocess.Popen"):
             result = await runner._handle_update_command(event)
 
@@ -238,7 +238,7 @@ class TestHandleUpdateCommand:
 
         with patch("gateway.run._hermes_home", hermes_home), \
              patch("gateway.run.__file__", fake_file), \
-             patch("shutil.which", side_effect=lambda x: "/usr/bin/hermes" if x == "hermes" else "/usr/bin/setsid"), \
+             patch("shutil.which", side_effect=lambda x: "/usr/bin/thoth" if x == "hermes" else "/usr/bin/setsid"), \
              patch("subprocess.Popen"):
             await runner._handle_update_command(event)
 
@@ -293,7 +293,7 @@ class TestHandleUpdateCommand:
 
         def which_no_setsid(x):
             if x == "hermes":
-                return "/usr/bin/hermes"
+                return "/usr/bin/thoth"
             if x == "setsid":
                 return None
             return None

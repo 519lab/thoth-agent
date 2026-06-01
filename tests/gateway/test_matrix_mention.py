@@ -98,8 +98,8 @@ class TestIsBotMentioned:
         assert self.adapter._is_bot_mentioned("HERMES can you help?")
 
     def test_matrix_pill_in_formatted_body(self):
-        html = '<a href="https://matrix.to/#/@hermes:example.org">Hermes</a> help'
-        assert self.adapter._is_bot_mentioned("Hermes help", html)
+        html = '<a href="https://matrix.to/#/@hermes:example.org">Thoth</a> help'
+        assert self.adapter._is_bot_mentioned("Thoth help", html)
 
     def test_no_mention(self):
         assert not self.adapter._is_bot_mentioned("hello everyone")
@@ -117,7 +117,7 @@ class TestIsBotMentioned:
     def test_m_mentions_user_ids_authoritative(self):
         """m.mentions.user_ids alone is sufficient — no body text needed."""
         assert self.adapter._is_bot_mentioned(
-            "please reply",  # no @hermes anywhere in body
+            "please reply",  # no @thoth anywhere in body
             mention_user_ids=["@hermes:example.org"],
         )
 
@@ -160,22 +160,22 @@ class TestStripMention:
 
     def test_localpart_preserved(self):
         """Bare localpart (no @) is preserved — avoids false positives in paths."""
-        result = self.adapter._strip_mention("hermes help me")
-        assert result == "hermes help me"
+        result = self.adapter._strip_mention("thoth help me")
+        assert result == "thoth help me"
 
     def test_localpart_in_path_preserved(self):
         """Localpart inside a file path must not be damaged."""
-        result = self.adapter._strip_mention("read /home/hermes/config.yaml")
-        assert result == "read /home/hermes/config.yaml"
+        result = self.adapter._strip_mention("read /home/thoth/config.yaml")
+        assert result == "read /home/thoth/config.yaml"
 
     def test_strip_localpart_when_explicit_at_mention(self):
         result = self.adapter._strip_mention("@hermes help me")
         assert result == "help me"
 
     def test_does_not_strip_bare_localpart_word(self):
-        # Regression: plain words like "Hermes Agent" should not be mutated.
-        result = self.adapter._strip_mention("Hermes Agent")
-        assert result == "Hermes Agent"
+        # Regression: plain words like "Thoth Agent" should not be mutated.
+        result = self.adapter._strip_mention("Thoth Agent")
+        assert result == "Thoth Agent"
 
     def test_strip_returns_empty_for_mention_only(self):
         result = self.adapter._strip_mention("@hermes:example.org")
@@ -303,8 +303,8 @@ async def test_require_mention_html_pill(monkeypatch):
     monkeypatch.setenv("MATRIX_AUTO_THREAD", "false")
 
     adapter = _make_adapter()
-    formatted = '<a href="https://matrix.to/#/@hermes:example.org">Hermes</a> help'
-    event = _make_event("Hermes help", formatted_body=formatted)
+    formatted = '<a href="https://matrix.to/#/@hermes:example.org">Thoth</a> help'
+    event = _make_event("Thoth help", formatted_body=formatted)
 
     await adapter._on_room_message(event)
     adapter.handle_message.assert_awaited_once()
@@ -390,12 +390,12 @@ async def test_dm_preserves_localpart_in_body(monkeypatch):
 
     adapter = _make_adapter()
     _set_dm(adapter)
-    event = _make_event("hermes help me")
+    event = _make_event("thoth help me")
 
     await adapter._on_room_message(event)
     adapter.handle_message.assert_awaited_once()
     msg = adapter.handle_message.await_args.args[0]
-    assert msg.text == "hermes help me"
+    assert msg.text == "thoth help me"
 
 
 @pytest.mark.asyncio

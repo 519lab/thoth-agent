@@ -3,8 +3,8 @@
 Standalone Web Tools Module
 
 This module provides generic web tools that work with multiple backend providers.
-Backend is selected during ``hermes tools`` setup (web.backend in config.yaml).
-When available, Hermes can route Firecrawl calls through a Nous-hosted tool-gateway
+Backend is selected during ``thoth tools`` setup (web.backend in config.yaml).
+When available, Thoth can route Firecrawl calls through a Nous-hosted tool-gateway
 for Nous Subscribers only.
 
 Available tools:
@@ -135,7 +135,7 @@ def _load_web_config() -> dict:
 def _get_backend() -> str:
     """Determine which web backend to use (shared fallback).
 
-    Reads ``web.backend`` from config.yaml (set by ``hermes tools``).
+    Reads ``web.backend`` from config.yaml (set by ``thoth tools``).
     Falls back to whichever API key is present for users who configured
     keys manually without running setup.
     """
@@ -222,7 +222,7 @@ def _is_backend_available(backend: str) -> bool:
         # Cheap probe — env var OR auth.json has OAuth tokens. Must not
         # call resolve_xai_http_credentials() here because the OAuth path
         # can trigger a network token refresh, and _is_backend_available
-        # runs on every web_search dispatch + every `hermes tools` repaint.
+        # runs on every web_search dispatch + every `thoth tools` repaint.
         try:
             from tools.xai_http import has_xai_credentials
             return has_xai_credentials()
@@ -821,7 +821,7 @@ def web_search_tool(query: str, limit: int = 5) -> str:
                 "success": False,
                 "error": (
                     "No web search provider configured. "
-                    "Run `hermes tools` to set one up."
+                    "Run `thoth tools` to set one up."
                 ),
             }
         else:

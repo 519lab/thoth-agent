@@ -8,7 +8,7 @@ ranks them against a context string (the recall query + whatever entities/
 patterns the caller folds in) by keyword overlap.
 
 Pure + dependency-light: filesystem scan + token overlap, no LLM. Powers
-``hermes substrate skills <query>`` and an opt-in recall section.
+``thoth substrate skills <query>`` and an opt-in recall section.
 """
 
 from __future__ import annotations

@@ -156,7 +156,7 @@ def test_unrecognized_or_cancel_input_cancels(answer, capsys):
 # Substrate worker discovery + restart on update
 # ===========================================================================
 #
-# ``hermes update`` must restart hermes-substrate* units (notably
+# ``thoth update`` must restart hermes-substrate* units (notably
 # hermes-substrate-worker.service) so substrate sub-agents pick up new code.
 # These tests MOCK every ``systemctl`` subprocess call — they never shell out
 # to a real service manager.

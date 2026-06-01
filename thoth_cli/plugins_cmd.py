@@ -1,4 +1,4 @@
-"""``hermes plugins`` CLI subcommand — install, update, remove, and list plugins.
+"""``thoth plugins`` CLI subcommand — install, update, remove, and list plugins.
 
 Plugins are installed from Git repositories into ``~/.hermes/plugins/``.
 Supports full URLs and ``owner/repo`` shorthand (resolves to GitHub).
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 def _resolve_git_executable() -> Optional[str]:
     """Resolve a git binary for subprocess use when ``PATH`` may be minimal.
 
-    Matches other Hermes subprocess resolution: :func:`shutil.which` first,
+    Matches other Thoth subprocess resolution: :func:`shutil.which` first,
     then common Git for Windows install paths and POSIX defaults.
     """
     found = shutil.which("git")
@@ -408,14 +408,14 @@ def _install_plugin_core(identifier: str, *, force: bool) -> tuple[Path, dict, s
                 raise PluginOperationError(
                     f"Plugin '{plugin_name}' requires manifest_version {mv}, "
                     f"but this installer only supports up to {_SUPPORTED_MANIFEST_VERSION}. "
-                    f"Run {recommended_update_command()} to update Hermes.",
+                    f"Run {recommended_update_command()} to update Thoth.",
                 ) from None
 
         if target.exists():
             if not force:
                 raise PluginOperationError(
                     f"Plugin '{plugin_name}' already exists. Use force reinstall "
-                    f"or run `hermes plugins update {plugin_name}`.",
+                    f"or run `thoth plugins update {plugin_name}`.",
                 )
             shutil.rmtree(target)
 
@@ -478,7 +478,7 @@ def cmd_install(
     ).exists():
         console.print(
             f"[yellow]Warning:[/yellow] {installed_name} doesn't contain plugin.yaml "
-            f"or __init__.py. It may not be a valid Hermes plugin.",
+            f"or __init__.py. It may not be a valid Thoth plugin.",
         )
 
     _prompt_plugin_env_vars(installed_manifest, console)
@@ -511,7 +511,7 @@ def cmd_install(
     else:
         console.print(
             f"[dim]Plugin installed but not enabled. "
-            f"Run `hermes plugins enable {installed_name}` to activate.[/dim]",
+            f"Run `thoth plugins enable {installed_name}` to activate.[/dim]",
         )
 
     console.print("[dim]Restart the gateway for the plugin to take effect:[/dim]")
@@ -719,7 +719,7 @@ def _discover_all_plugins() -> list:
     one level deeper (depth capped at 2, same as the loader).
 
     The returned ``key`` is the path-derived registry key — the value the
-    user types into ``hermes plugins enable <key>``. For category-namespaced
+    user types into ``thoth plugins enable <key>``. For category-namespaced
     plugins that's ``<category>/<dirname>``; for flat plugins it's the
     manifest's ``name`` (or the directory name if the manifest omits it).
 
@@ -1583,7 +1583,7 @@ def dashboard_remove_user_plugin(name: str) -> dict[str, Any]:
 
 
 def plugins_command(args) -> None:
-    """Dispatch hermes plugins subcommands."""
+    """Dispatch thoth plugins subcommands."""
     action = getattr(args, "plugins_action", None)
 
     if action == "install":

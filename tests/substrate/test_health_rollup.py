@@ -1,4 +1,4 @@
-"""Phase G — `hermes substrate health` operator rollup."""
+"""Phase G — `thoth substrate health` operator rollup."""
 
 from __future__ import annotations
 

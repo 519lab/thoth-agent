@@ -199,8 +199,8 @@ def mask_secret(
 ) -> str:
     """Mask a secret for display, preserving ``head`` and ``tail`` characters.
 
-    Canonical helper for display-time redaction across Hermes — used by
-    ``hermes config``, ``hermes status``, ``hermes dump``, and anywhere
+    Canonical helper for display-time redaction across Thoth — used by
+    ``thoth config``, ``thoth status``, ``thoth dump``, and anywhere
     a secret needs to be shown truncated for debuggability while still
     keeping the bulk hidden.
 
@@ -324,7 +324,7 @@ def redact_sensitive_text(text: str, *, force: bool = False, code_file: bool = F
 
     Performance: each regex pattern is gated behind a cheap substring
     pre-check (e.g. ``"=" in text`` for ENV assignments, ``"://" in text``
-    for URLs, ``"eyJ" in text`` for JWTs). On a typical hermes log line
+    for URLs, ``"eyJ" in text`` for JWTs). On a typical thoth log line
     (no secrets) this drops the 13-pattern scan from ~5.6us to ~1.8us per
     record (-68%). The pre-checks are conservative — false positives
     still run the full regex, which then doesn't match. False negatives

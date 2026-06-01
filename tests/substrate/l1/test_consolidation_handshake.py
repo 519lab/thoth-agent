@@ -62,12 +62,12 @@ async def test_persist_extraction_writes_l1_and_returns_addresses(hermes_db_init
     result = ParserResult(
         entities=[
             ParsedEntity("Greg", "person", "maintainer", source_slice_ids=[sid], quote="Greg"),
-            ParsedEntity("Hermes", "project", "the agent", source_slice_ids=[sid], quote="Hermes"),
+            ParsedEntity("Thoth", "project", "the agent", source_slice_ids=[sid], quote="Thoth"),
         ],
         relationships=[
             ParsedRelationship(
-                "Greg", "person", "works_on", "Hermes", "project",
-                confidence=0.9, source_slice_ids=[sid], quote="Greg works on Hermes",
+                "Greg", "person", "works_on", "Thoth", "project",
+                confidence=0.9, source_slice_ids=[sid], quote="Greg works on Thoth",
             )
         ],
     )

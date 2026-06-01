@@ -1,6 +1,6 @@
-"""Substrate ↔ Hermes integration surface.
+"""Substrate ↔ Thoth integration surface.
 
-Hermes call sites import from ``substrate.events.hermes_hooks``::
+Thoth call sites import from ``substrate.events.hermes_hooks``::
 
     from substrate.events.hermes_hooks import on_user_message_async
     await on_user_message_async(session_id, source, text, t_event)

@@ -226,7 +226,7 @@ class TestFileDedup(unittest.TestCase):
     def test_write_allows_large_file_that_quotes_status_text(self, mock_ops):
         """Legitimate large content that happens to quote the status is allowed.
 
-        Hermes' own docs / SKILL.md files may legitimately mention the dedup
+        Thoth's own docs / SKILL.md files may legitimately mention the dedup
         message verbatim.  Only short, status-dominated writes are rejected —
         a normal file that contains the message as one line out of many must
         still write successfully.

@@ -94,7 +94,7 @@ TOOLSETS = {
             "Search X (Twitter) posts and threads via xAI's built-in "
             "x_search Responses tool. Available when xAI credentials are "
             "configured (SuperGrok OAuth or XAI_API_KEY). Off by default; "
-            "enable in `hermes tools` → X (Twitter) Search."
+            "enable in `thoth tools` → X (Twitter) Search."
         ),
         "tools": ["x_search"],
         "includes": []
@@ -123,7 +123,7 @@ TOOLSETS = {
             "Video generation tools. Single ``video_generate`` tool covers "
             "text-to-video (prompt only) and image-to-video (prompt + "
             "image_url) — the active backend auto-routes. Configure via "
-            "``hermes tools`` → Video Generation."
+            "``thoth tools`` → Video Generation."
         ),
         "tools": ["video_generate"],
         "includes": []
@@ -322,7 +322,7 @@ TOOLSETS = {
     },
     
     # ==========================================================================
-    # Full Hermes toolsets (CLI + messaging platforms)
+    # Full Thoth toolsets (CLI + messaging platforms)
     #
     # All platforms share the same core tools (including send_message,
     # which is gated on gateway running via its check_fn).
@@ -388,11 +388,11 @@ TOOLSETS = {
 
     "hermes-cron": {
         # Mirrors hermes-cli so cron's "default" toolset is the same set of
-        # core tools users see interactively — then `hermes tools` filters
+        # core tools users see interactively — then `thoth tools` filters
         # them down per the platform config. _DEFAULT_OFF_TOOLSETS (moa,
         # homeassistant) are excluded by _get_platform_tools() unless
         # the user explicitly enables them.
-        "description": "Default cron toolset - same core tools as hermes-cli; gated by `hermes tools`",
+        "description": "Default cron toolset - same core tools as hermes-cli; gated by `thoth tools`",
         "tools": _HERMES_CORE_TOOLS,
         "includes": []
     },
@@ -443,7 +443,7 @@ TOOLSETS = {
     },
 
     "hermes-email": {
-        "description": "Email bot toolset - interact with Hermes via email (IMAP/SMTP)",
+        "description": "Email bot toolset - interact with Thoth via email (IMAP/SMTP)",
         "tools": _HERMES_CORE_TOOLS,
         "includes": []
     },
@@ -516,7 +516,7 @@ TOOLSETS = {
     },
 
     "hermes-sms": {
-        "description": "SMS bot toolset - interact with Hermes via SMS (Twilio)",
+        "description": "SMS bot toolset - interact with Thoth via SMS (Twilio)",
         "tools": _HERMES_CORE_TOOLS,
         "includes": []
     },
@@ -625,11 +625,11 @@ def resolve_toolset(name: str, visited: Set[str] = None) -> List[str]:
     # Get toolset definition
     toolset = get_toolset(name)
     if not toolset:
-        # Auto-generate a toolset for plugin platforms (hermes-<name>).
+        # Auto-generate a toolset for plugin platforms (thoth-<name>).
         # Gives them _HERMES_CORE_TOOLS plus any tools the plugin registered
         # into a toolset matching the platform name.
-        if name.startswith("hermes-"):
-            platform_name = name[len("hermes-"):]
+        if name.startswith("thoth-"):
+            platform_name = name[len("thoth-"):]
             try:
                 from gateway.platform_registry import platform_registry
                 if platform_registry.is_registered(platform_name):

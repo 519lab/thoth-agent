@@ -1,13 +1,13 @@
 """Bitwarden Secrets Manager (`bws` CLI) integration.
 
-Hermes pulls API keys from Bitwarden Secrets Manager at process startup
+Thoth pulls API keys from Bitwarden Secrets Manager at process startup
 so they don't have to live in plaintext in ``~/.hermes/.env``.
 
 Design summary
 --------------
 
 * The ``bws`` binary is auto-installed into ``<hermes_home>/bin/bws`` on
-  first use.  Hermes pins one version (``_BWS_VERSION``) and downloads
+  first use.  Thoth pins one version (``_BWS_VERSION``) and downloads
   the matching asset from the official GitHub Releases page, verifying
   the SHA-256 against the release's published checksum file.
 * The access token is stored in ``~/.hermes/.env`` as
@@ -16,9 +16,9 @@ Design summary
   bootstrap secret — every other provider key can live in Bitwarden.
 * Pulling secrets is a single ``bws secret list <project_id>
   --output json`` call.  We cache the result in-process for
-  ``cache_ttl_seconds`` so back-to-back ``hermes`` invocations don't
+  ``cache_ttl_seconds`` so back-to-back ``thoth`` invocations don't
   hammer the API.
-* Failures NEVER block Hermes startup.  Missing binary, no network,
+* Failures NEVER block Thoth startup.  Missing binary, no network,
   expired token, etc. all emit a one-line warning and continue with
   whatever credentials ``.env`` already had.
 
@@ -112,7 +112,7 @@ class FetchResult:
 
 
 def _hermes_bin_dir() -> Path:
-    """Where Hermes stores its managed binaries.  Profile-aware."""
+    """Where Thoth stores its managed binaries.  Profile-aware."""
     from hermes_constants import get_hermes_home
 
     return get_hermes_home() / "bin"
@@ -196,7 +196,7 @@ def install_bws(*, force: bool = False) -> Path:
 
     Returns the path to the installed executable.  Raises on any
     failure (network, checksum, extraction) — callers in the auto-install
-    path catch these; the user-facing ``hermes secrets bitwarden setup``
+    path catch these; the user-facing ``thoth secrets bitwarden setup``
     surface lets them propagate so the wizard can show a clear error.
     """
     bin_dir = _hermes_bin_dir()
@@ -344,7 +344,7 @@ def fetch_bitwarden_secrets(
             "bws binary not available — auto-install failed and `bws` is "
             "not on PATH.  Install manually from "
             "https://github.com/bitwarden/sdk-sm/releases or re-run "
-            "`hermes secrets bitwarden setup`."
+            "`thoth secrets bitwarden setup`."
         )
 
     secrets, warnings = _run_bws_list(bws, access_token, project_id)
@@ -456,14 +456,14 @@ def apply_bitwarden_secrets(
     if not access_token:
         result.error = (
             f"secrets.bitwarden.enabled is true but {access_token_env} is "
-            "not set.  Run `hermes secrets bitwarden setup`."
+            "not set.  Run `thoth secrets bitwarden setup`."
         )
         return result
 
     if not project_id:
         result.error = (
             "secrets.bitwarden.project_id is empty.  "
-            "Run `hermes secrets bitwarden setup`."
+            "Run `thoth secrets bitwarden setup`."
         )
         return result
 
@@ -472,7 +472,7 @@ def apply_bitwarden_secrets(
     if binary is None:
         result.error = (
             "bws binary not available and auto-install is disabled.  "
-            "Run `hermes secrets bitwarden setup` to install."
+            "Run `thoth secrets bitwarden setup` to install."
         )
         return result
 

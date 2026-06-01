@@ -1107,7 +1107,7 @@ def test_has_spawnable_ready_false_when_only_terminal_lanes(kanban_home, monkeyp
 
 def test_has_spawnable_ready_true_when_real_profile_present(kanban_home, monkeypatch):
     """``has_spawnable_ready`` returns True as soon as ANY ready task
-    has an assignee that maps to a real Hermes profile — preserves the
+    has an assignee that maps to a real Thoth profile — preserves the
     real "stuck" signal when a daily/agent task is queued."""
     from hermes_cli import profiles
     monkeypatch.setattr(
@@ -1676,7 +1676,7 @@ def test_session_id_compose_with_tenant_filter(kanban_home):
 # Shared-board path resolution (issue #19348)
 #
 # The kanban board is a cross-profile coordination primitive: a worker
-# spawned with `hermes -p <profile>` must read/write the same kanban.db
+# spawned with `thoth -p <profile>` must read/write the same kanban.db
 # as the dispatcher that claimed the task. These tests exercise the
 # path-resolution layer directly and would have caught the regression
 # where `kanban_db_path()` resolved to the active profile's HERMES_HOME.
@@ -1751,7 +1751,7 @@ class TestSharedBoardPaths:
         dispatcher_ws = kb.workspaces_root()
         dispatcher_log = kb.worker_log_path("t_handoff")
 
-        # Worker's perspective (profile activated by `hermes -p coder`).
+        # Worker's perspective (profile activated by `thoth -p coder`).
         monkeypatch.setenv("HERMES_HOME", str(profile_home))
         worker_db = kb.kanban_db_path()
         worker_ws = kb.workspaces_root()
@@ -2111,7 +2111,7 @@ def test_unlink_tasks_triggers_recompute_ready(kanban_home):
     complete_task and unblock_task.
 
     Before the fix, child stayed 'todo' indefinitely after unlink; only the
-    next dispatcher tick or a manual 'hermes kanban recompute' would promote it.
+    next dispatcher tick or a manual 'thoth kanban recompute' would promote it.
     """
     with kb.connect() as conn:
         # A is done.
@@ -2263,10 +2263,10 @@ def test_migrate_add_optional_columns_tolerates_concurrent_migration(kanban_home
 # ---------------------------------------------------------------------------
 # Dispatcher spawn invocation — _resolve_hermes_argv()
 #
-# Workers spawned by the dispatcher must use a `hermes` invocation that does
+# Workers spawned by the dispatcher must use a `thoth` invocation that does
 # not depend on PATH being set up correctly. cron jobs, systemd User= services,
 # launchd jobs, and other detached processes routinely run with a stripped
-# $PATH that doesn't include the venv's bin/, so a bare `["hermes", ...]`
+# $PATH that doesn't include the venv's bin/, so a bare `["thoth", ...]`
 # spawn fails with FileNotFoundError and the task gets stuck. The resolver
 # prefers the PATH shim (familiar `ps` output) but falls back to the module
 # form so the spawn keeps working when PATH is missing the shim.
@@ -2274,14 +2274,14 @@ def test_migrate_add_optional_columns_tolerates_concurrent_migration(kanban_home
 
 
 def test_resolve_hermes_argv_prefers_path_shim(monkeypatch):
-    """When `hermes` is on PATH, use the shim — preserves familiar ps output."""
+    """When `thoth` is on PATH, use the shim — preserves familiar ps output."""
     import shutil
     import hermes_cli.kanban_db as kb
 
     monkeypatch.delenv("HERMES_BIN", raising=False)
-    monkeypatch.setattr(shutil, "which", lambda name: "/usr/local/bin/hermes")
+    monkeypatch.setattr(shutil, "which", lambda name: "/usr/local/bin/thoth")
     argv = kb._resolve_hermes_argv()
-    assert argv == ["/usr/local/bin/hermes"]
+    assert argv == ["/usr/local/bin/thoth"]
 
 
 def test_resolve_hermes_argv_absolutizes_relative_exe_shim(monkeypatch, tmp_path):
@@ -2441,7 +2441,7 @@ def test_resolve_hermes_argv_module_actually_runs():
         f"`{' '.join(argv)} --version` failed (rc={r.returncode}); "
         f"stderr={r.stderr[:200]!r}"
     )
-    assert "Hermes Agent" in r.stdout, f"unexpected output: {r.stdout[:200]!r}"
+    assert "Thoth Agent" in r.stdout, f"unexpected output: {r.stdout[:200]!r}"
 
 
 # ---------------------------------------------------------------------------

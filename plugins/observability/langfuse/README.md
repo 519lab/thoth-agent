@@ -1,16 +1,16 @@
 # Langfuse Observability Plugin
 
-This plugin ships bundled with Hermes but is **opt-in** — it only loads when
+This plugin ships bundled with Thoth but is **opt-in** — it only loads when
 you explicitly enable it.
 
 ## Enable
 
 ```bash
 pip install langfuse
-hermes plugins enable observability/langfuse
+thoth plugins enable observability/langfuse
 ```
 
-Or check the box in the interactive `hermes plugins` UI.
+Or check the box in the interactive `thoth plugins` UI.
 
 ## Required credentials
 
@@ -28,8 +28,8 @@ open.
 ## Verify
 
 ```bash
-hermes plugins list                 # observability/langfuse should show "enabled"
-hermes chat -q "hello"              # then check Langfuse for a "Hermes turn" trace
+thoth plugins list                 # observability/langfuse should show "enabled"
+thoth chat -q "hello"              # then check Langfuse for a "Thoth turn" trace
 ```
 
 ## Optional tuning
@@ -45,5 +45,5 @@ HERMES_LANGFUSE_DEBUG=true           # verbose plugin logging
 ## Disable
 
 ```bash
-hermes plugins disable observability/langfuse
+thoth plugins disable observability/langfuse
 ```

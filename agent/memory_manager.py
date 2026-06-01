@@ -267,7 +267,7 @@ class MemoryManager:
         Providers in ``_BUILTIN_PROVIDER_NAMES`` (``"builtin"`` from
         the in-process memory tool path, ``"substrate"`` from the
         Phase C SubstrateMemoryProvider) are always accepted — they
-        ship with Hermes and don't count against the one-external cap.
+        ship with Thoth and don't count against the one-external cap.
         Only **one** external (plugin) provider is allowed — a second
         attempt is rejected with a warning.
         """

@@ -261,7 +261,7 @@ class OpenAICodexImageGenProvider(ImageGenProvider):
             "tag": "gpt-image-2 via ChatGPT/Codex OAuth — no API key required",
             "env_vars": [],
             "post_setup_hint": (
-                "Sign in with `hermes auth codex` (or `hermes setup` → Codex) "
+                "Sign in with `thoth auth codex` (or `thoth setup` → Codex) "
                 "if you haven't already. No API key needed."
             ),
         }
@@ -287,7 +287,7 @@ class OpenAICodexImageGenProvider(ImageGenProvider):
             return error_response(
                 error=(
                     "No Codex/ChatGPT OAuth credentials available. Run "
-                    "`hermes auth codex` (or `hermes setup` → Codex) to sign in."
+                    "`thoth auth codex` (or `thoth setup` → Codex) to sign in."
                 ),
                 error_type="auth_required",
                 provider="openai-codex",

@@ -1,10 +1,10 @@
 """Regression tests for ``cmd_whatsapp`` env-var write ordering.
 
-Before the fix, ``hermes whatsapp`` wrote ``WHATSAPP_ENABLED=true`` at
+Before the fix, ``thoth whatsapp`` wrote ``WHATSAPP_ENABLED=true`` at
 step 2 — before npm install (step 4) and before QR pairing (step 6).
 If the user Ctrl+C'd at any later step, ``.env`` claimed WhatsApp was
 ready when the bridge still had no ``creds.json``.  Every subsequent
-``hermes gateway`` then paid a 30s bridge-bootstrap timeout and queued
+``thoth gateway`` then paid a 30s bridge-bootstrap timeout and queued
 WhatsApp for indefinite retries — looking like "the gateway is broken."
 
 The fix: only set ``WHATSAPP_ENABLED=true`` once pairing actually
@@ -85,7 +85,7 @@ def test_aborted_setup_does_not_enable_whatsapp(isolated_home, monkeypatch):
 
 
 def test_existing_pairing_skip_branch_enables_whatsapp(isolated_home, monkeypatch):
-    """User runs ``hermes whatsapp`` with an existing paired session and
+    """User runs ``thoth whatsapp`` with an existing paired session and
     chooses "no, keep my session" at the re-pair prompt.  The env var
     should be (re-)written to true so the gateway picks WhatsApp back up,
     even if the var was lost since the original pairing.

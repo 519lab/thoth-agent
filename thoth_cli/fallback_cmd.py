@@ -1,16 +1,16 @@
 """
-hermes fallback — manage the fallback provider chain.
+thoth fallback — manage the fallback provider chain.
 
 Fallback providers are tried in order when the primary model fails with
 rate-limit, overload, or connection errors. See:
 https://thoth.519lab.com/docs/user-guide/features/fallback-providers
 
 Subcommands:
-  hermes fallback [list]   Show the current fallback chain (default when no subcommand)
-  hermes fallback add      Pick provider + model via the same picker as `hermes model`,
+  thoth fallback [list]   Show the current fallback chain (default when no subcommand)
+  thoth fallback add      Pick provider + model via the same picker as `thoth model`,
                            then append the selection to the chain
-  hermes fallback remove   Pick an entry to delete from the chain
-  hermes fallback clear    Remove all fallback entries
+  thoth fallback remove   Pick an entry to delete from the chain
+  thoth fallback clear    Remove all fallback entries
 
 Storage: ``fallback_providers`` in ``~/.hermes/config.yaml`` (top-level, list of
 ``{provider, model, base_url?, api_mode?}`` dicts).  The legacy single-dict
@@ -105,7 +105,7 @@ def _restore_auth_active_provider(value: Any) -> None:
     except Exception:
         # Best-effort — if auth.json can't be restored, the user's primary
         # provider may have been deactivated by the picker.  They can re-run
-        # `hermes model` to fix it.  Don't fail the fallback add.
+        # `thoth model` to fix it.  Don't fail the fallback add.
         pass
 
 
@@ -154,7 +154,7 @@ def _describe_primary(config: Dict[str, Any]) -> Optional[str]:
 
 
 def cmd_fallback_add(args) -> None:
-    """Launch the same picker as `hermes model`, then append the selection to the chain."""
+    """Launch the same picker as `thoth model`, then append the selection to the chain."""
     from thoth_cli.main import _require_tty, select_provider_and_model
     from thoth_cli.config import load_config, save_config
 
@@ -347,7 +347,7 @@ def _numbered_pick(question: str, choices: List[str]) -> Optional[int]:
 # ---------------------------------------------------------------------------
 
 def cmd_fallback(args) -> None:
-    """Top-level dispatcher for ``hermes fallback [subcommand]``."""
+    """Top-level dispatcher for ``thoth fallback [subcommand]``."""
     sub = getattr(args, "fallback_command", None)
     if sub in {None, "", "list", "ls"}:
         cmd_fallback_list(args)

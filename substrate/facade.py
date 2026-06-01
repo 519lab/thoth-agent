@@ -4,7 +4,7 @@ Phase A spec §8: ``Substrate.boot()`` does the full lifecycle —
 Alembic-head check, partition maintenance, stream auto-registration
 (the 15 streams from spec §9), sub-agent task spawn (Sentinel +
 force-reject + partition-maintenance + conductor stub), and binds the
-``substrate.events.hermes_hooks`` module so Hermes call sites can emit
+``substrate.events.hermes_hooks`` module so Thoth call sites can emit
 perception.
 
 ``Substrate.from_pool()`` is the test seam — it constructs a Substrate
@@ -224,7 +224,7 @@ _SUBAGENT_SHUTDOWN_TIMEOUT = 2.0
 class Substrate:
     """Process-wide substrate handle.
 
-    Constructed via :meth:`boot` from Hermes startup. Tests use
+    Constructed via :meth:`boot` from Thoth startup. Tests use
     :meth:`from_pool` for deterministic unit-test setup without the
     full boot side effects.
     """
@@ -311,7 +311,7 @@ class Substrate:
            StubConductor (which holds state but doesn't tick).
         5b. (``start_recall_log``) Start the Phase C recall-log writer.
         6. (``bind_hooks``) Bind ``substrate.events.hermes_hooks`` to this
-           instance so Hermes call sites can emit perception via the hook
+           instance so Thoth call sites can emit perception via the hook
            surface.
 
         The three boolean kwargs let the caller pick a role. Most callers
@@ -320,7 +320,7 @@ class Substrate:
         is exposed for tests and one-shot scripts that need a custom mix.
 
         Returns the booted Substrate. Failures are surfaced — the
-        caller (Hermes startup) decides whether to abort the process
+        caller (Thoth startup) decides whether to abort the process
         or degrade gracefully.
         """
         import hermes_db
@@ -398,7 +398,7 @@ class Substrate:
         CLI, the ACP adapter, the cron runner. Streams are auto-
         registered, perception hooks get bound, and the recall log
         writer starts. **Sub-agent tick loops are NOT started** — those
-        run in a dedicated ``hermes substrate worker run`` subprocess
+        run in a dedicated ``thoth substrate worker run`` subprocess
         so they own their own event loop and asyncpg pool.
 
         Why the split: when sub-agents tick in a process that also
@@ -430,14 +430,14 @@ class Substrate:
     ) -> "Substrate":
         """Boot in **worker** mode (sub-agent tick loops only).
 
-        Use this exclusively from the ``hermes substrate worker run``
+        Use this exclusively from the ``thoth substrate worker run``
         subprocess. Streams auto-register (idempotent — safe even if
         the writer process already registered them), sub-agent tick
         loops start (Sentinel, Curator, ForceRejectWorker,
         PartitionMaintenanceWorker; Conductor instantiated), but:
 
         * **Perception hooks are NOT bound** — the worker subprocess
-          doesn't receive Hermes-side ``on_user_message`` / etc. calls.
+          doesn't receive Thoth-side ``on_user_message`` / etc. calls.
           The hook target stays bound to whatever writer process owns
           it (typically the gateway).
         * **Recall log writer NOT started** — the worker doesn't serve
@@ -464,7 +464,7 @@ class Substrate:
         ``hermes_db.close()`` which is owned by Hermes's own shutdown
         sequence (spec §8.2).
         """
-        # Unbind hooks first so any in-flight Hermes call site that
+        # Unbind hooks first so any in-flight Thoth call site that
         # reaches a hook during shutdown is a silent no-op rather than
         # racing against a partially-shut-down substrate.
         from substrate.events import hermes_hooks

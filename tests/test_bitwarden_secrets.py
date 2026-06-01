@@ -2,7 +2,7 @@
 
 We never hit GitHub or Bitwarden in tests — subprocess + urllib are
 mocked so the suite stays fast and offline-safe.  The "live" pull and
-binary download are exercised manually by `hermes secrets bitwarden
+binary download are exercised manually by `thoth secrets bitwarden
 setup` outside of pytest.
 """
 
@@ -41,7 +41,7 @@ def _reset_caches():
 
 @pytest.fixture
 def hermes_home(tmp_path, monkeypatch):
-    """Point Hermes at an isolated home directory."""
+    """Point Thoth at an isolated home directory."""
     home = tmp_path / ".hermes"
     home.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(home))

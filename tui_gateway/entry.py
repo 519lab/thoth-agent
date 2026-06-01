@@ -146,7 +146,7 @@ def _log_signal(signum: int, frame) -> None:
 #
 # SIGPIPE and SIGHUP don't exist on Windows; guard each installation
 # with hasattr so ``python -m tui_gateway.entry`` (spawned by
-# ``hermes --tui``) imports cleanly there.  SIGBREAK (Windows' Ctrl+Break)
+# ``thoth --tui``) imports cleanly there.  SIGBREAK (Windows' Ctrl+Break)
 # is installed when available as a weaker equivalent of SIGHUP.
 if hasattr(signal, "SIGPIPE"):
     signal.signal(signal.SIGPIPE, signal.SIG_IGN)

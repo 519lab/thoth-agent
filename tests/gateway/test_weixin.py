@@ -71,7 +71,7 @@ class TestWeixinFormatting:
     def test_format_message_does_not_wrap_long_code_block_lines(self):
         adapter = _make_adapter()
 
-        command = "hermes " + " ".join(f"--option-{idx}=value" for idx in range(30))
+        command = "thoth " + " ".join(f"--option-{idx}=value" for idx in range(30))
         content = f"```bash\n{command}\n```"
 
         assert adapter.format_message(content) == content

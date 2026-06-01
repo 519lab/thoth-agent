@@ -1,4 +1,4 @@
-"""Tests that `hermes model` always shows the model selection menu for custom
+"""Tests that `thoth model` always shows the model selection menu for custom
 providers, even when a model is already saved.
 
 Regression test for the bug where _model_flow_named_custom() returned
@@ -330,7 +330,7 @@ class TestCustomProviderModelSwitch:
     def test_bare_custom_current_provider_matches_env_base_url_before_first_fallback(
         self, config_home, monkeypatch
     ):
-        """`hermes model` must mark the custom provider matching model.base_url
+        """`thoth model` must mark the custom provider matching model.base_url
         as current instead of falling back to the first saved custom provider.
 
         Regression: with ``model.provider: custom`` and multiple

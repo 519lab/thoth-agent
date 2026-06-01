@@ -3,7 +3,7 @@
 Most methods take an explicit ``asyncpg.Connection`` so the caller
 controls transactions. Sentinel batches and force-reject sweeps run
 inside ``hermes_db.transaction()`` blocks; the L0 ``commit_slice``
-helper passes its own ``conn`` so a Hermes hook can join the caller's
+helper passes its own ``conn`` so a Thoth hook can join the caller's
 transaction (e.g. ``on_session_start`` shares a txn with the
 ``sessions`` INSERT in ``SessionDB.create_session``).
 
@@ -113,8 +113,8 @@ class SliceRepo:
         # Clock-skew safety: cap caller-supplied timestamps to PG's
         # ``now()`` inside the INSERT so the
         # ``event <= perception <= ingest`` CHECK constraints hold even
-        # when the Hermes host's wall clock drifts a few ms ahead of
-        # PG's wall clock. This is the realistic case when Hermes runs
+        # when the Thoth host's wall clock drifts a few ms ahead of
+        # PG's wall clock. This is the realistic case when Thoth runs
         # in a VM separate from the Postgres container.
         #
         # Formula (let E, P be caller's event_time_world,
@@ -481,7 +481,7 @@ class SliceRepo:
              last ``window_seconds`` (proxy for Curator + reinforcement
              activity)
 
-        Surfaced by ``hermes substrate curator pressure``. Phase
+        Surfaced by ``thoth substrate curator pressure``. Phase
         B doesn't consume this programmatically — it's an operator
         observability window into what Phase F's real Conductor will
         eventually read for opportunity-forecast inputs.

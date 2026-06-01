@@ -1,4 +1,4 @@
-"""Centralized logging setup for Hermes Agent.
+"""Centralized logging setup for Thoth Agent.
 
 Provides a single ``setup_logging()`` entry point that both the CLI and
 gateway call early in their startup path.  All log files live under
@@ -139,7 +139,7 @@ class _ComponentFilter(logging.Filter):
 
 
 # Logger name prefixes that belong to each component.
-# Used by _ComponentFilter and exposed for ``hermes logs --component``.
+# Used by _ComponentFilter and exposed for ``thoth logs --component``.
 COMPONENT_PREFIXES = {
     "gateway": ("gateway", "hermes_plugins"),
     "agent": ("agent", "run_agent", "model_tools", "batch_runner"),
@@ -162,7 +162,7 @@ def setup_logging(
     mode: Optional[str] = None,
     force: bool = False,
 ) -> Path:
-    """Configure the Hermes logging subsystem.
+    """Configure the Thoth logging subsystem.
 
     Safe to call multiple times — the second call is a no-op unless
     *force* is ``True``.
@@ -170,7 +170,7 @@ def setup_logging(
     Parameters
     ----------
     hermes_home
-        Override for the Hermes home directory.  Falls back to
+        Override for the Thoth home directory.  Falls back to
         ``get_hermes_home()`` (profile-aware).
     log_level
         Minimum level for the ``agent.log`` file handler.  Accepts any
@@ -299,7 +299,7 @@ class _ManagedRotatingFileHandler(RotatingFileHandler):
     """RotatingFileHandler that ensures group-writable perms in managed mode.
 
     In managed mode (NixOS), the stateDir uses setgid (2770) so new files
-    inherit the hermes group. However, both _open() (initial creation) and
+    inherit the thoth group. However, both _open() (initial creation) and
     doRollover() create files via open(), which uses the process umask —
     typically 0022, producing 0644. This subclass applies chmod 0660 after
     both operations so the gateway and interactive users can share log files.

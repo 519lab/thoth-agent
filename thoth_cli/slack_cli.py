@@ -1,15 +1,15 @@
-"""``hermes slack ...`` CLI subcommands.
+"""``thoth slack ...`` CLI subcommands.
 
-Today only ``hermes slack manifest`` is implemented — it generates the
+Today only ``thoth slack manifest`` is implemented — it generates the
 Slack app manifest JSON for registering every gateway command as a native
 Slack slash (``/btw``, ``/stop``, ``/model``, …) so users get the same
 first-class slash UX Discord and Telegram already have.
 
 Typical workflow::
 
-    $ hermes slack manifest > slack-manifest.json
+    $ thoth slack manifest > slack-manifest.json
     # or:
-    $ hermes slack manifest --write
+    $ thoth slack manifest --write
 
 Then paste the printed JSON into the Slack app config (Features → App
 Manifest → Edit) and click Save. Slack diffs the manifest and prompts
@@ -27,9 +27,9 @@ def _build_full_manifest(bot_name: str, bot_description: str) -> dict:
     """Build a full Slack manifest merging display info + our slash list.
 
     The slash-command list is always generated from ``COMMAND_REGISTRY`` so
-    it stays in sync with the rest of Hermes. Other manifest sections
+    it stays in sync with the rest of Thoth. Other manifest sections
     (display info, OAuth scopes, socket mode) are set to sensible defaults
-    for a Hermes deployment — users can tweak them in the Slack UI after
+    for a Thoth deployment — users can tweak them in the Slack UI after
     pasting.
     """
     from thoth_cli.commands import slack_app_manifest
@@ -44,7 +44,7 @@ def _build_full_manifest(bot_name: str, bot_description: str) -> dict:
         },
         "display_information": {
             "name": bot_name[:35],
-            "description": (bot_description or "Your Hermes agent on Slack")[:140],
+            "description": (bot_description or "Your Thoth agent on Slack")[:140],
             "background_color": "#1a1a2e",
         },
         "features": {
@@ -59,7 +59,7 @@ def _build_full_manifest(bot_name: str, bot_description: str) -> dict:
             },
             "slash_commands": slashes,
             "assistant_view": {
-                "assistant_description": "Chat with Hermes in threads and DMs.",
+                "assistant_description": "Chat with Thoth in threads and DMs.",
             },
         },
         "oauth_config": {
@@ -109,13 +109,13 @@ def slack_manifest_command(args) -> int:
     Flags (all parsed in ``hermes_cli/main.py``):
       --write [PATH]  Write to file instead of stdout (default path:
                       ``$HERMES_HOME/slack-manifest.json``)
-      --name NAME     Override the bot display name (default: "Hermes")
+      --name NAME     Override the bot display name (default: "Thoth")
       --description DESC  Override the bot description
       --slashes-only  Emit only the ``features.slash_commands`` array (for
                       merging into an existing manifest manually)
     """
-    name = getattr(args, "name", None) or "Hermes"
-    description = getattr(args, "description", None) or "Your Hermes agent on Slack"
+    name = getattr(args, "name", None) or "Thoth"
+    description = getattr(args, "description", None) or "Your Thoth agent on Slack"
 
     if getattr(args, "slashes_only", False):
         from thoth_cli.commands import slack_app_manifest
@@ -143,7 +143,7 @@ def slack_manifest_command(args) -> int:
         print(f"Slack manifest written to: {target}", file=sys.stderr)
         print(
             "\nNext steps:\n"
-            "  1. Open https://api.slack.com/apps and pick your Hermes app\n"
+            "  1. Open https://api.slack.com/apps and pick your Thoth app\n"
             "     (or create a new one: Create New App → From an app manifest).\n"
             f"  2. Features → App Manifest → paste the contents of\n"
             f"     {target}\n"
@@ -151,7 +151,7 @@ def slack_manifest_command(args) -> int:
             "     slash commands changed.\n"
             "  4. Make sure Socket Mode is enabled and you have a bot token\n"
             "     (xoxb-...) and app token (xapp-...) configured via\n"
-            "     `hermes setup`.\n",
+            "     `thoth setup`.\n",
             file=sys.stderr,
         )
     else:

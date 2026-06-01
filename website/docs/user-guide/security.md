@@ -6,7 +6,7 @@ description: "Security model, dangerous command approval, user authorization, co
 
 # Security
 
-Hermes Agent is designed with a defense-in-depth security model. This page covers every security boundary — from command approval to container isolation to user authorization on messaging platforms.
+Thoth Agent is designed with a defense-in-depth security model. This page covers every security boundary — from command approval to container isolation to user authorization on messaging platforms.
 
 ## Overview
 
@@ -22,7 +22,7 @@ The security model has seven layers:
 
 ## Dangerous Command Approval
 
-Before executing any command, Hermes checks it against a curated list of dangerous patterns. If a match is found, the user must explicitly approve it.
+Before executing any command, Thoth checks it against a curated list of dangerous patterns. If a match is found, the user must explicitly approve it.
 
 ### Approval Modes
 
@@ -48,7 +48,7 @@ Setting `approvals.mode: off` disables all safety prompts. Use only in trusted e
 
 YOLO mode bypasses **all** dangerous command approval prompts for the current session. It can be activated three ways:
 
-1. **CLI flag**: Start a session with `hermes --yolo` or `hermes chat --yolo`
+1. **CLI flag**: Start a session with `thoth --yolo` or `thoth chat --yolo`
 2. **Slash command**: Type `/yolo` during a session to toggle it on/off
 3. **Environment variable**: Set `HERMES_YOLO_MODE=1`
 
@@ -64,7 +64,7 @@ The `/yolo` command is a **toggle** — each use flips the mode on or off:
 
 YOLO mode is available in both CLI and gateway sessions. Internally, it sets the `HERMES_YOLO_MODE` environment variable which is checked before every command execution.
 
-When YOLO is active, Hermes shows two persistent visual reminders so it's hard to forget that approval prompts are bypassed:
+When YOLO is active, Thoth shows two persistent visual reminders so it's hard to forget that approval prompts are bypassed:
 
 - A red banner line at session start when YOLO is already active: `⚠ YOLO mode — all approval prompts bypassed`. Hidden when YOLO is off so the default banner stays uncluttered.
 - A `⚠ YOLO` fragment in the status bar across all width tiers, updated live as you toggle YOLO on or off (rich-text renderer and plain-text fallback).
@@ -77,7 +77,7 @@ For destructive session slash commands (`/clear`, `/new` / `/reset`, `/undo`, `/
 
 ### Hardline Blocklist (Always-On Floor)
 
-Some commands are so catastrophic — irreversible filesystem wipes, fork bombs, direct block-device writes — that Hermes refuses to run them **regardless** of:
+Some commands are so catastrophic — irreversible filesystem wipes, fork bombs, direct block-device writes — that Thoth refuses to run them **regardless** of:
 
 - `--yolo` / `/yolo` toggled on
 - `approvals.mode: off`
@@ -140,7 +140,7 @@ The following patterns trigger approval prompts (defined in `tools/approval.py`)
 | `find -exec rm` / `find -delete` | Find with destructive actions |
 | `cp`/`mv`/`install` to `/etc/` | Copy/move file into system config |
 | `sed -i` / `sed --in-place` on `/etc/` | In-place edit of system config |
-| `pkill`/`killall` hermes/gateway | Self-termination prevention |
+| `pkill`/`killall` thoth/gateway | Self-termination prevention |
 | `gateway run` with `&`/`disown`/`nohup`/`setsid` | Prevents starting gateway outside service manager |
 
 :::info
@@ -190,12 +190,12 @@ command_allowlist:
 These patterns are loaded at startup and silently approved in all future sessions.
 
 :::tip
-Use `hermes config edit` to review or remove patterns from your permanent allowlist.
+Use `thoth config edit` to review or remove patterns from your permanent allowlist.
 :::
 
 ## User Authorization (Gateway)
 
-When running the messaging gateway, Hermes controls who can interact with the bot through a layered authorization system.
+When running the messaging gateway, Thoth controls who can interact with the bot through a layered authorization system.
 
 ### Authorization Check Order
 
@@ -241,13 +241,13 @@ or configure platform allowlists (e.g., TELEGRAM_ALLOWED_USERS=your_id).
 
 ### DM Pairing System
 
-For more flexible authorization, Hermes includes a code-based pairing system. Instead of requiring user IDs upfront, unknown users receive a one-time pairing code that the bot owner approves via the CLI.
+For more flexible authorization, Thoth includes a code-based pairing system. Instead of requiring user IDs upfront, unknown users receive a one-time pairing code that the bot owner approves via the CLI.
 
 **How it works:**
 
 1. An unknown user sends a DM to the bot
 2. The bot replies with an 8-character pairing code
-3. The bot owner runs `hermes pairing approve <platform> <code>` on the CLI
+3. The bot owner runs `thoth pairing approve <platform> <code>` on the CLI
 4. The user is permanently approved for that platform
 
 Control how unauthorized direct messages are handled in `~/.hermes/config.yaml`:
@@ -280,16 +280,16 @@ whatsapp:
 
 ```bash
 # List pending and approved users
-hermes pairing list
+thoth pairing list
 
 # Approve a pairing code
-hermes pairing approve telegram ABC12DEF
+thoth pairing approve telegram ABC12DEF
 
 # Revoke a user's access
-hermes pairing revoke telegram 123456789
+thoth pairing revoke telegram 123456789
 
 # Clear all pending codes
-hermes pairing clear-pending
+thoth pairing clear-pending
 ```
 
 **Storage:** Pairing data is stored in `~/.hermes/pairing/` with per-platform JSON files:
@@ -299,7 +299,7 @@ hermes pairing clear-pending
 
 ## Container Isolation
 
-When using the `docker` terminal backend, Hermes applies strict security hardening to every container.
+When using the `docker` terminal backend, Thoth applies strict security hardening to every container.
 
 ### Docker Security Flags
 
@@ -408,7 +408,7 @@ required_credential_files:
     description: Google OAuth2 client credentials
 ```
 
-When loaded, Hermes checks if these files exist in the active profile's `HERMES_HOME` and registers them for mounting:
+When loaded, Thoth checks if these files exist in the active profile's `HERMES_HOME` and registers them for mounting:
 
 - **Docker**: Read-only bind mounts (`-v host:container:ro`)
 - **Modal**: Mounted at sandbox creation + synced before each command (handles mid-session OAuth setup)
@@ -430,7 +430,7 @@ Paths are relative to `~/.hermes/`. Files are mounted to `/root/.hermes/` inside
 | Sandbox | Default Filter | Passthrough Override |
 |---------|---------------|---------------------|
 | **execute_code** | Blocks vars containing `KEY`, `TOKEN`, `SECRET`, `PASSWORD`, `CREDENTIAL`, `PASSWD`, `AUTH` in name; only allows safe-prefix vars through | ✅ Passthrough vars bypass both checks |
-| **terminal** (local) | Blocks explicit Hermes infrastructure vars (provider keys, gateway tokens, tool API keys) | ✅ Passthrough vars bypass the blocklist |
+| **terminal** (local) | Blocks explicit Thoth infrastructure vars (provider keys, gateway tokens, tool API keys) | ✅ Passthrough vars bypass the blocklist |
 | **terminal** (Docker) | No host env vars by default | ✅ Passthrough vars + `docker_forward_env` forwarded via `-e` |
 | **terminal** (Modal) | No host env/files by default | ✅ Credential files mounted; env passthrough via sync |
 | **MCP** | Blocks everything except safe system vars + explicitly configured `env` | ❌ Not affected by passthrough (use MCP `env` config instead) |
@@ -441,7 +441,7 @@ Paths are relative to `~/.hermes/`. Files are mounted to `/root/.hermes/` inside
 - Credential files are mounted **read-only** into Docker containers
 - Skills Guard scans skill content for suspicious env access patterns before installation
 - Missing/unset vars are never registered (you can't leak what doesn't exist)
-- Hermes infrastructure secrets (provider API keys, gateway tokens) should never be added to `env_passthrough` — they have dedicated mechanisms
+- Thoth infrastructure secrets (provider API keys, gateway tokens) should never be added to `env_passthrough` — they have dedicated mechanisms
 
 ## MCP Credential Handling
 
@@ -490,7 +490,7 @@ security:
       - "*.internal.company.com"
       - "admin.example.com"
     shared_files:
-      - "/etc/hermes/blocked-sites.txt"
+      - "/etc/thoth/blocked-sites.txt"
 ```
 
 When a blocked URL is requested, the tool returns an error explaining the domain is blocked by policy. The blocklist is enforced across `web_search`, `web_extract`, `browser_navigate`, and all URL-capable tools.
@@ -525,7 +525,7 @@ The host-substring guard (which blocks lookalike Unicode domain tricks even when
 
 ### Tirith Pre-Exec Security Scanning
 
-Hermes integrates [tirith](https://github.com/sheeki03/tirith) for content-level command scanning before execution. Tirith detects threats that pattern matching alone misses:
+Thoth integrates [tirith](https://github.com/sheeki03/tirith) for content-level command scanning before execution. Tirith detects threats that pattern matching alone misses:
 
 - Homograph URL spoofing (internationalized domain attacks)
 - Pipe-to-interpreter patterns (`curl | bash`, `wget | sh`)
@@ -544,7 +544,7 @@ security:
 
 When `tirith_fail_open` is `true` (default), commands proceed if tirith is not installed or times out. Set to `false` in high-security environments to block commands when tirith is unavailable.
 
-Tirith ships prebuilt binaries for Linux (x86_64 / aarch64) and macOS (x86_64 / arm64). On platforms with no prebuilt binary (Windows, etc.), tirith is silently skipped — pattern-matching guards still run, and the CLI does not surface an "unavailable" banner. To use tirith on Windows, run Hermes under WSL.
+Tirith ships prebuilt binaries for Linux (x86_64 / aarch64) and macOS (x86_64 / arm64). On platforms with no prebuilt binary (Windows, etc.), tirith is silently skipped — pattern-matching guards still run, and the CLI does not surface an "unavailable" banner. To use tirith on Windows, run Thoth under WSL.
 
 Tirith's verdict integrates with the approval flow: safe commands pass through, while both suspicious and blocked commands trigger user approval with the full tirith findings (severity, title, description, safer alternatives). Users can approve or deny — the default choice is deny to keep unattended scenarios secure.
 
@@ -577,7 +577,7 @@ Blocked files show a warning:
 7. **Set `MESSAGING_CWD`** — don't let the agent operate from sensitive directories
 8. **Run as non-root** — never run the gateway as root
 9. **Monitor logs** — check `~/.hermes/logs/` for unauthorized access attempts
-10. **Keep updated** — run `hermes update` regularly for security patches
+10. **Keep updated** — run `thoth update` regularly for security patches
 
 ### Securing API Keys
 
@@ -602,7 +602,7 @@ terminal:
 ```bash
 # ~/.hermes/.env
 TERMINAL_SSH_HOST=agent-worker.local
-TERMINAL_SSH_USER=hermes
+TERMINAL_SSH_USER=thoth
 TERMINAL_SSH_KEY=~/.ssh/hermes_agent_key
 ```
 
@@ -610,18 +610,18 @@ The SSH connection details live in `.env` (not `config.yaml`) so they aren't che
 
 ## Supply-chain advisory checking
 
-Hermes ships with a built-in advisory scanner that flags Python packages in the active venv that match a curated catalog of known-compromised versions (supply-chain worms like the May 2026 `mistralai 2.4.6` poisoning). Implementation lives in `hermes_cli/security_advisories.py`.
+Thoth ships with a built-in advisory scanner that flags Python packages in the active venv that match a curated catalog of known-compromised versions (supply-chain worms like the May 2026 `mistralai 2.4.6` poisoning). Implementation lives in `hermes_cli/security_advisories.py`.
 
 How it runs:
 
-- **CLI startup banner.** A one-line warning is printed if any advisory matches, with a pointer to `hermes doctor` for the full remediation.
-- **`hermes doctor`.** Surfaces every active advisory with version specifics and 2-4 step remediation instructions.
+- **CLI startup banner.** A one-line warning is printed if any advisory matches, with a pointer to `thoth doctor` for the full remediation.
+- **`thoth doctor`.** Surfaces every active advisory with version specifics and 2-4 step remediation instructions.
 - **Gateway startup.** Logged to `gateway.log`; the first interactive message gets a short operator banner.
 
 Each advisory carries a stable id. Once you have read and acted on it you can dismiss it for good:
 
 ```bash
-hermes doctor --ack <advisory-id>
+thoth doctor --ack <advisory-id>
 ```
 
 The ack is persisted to `config.security.acked_advisories` and survives restart. Old advisories are intentionally **not** removed from the catalog — leaving them in place keeps fresh installs warned about historically poisoned versions that might still be cached in a private mirror.
@@ -630,7 +630,7 @@ The check itself is stdlib-only and runs from one `importlib.metadata.version()`
 
 ### Lazy install of optional dependencies
 
-Many features (Mistral TTS, ElevenLabs, Honcho memory, Bedrock, Slack, Matrix, …) depend on Python packages that not every user needs. Hermes installs these **lazily** on first use rather than eagerly under `hermes-agent[all]`. The implementation lives in `tools/lazy_deps.py`.
+Many features (Mistral TTS, ElevenLabs, Honcho memory, Bedrock, Slack, Matrix, …) depend on Python packages that not every user needs. Thoth installs these **lazily** on first use rather than eagerly under `hermes-agent[all]`. The implementation lives in `tools/lazy_deps.py`.
 
 The trade-off this fixes:
 
@@ -641,7 +641,7 @@ How it works:
 
 1. A backend module calls `ensure("feature.name")` at the top of its first-import path.
 2. If the deps are missing, `ensure` checks `security.allow_lazy_installs` in `config.yaml` (default `true`) and runs a venv-scoped `pip install` for the allowlisted specs.
-3. If the install fails or the user has disabled lazy installs, the call raises `FeatureUnavailable` with the actual pip stderr and a pointer at `hermes tools`.
+3. If the install fails or the user has disabled lazy installs, the call raises `FeatureUnavailable` with the actual pip stderr and a pointer at `thoth tools`.
 
 Security guarantees enforced by `tools/lazy_deps.py`:
 
@@ -661,4 +661,4 @@ security:
   allow_lazy_installs: false
 ```
 
-When disabled, backends that need optional deps will tell the user to run the install manually (`pip install …`) or pick a different backend via `hermes tools`.
+When disabled, backends that need optional deps will tell the user to run the install manually (`pip install …`) or pick a different backend via `thoth tools`.

@@ -1,4 +1,4 @@
-"""Shared constants for Hermes Agent.
+"""Shared constants for Thoth Agent.
 
 Import-safe module with no dependencies — can be imported from anywhere
 without risk of circular imports.
@@ -18,7 +18,7 @@ _HERMES_HOME_OVERRIDE: ContextVar[str | object] = ContextVar(
 
 
 def set_hermes_home_override(path: str | Path | None) -> Token:
-    """Set a context-local Hermes home override and return its reset token.
+    """Set a context-local Thoth home override and return its reset token.
 
     This is for in-process, per-task scoping.  It deliberately does not mutate
     ``os.environ`` because that is shared by every thread in the process.
@@ -28,12 +28,12 @@ def set_hermes_home_override(path: str | Path | None) -> Token:
 
 
 def reset_hermes_home_override(token: Token) -> None:
-    """Restore the previous context-local Hermes home override."""
+    """Restore the previous context-local Thoth home override."""
     _HERMES_HOME_OVERRIDE.reset(token)
 
 
 def get_hermes_home_override() -> str | None:
-    """Return the active context-local Hermes home override, if any."""
+    """Return the active context-local Thoth home override, if any."""
     override = _HERMES_HOME_OVERRIDE.get()
     if override is _UNSET or not override:
         return None
@@ -67,7 +67,7 @@ def _disk_default_home() -> Path:
 
 
 def get_hermes_home() -> Path:
-    """Return the Hermes/Thoth home directory.
+    """Return the Thoth/Thoth home directory.
 
     Resolution (rename Phase 3): context override → ``THOTH_HOME`` env →
     ``HERMES_HOME`` env → ``~/.thoth`` if present → ``~/.hermes`` if present →
@@ -136,7 +136,7 @@ def get_hermes_home() -> Path:
 
 
 def get_default_hermes_root() -> Path:
-    """Return the root Hermes directory for profile-level operations.
+    """Return the root Thoth directory for profile-level operations.
 
     In standard deployments this is ``~/.hermes``.
 
@@ -182,7 +182,7 @@ def get_default_hermes_root() -> Path:
 def _get_packaged_data_dir(name: str) -> Path | None:
     """Return an installed data-files directory if one exists.
 
-    Used to discover bundled skills/optional-skills when Hermes is installed
+    Used to discover bundled skills/optional-skills when Thoth is installed
     from a wheel that emitted them via setuptools data_files.
     """
     candidates = []
@@ -234,7 +234,7 @@ def get_bundled_skills_dir(default: Path | None = None) -> Path:
 
 
 def get_hermes_dir(new_subpath: str, old_name: str) -> Path:
-    """Resolve a Hermes subdirectory with backward compatibility.
+    """Resolve a Thoth subdirectory with backward compatibility.
 
     New installs get the consolidated layout (e.g. ``cache/images``).
     Existing installs that already have the old path (e.g. ``image_cache``)
@@ -299,7 +299,7 @@ def get_subprocess_home() -> str | None:
 
     When ``{HERMES_HOME}/home/`` exists on disk, subprocesses should use it
     as ``HOME`` so system tools (git, ssh, gh, npm …) write their configs
-    inside the Hermes data directory instead of the OS-level ``/root`` or
+    inside the Thoth data directory instead of the OS-level ``/root`` or
     ``~/``.  This provides:
 
     * **Docker persistence** — tool configs land inside the persistent volume.

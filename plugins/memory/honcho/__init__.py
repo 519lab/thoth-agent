@@ -310,7 +310,7 @@ class HonchoMemoryProvider(MemoryProvider):
                 self._context_cadence = int(raw.get("contextCadence", 1))
                 # Backwards-compat: unset dialecticCadence falls back to 1
                 # (every turn) so existing honcho.json configs without the key
-                # behave as they did before. New setups via `hermes honcho setup`
+                # behave as they did before. New setups via `thoth honcho setup`
                 # get dialecticCadence=2 written explicitly by the wizard.
                 self._dialectic_cadence = int(raw.get("dialecticCadence", 1))
                 self._dialectic_depth = max(1, min(cfg.dialectic_depth, 3))
@@ -381,7 +381,7 @@ class HonchoMemoryProvider(MemoryProvider):
         self._session_initialized = True
 
         # ----- B6: Memory file migration (one-time, for new sessions) -----
-        # Skip under per-session strategy: every Hermes run creates a fresh
+        # Skip under per-session strategy: every Thoth run creates a fresh
         # Honcho session by design, so uploading MEMORY.md/USER.md/SOUL.md to
         # each one would flood the backend with short-lived duplicates instead
         # of performing a one-time migration.

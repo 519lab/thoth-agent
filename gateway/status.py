@@ -165,7 +165,7 @@ def _read_process_cmdline(pid: int) -> Optional[str]:
 
 
 def _looks_like_gateway_process(pid: int) -> bool:
-    """Return True when the live PID still looks like the Hermes gateway."""
+    """Return True when the live PID still looks like the Thoth gateway."""
     cmdline = _read_process_cmdline(pid)
     if not cmdline:
         return False
@@ -175,6 +175,7 @@ def _looks_like_gateway_process(pid: int) -> bool:
         "thoth_cli/main.py gateway",
         "hermes_cli.main gateway",
         "hermes_cli/main.py gateway",
+        "thoth gateway",
         "hermes gateway",
         "hermes-gateway",
         "gateway/run.py",
@@ -198,6 +199,7 @@ def _record_looks_like_gateway(record: dict[str, Any]) -> bool:
         "thoth_cli/main.py gateway",
         "hermes_cli.main gateway",
         "hermes_cli/main.py gateway",
+        "thoth gateway",
         "hermes gateway",
         "gateway/run.py",
     )

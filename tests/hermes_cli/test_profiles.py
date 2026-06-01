@@ -116,7 +116,7 @@ class TestValidateProfileName:
 
     @pytest.mark.parametrize("name", ["hermes", "test", "tmp", "root", "sudo"])
     def test_reserved_names_rejected(self, name):
-        """Reserved names collide with the Hermes install itself or with
+        """Reserved names collide with the Thoth install itself or with
         common system binaries — reject them at validate time so
         create/install/rename all share one gate."""
         with pytest.raises(ValueError, match="reserved"):
@@ -315,7 +315,7 @@ class TestCreateProfile:
 # ===================================================================
 
 class TestNoSkillsOptOut:
-    """Tests for `hermes profile create --no-skills` and the opt-out marker."""
+    """Tests for `thoth profile create --no-skills` and the opt-out marker."""
 
     def test_no_skills_writes_marker_and_skips_seeding(self, profile_env):
         profile_dir = create_profile("orchestrator", no_alias=True, no_skills=True)
@@ -353,7 +353,7 @@ class TestNoSkillsOptOut:
 
     def test_seed_profile_skills_respects_marker(self, profile_env):
         """seed_profile_skills() must no-op on opted-out profiles even when
-        called directly (e.g. by `hermes update`'s all-profile sync loop)."""
+        called directly (e.g. by `thoth update`'s all-profile sync loop)."""
         profile_dir = create_profile("orchestrator", no_alias=True, no_skills=True)
 
         # Call seed_profile_skills() directly — it should NOT invoke subprocess,

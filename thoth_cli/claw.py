@@ -1,13 +1,13 @@
-"""hermes claw — OpenClaw migration commands.
+"""thoth claw — OpenClaw migration commands.
 
 Usage:
-    hermes claw migrate              # Preview then migrate (always shows preview first)
-    hermes claw migrate --dry-run    # Preview only, no changes
-    hermes claw migrate --yes        # Skip confirmation prompt
-    hermes claw migrate --preset full --overwrite --migrate-secrets  # Full run w/ secrets
-    hermes claw migrate --no-backup  # Skip pre-migration snapshot
-    hermes claw cleanup              # Archive leftover OpenClaw directories
-    hermes claw cleanup --dry-run    # Preview what would be archived
+    thoth claw migrate              # Preview then migrate (always shows preview first)
+    thoth claw migrate --dry-run    # Preview only, no changes
+    thoth claw migrate --yes        # Skip confirmation prompt
+    thoth claw migrate --preset full --overwrite --migrate-secrets  # Full run w/ secrets
+    thoth claw migrate --no-backup  # Skip pre-migration snapshot
+    thoth claw cleanup              # Archive leftover OpenClaw directories
+    thoth claw cleanup --dry-run    # Preview what would be archived
 """
 
 import importlib.util
@@ -135,7 +135,7 @@ def _warn_if_openclaw_running(auto_yes: bool) -> None:
     print_info(
         "Messaging platforms (Telegram, Discord, Slack) only allow one "
         "active session per bot token. If you continue, both OpenClaw and "
-        "Hermes may try to use the same token, causing disconnects."
+        "Thoth may try to use the same token, causing disconnects."
     )
     print_info("Recommendation: stop OpenClaw before migrating.")
     print()
@@ -150,7 +150,7 @@ def _warn_if_openclaw_running(auto_yes: bool) -> None:
 
 
 def _warn_if_gateway_running(auto_yes: bool) -> None:
-    """Check if a Hermes gateway is running with connected platforms.
+    """Check if a Thoth gateway is running with connected platforms.
 
     Migrating bot tokens while the gateway is polling will cause conflicts
     (e.g. Telegram 409 "terminated by other getUpdates request"). Warn the
@@ -170,7 +170,7 @@ def _warn_if_gateway_running(auto_yes: bool) -> None:
 
     print()
     print_error(
-        "Hermes gateway is running with active connections: "
+        "Thoth gateway is running with active connections: "
         + ", ".join(connected)
     )
     print_info(
@@ -294,7 +294,7 @@ def _archive_directory(source_dir: Path, dry_run: bool = False) -> Path:
 
 
 def claw_command(args):
-    """Route hermes claw subcommands."""
+    """Route thoth claw subcommands."""
     action = getattr(args, "claw_action", None)
 
     if action == "migrate":
@@ -305,14 +305,14 @@ def claw_command(args):
         print(f"Usage: {cli_name()} claw <command> [options]")
         print()
         print("Commands:")
-        print("  migrate          Migrate settings from OpenClaw to Hermes")
+        print("  migrate          Migrate settings from OpenClaw to Thoth")
         print("  cleanup          Archive leftover OpenClaw directories after migration")
         print()
         print(f"Run '{cli_name()} claw <command> --help' for options.")
 
 
 def _cmd_migrate(args):
-    """Run the OpenClaw → Hermes migration."""
+    """Run the OpenClaw → Thoth migration."""
     # Check current and legacy OpenClaw directories
     explicit_source = getattr(args, "source", None)
     if explicit_source:
@@ -349,7 +349,7 @@ def _cmd_migrate(args):
     )
     print(
         color(
-            "│          ⚕ Hermes — OpenClaw Migration                 │",
+            "│          ⚕ Thoth — OpenClaw Migration                 │",
             Colors.MAGENTA,
         )
     )
@@ -399,7 +399,7 @@ def _cmd_migrate(args):
     # active will cause conflicts (e.g. Telegram 409).
     _warn_if_openclaw_running(auto_yes)
 
-    # Check if a Hermes gateway is running with connected platforms.
+    # Check if a Thoth gateway is running with connected platforms.
     _warn_if_gateway_running(auto_yes)
 
     # Ensure config.yaml exists before migration tries to read it
@@ -499,11 +499,11 @@ def _cmd_migrate(args):
             print_info("Migration cancelled.")
             return
 
-    # ── Phase 2b: Pre-apply backup of the Hermes home ─────────
+    # ── Phase 2b: Pre-apply backup of the Thoth home ─────────
     # Delegates to hermes_cli.backup.create_pre_migration_backup(), which
     # shares implementation with the pre-update backup (same exclusion
     # rules, same SQLite safe-copy, zip format) so the archive is
-    # restorable with `hermes import`.  Mirrors OpenClaw's
+    # restorable with `thoth import`.  Mirrors OpenClaw's
     # createPreMigrationBackup posture — one atomic restore point before
     # any mutation, auto-pruned to the last 5 pre-migration zips.
     backup_archive: Optional[Path] = None
@@ -520,7 +520,7 @@ def _cmd_migrate(args):
             print()
             print_error(f"Could not create pre-migration backup: {e}")
             print_info(
-                "Re-run with --no-backup to skip, or free up disk space under the Hermes home."
+                "Re-run with --no-backup to skip, or free up disk space under the Thoth home."
             )
             logger.debug("Pre-migration backup error", exc_info=True)
             return
@@ -553,7 +553,7 @@ def _cmd_migrate(args):
 
     # Source directory is left untouched — archiving is not the migration
     # tool's responsibility.  Users who want to clean up can run
-    # 'hermes claw cleanup' separately.
+    # 'thoth claw cleanup' separately.
 
 
 def _cmd_cleanup(args):
@@ -575,7 +575,7 @@ def _cmd_cleanup(args):
     )
     print(
         color(
-            "│          ⚕ Hermes — OpenClaw Cleanup                   │",
+            "│          ⚕ Thoth — OpenClaw Cleanup                   │",
             Colors.MAGENTA,
         )
     )

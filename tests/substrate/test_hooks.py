@@ -311,7 +311,7 @@ async def test_on_session_start_shares_txn(booted_substrate):
 @pytest.mark.asyncio
 async def test_hook_swallows_errors(booted_substrate, monkeypatch):
     """When the underlying ``commit_slice`` raises, the hook logs and
-    returns None — the Hermes caller MUST NOT see the exception.
+    returns None — the Thoth caller MUST NOT see the exception.
     """
     import substrate.events.hermes_hooks as mod
 

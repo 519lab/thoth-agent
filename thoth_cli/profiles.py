@@ -1,5 +1,5 @@
 """
-Profile management for multiple isolated Hermes instances.
+Profile management for multiple isolated Thoth instances.
 
 Each profile is a fully independent HERMES_HOME directory with its own
 config.yaml, .env, memory, sessions, skills, gateway, cron, and logs.
@@ -10,13 +10,13 @@ zero migration needed.
 
 Usage::
 
-    hermes profile create coder          # fresh profile + bundled skills
-    hermes profile create coder --clone  # also copy config, .env, SOUL.md, skills
-    hermes profile create coder --clone-all  # full copy of source profile
+    thoth profile create coder          # fresh profile + bundled skills
+    thoth profile create coder --clone  # also copy config, .env, SOUL.md, skills
+    thoth profile create coder --clone-all  # full copy of source profile
     coder chat                           # use via wrapper alias
-    hermes -p coder chat                 # or via flag
-    hermes profile use coder             # set as sticky default
-    hermes profile delete coder          # remove profile + alias + service
+    thoth -p coder chat                 # or via flag
+    thoth profile use coder             # set as sticky default
+    thoth profile delete coder          # remove profile + alias + service
 """
 
 import contextlib
@@ -100,11 +100,11 @@ _CLONE_ALL_DEFAULT_EXCLUDE_ROOT: frozenset[str] = frozenset({
     "node_modules",
 })
 
-# Marker file written by `hermes profile create --no-skills`.  When present in
-# a profile's root, callers of seed_profile_skills() (fresh-create, `hermes
+# Marker file written by `thoth profile create --no-skills`.  When present in
+# a profile's root, callers of seed_profile_skills() (fresh-create, `thoth
 # update`'s all-profile sync, the web dashboard) skip bundled-skill seeding
 # for that profile.  The user can still install skills manually via
-# `hermes skills install` or drop SKILL.md files into the profile's skills/.
+# `thoth skills install` or drop SKILL.md files into the profile's skills/.
 # Delete the marker file to opt back in.
 NO_BUNDLED_SKILLS_MARKER = ".no-bundled-skills"
 
@@ -122,7 +122,7 @@ def _clone_all_copytree_ignore(source_dir: Path):
 
     Two categories:
       1. Root-level entries in ``_CLONE_ALL_DEFAULT_EXCLUDE_ROOT`` — known
-         Hermes infrastructure directories that only the default profile
+         Thoth infrastructure directories that only the default profile
          (``~/.hermes``) ever contains.  Gated on ``source_dir`` actually
          being the default profile so a named-profile source never has its
          own data silently dropped.
@@ -197,7 +197,7 @@ _RESERVED_NAMES = frozenset({
     "hermes", "default", "test", "tmp", "root", "sudo",
 })
 
-# Hermes subcommands that cannot be used as profile names/aliases
+# Thoth subcommands that cannot be used as profile names/aliases
 _HERMES_SUBCOMMANDS = frozenset({
     "chat", "model", "gateway", "setup", "whatsapp", "login", "logout",
     "status", "cron", "doctor", "dump", "config", "pairing", "skills", "tools",
@@ -213,7 +213,7 @@ _HERMES_SUBCOMMANDS = frozenset({
 def _get_profiles_root() -> Path:
     """Return the directory where named profiles are stored.
 
-    Anchored to the hermes root, NOT to the current HERMES_HOME
+    Anchored to the thoth root, NOT to the current HERMES_HOME
     (which may itself be a profile).  This ensures ``coder profile list``
     can see all profiles.
 
@@ -292,7 +292,7 @@ def validate_profile_name(name: str) -> None:
     if name in _RESERVED_NAMES:
         raise ValueError(
             f"Profile name {name!r} is reserved — it collides with either "
-            f"the Hermes installation itself or a common system binary.  "
+            f"the Thoth installation itself or a common system binary.  "
             f"Pick a different name."
         )
 
@@ -320,13 +320,13 @@ def profile_exists(name: str) -> bool:
 def check_alias_collision(name: str) -> Optional[str]:
     """Return a human-readable collision message, or None if the name is safe.
 
-    Checks: reserved names, hermes subcommands, existing binaries in PATH.
+    Checks: reserved names, thoth subcommands, existing binaries in PATH.
     """
     canon = normalize_profile_name(name)
     if canon in _RESERVED_NAMES:
         return f"'{canon}' is a reserved name"
     if canon in _HERMES_SUBCOMMANDS:
-        return f"'{canon}' conflicts with a hermes subcommand"
+        return f"'{canon}' conflicts with a thoth subcommand"
 
     # Check existing commands in PATH
     wrapper_dir = _get_wrapper_dir()
@@ -340,7 +340,7 @@ def check_alias_collision(name: str) -> Optional[str]:
             if existing_path == str(wrapper_dir / canon):
                 try:
                     content = (wrapper_dir / canon).read_text()
-                    if "hermes -p" in content:
+                    if "thoth -p" in content:
                         return None  # it's our wrapper, safe to overwrite
                 except Exception:
                     pass
@@ -372,7 +372,7 @@ def create_wrapper_script(name: str) -> Optional[Path]:
 
     wrapper_path = wrapper_dir / canon
     try:
-        wrapper_path.write_text(f'#!/bin/sh\nexec hermes -p {canon} "$@"\n')
+        wrapper_path.write_text(f'#!/bin/sh\nexec thoth -p {canon} "$@"\n')
         wrapper_path.chmod(wrapper_path.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
         return wrapper_path
     except OSError as e:
@@ -387,7 +387,7 @@ def remove_wrapper_script(name: str) -> bool:
         try:
             # Verify it's our wrapper before removing
             content = wrapper_path.read_text()
-            if "hermes -p" in content:
+            if "thoth -p" in content:
                 wrapper_path.unlink()
                 return True
         except Exception:
@@ -433,7 +433,7 @@ def _read_distribution_meta(profile_dir: Path) -> tuple:
     if present; ``(None, None, None)`` otherwise.
 
     Failures (missing file, bad YAML) are swallowed — a bad manifest should
-    never break ``hermes profile list`` for an unrelated profile.
+    never break ``thoth profile list`` for an unrelated profile.
     """
     mf_path = profile_dir / "distribution.yaml"
     if not mf_path.is_file():
@@ -499,7 +499,7 @@ def _count_skills(profile_dir: Path) -> int:
 # ---------------------------------------------------------------------------
 #
 # We keep this file deliberately tiny and separate from the profile's
-# ``config.yaml``. ``config.yaml`` is the user-facing Hermes config
+# ``config.yaml``. ``config.yaml`` is the user-facing Thoth config
 # (~5000 lines of defaults); ``profile.yaml`` is metadata ABOUT the
 # profile itself (its role, who described it). Mixing them makes both
 # harder to read.
@@ -518,7 +518,7 @@ def read_profile_meta(profile_dir: Path) -> dict:
     Returns ``{"description": "", "description_auto": False}`` when the
     file is missing or unreadable. Never raises — a corrupt
     profile.yaml on an unrelated profile must not break
-    ``hermes profile list``.
+    ``thoth profile list``.
     """
     path = _profile_yaml_path(profile_dir)
     if not path.is_file():
@@ -661,7 +661,7 @@ def create_profile(
         If True, skip wrapper script creation.
     no_skills:
         If True, create an empty profile with no bundled skills, and write
-        a marker file so ``hermes update`` skips re-seeding this profile's
+        a marker file so ``thoth update`` skips re-seeding this profile's
         skills. Mutually exclusive with ``clone_config``/``clone_all`` (those
         explicitly copy skills from the source).
 
@@ -752,14 +752,14 @@ def create_profile(
         except Exception:
             pass  # best-effort — don't fail profile creation over this
 
-    # Write the opt-out marker so seed_profile_skills() and `hermes update`'s
+    # Write the opt-out marker so seed_profile_skills() and `thoth update`'s
     # all-profile sync loop both skip this profile for bundled-skill seeding.
     if no_skills:
         try:
             (profile_dir / NO_BUNDLED_SKILLS_MARKER).write_text(
                 "This profile opted out of bundled-skill seeding "
-                "(`hermes profile create --no-skills`).\n"
-                "Delete this file to re-enable sync on the next `hermes update`.\n",
+                "(`thoth profile create --no-skills`).\n"
+                "Delete this file to re-enable sync on the next `thoth update`.\n",
                 encoding="utf-8",
             )
         except OSError:
@@ -776,7 +776,7 @@ def create_profile(
                 description_auto=False,
             )
         except Exception:
-            pass  # non-fatal — user can describe later with `hermes profile describe`
+            pass  # non-fatal — user can describe later with `thoth profile describe`
 
     return profile_dir
 
@@ -787,7 +787,7 @@ def seed_profile_skills(profile_dir: Path, quiet: bool = False) -> Optional[dict
     Uses subprocess because sync_skills() caches HERMES_HOME at module level.
     Returns the sync result dict, or None on failure.
 
-    Profiles that opted out of bundled skills (via ``hermes profile create
+    Profiles that opted out of bundled skills (via ``thoth profile create
     --no-skills`` — which writes ``.no-bundled-skills`` to the profile root)
     are skipped and get an empty-result dict so callers can report
     "opted out" instead of "failed".
@@ -840,7 +840,7 @@ def delete_profile(name: str, yes: bool = False) -> Path:
     if canon == "default":
         raise ValueError(
             "Cannot delete the default profile (~/.hermes).\n"
-            "To remove everything, use: hermes uninstall"
+            "To remove everything, use: thoth uninstall"
         )
 
     profile_dir = get_profile_dir(canon)
@@ -1082,7 +1082,7 @@ def set_active_profile(name: str) -> None:
     if canon != "default" and not profile_exists(canon):
         raise FileNotFoundError(
             f"Profile '{canon}' does not exist. "
-            f"Create it with: hermes profile create {canon}"
+            f"Create it with: thoth profile create {canon}"
         )
 
     path = _get_active_profile_path()
@@ -1291,7 +1291,7 @@ def import_profile(archive_path: str, name: Optional[str] = None) -> Path:
     if not inferred_name:
         raise ValueError(
             "Cannot determine profile name from archive. "
-            "Specify it explicitly: hermes profile import <archive> --name <name>"
+            "Specify it explicitly: thoth profile import <archive> --name <name>"
         )
     if archive_root is None:
         raise ValueError(
@@ -1306,7 +1306,7 @@ def import_profile(archive_path: str, name: Optional[str] = None) -> Path:
     if canon == "default":
         raise ValueError(
             "Cannot import as 'default' — that is the built-in root profile (~/.hermes). "
-            "Specify a different name: hermes profile import <archive> --name <name>"
+            "Specify a different name: thoth profile import <archive> --name <name>"
         )
 
     profile_dir = get_profile_dir(canon)
@@ -1455,7 +1455,7 @@ def rename_profile(old_name: str, new_name: str) -> Path:
 def resolve_profile_env(profile_name: str) -> str:
     """Resolve a profile name to a HERMES_HOME path string.
 
-    Called early in the CLI entry point, before any hermes modules
+    Called early in the CLI entry point, before any thoth modules
     are imported, to set the HERMES_HOME environment variable.
     """
     canon = normalize_profile_name(profile_name)
@@ -1465,7 +1465,7 @@ def resolve_profile_env(profile_name: str) -> str:
     if canon != "default" and not profile_dir.is_dir():
         raise FileNotFoundError(
             f"Profile '{canon}' does not exist. "
-            f"Create it with: hermes profile create {canon}"
+            f"Create it with: thoth profile create {canon}"
         )
 
     return str(profile_dir)

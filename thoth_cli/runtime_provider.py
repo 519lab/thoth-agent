@@ -244,7 +244,7 @@ _VALID_API_MODES = {
     "bedrock_converse",
     # Optional opt-in: hand the entire turn to a `codex app-server` subprocess
     # so terminal/file-ops/patching/sandboxing run inside Codex's own runtime
-    # instead of Hermes' tool dispatch. Gated behind config key
+    # instead of Thoth's tool dispatch. Gated behind config key
     # `model.openai_runtime == "codex_app_server"` AND provider in
     # {"openai", "openai-codex"}. Default is unchanged.
     "codex_app_server",
@@ -570,7 +570,7 @@ def _get_named_custom_provider(requested_provider: str) -> Optional[Dict[str, An
         logger.warning(
             "custom_providers in config.yaml is a dict, not a list. "
             "Each entry must be prefixed with '-' in YAML. "
-            "Run 'hermes doctor' for details."
+            "Run 'thoth doctor' for details."
         )
         return None
 
@@ -944,7 +944,7 @@ def _resolve_azure_foundry_runtime(
     base_url = explicit_base_url_clean or cfg_base_url or env_base_url
     if not base_url:
         raise AuthError(
-            "Azure Foundry requires a base URL. Set it via 'hermes model' or "
+            "Azure Foundry requires a base URL. Set it via 'thoth model' or "
             "the AZURE_FOUNDRY_BASE_URL environment variable."
         )
 
@@ -1033,10 +1033,10 @@ def _resolve_azure_foundry_runtime(
     if not api_key:
         raise AuthError(
             "Azure Foundry requires an API key. Set AZURE_FOUNDRY_API_KEY in "
-            "~/.hermes/.env or run 'hermes model' to configure. To use "
+            "~/.hermes/.env or run 'thoth model' to configure. To use "
             "keyless Microsoft Entra ID auth instead, set "
             "model.auth_mode: entra_id in config.yaml (or pick "
-            "'Microsoft Entra ID' in 'hermes model')."
+            "'Microsoft Entra ID' in 'thoth model')."
         )
 
     source = "explicit" if (explicit_api_key or explicit_base_url) else "config"
@@ -1312,7 +1312,7 @@ def resolve_runtime_provider(
         # compatibility field: either an invoke JWT or legacy opaque key.
         # The pool doesn't
         # refresh it during selection (that would trigger network calls in
-        # non-runtime contexts like `hermes auth list`).  If the key is
+        # non-runtime contexts like `thoth auth list`).  If the key is
         # expired, clear pool_api_key so we fall through to
         # resolve_nous_runtime_credentials() which handles refresh + fallback.
         if provider == "nous" and entry is not None and pool_api_key:
@@ -1484,9 +1484,9 @@ def resolve_runtime_provider(
         if _is_azure_endpoint:
             # Honor user-specified env var hints on the model config before
             # falling back to the built-in AZURE_ANTHROPIC_KEY / ANTHROPIC_API_KEY
-            # chain.  Accept both `key_env` (Hermes canonical — matches the
+            # chain.  Accept both `key_env` (Thoth canonical — matches the
             # custom_providers field name) and `api_key_env` (documented in the
-            # Azure Foundry guide and read by most Hermes-compatible importers).
+            # Azure Foundry guide and read by most Thoth-compatible importers).
             # Matches the config.yaml examples in website/docs/guides/azure-foundry.md.
             token = ""
             for hint_key in ("key_env", "api_key_env"):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PostgreSQL State Store for Hermes Agent (Phase 0+).
+PostgreSQL State Store for Thoth Agent (Phase 0+).
 
 Provides persistent session storage backed by PostgreSQL 17 + pgvector.
 Stores session metadata, full message history, and model configuration for
@@ -50,7 +50,7 @@ _SUBSTRATE_UNBOUND_WARNED = False
 # Substrate perception hook bridge — Phase A §7 wiring.
 #
 # Lives at the SessionDB.append_message chokepoint because it's the single
-# function every Hermes call path goes through to persist a turn. Looking
+# function every Thoth call path goes through to persist a turn. Looking
 # up source/model from the session row keeps the per-call-site changes to
 # zero — the conversation loop, gateway intake, ACP server, etc. don't
 # need to learn the substrate's hook API.
@@ -68,7 +68,7 @@ async def _emit_substrate_message_hook(
     """Best-effort substrate emission for an append_message call.
 
     Never raises — hook errors are logged and dropped per Phase A spec
-    §6.2 (hooks must never bubble to a Hermes caller). Shares ``conn``
+    §6.2 (hooks must never bubble to a Thoth caller). Shares ``conn``
     so the slice INSERT joins the message INSERT's transaction.
     """
     try:
@@ -102,7 +102,7 @@ async def _emit_substrate_message_hook(
             )
         return
 
-    # Per-message trace at DEBUG. Only visible with ``hermes -v``.
+    # Per-message trace at DEBUG. Only visible with ``thoth -v``.
     # The session-summary INFO line at on_session_end is the
     # steady-state signal for "is perception working?"; this DEBUG
     # line is for active debugging of a specific session's coverage.
@@ -174,7 +174,7 @@ async def _emit_substrate_message_hook(
 def _extract_tool_call(call: Any) -> tuple[Optional[str], dict]:
     """Pull (tool_name, args_dict) out of a single tool_call entry.
 
-    Tool-call shapes vary by provider — the upstream Hermes
+    Tool-call shapes vary by provider — the upstream Thoth
     representation typically wraps OpenAI-style ``{"function": {"name":
     ..., "arguments": "..."}}``, sometimes pre-parsed to a dict.
     Returns ``(None, {})`` if the shape can't be recognised so the hook
@@ -2066,9 +2066,9 @@ class _AsyncSessionDB:
         session_id: str,
         managed_mode: str = "auto",
     ) -> None:
-        """Bind one Telegram DM topic thread to one Hermes session.
+        """Bind one Telegram DM topic thread to one Thoth session.
 
-        A Hermes session may only be linked to one Telegram topic in MVP.
+        A Thoth session may only be linked to one Telegram topic in MVP.
         Rebinding the same topic to the same session is idempotent; trying to
         link the same session to a different topic raises ValueError.
         """
@@ -2112,7 +2112,7 @@ class _AsyncSessionDB:
             )
 
     async def is_telegram_session_linked_to_topic(self, *, session_id: str) -> bool:
-        """Return True if a Hermes session is already bound to any Telegram DM topic."""
+        """Return True if a Thoth session is already bound to any Telegram DM topic."""
         async with thoth_db.connection() as conn:
             row = await conn.fetchrow(
                 "SELECT 1 FROM telegram_dm_topic_bindings WHERE session_id = $1 LIMIT 1",

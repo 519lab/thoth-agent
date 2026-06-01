@@ -1,8 +1,8 @@
-"""Hermes → substrate perception hooks.
+"""Thoth → substrate perception hooks.
 
 Each hook validates inputs, dispatches to :func:`commit_slice` against the
 appropriate auto-registered stream, and returns. Hooks **never** raise to
-the Hermes caller — failures are logged and dropped (Phase A spec §6.2).
+the Thoth caller — failures are logged and dropped (Phase A spec §6.2).
 
 The hook layer exposes matched pairs:
 
@@ -98,8 +98,8 @@ def _guard(hook_name: str) -> Callable:
     error. Works for both sync and async wrapped functions — the wrapper
     inspects the wrapped callable and returns the matching shape.
 
-    Why no-op rather than raise: hooks are called inline from Hermes's hot
-    path. A hook failure must NEVER bubble to a Hermes call site (Phase A
+    Why no-op rather than raise: hooks are called inline from Thoth's hot
+    path. A hook failure must NEVER bubble to a Thoth call site (Phase A
     spec §6.2). Silent dropping with a log is the contract.
     """
 

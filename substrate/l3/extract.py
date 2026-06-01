@@ -49,7 +49,7 @@ _PATTERN_SCHEMA = {
 
 def _build_prompt(context: str) -> str:
     return (
-        "You are reviewing structured knowledge a Hermes Agent has accumulated "
+        "You are reviewing structured knowledge a Thoth Agent has accumulated "
         "about its world — named entities and the relationships between them. "
         "Identify higher-order PATTERNS: generalizations (a recurring trait of "
         "an entity), themes (a recurring topic across entities), or recurring "

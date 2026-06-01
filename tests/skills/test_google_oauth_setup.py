@@ -277,9 +277,9 @@ class TestHermesConstantsFallback:
 
     def test_fallback_uses_hermes_home_env_var(self, monkeypatch, tmp_path):
         """When hermes_constants is missing, HERMES_HOME comes from env var."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "custom-hermes"))
+        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "custom-thoth"))
         module = self._load_helper(monkeypatch)
-        assert module.get_hermes_home() == tmp_path / "custom-hermes"
+        assert module.get_hermes_home() == tmp_path / "custom-thoth"
 
     def test_fallback_defaults_to_dot_hermes(self, monkeypatch):
         """When hermes_constants is missing and HERMES_HOME unset, default to ~/.hermes."""

@@ -57,7 +57,7 @@ def _slugify(raw: str) -> str:
 
 def _build_prompt(need_context: str) -> str:
     return (
-        "You are the skill-authoring component of a Hermes Agent's self-improvement "
+        "You are the skill-authoring component of a Thoth Agent's self-improvement "
         "system. The agent has noticed a RECURRING or IMPORTANT need in its own "
         "long-term memory (shown below). Your job is to decide whether this need "
         "warrants a reusable *skill* — a repeatable PROCEDURE the agent can follow "

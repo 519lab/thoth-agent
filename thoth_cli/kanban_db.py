@@ -19,7 +19,7 @@ Board resolution order (highest precedence first, all optional):
 * ``HERMES_KANBAN_BOARD`` env var (used by the dispatcher to pin workers
   to the board their task lives on — workers cannot see other boards).
 * ``<root>/kanban/current`` — a one-line text file holding the slug of
-  the "currently selected" board. Written by ``hermes kanban boards
+  the "currently selected" board. Written by ``thoth kanban boards
   switch <slug>``. When absent, the active board is ``default``.
 
 Schema is managed entirely by Alembic (see ``migrations/``). The
@@ -777,7 +777,7 @@ def _normalize_board_slug(slug: Optional[str]) -> Optional[str]:
 
 
 def kanban_home() -> Path:
-    """Return the shared Hermes root that anchors the kanban board.
+    """Return the shared Thoth root that anchors the kanban board.
 
     Resolution order:
 
@@ -813,7 +813,7 @@ def boards_root() -> Path:
 def current_board_path() -> Path:
     """Return the path to ``<root>/kanban/current``.
 
-    One-line text file written by ``hermes kanban boards switch <slug>``
+    One-line text file written by ``thoth kanban boards switch <slug>``
     to persist the user's board selection across CLI invocations. Absent
     by default (meaning: active board is ``default``).
     """
@@ -827,7 +827,7 @@ def get_current_board() -> str:
 
     1. ``HERMES_KANBAN_BOARD`` env var (set by the dispatcher on worker
        spawn, or manually for ad-hoc overrides).
-    2. ``<root>/kanban/current`` on disk (set by ``hermes kanban boards
+    2. ``<root>/kanban/current`` on disk (set by ``thoth kanban boards
        switch``), but only when that board still exists.
     3. ``DEFAULT_BOARD`` (``"default"``).
 
@@ -864,7 +864,7 @@ def set_current_board(slug: str) -> Path:
 
     Writes ``<root>/kanban/current``. The caller should validate the slug
     exists first (via :func:`board_exists`) — this function does not —
-    so that ``hermes kanban boards switch <typo>`` returns an error
+    so that ``thoth kanban boards switch <typo>`` returns an error
     instead of silently pointing at nothing.
     """
     normed = _normalize_board_slug(slug)
@@ -979,7 +979,7 @@ def worker_logs_dir(board: Optional[str] = None) -> Path:
 
     ``default`` keeps the legacy path ``<root>/kanban/logs/``. Other
     boards use ``<root>/kanban/boards/<slug>/logs/``. Logs follow the
-    board — makes ``hermes kanban log`` unambiguous even when multiple
+    board — makes ``thoth kanban log`` unambiguous even when multiple
     boards have tasks with the same id.
     """
     slug = _normalize_board_slug(board)
@@ -2068,7 +2068,7 @@ def create_task(
 
     ``skills`` is an optional list of skill names to force-load into
     the worker when dispatched. Stored as JSON; the dispatcher passes
-    each name to ``hermes --skills ...`` alongside the built-in
+    each name to ``thoth --skills ...`` alongside the built-in
     ``kanban-worker``. Use this to pin a task to a specialist skill
     (e.g. ``skills=["translation"]`` so the worker loads the
     translation skill regardless of the profile's default config).
@@ -2094,7 +2094,7 @@ def create_task(
     # Normalise + validate skills: strip whitespace, drop empties, dedupe
     # (preserving order). Refuse commas inside a single name so we don't
     # invisibly splatter a comma-joined string into one argv slot — the
-    # `hermes --skills X,Y` comma syntax is handled in the dispatcher,
+    # `thoth --skills X,Y` comma syntax is handled in the dispatcher,
     # not here.
     skills_list: Optional[list[str]] = None
     if skills is not None:
@@ -2277,7 +2277,7 @@ def get_task(conn: _PgConnection, task_id: str) -> Optional[Task]:
     return Task.from_row(row) if row else None
 
 
-# Canonical sort-order mappings for ``hermes kanban list --sort``.
+# Canonical sort-order mappings for ``thoth kanban list --sort``.
 # Each value is a raw SQL fragment appended after ``ORDER BY``.
 VALID_SORT_ORDERS: dict[str, str] = {
     "created": "created_at ASC, id ASC",
@@ -2449,7 +2449,7 @@ def unlink_tasks(conn: _PgConnection, parent_id: str, child_id: str) -> bool:
         # Dependency edge removed — re-evaluate promotion eligibility for the
         # child immediately.  Matches the contract of complete_task and
         # unblock_task; without this the child stays stuck in todo until the
-        # next dispatcher tick or a manual `hermes kanban recompute` (issue #22459).
+        # next dispatcher tick or a manual `thoth kanban recompute` (issue #22459).
         recompute_ready(conn)
     return removed
 
@@ -2596,7 +2596,7 @@ def _end_run(
     timed_out / spawn_failed / gave_up / reclaimed). ``status`` is the
     run-row status (usually just ``outcome``, but callers can pass it
     explicitly). Returns the closed run_id or ``None`` if no active run
-    existed (e.g. a CLI user calling ``hermes kanban complete`` on a
+    existed (e.g. a CLI user calling ``thoth kanban complete`` on a
     task that was never claimed).
     """
     now = int(time.time())
@@ -2657,7 +2657,7 @@ def _synthesize_ended_run(
     """Insert a zero-duration, already-closed run row.
 
     Used when a terminal transition happens on a task that was never
-    claimed (CLI user calling ``hermes kanban complete <ready-task>
+    claimed (CLI user calling ``thoth kanban complete <ready-task>
     --summary X``, or dashboard "mark done" on a ready task). Without
     this, the handoff fields (summary / metadata / error) would be
     silently dropped: ``_end_run`` is a no-op because there's no
@@ -2709,7 +2709,7 @@ def _has_sticky_block(conn: _PgConnection, task_id: str) -> bool:
 
     * **Worker- or operator-initiated** — a worker called
       ``kanban_block(reason="review-required: ...")`` (or somebody ran
-      ``hermes kanban block <id>``).  This is a deliberate handoff that
+      ``thoth kanban block <id>``).  This is a deliberate handoff that
       should stay blocked until an operator unblocks it.  The block tool
       emits a ``"blocked"`` event row in ``task_events``.
 
@@ -3377,7 +3377,7 @@ def complete_task(
     """Transition ``running|ready -> done`` and record ``result``.
 
     Accepts a task that is merely ``ready`` too, so a manual CLI
-    completion (``hermes kanban complete <id>``) works without requiring
+    completion (``thoth kanban complete <id>``) works without requiring
     a claim/start/complete sequence.
 
     ``summary`` and ``metadata`` are stored on the closing run (if any)
@@ -4336,7 +4336,7 @@ class DispatchResult:
     Operator-actionable — usually a misfiled task waiting for routing."""
     skipped_nonspawnable: list[str] = field(default_factory=list)
     """Ready task ids skipped because their assignee names a control-plane
-    lane (a Claude Code terminal like ``orion-cc``) rather than a Hermes
+    lane (a Claude Code terminal like ``orion-cc``) rather than a Thoth
     profile. Expected steady-state on multi-lane setups; NOT an
     operator-actionable failure. Tracked separately so health telemetry
     can distinguish "real stuck" (nothing spawned but spawnable work
@@ -5179,7 +5179,7 @@ def _record_spawn_failure(
 def _set_worker_pid(conn: _PgConnection, task_id: str, pid: int) -> None:
     """Record the spawned child's pid + emit a ``spawned`` event.
 
-    The event's payload carries the pid so a human reading ``hermes kanban
+    The event's payload carries the pid so a human reading ``thoth kanban
     tail`` can correlate log lines with OS-level traces without opening
     the drawer.
     """
@@ -5290,7 +5290,7 @@ def check_respawn_guard(conn: _PgConnection, task_id: str) -> Optional[str]:
 
 def has_spawnable_ready(conn: _PgConnection) -> bool:
     """Return True iff there is at least one ready+assigned+unclaimed task
-    whose assignee maps to a real Hermes profile.
+    whose assignee maps to a real Thoth profile.
 
     Used by the gateway- and CLI-embedded dispatchers' health telemetry to
     decide whether ``0 spawned`` is a "stuck" condition (real spawnable
@@ -5322,7 +5322,7 @@ def has_spawnable_ready(conn: _PgConnection) -> bool:
 
 def has_spawnable_review(conn: _PgConnection) -> bool:
     """Return True iff there is at least one review+assigned+unclaimed task
-    whose assignee maps to a real Hermes profile.
+    whose assignee maps to a real Thoth profile.
 
     Mirror of :func:`has_spawnable_ready` for the review column —
     used by the health telemetry to decide whether the dispatcher
@@ -5476,11 +5476,11 @@ def dispatch_once(
         if not row["assignee"]:
             result.skipped_unassigned.append(row["id"])
             continue
-        # Skip ready tasks whose assignee is not a real Hermes profile.
-        # `_default_spawn` invokes ``hermes -p <assignee>`` which fails
+        # Skip ready tasks whose assignee is not a real Thoth profile.
+        # `_default_spawn` invokes ``thoth -p <assignee>`` which fails
         # with "Profile 'X' does not exist" when the assignee names a
         # control-plane lane (e.g. an interactive Claude Code terminal
-        # like ``orion-cc`` / ``orion-research``) rather than a Hermes
+        # like ``orion-cc`` / ``orion-research``) rather than a Thoth
         # profile. Those task lanes are pulled by terminals via
         # ``claim_task`` directly and should NEVER auto-spawn — the
         # subprocess would crash on startup, get reaped as a zombie,
@@ -5511,7 +5511,7 @@ def dispatch_once(
         if guard_reason is not None:
             result.respawn_guarded.append((row["id"], guard_reason))
             # Emit an event so operators can see why the task was
-            # skipped when reading `hermes kanban tail` — without
+            # skipped when reading `thoth kanban tail` — without
             # this the task appears stuck in ready with no diagnosis.
             if not dry_run:
                 with write_txn(conn):
@@ -5730,15 +5730,15 @@ def _rotate_worker_log(
 
 
 def _module_hermes_argv() -> list[str]:
-    """Return the interpreter-bound Hermes CLI invocation."""
+    """Return the interpreter-bound Thoth CLI invocation."""
     # ``hermes_cli.main`` is the console-script target declared in
-    # pyproject.toml, NOT a top-level ``hermes`` package — there is no
-    # ``hermes`` package to import.
+    # pyproject.toml, NOT a top-level ``thoth`` package — there is no
+    # ``thoth`` package to import.
     return [sys.executable, "-m", "thoth_cli.main"]
 
 
 def _absolute_hermes_path(path: str) -> str:
-    """Return an absolute filesystem path for a resolved Hermes shim."""
+    """Return an absolute filesystem path for a resolved Thoth shim."""
     expanded = os.path.expanduser(path)
     return expanded if os.path.isabs(expanded) else os.path.abspath(expanded)
 
@@ -5792,7 +5792,7 @@ def _safe_which_no_cwd(command: str) -> Optional[str]:
 
 
 def _hermes_path_argv(path: str) -> list[str]:
-    """Return argv for a resolved Hermes executable path.
+    """Return argv for a resolved Thoth executable path.
 
     Windows batch shims (`.cmd` / `.bat`) are not safe as argv[0] for
     worker launches because the argument vector includes task-derived
@@ -5805,7 +5805,7 @@ def _hermes_path_argv(path: str) -> list[str]:
 
 
 def _resolve_hermes_argv() -> list[str]:
-    """Resolve the ``hermes`` invocation as argv parts for ``Popen``.
+    """Resolve the ``thoth`` invocation as argv parts for ``Popen``.
 
     Tries in order:
 
@@ -5819,7 +5819,7 @@ def _resolve_hermes_argv() -> list[str]:
        dispatcher therefore falls back to the interpreter-bound module form
        for implicit ``.cmd`` / ``.bat`` shims.
     3. ``sys.executable -m hermes_cli.main`` — fallback for setups where
-       Hermes is launched from a venv and the ``hermes`` shim is not on
+       Thoth is launched from a venv and the ``thoth`` shim is not on
        the dispatcher's ``$PATH`` (cron, systemd ``User=`` services,
        launchd jobs, detached processes, etc.). Goes through the running
        interpreter so the result is independent of ``$PATH``.
@@ -5850,7 +5850,7 @@ def _kanban_worker_skill_available(hermes_home: Optional[str]) -> bool:
     spawned worker will run under.
 
     The dispatcher injects ``--skills kanban-worker`` into every worker. When
-    the worker activates a profile (``hermes -p <name>``), its ``SKILLS_DIR``
+    the worker activates a profile (``thoth -p <name>``), its ``SKILLS_DIR``
     becomes ``<profile_home>/skills`` — which on many profiles does NOT contain
     the bundled skill (it ships in the *default* root home, not every
     profile-scoped skills dir). Preloading a missing skill is fatal at CLI
@@ -5916,7 +5916,7 @@ def _default_spawn(
     *,
     board: Optional[str] = None,
 ) -> Optional[int]:
-    """Fire-and-forget ``hermes -p <profile> chat -q ...`` subprocess.
+    """Fire-and-forget ``thoth -p <profile> chat -q ...`` subprocess.
 
     Returns the spawned child's PID so the dispatcher can detect crashes
     before the claim TTL expires. The child's completion is still observed
@@ -5942,7 +5942,7 @@ def _default_spawn(
     # Inject HERMES_HOME so the worker reads the profile-scoped config.yaml
     # (fallback_providers, toolsets, agent settings, etc.) instead of the root
     # config.  Without this, `env = dict(os.environ)` copies only the parent's
-    # env, and when the child process starts `hermes -p <name>` the
+    # env, and when the child process starts `thoth -p <name>` the
     # _apply_profile_override() runs *before* hermes_constants is imported.
     # If HERMES_HOME is absent from the child's env, get_hermes_home() falls
     # back to Path.home() / ".hermes" (the DEFAULT profile root), ignoring the
@@ -5980,7 +5980,7 @@ def _default_spawn(
     if foreground_timeout is not None:
         env["TERMINAL_MAX_FOREGROUND_TIMEOUT"] = foreground_timeout
     # Pin the shared board + workspaces root the dispatcher resolved, so
-    # that even when the worker activates a profile (`hermes -p <name>`
+    # that even when the worker activates a profile (`thoth -p <name>`
     # rewrites HERMES_HOME), its kanban paths still match the
     # dispatcher's. Belt-and-braces with the `get_default_hermes_root()`
     # resolution in `kanban_home()` — symmetric resolution is the norm,
@@ -5993,7 +5993,7 @@ def _default_spawn(
     resolved_board = _normalize_board_slug(board) or get_current_board()
     env["HERMES_KANBAN_BOARD"] = resolved_board
     # HERMES_PROFILE is the author the kanban_comment tool defaults to.
-    # `hermes -p <assignee>` activates the profile, but the env var is
+    # `thoth -p <assignee>` activates the profile, but the env var is
     # what the tool reads — set it explicitly here so comments are
     # attributed correctly regardless of how the child loads config.
     env["HERMES_PROFILE"] = profile_arg
@@ -6042,7 +6042,7 @@ def _default_spawn(
     ])
     # Redirect output to a per-task log under <board-root>/logs/.
     # Anchored at the board root (not the shared kanban root), so
-    # `hermes kanban log` on a specific board reads its own file and
+    # `thoth kanban log` on a specific board reads its own file and
     # logs don't collide across boards that happen to share task ids.
     log_dir = worker_logs_dir(board=board)
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -6066,8 +6066,8 @@ def _default_spawn(
     except FileNotFoundError:
         log_f.close()
         raise RuntimeError(
-            "`hermes` executable not found on PATH. "
-            "Install Hermes Agent or activate its venv before running the kanban dispatcher."
+            "`thoth` executable not found on PATH. "
+            "Install Thoth Agent or activate its venv before running the kanban dispatcher."
         )
     # NOTE: we intentionally do NOT close log_f here — we want Popen's
     # child process to keep writing after this function returns.  The
@@ -6092,7 +6092,7 @@ def run_daemon(
     """Run the dispatcher in a loop until interrupted.
 
     Calls :func:`dispatch_once` every ``interval`` seconds. Exits cleanly
-    on SIGINT / SIGTERM so ``hermes kanban daemon`` is systemd-friendly.
+    on SIGINT / SIGTERM so ``thoth kanban daemon`` is systemd-friendly.
     ``stop_event`` (a :class:`threading.Event`) and ``on_tick`` (a
     callable receiving the :class:`DispatchResult`) are test hooks.
     """
@@ -6749,7 +6749,7 @@ def list_profiles_on_disk() -> list[str]:
 
     Includes:
     - named profiles under ``<default-root>/profiles/<name>/config.yaml``
-    - the implicit ``default`` profile when the default Hermes root exists
+    - the implicit ``default`` profile when the default Thoth root exists
 
     Reads profile paths directly so this module has no import dependency on
     ``hermes_cli.profiles`` (which pulls in a large chunk of the CLI startup
@@ -6786,7 +6786,7 @@ def known_assignees(conn: _PgConnection) -> list[dict]:
     A name is included when it's a configured profile on disk OR when
     any non-archived task has it as the assignee. Used by:
 
-    - ``hermes kanban assignees`` for the terminal.
+    - ``thoth kanban assignees`` for the terminal.
     - The dashboard assignee dropdown (so a fresh profile appears in
       the picker even before it's been given any task).
     - Router-profile heuristics ("who's overloaded?") without scanning

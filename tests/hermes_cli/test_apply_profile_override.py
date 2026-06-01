@@ -1,6 +1,6 @@
 """Regression tests for _apply_profile_override HERMES_HOME guard (issue #22502).
 
-When HERMES_HOME is set to the hermes root (e.g. systemd hardcodes
+When HERMES_HOME is set to the thoth root (e.g. systemd hardcodes
 HERMES_HOME=/root/.hermes), _apply_profile_override must still read
 active_profile and update HERMES_HOME to the profile directory.
 
@@ -43,7 +43,7 @@ def _run_apply_profile_override(
     else:
         monkeypatch.delenv("HERMES_HOME", raising=False)
 
-    monkeypatch.setattr(sys, "argv", argv or ["hermes", "gateway", "start"])
+    monkeypatch.setattr(sys, "argv", argv or ["thoth", "gateway", "start"])
 
     from hermes_cli.main import _apply_profile_override
     _apply_profile_override()
@@ -54,7 +54,7 @@ def _run_apply_profile_override(
 class TestApplyProfileOverrideHermesHomeGuard:
     """Regression guard for issue #22502.
 
-    Verifies that HERMES_HOME pointing to the hermes root does NOT suppress
+    Verifies that HERMES_HOME pointing to the thoth root does NOT suppress
     the active_profile check, while HERMES_HOME already pointing to a
     profile directory IS trusted as-is.
     """
@@ -65,8 +65,8 @@ class TestApplyProfileOverrideHermesHomeGuard:
         """HERMES_HOME=/root/.hermes + active_profile=coder must redirect
         HERMES_HOME to .../profiles/coder.
 
-        Bug scenario from #22502: systemd sets HERMES_HOME to the hermes root
-        and the user switches to a profile via `hermes profile use`.
+        Bug scenario from #22502: systemd sets HERMES_HOME to the thoth root
+        and the user switches to a profile via `thoth profile use`.
         Before the fix, the guard returned early and active_profile was ignored.
         """
         hermes_root = tmp_path / ".hermes"
@@ -103,7 +103,7 @@ class TestApplyProfileOverrideHermesHomeGuard:
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HERMES_HOME", str(profile_dir))
-        monkeypatch.setattr(sys, "argv", ["hermes", "gateway", "start"])
+        monkeypatch.setattr(sys, "argv", ["thoth", "gateway", "start"])
 
         from hermes_cli.main import _apply_profile_override
         _apply_profile_override()
@@ -133,7 +133,7 @@ class TestApplyProfileOverrideHermesHomeGuard:
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.delenv("HERMES_HOME", raising=False)
-        monkeypatch.setattr(sys, "argv", ["hermes", "gateway", "start"])
+        monkeypatch.setattr(sys, "argv", ["thoth", "gateway", "start"])
         (hermes_root / "active_profile").write_text("default")
 
         from hermes_cli.main import _apply_profile_override

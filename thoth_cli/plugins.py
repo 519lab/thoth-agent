@@ -1,10 +1,10 @@
 """
-Hermes Plugin System
+Thoth Plugin System
 ====================
 
 Discovers, loads, and manages plugins from four sources:
 
-1. **Bundled plugins** – ``<repo>/plugins/<name>/`` (shipped with hermes-agent;
+1. **Bundled plugins** – ``<repo>/plugins/<name>/`` (shipped with thoth-agent;
    ``memory/`` and ``context_engine/`` subdirs are excluded — they have their
    own discovery paths)
 2. **User plugins**   – ``~/.hermes/plugins/<name>/``
@@ -96,7 +96,7 @@ def _install_plugin_debug_handler(force: bool = False) -> None:
     """When HERMES_PLUGINS_DEBUG is on, tee plugin logs to stderr at DEBUG.
 
     Idempotent: only attaches the handler once per process unless ``force``
-    is passed. Does not touch the root logger or other Hermes loggers.
+    is passed. Does not touch the root logger or other Thoth loggers.
     """
     global _DEBUG_HANDLER_INSTALLED, _PLUGINS_DEBUG
     if force:
@@ -260,7 +260,7 @@ class PluginManifest:
     #              (untrusted code).
     kind: str = "standalone"
     # Registry key — path-derived, used by ``plugins.enabled``/``disabled``
-    # lookups and by ``hermes plugins list``. For a flat plugin at
+    # lookups and by ``thoth plugins list``. For a flat plugin at
     # ``plugins/disk-cleanup/`` the key is ``disk-cleanup``; for a nested
     # category plugin at ``plugins/image_gen/openai/`` the key is
     # ``image_gen/openai``. When empty, falls back to ``name``.
@@ -392,7 +392,7 @@ class PluginContext:
         handler_fn: Callable | None = None,
         description: str = "",
     ) -> None:
-        """Register a CLI subcommand (e.g. ``hermes honcho ...``).
+        """Register a CLI subcommand (e.g. ``thoth honcho ...``).
 
         The *setup_fn* receives an argparse subparser and should add any
         arguments/sub-subparsers.  If *handler_fn* is provided it is set
@@ -421,7 +421,7 @@ class PluginContext:
         The handler signature is ``fn(raw_args: str) -> str | None``.
         It may also be an async callable — the gateway dispatch handles both.
 
-        Unlike ``register_cli_command()`` (which creates ``hermes <subcommand>``
+        Unlike ``register_cli_command()`` (which creates ``thoth <subcommand>``
         terminal commands), this registers in-session slash commands that users
         invoke during a conversation.
 
@@ -914,13 +914,13 @@ class PluginManager:
                 )
                 continue
 
-            # Built-in backends auto-load — they ship with hermes and must
+            # Built-in backends auto-load — they ship with thoth and must
             # just work. Selection among them (e.g. which image_gen backend
             # services calls) is driven by ``<category>.provider`` config,
             # enforced by the tool wrapper.
             #
             # Bundled platform plugins (gateway adapters like IRC) auto-load
-            # for the same reason: every platform Hermes ships must be
+            # for the same reason: every platform Thoth ships must be
             # available out of the box without the user having to opt in.
             if manifest.source == "bundled" and manifest.kind in {"backend", "platform"}:
                 self._load_plugin(manifest)
@@ -937,7 +937,7 @@ class PluginManager:
             if not is_enabled:
                 loaded = LoadedPlugin(manifest=manifest, enabled=False)
                 loaded.error = (
-                    "not enabled in config (run `hermes plugins enable {}` to activate)"
+                    "not enabled in config (run `thoth plugins enable {}` to activate)"
                     .format(lookup_key)
                 )
                 self._plugins[lookup_key] = loaded
@@ -1551,7 +1551,7 @@ def get_plugin_commands() -> Dict[str, dict]:
 def get_plugin_toolsets() -> List[tuple]:
     """Return plugin toolsets as ``(key, label, description)`` tuples.
 
-    Used by the ``hermes tools`` TUI so plugin-provided toolsets appear
+    Used by the ``thoth tools`` TUI so plugin-provided toolsets appear
     alongside the built-in ones and can be toggled on/off per platform.
     """
     manager = get_plugin_manager()

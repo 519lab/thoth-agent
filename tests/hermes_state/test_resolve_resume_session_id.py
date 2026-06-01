@@ -3,7 +3,7 @@
 Context compression ends the current session and forks a new child session
 (linked by ``parent_session_id``). The PG flush cursor is reset, so
 only the latest descendant ends up with rows in the ``messages`` table —
-the parent row has ``message_count = 0``. ``hermes --resume <parent_id>``
+the parent row has ``message_count = 0``. ``thoth --resume <parent_id>``
 used to load zero rows and show a blank chat.
 
 ``_AsyncSessionDB.resolve_resume_session_id()`` walks the parent → child chain

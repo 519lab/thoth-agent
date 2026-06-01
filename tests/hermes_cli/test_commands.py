@@ -297,11 +297,11 @@ class TestSlackNativeSlashes:
             assert isinstance(hint, str)
 
     def test_hermes_catchall_is_first(self):
-        """``/hermes`` must be reserved as the first slot so the legacy
-        ``/hermes <subcommand>`` form keeps working after we add new
+        """``/thoth`` must be reserved as the first slot so the legacy
+        ``/thoth <subcommand>`` form keeps working after we add new
         commands and hit the 50-slash cap."""
         slashes = slack_native_slashes()
-        assert slashes[0][0] == "hermes"
+        assert slashes[0][0] == "thoth"
 
     def test_names_respect_slack_limits(self):
         for name, _desc, _hint in slack_native_slashes():
@@ -328,7 +328,7 @@ class TestSlackNativeSlashes:
     def test_excludes_slack_reserved_commands(self):
         """Slack built-in commands (e.g. /status, /me, /join) cannot be
         registered by apps and must be excluded from the manifest.
-        Users can still reach them via /hermes <command>."""
+        Users can still reach them via /thoth <command>."""
         names = {n for n, _d, _h in slack_native_slashes()}
         for reserved in _SLACK_RESERVED_COMMANDS:
             assert reserved not in names, (
@@ -373,7 +373,7 @@ class TestSlackNativeSlashes:
 
 
 class TestSlackAppManifest:
-    """Generated Slack app manifest (used by `hermes slack manifest`)."""
+    """Generated Slack app manifest (used by `thoth slack manifest`)."""
 
     def test_returns_dict(self):
         m = slack_app_manifest()
@@ -393,7 +393,7 @@ class TestSlackAppManifest:
 
     def test_btw_is_in_manifest(self):
         """Regression: /btw must be a native Slack slash, not just a
-        /hermes subcommand."""
+        /thoth subcommand."""
         m = slack_app_manifest()
         commands = [c["command"] for c in m["features"]["slash_commands"]]
         assert "/btw" in commands
@@ -1721,7 +1721,7 @@ class TestPluginCommandEnumeration:
         assert "background_job" not in names
 
     def test_plugin_command_appears_in_slack_subcommand_map(self, monkeypatch):
-        """/hermes metricas must route through the Slack subcommand map."""
+        """/thoth metricas must route through the Slack subcommand map."""
         self._patch_plugin_commands(monkeypatch, {
             "metricas": {
                 "handler": lambda _a: "ok",

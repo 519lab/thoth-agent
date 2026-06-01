@@ -3,7 +3,7 @@ silently fell back to the old primary provider on the next turn because the
 fallback chain — seeded from config at agent __init__ — kept entries for the
 provider the user just moved away from.
 
-Reported: "switched from openrouter provider to anthropic api key via hermes
+Reported: "switched from openrouter provider to anthropic api key via thoth
 model and the tui keeps trying openrouter".
 """
 

@@ -1,10 +1,10 @@
-"""hermes webhook — manage dynamic webhook subscriptions from the CLI.
+"""thoth webhook — manage dynamic webhook subscriptions from the CLI.
 
 Usage:
-    hermes webhook subscribe <name> [options]
-    hermes webhook list
-    hermes webhook remove <name>
-    hermes webhook test <name> [--payload '{"key": "value"}']
+    thoth webhook subscribe <name> [options]
+    thoth webhook list
+    thoth webhook remove <name>
+    thoth webhook test <name> [--payload '{"key": "value"}']
 
 Subscriptions persist to ~/.hermes/webhook_subscriptions.json and are
 hot-reloaded by the webhook adapter without a gateway restart.
@@ -114,7 +114,7 @@ def _require_webhook_enabled() -> bool:
 
 
 def webhook_command(args):
-    """Entry point for 'hermes webhook' subcommand."""
+    """Entry point for 'thoth webhook' subcommand."""
     sub = getattr(args, "webhook_action", None)
 
     if not sub:
@@ -246,7 +246,7 @@ def _cmd_test(args):
     base_url = _get_webhook_base_url()
     url = f"{base_url}/webhooks/{name}"
 
-    payload = args.payload or '{"test": true, "event_type": "test", "message": "Hello from hermes webhook test"}'
+    payload = args.payload or '{"test": true, "event_type": "test", "message": "Hello from thoth webhook test"}'
 
     import hmac
     import hashlib

@@ -1,7 +1,7 @@
 """Tests for ``substrate.cli.inspect`` — the debug subcommand.
 
 Exercises the printer functions directly against the PG fixture so the
-tests don't have to spin up the full ``hermes`` argparse tree. The
+tests don't have to spin up the full ``thoth`` argparse tree. The
 ``register_subparser`` wiring is smoke-tested separately (it's a thin
 shell of argparse calls).
 """

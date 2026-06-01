@@ -1,6 +1,6 @@
-"""`hermes meet node ...` subcommand tree.
+"""`thoth meet node ...` subcommand tree.
 
-Wired into the existing ``hermes meet`` parser by the plugin's top-level
+Wired into the existing ``thoth meet`` parser by the plugin's top-level
 CLI. This module only defines the subparsers and their dispatch — it
 does not mutate the existing cli.py.
 """
@@ -21,7 +21,7 @@ from plugins.google_meet.node.server import NodeServer
 def register_cli(subparser: argparse.ArgumentParser) -> None:
     """Add ``run / list / approve / remove / status / ping`` subparsers.
 
-    *subparser* is the ``hermes meet node`` argparse object — typically
+    *subparser* is the ``thoth meet node`` argparse object — typically
     the result of ``meet_parser.add_parser('node', ...)``.
     """
     sp = subparser.add_subparsers(dest="node_cmd", required=True)
@@ -55,7 +55,7 @@ def register_cli(subparser: argparse.ArgumentParser) -> None:
 
 
 def node_command(args: argparse.Namespace) -> int:
-    """Dispatch for ``hermes meet node ...``.
+    """Dispatch for ``thoth meet node ...``.
 
     Returns a process exit code. Side-effects print to stdout/stderr.
     """
@@ -72,7 +72,7 @@ def node_command(args: argparse.Namespace) -> int:
         print(f"[meet-node] listening on ws://{args.host}:{args.port}")
         print(f"[meet-node] token (copy to gateway): {token}")
         print(f"[meet-node] approve with:")
-        print(f"             hermes meet node approve <name> ws://<host>:{args.port} {token}")
+        print(f"             thoth meet node approve <name> ws://<host>:{args.port} {token}")
         try:
             asyncio.run(server.serve())
         except KeyboardInterrupt:

@@ -83,8 +83,8 @@ def test_run_gateway_refuses_root_in_official_docker(monkeypatch, tmp_path, caps
 
     assert exc_info.value.code == 1
     out = capsys.readouterr().out
-    assert "Refusing to run the Hermes gateway as root" in out
-    assert "/opt/hermes/docker/entrypoint.sh" in out
+    assert "Refusing to run the Thoth gateway as root" in out
+    assert "/opt/thoth/docker/entrypoint.sh" in out
 
 
 def test_run_gateway_root_guard_has_escape_hatch(monkeypatch):
@@ -278,7 +278,7 @@ def test_gateway_start_in_container_with_operational_systemd_uses_systemd(monkey
 def test_gateway_restart_on_windows_without_service_uses_detached_backend(monkeypatch):
     """Windows manual restart must not fall back to foreground run_gateway().
 
-    A Telegram-hosted agent may run `hermes gateway restart` via the terminal
+    A Telegram-hosted agent may run `thoth gateway restart` via the terminal
     tool. The generic manual fallback stops the gateway and then calls
     run_gateway() in the same foreground subprocess; on Windows that subprocess
     can be reaped when its gateway parent is terminated, leaving the gateway
@@ -380,6 +380,10 @@ def test_systemd_install_checks_linger_status(monkeypatch, tmp_path, capsys):
 
     monkeypatch.setattr(gateway.subprocess, "run", fake_run)
     monkeypatch.setattr(gateway, "_ensure_linger_enabled", lambda: helper_calls.append(True))
+    # Keep hermetic: post-rename, a bare hermes-gateway.service counts as a
+    # legacy unit, so install would otherwise detect the developer machine's
+    # real one and block on the interactive removal prompt.
+    monkeypatch.setattr(gateway, "has_legacy_hermes_units", lambda: False)
 
     gateway.systemd_install(force=False)
 
@@ -408,6 +412,7 @@ def test_systemd_install_can_skip_enable_on_startup(monkeypatch, tmp_path, capsy
     monkeypatch.setattr(gateway.subprocess, "run", fake_run)
     monkeypatch.setattr(gateway, "_ensure_user_systemd_env", lambda: None)
     monkeypatch.setattr(gateway, "_ensure_linger_enabled", lambda: helper_calls.append(True))
+    monkeypatch.setattr(gateway, "has_legacy_hermes_units", lambda: False)
 
     gateway.systemd_install(force=False, enable_on_startup=False)
 
@@ -441,6 +446,7 @@ def test_systemd_install_system_scope_skips_linger_and_uses_systemctl(monkeypatc
 
     monkeypatch.setattr(gateway.subprocess, "run", fake_run)
     monkeypatch.setattr(gateway, "_ensure_linger_enabled", lambda: helper_calls.append(True))
+    monkeypatch.setattr(gateway, "has_legacy_hermes_units", lambda: False)
 
     gateway.systemd_install(force=False, system=True, run_as_user="alice")
 
@@ -474,7 +480,7 @@ def test_conflicting_systemd_units_warning(monkeypatch, tmp_path, capsys):
 
     out = capsys.readouterr().out
     assert "Both user and system gateway services are installed" in out
-    assert "hermes gateway uninstall" in out
+    assert f"{gateway.cli_name()} gateway uninstall" in out
     assert "--system" in out
 
 
@@ -488,8 +494,8 @@ def test_install_linux_gateway_from_setup_system_choice_without_root_prints_foll
 
     out = capsys.readouterr().out
     assert (scope, did_install) == ("system", False)
-    assert "sudo hermes gateway install --system --run-as-user alice" in out
-    assert "sudo hermes gateway start --system" in out
+    assert f"sudo {gateway.cli_name()} gateway install --system --run-as-user alice" in out
+    assert f"sudo {gateway.cli_name()} gateway start --system" in out
 
 
 def test_install_linux_gateway_from_setup_system_choice_as_root_installs(monkeypatch):

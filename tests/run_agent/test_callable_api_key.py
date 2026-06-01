@@ -3,7 +3,7 @@ the agent stack without coercion.
 
 The OpenAI Python SDK accepts ``api_key: str | None | Callable[[], str]``,
 and ``azure-identity``'s ``get_bearer_token_provider`` returns a callable.
-Hermes preserves the callable end-to-end so the SDK refreshes tokens
+Thoth preserves the callable end-to-end so the SDK refreshes tokens
 transparently. This file pins the contract at the high-risk seams the
 rubber-duck audit identified.
 

@@ -96,14 +96,14 @@ def _pf_on(monkeypatch):
 async def test_pattern_finder_writes_patterns(booted, monkeypatch):
     # Seed enough L1 entities to clear the min threshold.
     await l1.upsert_entity("Greg", "person", summary="works on infra")
-    await l1.upsert_entity("Hermes", "project", summary="the agent")
+    await l1.upsert_entity("Thoth", "project", summary="the agent")
     await l1.upsert_entity("substrate", "concept", summary="memory layer")
 
     async def _fake(context, *, client=None, model=None):
         assert "Greg" in context  # the context block reaches the LLM
         return PatternResult(patterns=[
             ParsedPattern("Greg works on infra-heavy projects", "generalization",
-                          entity_names=["Greg", "Hermes"], confidence=0.8),
+                          entity_names=["Greg", "Thoth"], confidence=0.8),
         ])
 
     monkeypatch.setattr(extract, "call_pattern_llm", _fake)
@@ -112,7 +112,7 @@ async def test_pattern_finder_writes_patterns(booted, monkeypatch):
     pats = await l3.list_patterns()
     assert any("infra-heavy" in p.statement for p in pats)
     p = pats[0]
-    assert len(p.cites) == 2  # resolved Greg + Hermes entity ids
+    assert len(p.cites) == 2  # resolved Greg + Thoth entity ids
 
 
 @pytest.mark.asyncio

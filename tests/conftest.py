@@ -206,7 +206,7 @@ _HERMES_BEHAVIORAL_VARS = frozenset({
     "HERMES_AGENT_USE_LEGACY_SESSION_KEYS",
     # Set by the launcher shim to the invoked command name (e.g.
     # hermes-substrate). Cleared so cli_name() deterministically returns the
-    # "hermes" default and the many tests asserting literal "hermes …" hints
+    # "thoth" default and the many tests asserting literal "thoth …" hints
     # don't depend on the ambient launcher name.
     "HERMES_CLI_NAME",
     # Kanban path/board pins must never leak from a developer shell or
@@ -423,7 +423,7 @@ def tmp_dir(tmp_path):
 
 @pytest.fixture()
 def mock_config():
-    """Return a minimal hermes config dict suitable for unit tests."""
+    """Return a minimal thoth config dict suitable for unit tests."""
     return {
         "model": "test/mock-model",
         "toolsets": ["terminal", "file"],
@@ -552,7 +552,7 @@ def _live_system_guard(request, monkeypatch):
     tokens[0]), so ``bash -c "systemctl restart hermes-gateway"``,
     ``sudo systemctl ...``, ``env systemctl ...``, ``setsid systemctl ...``
     are all caught. ``pkill``/``killall``/``taskkill`` invocations
-    targeting hermes/python patterns are also blocked.
+    targeting thoth/python patterns are also blocked.
     """
     if request.node.get_closest_marker(_LIVE_SYSTEM_GUARD_BYPASS_MARK):
         yield
@@ -646,7 +646,7 @@ def _live_system_guard(request, monkeypatch):
         "hermes_cli.main gateway",
         "hermes_cli/main.py gateway",
         "gateway/run.py",
-        "hermes gateway",
+        "thoth gateway",
     )
     _MUTATING_VERBS = (
         "restart", "start", "stop", "kill", "reload",
@@ -725,7 +725,7 @@ def _live_system_guard(request, monkeypatch):
             raise RuntimeError(
                 f"tests/conftest.py live-system guard: blocked "
                 f"subprocess.{name}({cmd!r}) — process-killer command "
-                "targeting hermes/python could hit the live gateway. "
+                "targeting thoth/python could hit the live gateway. "
                 "Mark with @pytest.mark.live_system_guard_bypass if "
                 "intentional."
             )
@@ -846,7 +846,7 @@ def _live_system_guard(request, monkeypatch):
 # required on Windows. Bring it up with: docker compose up -d postgres
 #
 # Connection defaults match docker-compose.yml:
-#   POSTGRES_USER=hermes  POSTGRES_PASSWORD=hermes  POSTGRES_DB=hermes
+#   POSTGRES_USER=thoth  POSTGRES_PASSWORD=thoth  POSTGRES_DB=thoth
 # Override via env vars POSTGRES_PORT / POSTGRES_USER / POSTGRES_PASSWORD.
 
 import pytest_asyncio
@@ -874,7 +874,7 @@ from alembic.config import Config
 # template creation is idempotent (CREATE DATABASE IF NOT EXISTS-style
 # via DatabaseJanitor at the fixture level). If a stale template is
 # blocking your local run, drop it once by hand:
-#     psql -U hermes -h localhost -c "DROP DATABASE IF EXISTS thoth_tmpl"
+#     psql -U thoth -h localhost -c "DROP DATABASE IF EXISTS thoth_tmpl"
 
 
 # Default to the dedicated `postgres-test` docker-compose service

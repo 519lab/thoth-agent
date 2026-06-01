@@ -360,7 +360,7 @@ def _require_client_id() -> str:
     if not cid:
         raise GoogleOAuthError(
             "Google OAuth client ID is not available.\n"
-            "Hermes looks for a locally installed gemini-cli to source the OAuth client. "
+            "Thoth looks for a locally installed gemini-cli to source the OAuth client. "
             "Either:\n"
             "  1. Install it: npm install -g @google/gemini-cli  (or brew install gemini-cli)\n"
             "  2. Set HERMES_GEMINI_CLIENT_ID and HERMES_GEMINI_CLIENT_SECRET in ~/.hermes/.env\n"
@@ -656,7 +656,7 @@ def get_valid_access_token(*, force_refresh: bool = False) -> str:
     creds = load_credentials()
     if creds is None:
         raise GoogleOAuthError(
-            "No Google OAuth credentials found. Run `hermes login --provider google-gemini-cli` first.",
+            "No Google OAuth credentials found. Run `thoth login --provider google-gemini-cli` first.",
             code="google_oauth_not_logged_in",
         )
 
@@ -791,7 +791,7 @@ class _OAuthCallbackHandler(http.server.BaseHTTPRequestHandler):
 
 
 _SUCCESS_PAGE = """<!doctype html>
-<html><head><meta charset="utf-8"><title>Hermes — signed in</title>
+<html><head><meta charset="utf-8"><title>Thoth — signed in</title>
 <style>
 body { font: 16px/1.5 system-ui, sans-serif; margin: 10vh auto; max-width: 32rem; text-align: center; color: #222; }
 h1 { color: #1a7f37; } p { color: #555; }
@@ -801,13 +801,13 @@ h1 { color: #1a7f37; } p { color: #555; }
 """
 
 _ERROR_PAGE = """<!doctype html>
-<html><head><meta charset="utf-8"><title>Hermes — sign-in failed</title>
+<html><head><meta charset="utf-8"><title>Thoth — sign-in failed</title>
 <style>
 body {{ font: 16px/1.5 system-ui, sans-serif; margin: 10vh auto; max-width: 32rem; text-align: center; color: #222; }}
 h1 {{ color: #b42318; }} p {{ color: #555; }}
 </style></head>
 <body><h1>Sign-in failed</h1><p>{message}</p>
-<p>Return to your terminal — Hermes will walk you through a manual paste fallback.</p></body></html>
+<p>Return to your terminal — Thoth will walk you through a manual paste fallback.</p></body></html>
 """
 
 
@@ -885,7 +885,7 @@ def start_oauth_flow(
         "access_type": "offline",
         "prompt": "consent",
     }
-    auth_url = AUTH_ENDPOINT + "?" + urllib.parse.urlencode(params) + "#hermes"
+    auth_url = AUTH_ENDPOINT + "?" + urllib.parse.urlencode(params) + "#thoth"
 
     server_thread = threading.Thread(target=server.serve_forever, daemon=True)
     server_thread.start()
@@ -962,7 +962,7 @@ def _paste_mode_login(
         "access_type": "offline",
         "prompt": "consent",
     }
-    auth_url = AUTH_ENDPOINT + "?" + urllib.parse.urlencode(params) + "#hermes"
+    auth_url = AUTH_ENDPOINT + "?" + urllib.parse.urlencode(params) + "#thoth"
 
     print()
     print("Open this URL in a browser on any device:")

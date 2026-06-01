@@ -12,13 +12,13 @@ AI-native cross-session user modeling with multi-pass dialectic reasoning, sessi
 ## Setup
 
 ```bash
-hermes honcho setup    # full interactive wizard (cloud or local)
-hermes memory setup    # generic picker, also works
+thoth honcho setup    # full interactive wizard (cloud or local)
+thoth memory setup    # generic picker, also works
 ```
 
 Or manually:
 ```bash
-hermes config set memory.provider honcho
+thoth config set memory.provider honcho
 echo "HONCHO_API_KEY=***" >> ~/.hermes/.env
 ```
 
@@ -105,11 +105,11 @@ Config is read from the first file that exists:
 
 | Priority | Path | Scope |
 |----------|------|-------|
-| 1 | `$HERMES_HOME/honcho.json` | Profile-local (isolated Hermes instances) |
+| 1 | `$HERMES_HOME/honcho.json` | Profile-local (isolated Thoth instances) |
 | 2 | `~/.hermes/honcho.json` | Default profile (shared host blocks) |
 | 3 | `~/.honcho/config.json` | Global (cross-app interop) |
 
-Host key is derived from the active Hermes profile: `hermes` (default) or `hermes.<profile>`.
+Host key is derived from the active Thoth profile: `hermes` (default) or `hermes.<profile>`.
 
 For every key, resolution order is: **host block > root > env var > default**.
 
@@ -159,7 +159,7 @@ The Honcho session name determines which conversation bucket memory lands in. Re
 | 1 | Manual map (`sessions` config) | `"myproject-main"` |
 | 2 | `/title` command (mid-session rename) | `"refactor-auth"` |
 | 3 | Gateway session key (Telegram, Discord, etc.) | `"agent-main-telegram-dm-8439114563"` |
-| 4 | `per-session` strategy | Hermes session ID (`20260415_a3f2b1`) |
+| 4 | `per-session` strategy | Thoth session ID (`20260415_a3f2b1`) |
 | 5 | `per-repo` strategy | Git root directory name (`hermes-agent`) |
 | 6 | `per-directory` strategy | Current directory basename (`src`) |
 | 7 | `global` strategy | Workspace name (`hermes`) |
@@ -170,14 +170,14 @@ If `sessionPeerPrefix` is `true`, the peer name is prepended: `eri-hermes-agent`
 
 #### What each strategy produces
 
-- **`per-directory`** — basename of `$PWD`. Opening hermes in `~/code/myapp` and `~/code/other` gives two separate sessions. Same directory = same session across runs.
+- **`per-directory`** — basename of `$PWD`. Opening thoth in `~/code/myapp` and `~/code/other` gives two separate sessions. Same directory = same session across runs.
 - **`per-repo`** — git root directory name. All subdirectories within a repo share one session. Falls back to `per-directory` if not inside a git repo.
-- **`per-session`** — Hermes session ID (timestamp + hex). Every `hermes` invocation starts a fresh Honcho session. Falls back to `per-directory` if no session ID is available.
+- **`per-session`** — Thoth session ID (timestamp + hex). Every `thoth` invocation starts a fresh Honcho session. Falls back to `per-directory` if no session ID is available.
 - **`global`** — workspace name. One session for everything. Memory accumulates across all directories and runs.
 
 ### Multi-Profile Pattern
 
-Multiple Hermes profiles can share one workspace while maintaining separate AI identities. Config resolution is **host block > root > env var > default** — host blocks inherit from root, so shared settings only need to be declared once:
+Multiple Thoth profiles can share one workspace while maintaining separate AI identities. Config resolution is **host block > root > env var > default** — host blocks inherit from root, so shared settings only need to be declared once:
 
 ```json
 {
@@ -201,7 +201,7 @@ Multiple Hermes profiles can share one workspace while maintaining separate AI i
 
 Both profiles see the same user (`yourname`) in the same shared environment (`hermes`), but each AI peer builds its own observations, conclusions, and behavior patterns. The coder's memory stays code-oriented; the main agent's stays broad.
 
-Host key is derived from the active Hermes profile: `hermes` (default) or `hermes.<profile>` (e.g. `hermes -p coder` → host key `hermes.coder`).
+Host key is derived from the active Thoth profile: `hermes` (default) or `hermes.<profile>` (e.g. `thoth -p coder` → host key `hermes.coder`).
 
 ### Dialectic & Reasoning
 
@@ -272,16 +272,16 @@ Presets:
 
 | Command | Description |
 |---------|-------------|
-| `hermes honcho setup` | Full interactive setup wizard |
-| `hermes honcho status` | Show resolved config for active profile |
-| `hermes honcho enable` / `disable` | Toggle Honcho for active profile |
-| `hermes honcho mode <mode>` | Change recall or observation mode |
-| `hermes honcho peer --user <name>` | Update user peer name |
-| `hermes honcho peer --ai <name>` | Update AI peer name |
-| `hermes honcho tokens --context <N>` | Set context token budget |
-| `hermes honcho tokens --dialectic <N>` | Set dialectic max chars |
-| `hermes honcho map <name>` | Map current directory to a session name |
-| `hermes honcho sync` | Create host blocks for all Hermes profiles |
+| `thoth honcho setup` | Full interactive setup wizard |
+| `thoth honcho status` | Show resolved config for active profile |
+| `thoth honcho enable` / `disable` | Toggle Honcho for active profile |
+| `thoth honcho mode <mode>` | Change recall or observation mode |
+| `thoth honcho peer --user <name>` | Update user peer name |
+| `thoth honcho peer --ai <name>` | Update AI peer name |
+| `thoth honcho tokens --context <N>` | Set context token budget |
+| `thoth honcho tokens --dialectic <N>` | Set dialectic max chars |
+| `thoth honcho map <name>` | Map current directory to a session name |
+| `thoth honcho sync` | Create host blocks for all Thoth profiles |
 
 ## Example Config
 

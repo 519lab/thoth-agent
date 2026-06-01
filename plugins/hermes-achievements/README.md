@@ -1,14 +1,14 @@
-# Hermes Achievements
+# Thoth Achievements
 
-> **Bundled with Hermes Agent.** Originally authored by [@PCinkusz](https://github.com/PCinkusz) at https://github.com/PCinkusz/hermes-achievements — vendored into `plugins/hermes-achievements/` so it ships with the dashboard out-of-the-box and stays in lockstep with Hermes feature changes. Upstream repo remains the staging ground for new badges and UI iteration.
+> **Bundled with Thoth Agent.** Originally authored by [@PCinkusz](https://github.com/PCinkusz) at https://github.com/PCinkusz/hermes-achievements — vendored into `plugins/hermes-achievements/` so it ships with the dashboard out-of-the-box and stays in lockstep with Thoth feature changes. Upstream repo remains the staging ground for new badges and UI iteration.
 >
-> When Hermes is installed via `pip install hermes-agent` or cloned from source, this plugin auto-registers as a dashboard tab on first `hermes dashboard` launch. No separate install step. See [Built-in Plugins → hermes-achievements](../../website/docs/user-guide/features/built-in-plugins.md) in the main docs.
+> When Thoth is installed via `pip install hermes-agent` or cloned from source, this plugin auto-registers as a dashboard tab on first `thoth dashboard` launch. No separate install step. See [Built-in Plugins → hermes-achievements](../../website/docs/user-guide/features/built-in-plugins.md) in the main docs.
 
-Achievement system for the Hermes Dashboard: collectible, tiered badges generated from real local Hermes session history.
+Achievement system for the Thoth Dashboard: collectible, tiered badges generated from real local Thoth session history.
 
-![Hermes Achievements dashboard](docs/assets/achievements-dashboard-hd.png)
+![Thoth Achievements dashboard](docs/assets/achievements-dashboard-hd.png)
 
-The screenshots use temporary demo tier data to show the full visual range. The plugin itself reads real local Hermes session history by default.
+The screenshots use temporary demo tier data to show the full visual range. The plugin itself reads real local Thoth session history by default.
 
 > **Update notice (2026-04-29):** If you installed this plugin before today, update to the latest version. The achievements scan path was refactored for much faster warm loads (snapshot cache + incremental checkpoint scan).
 >
@@ -16,12 +16,12 @@ The screenshots use temporary demo tier data to show the full visual range. The 
 
 ## What it does
 
-Hermes Achievements scans local Hermes sessions and unlocks badges based on real agent behavior:
+Thoth Achievements scans local Thoth sessions and unlocks badges based on real agent behavior:
 
 - autonomous tool chains
 - debugging and recovery patterns
 - vibe-coding file edits
-- Hermes-native skills, memory, cron, and plugin usage
+- Thoth-native skills, memory, cron, and plugin usage
 - web research and browser automation
 - model/provider workflows
 - lifestyle patterns such as weekend or night sessions
@@ -30,7 +30,7 @@ Achievements have three visible states:
 
 - **Unlocked** — earned at least one tier
 - **Discovered** — known achievement, progress visible, not earned yet
-- **Secret** — hidden until Hermes detects the first related signal
+- **Secret** — hidden until Thoth detects the first related signal
 
 Most achievements level through:
 
@@ -58,7 +58,7 @@ Version `0.2.x` expands the catalog to 60+ achievements, including model/provide
 
 ## Install
 
-Clone into your Hermes plugins directory:
+Clone into your Thoth plugins directory:
 
 ```bash
 git clone https://github.com/PCinkusz/hermes-achievements ~/.hermes/plugins/hermes-achievements
@@ -77,7 +77,7 @@ Then rescan dashboard plugins:
 curl http://127.0.0.1:9119/api/dashboard/plugins/rescan
 ```
 
-If backend API routes 404, restart `hermes dashboard`; plugin APIs are mounted at dashboard startup.
+If backend API routes 404, restart `thoth dashboard`; plugin APIs are mounted at dashboard startup.
 
 ## Updating
 
@@ -89,14 +89,14 @@ git pull --ff-only
 curl http://127.0.0.1:9119/api/dashboard/plugins/rescan
 ```
 
-If the update changes backend routes or `plugin_api.py`, restart `hermes dashboard` after pulling.
+If the update changes backend routes or `plugin_api.py`, restart `thoth dashboard` after pulling.
 
 As of 2026-04-29, updating is strongly recommended because scan performance changed significantly:
 - removed duplicate `/overview` scan path
 - added cached `/achievements` snapshot
 - added incremental checkpoint reuse for unchanged sessions
 
-Achievement unlock state is stored locally in `state.json` and is not overwritten by git updates. New achievements are evaluated from your existing Hermes session history. Achievement IDs are stable and should not be renamed casually because they are the unlock-state keys.
+Achievement unlock state is stored locally in `state.json` and is not overwritten by git updates. New achievements are evaluated from your existing Thoth session history. Achievement IDs are stable and should not be renamed casually because they are the unlock-state keys.
 
 Releases are tagged in git, for example:
 

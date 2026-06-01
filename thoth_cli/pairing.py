@@ -2,17 +2,17 @@
 CLI commands for the DM pairing system.
 
 Usage:
-    hermes pairing list              # Show all pending + approved users
-    hermes pairing approve <platform> <code>  # Approve a pairing code
-    hermes pairing revoke <platform> <user_id> # Revoke user access
-    hermes pairing clear-pending     # Clear all expired/pending codes
+    thoth pairing list              # Show all pending + approved users
+    thoth pairing approve <platform> <code>  # Approve a pairing code
+    thoth pairing revoke <platform> <user_id> # Revoke user access
+    thoth pairing clear-pending     # Clear all expired/pending codes
 """
 
 from thoth_cli.cli_name import cli_name
 
 
 def pairing_command(args):
-    """Handle hermes pairing subcommands."""
+    """Handle thoth pairing subcommands."""
     from gateway.pairing import PairingStore
 
     store = PairingStore()

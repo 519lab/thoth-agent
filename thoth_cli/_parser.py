@@ -1,5 +1,5 @@
 """
-Top-level argparse construction for the hermes CLI.
+Top-level argparse construction for the thoth CLI.
 
 Lives in its own module so other modules (e.g. ``relaunch.py``) can
 introspect the parser to discover which flags exist without running the
@@ -42,7 +42,7 @@ def _inherited_flag(parser, *args, **kwargs):
 def _build_epilogue(cli: str) -> str:
     """Render the --help examples block using the actual launcher name.
 
-    ``cli`` is whatever the user invoked the CLI as (``hermes`` upstream,
+    ``cli`` is whatever the user invoked the CLI as (``thoth`` upstream,
     or a side-by-side fork name like ``hermes-substrate``). Note the
     ``hermes-agent-dev`` toolset name below is data, not the command, and is
     intentionally left unchanged.
@@ -99,7 +99,7 @@ def build_top_level_parser():
     _cli = cli_name()
     parser = argparse.ArgumentParser(
         prog=_cli,
-        description="Hermes Agent - AI assistant with tool-calling capabilities",
+        description="Thoth Agent - AI assistant with tool-calling capabilities",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=_build_epilogue(_cli),
     )
@@ -123,7 +123,7 @@ def build_top_level_parser():
     # --model / --provider are accepted at the top level so they can pair
     # with -z without needing the `chat` subcommand.  If neither -z nor a
     # subcommand consumes them, they fall through harmlessly as None.
-    # Mirrors `hermes chat --model ... --provider ...` semantics.
+    # Mirrors `thoth chat --model ... --provider ...` semantics.
     _inherited_flag(
         parser,
         "-m",
@@ -245,7 +245,7 @@ def build_top_level_parser():
     chat_parser = subparsers.add_parser(
         "chat",
         help="Interactive chat with the agent",
-        description="Start an interactive chat session with Hermes Agent",
+        description="Start an interactive chat session with Thoth Agent",
     )
     chat_parser.add_argument(
         "-q", "--query", help="Single query (non-interactive mode)"

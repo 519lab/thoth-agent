@@ -1,7 +1,7 @@
 """
-Status command for hermes CLI.
+Status command for thoth CLI.
 
-Shows the status of all Hermes Agent components.
+Shows the status of all Thoth Agent components.
 """
 
 import os
@@ -32,7 +32,7 @@ def redact_key(key: str) -> str:
     """Redact an API key for display.
 
     Thin wrapper over :func:`agent.redact.mask_secret`. Preserves the
-    "(not set)" placeholder in dim color to match ``hermes config``'s
+    "(not set)" placeholder in dim color to match ``thoth config``'s
     output (previously this variant was missing the DIM color —
     consolidated via PR that also introduced ``mask_secret``).
     """
@@ -89,13 +89,13 @@ from hermes_constants import is_termux as _is_termux
 
 
 def show_status(args):
-    """Show status of all Hermes Agent components."""
+    """Show status of all Thoth Agent components."""
     show_all = getattr(args, 'all', False)
     deep = getattr(args, 'deep', False)
 
     print()
     print(color("┌─────────────────────────────────────────────────────────┐", Colors.CYAN))
-    print(color("│                 ⚕ Hermes Agent Status                  │", Colors.CYAN))
+    print(color("│                 ⚕ Thoth Agent Status                  │", Colors.CYAN))
     print(color("└─────────────────────────────────────────────────────────┘", Colors.CYAN))
 
     # =========================================================================
@@ -390,7 +390,7 @@ def show_status(args):
             persist_enabled = persist.lower() in {"1", "true", "yes", "on"}
         auth_status = describe_vercel_auth()
         sdk_ok = importlib.util.find_spec("vercel") is not None
-        sdk_label = "installed" if sdk_ok else "missing (install: pip install 'hermes-agent[vercel]')"
+        sdk_label = "installed" if sdk_ok else "missing (install: pip install 'thoth-agent[vercel]')"
         print(f"  Runtime:      {runtime}")
         print(f"  SDK:          {check_mark(sdk_ok)} {sdk_label}")
         print(f"  Auth:         {check_mark(auth_status.ok)} {auth_status.label}")

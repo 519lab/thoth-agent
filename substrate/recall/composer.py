@@ -2,12 +2,12 @@
 
 Turns the ranked list of :class:`RecallCandidate` into the text body
 that :class:`SubstrateMemoryProvider` returns. Sanitises any inline
-``<memory-context>`` fences using Hermes's existing helper, counts
+``<memory-context>`` fences using Thoth's existing helper, counts
 tokens via tiktoken, and stops when adding the next candidate would
 exceed the budget. A single oversized first candidate is truncated at
 the last newline before the budget edge and marked ``[truncated]``.
 
-Output is NOT fence-wrapped — the caller passes the text to Hermes's
+Output is NOT fence-wrapped — the caller passes the text to Thoth's
 ``build_memory_context_block`` for the standard wrapper.
 """
 

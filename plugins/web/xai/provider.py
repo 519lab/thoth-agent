@@ -4,7 +4,7 @@ Routes ``web_search`` tool calls through xAI's agentic Web Search tool
 (server-side ``web_search`` on the Responses API). Grok runs the actual
 searching and page-browsing server-side; we ask it to return the top
 results as structured JSON so we can hand back the same
-``{title, url, description, position}`` rows every other Hermes web
+``{title, url, description, position}`` rows every other Thoth web
 provider produces.
 
 Reference: https://docs.x.ai/developers/tools/web-search
@@ -25,7 +25,7 @@ Optional knobs (under ``web.xai`` in ``config.yaml``)::
         timeout: 90                   # seconds (default 90)
 
 Auth: reuses :func:`tools.xai_http.resolve_xai_http_credentials`, which
-prefers Hermes-managed xAI Grok OAuth (via ``hermes auth``) and falls back
+prefers Thoth-managed xAI Grok OAuth (via ``thoth auth``) and falls back
 to ``XAI_API_KEY`` (resolved through ``~/.hermes/.env``, then
 ``os.environ``).
 """
@@ -132,7 +132,7 @@ class XAIWebSearchProvider(WebSearchProvider):
         deliberately *not* the same as :func:`resolve_xai_http_credentials`:
         it never triggers OAuth token refresh or acquires the auth-store
         lock. The ABC contract requires this method to be safe to call on
-        every ``hermes tools`` repaint and at tool-registration time.
+        every ``thoth tools`` repaint and at tool-registration time.
         Token freshness / refresh is handled inside :meth:`search`.
         """
         return has_xai_credentials()
@@ -169,7 +169,7 @@ class XAIWebSearchProvider(WebSearchProvider):
             return {
                 "success": False,
                 "error": (
-                    "No xAI credentials found. Run `hermes auth` to sign in with "
+                    "No xAI credentials found. Run `thoth auth` to sign in with "
                     "xAI Grok OAuth, or set XAI_API_KEY."
                 ),
             }

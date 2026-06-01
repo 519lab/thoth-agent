@@ -199,7 +199,7 @@ class TestConfig:
         assert provider._recall_tags is None
         assert provider._bank_mission == ""
         assert provider._bank_retain_mission is None
-        assert provider._retain_context == "conversation between Hermes Agent and the User"
+        assert provider._retain_context == "conversation between Thoth Agent and the User"
 
     def test_custom_config_values(self, provider_with_config):
         p = provider_with_config(
@@ -678,7 +678,7 @@ class TestSyncTurn:
         assert call_kwargs["retain_async"] is True
         assert len(call_kwargs["items"]) == 1
         item = call_kwargs["items"][0]
-        assert item["context"] == "conversation between Hermes Agent and the User"
+        assert item["context"] == "conversation between Thoth Agent and the User"
         assert item["tags"] == ["conv", "session1", "session:session-1"]
         content = json.loads(item["content"])
         assert len(content) == 1
@@ -725,7 +725,7 @@ class TestSyncTurn:
         assert call_kwargs["document_id"].startswith("test-session-")
         assert call_kwargs["retain_async"] is True
         assert len(call_kwargs["items"]) == 1
-        assert call_kwargs["items"][0]["context"] == "conversation between Hermes Agent and the User"
+        assert call_kwargs["items"][0]["context"] == "conversation between Thoth Agent and the User"
 
     def test_sync_turn_custom_context(self, provider_with_config):
         p = provider_with_config(retain_context="my-agent")
@@ -1300,7 +1300,7 @@ class TestBankIdTemplate:
     def test_resolve_invalid_template_returns_fallback(self):
         # Unknown placeholder should fall back without raising
         result = _resolve_bank_id_template(
-            "hermes-{unknown}", fallback="hermes",
+            "thoth-{unknown}", fallback="hermes",
             profile="", workspace="", platform="", user="", session="",
         )
         assert result == "hermes"

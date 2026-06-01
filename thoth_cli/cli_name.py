@@ -1,7 +1,7 @@
 """Resolve the name the user actually invoked this CLI with.
 
-A Hermes Substrate fork can be installed side-by-side with an upstream
-``hermes`` under a different launcher name (e.g. ``hermes-substrate``).
+A Thoth Substrate fork can be installed side-by-side with an upstream
+``thoth`` under a different launcher name (e.g. ``hermes-substrate``).
 User-facing hints like ``<cli> --resume <id>`` must echo back whatever
 launcher the user actually typed, otherwise the suggestion points at the
 wrong install (or a command that doesn't exist).

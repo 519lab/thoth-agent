@@ -296,18 +296,18 @@ class TestGatewayRuntimeStatus:
             "pid": 99999,
             "start_time": 1000.0,
             "kind": "hermes-gateway",
-            "argv": ["/old/path/hermes", "gateway", "run"],
+            "argv": ["/old/path/thoth", "gateway", "run"],
             "platforms": {},
             "updated_at": "2025-01-01T00:00:00Z",
         }))
 
-        monkeypatch.setattr(status.sys, "argv", ["/new/path/hermes", "gateway", "run"])
+        monkeypatch.setattr(status.sys, "argv", ["/new/path/thoth", "gateway", "run"])
         monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 2000)
 
         status.write_runtime_status(gateway_state="running")
 
         payload = status.read_runtime_status()
-        assert payload["argv"] == ["/new/path/hermes", "gateway", "run"]
+        assert payload["argv"] == ["/new/path/thoth", "gateway", "run"]
         assert payload["pid"] == os.getpid()
         assert payload["start_time"] == 2000
 

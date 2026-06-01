@@ -1,10 +1,10 @@
 """End-to-end Phase A acceptance surrogate for spec §12 acceptance #3.
 
-The spec's acceptance criterion is: *"Running ``hermes`` and exchanging a
+The spec's acceptance criterion is: *"Running ``thoth`` and exchanging a
 turn produces a response identical to Phase 0 behavior; behind the scenes,
 slices accumulate in ``substrate_slices`` for that session."*
 
-We don't run the full interactive ``hermes`` binary here (that'd require
+We don't run the full interactive ``thoth`` binary here (that'd require
 an LLM provider and a TTY). What we DO is the substrate-visible portion of
 the turn: boot substrate, create a session, append user + assistant
 messages, append a tool message — and assert the right slices accumulated
@@ -112,10 +112,10 @@ async def test_session_roundtrip_emits_substrate_slices(booted):
 
 @pytest.mark.asyncio
 async def test_inspect_summary_after_roundtrip_is_nonempty(booted):
-    """After a session round-trip, ``hermes substrate`` reports
+    """After a session round-trip, ``thoth substrate`` reports
     non-zero slice counts and the expected sub-agent section.
 
-    This is the §12 acceptance #4 surrogate: *"hermes substrate
+    This is the §12 acceptance #4 surrogate: *"thoth substrate
     returns a non-empty summary with sensible counts after one or more
     real sessions."*
     """

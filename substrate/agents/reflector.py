@@ -116,7 +116,7 @@ async def _synthesize(context: str, *, client, model) -> ReflectorResult:
     from substrate.l1.extract import _strip_fences
 
     prompt = (
-        "You are the reflective faculty of a Hermes Agent's memory. Below is "
+        "You are the reflective faculty of a Thoth Agent's memory. Below is "
         "a summary of what the agent currently knows about its world and "
         "itself. Synthesize 1-3 HIGHER-ORDER meta-observations: reflections "
         "on recurring themes (layer 'l3') or notes about the shape, gaps, or "

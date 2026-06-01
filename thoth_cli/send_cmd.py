@@ -1,4 +1,4 @@
-"""CLI subcommand: ``hermes send`` — pipe text from shell scripts to any
+"""CLI subcommand: ``thoth send`` — pipe text from shell scripts to any
 configured messaging platform (Telegram, Discord, Slack, Signal, SMS, etc.).
 
 This is a thin wrapper around ``tools.send_message_tool.send_message_tool``
@@ -204,16 +204,16 @@ def _load_hermes_env() -> None:
 
     ``send_message_tool`` reads tokens and home-channel IDs via
     ``os.getenv(...)`` on each call. The gateway process does two things at
-    startup that ``hermes send`` must replicate when invoked standalone:
+    startup that ``thoth send`` must replicate when invoked standalone:
 
     1. ``load_dotenv(~/.hermes/.env)`` — brings bot tokens into the env.
     2. Bridge top-level simple values from ``~/.hermes/config.yaml`` into
        ``os.environ`` (without overriding existing env vars). This is where
        ``TELEGRAM_HOME_CHANNEL`` and friends live when the user saved them
-       via ``hermes config set``.
+       via ``thoth config set``.
 
     See ``gateway/run.py`` for the canonical version of this bridge — we
-    intentionally reimplement the minimum needed here so ``hermes send``
+    intentionally reimplement the minimum needed here so ``thoth send``
     doesn't pull in the full gateway module just to resolve a home channel.
     """
     # Step 1: dotenv
@@ -322,7 +322,7 @@ def cmd_send(args: argparse.Namespace) -> None:
     if subject:
         message = f"{subject}\n\n{message.lstrip()}"
 
-    # Import lazily so `hermes send --help` stays fast and does not pull in
+    # Import lazily so `thoth send --help` stays fast and does not pull in
     # the full tool registry / gateway config stack.
     from tools.send_message_tool import send_message_tool
 
@@ -357,7 +357,7 @@ def register_send_subparser(subparsers) -> argparse.ArgumentParser:
         "send",
         help="Send a message to a configured platform (scripts, cron jobs, CI).",
         description=(
-            "Pipe text from any shell script to any messaging platform Hermes "
+            "Pipe text from any shell script to any messaging platform Thoth "
             "is already configured for. Reuses the gateway's platform "
             "credentials (~/.hermes/.env + ~/.hermes/config.yaml) — no LLM, "
             "no agent loop, no running gateway required for bot-token "
@@ -365,12 +365,12 @@ def register_send_subparser(subparsers) -> argparse.ArgumentParser:
         ),
         epilog=(
             "Examples:\n"
-            "  hermes send --to telegram \"deploy finished\"\n"
-            "  echo \"RAM 92%\" | hermes send --to telegram:-1001234567890\n"
-            "  hermes send --to discord:#ops --file /tmp/report.md\n"
-            "  hermes send --to slack:#eng --subject \"[CI]\" --file build.log\n"
-            "  hermes send --list                  # all platforms\n"
-            "  hermes send --list telegram         # filter by platform\n"
+            "  thoth send --to telegram \"deploy finished\"\n"
+            "  echo \"RAM 92%\" | thoth send --to telegram:-1001234567890\n"
+            "  thoth send --to discord:#ops --file /tmp/report.md\n"
+            "  thoth send --to slack:#eng --subject \"[CI]\" --file build.log\n"
+            "  thoth send --list                  # all platforms\n"
+            "  thoth send --list telegram         # filter by platform\n"
             "\n"
             "Exit codes: 0 ok, 1 delivery/backend error, 2 usage error."
         ),
@@ -422,7 +422,7 @@ def register_send_subparser(subparsers) -> argparse.ArgumentParser:
         dest="list_targets",
         action="store_true",
         default=False,
-        help="List available targets. Optional positional filter: `hermes send --list telegram`.",
+        help="List available targets. Optional positional filter: `thoth send --list telegram`.",
     )
 
     parser.add_argument(

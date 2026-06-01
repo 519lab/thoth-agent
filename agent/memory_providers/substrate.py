@@ -8,10 +8,10 @@ foreground's ``<memory-context>`` block continues to come from the
 existing built-in path. Flipping to ``1`` is a one-line follow-up PR
 once the operator has validated the substrate path manually.
 
-The provider is sync (matches Hermes's ``MemoryProvider`` ABC); it
+The provider is sync (matches Thoth's ``MemoryProvider`` ABC); it
 bridges to the async ``recall()`` via ``recall_sync`` (which goes
 through ``hermes_db.run_sync``). Failures are absorbed — substrate
-errors never reach the Hermes call site (mirrors the Phase A hook
+errors never reach the Thoth call site (mirrors the Phase A hook
 discipline).
 
 The provider exposes one tool — ``substrate_recall_more`` — for the
@@ -34,7 +34,7 @@ _log = logging.getLogger("substrate.memory_provider")
 
 
 # Env-var name controlling activation. Kept here (not in substrate.config)
-# so the import surface stays Hermes-side; substrate.config reads the
+# so the import surface stays Thoth-side; substrate.config reads the
 # same name for its own enable flag.
 _ENABLE_ENV_VAR = "HERMES_SUBSTRATE_RECALL"
 
@@ -83,9 +83,9 @@ class SubstrateMemoryProvider(MemoryProvider):
     def is_available(self) -> bool:
         """Return True if the substrate has been booted.
 
-        The substrate's boot is non-fatal to Hermes (Phase A §0) — if
+        The substrate's boot is non-fatal to Thoth (Phase A §0) — if
         the substrate failed to boot, the provider is "unavailable"
-        and Hermes continues with whatever else is registered.
+        and Thoth continues with whatever else is registered.
         """
         from substrate import get_bound_substrate
 
@@ -224,7 +224,7 @@ class SubstrateMemoryProvider(MemoryProvider):
     @staticmethod
     def _substrate_or_none():
         """Resolve the bound substrate without raising. Imports late so
-        a substrate-import failure doesn't crash Hermes provider setup."""
+        a substrate-import failure doesn't crash Thoth provider setup."""
         try:
             from substrate import get_bound_substrate
         except Exception:

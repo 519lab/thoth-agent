@@ -132,7 +132,7 @@ def _strip_yaml_frontmatter(content: str) -> str:
 # =========================================================================
 
 DEFAULT_AGENT_IDENTITY = (
-    "You are Hermes Agent, an intelligent AI assistant created by Nous Research. "
+    "You are Thoth Agent, an intelligent AI assistant created by Nous Research. "
     "You are helpful, knowledgeable, and direct. You assist users with a wide "
     "range of tasks including answering questions, writing and editing code, "
     "analyzing information, creative work, and executing actions via your tools. "
@@ -142,7 +142,7 @@ DEFAULT_AGENT_IDENTITY = (
 )
 
 HERMES_AGENT_HELP_GUIDANCE = (
-    "If the user asks about configuring, setting up, or using Hermes Agent "
+    "If the user asks about configuring, setting up, or using Thoth Agent "
     "itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') "
     "before answering. Docs: https://thoth.519lab.com/docs"
 )
@@ -246,7 +246,7 @@ KANBAN_GUIDANCE = (
     "\n"
     "## Do NOT\n"
     "\n"
-    "- Do not shell out to `hermes kanban <verb>` for board operations. Use "
+    "- Do not shell out to `thoth kanban <verb>` for board operations. Use "
     "the `kanban_*` tools — they work across all terminal backends.\n"
     "- Do not complete a task you didn't actually finish. Block it.\n"
     "- Do not assign follow-up work to yourself. Assign it to the right "
@@ -585,7 +585,7 @@ PLATFORM_HINTS = {
         "brief and natural."
     ),
     "webui": (
-        "You are in the Hermes WebUI, a browser-based chat interface. "
+        "You are in the Thoth WebUI, a browser-based chat interface. "
         "Full Markdown rendering is supported — headings, bold, italic, code "
         "blocks, tables, math (LaTeX), and Mermaid diagrams all render natively. "
         "To display local or remote media/files inline, include "
@@ -618,7 +618,7 @@ WSL_ENVIRONMENT_HINT = (
 
 # Non-local terminal backends that run commands (and therefore every file
 # tool: read_file, write_file, patch, search_files) inside a separate
-# container / remote host rather than on the machine where Hermes itself
+# container / remote host rather than on the machine where Thoth itself
 # runs. For these backends, host info (Windows/Linux/macOS, $HOME, cwd) is
 # misleading — the agent should only see the machine it can actually touch.
 _REMOTE_TERMINAL_BACKENDS = frozenset({
@@ -646,7 +646,7 @@ _BACKEND_FALLBACK_DESCRIPTIONS: dict[str, str] = {
 # on the first prompt build of a session. Keyed by (env_type, cwd_hint) so
 # a mid-process backend switch rebuilds the string. Kept in-module (not on
 # disk) because the probe captures live backend state that may change
-# across Hermes restarts.
+# across Thoth restarts.
 _BACKEND_PROBE_CACHE: dict[tuple[str, str], str] = {}
 
 
@@ -667,7 +667,7 @@ def _probe_remote_backend(env_type: str) -> str | None:
     Returns a pre-formatted multi-line string describing the backend's OS,
     $HOME, cwd, and user — or None if the probe failed. Result is cached
     per process. Used only for non-local backends where the agent's tools
-    operate on a different machine than the host Hermes runs on.
+    operate on a different machine than the host Thoth runs on.
     """
     cwd_hint = os.getenv("TERMINAL_CWD", "")
     cache_key = (env_type, cwd_hint)
@@ -806,8 +806,8 @@ def build_environment_hints() -> str:
                 f"Terminal backend: {backend}. Your `terminal`, `read_file`, "
                 f"`write_file`, `patch`, and `search_files` tools all operate "
                 f"inside this {backend} environment — NOT on the machine "
-                f"where Hermes itself is running. The host OS, home, and cwd "
-                f"of the Hermes process are irrelevant; only the following "
+                f"where Thoth itself is running. The host OS, home, and cwd "
+                f"of the Thoth process are irrelevant; only the following "
                 f"backend state matters:\n{probe}"
             )
         else:
@@ -817,7 +817,7 @@ def build_environment_hints() -> str:
             hints.append(
                 f"Terminal backend: {backend}. Your `terminal`, `read_file`, "
                 f"`write_file`, `patch`, and `search_files` tools all operate "
-                f"inside {description} — NOT on the machine where Hermes "
+                f"inside {description} — NOT on the machine where Thoth "
                 f"itself runs. The backend probe didn't respond at "
                 f"prompt-build time, so the sandbox's current user, $HOME, "
                 f"and working directory are unknown from here. If you need "
@@ -1202,10 +1202,10 @@ def build_skills_system_prompt(
             "for tasks like code review, planning, and testing — load them even for tasks you "
             "already know how to do, because the skill defines how it should be done here.\n"
             "Whenever the user asks you to configure, set up, install, enable, disable, modify, "
-            "or troubleshoot Hermes Agent itself — its CLI, config, models, providers, tools, "
+            "or troubleshoot Thoth Agent itself — its CLI, config, models, providers, tools, "
             "skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill "
-            "first. It has the actual commands (e.g. `hermes config set …`, `hermes tools`, "
-            "`hermes setup`) so you don't have to guess or invent workarounds.\n"
+            "first. It has the actual commands (e.g. `thoth config set …`, `thoth tools`, "
+            "`thoth setup`) so you don't have to guess or invent workarounds.\n"
             "If a skill has issues, fix it with skill_manage(action='patch').\n"
             "After difficult/iterative tasks, offer to save as a skill. "
             "If a skill you loaded was missing steps, had wrong commands, or needed "
@@ -1288,7 +1288,7 @@ def build_nous_subscription_prompt(valid_tool_names: "set[str] | None" = None) -
             "When a Nous-managed feature is active, do not ask the user for Firecrawl, FAL, OpenAI TTS, or Browser-Use API keys.",
             "If the user is not subscribed and asks for a capability that Nous subscription would unlock or simplify, suggest Nous subscription as one option alongside direct setup or local alternatives.",
             "Do not mention subscription unless the user asks about it or it directly solves the current missing capability.",
-            "Useful commands: hermes setup, hermes setup tools, hermes setup terminal, hermes status.",
+            "Useful commands: thoth setup, thoth setup tools, thoth setup terminal, thoth status.",
         ]
     )
     return "\n".join(lines)

@@ -22,7 +22,7 @@ class TestCleanForDisplay:
 
     def test_media_tag_stripped(self):
         """Basic MEDIA:<path> tag is removed."""
-        text = "Here is the image\nMEDIA:/tmp/hermes/image.png"
+        text = "Here is the image\nMEDIA:/tmp/thoth/image.png"
         result = GatewayStreamConsumer._clean_for_display(text)
         assert "MEDIA:" not in result
         assert "Here is the image" in result
