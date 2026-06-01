@@ -306,7 +306,7 @@ def pool() -> asyncpg.Pool:
     # run in environments without a live PG instance, while DB-touching
     # subcommands still get a working pool without an explicit init step
     # at the entry point.
-    dsn = os.environ.get("HERMES_PG_DSN")
+    dsn = os.environ.get("THOTH_PG_DSN")
     if not dsn:
         raise RuntimeError("hermes_db.init() not called")
 
@@ -468,7 +468,7 @@ def ensure_pool_sync() -> bool:
     """
     if _pool is not None:
         return True
-    dsn = os.environ.get("HERMES_PG_DSN")
+    dsn = os.environ.get("THOTH_PG_DSN")
     if not dsn:
         return False
     # Reject calls from inside ANY running loop on this thread (not just

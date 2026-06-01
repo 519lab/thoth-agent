@@ -212,9 +212,9 @@ def cli_migrate_from_sqlite(sqlite_path: str | None = None, dry_run: bool = Fals
     src = Path(sqlite_path)
     if not src.exists():
         return f"Error: {src} does not exist"
-    dsn = os.environ.get("HERMES_PG_DSN")
+    dsn = os.environ.get("THOTH_PG_DSN")
     if not dsn:
-        return "Error: HERMES_PG_DSN env var not set"
+        return "Error: THOTH_PG_DSN env var not set"
 
     async def _run():
         await hermes_db.init(dsn)
