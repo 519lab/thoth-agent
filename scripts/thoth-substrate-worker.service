@@ -1,5 +1,5 @@
 [Unit]
-# Hermes substrate sub-agent worker subprocess.
+# Thoth substrate sub-agent worker subprocess.
 #
 # Runs Sentinel + Curator + ForceRejectWorker + PartitionMaintenanceWorker
 # in a dedicated process with its own asyncpg pool and event loop.
@@ -10,10 +10,10 @@
 #
 # Installed by ``scripts/install.sh`` as a per-user (``--user``) unit.
 # After the install command places this file at
-# ``~/.config/systemd/user/hermes-substrate-worker.service``, enable +
+# ``~/.config/systemd/user/thoth-substrate-worker.service``, enable +
 # start it with:
 #
-#   systemctl --user enable --now hermes-substrate-worker
+#   systemctl --user enable --now thoth-substrate-worker
 #
 # Path placeholders below assume the standard install layout:
 #   HERMES_HOME = ~/.hermes
@@ -24,9 +24,9 @@
 # WorkingDirectory / EnvironmentFile paths to match. The install
 # script overwrites this file on each ``install.sh`` run, so custom
 # edits should be staged in a drop-in at
-# ``~/.config/systemd/user/hermes-substrate-worker.service.d/override.conf``.
+# ``~/.config/systemd/user/thoth-substrate-worker.service.d/override.conf``.
 
-Description=Hermes Substrate Sub-Agent Worker (Sentinel, Curator, etc.)
+Description=Thoth Substrate Sub-Agent Worker (Sentinel, Curator, etc.)
 Documentation=https://github.com/519lab/thoth-agent#substrate
 After=network-online.target
 Wants=network-online.target
@@ -35,7 +35,7 @@ Wants=network-online.target
 # the other — if the gateway is stopped for maintenance the worker keeps
 # decaying salience and backfilling embeddings against whatever slices
 # the writer processes (CLI sessions, cron) emit.
-After=hermes-gateway.service
+After=thoth-gateway.service
 
 [Service]
 Type=simple

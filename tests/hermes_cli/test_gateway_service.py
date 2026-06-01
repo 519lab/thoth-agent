@@ -44,6 +44,11 @@ class TestSystemdServiceRefresh:
 
         monkeypatch.setattr(gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path)
         monkeypatch.setattr(gateway_cli, "generate_systemd_unit", lambda system=False, run_as_user=None: "new unit\n")
+        # Keep the test hermetic: the install flow now treats a bare
+        # ``hermes-gateway.service`` as a legacy unit and would otherwise
+        # detect the real one on the developer's machine and block on the
+        # interactive removal prompt.
+        monkeypatch.setattr(gateway_cli, "has_legacy_hermes_units", lambda: False)
 
         calls = []
 
@@ -1863,23 +1868,43 @@ class TestLegacyHermesUnitDetection:
         assert path == legacy
         assert is_system is True
 
+    def test_detects_legacy_hermes_gateway_service(self, tmp_path, monkeypatch):
+        """After the thoth-gateway rename, the OLD default unit name
+        ``hermes-gateway.service`` is itself legacy and must be detected when
+        it carries one of our gateway ExecStart markers — this is the
+        migration path that lets an upgraded install shed its pre-rename unit.
+        """
+        user_dir, _ = self._setup_search_paths(tmp_path, monkeypatch)
+        legacy = user_dir / "hermes-gateway.service"
+        legacy.write_text(self._OUR_UNIT_TEXT, encoding="utf-8")
+
+        results = gateway_cli._find_legacy_hermes_units()
+
+        assert len(results) == 1
+        name, path, is_system = results[0]
+        assert name == "hermes-gateway.service"
+        assert path == legacy
+        assert is_system is False
+        assert gateway_cli.has_legacy_hermes_units() is True
+
     def test_ignores_profile_unit_hermes_gateway_coder(self, tmp_path, monkeypatch):
         """CRITICAL: profile units must NOT be flagged as legacy.
 
         Teknium's concern — ``hermes-gateway-coder.service`` is our standard
         naming for the ``coder`` profile. The legacy detector is an explicit
-        allowlist, not a glob, so profile units are safe.
+        allowlist, not a glob, so profile units (``hermes-gateway-<suffix>``)
+        are never matched — even though the bare ``hermes-gateway.service``
+        default name is itself legacy after the thoth-gateway rename.
         """
         user_dir, system_dir = self._setup_search_paths(tmp_path, monkeypatch)
-        # Drop profile units in BOTH scopes with our ExecStart
+        # Drop profile units (suffixed) in BOTH scopes with our ExecStart.
+        # The bare ``hermes-gateway.service`` is intentionally NOT written
+        # here — it is now a legacy default name and would be matched.
         for base in (user_dir, system_dir):
             (base / "hermes-gateway-coder.service").write_text(
                 self._OUR_UNIT_TEXT, encoding="utf-8"
             )
             (base / "hermes-gateway-orcha.service").write_text(
-                self._OUR_UNIT_TEXT, encoding="utf-8"
-            )
-            (base / "hermes-gateway.service").write_text(
                 self._OUR_UNIT_TEXT, encoding="utf-8"
             )
 
@@ -2111,20 +2136,25 @@ class TestRemoveLegacyHermesUnits:
     ):
         """Teknium's constraint: profile units (hermes-gateway-coder.service)
         must survive a migration call, even if we somehow include them in the
-        search dir."""
+        search dir.
+
+        After the thoth-gateway rename the bare ``hermes-gateway.service`` is
+        itself a legacy default name and IS removed; only the suffixed profile
+        unit must be left untouched (the allowlist matches the base name, not
+        ``hermes-gateway-<suffix>``)."""
         user_dir, _, _ = self._setup(tmp_path, monkeypatch, as_root=True)
         profile_unit = user_dir / "hermes-gateway-coder.service"
         profile_unit.write_text(self._OUR_UNIT_TEXT, encoding="utf-8")
-        default_unit = user_dir / "hermes-gateway.service"
-        default_unit.write_text(self._OUR_UNIT_TEXT, encoding="utf-8")
+        legacy_default_unit = user_dir / "hermes-gateway.service"
+        legacy_default_unit.write_text(self._OUR_UNIT_TEXT, encoding="utf-8")
 
         removed, remaining = gateway_cli.remove_legacy_hermes_units(interactive=False)
 
-        assert removed == 0
+        # The now-legacy bare default unit is removed; the profile unit is not.
+        assert removed == 1
         assert remaining == []
-        # Both the profile unit and the current default unit must survive
         assert profile_unit.exists()
-        assert default_unit.exists()
+        assert not legacy_default_unit.exists()
 
     def test_interactive_prompt_no_skips_removal(self, tmp_path, monkeypatch, capsys):
         """When interactive=True and user answers no, no removal happens."""

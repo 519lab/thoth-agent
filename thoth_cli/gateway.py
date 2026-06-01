@@ -1261,8 +1261,8 @@ def _windows_gateway_should_absorb_console_controls() -> bool:
 # Service Configuration
 # =============================================================================
 
-_SERVICE_BASE = "hermes-gateway"
-SERVICE_DESCRIPTION = "Hermes Agent Gateway - Messaging Platform Integration"
+_SERVICE_BASE = "thoth-gateway"
+SERVICE_DESCRIPTION = "Thoth Agent Gateway - Messaging Platform Integration"
 
 
 def _profile_suffix() -> str:
@@ -1323,8 +1323,8 @@ def _profile_arg(hermes_home: str | None = None) -> str:
 def get_service_name() -> str:
     """Derive a systemd service name scoped to this HERMES_HOME.
 
-    Default ``~/.hermes`` returns ``hermes-gateway`` (backward compatible).
-    Profile ``~/.hermes/profiles/coder`` returns ``hermes-gateway-coder``.
+    Default ``~/.hermes`` returns ``thoth-gateway`` (backward compatible).
+    Profile ``~/.hermes/profiles/coder`` returns ``thoth-gateway-coder``.
     Any other HERMES_HOME appends a short hash for uniqueness.
     """
     suffix = _profile_suffix()
@@ -1582,10 +1582,12 @@ def has_conflicting_systemd_units() -> bool:
 
 
 # Legacy service names from older Hermes installs that predate the
-# hermes-gateway rename. Kept as an explicit allowlist (NOT a glob) so
-# profile units (hermes-gateway-*.service) and unrelated third-party
-# "hermes" units are never matched.
-_LEGACY_SERVICE_NAMES: tuple[str, ...] = ("hermes.service",)
+# thoth-gateway rename. ``hermes-gateway.service`` is now legacy too (it was
+# the default unit name before the thoth-gateway rename). Kept as an explicit
+# allowlist (NOT a glob) so profile units (hermes-gateway-*.service) and
+# unrelated third-party "hermes" units are never matched — consistent with
+# the existing design.
+_LEGACY_SERVICE_NAMES: tuple[str, ...] = ("hermes.service", "hermes-gateway.service")
 
 # ExecStart content markers that identify a unit as running our gateway.
 # A legacy unit is only flagged when its file contains one of these.
@@ -1616,11 +1618,11 @@ def _find_legacy_hermes_units() -> list[tuple[str, Path, bool]]:
     """Return ``[(unit_name, unit_path, is_system)]`` for legacy Hermes gateway units.
 
     Detects unit files installed by older Hermes versions that used a
-    different service name (e.g. ``hermes.service`` before the rename to
-    ``hermes-gateway.service``). When both a legacy unit and the current
-    ``hermes-gateway.service`` are active, they fight over the same bot
-    token — the PR #5646 signal-recovery change turns this into a 30-second
-    SIGTERM flap loop.
+    different service name (e.g. ``hermes.service`` or ``hermes-gateway.service``
+    before the rename to ``thoth-gateway.service``). When both a legacy unit
+    and the current ``thoth-gateway.service`` are active, they fight over the
+    same bot token — the PR #5646 signal-recovery change turns this into a
+    30-second SIGTERM flap loop.
 
     Safety guards:
 
@@ -1668,7 +1670,7 @@ def print_legacy_unit_warning() -> None:
     for name, path, is_system in legacy:
         scope = "system" if is_system else "user"
         print_info(f"    {path}  ({scope} scope)")
-    print_info("  These run alongside the current hermes-gateway service and")
+    print_info(f"  These run alongside the current {get_service_name()} service and")
     print_info("  cause SIGTERM flap loops — both try to use the same bot token.")
     print_info("  Remove them with:")
     print_info(f"    {cli_name()} gateway migrate-legacy")
