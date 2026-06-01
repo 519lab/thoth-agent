@@ -568,6 +568,6 @@ The short version:
 - [Profiles: Running Multiple Agents](./profiles.md) — the base concept
 - [Profile Commands reference](../reference/profile-commands.md) — every flag, every option
 - [`thoth profile export` / `import`](../reference/profile-commands.md#thoth-profile-export) — local backup / restore (not distribution)
-- [Using SOUL with Thoth](../guides/use-soul-with-hermes.md) — authoring personalities
+- [Using SOUL with Thoth](../guides/use-soul-with-thoth.md) — authoring personalities
 - [Personality & SOUL](./features/personality.md) — how SOUL fits into the agent
 - [Skills catalog](../reference/skills-catalog.md) — skills you can bundle

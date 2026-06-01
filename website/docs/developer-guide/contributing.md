@@ -22,7 +22,7 @@ We value contributions in this order:
 
 ## Common contribution paths
 
-- Building a custom/local tool without modifying Thoth core? Start with [Build a Thoth Plugin](../guides/build-a-hermes-plugin.md)
+- Building a custom/local tool without modifying Thoth core? Start with [Build a Thoth Plugin](../guides/build-a-thoth-plugin.md)
 - Building a new built-in core tool for Thoth itself? Start with [Adding Tools](./adding-tools.md)
 - Building a new skill? Start with [Creating Skills](./creating-skills.md)
 - Building a new inference provider? Start with [Adding Providers](./adding-providers.md)

@@ -14,7 +14,7 @@ If you want a personal, project-local, or otherwise custom tool without
 modifying Thoth core, use the plugin route instead:
 
 - [Plugins](/docs/user-guide/features/plugins)
-- [Build a Thoth Plugin](/docs/guides/build-a-hermes-plugin)
+- [Build a Thoth Plugin](/docs/guides/build-a-thoth-plugin)
 
 Default to plugins for most custom tool creation. Only follow this page when
 you explicitly want to ship a new built-in tool in `tools/` and `toolsets.py`.

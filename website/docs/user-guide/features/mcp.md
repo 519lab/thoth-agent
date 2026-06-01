@@ -585,7 +585,7 @@ The gateway does NOT need to be running for read operations (listing conversatio
 
 ## Related docs
 
-- [Use MCP with Thoth](/docs/guides/use-mcp-with-hermes)
+- [Use MCP with Thoth](/docs/guides/use-mcp-with-thoth)
 - [CLI Commands](/docs/reference/cli-commands)
 - [Slash Commands](/docs/reference/slash-commands)
 - [FAQ](/docs/reference/faq)

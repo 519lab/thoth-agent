@@ -51,7 +51,7 @@ This is more reliable than trying to force Thoth core browser transport to attac
 
 See:
 
-- [Use MCP with Thoth](../guides/use-mcp-with-hermes.md#wsl2-bridge-hermes-in-wsl-to-windows-chrome)
+- [Use MCP with Thoth](../guides/use-mcp-with-thoth.md#wsl2-bridge-hermes-in-wsl-to-windows-chrome)
 - [Browser Automation](../user-guide/features/browser.md#wsl2--windows-chrome-prefer-mcp-over-browser-connect)
 
 ### Does it work on Android / Termux?
@@ -596,7 +596,7 @@ thoth chat
 
 See also:
 - [MCP (Model Context Protocol)](/docs/user-guide/features/mcp)
-- [Use MCP with Thoth](/docs/guides/use-mcp-with-hermes)
+- [Use MCP with Thoth](/docs/guides/use-mcp-with-thoth)
 - [MCP Config Reference](/docs/reference/mcp-config-reference)
 
 #### MCP timeout errors

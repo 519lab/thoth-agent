@@ -51,9 +51,9 @@ It's not a coding copilot tethered to an IDE or a chatbot wrapper around a singl
 | 🧠 **[Memory System](/docs/user-guide/features/memory)** | Persistent memory that grows across sessions |
 | 📚 **[Skills System](/docs/user-guide/features/skills)** | Procedural memory the agent creates and reuses |
 | 🔌 **[MCP Integration](/docs/user-guide/features/mcp)** | Connect to MCP servers, filter their tools, and extend Thoth safely |
-| 🧭 **[Use MCP with Thoth](/docs/guides/use-mcp-with-hermes)** | Practical MCP setup patterns, examples, and tutorials |
+| 🧭 **[Use MCP with Thoth](/docs/guides/use-mcp-with-thoth)** | Practical MCP setup patterns, examples, and tutorials |
 | 🎙️ **[Voice Mode](/docs/user-guide/features/voice-mode)** | Real-time voice interaction in CLI, Telegram, Discord, and Discord VC |
-| 🗣️ **[Use Voice Mode with Thoth](/docs/guides/use-voice-mode-with-hermes)** | Hands-on setup and usage patterns for Thoth voice workflows |
+| 🗣️ **[Use Voice Mode with Thoth](/docs/guides/use-voice-mode-with-thoth)** | Hands-on setup and usage patterns for Thoth voice workflows |
 | 🎭 **[Personality & SOUL.md](/docs/user-guide/features/personality)** | Define Thoth's default voice with a global SOUL.md |
 | 📄 **[Context Files](/docs/user-guide/features/context-files)** | Project context files that shape every conversation |
 | 🔒 **[Security](/docs/user-guide/security)** | Command approval, authorization, container isolation |

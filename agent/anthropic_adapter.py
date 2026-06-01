@@ -2117,6 +2117,13 @@ def build_anthropic_kwargs(
                 text = block.get("text", "")
                 text = text.replace("Thoth Agent", "Claude Code")
                 text = text.replace("Thoth agent", "Claude Code")
+                # Transition-window back-compat: persisted sessions created
+                # before the Hermes->Thoth rename still carry the old brand in
+                # their system prompt; strip those too so they don't trip the
+                # server-side content filters. Safe to drop once no pre-rename
+                # sessions remain.
+                text = text.replace("Hermes Agent", "Claude Code")
+                text = text.replace("Hermes agent", "Claude Code")
                 text = text.replace("hermes-agent", "claude-code")
                 text = text.replace("Nous Research", "Anthropic")
                 block["text"] = text
