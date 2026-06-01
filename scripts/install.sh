@@ -1631,7 +1631,7 @@ After=hermes-gateway.service
 Type=simple
 WorkingDirectory=$INSTALL_DIR
 EnvironmentFile=$env_file$user_directive
-ExecStart=$python_path -m hermes_cli.main substrate worker run
+ExecStart=$python_path -m thoth_cli.main substrate worker run
 TimeoutStopSec=15
 KillSignal=SIGTERM
 Restart=always
@@ -1698,7 +1698,7 @@ run_setup_wizard() {
     cd "$INSTALL_DIR"
     local pg_dsn="${PG_DSN_OVERRIDE:-postgresql://${PG_USER_DEFAULT}:${PG_PASSWORD_DEFAULT}@${PG_HOST_DEFAULT}:${PG_PORT_DEFAULT}/${PG_DATABASE_DEFAULT}}"
     HERMES_HOME="$HERMES_HOME" HERMES_PG_DSN="$pg_dsn" \
-        "$INSTALL_DIR/venv/bin/python" -m hermes_cli.main setup < /dev/tty
+        "$INSTALL_DIR/venv/bin/python" -m thoth_cli.main setup < /dev/tty
 }
 
 # ── Success message ────────────────────────────────────────────────────────

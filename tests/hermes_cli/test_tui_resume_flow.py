@@ -223,7 +223,7 @@ def test_main_top_level_tui_accepts_toolsets(monkeypatch, main_mod):
     monkeypatch.setattr(sys, "argv", ["hermes", "--tui", "--toolsets", "web,terminal"])
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "thoth_cli.plugins",
         types.SimpleNamespace(discover_plugins=lambda: None),
     )
     monkeypatch.setitem(
@@ -328,7 +328,7 @@ def test_termux_fast_cli_launch_oneshot_uses_light_parser(monkeypatch, main_mod)
     )
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.oneshot",
+        "thoth_cli.oneshot",
         types.SimpleNamespace(
             run_oneshot=lambda prompt, **kwargs: captured.update(
                 {"prompt": prompt, **kwargs}
@@ -520,7 +520,7 @@ def test_main_top_level_oneshot_accepts_toolsets(monkeypatch, main_mod):
     )
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "thoth_cli.plugins",
         types.SimpleNamespace(discover_plugins=lambda: None),
     )
     monkeypatch.setitem(
@@ -539,7 +539,7 @@ def test_main_top_level_oneshot_accepts_toolsets(monkeypatch, main_mod):
     )
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.oneshot",
+        "thoth_cli.oneshot",
         types.SimpleNamespace(
             run_oneshot=lambda prompt, **kwargs: captured.update(
                 {"prompt": prompt, **kwargs}
@@ -563,7 +563,7 @@ def test_main_top_level_oneshot_accepts_toolsets(monkeypatch, main_mod):
 def _stub_plugin_discovery(monkeypatch):
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "thoth_cli.plugins",
         types.SimpleNamespace(discover_plugins=lambda: None),
     )
 
@@ -623,7 +623,7 @@ def test_oneshot_accepts_plugin_toolset_after_discovery(monkeypatch):
     monkeypatch.setattr(toolsets, "validate_toolset", fake_validate)
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "thoth_cli.plugins",
         types.SimpleNamespace(
             discover_plugins=lambda: discovered.update({"ready": True})
         ),
@@ -710,19 +710,19 @@ def test_oneshot_wires_session_db_for_recall(monkeypatch):
     monkeypatch.setitem(sys.modules, "hermes_state", mod("hermes_state", SessionDB=FakeSessionDB))
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.config",
-        mod("hermes_cli.config", load_config=lambda: {"model": {"default": "m"}}),
+        "thoth_cli.config",
+        mod("thoth_cli.config", load_config=lambda: {"model": {"default": "m"}}),
     )
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.models",
-        mod("hermes_cli.models", detect_provider_for_model=lambda *_args, **_kwargs: None),
+        "thoth_cli.models",
+        mod("thoth_cli.models", detect_provider_for_model=lambda *_args, **_kwargs: None),
     )
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.runtime_provider",
+        "thoth_cli.runtime_provider",
         mod(
-            "hermes_cli.runtime_provider",
+            "thoth_cli.runtime_provider",
             resolve_runtime_provider=lambda **_kwargs: {
                 "api_key": "k",
                 "base_url": "u",
@@ -734,8 +734,8 @@ def test_oneshot_wires_session_db_for_recall(monkeypatch):
     )
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.tools_config",
-        mod("hermes_cli.tools_config", _get_platform_tools=lambda *_args, **_kwargs: {"session_search"}),
+        "thoth_cli.tools_config",
+        mod("thoth_cli.tools_config", _get_platform_tools=lambda *_args, **_kwargs: {"session_search"}),
     )
 
     assert _run_agent("recall this") == "ok"

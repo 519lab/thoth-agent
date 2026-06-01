@@ -112,7 +112,9 @@ class TestBuildRelaunchArgv:
     def test_falls_back_to_python_module(self, monkeypatch):
         monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: None)
         argv = relaunch_mod.build_relaunch_argv(["--resume", "abc"])
-        assert argv == [sys.executable, "-m", "hermes_cli.main", "--resume", "abc"]
+        assert argv[:2] == [sys.executable, "-m"]
+        assert argv[2] in ("thoth_cli.main", "hermes_cli.main")
+        assert argv[3:] == ["--resume", "abc"]
 
     def test_preserves_inherited_flags(self, monkeypatch):
         monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: "/usr/bin/hermes")

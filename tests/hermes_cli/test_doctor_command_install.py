@@ -216,7 +216,7 @@ class TestDoctorCommandInstallation:
         cmd_link_dir = tmp_path / ".local" / "bin"
         cmd_link_dir.mkdir(parents=True)
         cmd_link = cmd_link_dir / "hermes"
-        cmd_link.write_text("#!/bin/sh\nexec python -m hermes_cli.main \"$@\"\n")
+        cmd_link.write_text("#!/bin/sh\nexec python -m thoth_cli.main \"$@\"\n")
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 

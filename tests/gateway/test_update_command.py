@@ -173,7 +173,9 @@ class TestHandleUpdateCommand:
              patch("importlib.util.find_spec", return_value=fake_spec):
             result = _resolve_hermes_bin()
 
-        assert result == [sys.executable, "-m", "hermes_cli.main"]
+        assert result[:2] == [sys.executable, "-m"]
+        assert result[2] in ("thoth_cli.main", "hermes_cli.main")
+        assert len(result) == 3
 
     @pytest.mark.asyncio
     async def test_resolve_hermes_bin_returns_none_when_both_fail(self):

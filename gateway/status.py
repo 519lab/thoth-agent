@@ -171,6 +171,8 @@ def _looks_like_gateway_process(pid: int) -> bool:
         return False
 
     patterns = (
+        "thoth_cli.main gateway",
+        "thoth_cli/main.py gateway",
         "hermes_cli.main gateway",
         "hermes_cli/main.py gateway",
         "hermes gateway",
@@ -192,6 +194,8 @@ def _record_looks_like_gateway(record: dict[str, Any]) -> bool:
     # Normalize Windows backslashes so patterns match cross-platform.
     cmdline = " ".join(str(part) for part in argv).replace("\\", "/")
     patterns = (
+        "thoth_cli.main gateway",
+        "thoth_cli/main.py gateway",
         "hermes_cli.main gateway",
         "hermes_cli/main.py gateway",
         "hermes gateway",

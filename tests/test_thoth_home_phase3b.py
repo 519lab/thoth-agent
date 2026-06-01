@@ -16,7 +16,7 @@ def test_systemd_units_emit_both_home_vars():
 def test_launchd_plist_emits_both_home_keys():
     src = open(
         os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                     "hermes_cli", "gateway.py"),
+                     "thoth_cli", "gateway.py"),
         encoding="utf-8",
     ).read()
     assert src.count("<key>HERMES_HOME</key>") >= 1
@@ -26,7 +26,7 @@ def test_launchd_plist_emits_both_home_keys():
 def test_windows_wrapper_and_task_set_both():
     src = open(
         os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                     "hermes_cli", "gateway_windows.py"),
+                     "thoth_cli", "gateway_windows.py"),
         encoding="utf-8",
     ).read()
     assert 'set "HERMES_HOME=' in src and 'set "THOTH_HOME=' in src

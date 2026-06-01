@@ -1997,7 +1997,7 @@ def test_cli_bulk_complete_with_summary_rejects(kanban_home):
     import os, sys
     env = os.environ.copy()
     r = _run(
-        [sys.executable, "-m", "hermes_cli.main", "kanban",
+        [sys.executable, "-m", "thoth_cli.main", "kanban",
          "complete", a, b, "--summary", "oops"],
         capture_output=True, text=True, env=env,
     )
@@ -2236,7 +2236,7 @@ def test_cli_create_on_fresh_home_auto_inits(tmp_path, monkeypatch, hermes_db_in
     env = {**os.environ, "HERMES_HOME": str(home),
            "PYTHONPATH": str(worktree_root)}
     r = _sp.run(
-        [_sys.executable, "-m", "hermes_cli.main", "kanban",
+        [_sys.executable, "-m", "thoth_cli.main", "kanban",
          "create", "smoke", "--assignee", "worker", "--json"],
         capture_output=True, text=True, env=env,
     )

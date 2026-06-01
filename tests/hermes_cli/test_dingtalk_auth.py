@@ -194,24 +194,30 @@ class TestConfigOverrides:
 
     def test_base_url_default(self, monkeypatch):
         monkeypatch.delenv("DINGTALK_REGISTRATION_BASE_URL", raising=False)
-        # Force module reload to pick up current env
+        # Force a fresh import of the CANONICAL module to pick up current env.
+        # importlib.reload() is a no-op once the back-compat shim has aliased
+        # the module (its loader's exec_module doesn't re-run the source), so
+        # drop both names from sys.modules and re-import the real module.
         import importlib
-        import hermes_cli.dingtalk_auth as mod
-        importlib.reload(mod)
+        sys.modules.pop("hermes_cli.dingtalk_auth", None)
+        sys.modules.pop("thoth_cli.dingtalk_auth", None)
+        mod = importlib.import_module("thoth_cli.dingtalk_auth")
         assert mod.REGISTRATION_BASE_URL == "https://oapi.dingtalk.com"
 
     def test_base_url_override_via_env(self, monkeypatch):
         monkeypatch.setenv("DINGTALK_REGISTRATION_BASE_URL",
                            "https://test.example.com/")
         import importlib
-        import hermes_cli.dingtalk_auth as mod
-        importlib.reload(mod)
+        sys.modules.pop("hermes_cli.dingtalk_auth", None)
+        sys.modules.pop("thoth_cli.dingtalk_auth", None)
+        mod = importlib.import_module("thoth_cli.dingtalk_auth")
         # Trailing slash stripped
         assert mod.REGISTRATION_BASE_URL == "https://test.example.com"
 
     def test_source_default(self, monkeypatch):
         monkeypatch.delenv("DINGTALK_REGISTRATION_SOURCE", raising=False)
         import importlib
-        import hermes_cli.dingtalk_auth as mod
-        importlib.reload(mod)
+        sys.modules.pop("hermes_cli.dingtalk_auth", None)
+        sys.modules.pop("thoth_cli.dingtalk_auth", None)
+        mod = importlib.import_module("thoth_cli.dingtalk_auth")
         assert mod.REGISTRATION_SOURCE == "openClaw"

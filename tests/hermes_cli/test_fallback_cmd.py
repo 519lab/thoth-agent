@@ -471,7 +471,7 @@ class TestArgparseWiring:
         import subprocess
         import sys
         result = subprocess.run(
-            [sys.executable, "-m", "hermes_cli.main", "fallback", "--help"],
+            [sys.executable, "-m", "thoth_cli.main", "fallback", "--help"],
             capture_output=True,
             text=True,
             timeout=30,

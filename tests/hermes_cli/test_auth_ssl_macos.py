@@ -21,7 +21,11 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from hermes_cli.auth import _default_verify, _resolve_verify
+# Canonical module name post-rename. Importing the thoth_cli name directly
+# avoids a first-touch ordering issue where `from hermes_cli.auth import ...`
+# (the first hermes_cli reference in this isolated test process) races the
+# back-compat package shim's meta-path finder under an editable install.
+from thoth_cli.auth import _default_verify, _resolve_verify
 
 
 @pytest.fixture
