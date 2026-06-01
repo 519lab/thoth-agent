@@ -21,7 +21,7 @@ import pytest
 
 def _truncate_session_tables() -> None:
     """Drop all rows from session-related tables in the configured DB."""
-    if not os.environ.get("HERMES_PG_DSN"):
+    if not (os.environ.get("THOTH_PG_DSN") or os.environ.get("HERMES_PG_DSN")):
         return
 
     import hermes_db

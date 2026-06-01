@@ -79,6 +79,7 @@ def test_pool_raises_before_init(monkeypatch):
     # DSN is in the environment (otherwise lazy init kicks in and returns a
     # real pool).
     monkeypatch.delenv("HERMES_PG_DSN", raising=False)
+    monkeypatch.delenv("THOTH_PG_DSN", raising=False)
     with pytest.raises(RuntimeError, match="hermes_db.init"):
         hermes_db.pool()
 
@@ -96,7 +97,7 @@ async def test_pool_refuses_lazy_bootstrap_inside_running_loop(monkeypatch):
     # A DSN is present (so the old code would have attempted lazy init);
     # the guard fires before any connection is opened, so the bogus host
     # is never contacted.
-    monkeypatch.setenv("HERMES_PG_DSN", "postgresql://u:p@localhost:5432/db")
+    monkeypatch.setenv("THOTH_PG_DSN", "postgresql://u:p@localhost:5432/db")
     try:
         with pytest.raises(RuntimeError, match="running event loop"):
             hermes_db.pool()
@@ -109,6 +110,7 @@ def test_ensure_pool_sync_returns_false_when_no_dsn(monkeypatch):
     returns False — sync entry points use this to gracefully degrade.
     """
     monkeypatch.delenv("HERMES_PG_DSN", raising=False)
+    monkeypatch.delenv("THOTH_PG_DSN", raising=False)
     # Don't close an existing pool (would interfere with later tests
     # that share the module-level singleton); just verify the no-DSN
     # branch returns False when called against an uninitialised state.
