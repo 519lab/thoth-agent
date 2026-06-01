@@ -41,14 +41,14 @@ _log = logging.getLogger("substrate.hooks")
 
 # Per-source user-message streams. ``hermes.world.user_message.<source>``
 # allows downstream consumers to filter by gateway (CLI vs Discord vs ACP).
-NAME_USER_MESSAGE_PREFIX = "hermes.world.user_message"
-NAME_ASSISTANT_RESPONSE = "hermes.self_action.assistant_response"
-NAME_TOOL_CALL = "hermes.self_action.tool_call"
-NAME_TOOL_RESULT = "hermes.self_state.tool_result"
-NAME_SUBAGENT_SPAWN = "hermes.self_action.subagent_spawn"
-NAME_SUBAGENT_RETURN = "hermes.self_state.subagent_return"
-NAME_SESSION_LIFECYCLE = "hermes.self_state.session_lifecycle"
-NAME_CRON_DISPATCH = "hermes.self_state.cron_dispatch"
+NAME_USER_MESSAGE_PREFIX = "thoth.world.user_message"
+NAME_ASSISTANT_RESPONSE = "thoth.self_action.assistant_response"
+NAME_TOOL_CALL = "thoth.self_action.tool_call"
+NAME_TOOL_RESULT = "thoth.self_state.tool_result"
+NAME_SUBAGENT_SPAWN = "thoth.self_action.subagent_spawn"
+NAME_SUBAGENT_RETURN = "thoth.self_state.subagent_return"
+NAME_SESSION_LIFECYCLE = "thoth.self_state.session_lifecycle"
+NAME_CRON_DISPATCH = "thoth.self_state.cron_dispatch"
 
 
 # ---------------------------------------------------------------------------
@@ -582,16 +582,16 @@ async def on_session_end_async(
                     ON sl.stream_id = st.stream_id
                    AND sl.metadata->>'session_id' = $1
                  WHERE st.name IN (
-                       'hermes.world.user_message.cli',
-                       'hermes.world.user_message.telegram',
-                       'hermes.world.user_message.discord',
-                       'hermes.world.user_message.slack',
-                       'hermes.world.user_message.whatsapp',
-                       'hermes.world.user_message.signal',
-                       'hermes.world.user_message.acp',
-                       'hermes.self_action.assistant_response',
-                       'hermes.self_action.tool_call',
-                       'hermes.self_state.tool_result'
+                       'thoth.world.user_message.cli',
+                       'thoth.world.user_message.telegram',
+                       'thoth.world.user_message.discord',
+                       'thoth.world.user_message.slack',
+                       'thoth.world.user_message.whatsapp',
+                       'thoth.world.user_message.signal',
+                       'thoth.world.user_message.acp',
+                       'thoth.self_action.assistant_response',
+                       'thoth.self_action.tool_call',
+                       'thoth.self_state.tool_result'
                  )
                  GROUP BY st.name
                  HAVING count(sl.slice_id) > 0

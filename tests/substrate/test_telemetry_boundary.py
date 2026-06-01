@@ -34,9 +34,9 @@ def _now_utc() -> datetime:
 
 def test_is_perceptual_boundary():
     """hermes.* is perception; substrate.* is operational telemetry."""
-    assert is_perceptual("hermes.world.user_message.cli")
-    assert is_perceptual("hermes.self_state.tool_result")
-    assert is_perceptual("hermes.self_action.tool_call")
+    assert is_perceptual("thoth.world.user_message.cli")
+    assert is_perceptual("thoth.self_state.tool_result")
+    assert is_perceptual("thoth.self_action.tool_call")
     assert not is_perceptual("substrate.self_state")
     # Prefix-based, so a future substrate.* stream is covered automatically.
     assert not is_perceptual("substrate.some_future_stream")

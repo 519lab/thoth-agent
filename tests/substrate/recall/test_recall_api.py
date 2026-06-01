@@ -57,7 +57,7 @@ async def _seed_passed_slice(substrate, *, text: str, t_now: datetime) -> None:
     import hermes_db
 
     stream = await substrate.streams.get_by_name(
-        "hermes.world.user_message.cli"
+        "thoth.world.user_message.cli"
     )
     assert stream is not None
     await commit_slice(
@@ -122,14 +122,14 @@ async def test_recall_respects_time_window(booted_substrate):
 
 @pytest.mark.asyncio
 async def test_recall_default_streams_only(booted_substrate):
-    """Slices on hermes.self_state.* aren't in the default projection;
+    """Slices on thoth.self_state.* aren't in the default projection;
     explicit stream_filter includes them."""
     import hermes_db
 
     t = datetime.now(timezone.utc)
     # Seed a slice on a non-default stream.
     self_stream = await booted_substrate.streams.get_by_name(
-        "hermes.self_state.cron_dispatch"
+        "thoth.self_state.cron_dispatch"
     )
     assert self_stream is not None
     await commit_slice(
@@ -148,7 +148,7 @@ async def test_recall_default_streams_only(booted_substrate):
     # Explicit: seen.
     explicit_proj = await recall(
         booted_substrate, "secret",
-        stream_filter=["hermes.self_state.cron_dispatch"],
+        stream_filter=["thoth.self_state.cron_dispatch"],
     )
     assert "secret" in explicit_proj.text
 

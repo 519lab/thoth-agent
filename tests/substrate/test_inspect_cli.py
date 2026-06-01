@@ -116,13 +116,13 @@ async def test_print_streams_lists_autoregistered(booted_substrate):
     # Header + every §9 stream name appears in the listing.
     assert "name" in out and "modality" in out
     for name in (
-        "hermes.world.user_message.cli",
-        "hermes.world.user_message.telegram",
-        "hermes.self_action.assistant_response",
-        "hermes.self_action.tool_call",
-        "hermes.self_state.tool_result",
-        "hermes.self_state.session_lifecycle",
-        "hermes.self_state.cron_dispatch",
+        "thoth.world.user_message.cli",
+        "thoth.world.user_message.telegram",
+        "thoth.self_action.assistant_response",
+        "thoth.self_action.tool_call",
+        "thoth.self_state.tool_result",
+        "thoth.self_state.session_lifecycle",
+        "thoth.self_state.cron_dispatch",
         "substrate.self_state",
     ):
         assert name in out, f"stream {name} missing from streams listing"
@@ -143,7 +143,7 @@ async def test_print_slices_for_named_stream(booted_substrate):
     async with hermes_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_slices(
-                conn, stream_name="hermes.world.user_message.cli", limit=10
+                conn, stream_name="thoth.world.user_message.cli", limit=10
             )
     out = buf.getvalue()
     assert "Most-recent 3 slices" in out

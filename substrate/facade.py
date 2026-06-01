@@ -70,7 +70,7 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
     for source in _USER_MESSAGE_SOURCES:
         specs.append(
             (
-                f"hermes.world.user_message.{source}",
+                f"thoth.world.user_message.{source}",
                 Family.EXTEROCEPTIVE,
                 Modality.TEXT,
                 source,
@@ -84,7 +84,7 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
     specs.extend(
         [
             (
-                "hermes.self_action.assistant_response",
+                "thoth.self_action.assistant_response",
                 Family.SELF_ACTION,
                 Modality.TEXT,
                 "agent",
@@ -92,7 +92,7 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
                 DEFAULT_TEXT_PROFILE,
             ),
             (
-                "hermes.self_action.tool_call",
+                "thoth.self_action.tool_call",
                 Family.SELF_ACTION,
                 Modality.STRUCTURED_EVENT,
                 "agent",
@@ -100,7 +100,7 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
                 DEFAULT_STRUCTURED_PROFILE,
             ),
             (
-                "hermes.self_state.tool_result",
+                "thoth.self_state.tool_result",
                 Family.SELF_STATE,
                 Modality.STRUCTURED_EVENT,
                 "agent",
@@ -108,7 +108,7 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
                 DEFAULT_STRUCTURED_PROFILE,
             ),
             (
-                "hermes.self_action.subagent_spawn",
+                "thoth.self_action.subagent_spawn",
                 Family.SELF_ACTION,
                 Modality.STRUCTURED_EVENT,
                 "agent",
@@ -116,7 +116,7 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
                 DEFAULT_STRUCTURED_PROFILE,
             ),
             (
-                "hermes.self_state.subagent_return",
+                "thoth.self_state.subagent_return",
                 Family.SELF_STATE,
                 Modality.STRUCTURED_EVENT,
                 "agent",
@@ -124,7 +124,7 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
                 DEFAULT_STRUCTURED_PROFILE,
             ),
             (
-                "hermes.self_state.session_lifecycle",
+                "thoth.self_state.session_lifecycle",
                 Family.SELF_STATE,
                 Modality.STRUCTURED_EVENT,
                 "agent",
@@ -132,7 +132,7 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
                 DEFAULT_STRUCTURED_PROFILE,
             ),
             (
-                "hermes.self_state.cron_dispatch",
+                "thoth.self_state.cron_dispatch",
                 Family.SELF_STATE,
                 Modality.STRUCTURED_EVENT,
                 "agent",

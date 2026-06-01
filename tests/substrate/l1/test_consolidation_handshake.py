@@ -36,7 +36,7 @@ async def _commit_passed_slices(substrate, texts):
     """Commit slices, flip them passed, return their slice_ids in order."""
     import hermes_db
 
-    stream = await substrate.streams.get_by_name("hermes.world.user_message.cli")
+    stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     for t in texts:
         await commit_slice(
             substrate, stream.stream_id, t, event_time_world=datetime.now(timezone.utc)

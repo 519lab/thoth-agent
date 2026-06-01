@@ -74,7 +74,7 @@ def test_sync_hook_noop_before_boot():
 @pytest.mark.asyncio
 async def test_on_user_message_async_writes_slice(booted_substrate):
     """``on_user_message_async`` writes one slice on
-    ``hermes.world.user_message.<source>`` with TEXT modality wrap and
+    ``thoth.world.user_message.<source>`` with TEXT modality wrap and
     session/source metadata.
     """
     import hermes_db
@@ -89,7 +89,7 @@ async def test_on_user_message_async_writes_slice(booted_substrate):
             SELECT sl.payload, sl.metadata, st.name AS stream_name
               FROM substrate_slices sl
               JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.world.user_message.cli'
+             WHERE st.name = 'thoth.world.user_message.cli'
             """
         )
     assert len(rows) == 1
@@ -110,7 +110,7 @@ async def test_on_assistant_response_async_writes_slice(booted_substrate):
             SELECT sl.payload, sl.metadata
               FROM substrate_slices sl
               JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_action.assistant_response'
+             WHERE st.name = 'thoth.self_action.assistant_response'
             """
         )
     assert row is not None
@@ -136,14 +136,14 @@ async def test_on_tool_call_and_result_pair(booted_substrate):
             """
             SELECT payload FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_action.tool_call'
+             WHERE st.name = 'thoth.self_action.tool_call'
             """
         )
         result_row = await conn.fetchrow(
             """
             SELECT payload FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_state.tool_result'
+             WHERE st.name = 'thoth.self_state.tool_result'
             """
         )
     assert call_row["payload"] == {"tool": "bash", "args": {"cmd": "ls"}}
@@ -168,7 +168,7 @@ async def test_on_tool_result_summarises_large_result(booted_substrate):
             """
             SELECT payload FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_state.tool_result'
+             WHERE st.name = 'thoth.self_state.tool_result'
             """
         )
     # Truncated to 256 chars + "(1000 chars)" suffix.
@@ -192,14 +192,14 @@ async def test_on_subagent_spawn_and_return(booted_substrate):
             """
             SELECT payload FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_action.subagent_spawn'
+             WHERE st.name = 'thoth.self_action.subagent_spawn'
             """
         )
         ret = await conn.fetchrow(
             """
             SELECT payload FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_state.subagent_return'
+             WHERE st.name = 'thoth.self_state.subagent_return'
             """
         )
     assert spawn["payload"] == {"child_id": "child-A", "goal": "investigate bug 42"}
@@ -218,7 +218,7 @@ async def test_on_session_start_async_writes_slice(booted_substrate):
             """
             SELECT sl.payload, sl.metadata FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_state.session_lifecycle'
+             WHERE st.name = 'thoth.self_state.session_lifecycle'
                AND sl.payload->>'event' = 'session_start'
             """
         )
@@ -237,7 +237,7 @@ async def test_on_session_end_async_writes_slice(booted_substrate):
             """
             SELECT payload FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_state.session_lifecycle'
+             WHERE st.name = 'thoth.self_state.session_lifecycle'
                AND payload->>'event' = 'session_end'
             """
         )
@@ -255,7 +255,7 @@ async def test_on_cron_fire_async_writes_slice(booted_substrate):
             """
             SELECT payload FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_state.cron_dispatch'
+             WHERE st.name = 'thoth.self_state.cron_dispatch'
             """
         )
     assert row is not None
@@ -296,7 +296,7 @@ async def test_on_session_start_shares_txn(booted_substrate):
             """
             SELECT count(*) FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_state.session_lifecycle'
+             WHERE st.name = 'thoth.self_state.session_lifecycle'
                AND sl.metadata->>'session_id' = 'sess-rollback'
             """
         )

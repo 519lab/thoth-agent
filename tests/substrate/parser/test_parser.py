@@ -45,7 +45,7 @@ def _parser_on(monkeypatch):
 
 async def _seed(substrate, session_id, texts):
     """Commit slices directly as passed (born_passed) tagged with a session."""
-    stream = await substrate.streams.get_by_name("hermes.world.user_message.cli")
+    stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     for t in texts:
         await commit_slice(
             substrate, stream.stream_id, t,

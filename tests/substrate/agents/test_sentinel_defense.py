@@ -85,7 +85,7 @@ async def booted(hermes_db_initialized):
 
 
 async def _commit_pending(substrate, text):
-    stream = await substrate.streams.get_by_name("hermes.world.user_message.cli")
+    stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     await commit_slice(
         substrate, stream.stream_id, text,
         event_time_world=datetime.now(timezone.utc),
@@ -104,7 +104,7 @@ async def _state_counts(substrate):
             SELECT sl.sentinel_state, COUNT(*)::int n
               FROM substrate_slices sl
               JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.world.user_message.cli'
+             WHERE st.name = 'thoth.world.user_message.cli'
              GROUP BY sl.sentinel_state
             """
         )

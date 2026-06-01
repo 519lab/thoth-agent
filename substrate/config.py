@@ -188,17 +188,17 @@ HERMES_SUBSTRATE_RECALL_ENABLED = _envbool(
 # response streams; explicitly excludes self-state. ``stream_filter=None``
 # in the recall API resolves to this list at call time.
 DEFAULT_RECALL_STREAMS: tuple[str, ...] = (
-    "hermes.world.user_message.cli",
-    "hermes.world.user_message.telegram",
-    "hermes.world.user_message.discord",
-    "hermes.world.user_message.slack",
-    "hermes.world.user_message.whatsapp",
-    "hermes.world.user_message.signal",
-    "hermes.world.user_message.acp",
-    "hermes.self_action.assistant_response",
+    "thoth.world.user_message.cli",
+    "thoth.world.user_message.telegram",
+    "thoth.world.user_message.discord",
+    "thoth.world.user_message.slack",
+    "thoth.world.user_message.whatsapp",
+    "thoth.world.user_message.signal",
+    "thoth.world.user_message.acp",
+    "thoth.self_action.assistant_response",
     # Retrospective summaries (the Summarizer): dense, carry older context
     # forward so recall surfaces a summary instead of the faded originals.
-    "hermes.self_action.summary",
+    "thoth.self_action.summary",
 )
 
 

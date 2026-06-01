@@ -84,7 +84,7 @@ async def test_provider_coexists_with_external(booted_substrate, fresh_provider)
 async def test_provider_disabled_returns_empty(booted_substrate, fresh_provider):
     """HERMES_SUBSTRATE_RECALL=0 → prefetch returns '' regardless of substrate state."""
     # Seed some content so a wrong implementation would return non-empty.
-    stream = await booted_substrate.streams.get_by_name("hermes.world.user_message.cli")
+    stream = await booted_substrate.streams.get_by_name("thoth.world.user_message.cli")
     await commit_slice(
         booted_substrate, stream.stream_id, "secret data",
         event_time_world=datetime.now(timezone.utc),
