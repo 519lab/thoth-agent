@@ -33,7 +33,7 @@ def _cand(text, *, salience=0.5, age_h=0.0):
     return RecallCandidate(
         slice_id=sid,
         address=Address(uuid4(), t, t),
-        stream_name="hermes.world.user_message.cli",
+        stream_name="thoth.world.user_message.cli",
         payload=text,
         event_time_world=t,
         salience_score=salience,
@@ -133,7 +133,7 @@ async def booted(hermes_db_initialized):
 async def _seed(substrate, text, *, salience=1.0):
     import hermes_db
 
-    stream = await substrate.streams.get_by_name("hermes.world.user_message.cli")
+    stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     await commit_slice(
         substrate, stream.stream_id, text,
         event_time_world=datetime.now(timezone.utc), born_passed=True,

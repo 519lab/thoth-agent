@@ -330,6 +330,7 @@ def test_commit_slice_sync_works_from_sync_context(hermes_db_dsn):
     from substrate.facade import Substrate
 
     # Manually init the pool on the persistent sync loop.
+    os.environ["THOTH_PG_DSN"] = hermes_db_dsn
     os.environ["HERMES_PG_DSN"] = hermes_db_dsn
     assert hermes_db.ensure_pool_sync() is True
     try:

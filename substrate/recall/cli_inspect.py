@@ -216,7 +216,7 @@ async def _derive_probe_query(conn: "asyncpg.Connection") -> str:
         SELECT sl.payload
           FROM substrate_slices sl
           JOIN substrate_streams st ON st.stream_id = sl.stream_id
-         WHERE st.name LIKE 'hermes.world.user_message.%'
+         WHERE st.name LIKE 'thoth.world.user_message.%'
            AND sl.sentinel_state = 'passed'
          ORDER BY sl.event_time_world DESC
          LIMIT 1

@@ -45,7 +45,7 @@ async def booted(hermes_db_initialized):
 
 async def _seed_pending(substrate, n):
     """Commit n passed-but-unconsolidated slices to create backlog."""
-    stream = await substrate.streams.get_by_name("hermes.world.user_message.cli")
+    stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     for i in range(n):
         await commit_slice(
             substrate, stream.stream_id, f"m{i}",

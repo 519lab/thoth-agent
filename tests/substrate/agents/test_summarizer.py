@@ -37,7 +37,7 @@ async def _commit_old(substrate, text, *, age_h):
     """Commit an OLD passed slice (event_time backdated) for a session."""
     import hermes_db
 
-    stream = await substrate.streams.get_by_name("hermes.world.user_message.cli")
+    stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     t = datetime.now(timezone.utc) - timedelta(hours=age_h)
     await commit_slice(
         substrate, stream.stream_id, text, event_time_world=t,
@@ -95,7 +95,7 @@ async def test_summarizer_skips_recent_slices(booted, monkeypatch):
     # Recent slices (age 0) must NOT be summarized.
     import hermes_db
 
-    stream = await booted.streams.get_by_name("hermes.world.user_message.cli")
+    stream = await booted.streams.get_by_name("thoth.world.user_message.cli")
     for i in range(5):
         await commit_slice(
             booted, stream.stream_id, f"fresh {i}",

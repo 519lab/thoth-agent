@@ -96,10 +96,10 @@ async def _run_worker_async() -> int:
     )
     log = logging.getLogger("substrate.worker")
 
-    dsn = os.environ.get("HERMES_PG_DSN")
+    dsn = os.environ.get("THOTH_PG_DSN")
     if not dsn:
         log.error(
-            "HERMES_PG_DSN not set; the substrate worker requires PG. "
+            "THOTH_PG_DSN not set; the substrate worker requires PG. "
             "Set it in ~/.hermes/.env or the systemd unit's EnvironmentFile."
         )
         return 1

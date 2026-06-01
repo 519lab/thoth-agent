@@ -14072,8 +14072,32 @@ Examples:
         default=False,
         help="Count rows without writing to PG",
     )
-    from thoth_cli.db_commands import cmd_db, cmd_db_migrate_from_sqlite  # noqa: E402
+
+    db_migrate_hermes = db_subparsers.add_parser(
+        "migrate-from-hermes",
+        help="Rename legacy substrate stream names (hermes.* -> thoth.*) for a Thoth cutover",
+        description=(
+            "One-time substrate stream-name rename for an existing Hermes "
+            "instance being cut over to Thoth. Renames substrate_streams names "
+            "from hermes.* to thoth.* in place (slices follow by stream_id). "
+            "Idempotent and collision-free. Requires THOTH_PG_DSN to be set."
+        ),
+    )
+    db_migrate_hermes.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        default=False,
+        help="Count matching rows without writing to PG",
+    )
+
+    from thoth_cli.db_commands import (  # noqa: E402
+        cmd_db,
+        cmd_db_migrate_from_hermes,
+        cmd_db_migrate_from_sqlite,
+    )
     db_migrate_sqlite.set_defaults(func=cmd_db_migrate_from_sqlite)
+    db_migrate_hermes.set_defaults(func=cmd_db_migrate_from_hermes)
     db_parser.set_defaults(func=cmd_db)
 
     # =========================================================================

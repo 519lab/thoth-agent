@@ -40,7 +40,8 @@ infrastructure beneath them.
 
 ## Prerequisites
 
-- `HERMES_PG_DSN` set and pointing at a PG 17+ instance with the `vector`,
+- `THOTH_PG_DSN` (legacy `HERMES_PG_DSN` still honored via the env bridge)
+  set and pointing at a PG 17+ instance with the `vector`,
   `pg_trgm`, and `pgcrypto` extensions. Verify with `hermes doctor`.
 - Alembic at head (`uv run alembic -c migrations/alembic.ini current` should
   match the latest revision under `migrations/versions/`). If behind, run
@@ -98,7 +99,7 @@ hermes substrate
 hermes substrate streams
 
 # the most-recent N slices on a single stream
-hermes substrate slices --stream hermes.world.user_message.cli --limit 20
+hermes substrate slices --stream thoth.world.user_message.cli --limit 20
 
 # pending queue depth + oldest pending age
 hermes substrate pending
@@ -197,10 +198,10 @@ coverage is an optimization target, not a correctness gate.
 hermes sessions list | head
 
 # All user-message slices for the CLI source, ordered most-recent first
-hermes substrate slices --stream hermes.world.user_message.cli --limit 50
+hermes substrate slices --stream thoth.world.user_message.cli --limit 50
 
 # Assistant responses
-hermes substrate slices --stream hermes.self_action.assistant_response --limit 50
+hermes substrate slices --stream thoth.self_action.assistant_response --limit 50
 ```
 
 For session-scoped filtering you currently need raw SQL — the `payload` JSON
@@ -210,7 +211,7 @@ column has a `session_id` key on most streams:
 SELECT event_time_world, payload->>'text' AS text
   FROM substrate_slices
  WHERE stream_id = (SELECT stream_id FROM substrate_streams
-                    WHERE name = 'hermes.world.user_message.cli')
+                    WHERE name = 'thoth.world.user_message.cli')
    AND payload->>'session_id' = '<session-id>'
  ORDER BY event_time_world DESC;
 ```
@@ -297,7 +298,7 @@ run PG on the host, either stop the host service for development or override:
 ```bash
 docker compose down postgres
 # Bind to 5433 instead by setting POSTGRES_HOST_PORT before compose up,
-# then point HERMES_PG_DSN at 5433.
+# then point THOTH_PG_DSN at 5433.
 ```
 
 The test container runs on port 5433 (`postgres-test` profile) and is

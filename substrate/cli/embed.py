@@ -117,7 +117,7 @@ def _cmd_embed_reshape(args: argparse.Namespace) -> int:
 
     if not hermes_db.ensure_pool_sync():
         print(
-            "error: HERMES_PG_DSN not set; cannot connect to substrate PG.",
+            "error: THOTH_PG_DSN not set; cannot connect to substrate PG.",
             file=sys.stderr,
         )
         return 1

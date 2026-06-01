@@ -126,7 +126,7 @@ async def test_recall_appends_skills_when_enabled(booted, fake_skills, monkeypat
     monkeypatch.setattr(cfg, "RECALL_INCLUDE_L1", False)
     monkeypatch.setattr(cfg, "RECALL_SUGGEST_SKILLS", True)
 
-    stream = await booted.streams.get_by_name("hermes.world.user_message.cli")
+    stream = await booted.streams.get_by_name("thoth.world.user_message.cli")
     await commit_slice(
         booted, stream.stream_id, "we need to deploy the kubernetes cluster",
         event_time_world=datetime.now(timezone.utc), born_passed=True,
@@ -146,7 +146,7 @@ async def test_recall_no_skills_when_disabled(booted, fake_skills, monkeypatch):
     monkeypatch.setattr(cfg, "RECALL_INCLUDE_L1", False)
     monkeypatch.setattr(cfg, "RECALL_SUGGEST_SKILLS", False)
 
-    stream = await booted.streams.get_by_name("hermes.world.user_message.cli")
+    stream = await booted.streams.get_by_name("thoth.world.user_message.cli")
     await commit_slice(
         booted, stream.stream_id, "deploy kubernetes",
         event_time_world=datetime.now(timezone.utc), born_passed=True,

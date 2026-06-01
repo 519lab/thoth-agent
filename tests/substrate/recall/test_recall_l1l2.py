@@ -36,7 +36,7 @@ async def booted(hermes_db_initialized):
 
 
 async def _seed_passed_slice(substrate, text):
-    stream = await substrate.streams.get_by_name("hermes.world.user_message.cli")
+    stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     await commit_slice(
         substrate, stream.stream_id, text, event_time_world=datetime.now(timezone.utc),
         born_passed=True,

@@ -56,7 +56,7 @@ async def seeded_substrate(hermes_db_initialized):
         # Seed N passed slices on the user_message.cli stream.
         import hermes_db
 
-        stream = await sub.streams.get_by_name("hermes.world.user_message.cli")
+        stream = await sub.streams.get_by_name("thoth.world.user_message.cli")
         t = datetime.now(timezone.utc)
         for i in range(_SEED_SLICES):
             await commit_slice(

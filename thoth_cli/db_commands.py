@@ -1,7 +1,11 @@
 """Phase 0: one-shot SQLite -> PG migrator for users with a legacy ~/.hermes/state.db.
 
+Also: one-time substrate stream-name rename for an existing Hermes instance
+being cut over to Thoth (substrate_streams ``hermes.*`` -> ``thoth.*``).
+
 CLI surface:
     hermes db migrate-from-sqlite [--sqlite-path PATH] [--dry-run]
+    hermes db migrate-from-hermes [--dry-run]
 
 Default sqlite-path: ~/.hermes/state.db  (upstream default)
 Default dry-run:     False
@@ -202,6 +206,58 @@ async def migrate_from_sqlite(src_path: Path, *, dry_run: bool = False) -> Tuple
 
 
 # ---------------------------------------------------------------------------
+# Phase 6: one-time substrate stream-name rename (hermes.* -> thoth.*)
+# ---------------------------------------------------------------------------
+
+async def migrate_from_hermes(*, dry_run: bool = False) -> int:
+    """Rename legacy ``hermes.*`` substrate stream names to ``thoth.*``.
+
+    For an existing Hermes instance being cut over to Thoth. Thoth is a clean
+    cutover: substrate emits/reads ``thoth.*`` only, so no ``thoth.*`` twins of
+    the legacy ``hermes.*`` streams exist and the rename cannot collide with
+    the UNIQUE(name) constraint. Slices reference their stream by ``stream_id``,
+    so they follow the rename automatically (no slice rewrite needed).
+
+    The rewrite is idempotent and collision-free:
+
+        UPDATE substrate_streams
+           SET name = 'thoth.' || substring(name from 8)
+         WHERE name LIKE 'hermes.%'
+
+    (``substring(name from 8)`` drops the 7-char ``hermes.`` prefix.) Re-running
+    after a successful pass matches zero rows.
+
+    Returns ``rows_updated``. When ``dry_run=True`` only the matching-row count
+    is returned and nothing is written.
+
+    Caller is responsible for ensuring PG is initialised (``hermes_db.init``).
+    """
+    if dry_run:
+        async with hermes_db.connection() as conn:
+            rows_updated = await conn.fetchval(
+                "SELECT count(*) FROM substrate_streams WHERE name LIKE 'hermes.%'"
+            )
+    else:
+        async with hermes_db.transaction() as conn:
+            status = await conn.execute(
+                """
+                UPDATE substrate_streams
+                   SET name = 'thoth.' || substring(name from 8)
+                 WHERE name LIKE 'hermes.%'
+                """
+            )
+            # asyncpg returns a command tag like "UPDATE 3"; parse the count.
+            rows_updated = int(status.split()[-1]) if status else 0
+
+    logger.info(
+        "migrate_from_hermes: %s %d substrate_streams hermes.* -> thoth.*",
+        "[dry-run] would rename" if dry_run else "renamed",
+        rows_updated,
+    )
+    return int(rows_updated)
+
+
+# ---------------------------------------------------------------------------
 # CLI entry point (called from hermes db migrate-from-sqlite via argparse)
 # ---------------------------------------------------------------------------
 
@@ -212,9 +268,9 @@ def cli_migrate_from_sqlite(sqlite_path: str | None = None, dry_run: bool = Fals
     src = Path(sqlite_path)
     if not src.exists():
         return f"Error: {src} does not exist"
-    dsn = os.environ.get("HERMES_PG_DSN")
+    dsn = os.environ.get("THOTH_PG_DSN")
     if not dsn:
-        return "Error: HERMES_PG_DSN env var not set"
+        return "Error: THOTH_PG_DSN env var not set"
 
     async def _run():
         await hermes_db.init(dsn)
@@ -243,11 +299,42 @@ def cmd_db_migrate_from_sqlite(args) -> int:  # noqa: ANN001
     return 0 if not result.startswith("Error") else 1
 
 
+def cli_migrate_from_hermes(dry_run: bool = False) -> str:
+    """CLI entry: called from ``hermes db migrate-from-hermes``."""
+    dsn = os.environ.get("THOTH_PG_DSN")
+    if not dsn:
+        return "Error: THOTH_PG_DSN env var not set"
+
+    async def _run():
+        await hermes_db.init(dsn)
+        try:
+            return await migrate_from_hermes(dry_run=dry_run)
+        finally:
+            await hermes_db.close()
+
+    rows = hermes_db.run_sync(_run())
+    prefix = "[dry-run] would rename" if dry_run else "Renamed"
+    return f"{prefix}: {rows} substrate_streams hermes.* -> thoth.*"
+
+
+def cmd_db_migrate_from_hermes(args) -> int:  # noqa: ANN001
+    """Handler for ``hermes db migrate-from-hermes`` argparse subcommand."""
+    result = cli_migrate_from_hermes(dry_run=getattr(args, "dry_run", False))
+    print(result)
+    return 0 if not result.startswith("Error") else 1
+
+
 def cmd_db(args) -> int:  # noqa: ANN001
     """Dispatcher for ``hermes db <subcommand>``."""
     import sys
     sub = getattr(args, "db_command", None)
     if sub == "migrate-from-sqlite":
         return cmd_db_migrate_from_sqlite(args)
-    print("usage: hermes db migrate-from-sqlite [--sqlite-path PATH] [--dry-run]", file=sys.stderr)
+    if sub == "migrate-from-hermes":
+        return cmd_db_migrate_from_hermes(args)
+    print(
+        "usage: hermes db {migrate-from-sqlite [--sqlite-path PATH] [--dry-run] | "
+        "migrate-from-hermes [--dry-run]}",
+        file=sys.stderr,
+    )
     return 2

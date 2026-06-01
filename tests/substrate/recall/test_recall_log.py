@@ -61,7 +61,7 @@ async def test_recall_writes_log_row(booted_substrate):
 
     # Seed a slice so the recall has something to do.
     stream = await booted_substrate.streams.get_by_name(
-        "hermes.world.user_message.cli"
+        "thoth.world.user_message.cli"
     )
     await commit_slice(
         booted_substrate,

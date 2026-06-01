@@ -522,7 +522,7 @@ def _run_inspect(action) -> int:
 
     if not hermes_db.ensure_pool_sync():
         print(
-            "error: HERMES_PG_DSN is not set and no pool is initialised; "
+            "error: THOTH_PG_DSN is not set and no pool is initialised; "
             "configure it before running `hermes substrate`.",
             file=sys.stderr,
         )

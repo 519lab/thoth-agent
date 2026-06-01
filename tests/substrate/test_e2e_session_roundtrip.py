@@ -83,11 +83,11 @@ async def test_session_roundtrip_emits_substrate_slices(booted):
 
     # ---- Assertions: slice tally per stream --------------------------------
     expected_streams = {
-        "hermes.self_state.session_lifecycle": 1,         # session_start
-        "hermes.world.user_message.cli": 1,               # the user msg
-        "hermes.self_action.assistant_response": 1,       # the text reply
-        "hermes.self_action.tool_call": 1,                # the calculator call
-        "hermes.self_state.tool_result": 1,               # the tool response
+        "thoth.self_state.session_lifecycle": 1,         # session_start
+        "thoth.world.user_message.cli": 1,               # the user msg
+        "thoth.self_action.assistant_response": 1,       # the text reply
+        "thoth.self_action.tool_call": 1,                # the calculator call
+        "thoth.self_state.tool_result": 1,               # the tool response
     }
     async with hermes_db.connection() as conn:
         rows = await conn.fetch(
@@ -96,7 +96,7 @@ async def test_session_roundtrip_emits_substrate_slices(booted):
               FROM substrate_slices sl
               JOIN substrate_streams st ON st.stream_id = sl.stream_id
              WHERE sl.metadata->>'session_id' = $1
-                OR (st.name = 'hermes.self_state.session_lifecycle'
+                OR (st.name = 'thoth.self_state.session_lifecycle'
                     AND sl.payload->>'session_id' = $1)
              GROUP BY st.name
             """,
@@ -177,7 +177,7 @@ async def test_end_session_emits_substrate_slice(booted):
             """
             SELECT COUNT(*) FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_state.session_lifecycle'
+             WHERE st.name = 'thoth.self_state.session_lifecycle'
                AND sl.payload->>'session_id' = $1
                AND sl.payload->>'event' = 'session_end'
             """,
@@ -195,7 +195,7 @@ async def test_end_session_emits_substrate_slice(booted):
             """
             SELECT COUNT(*) FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
-             WHERE st.name = 'hermes.self_state.session_lifecycle'
+             WHERE st.name = 'thoth.self_state.session_lifecycle'
                AND sl.payload->>'session_id' = $1
                AND sl.payload->>'event' = 'session_end'
             """,
@@ -235,7 +235,7 @@ async def test_session_start_shares_txn_with_session_row(booted):
               JOIN substrate_slices sl ON sl.payload->>'session_id' = s.id
               JOIN substrate_streams st ON st.stream_id = sl.stream_id
              WHERE s.id = $1
-               AND st.name = 'hermes.self_state.session_lifecycle'
+               AND st.name = 'thoth.self_state.session_lifecycle'
                AND sl.payload->>'event' = 'session_start'
             """,
             "e2e-atomic-1",

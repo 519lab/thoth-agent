@@ -343,7 +343,8 @@ $HERMES_HOME/skills/        Installed skills
 ```
 
 **Substrate Edition (this fork) differences:** session + kanban + substrate
-state all live in **PostgreSQL** (DSN `HERMES_PG_DSN`, default
+state all live in **PostgreSQL** (DSN `THOTH_PG_DSN`; legacy `HERMES_PG_DSN`
+still honored via the env bridge; default
 `postgresql://hermes:hermes@localhost:5432/hermes`) rather than `state.db`.
 The `state.db` SQLite file no longer exists in this fork. The installer's
 defaults still place `HERMES_HOME` at `~/.hermes/` and the launcher at
@@ -741,7 +742,7 @@ What runs in the background:
 Perception emission is wired into every user message, assistant response,
 tool call/result, sub-agent spawn/return, session-lifecycle event, and
 cron dispatch — each lands as a *slice* on a named *stream* (e.g.
-`hermes.world.user_message.cli`, `hermes.self_action.assistant_response`).
+`thoth.world.user_message.cli`, `thoth.self_action.assistant_response`).
 Slice writes are non-fatal: substrate failures never break the foreground
 conversation.
 

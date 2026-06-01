@@ -30,7 +30,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from substrate.facade import Substrate
 
 
-SUMMARY_STREAM = "hermes.self_action.summary"
+SUMMARY_STREAM = "thoth.self_action.summary"
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
