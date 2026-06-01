@@ -74,11 +74,11 @@ Thoth uses **PostgreSQL 17** (with the `vector` and `pg_trgm` extensions) as the
 
 ```bash
 docker compose up -d postgres
-export HERMES_PG_DSN=postgresql://hermes:hermes@localhost:5432/hermes
+export THOTH_PG_DSN=postgresql://hermes:hermes@localhost:5432/hermes   # legacy HERMES_PG_DSN still works via the env bridge
 uv run alembic -c migrations/alembic.ini upgrade head
 ```
 
-**For production deploys:** point `HERMES_PG_DSN` at any PostgreSQL 17+ instance with the `vector` and `pg_trgm` extensions installed, and run `alembic upgrade head` as part of your deploy.
+**For production deploys:** point `THOTH_PG_DSN` (legacy `HERMES_PG_DSN` still honored via the env bridge) at any PostgreSQL 17+ instance with the `vector` and `pg_trgm` extensions installed, and run `alembic upgrade head` as part of your deploy.
 
 **Coming from an older SQLite-based install?** A one-shot importer is provided:
 
@@ -90,7 +90,7 @@ uv run hermes db migrate-from-sqlite --sqlite-path ~/.hermes/state.db   # add --
 
 ## Cognitive substrate
 
-The substrate is what makes Thoth more than a stateless chat loop. It's a PostgreSQL-backed **perception sink and recall source**: every user message, assistant response, tool call/result, sub-agent spawn/return, session-lifecycle event, and cron dispatch is emitted as a *slice* on a named *stream* (`hermes.world.user_message.cli`, `hermes.self_action.assistant_response`, and so on). Slices are stored in `substrate_slices` (RANGE-partitioned monthly on ingest time), curated continuously, and recalled on demand.
+The substrate is what makes Thoth more than a stateless chat loop. It's a PostgreSQL-backed **perception sink and recall source**: every user message, assistant response, tool call/result, sub-agent spawn/return, session-lifecycle event, and cron dispatch is emitted as a *slice* on a named *stream* (`thoth.world.user_message.cli`, `thoth.self_action.assistant_response`, and so on). Slices are stored in `substrate_slices` (RANGE-partitioned monthly on ingest time), curated continuously, and recalled on demand.
 
 It runs alongside the agent via background workers and is designed to be safe: substrate failures are non-fatal, and the recall path is env-gated off by default. The schema migration is permanent, so back up your DB before the first run if you care about the data.
 
@@ -105,7 +105,7 @@ It runs alongside the agent via background workers and is designed to be safe: s
 ```bash
 hermes substrate            # default summary (streams, slice counts, pending)
 hermes substrate streams    # per-stream slice counts
-hermes substrate slices --stream hermes.world.user_message.cli --limit 20
+hermes substrate slices --stream thoth.world.user_message.cli --limit 20
 hermes substrate pending    # current pending-queue depth + oldest age
 hermes substrate profiles   # seeded decay profiles
 hermes substrate curator    # Curator decay/release activity

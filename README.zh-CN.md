@@ -75,11 +75,11 @@ Thoth 使用 **PostgreSQL 17**（启用 `vector` 和 `pg_trgm` 扩展）作为�
 
 ```bash
 docker compose up -d postgres
-export HERMES_PG_DSN=postgresql://hermes:hermes@localhost:5432/hermes
+export THOTH_PG_DSN=postgresql://hermes:hermes@localhost:5432/hermes   # 旧的 HERMES_PG_DSN 仍通过环境变量桥接生效
 uv run alembic -c migrations/alembic.ini upgrade head
 ```
 
-**生产部署：** 将 `HERMES_PG_DSN` 指向任意安装了 `vector` 和 `pg_trgm` 扩展的 PostgreSQL 17+ 实例，并将 `alembic upgrade head` 作为部署流程的一部分运行。
+**生产部署：** 将 `THOTH_PG_DSN`（旧的 `HERMES_PG_DSN` 仍通过环境变量桥接生效）指向任意安装了 `vector` 和 `pg_trgm` 扩展的 PostgreSQL 17+ 实例，并将 `alembic upgrade head` 作为部署流程的一部分运行。
 
 **从旧的基于 SQLite 的安装迁移？** 我们提供了一个一次性导入器：
 
@@ -91,7 +91,7 @@ uv run hermes db migrate-from-sqlite --sqlite-path ~/.hermes/state.db   # 加 --
 
 ## 认知基底
 
-基底（substrate）是让 Thoth 不止是一个无状态聊天循环的关键所在。它是一个由 PostgreSQL 支撑的**感知汇聚点与召回来源**：每一条用户消息、助手响应、工具调用 / 结果、子代理生成 / 返回、会话生命周期事件和 cron 派发，都会作为一个*切片（slice）*发射到一个命名的*流（stream）*上（如 `hermes.world.user_message.cli`、`hermes.self_action.assistant_response` 等）。切片存储在 `substrate_slices` 中（按摄入时间做月度 RANGE 分区），被持续管理，并按需召回。
+基底（substrate）是让 Thoth 不止是一个无状态聊天循环的关键所在。它是一个由 PostgreSQL 支撑的**感知汇聚点与召回来源**：每一条用户消息、助手响应、工具调用 / 结果、子代理生成 / 返回、会话生命周期事件和 cron 派发，都会作为一个*切片（slice）*发射到一个命名的*流（stream）*上（如 `thoth.world.user_message.cli`、`thoth.self_action.assistant_response` 等）。切片存储在 `substrate_slices` 中（按摄入时间做月度 RANGE 分区），被持续管理，并按需召回。
 
 它通过后台 worker 与代理并行运行，并被设计为安全的：基底故障是非致命的，而召回路径默认通过环境变量关闭。schema 迁移是永久性的，所以如果你在意这些数据，请在首次运行前备份数据库。
 
@@ -106,7 +106,7 @@ uv run hermes db migrate-from-sqlite --sqlite-path ~/.hermes/state.db   # 加 --
 ```bash
 hermes substrate            # 默认摘要（流、切片数、待处理）
 hermes substrate streams    # 每个流的切片数
-hermes substrate slices --stream hermes.world.user_message.cli --limit 20
+hermes substrate slices --stream thoth.world.user_message.cli --limit 20
 hermes substrate pending    # 当前待处理队列深度 + 最旧切片的年龄
 hermes substrate profiles   # 已植入的衰减配置
 hermes substrate curator    # Curator 衰减 / 释放活动
