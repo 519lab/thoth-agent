@@ -931,17 +931,22 @@ def hermes_db_dsn(postgresql):
     password_part = f":{info.password}@" if info.password else "@"
     dsn = f"postgresql://{info.user}{password_part}{info.host}:{info.port}/{info.dbname}"
     cfg = Config("migrations/alembic.ini")
-    # env.py reads HERMES_PG_DSN to build the SQLAlchemy URL.
-    prev = os.environ.get("HERMES_PG_DSN")
+    # Runtime (thoth_db sync-pool, substrate) + alembic env.py read THOTH_PG_DSN
+    # (canonical, post-cutover) with HERMES_PG_DSN legacy fallback. The P2 env
+    # bridge only mirrors at startup, and this fixture sets the DSN at test time
+    # (after bootstrap), so set BOTH spellings explicitly.
+    _prev = {k: os.environ.get(k) for k in ("THOTH_PG_DSN", "HERMES_PG_DSN")}
+    os.environ["THOTH_PG_DSN"] = dsn
     os.environ["HERMES_PG_DSN"] = dsn
     try:
         command.upgrade(cfg, "head")
         yield dsn
     finally:
-        if prev is None:
-            os.environ.pop("HERMES_PG_DSN", None)
-        else:
-            os.environ["HERMES_PG_DSN"] = prev
+        for _k, _v in _prev.items():
+            if _v is None:
+                os.environ.pop(_k, None)
+            else:
+                os.environ[_k] = _v
 
 
 @pytest_asyncio.fixture

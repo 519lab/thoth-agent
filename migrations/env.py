@@ -11,9 +11,9 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-dsn = os.environ.get("HERMES_PG_DSN")
+dsn = os.environ.get("THOTH_PG_DSN") or os.environ.get("HERMES_PG_DSN")
 if not dsn:
-    raise RuntimeError("HERMES_PG_DSN must be set to run migrations")
+    raise RuntimeError("THOTH_PG_DSN (or legacy HERMES_PG_DSN) must be set to run migrations")
 # Alembic with asyncpg needs the postgresql+asyncpg:// scheme.
 if dsn.startswith("postgresql://"):
     dsn_sa = "postgresql+asyncpg://" + dsn[len("postgresql://"):]

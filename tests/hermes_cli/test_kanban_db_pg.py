@@ -26,6 +26,7 @@ import pytest_asyncio
 @pytest.fixture(autouse=True)
 def _set_pg_dsn(hermes_db_initialized_sync, monkeypatch):
     """Make kanban_db use PG for the duration of each test."""
+    monkeypatch.setenv("THOTH_PG_DSN", hermes_db_initialized_sync)
     monkeypatch.setenv("HERMES_PG_DSN", hermes_db_initialized_sync)
 
 
