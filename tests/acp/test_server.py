@@ -102,7 +102,7 @@ class TestInitialize:
         resp = await agent.initialize(protocol_version=1)
         assert resp.agent_info is not None
         assert isinstance(resp.agent_info, Implementation)
-        assert resp.agent_info.name == "hermes-agent"
+        assert resp.agent_info.name == "thoth-agent"
         assert resp.agent_info.version == HERMES_VERSION
 
     @pytest.mark.asyncio
