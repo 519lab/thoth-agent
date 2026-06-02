@@ -16,7 +16,7 @@
 
 Run it on a $5 VPS, a GPU cluster, or serverless infrastructure that costs nearly nothing when idle. It isn't tied to your laptop — talk to it from Telegram while it works on a cloud VM.
 
-Use any model you want — [OpenRouter](https://openrouter.ai) (200+ models), [NovitaAI](https://novita.ai), [NVIDIA NIM](https://build.nvidia.com) (Nemotron), [Xiaomi MiMo](https://platform.xiaomimimo.com), [z.ai/GLM](https://z.ai), [Kimi/Moonshot](https://platform.moonshot.ai), [MiniMax](https://www.minimax.io), [Hugging Face](https://huggingface.co), [Nous Portal](https://portal.nousresearch.com), OpenAI, or your own endpoint. Switch with `hermes model` — no code changes, no lock-in.
+Use any model you want — [OpenRouter](https://openrouter.ai) (200+ models), [NovitaAI](https://novita.ai), [NVIDIA NIM](https://build.nvidia.com) (Nemotron), [Xiaomi MiMo](https://platform.xiaomimimo.com), [z.ai/GLM](https://z.ai), [Kimi/Moonshot](https://platform.moonshot.ai), [MiniMax](https://www.minimax.io), [Hugging Face](https://huggingface.co), [Nous Portal](https://portal.nousresearch.com), OpenAI, or your own endpoint. Switch with `thoth model` — no code changes, no lock-in.
 
 <table>
 <tr><td><b>A real terminal interface</b></td><td>Full TUI with multiline editing, slash-command autocomplete, conversation history, interrupt-and-redirect, and streaming tool output.</td></tr>
@@ -29,7 +29,7 @@ Use any model you want — [OpenRouter](https://openrouter.ai) (200+ models), [N
 <tr><td><b>Research-ready</b></td><td>Batch trajectory generation and trajectory compression for training the next generation of tool-calling models.</td></tr>
 </table>
 
-> **A note on the name:** the project is **Thoth**, but the command-line tool is still invoked as `hermes` (and config lives under `~/.hermes`). The executable/namespace rename is in progress; every command in this README is current.
+> **A note on the name:** the project is **Thoth**, and the command is now `thoth` — every example in this README uses it. The legacy `hermes` command still works as an alias, and installs keep their config under `~/.hermes` (the database stays named `hermes` too), so nothing breaks if you're upgrading. The remaining executable/namespace rename is in progress.
 
 ---
 
@@ -61,7 +61,7 @@ After installation:
 
 ```bash
 source ~/.bashrc    # reload shell (or: source ~/.zshrc)
-hermes              # start chatting!
+thoth               # start chatting!
 ```
 
 ---
@@ -83,7 +83,7 @@ uv run alembic -c migrations/alembic.ini upgrade head
 **Coming from an older SQLite-based install?** A one-shot importer is provided:
 
 ```bash
-uv run hermes db migrate-from-sqlite --sqlite-path ~/.hermes/state.db   # add --dry-run to preview
+uv run thoth db migrate-from-sqlite --sqlite-path ~/.hermes/state.db   # add --dry-run to preview
 ```
 
 ---
@@ -103,39 +103,39 @@ It runs alongside the agent via background workers and is designed to be safe: s
 ### Inspecting substrate state
 
 ```bash
-hermes substrate            # default summary (streams, slice counts, pending)
-hermes substrate streams    # per-stream slice counts
-hermes substrate slices --stream thoth.world.user_message.cli --limit 20
-hermes substrate pending    # current pending-queue depth + oldest age
-hermes substrate profiles   # seeded decay profiles
-hermes substrate curator    # Curator decay/release activity
-hermes substrate recall     # recall coverage + recent calls
+thoth substrate            # default summary (streams, slice counts, pending)
+thoth substrate streams    # per-stream slice counts
+thoth substrate slices --stream thoth.world.user_message.cli --limit 20
+thoth substrate pending    # current pending-queue depth + oldest age
+thoth substrate profiles   # seeded decay profiles
+thoth substrate curator    # Curator decay/release activity
+thoth substrate recall     # recall coverage + recent calls
 ```
 
-If your DB is on an older Alembic revision when Thoth starts, boot raises a `RuntimeError` with the upgrade command to run; set `HERMES_AUTO_MIGRATE=1` to upgrade automatically on first boot. Procedural operator docs ship as a bundled skill — load with `/substrate`.
+If your DB is on an older Alembic revision when Thoth starts, boot raises a `RuntimeError` with the upgrade command to run; set `HERMES_AUTO_MIGRATE=1` to upgrade automatically on first boot. For the full design — the L0–L4 layer stack, the sub-agents, and the recall pipeline — see [`docs/architecture/substrate.md`](docs/architecture/substrate.md). Procedural operator docs ship as a bundled skill — load with `/substrate`.
 
 ---
 
 ## Getting Started
 
 ```bash
-hermes              # Interactive CLI — start a conversation
-hermes model        # Choose your LLM provider and model
-hermes tools        # Configure which tools are enabled
-hermes config set   # Set individual config values
-hermes gateway      # Start the messaging gateway (Telegram, Discord, etc.)
-hermes setup        # Run the full setup wizard (configures everything at once)
-hermes update       # Update to the latest version
-hermes doctor       # Diagnose any issues
+thoth              # Interactive CLI — start a conversation
+thoth model        # Choose your LLM provider and model
+thoth tools        # Configure which tools are enabled
+thoth config set   # Set individual config values
+thoth gateway      # Start the messaging gateway (Telegram, Discord, etc.)
+thoth setup        # Run the full setup wizard (configures everything at once)
+thoth update       # Update to the latest version
+thoth doctor       # Diagnose any issues
 ```
 
 ### CLI vs Messaging quick reference
 
-Thoth has two entry points: start the terminal UI with `hermes`, or run the gateway and talk to it from Telegram, Discord, Slack, WhatsApp, Signal, or Email. Once you're in a conversation, many slash commands are shared across both.
+Thoth has two entry points: start the terminal UI with `thoth`, or run the gateway and talk to it from Telegram, Discord, Slack, WhatsApp, Signal, or Email. Once you're in a conversation, many slash commands are shared across both.
 
 | Action | CLI | Messaging platforms |
 |---------|-----|---------------------|
-| Start chatting | `hermes` | `hermes gateway setup` + `hermes gateway start`, then message the bot |
+| Start chatting | `thoth` | `thoth gateway setup` + `thoth gateway start`, then message the bot |
 | Start fresh conversation | `/new` or `/reset` | `/new` or `/reset` |
 | Change model | `/model [provider:model]` | `/model [provider:model]` |
 | Set a personality | `/personality [name]` | `/personality [name]` |
@@ -145,7 +145,7 @@ Thoth has two entry points: start the terminal UI with `hermes`, or run the gate
 | Interrupt current work | `Ctrl+C` or send a new message | `/stop` or send a new message |
 | Platform-specific status | `/platforms` | `/status`, `/sethome` |
 
-Run `hermes --help` (or `hermes <command> --help`) for the full command surface.
+Run `thoth --help` (or `thoth <command> --help`) for the full command surface.
 
 ---
 
@@ -191,16 +191,16 @@ Source is bind-mounted so test edits don't trigger an image rebuild; the venv li
 
 ## Migrating from OpenClaw
 
-If you're coming from OpenClaw, Thoth can automatically import your settings, memories, skills, and API keys. The setup wizard (`hermes setup`) detects `~/.openclaw` and offers to migrate before configuration begins. Anytime after install:
+If you're coming from OpenClaw, Thoth can automatically import your settings, memories, skills, and API keys. The setup wizard (`thoth setup`) detects `~/.openclaw` and offers to migrate before configuration begins. Anytime after install:
 
 ```bash
-hermes claw migrate              # Interactive migration (full preset)
-hermes claw migrate --dry-run    # Preview what would be migrated
-hermes claw migrate --preset user-data   # Migrate without secrets
-hermes claw migrate --overwrite  # Overwrite existing conflicts
+thoth claw migrate              # Interactive migration (full preset)
+thoth claw migrate --dry-run    # Preview what would be migrated
+thoth claw migrate --preset user-data   # Migrate without secrets
+thoth claw migrate --overwrite  # Overwrite existing conflicts
 ```
 
-What gets imported: persona file (**SOUL.md**), memories (MEMORY.md / USER.md), user-created skills, command allowlist, messaging settings, allowlisted API keys, TTS assets, and workspace instructions (AGENTS.md). See `hermes claw migrate --help` for all options.
+What gets imported: persona file (**SOUL.md**), memories (MEMORY.md / USER.md), user-created skills, command allowlist, messaging settings, allowlisted API keys, TTS assets, and workspace instructions (AGENTS.md). See `thoth claw migrate --help` for all options.
 
 ---
 
