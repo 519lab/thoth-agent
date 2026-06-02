@@ -213,6 +213,10 @@ _EXPECTED_REVISIONS = frozenset(
         #   frontier model judges each draft against a guardrail/design/intent
         #   rubric; verdict stored for review + gate-mode auto-reject).
         "20260528_0023",
+        # - ``20260528_0024`` — substrate_agent_cost: per-call auxiliary-model
+        #   token-usage sink (operational telemetry, never read by the awareness
+        #   loop). Surfaced in ``thoth substrate health``.
+        "20260528_0024",
     }
 )
 

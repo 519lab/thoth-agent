@@ -111,8 +111,9 @@ def _coerce(data) -> ReflectorResult:
     return ReflectorResult(reflections=out)
 
 
-async def _synthesize(context: str, *, client, model) -> ReflectorResult:
+async def _synthesize(context: str, *, client, model, substrate=None) -> ReflectorResult:
     """LLM synthesis seam (mocked in tests). JSON-schema → plain fallback."""
+    from substrate import cost
     from substrate.l1.extract import _strip_fences
 
     prompt = (
@@ -126,7 +127,10 @@ async def _synthesize(context: str, *, client, model) -> ReflectorResult:
         f"Return JSON matching: {json.dumps(_SCHEMA)}"
     )
     try:
-        resp = await client.chat.completions.create(
+        resp = await cost.acreate_and_record(
+            client,
+            substrate=substrate,
+            agent="reflector",
             model=model,
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_schema",
@@ -135,7 +139,10 @@ async def _synthesize(context: str, *, client, model) -> ReflectorResult:
         )
         raw = resp.choices[0].message.content or ""
     except Exception:
-        resp = await client.chat.completions.create(
+        resp = await cost.acreate_and_record(
+            client,
+            substrate=substrate,
+            agent="reflector",
             model=model,
             messages=[{"role": "user",
                        "content": prompt + "\n\nReturn ONLY the JSON object."}],
@@ -181,7 +188,8 @@ class Reflector(SubAgent):
         timeout_s = _env_int("REFLECTOR_TIMEOUT_S", 25)
         try:
             result = await asyncio.wait_for(
-                _synthesize(context, client=client, model=model), timeout=timeout_s
+                _synthesize(context, client=client, model=model, substrate=self._substrate),
+                timeout=timeout_s,
             )
         except Exception:
             self._log.debug("reflector.tick.degraded", exc_info=True)

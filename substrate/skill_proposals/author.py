@@ -121,10 +121,15 @@ def _coerce(data) -> Optional[DraftedSkill]:
 
 
 async def draft_skill(
-    need_context: str, *, client=None, model: Optional[str] = None
+    need_context: str, *, client=None, model: Optional[str] = None, substrate=None
 ) -> Optional[DraftedSkill]:
     """Draft a skill for ``need_context``, or ``None`` if the model declines or
-    the output is unusable. Never raises on a model/parse error (returns None)."""
+    the output is unusable. Never raises on a model/parse error (returns None).
+
+    ``substrate`` (optional) threads through to the create site so per-agent
+    token usage is recorded; ``None`` skips recording (back-compatible)."""
+    from substrate import cost
+
     if not (need_context or "").strip():
         return None
     if client is None:
@@ -136,7 +141,10 @@ async def draft_skill(
 
     raw = ""
     try:
-        resp = await client.chat.completions.create(
+        resp = await cost.acreate_and_record(
+            client,
+            substrate=substrate,
+            agent="skill_author",
             model=model,
             messages=[{"role": "user", "content": prompt}],
             response_format={
@@ -148,7 +156,10 @@ async def draft_skill(
         raw = resp.choices[0].message.content or ""
     except Exception:
         try:
-            resp = await client.chat.completions.create(
+            resp = await cost.acreate_and_record(
+                client,
+                substrate=substrate,
+                agent="skill_author",
                 model=model,
                 messages=[{
                     "role": "user",

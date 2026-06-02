@@ -54,9 +54,11 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
-async def _summarize(texts: list[str], *, client, model) -> str:
+async def _summarize(texts: list[str], *, client, model, substrate=None) -> str:
     """LLM summarization seam (mocked in tests). Returns a dense summary
     that preserves key entities + decisions."""
+    from substrate import cost
+
     joined = "\n".join(f"- {t}" for t in texts)
     prompt = (
         "Summarize the following older messages from one conversation into a "
@@ -64,7 +66,10 @@ async def _summarize(texts: list[str], *, client, model) -> str:
         "decisions, and open threads; drop chit-chat. 2-5 sentences.\n\n"
         f"{joined}"
     )
-    resp = await client.chat.completions.create(
+    resp = await cost.acreate_and_record(
+        client,
+        substrate=substrate,
+        agent="summarizer",
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2,
@@ -183,7 +188,8 @@ class Summarizer(SubAgent):
         timeout_s = _env_int("SUMMARIZER_TIMEOUT_S", 30)
         try:
             summary = await asyncio.wait_for(
-                _summarize(texts, client=client, model=model), timeout=timeout_s
+                _summarize(texts, client=client, model=model, substrate=self._substrate),
+                timeout=timeout_s,
             )
         except Exception:
             self._log.debug("summarizer.llm.degraded", exc_info=True)

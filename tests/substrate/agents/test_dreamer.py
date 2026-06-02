@@ -48,7 +48,7 @@ async def test_append_and_list_dreams(hermes_db_initialized):
 async def test_dreamer_explores_from_pattern_seed(booted, monkeypatch):
     await l3.upsert_pattern("deploys cluster on fridays", "theme")
 
-    async def _fake(seed, *, client=None, model=None):
+    async def _fake(seed, *, client=None, model=None, substrate=None):
         assert "fridays" in seed
         return "What if friday deploys correlate with weekend incident spikes?"
 
@@ -67,7 +67,7 @@ async def test_dreamer_seeds_from_entities_when_no_patterns(booted, monkeypatch)
 
     captured = {}
 
-    async def _fake(seed, *, client=None, model=None):
+    async def _fake(seed, *, client=None, model=None, substrate=None):
         captured["seed"] = seed
         return "an exploration"
 

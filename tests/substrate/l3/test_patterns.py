@@ -99,7 +99,7 @@ async def test_pattern_finder_writes_patterns(booted, monkeypatch):
     await l1.upsert_entity("Thoth", "project", summary="the agent")
     await l1.upsert_entity("substrate", "concept", summary="memory layer")
 
-    async def _fake(context, *, client=None, model=None):
+    async def _fake(context, *, client=None, model=None, substrate=None):
         assert "Greg" in context  # the context block reaches the LLM
         return PatternResult(patterns=[
             ParsedPattern("Greg works on infra-heavy projects", "generalization",

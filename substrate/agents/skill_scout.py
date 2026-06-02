@@ -102,7 +102,8 @@ class SkillScout(SubAgent):
         timeout_s = _env_int("SKILL_SCOUT_TIMEOUT_S", 40)
         try:
             drafted = await asyncio.wait_for(
-                author.draft_skill(candidate["need_text"]), timeout=timeout_s
+                author.draft_skill(candidate["need_text"], substrate=self._substrate),
+                timeout=timeout_s,
             )
         except (asyncio.TimeoutError, Exception):
             self._log.debug("skill_scout.draft.degraded", exc_info=True)
@@ -165,7 +166,10 @@ class SkillScout(SubAgent):
 
         try:
             return await asyncio.wait_for(
-                evaluator.evaluate_skill(drafted.skill_md, need_text), timeout=timeout_s
+                evaluator.evaluate_skill(
+                    drafted.skill_md, need_text, substrate=self._substrate
+                ),
+                timeout=timeout_s,
             )
         except (asyncio.TimeoutError, Exception):
             self._log.debug("skill_scout.evaluate.degraded", exc_info=True)

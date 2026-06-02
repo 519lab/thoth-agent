@@ -154,14 +154,22 @@ def _short_id_map(slices: list[SliceText]) -> dict[str, UUID]:
 # ---------------------------------------------------------------------------
 
 
-async def _create(client, **kwargs):
-    """Single chat-completion call. Isolated so tests can assert kwargs."""
-    return await client.chat.completions.create(**kwargs)
+async def _create(client, *, substrate=None, **kwargs):
+    """Single chat-completion call. Isolated so tests can assert kwargs.
+
+    Routes through ``substrate.cost.acreate_and_record`` so per-agent token
+    usage is recorded (no-op recording when ``substrate`` is None)."""
+    from substrate import cost
+
+    return await cost.acreate_and_record(
+        client, substrate=substrate, agent="parser", **kwargs
+    )
 
 
-async def _tier1(client, model, prompt) -> str:
+async def _tier1(client, model, prompt, substrate=None) -> str:
     resp = await _create(
         client,
+        substrate=substrate,
         model=model,
         messages=[{"role": "user", "content": prompt}],
         response_format={
@@ -173,9 +181,10 @@ async def _tier1(client, model, prompt) -> str:
     return resp.choices[0].message.content or ""
 
 
-async def _tier2(client, model, prompt) -> str:
+async def _tier2(client, model, prompt, substrate=None) -> str:
     resp = await _create(
         client,
+        substrate=substrate,
         model=model,
         messages=[{"role": "user", "content": prompt}],
         tools=[{
@@ -191,7 +200,7 @@ async def _tier2(client, model, prompt) -> str:
     return tool_calls[0].function.arguments or ""
 
 
-async def _tier3(client, model, prompt) -> str:
+async def _tier3(client, model, prompt, substrate=None) -> str:
     retries = _env_int("PARSER_JSON_RETRIES", 2)
     msg = prompt + (
         "\n\nRespond with ONLY a JSON object matching the schema above. "
@@ -201,6 +210,7 @@ async def _tier3(client, model, prompt) -> str:
     for attempt in range(retries + 1):
         resp = await _create(
             client,
+            substrate=substrate,
             model=model,
             messages=[{"role": "user", "content": msg}],
             temperature=float(os.environ.get("PARSER_TEMPERATURE", "0.2") or "0.2"),
@@ -232,7 +242,9 @@ def _strip_fences(raw: str) -> str:
 _TIERS = {1: _tier1, 2: _tier2, 3: _tier3}
 
 
-async def _call_with_structured_output(client, model: str, prompt: str) -> str:
+async def _call_with_structured_output(
+    client, model: str, prompt: str, substrate=None
+) -> str:
     """Walk tiers 1→2→3, memoising the first that works for *model*.
 
     An explicit ``PARSER_STRUCTURED_OUTPUT_TIER`` (1–3) pins the tier and
@@ -240,13 +252,13 @@ async def _call_with_structured_output(client, model: str, prompt: str) -> str:
     """
     pinned = _env_int("PARSER_STRUCTURED_OUTPUT_TIER", 0)
     if pinned in (1, 2, 3):
-        return await _TIERS[pinned](client, model, prompt)
+        return await _TIERS[pinned](client, model, prompt, substrate)
 
     start = _tier_cache.get(model, 1)
     last_exc: Optional[Exception] = None
     for tier in (t for t in (1, 2, 3) if t >= start):
         try:
-            raw = await _TIERS[tier](client, model, prompt)
+            raw = await _TIERS[tier](client, model, prompt, substrate)
             _tier_cache[model] = tier
             return raw
         except Exception as exc:  # demote to the next tier
@@ -327,11 +339,15 @@ def resolve_parser_client():
 
 
 async def call_parser_llm(
-    slices: list[SliceText], *, client=None, model: Optional[str] = None
+    slices: list[SliceText], *, client=None, model: Optional[str] = None,
+    substrate=None,
 ) -> ParserResult:
     """Extract entities + relationships from *slices*. Raises ParseError on
     malformed output; raises other exceptions on transport failures (the
-    Parser maps those to ``llm_error``)."""
+    Parser maps those to ``llm_error``).
+
+    ``substrate`` (optional) threads through to the create site so per-agent
+    token usage is recorded; ``None`` skips recording (back-compatible)."""
     if not slices:
         return ParserResult()
     if client is None:
@@ -341,7 +357,7 @@ async def call_parser_llm(
         if client is None:
             raise RuntimeError("no parser auxiliary client configured")
     prompt = _build_prompt(slices)
-    raw = await _call_with_structured_output(client, model or "", prompt)
+    raw = await _call_with_structured_output(client, model or "", prompt, substrate)
     try:
         data = json.loads(_strip_fences(raw))
     except (json.JSONDecodeError, ValueError) as exc:

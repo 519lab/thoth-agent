@@ -61,7 +61,7 @@ async def test_summarizer_compresses_old_session(booted, monkeypatch):
 
     captured = {}
 
-    async def _fake(texts, *, client=None, model=None):
+    async def _fake(texts, *, client=None, model=None, substrate=None):
         captured["n"] = len(texts)
         return "Discussed the postgres migration across several messages."
 
@@ -130,7 +130,7 @@ async def test_summarizer_does_not_resummarize(booted, monkeypatch):
     for i in range(4):
         await _commit_old(booted, f"old item {i}", age_h=48)
 
-    async def _fake(texts, *, client=None, model=None):
+    async def _fake(texts, *, client=None, model=None, substrate=None):
         return "summary one"
 
     monkeypatch.setattr(summ_mod, "_summarize", _fake)
