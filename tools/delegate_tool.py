@@ -2554,7 +2554,7 @@ def _resolve_delegation_credentials(cfg: dict, parent_agent) -> dict:
     if not api_key:
         raise ValueError(
             f"Delegation provider '{configured_provider}' resolved but has no API key. "
-            f"Set the appropriate environment variable or run 'hermes auth'."
+            f"Set the appropriate environment variable or run 'thoth auth'."
         )
 
     return {
@@ -2871,7 +2871,7 @@ DELEGATE_TASK_SCHEMA = {
                     "See agent/copilot_acp_client.py for the implementation. "
                     "IMPORTANT: Do NOT set this unless the user has explicitly told you "
                     "a specific ACP-compatible CLI is installed and configured. "
-                    "Leave empty to use the parent's default transport (Hermes subagents)."
+                    "Leave empty to use the parent's default transport (Thoth subagents)."
                 ),
             },
             "acp_args": {

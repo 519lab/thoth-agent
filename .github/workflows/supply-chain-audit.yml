@@ -97,7 +97,10 @@ jobs:
 
           # --- Install-hook files (setup.py/sitecustomize/usercustomize/__init__.pth) ---
           # These execute during pip install or interpreter startup.
-          SETUP_HITS=$(git diff --name-only "$BASE".."$HEAD" | grep -E '(^|/)(setup\.py|setup\.cfg|sitecustomize\.py|usercustomize\.py|__init__\.pth)$' || true)
+          # Allowlist (exact paths): files that match the filename heuristic but are
+          # NOT real install hooks. thoth_cli/setup.py is the interactive setup *wizard*
+          # module (imported at runtime, never run by pip or interpreter startup).
+          SETUP_HITS=$(git diff --name-only "$BASE".."$HEAD" | grep -E '(^|/)(setup\.py|setup\.cfg|sitecustomize\.py|usercustomize\.py|__init__\.pth)$' | grep -vxF 'thoth_cli/setup.py' || true)
           if [ -n "$SETUP_HITS" ]; then
             FINDINGS="${FINDINGS}
           ### 🚨 CRITICAL: Install-hook file added or modified

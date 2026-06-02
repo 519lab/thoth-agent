@@ -99,7 +99,7 @@ class TestCronjobRequirements:
         monkeypatch.delenv("HERMES_GATEWAY_SESSION", raising=False)
         monkeypatch.delenv("HERMES_EXEC_ASK", raising=False)
         # Even with no crontab in PATH, the cronjob tool should be available
-        # because hermes uses an internal scheduler, not system crontab.
+        # because thoth uses an internal scheduler, not system crontab.
         assert check_cronjob_requirements() is True
 
     def test_accepts_interactive_mode(self, monkeypatch):

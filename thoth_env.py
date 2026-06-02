@@ -1,6 +1,6 @@
-"""hermes→thoth environment-variable compatibility bridge.
+"""thoth→thoth environment-variable compatibility bridge.
 
-Phase 2 of the hermes→thoth rename. The project is renaming, but existing
+Phase 2 of the thoth→thoth rename. The project is renaming, but existing
 installs set ``HERMES_*`` env vars (in ``~/.hermes/.env`` and the shell) and
 ~398 reads across the codebase still use ``os.environ.get("HERMES_...")``.
 Rewriting every call site is high-risk churn; instead we mirror the two

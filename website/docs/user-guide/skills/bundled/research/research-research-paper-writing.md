@@ -27,7 +27,7 @@ Write ML papers for NeurIPS/ICML/ICLR: design→submit.
 ## Reference: full SKILL.md
 
 :::info
-The following is the complete skill definition that Hermes loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
+The following is the complete skill definition that Thoth loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
 :::
 
 # Research Paper Writing Pipeline
@@ -2132,13 +2132,13 @@ The main pipeline above targets empirical ML papers. Other paper types require d
 
 ---
 
-## Hermes Agent Integration
+## Thoth Agent Integration
 
-This skill is designed for the Hermes agent. It uses Hermes tools, delegation, scheduling, and memory for the full research lifecycle.
+This skill is designed for the Thoth agent. It uses Thoth tools, delegation, scheduling, and memory for the full research lifecycle.
 
 ### Related Skills
 
-Compose this skill with other Hermes skills for specific phases:
+Compose this skill with other Thoth skills for specific phases:
 
 | Skill | When to Use | How to Load |
 |-------|-------------|-------------|
@@ -2151,7 +2151,7 @@ Compose this skill with other Hermes skills for specific phases:
 
 **This skill supersedes `ml-paper-writing`** — it contains all of ml-paper-writing's content plus the full experiment/analysis pipeline and autoreason methodology.
 
-### Hermes Tools Reference
+### Thoth Tools Reference
 
 | Tool | Usage in This Pipeline |
 |------|----------------------|

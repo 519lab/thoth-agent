@@ -227,7 +227,7 @@ def _normalize_string_set(values) -> Set[str]:
 # (config_path_str, mtime_ns) -> resolved external dirs list.  Keyed by
 # mtime_ns so a config.yaml edit mid-run is picked up automatically;
 # otherwise every call would re-read + re-YAML-parse the 15KB config,
-# which becomes the dominant cost of ``hermes`` startup when ~120 skills
+# which becomes the dominant cost of ``thoth`` startup when ~120 skills
 # each trigger a category lookup during banner construction (10+ seconds
 # of pure waste).
 _EXTERNAL_DIRS_CACHE: Dict[Tuple[str, int], List[Path]] = {}
@@ -247,7 +247,7 @@ def get_external_skills_dirs() -> List[Path]:
 
     Cached in-process, keyed on ``config.yaml`` mtime — the function is
     called once per skill during banner / tool-registry scans, and YAML
-    parsing a non-trivial config dominates ``hermes`` cold-start time
+    parsing a non-trivial config dominates ``thoth`` cold-start time
     when the cache is absent.
     """
     config_path = get_config_path()
@@ -532,7 +532,7 @@ def extract_skill_description(frontmatter: Dict[str, Any]) -> str:
 def iter_skill_index_files(skills_dir: Path, filename: str):
     """Walk skills_dir yielding sorted paths matching *filename*.
 
-    Excludes Hermes metadata, VCS, virtualenv/dependency, and cache
+    Excludes Thoth metadata, VCS, virtualenv/dependency, and cache
     directories so dependencies cannot register nested skills.
     """
     matches = []

@@ -1720,7 +1720,7 @@ def test_sync_codex_entry_from_auth_store_adopts_newer_tokens(tmp_path, monkeypa
     assert entry.access_token == "access-OLD"
     assert entry.refresh_token == "refresh-OLD"
 
-    # Simulate `hermes auth openai-codex` replacing the token pair on disk.
+    # Simulate `thoth auth openai-codex` replacing the token pair on disk.
     _write_auth_store(tmp_path, _codex_auth_store("access-NEW", "refresh-NEW"))
 
     synced = pool._sync_codex_entry_from_auth_store(entry)
@@ -1751,7 +1751,7 @@ def test_codex_exhausted_entry_recovers_via_auth_store_sync(tmp_path, monkeypatc
     """An exhausted Codex entry should recover when auth.json has newer tokens.
 
     Reproduces the Discord report (p1aceho1der, Apr 2026): after a Codex
-    rate-limit reset the user ran `hermes model` to reauth, but the pool
+    rate-limit reset the user ran `thoth model` to reauth, but the pool
     entry stayed marked EXHAUSTED with last_error_reset_at many hours in
     the future — so `_available_entries` kept returning empty and every
     request failed with "no available entries (all exhausted or empty)".
@@ -1785,7 +1785,7 @@ def test_codex_exhausted_entry_recovers_via_auth_store_sync(tmp_path, monkeypatc
     available_before = pool._available_entries(clear_expired=True, refresh=False)
     assert available_before == []
 
-    # Simulate `hermes model` / `hermes auth` refreshing the tokens.
+    # Simulate `thoth model` / `thoth auth` refreshing the tokens.
     _write_auth_store(tmp_path, _codex_auth_store("access-FRESH", "refresh-FRESH"))
 
     available = pool._available_entries(clear_expired=True, refresh=False)

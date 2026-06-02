@@ -1,8 +1,8 @@
 """Tests for the one-time substrate stream-name rename (Phase 6 cutover).
 
 ``thoth db migrate-from-hermes`` renames legacy ``hermes.*`` substrate stream
-names to ``thoth.*`` in place. Thoth is a clean cutover: no ``thoth.*`` twins
-of the legacy streams exist, so the rename never collides with the
+names to ``thoth.*`` in place. This is a clean cutover: no ``thoth.*`` twins
+of the legacy ``hermes.*`` streams exist, so the rename never collides with the
 UNIQUE(name) constraint. Slices reference their stream by ``stream_id`` and so
 follow the rename automatically.
 

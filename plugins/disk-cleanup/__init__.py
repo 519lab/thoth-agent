@@ -1,4 +1,4 @@
-"""disk-cleanup plugin — auto-cleanup of ephemeral Hermes session files.
+"""disk-cleanup plugin — auto-cleanup of ephemeral Thoth session files.
 
 Wires three behaviours:
 
@@ -205,7 +205,7 @@ Subcommands:
 
 Categories: temp | test | research | download | chrome-profile | cron-output | other
 
-All operations are scoped to HERMES_HOME and /tmp/hermes-*.
+All operations are scoped to HERMES_HOME and /tmp/hermes-* or /tmp/thoth-*.
 Test files are auto-tracked on write_file / terminal and auto-cleaned at session end.
 """
 
@@ -312,5 +312,5 @@ def register(ctx) -> None:
     ctx.register_command(
         "disk-cleanup",
         handler=_handle_slash,
-        description="Track and clean up ephemeral Hermes session files.",
+        description="Track and clean up ephemeral Thoth session files.",
     )

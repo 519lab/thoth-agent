@@ -1,7 +1,7 @@
 """
-Gateway subcommand for hermes CLI.
+Gateway subcommand for thoth CLI.
 
-Handles: hermes gateway [run|start|stop|restart|status|install|uninstall|setup]
+Handles: thoth gateway [run|start|stop|restart|status|install|uninstall|setup]
 """
 
 import asyncio
@@ -32,7 +32,7 @@ from thoth_cli.config import (
     save_env_value,
 )
 # display_hermes_home is imported lazily at call sites to avoid ImportError
-# when hermes_constants is cached from a pre-update version during `hermes update`.
+# when hermes_constants is cached from a pre-update version during `thoth update`.
 from thoth_cli.setup import (
     print_header, print_info, print_success, print_warning, print_error,
     prompt, prompt_choice, prompt_yes_no,
@@ -140,7 +140,7 @@ def _get_parent_pid(pid: int) -> int | None:
     older implementation shelled out to ``ps -o ppid= -p <pid>``, which
     silently fails on Windows (no ``ps``) so the ancestor walk terminated
     at self — the caller's dedup / exclude logic then couldn't distinguish
-    "hermes CLI that invoked this scan" from "real gateway process".
+    "thoth CLI that invoked this scan" from "real gateway process".
     """
     if pid <= 1:
         return None
@@ -263,7 +263,7 @@ def _get_ancestor_pids() -> set[int]:
 
     Walks from the current PID up to PID 1 (init) so that process-table scans
     never match the calling CLI process or any of its parents.  This prevents
-    ``hermes gateway status`` from falsely counting the ``hermes`` CLI that
+    ``thoth gateway status`` from falsely counting the ``thoth`` CLI that
     invoked it as a running gateway instance (see #13242).
     """
     ancestors: set[int] = set()
@@ -294,7 +294,7 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
     discover gateways outside the current profile.
     """
     # Exclude the entire ancestor chain so the CLI process that invoked this
-    # scan (e.g. ``hermes gateway status``) is never mistaken for a running
+    # scan (e.g. ``thoth gateway status``) is never mistaken for a running
     # gateway.  See #13242.
     exclude_pids = exclude_pids | _get_ancestor_pids()
     pids: list[int] = []
@@ -311,6 +311,7 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
         "hermes_cli/main.py gateway",
         "hermes_cli/main.py --profile",
         "hermes_cli/main.py -p",
+        "thoth gateway",
         "hermes gateway",
         "gateway/run.py",
     ]
@@ -522,10 +523,10 @@ def find_gateway_pids(exclude_pids: set | None = None, all_profiles: bool = Fals
         exclude_pids: PIDs to exclude from the result (e.g. service-managed
             PIDs that should not be killed during a stale-process sweep).
         all_profiles: When ``True``, return gateway PIDs across **all**
-            profiles (the pre-7923 global behaviour).  ``hermes update``
+            profiles (the pre-7923 global behaviour).  ``thoth update``
             needs this because a code update affects every profile.
             When ``False`` (default), only PIDs belonging to the current
-            Hermes profile are returned.
+            Thoth profile are returned.
     """
     _exclude = set(exclude_pids or set())
     pids: list[int] = []
@@ -546,7 +547,7 @@ def find_gateway_pids(exclude_pids: set | None = None, all_profiles: bool = Fals
 def find_profile_gateway_processes(
     exclude_pids: set | None = None,
 ) -> list[ProfileGatewayProcess]:
-    """Return running gateway PIDs mapped to Hermes profiles via PID files."""
+    """Return running gateway PIDs mapped to Thoth profiles via PID files."""
     _exclude = set(exclude_pids or set())
     processes: list[ProfileGatewayProcess] = []
     try:
@@ -591,8 +592,8 @@ def launch_detached_profile_gateway_restart(profile: str, old_pid: int) -> bool:
     #
     # Windows — ``start_new_session`` is silently accepted but does NOT
     # detach.  The watcher stays attached to the CLI's console and dies
-    # when the user closes the terminal, leaving ``hermes update`` users
-    # with no running gateway until they re-invoke ``hermes gateway``
+    # when the user closes the terminal, leaving ``thoth update`` users
+    # with no running gateway until they re-invoke ``thoth gateway``
     # manually.  The Win32 equivalent is the ``CREATE_NEW_PROCESS_GROUP |
     # DETACHED_PROCESS | CREATE_NO_WINDOW`` creationflags bundle.
     #
@@ -1039,7 +1040,7 @@ def _print_gateway_process_mismatch(snapshot: GatewayRuntimeSnapshot) -> None:
 def _print_other_profiles_gateway_status() -> None:
     """Print a summary of gateway status across all profiles.
 
-    Shown at the bottom of ``hermes gateway status`` output so users with
+    Shown at the bottom of ``thoth gateway status`` output so users with
     multiple profiles can tell at a glance which gateways are running and
     avoid confusing another profile's process with the current one.
     """
@@ -1239,7 +1240,7 @@ def is_windows() -> bool:
 def _windows_gateway_should_absorb_console_controls() -> bool:
     """Return True for detached Windows gateway runs that should ignore Ctrl+C.
 
-    Foreground ``hermes gateway run`` must remain interruptible from
+    Foreground ``thoth gateway run`` must remain interruptible from
     PowerShell/CMD. Detached service-style launches opt in via
     ``HERMES_GATEWAY_DETACHED=1``; older wrappers without the env marker are
     treated as detached when no interactive stdin is attached.
@@ -1261,8 +1262,8 @@ def _windows_gateway_should_absorb_console_controls() -> bool:
 # Service Configuration
 # =============================================================================
 
-_SERVICE_BASE = "hermes-gateway"
-SERVICE_DESCRIPTION = "Hermes Agent Gateway - Messaging Platform Integration"
+_SERVICE_BASE = "thoth-gateway"
+SERVICE_DESCRIPTION = "Thoth Agent Gateway - Messaging Platform Integration"
 
 
 def _profile_suffix() -> str:
@@ -1323,8 +1324,8 @@ def _profile_arg(hermes_home: str | None = None) -> str:
 def get_service_name() -> str:
     """Derive a systemd service name scoped to this HERMES_HOME.
 
-    Default ``~/.hermes`` returns ``hermes-gateway`` (backward compatible).
-    Profile ``~/.hermes/profiles/coder`` returns ``hermes-gateway-coder``.
+    Default ``~/.hermes`` returns ``thoth-gateway`` (backward compatible).
+    Profile ``~/.hermes/profiles/coder`` returns ``thoth-gateway-coder``.
     Any other HERMES_HOME appends a short hash for uniqueness.
     """
     suffix = _profile_suffix()
@@ -1582,10 +1583,12 @@ def has_conflicting_systemd_units() -> bool:
 
 
 # Legacy service names from older Hermes installs that predate the
-# hermes-gateway rename. Kept as an explicit allowlist (NOT a glob) so
-# profile units (hermes-gateway-*.service) and unrelated third-party
-# "hermes" units are never matched.
-_LEGACY_SERVICE_NAMES: tuple[str, ...] = ("hermes.service",)
+# hermes-gateway rename. ``hermes-gateway.service`` is now legacy too (it was
+# the default unit name before the thoth-gateway rename). Kept as an explicit
+# allowlist (NOT a glob) so profile units (hermes-gateway-*.service) and
+# unrelated third-party "hermes" units are never matched — consistent with
+# the existing design.
+_LEGACY_SERVICE_NAMES: tuple[str, ...] = ("hermes.service", "hermes-gateway.service")
 
 # ExecStart content markers that identify a unit as running our gateway.
 # A legacy unit is only flagged when its file contains one of these.
@@ -1616,11 +1619,11 @@ def _find_legacy_hermes_units() -> list[tuple[str, Path, bool]]:
     """Return ``[(unit_name, unit_path, is_system)]`` for legacy Hermes gateway units.
 
     Detects unit files installed by older Hermes versions that used a
-    different service name (e.g. ``hermes.service`` before the rename to
-    ``hermes-gateway.service``). When both a legacy unit and the current
-    ``hermes-gateway.service`` are active, they fight over the same bot
-    token — the PR #5646 signal-recovery change turns this into a 30-second
-    SIGTERM flap loop.
+    different service name (e.g. ``hermes.service`` or ``hermes-gateway.service``
+    before the rename to ``thoth-gateway.service``). When both a legacy unit
+    and the current ``thoth-gateway.service`` are active, they fight over the
+    same bot token — the PR #5646 signal-recovery change turns this into a
+    30-second SIGTERM flap loop.
 
     Safety guards:
 
@@ -1668,7 +1671,7 @@ def print_legacy_unit_warning() -> None:
     for name, path, is_system in legacy:
         scope = "system" if is_system else "user"
         print_info(f"    {path}  ({scope} scope)")
-    print_info("  These run alongside the current hermes-gateway service and")
+    print_info(f"  These run alongside the current {get_service_name()} service and")
     print_info("  cause SIGTERM flap loops — both try to use the same bot token.")
     print_info("  Remove them with:")
     print_info(f"    {cli_name()} gateway migrate-legacy")
@@ -1856,7 +1859,7 @@ def install_linux_gateway_from_setup(force: bool = False, enable_on_startup: boo
     if scope == "system":
         run_as_user = _default_system_service_user()
         if os.geteuid() != 0:  # windows-footgun: ok — Linux systemd install wizard, never invoked on Windows
-            print_warning("  System service install requires sudo, so Hermes can't create it from this user session.")
+            print_warning("  System service install requires sudo, so Thoth can't create it from this user session.")
             if run_as_user:
                 print_info(f"  After setup, run: sudo {cli_name()} gateway install --system --run-as-user {run_as_user}")
             else:
@@ -1944,7 +1947,7 @@ def print_systemd_linger_guidance() -> None:
 def _launchd_user_home() -> Path:
     """Return the real macOS user home for launchd artifacts.
 
-    Profile-mode Hermes often sets ``HOME`` to a profile-scoped directory, but
+    Profile-mode Thoth often sets ``HOME`` to a profile-scoped directory, but
     launchd user agents still live under the actual account home.
     """
     import pwd
@@ -2069,7 +2072,7 @@ def _remap_path_for_user(path: str, target_home_dir: str) -> str:
     to *target_home_dir*; otherwise the path is returned unchanged.
 
       /root/.hermes/hermes-agent  -> /home/alice/.hermes/hermes-agent
-      /opt/hermes                 -> /opt/hermes  (kept as-is)
+      /opt/thoth                 -> /opt/thoth  (kept as-is)
 
     Note: this function intentionally does NOT resolve symlinks. A venv's
     ``bin/python`` is typically a symlink to the base interpreter (e.g. a
@@ -2096,7 +2099,7 @@ def _hermes_home_for_target_user(target_home_dir: str) -> str:
       /root/.thoth                     → /home/alice/.thoth
       /root/.hermes                    → /home/alice/.hermes
       /root/.hermes/profiles/coder     → /home/alice/.hermes/profiles/coder
-      /opt/custom-hermes               → /opt/custom-hermes  (kept as-is)
+      /opt/custom-thoth               → /opt/custom-thoth  (kept as-is)
     Checks both .thoth (Phase-3 canonical) and .hermes (legacy) so that
     explicit HERMES_HOME=/root/.hermes paths still remap correctly.
     PermissionError from resolve() (e.g. /root unreachable) falls back to
@@ -2350,7 +2353,7 @@ def refresh_systemd_unit_if_needed(system: bool = False) -> bool:
 
     unit_path.write_text(new_unit, encoding="utf-8")
     _run_systemctl(["daemon-reload"], system=system, check=True, timeout=30)
-    print(f"↻ Updated gateway {_service_scope_label(system)} service definition to match the current Hermes install")
+    print(f"↻ Updated gateway {_service_scope_label(system)} service definition to match the current Thoth install")
     return True
 
 
@@ -2808,13 +2811,58 @@ def systemd_status(deep: bool = False, system: bool = False, full: bool = False)
 # =============================================================================
 
 def get_launchd_label() -> str:
-    """Return the launchd service label, scoped per profile."""
+    """Return the launchd service label, scoped per profile.
+
+    Default root → ``ai.thoth.gateway``. Profile ``coder`` →
+    ``ai.thoth.gateway-coder``. The old ``ai.hermes.gateway`` label is kept in
+    ``_LEGACY_LAUNCHD_LABELS`` so install/uninstall can bootout an orphaned
+    agent left by a pre-rename Hermes install.
+    """
     suffix = _profile_suffix()
-    return f"ai.hermes.gateway-{suffix}" if suffix else "ai.hermes.gateway"
+    return f"ai.thoth.gateway-{suffix}" if suffix else "ai.thoth.gateway"
+
+
+# Legacy launchd label BASES used by pre-rename Hermes installs. Kept as an
+# explicit allowlist (NOT a glob) so install/uninstall/refresh can best-effort
+# ``launchctl bootout`` the orphaned agent, ensuring the old ``ai.hermes.gateway``
+# does not keep running alongside the renamed ``ai.thoth.gateway`` (double-run /
+# bot-token fight). Mirrors the systemd ``_LEGACY_SERVICE_NAMES`` design.
+_LEGACY_LAUNCHD_LABELS: tuple[str, ...] = ("ai.hermes.gateway",)
+
+
+def _legacy_launchd_labels_for_profile() -> list[str]:
+    """Return the OLD launchd labels for the CURRENT profile.
+
+    Suffixes each base in :data:`_LEGACY_LAUNCHD_LABELS` with the active
+    profile suffix, mirroring :func:`get_launchd_label`'s logic so the right
+    per-profile legacy agent is booted out.
+    """
+    suffix = _profile_suffix()
+    return [f"{base}-{suffix}" if suffix else base for base in _LEGACY_LAUNCHD_LABELS]
 
 
 def _launchd_domain() -> str:
     return f"gui/{os.getuid()}"  # windows-footgun: ok — POSIX launchd (macOS) helper, never invoked on Windows
+
+
+def _bootout_legacy_launchd_agent() -> None:
+    """Best-effort ``launchctl bootout`` of the orphaned pre-rename agent(s).
+
+    Mirrors the systemd legacy-migration philosophy: defensive and best-effort,
+    never raising. If no old ``ai.hermes.gateway`` agent is loaded (the common
+    case), launchctl returns nonzero and we simply ignore it.
+    """
+    domain = _launchd_domain()
+    for legacy_label in _legacy_launchd_labels_for_profile():
+        try:
+            subprocess.run(
+                ["launchctl", "bootout", f"{domain}/{legacy_label}"],
+                check=False,
+                timeout=90,
+            )
+        except Exception:
+            # Never let legacy migration break install/uninstall.
+            pass
 
 
 def generate_launchd_plist() -> str:
@@ -2929,10 +2977,13 @@ def refresh_launchd_plist_if_needed() -> bool:
 
     plist_path.write_text(generate_launchd_plist(), encoding="utf-8")
     label = get_launchd_label()
+    # Best-effort: bootout any orphaned pre-rename ai.hermes.gateway agent for
+    # this profile so it does not double-run alongside the renamed label.
+    _bootout_legacy_launchd_agent()
     # Bootout/bootstrap so launchd picks up the new definition
     subprocess.run(["launchctl", "bootout", f"{_launchd_domain()}/{label}"], check=False, timeout=90)
     subprocess.run(["launchctl", "bootstrap", _launchd_domain(), str(plist_path)], check=False, timeout=30)
-    print("↻ Updated gateway launchd service definition to match the current Hermes install")
+    print("↻ Updated gateway launchd service definition to match the current Thoth install")
     return True
 
 
@@ -2952,7 +3003,11 @@ def launchd_install(force: bool = False):
     plist_path.parent.mkdir(parents=True, exist_ok=True)
     print(f"Installing launchd service to: {plist_path}")
     plist_path.write_text(generate_launchd_plist())
-    
+
+    # Best-effort: bootout any orphaned pre-rename ai.hermes.gateway agent for
+    # this profile so it does not double-run alongside the renamed label.
+    _bootout_legacy_launchd_agent()
+
     subprocess.run(["launchctl", "bootstrap", _launchd_domain(), str(plist_path)], check=True, timeout=30)
     
     print()
@@ -2967,7 +3022,10 @@ def launchd_uninstall():
     plist_path = get_launchd_plist_path()
     label = get_launchd_label()
     subprocess.run(["launchctl", "bootout", f"{_launchd_domain()}/{label}"], check=False, timeout=90)
-    
+    # Best-effort: also bootout any orphaned pre-rename ai.hermes.gateway agent
+    # for this profile so an old install is fully removed.
+    _bootout_legacy_launchd_agent()
+
     if plist_path.exists():
         plist_path.unlink()
         print(f"✓ Removed {plist_path}")
@@ -3012,7 +3070,7 @@ def launchd_stop():
     # bootout unloads the service definition so KeepAlive doesn't respawn
     # the process.  A plain `kill SIGTERM` only signals the process — launchd
     # immediately restarts it because KeepAlive.SuccessfulExit = false.
-    # `hermes gateway start` re-bootstraps when it detects the job is unloaded.
+    # `thoth gateway start` re-bootstraps when it detects the job is unloaded.
     try:
         subprocess.run(["launchctl", "bootout", target], check=True, timeout=90)
     except subprocess.CalledProcessError as e:
@@ -3115,9 +3173,9 @@ def launchd_status(deep: bool = False):
 
     print(f"Launchd plist: {plist_path}")
     if launchd_plist_is_current():
-        print("✓ Service definition matches the current Hermes install")
+        print("✓ Service definition matches the current Thoth install")
     else:
-        print("⚠ Service definition is stale relative to the current Hermes install")
+        print("⚠ Service definition is stale relative to the current Thoth install")
         print(f"  Run: {cli_name()} gateway start")
 
     if loaded:
@@ -3146,7 +3204,7 @@ def _truthy_env(value: str | None) -> bool:
 
 def _is_official_docker_checkout() -> bool:
     return (
-        str(PROJECT_ROOT) == "/opt/hermes"
+        str(PROJECT_ROOT) == "/opt/thoth"
         and (PROJECT_ROOT / "docker" / "entrypoint.sh").is_file()
     )
 
@@ -3161,12 +3219,12 @@ def _guard_official_docker_root_gateway() -> None:
         return
 
     print_error(
-        "Refusing to run the Hermes gateway as root inside the official Docker image."
+        "Refusing to run the Thoth gateway as root inside the official Docker image."
     )
     print(
         "  The image entrypoint normally drops privileges to the 'hermes' user. "
         "If you override entrypoint in Docker Compose, include "
-        "/opt/hermes/docker/entrypoint.sh before the Hermes command."
+        "/opt/thoth/docker/entrypoint.sh before the Thoth command."
     )
     print(
         "  Running the gateway as root can leave root-owned files in "
@@ -3190,7 +3248,7 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False):
     sys.path.insert(0, str(PROJECT_ROOT))
 
     # Detached Windows gateway runs must ignore console-control broadcasts
-    # from sibling CLI processes, but foreground `hermes gateway run` still
+    # from sibling CLI processes, but foreground `thoth gateway run` still
     # needs to obey the banner's "Press Ctrl+C to stop" contract.
     # Service-style launchers set HERMES_GATEWAY_DETACHED=1; older wrappers
     # without the marker are handled by the non-TTY fallback.
@@ -3231,10 +3289,10 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False):
     # Refresh the systemd unit definition on every boot so that restart
     # settings (RestartSec, StartLimitIntervalSec, etc.) stay current even
     # when the process was respawned via exit-code-75 (stale-code or
-    # /restart) rather than through `hermes gateway restart` which already
+    # /restart) rather than through `thoth gateway restart` which already
     # calls refresh_systemd_unit_if_needed().  Without this, a code update
     # that ships new unit settings won't take effect until the next manual
-    # `hermes gateway start/restart` — leaving the gateway vulnerable to
+    # `thoth gateway start/restart` — leaving the gateway vulnerable to
     # the exact failure mode the new settings were meant to prevent.
     if supports_systemd_services():
         try:
@@ -3245,7 +3303,7 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False):
     from gateway.run import start_gateway
     
     print("┌─────────────────────────────────────────────────────────┐")
-    print("│           ⚕ Hermes Gateway Starting...                 │")
+    print("│           ⚕ Thoth Gateway Starting...                 │")
     print("├─────────────────────────────────────────────────────────┤")
     print("│  Messaging platforms + cron scheduler                    │")
     print("│  Press Ctrl+C to stop                                   │")
@@ -3436,7 +3494,7 @@ _PLATFORMS = [
             "3. Get an access token: Element → Settings → Help & About → Access Token",
             "   Or via API: curl -X POST https://your-server/_matrix/client/v3/login \\",
             "     -d '{\"type\":\"m.login.password\",\"user\":\"@bot:server\",\"password\":\"...\"}'",
-            "4. Alternatively, provide user ID + password and Hermes will log in directly",
+            "4. Alternatively, provide user ID + password and Thoth will log in directly",
             "5. For E2EE: set MATRIX_ENCRYPTION=true (requires pip install 'mautrix[encryption]')",
             "6. To find your user ID: it's @username:your-server (shown in Element profile)",
         ],
@@ -3462,7 +3520,7 @@ _PLATFORMS = [
         "setup_instructions": [
             "1. In Mattermost: Integrations → Bot Accounts → Add Bot Account",
             "   (System Console → Integrations → Bot Accounts must be enabled)",
-            "2. Give it a username (e.g. hermes) and copy the bot token",
+            "2. Give it a username (e.g. thoth) and copy the bot token",
             "3. Works with any self-hosted Mattermost instance — enter your server URL",
             "4. To find your user ID: click your avatar (top-left) → Profile",
             "   Your user ID is displayed there — click it to copy.",
@@ -3478,7 +3536,7 @@ _PLATFORMS = [
              "is_allowlist": True,
              "help": "Your Mattermost user ID from step 4 above."},
             {"name": "MATTERMOST_HOME_CHANNEL", "prompt": "Home channel ID (for cron/notification delivery, or empty to set later with /set-home)", "password": False,
-             "help": "Channel ID where Hermes delivers cron results and notifications."},
+             "help": "Channel ID where Thoth delivers cron results and notifications."},
             {"name": "MATTERMOST_REPLY_MODE", "prompt": "Reply mode — 'off' for flat messages, 'thread' for threaded replies (default: off)", "password": False,
              "help": "off = flat channel messages, thread = replies nest under your message."},
         ],
@@ -3501,7 +3559,7 @@ _PLATFORMS = [
         "emoji": "📧",
         "token_var": "EMAIL_ADDRESS",
         "setup_instructions": [
-            "1. Use a dedicated email account for your Hermes agent",
+            "1. Use a dedicated email account for your Thoth agent",
             "2. For Gmail: enable 2FA, then create an App Password at",
             "   https://myaccount.google.com/apppasswords",
             "3. For other providers: use your email password or app-specific password",
@@ -3509,7 +3567,7 @@ _PLATFORMS = [
         ],
         "vars": [
             {"name": "EMAIL_ADDRESS", "prompt": "Email address", "password": False,
-             "help": "The email address Hermes will use (e.g., hermes@gmail.com)."},
+             "help": "The email address Thoth will use (e.g., thoth@gmail.com)."},
             {"name": "EMAIL_PASSWORD", "prompt": "Email password (or app password)", "password": True,
              "help": "For Gmail, use an App Password (not your regular password)."},
             {"name": "EMAIL_IMAP_HOST", "prompt": "IMAP host", "password": False,
@@ -3667,7 +3725,7 @@ _PLATFORMS = [
             "2. Complete the BlueBubbles setup wizard — sign in with your Apple ID",
             "3. In BlueBubbles Settings → API, note the Server URL and password",
             "4. The server URL is typically http://<your-mac-ip>:1234",
-            "5. Hermes connects via the BlueBubbles REST API and receives",
+            "5. Thoth connects via the BlueBubbles REST API and receives",
             "   incoming messages via a local webhook",
             f"6. To authorize users, use DM pairing: {cli_name()} pairing generate bluebubbles",
             "   Share the code — the user sends it via iMessage to get approved",
@@ -3716,7 +3774,7 @@ _PLATFORMS = [
             "1. Download the Yuanbao app from https://yuanbao.tencent.com/",
             "2. In the app, go to PAI → My Bot and create a new bot",
             "3. After the bot is created, copy the App ID and App Secret",
-            "4. Enter them below and Hermes will connect automatically over WebSocket",
+            "4. Enter them below and Thoth will connect automatically over WebSocket",
         ],
         "vars": [
             {"name": "YUANBAO_APP_ID", "prompt": "App ID", "password": False,
@@ -3732,7 +3790,7 @@ def _all_platforms() -> list[dict]:
     Combines the built-in ``_PLATFORMS`` with plugin platforms registered via
     ``platform_registry``. Plugins are discovered on first call so bundled
     platforms (like IRC, which auto-load via ``kind: platform``) appear in
-    ``hermes setup gateway`` without needing the gateway to be running.
+    ``thoth setup gateway`` without needing the gateway to be running.
     Built-ins keep their dict shape; plugin entries are adapted to the same
     shape with ``_registry_entry`` holding the source.
 
@@ -3742,7 +3800,7 @@ def _all_platforms() -> list[dict]:
         ``mautrix[encryption]`` -> ``python-olm``, which has no Windows
         wheel and needs ``make`` + libolm to build from sdist. There's
         no native Windows path that works, so we don't offer it in the
-        picker. Users who want Matrix on Windows can run hermes under
+        picker. Users who want Matrix on Windows can run thoth under
         WSL.
     """
     # Populate the registry so plugin platforms are visible. Idempotent.
@@ -4256,9 +4314,9 @@ def _setup_weixin():
     print()
     print(color("  ─── 💬 Weixin / WeChat Setup ───", Colors.CYAN))
     print()
-    print_info("  1. Hermes will open Tencent iLink QR login in this terminal.")
+    print_info("  1. Thoth will open Tencent iLink QR login in this terminal.")
     print_info("  2. Use WeChat to scan and confirm the QR code.")
-    print_info("  3. Hermes will store the returned account_id/token in ~/.hermes/.env.")
+    print_info("  3. Thoth will store the returned account_id/token in ~/.hermes/.env.")
     print_info("  4. This adapter supports native text, image, video, and document delivery.")
 
     existing_account = get_env_value("WEIXIN_ACCOUNT_ID")
@@ -5043,7 +5101,7 @@ def gateway_setup():
             elif is_wsl():
                 print_info("  WSL detected but systemd is not running.")
                 print_info(f"  Run in foreground: {cli_name()} gateway run")
-                print_info(f"  For persistence:   tmux new -s hermes '{cli_name()} gateway run'")
+                print_info(f"  For persistence:   tmux new -s thoth '{cli_name()} gateway run'")
                 print_info("  To enable systemd: add systemd=true to /etc/wsl.conf, then 'wsl --shutdown'")
             elif is_termux():
                 from hermes_constants import display_hermes_home as _dhh
@@ -5076,7 +5134,7 @@ def gateway_command(args):
             print(f"  {line}")
         sys.exit(1)
     except SystemScopeRequiresRootError as e:
-        # The direct ``hermes gateway install|uninstall|start|stop|restart``
+        # The direct ``thoth gateway install|uninstall|start|stop|restart``
         # path lands here when the user typed a system-scope action without
         # sudo. Same exit code as before — just gives the wizard a way to
         # intercept the same condition with friendlier guidance before the
@@ -5116,7 +5174,7 @@ def _gateway_command_inner(args):
             if is_wsl():
                 print_warning("WSL detected — systemd services may not survive WSL restarts.")
                 print_info(f"  Consider running in foreground instead: {cli_name()} gateway run")
-                print_info(f"  Or use tmux/screen for persistence: tmux new -s hermes '{cli_name()} gateway run'")
+                print_info(f"  Or use tmux/screen for persistence: tmux new -s thoth '{cli_name()} gateway run'")
                 print()
             start_now = prompt_yes_no("Start the gateway now after installing the service?", True)
             start_on_login = prompt_yes_no("Start the gateway automatically on login/boot with systemd?", True)
@@ -5144,7 +5202,7 @@ def _gateway_command_inner(args):
             print("or run the gateway in foreground mode:")
             print()
             print(f"  {cli_name()} gateway run                              # direct foreground")
-            print(f"  tmux new -s hermes '{cli_name()} gateway run'         # persistent via tmux")
+            print(f"  tmux new -s thoth '{cli_name()} gateway run'         # persistent via tmux")
             print(f"  nohup {cli_name()} gateway run > ~/.hermes/logs/gateway.log 2>&1 &  # background")
             sys.exit(1)
         elif is_container():
@@ -5215,7 +5273,7 @@ def _gateway_command_inner(args):
             print("Run the gateway in foreground mode instead:")
             print()
             print(f"  {cli_name()} gateway run                              # direct foreground")
-            print(f"  tmux new -s hermes '{cli_name()} gateway run'         # persistent via tmux")
+            print(f"  tmux new -s thoth '{cli_name()} gateway run'         # persistent via tmux")
             print(f"  nohup {cli_name()} gateway run > ~/.hermes/logs/gateway.log 2>&1 &  # background")
             print()
             print("To enable systemd: add systemd=true to /etc/wsl.conf and run 'wsl --shutdown' from PowerShell.")
@@ -5480,7 +5538,7 @@ def _gateway_command_inner(args):
                 if is_termux():
                     print(f"  nohup {cli_name()} gateway run > ~/.hermes/logs/gateway.log 2>&1 &  # Best-effort background start")
                 elif is_wsl():
-                    print(f"  tmux new -s hermes '{cli_name()} gateway run'         # persistent via tmux")
+                    print(f"  tmux new -s thoth '{cli_name()} gateway run'         # persistent via tmux")
                     print(f"  nohup {cli_name()} gateway run > ~/.hermes/logs/gateway.log 2>&1 &  # background")
                 elif is_windows():
                     print(f"  {cli_name()} gateway install  # Install as Windows Scheduled Task (auto-start on login)")

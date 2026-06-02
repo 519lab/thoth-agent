@@ -1,4 +1,4 @@
-"""Tests for ``hermes embed reshape <DIM>``.
+"""Tests for ``thoth embed reshape <DIM>``.
 
 The reshape command is the most invasive substrate operation: it drops
 an index, NULLs every embedding, ALTERs a column type, recreates the
@@ -185,7 +185,7 @@ def test_cmd_embed_reshape_drives_sync_loop(hermes_db_initialized_sync):
 
 
 def test_reshape_parser_requires_dim():
-    """``hermes embed reshape`` without DIM should fail with non-zero exit."""
+    """``thoth embed reshape`` without DIM should fail with non-zero exit."""
     p = argparse.ArgumentParser()
     sp = p.add_subparsers(dest="cmd")
     embed_cli.register_subparser(sp)

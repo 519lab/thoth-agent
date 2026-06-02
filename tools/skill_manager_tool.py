@@ -62,7 +62,7 @@ def _guard_agent_created_enabled() -> bool:
     Off by default because the agent can already execute the same code
     paths via terminal() with no gate, so the scan adds friction without
     meaningful security.  Users who want belt-and-suspenders can turn it
-    on via `hermes config set skills.guard_agent_created true`.
+    on via `thoth config set skills.guard_agent_created true`.
     """
     try:
         from hermes_cli.config import load_config
@@ -152,7 +152,7 @@ def _pinned_guard(name: str) -> Optional[str]:
             return (
                 f"Skill '{name}' is pinned and cannot be deleted by "
                 f"skill_manage. Ask the user to run "
-                f"`hermes curator unpin {name}` if they want to delete it. "
+                f"`thoth curator unpin {name}` if they want to delete it. "
                 f"Patches and edits are allowed on pinned skills; only "
                 f"deletion is blocked."
             )
@@ -822,7 +822,7 @@ SKILL_MANAGE_SCHEMA = {
         "Good skills: trigger conditions, numbered steps with exact commands, "
         "pitfalls section, verification steps. Use skill_view() to see format examples.\n\n"
         "Pinned skills are protected from deletion only — skill_manage(action='delete') "
-        "will refuse with a message pointing the user to `hermes curator unpin <name>`. "
+        "will refuse with a message pointing the user to `thoth curator unpin <name>`. "
         "Patches and edits go through on pinned skills so you can still improve them as "
         "pitfalls come up; pin only guards against irrecoverable loss."
     ),

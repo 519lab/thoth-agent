@@ -29,7 +29,7 @@ def test_get_codex_model_ids_prioritizes_default_and_cache(tmp_path, monkeypatch
     assert "gpt-5.1-codex" in models
     assert "gpt-5.3-codex" in models
     # Codex CLI marks Spark unsupported in the public API, but the Codex
-    # backend still accepts it via the OAuth-backed CLI/Hermes route.
+    # backend still accepts it via the OAuth-backed CLI/Thoth route.
     assert "gpt-5.3-codex-spark" in models
     # Non-codex-suffixed models are included when the cache says they're available
     assert "gpt-5.4" in models

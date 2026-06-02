@@ -1,5 +1,5 @@
 """
-Microsoft Teams platform adapter for Hermes Agent.
+Microsoft Teams platform adapter for Thoth Agent.
 
 Uses the microsoft-teams-apps SDK for authentication and activity processing.
 Runs an aiohttp webhook server to receive messages from Teams.
@@ -505,8 +505,8 @@ async def _standalone_send(
     """Acquire a Bot Framework bearer token and POST a single message activity.
 
     Used by ``tools/send_message_tool._send_via_adapter`` when the gateway
-    runner is not in this process (e.g. ``hermes cron`` running as a
-    separate process from ``hermes gateway``).  Without this hook,
+    runner is not in this process (e.g. ``thoth cron`` running as a
+    separate process from ``thoth gateway``).  Without this hook,
     ``deliver=teams`` cron jobs fail with ``No live adapter for platform``.
 
     Configuration: requires ``TEAMS_CLIENT_ID``, ``TEAMS_CLIENT_SECRET``,
@@ -675,7 +675,7 @@ class TeamsAdapter(BasePlatformAdapter):
                 client_secret=self._client_secret,
                 tenant_id=self._tenant_id,
                 http_server_adapter=_AiohttpBridgeAdapter(aiohttp_app),
-                client=ClientOptions(headers={"User-Agent": "Hermes"}),
+                client=ClientOptions(headers={"User-Agent": "Thoth"}),
             )
 
             # Register message handler before initialize()
@@ -1108,7 +1108,7 @@ def interactive_setup() -> None:
     print()
     print_info("Then expose port 3978 publicly (devtunnel / ngrok / cloudflared),")
     print_info("and create your bot:")
-    print_info("  teams app create --name \"Hermes\" --endpoint \"https://<tunnel>/api/messages\"")
+    print_info("  teams app create --name \"Thoth\" --endpoint \"https://<tunnel>/api/messages\"")
     print()
     print_info("The CLI will print CLIENT_ID, CLIENT_SECRET, and TENANT_ID. Paste them below.")
     print()
@@ -1157,7 +1157,7 @@ def interactive_setup() -> None:
 # ── Plugin entry point ────────────────────────────────────────────────────────
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Hermes plugin system."""
+    """Plugin entry point — called by the Thoth plugin system."""
     ctx.register_platform(
         name="teams",
         label="Microsoft Teams",

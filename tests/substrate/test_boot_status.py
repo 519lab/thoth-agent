@@ -3,7 +3,7 @@
 ``bootstrap_substrate`` records every boot attempt (success or failure)
 to the ``state_meta`` KV table and an in-process cache, so a writer-mode
 boot failure — which silently stops all perception — is visible via
-``hermes substrate boot`` and the default summary instead of only in
+``thoth substrate boot`` and the default summary instead of only in
 process logs.
 """
 
@@ -132,7 +132,7 @@ async def test_bootstrap_records_failure(hermes_db_initialized, monkeypatch):
     monkeypatch.setattr("substrate.Substrate.boot_writer", _boom)
 
     result = await hermes_bootstrap.bootstrap_substrate(mode="writer")
-    # Failure is non-fatal for writer mode: returns None, Hermes proceeds.
+    # Failure is non-fatal for writer mode: returns None, Thoth proceeds.
     assert result is None
     status = hermes_bootstrap.get_boot_status("writer")
     assert status["ok"] is False

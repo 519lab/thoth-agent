@@ -323,7 +323,7 @@ def check_systemd_timing_alignment(drain_timeout: float) -> Optional[Dict[str, A
     """At startup, sanity-check that systemd's TimeoutStopSec >= drain_timeout.
 
     When the gateway is run under a stale systemd unit file (e.g. the user
-    upgraded hermes-agent but never re-ran ``hermes setup`` to regenerate
+    upgraded hermes-agent but never re-ran ``thoth setup`` to regenerate
     the unit), ``TimeoutStopSec`` can be smaller than the configured
     ``restart_drain_timeout``.  Result: SIGTERM arrives, the drain starts,
     and systemd SIGKILLs the cgroup mid-drain — looks like a phantom kill
@@ -362,7 +362,7 @@ def check_systemd_timing_alignment(drain_timeout: float) -> Optional[Dict[str, A
 
     # Query systemctl for TimeoutStopUSec.  Use --user OR system depending
     # on which manager actually owns the unit.  Try user first since
-    # that's the common case for hermes.
+    # that's the common case for thoth.
     timeout_us: Optional[int] = None
     for flag in (["--user"], []):
         try:

@@ -4,7 +4,7 @@ The cua-driver upstream installer always pulls the latest release tag, so
 re-running it is the canonical upgrade path. ``install_cua_driver(upgrade=True)``
 must:
 
-* Be macOS-only — no-op silently on Linux/Windows so ``hermes update`` can
+* Be macOS-only — no-op silently on Linux/Windows so ``thoth update`` can
   call it unconditionally without warning every non-macOS user.
 * Re-run the installer even when the binary is already on PATH (this is the
   fix for the "we only pulled cua-driver once on enable" complaint).

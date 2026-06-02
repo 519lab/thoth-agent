@@ -101,17 +101,17 @@ async def test_parser_intensity_off_is_noop(booted, monkeypatch):
 async def test_parser_extracts_persists_consolidates(booted, monkeypatch):
     import hermes_db
 
-    await _seed(booted, "sess-1", ["Greg works on Hermes"] + [f"m{i}" for i in range(5)])
+    await _seed(booted, "sess-1", ["Greg works on Thoth"] + [f"m{i}" for i in range(5)])
 
     async def _fake_call(batch, *, client=None, model=None):
         sid = batch[0].slice_id
         return ParserResult(
             entities=[
                 ParsedEntity("Greg", "person", "maintainer", source_slice_ids=[sid], quote="Greg"),
-                ParsedEntity("Hermes", "project", "the agent", source_slice_ids=[sid], quote="Hermes"),
+                ParsedEntity("Thoth", "project", "the agent", source_slice_ids=[sid], quote="Thoth"),
             ],
             relationships=[
-                ParsedRelationship("Greg", "person", "works_on", "Hermes", "project",
+                ParsedRelationship("Greg", "person", "works_on", "Thoth", "project",
                                    confidence=0.9, source_slice_ids=[sid]),
             ],
         )

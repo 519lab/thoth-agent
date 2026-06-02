@@ -1,5 +1,5 @@
 """
-Cron subcommand for hermes CLI.
+Cron subcommand for thoth CLI.
 
 Handles standalone cron management commands like list, create, edit,
 pause/resume/run/remove, status, and tick.

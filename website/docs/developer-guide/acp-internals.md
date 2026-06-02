@@ -6,7 +6,7 @@ description: "How the ACP adapter works: lifecycle, sessions, event bridge, appr
 
 # ACP Internals
 
-The ACP adapter wraps Hermes' synchronous `AIAgent` in an async JSON-RPC stdio server.
+The ACP adapter wraps Thoth's synchronous `AIAgent` in an async JSON-RPC stdio server.
 
 Key implementation files:
 
@@ -22,7 +22,7 @@ Key implementation files:
 ## Boot flow
 
 ```text
-hermes acp / hermes-acp / python -m acp_adapter
+thoth acp / hermes-acp / python -m acp_adapter
   -> acp_adapter.entry.main()
   -> parse --version / --check / --setup before server startup
   -> load ~/.hermes/.env
@@ -94,15 +94,15 @@ asyncio.run_coroutine_threadsafe(...)
 
 Mapping:
 
-- `allow_once` -> Hermes `once`
-- `allow_always` -> Hermes `always`
-- reject options -> Hermes `deny`
+- `allow_once` -> Thoth `once`
+- `allow_always` -> Thoth `always`
+- reject options -> Thoth `deny`
 
 Timeouts and bridge failures deny by default.
 
 ### Tool rendering helpers
 
-`acp_adapter/tools.py` maps Hermes tools to ACP tool kinds and builds editor-facing content.
+`acp_adapter/tools.py` maps Thoth tools to ACP tool kinds and builds editor-facing content.
 
 Examples:
 
@@ -144,12 +144,12 @@ prompt(..., session_id)
 
 ACP does not implement its own auth store.
 
-Instead it reuses Hermes' runtime resolver:
+Instead it reuses Thoth's runtime resolver:
 
 - `acp_adapter/auth.py`
 - `hermes_cli/runtime_provider.py`
 
-So ACP advertises and uses the currently configured Hermes provider/credentials. It also always advertises a terminal setup auth method (`hermes-setup`, args `--setup`) so first-run registry clients can open Hermes' interactive model/provider configuration before starting a normal ACP session.
+So ACP advertises and uses the currently configured Thoth provider/credentials. It also always advertises a terminal setup auth method (`hermes-setup`, args `--setup`) so first-run registry clients can open Thoth's interactive model/provider configuration before starting a normal ACP session.
 
 ## Working directory binding
 
@@ -180,5 +180,5 @@ ACP temporarily installs an approval callback on the terminal tool during prompt
 
 - `tests/acp/` — ACP test suite
 - `toolsets.py` — `hermes-acp` toolset definition
-- `hermes_cli/main.py` — `hermes acp` CLI subcommand
+- `hermes_cli/main.py` — `thoth acp` CLI subcommand
 - `pyproject.toml` — `[acp]` optional dependency + `hermes-acp` script

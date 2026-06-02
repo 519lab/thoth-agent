@@ -209,7 +209,7 @@ async def test_does_not_open_own_pool(monkeypatch, hermes_db_initialized):
 async def test_shutdown_does_not_close_pool(booted_with_subagents):
     """``Substrate.shutdown()`` does NOT close ``hermes_db.pool()`` —
     that's the responsibility of ``hermes_db.close()`` which is owned
-    by Hermes's own shutdown sequence."""
+    by Thoth's own shutdown sequence."""
     import hermes_db
 
     pool = hermes_db.pool()
@@ -339,7 +339,7 @@ async def test_boot_worker_starts_subagents_skips_hooks_and_recall(
         # Hooks NOT bound — the writer process owns that binding.
         assert hermes_hooks._substrate_for_tests() is None, (
             "boot_worker must NOT bind perception hooks; doing so would "
-            "redirect Hermes hook emits to a process that doesn't have "
+            "redirect Thoth hook emits to a process that doesn't have "
             "the chat/gateway loop. Only writer processes bind hooks."
         )
         # Recall log writer NOT started.

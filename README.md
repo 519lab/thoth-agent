@@ -210,7 +210,7 @@ Contributions are welcome. Clone and go:
 
 ```bash
 git clone https://github.com/519lab/thoth-agent.git
-cd hermes-agent
+cd thoth-agent
 ./setup-hermes.sh     # installs uv, creates venv, installs .[all], symlinks ~/.local/bin/hermes
 ./hermes              # auto-detects the venv, no need to `source` first
 ```

@@ -1,4 +1,4 @@
-"""Tests for hermes db migrate-from-sqlite (Task 21).
+"""Tests for thoth db migrate-from-sqlite (Task 21).
 
 Requires: docker-compose postgres running (same as other Phase-0 PG tests).
 Run: uv run pytest tests/test_migrate_from_sqlite.py -v -o addopts=""

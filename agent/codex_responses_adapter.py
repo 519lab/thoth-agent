@@ -256,7 +256,7 @@ def _chat_messages_to_responses_input(
     May 2026) we believed xAI's OAuth/SuperGrok ``/v1/responses`` surface
     rejected replayed ``encrypted_content`` reasoning items minted by
     prior turns, and we stripped them.  That decision was wrong — xAI
-    explicitly relies on Hermes threading encrypted reasoning back across
+    explicitly relies on Thoth threading encrypted reasoning back across
     turns for cross-turn coherence (the whole point of their partnership
     integration).  We now replay encrypted reasoning on every Responses
     transport (xAI, native Codex, custom relays) and let xAI tell us

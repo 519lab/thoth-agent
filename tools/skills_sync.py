@@ -221,7 +221,7 @@ def sync_skills(quiet: bool = False) -> dict:
                         print(
                             f"  ⚠ {skill_name}: bundled version shipped but you "
                             f"already have a local skill by this name — yours "
-                            f"was kept. Run `hermes skills reset {skill_name}` "
+                            f"was kept. Run `thoth skills reset {skill_name}` "
                             f"to replace it with the bundled version."
                         )
                 else:
@@ -354,7 +354,7 @@ def reset_bundled_skill(name: str, restore: bool = False) -> dict:
             "action": "not_in_manifest",
             "message": (
                 f"'{name}' is not a tracked bundled skill. Nothing to reset. "
-                f"(Hub-installed skills use `hermes skills uninstall`.)"
+                f"(Hub-installed skills use `thoth skills uninstall`.)"
             ),
             "synced": None,
         }
@@ -407,7 +407,7 @@ def reset_bundled_skill(name: str, restore: bool = False) -> dict:
     else:
         action = "manifest_cleared"
         message = (
-            f"Cleared manifest entry for '{name}'. Future `hermes update` runs "
+            f"Cleared manifest entry for '{name}'. Future `thoth update` runs "
             f"will re-baseline against your current copy and accept upstream changes."
         )
 

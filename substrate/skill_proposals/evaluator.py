@@ -49,7 +49,7 @@ _EVAL_SCHEMA = {
 
 def _build_prompt(skill_md: str, need_context: str) -> str:
     return (
-        "You are the safety + quality evaluator in a Hermes Agent's self-improvement "
+        "You are the safety + quality evaluator in a Thoth Agent's self-improvement "
         "system. Another model drafted the skill below from a recurring need the agent "
         "found in its own memory. A human will decide whether to install it; your job is "
         "to give that human a trustworthy second opinion.\n\n"

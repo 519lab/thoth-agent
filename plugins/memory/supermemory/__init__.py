@@ -462,7 +462,7 @@ class SupermemoryMemoryProvider(MemoryProvider):
             return False
 
     def get_config_schema(self):
-        # Only prompt for the API key during `hermes memory setup`.
+        # Only prompt for the API key during `thoth memory setup`.
         # All other options are documented for $HERMES_HOME/supermemory.json
         # or the SUPERMEMORY_CONTAINER_TAG env var.
         return [

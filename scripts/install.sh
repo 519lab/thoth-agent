@@ -59,10 +59,10 @@ REPO_URL_SSH="git@github.com:519lab/thoth-agent.git"
 REPO_URL_HTTPS="https://github.com/519lab/thoth-agent.git"
 
 HERMES_HOME_DEFAULT="$HOME/.hermes"
-CLI_NAME_DEFAULT="hermes"
+CLI_NAME_DEFAULT="thoth"
 
 HERMES_HOME="${HERMES_HOME:-$HERMES_HOME_DEFAULT}"
-CLI_NAME="${HERMES_CLI_NAME:-$CLI_NAME_DEFAULT}"
+CLI_NAME="${THOTH_CLI_NAME:-${HERMES_CLI_NAME:-$CLI_NAME_DEFAULT}}"
 
 # INSTALL_DIR resolved after arg parsing + OS detection.
 if [ -n "${HERMES_INSTALL_DIR:-}" ]; then
@@ -165,7 +165,7 @@ Options:
                         default: hermes
                         Pass a different name (e.g. hermes-substrate) to
                         coexist with another Hermes install on the same machine.
-                        (Override env: HERMES_CLI_NAME)
+                        (Override env: THOTH_CLI_NAME)
   --pg-dsn URL        PostgreSQL DSN to use
                         default: postgresql://hermes:hermes@localhost:5432/hermes
                         (matches the docker-compose service shipped with this repo)
@@ -362,10 +362,10 @@ warn_upstream_collision() {
         saw_collision=true
     fi
 
-    if [ "$CLI_NAME" = "hermes" ] && command -v hermes >/dev/null 2>&1; then
+    if [ "$CLI_NAME" = "thoth" ] && command -v thoth >/dev/null 2>&1; then
         local existing existing_canon target_link target_canon
-        existing="$(command -v hermes)"
-        target_link="$(get_command_link_dir)/hermes"
+        existing="$(command -v thoth)"
+        target_link="$(get_command_link_dir)/thoth"
         # Canonicalize both sides so the same physical file (reached via
         # different paths — symlinks, ``~`` vs ``$HOME``, /usr/local
         # shims) compares equal. ``readlink -f`` returns the path even
@@ -374,8 +374,8 @@ warn_upstream_collision() {
         existing_canon="$(readlink -f "$existing" 2>/dev/null || echo "$existing")"
         target_canon="$(readlink -f "$target_link" 2>/dev/null || echo "$target_link")"
         if [ "$existing_canon" != "$target_canon" ]; then
-            log_warn "CLI_NAME=hermes will install a launcher at $(get_command_link_display_dir)/hermes"
-            log_warn "  which shadows the existing 'hermes' command at: $existing"
+            log_warn "CLI_NAME=thoth will install a launcher at $(get_command_link_display_dir)/thoth"
+            log_warn "  which shadows the existing 'thoth' command at: $existing"
             saw_collision=true
         fi
     fi
@@ -1198,7 +1198,8 @@ unset PYTHONHOME
 export HERMES_HOME="\${HERMES_HOME:-$HERMES_HOME}"
 export HERMES_PG_DSN="\${HERMES_PG_DSN:-$pg_dsn}"
 # Echo the user-facing launcher name into resume/setup hints. The venv
-# console script is itself named "hermes" so argv[0] can't carry this.
+# console script is itself named "thoth" so argv[0] can't carry this.
+export THOTH_CLI_NAME="\${THOTH_CLI_NAME:-$CLI_NAME}"
 export HERMES_CLI_NAME="\${HERMES_CLI_NAME:-$CLI_NAME}"
 $embed_dim_export
 exec "$HERMES_BIN" "\$@"

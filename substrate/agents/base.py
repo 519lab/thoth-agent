@@ -71,7 +71,7 @@ _OFF_POLL_INTERVAL = 1.0
 # ---------------------------------------------------------------------------
 # Liveness heartbeat. The sub-agent run loop upserts a row into
 # ``substrate_agent_heartbeat`` on this cadence so a *different process*
-# (the ``hermes substrate`` inspect CLI) can tell a live worker subprocess
+# (the ``thoth substrate`` inspect CLI) can tell a live worker subprocess
 # from a dead one. Before this existed, the inspect CLI printed a static
 # "all healthy" sub-agent list — a dead worker was invisible (the
 # 2026-05-26 production incident).

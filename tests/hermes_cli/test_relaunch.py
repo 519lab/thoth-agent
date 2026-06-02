@@ -9,7 +9,7 @@ from hermes_cli import relaunch as relaunch_mod
 
 class TestResolveHermesBin:
     def test_prefers_absolute_argv0_when_executable(self, monkeypatch):
-        fake = "/nix/store/abc/bin/hermes"
+        fake = "/nix/store/abc/bin/thoth"
         monkeypatch.setattr(sys, "argv", [fake])
         monkeypatch.setattr(relaunch_mod.os.path, "isfile", lambda p: p == fake)
         monkeypatch.setattr(relaunch_mod.os, "access", lambda p, mode: p == fake)
@@ -28,9 +28,9 @@ class TestResolveHermesBin:
     def test_falls_back_to_path_which(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["-c"])  # not a real path
         monkeypatch.setattr(
-            relaunch_mod.shutil, "which", lambda name: "/usr/bin/hermes" if name == "hermes" else None
+            relaunch_mod.shutil, "which", lambda name: "/usr/bin/thoth" if name == "hermes" else None
         )
-        assert relaunch_mod.resolve_hermes_bin() == "/usr/bin/hermes"
+        assert relaunch_mod.resolve_hermes_bin() == "/usr/bin/thoth"
 
     def test_returns_none_when_unresolvable(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["-c"])
@@ -105,9 +105,9 @@ class TestInheritedFlagTable:
 
 class TestBuildRelaunchArgv:
     def test_uses_bin_when_available(self, monkeypatch):
-        monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: "/usr/bin/hermes")
+        monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: "/usr/bin/thoth")
         argv = relaunch_mod.build_relaunch_argv(["--resume", "abc"])
-        assert argv[0] == "/usr/bin/hermes"
+        assert argv[0] == "/usr/bin/thoth"
 
     def test_falls_back_to_python_module(self, monkeypatch):
         monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: None)
@@ -117,7 +117,7 @@ class TestBuildRelaunchArgv:
         assert argv[3:] == ["--resume", "abc"]
 
     def test_preserves_inherited_flags(self, monkeypatch):
-        monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: "/usr/bin/hermes")
+        monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: "/usr/bin/thoth")
         original = ["--tui", "--dev", "--profile", "work", "sessions", "browse"]
         argv = relaunch_mod.build_relaunch_argv(["--resume", "abc"], original_argv=original)
         assert "--tui" in argv
@@ -131,13 +131,13 @@ class TestBuildRelaunchArgv:
         assert "browse" not in argv
 
     def test_can_disable_preserve(self, monkeypatch):
-        monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: "/usr/bin/hermes")
+        monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: "/usr/bin/thoth")
         original = ["--tui", "chat"]
         argv = relaunch_mod.build_relaunch_argv(
             ["--resume", "abc"], preserve_inherited=False, original_argv=original
         )
         assert "--tui" not in argv
-        assert argv == ["/usr/bin/hermes", "--resume", "abc"]
+        assert argv == ["/usr/bin/thoth", "--resume", "abc"]
 
 
 class TestRelaunch:
@@ -149,17 +149,17 @@ class TestRelaunch:
             raise SystemExit(0)
 
         monkeypatch.setattr(relaunch_mod.os, "execvp", fake_execvp)
-        monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: "/usr/bin/hermes")
+        monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: "/usr/bin/thoth")
 
         with pytest.raises(SystemExit):
             relaunch_mod.relaunch(["--resume", "abc"])
 
-        assert calls == [("/usr/bin/hermes", ["/usr/bin/hermes", "--resume", "abc"])]
+        assert calls == [("/usr/bin/thoth", ["/usr/bin/thoth", "--resume", "abc"])]
 
     def test_windows_uses_subprocess_not_execvp(self, monkeypatch):
         """On Windows, os.execvp raises OSError "Exec format error" when the
         target is a .cmd shim or console-script wrapper (both common for
-        hermes).  relaunch() must detect win32 and use subprocess.run +
+        thoth).  relaunch() must detect win32 and use subprocess.run +
         sys.exit instead."""
         monkeypatch.setattr(relaunch_mod.sys, "platform", "win32")
         monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: r"C:\Users\test\hermes.exe")

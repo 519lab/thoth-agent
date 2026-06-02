@@ -64,7 +64,7 @@ class RecallProjection:
     """The composed projection returned by :func:`substrate.recall.api.recall`.
 
     ``text`` is the sanitised body (NOT fence-wrapped — the caller
-    applies Hermes's ``build_memory_context_block`` wrapper). Empty
+    applies Thoth's ``build_memory_context_block`` wrapper). Empty
     when the pipeline produced no usable composition; ``empty_reason``
     distinguishes the cause for observability.
     """

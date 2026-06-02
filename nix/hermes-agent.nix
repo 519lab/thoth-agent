@@ -169,6 +169,11 @@ stdenv.mkDerivation {
           ${lib.optionalString (extraPythonPackages != [ ]) ''--suffix PYTHONPATH : "${pythonPath}"''}
       '')
       [
+        # Canonical thoth entry points (pyproject [project.scripts]) ...
+        "thoth"
+        "thoth-agent"
+        "thoth-acp"
+        # ... plus the pre-rename hermes aliases, kept for back-compat.
         "hermes"
         "hermes-agent"
         "hermes-acp"

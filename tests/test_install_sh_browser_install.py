@@ -1,6 +1,6 @@
 """Regression tests for install.sh browser setup.
 
-Browser automation is optional. The installer should not leave Hermes
+Browser automation is optional. The installer should not leave Thoth
 half-installed just because Playwright's managed Chromium download hangs on an
 unsupported distribution.
 """

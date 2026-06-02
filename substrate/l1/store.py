@@ -489,7 +489,7 @@ async def duplicate_candidates(
     *, threshold: float = 0.6, limit: int = 20, conn=None
 ) -> list[dict]:
     """Suggest likely-duplicate entity pairs: same kind + trigram-similar
-    names, above ``threshold``. Powers ``hermes substrate l1 dupes`` so an
+    names, above ``threshold``. Powers ``thoth substrate l1 dupes`` so an
     operator can review + merge fragmented memory."""
     async with _acquire(conn) as c:
         rows = await c.fetch(

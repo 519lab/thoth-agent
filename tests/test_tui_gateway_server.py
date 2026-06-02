@@ -2364,7 +2364,7 @@ def test_session_status_reads_live_gateway_agent(monkeypatch):
         server._sessions.pop("sid", None)
 
     out = resp["result"]["output"]
-    assert "Hermes TUI Status" in out
+    assert "Thoth TUI Status" in out
     assert "Session ID: session-key" in out
     assert "Title: Live TUI" in out
     assert "Model: live-model (live-provider)" in out
@@ -3575,13 +3575,13 @@ def test_session_delete_success_returns_deleted_id(monkeypatch):
 
 
 # --------------------------------------------------------------------------
-# model.options — curated-list parity with `hermes model` and classic /model
+# model.options — curated-list parity with `thoth model` and classic /model
 # --------------------------------------------------------------------------
 
 
 def test_model_options_does_not_overwrite_curated_models(monkeypatch):
     """The TUI model.options handler must surface the same curated model
-    list as `hermes model` and the classic CLI /model picker.
+    list as `thoth model` and the classic CLI /model picker.
 
     Regression: earlier versions of this handler unconditionally replaced
     each provider's curated ``models`` field with ``provider_model_ids()``

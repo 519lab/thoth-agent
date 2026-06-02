@@ -1,5 +1,5 @@
 """
-Cron job management tools for Hermes Agent.
+Cron job management tools for Thoth Agent.
 
 Expose a single compressed action-oriented tool to avoid schema/context bloat.
 Compatibility wrappers remain for direct Python callers and legacy tests.
@@ -192,7 +192,7 @@ def _resolve_model_override(model_obj: Optional[Dict[str, Any]]) -> tuple:
     """Resolve a model override object into (provider, model) for job storage.
 
     If provider is omitted, pins the current main provider from config so the
-    job doesn't drift when the user later changes their default via hermes model.
+    job doesn't drift when the user later changes their default via thoth model.
 
     Returns (provider_str_or_none, model_str_or_none).
     """
@@ -710,7 +710,7 @@ Important safety rule: cron-run sessions should not recursively schedule more cr
             },
             "profile": {
                 "type": "string",
-                "description": "Optional Hermes profile name to run the job under. When set, the scheduler resolves that profile, applies a context-local Hermes home override, loads that profile's config/.env for the run, and bridges HERMES_HOME into subprocesses. Any temporary process-environment changes from profile .env loading are restored after the job exits. Use 'default' for the root Hermes profile. Named profiles must already exist. When unset (default), preserves the scheduler's existing profile. On update, pass an empty string to clear. Jobs with profile run sequentially (not parallel) to keep profile-scoped runtime state isolated."
+                "description": "Optional Thoth profile name to run the job under. When set, the scheduler resolves that profile, applies a context-local Thoth home override, loads that profile's config/.env for the run, and bridges HERMES_HOME into subprocesses. Any temporary process-environment changes from profile .env loading are restored after the job exits. Use 'default' for the root Thoth profile. Named profiles must already exist. When unset (default), preserves the scheduler's existing profile. On update, pass an empty string to clear. Jobs with profile run sequentially (not parallel) to keep profile-scoped runtime state isolated."
             },
         },
         "required": ["action"]

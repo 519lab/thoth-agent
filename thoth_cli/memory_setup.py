@@ -1,4 +1,4 @@
-"""hermes memory setup|status — configure memory provider plugins.
+"""thoth memory setup|status — configure memory provider plugins.
 
 Auto-detects installed memory providers via the plugin system.
 Interactive curses-based UI for provider selection, then walks through
@@ -19,7 +19,7 @@ from thoth_cli.cli_name import cli_name
 
 
 # ---------------------------------------------------------------------------
-# Curses-based interactive picker (same pattern as hermes tools)
+# Curses-based interactive picker (same pattern as thoth tools)
 # ---------------------------------------------------------------------------
 
 def _curses_select(title: str, items: list[tuple[str, str]], default: int = 0) -> int:

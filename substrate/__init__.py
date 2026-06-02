@@ -31,7 +31,7 @@ def get_bound_substrate():
     yet.
 
     Phase C surface: the ``SubstrateMemoryProvider`` (registered into
-    Hermes's ``MemoryManager`` at startup) uses this to reach the
+    Thoth's ``MemoryManager`` at startup) uses this to reach the
     substrate without holding a hard reference — keeps the provider's
     import surface independent of Substrate's lifecycle.
     """

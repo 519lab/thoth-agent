@@ -1,4 +1,4 @@
-"""Phase D inspect surface — `hermes substrate l1` + `hermes substrate parser`."""
+"""Phase D inspect surface — `thoth substrate l1` + `thoth substrate parser`."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ async def test_print_l1_entities_lists(hermes_db_initialized):
     import hermes_db
 
     subj, _ = await store.upsert_entity("Greg", "person", summary="maintainer")
-    obj, _ = await store.upsert_entity("Hermes", "project")
+    obj, _ = await store.upsert_entity("Thoth", "project")
     await store.upsert_relationship(subj, "works_on", obj)
 
     buf = io.StringIO()

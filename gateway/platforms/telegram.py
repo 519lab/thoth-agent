@@ -585,7 +585,7 @@ class TelegramAdapter(BasePlatformAdapter):
 
         Supergroup/forum topics use ``message_thread_id``. True Bot API Direct
         Messages topics can opt in with explicit ``direct_messages_topic_id``
-        metadata. Hermes-created private-chat topic lanes are marked with
+        metadata. Thoth-created private-chat topic lanes are marked with
         ``telegram_dm_topic_reply_fallback``. Live replies send the private
         topic thread id together with a reply anchor; synthetic/resumed sends
         without an anchor use ``direct_messages_topic_id`` when metadata has it.
@@ -978,7 +978,7 @@ class TelegramAdapter(BasePlatformAdapter):
         if self.has_fatal_error and self.fatal_error_code == "telegram_polling_conflict":
             return
         # Transient 409 Conflict errors arise when the previous gateway process
-        # has been killed (e.g. during `hermes update` or `--replace` handoffs)
+        # has been killed (e.g. during `thoth update` or `--replace` handoffs)
         # but its long-poll connection hasn't yet expired on Telegram's servers.
         # Telegram holds open getUpdates sessions for up to ~30s after the
         # client disconnects, so a new gateway starting immediately will receive
@@ -1061,8 +1061,8 @@ class TelegramAdapter(BasePlatformAdapter):
             "Telegram polling could not recover after %d retries (%ds total wait). "
             "The previous gateway session is still held open on Telegram's servers, "
             "or another process is using the same bot token. "
-            "To recover: ensure no other Hermes or OpenClaw instance is running "
-            "with this token, then restart the gateway with 'hermes gateway restart'."
+            "To recover: ensure no other Thoth or OpenClaw instance is running "
+            "with this token, then restart the gateway with 'thoth gateway restart'."
             % (MAX_CONFLICT_RETRIES, sum(10 + i * 10 for i in range(1, MAX_CONFLICT_RETRIES + 1)))
         )
         logger.error(
@@ -1359,7 +1359,7 @@ class TelegramAdapter(BasePlatformAdapter):
             # server's filesystem rather than a relative HTTP path. PTB needs
             # local_mode=True so download_*() reads from disk instead of issuing
             # an HTTP GET that would 404. Requires that the same path is
-            # readable by the Hermes process (shared mount, same machine, etc.).
+            # readable by the Thoth process (shared mount, same machine, etc.).
             if self.config.extra.get("local_mode"):
                 builder = builder.local_mode(True)
                 logger.info("[%s] Using Telegram local_mode (read files from disk)", self.name)
@@ -2343,7 +2343,7 @@ class TelegramAdapter(BasePlatformAdapter):
     ) -> SendResult:
         """Send an inline-keyboard update prompt (Yes / No buttons).
 
-        Used by the gateway ``/update`` watcher when ``hermes update --gateway``
+        Used by the gateway ``/update`` watcher when ``thoth update --gateway``
         needs user input (stash restore, config migration).
         """
         if not self._bot:
@@ -4462,7 +4462,7 @@ class TelegramAdapter(BasePlatformAdapter):
     def _explicit_bot_mentions_exclude_self(self, message: Message) -> bool:
         """Return True when explicit bot handles target other bots, not this one.
 
-        Telegram groups can contain several Hermes bot profiles. A message like
+        Telegram groups can contain several Thoth bot profiles. A message like
         ``@bot3 hi @bot4`` must not wake ``@bot1`` through reply/wake-word
         fallbacks. Treat explicit bot-handle mentions as an exclusive routing
         hint: if at least one @...bot username is present and none matches this

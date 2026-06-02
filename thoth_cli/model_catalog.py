@@ -1,6 +1,6 @@
 """Remote model catalog fetcher.
 
-The Hermes docs site hosts a JSON manifest of curated models for providers
+The Thoth docs site hosts a JSON manifest of curated models for providers
 we want to update without shipping a release (currently OpenRouter and
 Nous Portal). This module fetches, validates, and caches that manifest,
 falling back to the in-repo hardcoded lists when the network is unavailable.
@@ -323,7 +323,7 @@ def get_curated_nous_models() -> list[str] | None:
 
 
 def reset_cache() -> None:
-    """Clear the in-process cache. Used by tests and ``hermes model --refresh``."""
+    """Clear the in-process cache. Used by tests and ``thoth model --refresh``."""
     global _catalog_cache, _catalog_cache_source_mtime
     _catalog_cache = None
     _catalog_cache_source_mtime = 0.0

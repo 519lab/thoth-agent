@@ -5,8 +5,8 @@ Bug: `agent/redact.py` snapshots `_REDACT_ENABLED` from the env var
 line ~174 calls `setup_logging(mode="cli")` which transitively imports
 `agent.redact` — BEFORE any config bridge ran. So if a user set
 `security.redact_secrets: false` in config.yaml (instead of as an env var
-in .env), the toggle was silently ignored in both `hermes chat` and
-`hermes gateway run`.
+in .env), the toggle was silently ignored in both `thoth chat` and
+`thoth gateway run`.
 
 Fix: bridge `security.redact_secrets` from config.yaml → `HERMES_REDACT_SECRETS`
 env var in `hermes_cli/main.py` BEFORE the `setup_logging()` call.

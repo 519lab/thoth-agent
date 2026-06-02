@@ -1,7 +1,7 @@
 """
-MCP Server Management CLI — ``hermes mcp`` subcommand.
+MCP Server Management CLI — ``thoth mcp`` subcommand.
 
-Implements ``hermes mcp add/remove/list/test/configure`` for interactive
+Implements ``thoth mcp add/remove/list/test/configure`` for interactive
 MCP server lifecycle management (issue #690 Phase 2).
 
 Relies on tools/mcp_tool.py for connection/discovery and keeps
@@ -221,7 +221,7 @@ def _unwrap_exception_group(exc: BaseException) -> Exception:
     return RuntimeError(str(exc))
 
 
-# ─── hermes mcp add ──────────────────────────────────────────────────────────
+# ─── thoth mcp add ──────────────────────────────────────────────────────────
 
 def cmd_mcp_add(args):
     """Add a new MCP server with discovery-first tool selection."""
@@ -259,9 +259,9 @@ def cmd_mcp_add(args):
     if not url and not command:
         _error("Must specify --url <endpoint>, --command <cmd>, or --preset <name>")
         _info("Examples:")
-        _info('  hermes mcp add ink --url "https://mcp.ml.ink/mcp"')
-        _info('  hermes mcp add github --command npx --args @modelcontextprotocol/server-github')
-        _info('  hermes mcp add myserver --preset mypreset')
+        _info('  thoth mcp add ink --url "https://mcp.ml.ink/mcp"')
+        _info('  thoth mcp add github --command npx --args @modelcontextprotocol/server-github')
+        _info('  thoth mcp add myserver --preset mypreset')
         return
 
     # Check if server already exists
@@ -346,7 +346,7 @@ def cmd_mcp_add(args):
             server_config["enabled"] = False
             _save_mcp_server(name, server_config)
             _success(f"Saved '{name}' to config (disabled)")
-            _info("Fix the issue, then: hermes mcp test " + name)
+            _info("Fix the issue, then: thoth mcp test " + name)
         return
 
     if not tools:
@@ -417,7 +417,7 @@ def cmd_mcp_add(args):
     _info("Start a new session to use these tools.")
 
 
-# ─── hermes mcp remove ───────────────────────────────────────────────────────
+# ─── thoth mcp remove ───────────────────────────────────────────────────────
 
 def cmd_mcp_remove(args):
     """Remove an MCP server from config."""
@@ -440,7 +440,7 @@ def cmd_mcp_remove(args):
 
     # Clean up OAuth tokens if they exist — route through MCPOAuthManager so
     # any provider instance cached in the current process (e.g. from an
-    # earlier `hermes mcp test` in the same session) is evicted too.
+    # earlier `thoth mcp test` in the same session) is evicted too.
     try:
         from tools.mcp_oauth_manager import get_manager
         get_manager().remove(name)
@@ -449,7 +449,7 @@ def cmd_mcp_remove(args):
         pass
 
 
-# ─── hermes mcp list ──────────────────────────────────────────────────────────
+# ─── thoth mcp list ──────────────────────────────────────────────────────────
 
 def cmd_mcp_list(args=None):
     """List all configured MCP servers."""
@@ -460,8 +460,8 @@ def cmd_mcp_list(args=None):
         _info("No MCP servers configured.")
         print()
         _info("Add one with:")
-        _info('  hermes mcp add <name> --url <endpoint>')
-        _info('  hermes mcp add <name> --command <cmd> --args <args...>')
+        _info('  thoth mcp add <name> --url <endpoint>')
+        _info('  thoth mcp add <name> --command <cmd> --args <args...>')
         print()
         return
 
@@ -518,7 +518,7 @@ def cmd_mcp_list(args=None):
     print()
 
 
-# ─── hermes mcp test ──────────────────────────────────────────────────────────
+# ─── thoth mcp test ──────────────────────────────────────────────────────────
 
 def cmd_mcp_test(args):
     """Test connection to an MCP server."""
@@ -582,7 +582,7 @@ def cmd_mcp_test(args):
     print()
 
 
-# ─── hermes mcp login ────────────────────────────────────────────────────────
+# ─── thoth mcp login ────────────────────────────────────────────────────────
 
 def cmd_mcp_login(args):
     """Force re-authentication for an OAuth-based MCP server.
@@ -613,7 +613,7 @@ def cmd_mcp_login(args):
         return
     if server_config.get("auth") != "oauth":
         _error(f"Server '{name}' is not configured for OAuth (auth={server_config.get('auth')})")
-        _info("Use `hermes mcp remove` + `hermes mcp add` to reconfigure auth.")
+        _info("Use `thoth mcp remove` + `thoth mcp add` to reconfigure auth.")
         return
 
     # Wipe both disk and in-memory cache so the next probe forces a fresh
@@ -639,7 +639,7 @@ def cmd_mcp_login(args):
         _error(f"Authentication failed: {exc}")
 
 
-# ─── hermes mcp configure ────────────────────────────────────────────────────
+# ─── thoth mcp configure ────────────────────────────────────────────────────
 
 def cmd_mcp_configure(args):
     """Reconfigure which tools are enabled for an existing MCP server."""
@@ -742,7 +742,7 @@ def cmd_mcp_configure(args):
 # ─── Dispatcher ───────────────────────────────────────────────────────────────
 
 def mcp_command(args):
-    """Main dispatcher for ``hermes mcp`` subcommands."""
+    """Main dispatcher for ``thoth mcp`` subcommands."""
     action = getattr(args, "mcp_action", None)
 
     if action == "serve":
@@ -769,13 +769,13 @@ def mcp_command(args):
         # No subcommand — show list
         cmd_mcp_list()
         print(color("  Commands:", Colors.CYAN))
-        _info("hermes mcp serve                              Run as MCP server")
-        _info("hermes mcp add <name> --url <endpoint>        Add an MCP server")
-        _info("hermes mcp add <name> --command <cmd>         Add a stdio server")
-        _info("hermes mcp add <name> --preset <preset>       Add from a known preset")
-        _info("hermes mcp remove <name>                      Remove a server")
-        _info("hermes mcp list                               List servers")
-        _info("hermes mcp test <name>                        Test connection")
-        _info("hermes mcp configure <name>                   Toggle tools")
-        _info("hermes mcp login <name>                       Re-authenticate OAuth")
+        _info("thoth mcp serve                              Run as MCP server")
+        _info("thoth mcp add <name> --url <endpoint>        Add an MCP server")
+        _info("thoth mcp add <name> --command <cmd>         Add a stdio server")
+        _info("thoth mcp add <name> --preset <preset>       Add from a known preset")
+        _info("thoth mcp remove <name>                      Remove a server")
+        _info("thoth mcp list                               List servers")
+        _info("thoth mcp test <name>                        Test connection")
+        _info("thoth mcp configure <name>                   Toggle tools")
+        _info("thoth mcp login <name>                       Re-authenticate OAuth")
         print()

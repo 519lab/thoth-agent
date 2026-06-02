@@ -23,7 +23,7 @@ from utils import normalize_proxy_url
 
 logger = logging.getLogger(__name__)
 
-# Audio file extensions Hermes recognizes for native audio delivery.
+# Audio file extensions Thoth recognizes for native audio delivery.
 # Kept in sync with tools/send_message_tool.py and cron/scheduler.py via
 # should_send_media_as_audio() below.
 _AUDIO_EXTS = frozenset({'.ogg', '.opus', '.mp3', '.wav', '.m4a', '.flac'})
@@ -44,7 +44,7 @@ def _thread_metadata_for_source(source, reply_to_message_id: str | None = None) 
     """Build platform-aware thread metadata for adapter sends.
 
     Most platforms route threaded sends with a generic ``thread_id`` metadata
-    value. Telegram private-chat topics created through Hermes' DM-topic helper
+    value. Telegram private-chat topics created through Thoth's DM-topic helper
     are exposed in updates as ``message_thread_id`` plus a reply anchor. Live
     user-message replies route with ``message_thread_id`` + ``reply_to_message_id``;
     synthetic/resumed sends that have no reply anchor fall back to Telegram's
@@ -69,7 +69,7 @@ def _reply_anchor_for_event(event) -> str | None:
     """Return reply_to id for platforms that need reply semantics.
 
     Telegram forum/supergroup topics should be routed by topic metadata, not by
-    replying to the triggering message. Hermes-created Telegram private-chat
+    replying to the triggering message. Thoth-created Telegram private-chat
     topic lanes prefer replying to the triggering user message so the answer
     stays attached to the active lane; synthetic/resumed sends fall back to
     ``direct_messages_topic_id`` metadata when no message id is available.
@@ -1025,8 +1025,8 @@ class MessageEvent:
 
 _PLAINTEXT_GATEWAY_RESTART_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"^(?:please\s+)?restart\s+(?:the\s+)?gateway[.!?\s]*$", re.IGNORECASE),
-    re.compile(r"^(?:please\s+)?restart\s+(?:the\s+)?hermes\s+gateway[.!?\s]*$", re.IGNORECASE),
-    re.compile(r"^(?:please\s+)?restart\s+hermes[.!?\s]*$", re.IGNORECASE),
+    re.compile(r"^(?:please\s+)?restart\s+(?:the\s+)?thoth\s+gateway[.!?\s]*$", re.IGNORECASE),
+    re.compile(r"^(?:please\s+)?restart\s+thoth[.!?\s]*$", re.IGNORECASE),
 )
 
 

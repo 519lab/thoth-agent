@@ -26,7 +26,7 @@ try:
     import hermes_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     # Graceful fallback when hermes_bootstrap isn't registered in the venv
-    # yet — happens during partial ``hermes update`` where git-reset landed
+    # yet — happens during partial ``thoth update`` where git-reset landed
     # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
     # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
     pass
@@ -566,7 +566,7 @@ class AIAgent:
 
     def _ensure_lmstudio_runtime_loaded(self, config_context_length: Optional[int] = None) -> None:
         """
-        Preload the LM Studio model with at least Hermes' minimum context.
+        Preload the LM Studio model with at least Thoth' minimum context.
         """
         if (self.provider or "").strip().lower() != "lmstudio":
             return
@@ -635,7 +635,7 @@ class AIAgent:
         all non-forced output is suppressed.
 
         ``suppress_status_output`` is a stricter CLI automation mode used by
-        parseable single-query flows such as ``hermes chat -q``. In that mode,
+        parseable single-query flows such as ``thoth chat -q``. In that mode,
         all status/diagnostic prints routed through ``_vprint`` are suppressed
         so stdout stays machine-readable.
         """
@@ -2582,7 +2582,7 @@ class AIAgent:
         # Guard against silent account swap.
         #
         # When an agent is using a non-singleton credential — e.g. a manual
-        # pool entry (``hermes auth add xai-oauth``) whose tokens belong to
+        # pool entry (``thoth auth add xai-oauth``) whose tokens belong to
         # a different account than the loopback_pkce singleton, or an agent
         # constructed with an explicit ``api_key=`` arg — force-refreshing
         # the singleton here and adopting its tokens silently re-routes the

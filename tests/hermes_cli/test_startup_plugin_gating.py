@@ -2,8 +2,8 @@
 
 ``hermes_cli.main`` skips eager plugin discovery at argparse-setup time
 when the invocation is clearly targeting a known built-in subcommand.
-This saves 500-650ms on ``hermes --help``, ``hermes version``,
-``hermes logs``, etc., by not importing ``google.cloud.pubsub_v1``,
+This saves 500-650ms on ``thoth --help``, ``thoth version``,
+``thoth logs``, etc., by not importing ``google.cloud.pubsub_v1``,
 ``aiohttp``, ``grpc``, and friends.
 
 Two invariants:
@@ -39,7 +39,7 @@ from hermes_cli.main import (
 
 
 def _live_subcommand_names() -> set[str]:
-    """Run ``hermes --help`` in-process and parse the subcommand block.
+    """Run ``thoth --help`` in-process and parse the subcommand block.
 
     We patch ``_plugin_cli_discovery_needed`` to always return False so
     plugin-registered commands aren't included — we're validating the
@@ -152,7 +152,7 @@ def test_builtin_set_covers_every_registered_subcommand():
     """
     live = _live_subcommand_names()
     # "help" is synthetic — an argparse-implicit convenience we include
-    # in the set so ``hermes help <cmd>`` skips discovery; it won't show
+    # in the set so ``thoth help <cmd>`` skips discovery; it won't show
     # up as a subparser in the --help output.
     declared = _BUILTIN_SUBCOMMANDS - {"help"}
     missing_from_declaration = live - declared

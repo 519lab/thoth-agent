@@ -674,7 +674,7 @@ class MatrixAdapter(BasePlatformAdapter):
                 resp = await client.login(
                     identifier=self._user_id,
                     password=self._password,
-                    device_name="Hermes Agent",
+                    device_name="Thoth Agent",
                     device_id=self._device_id or None,
                 )
                 if resp and hasattr(resp, "device_id"):
@@ -2636,7 +2636,7 @@ class MatrixAdapter(BasePlatformAdapter):
 
         Important: only strip explicit mention tokens (``@user:server`` or
         ``@localpart``). Do NOT strip bare words matching the bot localpart,
-        otherwise normal phrases like "Hermes Agent" become "Agent".
+        otherwise normal phrases like "Thoth Agent" become "Agent".
         """
         if not body:
             return ""

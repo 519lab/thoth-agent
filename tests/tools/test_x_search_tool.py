@@ -69,7 +69,7 @@ def test_x_search_posts_responses_request(monkeypatch):
 
     tool_def = captured["json"]["tools"][0]
     assert captured["url"] == "https://api.x.ai/v1/responses"
-    assert captured["headers"]["User-Agent"] == f"Hermes-Agent/{__version__}"
+    assert captured["headers"]["User-Agent"] == f"Thoth-Agent/{__version__}"
     assert captured["json"]["model"] == "grok-4.20-reasoning"
     assert captured["json"]["store"] is False
     assert tool_def["type"] == "x_search"
@@ -375,7 +375,7 @@ def test_x_search_returns_tool_error_when_no_credentials(monkeypatch):
     # surfaces a friendly error rather than an HTTP exception.
     result = x_search_tool(query="anything")
     assert "No xAI credentials available" in result
-    assert "hermes auth add xai-oauth" in result
+    assert "thoth auth add xai-oauth" in result
 
 
 def test_x_search_check_fn_false_when_resolver_raises(monkeypatch):

@@ -1,4 +1,4 @@
-"""Windows UTF-8 bootstrap for Hermes entry points.
+"""Windows UTF-8 bootstrap for Thoth entry points.
 
 Python on Windows has two long-standing text-encoding footguns:
 
@@ -13,8 +13,8 @@ Python on Windows has two long-standing text-encoding footguns:
    cp1252 defaults and hits the same UnicodeEncodeError.
 
 This module fixes both on Windows *only* — POSIX is untouched.  It
-should be imported at the very top of every Hermes entry point
-(``hermes``, ``hermes-agent``, ``hermes-acp``, ``python -m gateway.run``,
+should be imported at the very top of every Thoth entry point
+(``thoth``, ``hermes-agent``, ``hermes-acp``, ``python -m gateway.run``,
 ``batch_runner.py``, ``cron/scheduler.py``) before any other imports
 that might do file I/O or print to stdout.
 
@@ -128,7 +128,7 @@ def apply_windows_utf8_bootstrap() -> bool:
 # import side effect does the right thing.
 apply_windows_utf8_bootstrap()
 
-# hermes→thoth env bridge (rename Phase 2): mirror HERMES_* <-> THOTH_* in
+# thoth→thoth env bridge (rename Phase 2): mirror HERMES_* <-> THOTH_* in
 # os.environ so either spelling works, BEFORE any HERMES_*/THOTH_* read. This
 # is the universal hook — every shipped entry point imports hermes_bootstrap
 # first (same invariant the Windows bootstrap relies on). Pure-stdlib + guarded
@@ -216,13 +216,13 @@ def init_db_sync() -> None:
 # bridges via hermes_db.run_sync.
 #
 # Bootstrap failure is non-fatal for writer-mode callers: a logged error,
-# no substrate emission, Hermes runs as before (Phase A spec §0 — substrate
-# failures must not crash Hermes). Worker-mode boot failure is critical (no
+# no substrate emission, Thoth runs as before (Phase A spec §0 — substrate
+# failures must not crash Thoth). Worker-mode boot failure is critical (no
 # decay / Sentinel / embeddings) and the worker subprocess exits non-zero
 # so systemd restarts it.
 #
 # Either way, the outcome is recorded durably so an operator can SEE it
-# without grepping logs: ``hermes substrate boot`` (and the default
+# without grepping logs: ``thoth substrate boot`` (and the default
 # summary) read the last boot status per mode from the ``state_meta`` KV
 # table. Before this, a writer-mode boot failure silently stopped all
 # perception with no cross-process signal.
@@ -246,7 +246,7 @@ def get_boot_status(mode: "str | None" = None):
     hasn't attempted that mode). Without ``mode`` → the whole
     ``{mode: status}`` map. Process-local: reflects only boots attempted
     in *this* process. The cross-process view is the ``state_meta`` rows
-    surfaced by ``hermes substrate boot``.
+    surfaced by ``thoth substrate boot``.
     """
     if mode is not None:
         return _last_boot_status.get(mode)
@@ -304,7 +304,7 @@ async def bootstrap_substrate(log=None, *, mode: str = "writer"):
       Streams auto-register, hooks bind, recall log writer starts;
       sub-agent tick loops do NOT start.
     * ``"worker"`` — sub-agent tick loops only. Use exclusively from
-      the dedicated ``hermes substrate worker run`` subprocess.
+      the dedicated ``thoth substrate worker run`` subprocess.
 
     Returns the Substrate instance (or ``None`` if boot failed). Failures
     are logged as warnings and the function returns ``None`` so the
@@ -347,7 +347,7 @@ async def bootstrap_substrate(log=None, *, mode: str = "writer"):
             )
         else:
             log.error(
-                "substrate.bootstrap.failed mode=%s — Hermes keeps running "
+                "substrate.bootstrap.failed mode=%s — Thoth keeps running "
                 "but emits NO perception (no recall, no L0 growth) until "
                 "this is fixed and the process restarted",
                 mode,

@@ -1,4 +1,4 @@
-# hermes_env.py — back-compat shim (Hermes->Thoth rename, P4). Remove in a later cleanup phase.
+# hermes_env.py — back-compat shim (Thoth->Thoth rename, P4). Remove in a later cleanup phase.
 import sys
 from thoth_env import *  # noqa: F401,F403  (re-export public names for "from hermes_env import foo")
 import thoth_env as _real

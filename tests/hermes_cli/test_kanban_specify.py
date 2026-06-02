@@ -1,4 +1,4 @@
-"""Tests for the specifier module + `hermes kanban specify` CLI surface.
+"""Tests for the specifier module + `thoth kanban specify` CLI surface.
 
 The auxiliary LLM client is mocked — these tests don't hit any network or
 real provider. They exercise the prompt plumbing, response parsing, DB
@@ -226,7 +226,7 @@ def test_list_triage_ids(kanban_home):
 # ---------------------------------------------------------------------------
 
 def _run_cli(*argv: str) -> int:
-    """Invoke the `hermes kanban …` argparse surface directly."""
+    """Invoke the `thoth kanban …` argparse surface directly."""
     root = argparse.ArgumentParser()
     subp = root.add_subparsers(dest="cmd")
     kanban_cli.build_parser(subp)

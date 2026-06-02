@@ -1,4 +1,4 @@
-"""Tests for ``hermes substrate recall validate`` — the go/no-go probe.
+"""Tests for ``thoth substrate recall validate`` — the go/no-go probe.
 
 The probe runs a real ``recall()`` against the current L0 and prints the
 composed <memory-context> block plus a READY/DEGRADED/NOT READY verdict.

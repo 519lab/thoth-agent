@@ -1083,9 +1083,9 @@ class TestHermesHomeIsolation:
     def test_failure_marker_respects_hermes_home(self):
         """_failure_marker_path must use HERMES_HOME, not hardcoded ~/.hermes."""
         from tools.tirith_security import _failure_marker_path
-        with patch.dict(os.environ, {"HERMES_HOME": "/custom/hermes"}):
+        with patch.dict(os.environ, {"HERMES_HOME": "/custom/thoth"}):
             result = _failure_marker_path()
-        assert result == "/custom/hermes/.tirith-install-failed"
+        assert result == "/custom/thoth/.tirith-install-failed"
 
     def test_conftest_isolation_prevents_real_home_writes(self):
         """The conftest autouse fixture sets HERMES_HOME; verify it's active."""

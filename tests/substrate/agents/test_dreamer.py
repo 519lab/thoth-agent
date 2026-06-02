@@ -63,7 +63,7 @@ async def test_dreamer_explores_from_pattern_seed(booted, monkeypatch):
 @pytest.mark.asyncio
 async def test_dreamer_seeds_from_entities_when_no_patterns(booted, monkeypatch):
     await l1.upsert_entity("Greg", "person")
-    await l1.upsert_entity("Hermes", "project")
+    await l1.upsert_entity("Thoth", "project")
 
     captured = {}
 

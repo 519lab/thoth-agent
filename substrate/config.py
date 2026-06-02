@@ -114,7 +114,7 @@ RECALL_L1_LIMIT = _envint("RECALL_L1_LIMIT", default=5)
 
 # Skill suggestion in the recall projection. Opt-in (default
 # OFF) so it never adds noise to the per-turn block unless wanted; the
-# `hermes substrate skills <query>` CLI works regardless.
+# `thoth substrate skills <query>` CLI works regardless.
 RECALL_SUGGEST_SKILLS = _envbool("RECALL_SUGGEST_SKILLS", default=False)
 RECALL_SKILL_LIMIT = _envint("RECALL_SKILL_LIMIT", default=3)
 

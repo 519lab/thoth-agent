@@ -1,20 +1,20 @@
-"""``hermes embed`` — embedding admin commands.
+"""``thoth embed`` — embedding admin commands.
 
 Surface:
 
-    hermes embed reshape <DIM>     # reshape pgvector column + re-embed
+    thoth embed reshape <DIM>     # reshape pgvector column + re-embed
 
-Distinct from ``hermes substrate`` (read-only inspection): these commands
+Distinct from ``thoth substrate`` (read-only inspection): these commands
 mutate the substrate's embedding state. Lives at the top level rather
-than under ``hermes substrate`` because embedding is its own user-visible
+than under ``thoth substrate`` because embedding is its own user-visible
 concern (config, model choice, dim, cost) — not just substrate internals.
 
 Future expansion (not in this PR):
-    hermes embed status            # coverage, cost since last reset, last error
-    hermes embed backfill          # force a re-embed pass over the NULL queue
-    hermes embed test              # 1-call probe of the configured provider
+    thoth embed status            # coverage, cost since last reset, last error
+    thoth embed backfill          # force a re-embed pass over the NULL queue
+    thoth embed test              # 1-call probe of the configured provider
 
-Wired into Hermes's top-level argparse via :func:`register_subparser`
+Wired into Thoth's top-level argparse via :func:`register_subparser`
 called from ``hermes_cli/main.py``.
 """
 
@@ -34,12 +34,12 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def register_subparser(subparsers: argparse._SubParsersAction) -> None:
-    """Add the ``hermes embed`` subcommand tree to ``subparsers``."""
+    """Add the ``thoth embed`` subcommand tree to ``subparsers``."""
     embed_parser = subparsers.add_parser(
         "embed",
         help="Embedding admin (reshape pgvector column, re-embed)",
         description="Admin commands for the substrate's embedding column. "
-        "Inspection lives under ``hermes substrate recall``; this namespace "
+        "Inspection lives under ``thoth substrate recall``; this namespace "
         "is for state-mutating operations.",
     )
     embed_sub = embed_parser.add_subparsers(dest="embed_command")
@@ -90,9 +90,9 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def _cmd_embed_help(args: argparse.Namespace) -> int:
-    """Default for ``hermes embed`` with no subcommand."""
+    """Default for ``thoth embed`` with no subcommand."""
     print(
-        "usage: hermes embed reshape <DIM> [--yes] [--no-reembed] [--batch-size N]",
+        "usage: thoth embed reshape <DIM> [--yes] [--no-reembed] [--batch-size N]",
         file=sys.stderr,
     )
     return 2

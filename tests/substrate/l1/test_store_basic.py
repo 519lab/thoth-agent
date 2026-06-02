@@ -15,14 +15,14 @@ async def test_upsert_entity_creates_then_merges(hermes_db_initialized):
     assert created1 is True
 
     eid2, created2 = await store.upsert_entity(
-        "Greg", "person", summary="Hermes substrate maintainer", aliases=["gg"]
+        "Greg", "person", summary="Thoth substrate maintainer", aliases=["gg"]
     )
     assert created2 is False
     assert eid2 == eid1  # merged on (name, entity_type)
 
     ent = await store.get_entity_by_id(eid1)
     assert ent is not None
-    assert ent.summary == "Hermes substrate maintainer"  # non-empty new summary wins
+    assert ent.summary == "Thoth substrate maintainer"  # non-empty new summary wins
     assert "gg" in ent.aliases
 
 
@@ -36,7 +36,7 @@ async def test_upsert_entity_normalises_type(hermes_db_initialized):
 @pytest.mark.asyncio
 async def test_upsert_relationship_dedup(hermes_db_initialized):
     subj, _ = await store.upsert_entity("Greg", "person")
-    obj, _ = await store.upsert_entity("Hermes", "project")
+    obj, _ = await store.upsert_entity("Thoth", "project")
     rid1, c1 = await store.upsert_relationship(subj, "works_on", obj, confidence=0.6)
     rid2, c2 = await store.upsert_relationship(subj, "works_on", obj, confidence=0.9)
     assert c1 is True and c2 is False

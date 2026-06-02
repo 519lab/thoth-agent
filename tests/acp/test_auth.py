@@ -92,11 +92,11 @@ class TestBuildAuthMethods:
             {
                 "args": ["--setup"],
                 "description": (
-                    "Open Hermes' interactive model/provider setup in a terminal. "
-                    "Use this when Hermes has not been configured on this machine yet."
+                    "Open Thoth's interactive model/provider setup in a terminal. "
+                    "Use this when Thoth has not been configured on this machine yet."
                 ),
                 "id": TERMINAL_SETUP_AUTH_METHOD_ID,
-                "name": "Configure Hermes provider",
+                "name": "Configure Thoth provider",
                 "type": "terminal",
             }
         ]

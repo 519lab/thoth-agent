@@ -1,7 +1,7 @@
 """compose_projection — Phase C Task 6 / spec §9.4.
 
 Pure-function tests against the composer. No DB, no async. Uses
-tiktoken (already pinned for Hermes's context_compressor).
+tiktoken (already pinned for Thoth's context_compressor).
 """
 
 from __future__ import annotations

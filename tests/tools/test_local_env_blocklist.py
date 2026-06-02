@@ -1,8 +1,8 @@
 """Tests for subprocess env sanitization in LocalEnvironment.
 
-Verifies that Hermes-managed provider, tool, and gateway env vars are
+Verifies that Thoth-managed provider, tool, and gateway env vars are
 stripped from subprocess environments so external CLIs are not silently
-misrouted or handed Hermes secrets.
+misrouted or handed Thoth secrets.
 
 See: https://github.com/519lab/thoth-agent/issues/1002
 See: https://github.com/519lab/thoth-agent/issues/1264

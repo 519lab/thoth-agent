@@ -1,10 +1,10 @@
 """
-Backup and import commands for hermes CLI.
+Backup and import commands for thoth CLI.
 
-`hermes backup` creates a zip archive of the entire ~/.hermes/ directory
+`thoth backup` creates a zip archive of the entire ~/.hermes/ directory
 (excluding the hermes-agent repo and transient files).
 
-`hermes import` restores from a backup zip, overlaying onto the current
+`thoth import` restores from a backup zip, overlaying onto the current
 HERMES_HOME root.
 """
 
@@ -67,7 +67,7 @@ _SECRET_FILE_NAMES = {".env", "auth.json", "state.db"}
 
 
 def _should_exclude(rel_path: Path) -> bool:
-    """Return True if *rel_path* (relative to hermes root) should be skipped."""
+    """Return True if *rel_path* (relative to thoth root) should be skipped."""
     parts = rel_path.parts
 
     # Any path component matches an excluded dir name
@@ -127,11 +127,11 @@ def _format_size(nbytes: int) -> str:
 
 
 def run_backup(args) -> None:
-    """Create a zip backup of the Hermes home directory."""
+    """Create a zip backup of the Thoth home directory."""
     hermes_root = get_default_hermes_root()
 
     if not hermes_root.is_dir():
-        print(f"Error: Hermes home directory not found at {hermes_root}")
+        print(f"Error: Thoth home directory not found at {hermes_root}")
         sys.exit(1)
 
     # Determine output path
@@ -177,7 +177,7 @@ def run_backup(args) -> None:
             if _should_exclude(rel):
                 continue
 
-            # Skip the output zip itself if it happens to be inside hermes root
+            # Skip the output zip itself if it happens to be inside thoth root
             try:
                 if fpath.resolve() == out_path.resolve():
                     continue
@@ -255,7 +255,7 @@ def run_backup(args) -> None:
 # ---------------------------------------------------------------------------
 
 def _validate_backup_zip(zf: zipfile.ZipFile) -> tuple[bool, str]:
-    """Check that a zip looks like a Hermes backup.
+    """Check that a zip looks like a Thoth backup.
 
     Returns (ok, reason).
     """
@@ -263,7 +263,7 @@ def _validate_backup_zip(zf: zipfile.ZipFile) -> tuple[bool, str]:
     if not names:
         return False, "zip archive is empty"
 
-    # Look for telltale files that a hermes home would have
+    # Look for telltale files that a thoth home would have
     markers = {"config.yaml", ".env", "state.db"}
     found = set()
     for n in names:
@@ -274,7 +274,7 @@ def _validate_backup_zip(zf: zipfile.ZipFile) -> tuple[bool, str]:
 
     if not found:
         return False, (
-            "zip does not appear to be a Hermes backup "
+            "zip does not appear to be a Thoth backup "
             "(no config.yaml, .env, or state databases found)"
         )
 
@@ -306,7 +306,7 @@ def _detect_prefix(zf: zipfile.ZipFile) -> str:
 
 
 def run_import(args) -> None:
-    """Restore a Hermes backup from a zip file."""
+    """Restore a Thoth backup from a zip file."""
     zip_path = Path(args.zipfile).expanduser().resolve()
 
     if not zip_path.is_file():
@@ -342,7 +342,7 @@ def run_import(args) -> None:
 
         if (has_config or has_env) and not args.force:
             print()
-            print("Warning: Target directory already has Hermes configuration.")
+            print("Warning: Target directory already has Thoth configuration.")
             print("Importing will overwrite existing files with backup contents.")
             print()
             try:
@@ -461,11 +461,11 @@ def run_import(args) -> None:
             for pname in gw_profiles:
                 print(f"  {cli_name()} -p {pname} gateway install")
 
-        print("Done. Your Hermes configuration has been restored.")
+        print("Done. Your Thoth configuration has been restored.")
 
 
 # ---------------------------------------------------------------------------
-# Quick state snapshots (used by /snapshot slash command and hermes backup --quick)
+# Quick state snapshots (used by /snapshot slash command and thoth backup --quick)
 # ---------------------------------------------------------------------------
 
 # Critical state files to include in quick snapshots (relative to HERMES_HOME).
@@ -475,7 +475,7 @@ def run_import(args) -> None:
 # Entries may be individual files OR directories.  Directories are captured
 # recursively; missing entries are silently skipped.  Pairing data lives in
 # platform-specific JSON blobs outside state.db, so it's listed here explicitly
-# — `hermes update` snapshots this set before pulling so approved-user lists
+# — `thoth update` snapshots this set before pulling so approved-user lists
 # are recoverable if anything goes wrong (issue #15733).
 _QUICK_STATE_FILES = (
     "state.db",
@@ -690,7 +690,7 @@ def prune_quick_snapshots(
 
 
 def run_quick_backup(args) -> None:
-    """CLI entry point for hermes backup --quick."""
+    """CLI entry point for thoth backup --quick."""
     label = getattr(args, "label", None)
     snap_id = create_quick_snapshot(label=label)
     if snap_id:
@@ -837,7 +837,7 @@ def create_pre_update_backup(
 
     Returns the path to the created zip, or ``None`` if no files were
     found or the backup could not be created.  Never raises — the caller
-    (``hermes update``) should continue even if the backup fails.
+    (``thoth update``) should continue even if the backup fails.
     """
     hermes_root = hermes_home or get_default_hermes_root()
     if not hermes_root.is_dir():
@@ -862,7 +862,7 @@ def create_pre_update_backup(
 
 
 # ---------------------------------------------------------------------------
-# Pre-migration auto-backup (used by `hermes claw migrate`)
+# Pre-migration auto-backup (used by `thoth claw migrate`)
 # ---------------------------------------------------------------------------
 
 _PRE_MIGRATION_PREFIX = "pre-migration-"
@@ -902,11 +902,11 @@ def create_pre_migration_backup(
     keep: int = _PRE_MIGRATION_DEFAULT_KEEP,
 ) -> Optional[Path]:
     """Create a full zip backup of HERMES_HOME under ``backups/`` before a
-    ``hermes claw migrate`` apply.
+    ``thoth claw migrate`` apply.
 
     Shares implementation with :func:`create_pre_update_backup` via
     ``_write_full_zip_backup`` — same exclusions, same SQLite safe-copy,
-    restorable with ``hermes import <archive>``.  Writes to
+    restorable with ``thoth import <archive>``.  Writes to
     ``<HERMES_HOME>/backups/pre-migration-<timestamp>.zip`` and auto-prunes
     old pre-migration backups.
 
@@ -918,7 +918,7 @@ def create_pre_migration_backup(
     if not hermes_root.is_dir():
         return None
 
-    # Reuses the shared backups/ directory so `hermes import` and the
+    # Reuses the shared backups/ directory so `thoth import` and the
     # update-backup listing pick up pre-migration archives too.
     backup_dir = _pre_update_backup_dir(hermes_root)
     try:

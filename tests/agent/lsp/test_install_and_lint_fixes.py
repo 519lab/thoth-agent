@@ -4,7 +4,7 @@ Covers:
 
 1. ``typescript-language-server`` install recipe pulls in ``typescript``
    alongside the server, so the npm install command targets both.
-2. ``hermes lsp status`` surfaces a ``Backend warnings`` section when
+2. ``thoth lsp status`` surfaces a ``Backend warnings`` section when
    bash-language-server is installed but ``shellcheck`` is missing.
 3. ``_check_lint`` returns ``skipped`` (not ``error``) when the linter
    command exists on PATH but couldn't actually run — e.g. ``npx tsc``
@@ -95,7 +95,7 @@ def test_install_npm_works_without_extras(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Fix 2: ``hermes lsp status`` surfaces shellcheck-missing for bash
+# Fix 2: ``thoth lsp status`` surfaces shellcheck-missing for bash
 # ---------------------------------------------------------------------------
 
 

@@ -1,13 +1,13 @@
 ---
 slug: /
 sidebar_position: 0
-title: "Hermes Agent Documentation"
+title: "Thoth Agent Documentation"
 description: "The self-improving AI agent built by Nous Research. A built-in learning loop that creates skills from experience, improves them during use, and remembers across sessions."
 hide_table_of_contents: true
 displayed_sidebar: docs
 ---
 
-# Hermes Agent
+# Thoth Agent
 
 The self-improving AI agent built by [Nous Research](https://nousresearch.com). The only agent with a built-in learning loop — it creates skills from experience, improves them during use, nudges itself to persist knowledge, and builds a deepening model of who you are across sessions.
 
@@ -34,7 +34,7 @@ iex (irm https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/insta
 
 See the full **[Installation Guide](/docs/getting-started/installation)** for what the installer does, the per-user vs root layout, and Windows-specific notes.
 
-## What is Hermes Agent?
+## What is Thoth Agent?
 
 It's not a coding copilot tethered to an IDE or a chatbot wrapper around a single API. It's an **autonomous agent** that gets more capable the longer it runs. It lives wherever you put it — a $5 VPS, a GPU cluster, or serverless infrastructure (Daytona, Modal) that costs nearly nothing when idle. Talk to it from Telegram while it works on a cloud VM you never SSH into yourself. It's not tied to your laptop.
 
@@ -50,14 +50,14 @@ It's not a coding copilot tethered to an IDE or a chatbot wrapper around a singl
 | 🔧 **[Tools & Toolsets](/docs/user-guide/features/tools)** | 70+ built-in tools and how to configure them |
 | 🧠 **[Memory System](/docs/user-guide/features/memory)** | Persistent memory that grows across sessions |
 | 📚 **[Skills System](/docs/user-guide/features/skills)** | Procedural memory the agent creates and reuses |
-| 🔌 **[MCP Integration](/docs/user-guide/features/mcp)** | Connect to MCP servers, filter their tools, and extend Hermes safely |
-| 🧭 **[Use MCP with Hermes](/docs/guides/use-mcp-with-hermes)** | Practical MCP setup patterns, examples, and tutorials |
+| 🔌 **[MCP Integration](/docs/user-guide/features/mcp)** | Connect to MCP servers, filter their tools, and extend Thoth safely |
+| 🧭 **[Use MCP with Thoth](/docs/guides/use-mcp-with-hermes)** | Practical MCP setup patterns, examples, and tutorials |
 | 🎙️ **[Voice Mode](/docs/user-guide/features/voice-mode)** | Real-time voice interaction in CLI, Telegram, Discord, and Discord VC |
-| 🗣️ **[Use Voice Mode with Hermes](/docs/guides/use-voice-mode-with-hermes)** | Hands-on setup and usage patterns for Hermes voice workflows |
-| 🎭 **[Personality & SOUL.md](/docs/user-guide/features/personality)** | Define Hermes' default voice with a global SOUL.md |
+| 🗣️ **[Use Voice Mode with Thoth](/docs/guides/use-voice-mode-with-hermes)** | Hands-on setup and usage patterns for Thoth voice workflows |
+| 🎭 **[Personality & SOUL.md](/docs/user-guide/features/personality)** | Define Thoth's default voice with a global SOUL.md |
 | 📄 **[Context Files](/docs/user-guide/features/context-files)** | Project context files that shape every conversation |
 | 🔒 **[Security](/docs/user-guide/security)** | Command approval, authorization, container isolation |
-| 💡 **[Tips & Best Practices](/docs/guides/tips)** | Quick wins to get the most out of Hermes |
+| 💡 **[Tips & Best Practices](/docs/guides/tips)** | Quick wins to get the most out of Thoth |
 | 🏗️ **[Architecture](/docs/developer-guide/architecture)** | How it works under the hood |
 | ❓ **[FAQ & Troubleshooting](/docs/reference/faq)** | Common questions and solutions |
 

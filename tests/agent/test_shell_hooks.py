@@ -287,7 +287,7 @@ class TestCallbackSubprocess:
         """v1 schema-bug regression gate.
 
         Shell hook returns the Claude-Code-style payload and the bridge
-        must translate it to the canonical Hermes block shape so that
+        must translate it to the canonical Thoth block shape so that
         get_pre_tool_call_block_message() surfaces the block.
         """
         script = _write_script(
@@ -647,7 +647,7 @@ class TestAllowlistConcurrency:
         self, tmp_path, monkeypatch, caplog,
     ):
         """Persistence failures must log the path, errno, and
-        re-prompt consequence so "hermes keeps asking" is debuggable."""
+        re-prompt consequence so "thoth keeps asking" is debuggable."""
         import logging
         monkeypatch.setenv("HERMES_HOME", str(tmp_path / "home"))
         monkeypatch.setattr(
@@ -687,7 +687,7 @@ class TestAllowlistConcurrency:
         shlex token, which picked the interpreter (``python3``, ``bash``,
         ``/usr/bin/env``) instead of the actual script for any
         interpreter-prefixed command.  That broke
-        ``hermes hooks doctor``'s executability check and silently
+        ``thoth hooks doctor``'s executability check and silently
         disabled mtime drift detection for such hooks."""
         cases = [
             # bare path

@@ -48,12 +48,12 @@ def test_extract_markdown_entries_promotes_heading_context():
 
 ### Active Projects
 
-- Hermes Agent
+- Thoth Agent
 """
     entries = mod.extract_markdown_entries(text)
     assert "Tyler Williams: Founder of VANTA Research" in entries
     assert "Tyler Williams: Timezone: America/Los_Angeles" in entries
-    assert "Tyler Williams > Active Projects: Hermes Agent" in entries
+    assert "Tyler Williams > Active Projects: Thoth Agent" in entries
 
 
 def test_merge_entries_respects_limit_and_reports_overflow():
@@ -891,12 +891,12 @@ def test_rebrand_text_handles_multiple_replacements():
 
 def test_rebrand_text_preserves_filesystem_path_casing():
     """Lowercase matches — especially ``.openclaw`` filesystem paths — must
-    rewrite to lowercase ``.hermes`` (the real Hermes home), not the broken
-    ``.Hermes``.
+    rewrite to lowercase ``.hermes`` (the real Thoth home), not the broken
+    ``.Thoth``.
 
     Regression test for @versun's OpenClaw-residue feedback: after migration,
     memory entries that referenced ``~/.openclaw/config.yaml`` were being
-    rewritten to ``~/.Hermes/config.yaml`` — a path that doesn't exist —
+    rewritten to ``~/.Thoth/config.yaml`` — a path that doesn't exist —
     and the agent kept trying to read it.
     """
     mod = load_module()

@@ -8,7 +8,7 @@ Usage::
 
     python -m acp_adapter.entry
     # or
-    hermes acp
+    thoth acp
     # or
     hermes-acp
 """
@@ -19,7 +19,7 @@ try:
     import hermes_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     # Graceful fallback when hermes_bootstrap isn't registered in the venv
-    # yet — happens during partial ``hermes update`` where git-reset landed
+    # yet — happens during partial ``thoth update`` where git-reset landed
     # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
     # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
     pass
@@ -111,9 +111,9 @@ def _load_env() -> None:
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="hermes-acp",
-        description="Run Hermes Agent as an ACP stdio server.",
+        description="Run Thoth Agent as an ACP stdio server.",
     )
-    parser.add_argument("--version", action="store_true", help="Print Hermes version and exit")
+    parser.add_argument("--version", action="store_true", help="Print Thoth version and exit")
     parser.add_argument(
         "--check",
         action="store_true",
@@ -122,7 +122,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--setup",
         action="store_true",
-        help="Run interactive Hermes provider/model setup for ACP terminal auth",
+        help="Run interactive Thoth provider/model setup for ACP terminal auth",
     )
     parser.add_argument(
         "--setup-browser",
@@ -151,7 +151,7 @@ def _run_check() -> None:
     import acp  # noqa: F401
     from acp_adapter.server import HermesACPAgent  # noqa: F401
 
-    print("Hermes ACP check OK")
+    print("Thoth ACP check OK")
 
 
 def _run_setup() -> None:
@@ -159,7 +159,7 @@ def _run_setup() -> None:
 
     old_argv = sys.argv[:]
     try:
-        sys.argv = [old_argv[0] if old_argv else "hermes", "model"]
+        sys.argv = [old_argv[0] if old_argv else "thoth", "model"]
         hermes_main()
     finally:
         sys.argv = old_argv
@@ -185,7 +185,7 @@ def _run_setup_browser(assume_yes: bool = False) -> int:
     """Bootstrap agent-browser + Chromium.
 
     Routes through dep_ensure -> install.{sh,ps1} --ensure, sharing code
-    with ``hermes postinstall`` and the runtime lazy installer.
+    with ``thoth postinstall`` and the runtime lazy installer.
 
     Returns 0 on success, 1 on failure.
     """

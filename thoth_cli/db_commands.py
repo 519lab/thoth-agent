@@ -4,8 +4,8 @@ Also: one-time substrate stream-name rename for an existing Hermes instance
 being cut over to Thoth (substrate_streams ``hermes.*`` -> ``thoth.*``).
 
 CLI surface:
-    hermes db migrate-from-sqlite [--sqlite-path PATH] [--dry-run]
-    hermes db migrate-from-hermes [--dry-run]
+    thoth db migrate-from-sqlite [--sqlite-path PATH] [--dry-run]
+    thoth db migrate-from-thoth [--dry-run]
 
 Default sqlite-path: ~/.hermes/state.db  (upstream default)
 Default dry-run:     False
@@ -258,11 +258,11 @@ async def migrate_from_hermes(*, dry_run: bool = False) -> int:
 
 
 # ---------------------------------------------------------------------------
-# CLI entry point (called from hermes db migrate-from-sqlite via argparse)
+# CLI entry point (called from thoth db migrate-from-sqlite via argparse)
 # ---------------------------------------------------------------------------
 
 def cli_migrate_from_sqlite(sqlite_path: str | None = None, dry_run: bool = False) -> str:
-    """CLI entry: called from ``hermes db migrate-from-sqlite``."""
+    """CLI entry: called from ``thoth db migrate-from-sqlite``."""
     if sqlite_path is None:
         sqlite_path = os.path.expanduser("~/.hermes/state.db")
     src = Path(sqlite_path)
@@ -286,11 +286,11 @@ def cli_migrate_from_sqlite(sqlite_path: str | None = None, dry_run: bool = Fals
 
 
 # ---------------------------------------------------------------------------
-# argparse handler (receives Namespace from hermes db migrate-from-sqlite)
+# argparse handler (receives Namespace from thoth db migrate-from-sqlite)
 # ---------------------------------------------------------------------------
 
 def cmd_db_migrate_from_sqlite(args) -> int:  # noqa: ANN001
-    """Handler for ``hermes db migrate-from-sqlite`` argparse subcommand."""
+    """Handler for ``thoth db migrate-from-sqlite`` argparse subcommand."""
     result = cli_migrate_from_sqlite(
         sqlite_path=getattr(args, "sqlite_path", None),
         dry_run=getattr(args, "dry_run", False),
@@ -300,7 +300,7 @@ def cmd_db_migrate_from_sqlite(args) -> int:  # noqa: ANN001
 
 
 def cli_migrate_from_hermes(dry_run: bool = False) -> str:
-    """CLI entry: called from ``hermes db migrate-from-hermes``."""
+    """CLI entry: called from ``thoth db migrate-from-thoth``."""
     dsn = os.environ.get("THOTH_PG_DSN")
     if not dsn:
         return "Error: THOTH_PG_DSN env var not set"
@@ -318,23 +318,23 @@ def cli_migrate_from_hermes(dry_run: bool = False) -> str:
 
 
 def cmd_db_migrate_from_hermes(args) -> int:  # noqa: ANN001
-    """Handler for ``hermes db migrate-from-hermes`` argparse subcommand."""
+    """Handler for ``thoth db migrate-from-thoth`` argparse subcommand."""
     result = cli_migrate_from_hermes(dry_run=getattr(args, "dry_run", False))
     print(result)
     return 0 if not result.startswith("Error") else 1
 
 
 def cmd_db(args) -> int:  # noqa: ANN001
-    """Dispatcher for ``hermes db <subcommand>``."""
+    """Dispatcher for ``thoth db <subcommand>``."""
     import sys
     sub = getattr(args, "db_command", None)
     if sub == "migrate-from-sqlite":
         return cmd_db_migrate_from_sqlite(args)
-    if sub == "migrate-from-hermes":
+    if sub == "migrate-from-thoth":
         return cmd_db_migrate_from_hermes(args)
     print(
-        "usage: hermes db {migrate-from-sqlite [--sqlite-path PATH] [--dry-run] | "
-        "migrate-from-hermes [--dry-run]}",
+        "usage: thoth db {migrate-from-sqlite [--sqlite-path PATH] [--dry-run] | "
+        "migrate-from-thoth [--dry-run]}",
         file=sys.stderr,
     )
     return 2

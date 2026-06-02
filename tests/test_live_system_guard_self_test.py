@@ -237,7 +237,7 @@ def test_systemctl_list_units_passes_through():
 
 
 def test_systemctl_unrelated_unit_passes_through():
-    """systemctl restart of a non-hermes unit is allowed (we only protect hermes)."""
+    """systemctl restart of a non-thoth unit is allowed (we only protect thoth)."""
     # Use --dry-run so we don't actually try to restart anything; just
     # verify the guard doesn't block the call. systemctl supports
     # --dry-run via the privileged API; on user scope it usually fails
@@ -263,7 +263,7 @@ def test_kill_own_subtree_passes_through():
 
 
 def test_subprocess_pkill_with_unrelated_pattern_passes_through():
-    """``pkill -f some-unrelated-pattern`` (no hermes/python) is fine."""
+    """``pkill -f some-unrelated-pattern`` (no thoth/python) is fine."""
     # We don't actually run pkill — just verify the guard would let it
     # through by inspecting the matcher. Re-implementing the check here
     # would duplicate the guard; instead spawn a noop to confirm no raise.

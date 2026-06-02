@@ -1,6 +1,6 @@
 """Vercel AI Gateway provider profile.
 
-AI Gateway routes to multiple backends. Hermes sends attribution
+AI Gateway routes to multiple backends. Thoth sends attribution
 headers and full reasoning config passthrough.
 """
 
@@ -35,7 +35,7 @@ vercel = VercelAIGatewayProfile(
     base_url="https://ai-gateway.vercel.sh/v1",
     default_headers={
         "HTTP-Referer": "https://thoth.519lab.com",
-        "X-Title": "Hermes Agent",
+        "X-Title": "Thoth Agent",
     },
     default_aux_model="google/gemini-3-flash",
 )

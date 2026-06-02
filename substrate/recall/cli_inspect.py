@@ -1,4 +1,4 @@
-"""``hermes substrate recall`` printers — Phase C Task 12.
+"""``thoth substrate recall`` printers — Phase C Task 12.
 
 Implementation lives next to the recall API for cohesion; the parent
 ``substrate/cli/inspect.py`` registers the subparser and delegates the
@@ -242,7 +242,7 @@ def _validate_verdict(
     if total_slices == 0 or reachable == 0:
         notes.append(
             "No perception in the recall window — recall returns empty blocks. "
-            "Check the worker is running (`hermes substrate agents`) and that "
+            "Check the worker is running (`thoth substrate agents`) and that "
             "sessions are flowing into L0."
         )
         return ("NOT READY", notes)
@@ -255,7 +255,7 @@ def _validate_verdict(
         notes.append(
             f"Embedding coverage is low ({coverage:.0f}%) — recall is leaning "
             "on keyword ranking. Confirm the worker is backfilling embeddings "
-            "(`hermes substrate curator`) and the embedding provider is reachable."
+            "(`thoth substrate curator`) and the embedding provider is reachable."
         )
     if proj.text:
         notes.append(

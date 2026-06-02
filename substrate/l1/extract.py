@@ -1,6 +1,6 @@
 """Parser LLM extraction — slices → ``ParserResult``.
 
-Routes through Hermes's existing auxiliary-client chain
+Routes through Thoth's existing auxiliary-client chain
 (``agent/auxiliary_client.py`` ``get_async_text_auxiliary_client("parser")``)
 so any configured provider works — OpenRouter, Nous, OpenAI, Anthropic, or
 any OpenAI-compatible local endpoint (Ollama, vLLM, llama.cpp…).
@@ -130,7 +130,7 @@ def _build_prompt(slices: list[SliceText]) -> str:
         lines.append(f'[{short}] ({s.stream_name}) "{text}"')
     slice_block = "\n".join(lines)
     return (
-        f"You are reading {len(slices)} messages from a Hermes Agent "
+        f"You are reading {len(slices)} messages from a Thoth Agent "
         "conversation. Identify named entities (people, projects, files, "
         "concepts, places, organizations) and the relationships between them "
         "that are EXPLICITLY mentioned. Do not infer.\n\n"
@@ -316,7 +316,7 @@ def _coerce_result(data: Any, id_map: dict[str, UUID]) -> ParserResult:
 
 
 def resolve_parser_client():
-    """Resolve ``(async_client, model)`` for the Parser task via Hermes's
+    """Resolve ``(async_client, model)`` for the Parser task via Thoth's
     auxiliary-client chain. Returns ``(None, None)`` when no provider is
     configured. Kept as a thin seam so the Parser can log the model and
     tests can inject a dummy client without monkeypatching the whole

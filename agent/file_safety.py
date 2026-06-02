@@ -17,7 +17,7 @@ def _hermes_home_path() -> Path:
 
 
 def _hermes_root_path() -> Path:
-    """Resolve the Hermes root dir (always the parent of any profile, never per-profile)."""
+    """Resolve the Thoth root dir (always the parent of any profile, never per-profile)."""
     try:
         from hermes_constants import get_default_hermes_root  # local import to avoid cycles
         return get_default_hermes_root()
@@ -97,7 +97,7 @@ def is_write_denied(path: str) -> bool:
         if resolved.startswith(prefix):
             return True
 
-    # Hermes control-plane files: block both the ACTIVE profile's view
+    # Thoth control-plane files: block both the ACTIVE profile's view
     # (hermes_home) AND the global root view. Without the root pass, a
     # profile-mode session leaves <root>/auth.json + <root>/config.yaml
     # writable — letting a prompt-injected write_file overwrite the global
@@ -136,7 +136,7 @@ def is_write_denied(path: str) -> bool:
 
 
 def get_read_block_error(path: str) -> Optional[str]:
-    """Return an error message when a read targets internal Hermes cache files."""
+    """Return an error message when a read targets internal Thoth cache files."""
     resolved = Path(path).expanduser().resolve()
     hermes_home = _hermes_home_path().resolve()
     blocked_dirs = [
@@ -149,7 +149,7 @@ def get_read_block_error(path: str) -> Optional[str]:
         except ValueError:
             continue
         return (
-            f"Access denied: {path} is an internal Hermes cache file "
+            f"Access denied: {path} is an internal Thoth cache file "
             "and cannot be read directly to prevent prompt injection. "
             "Use the skills_list or skill_view tools instead."
         )

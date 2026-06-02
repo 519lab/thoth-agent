@@ -216,7 +216,7 @@ def test_restore_stashed_changes_keeps_going_when_drop_fails(monkeypatch, tmp_pa
 def test_restore_stashed_changes_always_resets_on_conflict(monkeypatch, tmp_path, capsys):
     """Conflicts always auto-reset (no prompt) and return False, even interactively.
 
-    Leaving conflict markers in source files makes hermes unrunnable (SyntaxError).
+    Leaving conflict markers in source files makes thoth unrunnable (SyntaxError).
     The stash is preserved for manual recovery; cmd_update continues normally.
     """
     calls = []

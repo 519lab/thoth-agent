@@ -31,7 +31,7 @@ COMMON_HERMES_TOOLS = ["read_file", "search_files", "terminal", "patch", "write_
 
 class TestToolKindMap:
     def test_all_hermes_tools_have_kind(self):
-        """Every common hermes tool should appear in TOOL_KIND_MAP."""
+        """Every common thoth tool should appear in TOOL_KIND_MAP."""
         for tool in COMMON_HERMES_TOOLS:
             assert tool in TOOL_KIND_MAP, f"{tool} missing from TOOL_KIND_MAP"
 
@@ -602,13 +602,13 @@ class TestBuildToolComplete:
     def test_build_tool_complete_for_write_file_summarizes_without_repeating_diff(self, tmp_path):
         target = tmp_path / "diff-test.txt"
         snapshot = type("Snapshot", (), {"paths": [target], "before": {str(target): None}})()
-        target.write_text("hello from hermes\n", encoding="utf-8")
+        target.write_text("hello from thoth\n", encoding="utf-8")
 
         result = build_tool_complete(
             "tc-wf1",
             "write_file",
-            '{"bytes_written": 18, "dirs_created": false}',
-            function_args={"path": str(target), "content": "hello from hermes\n"},
+            '{"bytes_written": 17, "dirs_created": false}',
+            function_args={"path": str(target), "content": "hello from thoth\n"},
             snapshot=snapshot,
         )
         assert isinstance(result, ToolCallProgress)

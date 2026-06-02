@@ -659,7 +659,7 @@ class TestToolsModeInitBehavior:
 class TestPerSessionMigrateGuard:
     """Verify migrate_memory_files is skipped under per-session strategy.
 
-    per-session creates a fresh Honcho session every Hermes run. Uploading
+    per-session creates a fresh Honcho session every Thoth run. Uploading
     MEMORY.md/USER.md/SOUL.md to each short-lived session floods the backend
     with duplicate content. The guard was added to prevent orphan sessions
     containing only <prior_memory_file> wrappers.
@@ -1514,7 +1514,7 @@ class TestDialecticLifecycleSmoke:
         # Program the dialectic responses in the exact order they'll be requested.
         # An extra or missing call fails the test — strong smoke signal.
         responses = iter([
-            "prewarm: user is eri, works on hermes",      # session-start prewarm
+            "prewarm: user is eri, works on thoth",      # session-start prewarm
             "cadence fire: long query synthesis",         # turn 4 queue_prefetch
             "",                                           # turn 7 fire: silent failure
             "retry success: fresh synthesis",             # turn 8 queue_prefetch retry

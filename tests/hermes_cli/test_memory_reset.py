@@ -1,4 +1,4 @@
-"""Tests for the `hermes memory reset` CLI command.
+"""Tests for the `thoth memory reset` CLI command.
 
 Covers:
 - Reset both stores (MEMORY.md + USER.md)
@@ -37,7 +37,7 @@ def memory_env(tmp_path, monkeypatch):
 def _run_memory_reset(target="all", yes=False, monkeypatch=None, confirm_input="no"):
     """Invoke the memory reset logic from cmd_memory in main.py.
 
-    Simulates what happens when `hermes memory reset` is run.
+    Simulates what happens when `thoth memory reset` is run.
     """
     from hermes_constants import get_hermes_home, display_hermes_home
 
@@ -63,7 +63,7 @@ def _run_memory_reset(target="all", yes=False, monkeypatch=None, confirm_input="
 
 
 class TestMemoryReset:
-    """Tests for `hermes memory reset` subcommand."""
+    """Tests for `thoth memory reset` subcommand."""
 
     def test_reset_all_with_yes_flag(self, memory_env):
         """--yes flag should skip confirmation and delete both files."""

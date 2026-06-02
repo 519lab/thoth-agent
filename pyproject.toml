@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hermes-agent"
+name = "thoth-agent"
 version = "0.14.0"
 description = "The self-improving AI agent — creates skills from experience, improves them during use, and runs anywhere"
 readme = "README.md"
@@ -155,23 +155,23 @@ azure-identity = ["azure-identity==1.25.3"]
 termux = [
   # Baseline Android / Termux path for reliable fresh installs.
   "python-telegram-bot[webhooks]==22.6",
-  "hermes-agent[cron]",
-  "hermes-agent[cli]",
-  "hermes-agent[pty]",
-  "hermes-agent[mcp]",
-  "hermes-agent[honcho]",
-  "hermes-agent[acp]",
+  "thoth-agent[cron]",
+  "thoth-agent[cli]",
+  "thoth-agent[pty]",
+  "thoth-agent[mcp]",
+  "thoth-agent[honcho]",
+  "thoth-agent[acp]",
 ]
 termux-all = [
   # Best-effort "install all" profile for Termux. Same policy as [all]:
   # only includes extras that aren't covered by `tools/lazy_deps.py`.
   # Backends like telegram/slack/dingtalk/feishu/honcho lazy-install at
   # first use, so they're no longer eager-installed here.
-  "hermes-agent[termux]",
-  "hermes-agent[google]",
-  "hermes-agent[homeassistant]",
-  "hermes-agent[sms]",
-  "hermes-agent[web]",
+  "thoth-agent[termux]",
+  "thoth-agent[google]",
+  "thoth-agent[homeassistant]",
+  "thoth-agent[sms]",
+  "thoth-agent[web]",
 ]
 dingtalk = ["dingtalk-stream==0.24.3", "alibabacloud-dingtalk==2.2.42", "qrcode==7.4.2"]
 feishu = ["lark-oapi==1.5.3", "qrcode==7.4.2"]
@@ -215,17 +215,17 @@ all = [
   # [all], `uv sync --locked` on Windows tried to build it from sdist
   # and failed on `make`. Lazy-install routes that build to first use,
   # where the user is expected to have a toolchain available.
-  "hermes-agent[cron]",
-  "hermes-agent[cli]",
-  "hermes-agent[dev]",
-  "hermes-agent[pty]",
-  "hermes-agent[mcp]",
-  "hermes-agent[homeassistant]",
-  "hermes-agent[sms]",
-  "hermes-agent[acp]",
-  "hermes-agent[google]",
-  "hermes-agent[web]",
-  "hermes-agent[youtube]",
+  "thoth-agent[cron]",
+  "thoth-agent[cli]",
+  "thoth-agent[dev]",
+  "thoth-agent[pty]",
+  "thoth-agent[mcp]",
+  "thoth-agent[homeassistant]",
+  "thoth-agent[sms]",
+  "thoth-agent[acp]",
+  "thoth-agent[google]",
+  "thoth-agent[web]",
+  "thoth-agent[youtube]",
 ]
 
 [project.scripts]

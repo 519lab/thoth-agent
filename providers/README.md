@@ -1,6 +1,6 @@
 # providers/
 
-Registry and ABC for every inference provider Hermes knows about.
+Registry and ABC for every inference provider Thoth knows about.
 
 Each provider is declared once as a `ProviderProfile`. Every other layer —
 auth resolution, transport kwargs, model listing, runtime routing — reads from

@@ -448,8 +448,8 @@ class MCPOAuthManager:
     def remove(self, server_name: str) -> None:
         """Evict the provider from cache AND delete tokens from disk.
 
-        Called by ``hermes mcp remove <name>`` and (indirectly) by
-        ``hermes mcp login <name>`` during forced re-auth.
+        Called by ``thoth mcp remove <name>`` and (indirectly) by
+        ``thoth mcp login <name>`` during forced re-auth.
         """
         with self._entries_lock:
             self._entries.pop(server_name, None)

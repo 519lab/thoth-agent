@@ -42,10 +42,10 @@ def _edge(edges, a, b, etype):
 @pytest.mark.asyncio
 async def test_co_occurrence_from_shared_citation(booted):
     a, _ = await l1.upsert_entity("Greg", "person")
-    b, _ = await l1.upsert_entity("Hermes", "project")
+    b, _ = await l1.upsert_entity("Thoth", "project")
     sid = uuid4()  # both cited by the same (synthetic) slice
     await l1.add_citation(entity_id=a, slice_id=sid, quote="Greg")
-    await l1.add_citation(entity_id=b, slice_id=sid, quote="Hermes")
+    await l1.add_citation(entity_id=b, slice_id=sid, quote="Thoth")
 
     await Associator(booted).tick()
 

@@ -1,4 +1,4 @@
-"""Slash command definitions and autocomplete for the Hermes CLI.
+"""Slash command definitions and autocomplete for the Thoth CLI.
 
 Central registry for all slash commands. Every consumer -- CLI help, gateway
 dispatch, Telegram BotCommands, Slack subcommand mapping, autocomplete --
@@ -87,7 +87,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                args_hint="[focus topic]"),
     CommandDef("rollback", "List or restore filesystem checkpoints", "Session",
                args_hint="[number]"),
-    CommandDef("snapshot", "Create or restore state snapshots of Hermes config/state", "Session",
+    CommandDef("snapshot", "Create or restore state snapshots of Thoth config/state", "Session",
                cli_only=True, aliases=("snap",), args_hint="[create|restore <id>|prune]"),
     CommandDef("stop", "Kill all running background processes", "Session"),
     CommandDef("approve", "Approve a pending dangerous command", "Session",
@@ -102,7 +102,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                aliases=("q",), args_hint="<prompt>"),
     CommandDef("steer", "Inject a message after the next tool call without interrupting", "Session",
                args_hint="<prompt>"),
-    CommandDef("goal", "Set a standing goal Hermes works on across turns until achieved", "Session",
+    CommandDef("goal", "Set a standing goal Thoth works on across turns until achieved", "Session",
                args_hint="[text | pause | resume | clear | status]"),
     CommandDef("subgoal", "Add or manage extra criteria on the active goal", "Session",
                args_hint="[text | remove N | clear]"),
@@ -153,7 +153,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                subcommands=("kaomoji", "emoji", "unicode", "ascii")),
     CommandDef("voice", "Toggle voice mode", "Configuration",
                args_hint="[on|off|tts|status]", subcommands=("on", "off", "tts", "status")),
-    CommandDef("busy", "Control what Enter does while Hermes is working", "Configuration",
+    CommandDef("busy", "Control what Enter does while Thoth is working", "Configuration",
                cli_only=True, args_hint="[queue|steer|interrupt|status]",
                subcommands=("queue", "steer", "interrupt", "status")),
 
@@ -212,7 +212,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                cli_only=True),
     CommandDef("image", "Attach a local image file for your next prompt", "Info",
                cli_only=True, args_hint="<path>"),
-    CommandDef("update", "Update Hermes Agent to the latest version", "Info"),
+    CommandDef("update", "Update Thoth Agent to the latest version", "Info"),
     CommandDef("debug", "Upload debug report (system info + logs) and get shareable links", "Info"),
 
     # Exit
@@ -448,7 +448,7 @@ def _iter_plugin_command_entries() -> list[tuple[str, str, str]]:
     Plugin commands are registered via
     :func:`hermes_cli.plugins.PluginContext.register_command`. They behave
     like ``CommandDef`` entries for gateway surfacing: they appear in the
-    Telegram command menu, in Slack's ``/hermes`` subcommand mapping, and
+    Telegram command menu, in Slack's ``/thoth`` subcommand mapping, and
     (via :func:`gateway.platforms.discord._register_slash_commands`) in
     Discord's native slash command picker.
 
@@ -539,7 +539,7 @@ _TELEGRAM_MENU_PRIORITY = (
 )
 """Built-in commands that should stay visible in Telegram's capped menu.
 
-Telegram only displays a small BotCommand menu in practice.  The full Hermes
+Telegram only displays a small BotCommand menu in practice.  The full Thoth
 registry is still dispatchable when typed manually, but operational commands
 need to survive the visible menu cap ahead of lower-priority built-ins.
 """
@@ -721,7 +721,7 @@ def _collect_gateway_skill_entries(
         # user-configured ``skills.external_dirs``. Ensure each prefix ends
         # with ``/`` so ``/my-skills`` does not also match ``/my-skills-extra``.
         # Without this widening, external skills are visible in
-        # ``hermes skills list`` and the agent's ``/skill-name`` dispatch but
+        # ``thoth skills list`` and the agent's ``/skill-name`` dispatch but
         # silently excluded from gateway slash menus (#8110).
         _allowed_prefixes = [_skills_dir.rstrip("/") + "/"]
         _allowed_prefixes.extend(
@@ -778,7 +778,7 @@ def telegram_menu_commands(max_commands: int = 100) -> tuple[list[tuple[str, str
 
     Skills are the only tier that gets trimmed when the cap is hit.
     User-installed hub skills are excluded — accessible via /skills.
-    Skills disabled for the ``"telegram"`` platform (via ``hermes skills
+    Skills disabled for the ``"telegram"`` platform (via ``thoth skills
     config``) are excluded from the menu entirely.
 
     Returns:
@@ -846,7 +846,7 @@ def discord_skill_commands_by_category(
     Scan roots include the local ``SKILLS_DIR`` **and** any configured
     ``skills.external_dirs`` — matching the widened filter applied to the
     flat ``discord_skill_commands()`` collector in #18741. Without this
-    parity, external-dir skills are visible via ``hermes skills list`` and
+    parity, external-dir skills are visible via ``thoth skills list`` and
     the agent's ``/skill-name`` dispatch but silently absent from Discord's
     ``/skill`` autocomplete.
 
@@ -1033,7 +1033,7 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
     Every gateway-available command in ``COMMAND_REGISTRY`` is surfaced as
     a standalone Slack slash command (e.g. ``/btw``, ``/stop``, ``/model``),
     matching Discord's and Telegram's model where every command is a
-    first-class slash and not a ``/hermes <verb>`` subcommand.
+    first-class slash and not a ``/thoth <verb>`` subcommand.
 
     Both canonical names and aliases are included so users can type any
     documented form (e.g. ``/background``, ``/bg``, and ``/btw`` all work).
@@ -1041,20 +1041,20 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
 
     Commands whose sanitized name collides with a Slack built-in
     (e.g. ``/status``, ``/me``, ``/join``) are silently skipped.  Users
-    can still reach them via ``/hermes <command>``.
+    can still reach them via ``/thoth <command>``.
 
     Results are clamped to Slack's 50-command limit with duplicate-name
-    avoidance. ``/hermes`` is always reserved as the first entry so the
-    legacy ``/hermes <subcommand>`` form keeps working for anything that
+    avoidance. ``/thoth`` is always reserved as the first entry so the
+    legacy ``/thoth <subcommand>`` form keeps working for anything that
     gets dropped by the clamp or for free-form questions.
     """
     overrides = _resolve_config_gates()
     entries: list[tuple[str, str, str]] = []
     seen: set[str] = set()
 
-    # Reserve /hermes as the catch-all top-level command.
-    entries.append(("hermes", "Talk to Hermes or run a subcommand", "[subcommand] [args]"))
-    seen.add("hermes")
+    # Reserve /thoth as the catch-all top-level command.
+    entries.append(("thoth", "Talk to Thoth or run a subcommand", "[subcommand] [args]"))
+    seen.add("thoth")
 
     def _add(name: str, desc: str, hint: str) -> None:
         slack_name = _sanitize_slack_name(name)
@@ -1118,12 +1118,12 @@ def slack_app_manifest(request_url: str = "https://hermes-agent.local/slack/comm
 
 
 def slack_subcommand_map() -> dict[str, str]:
-    """Return subcommand -> /command mapping for Slack /hermes handler.
+    """Return subcommand -> /command mapping for Slack /thoth handler.
 
-    Maps both canonical names and aliases so /hermes bg do stuff works
-    the same as /hermes background do stuff.
+    Maps both canonical names and aliases so /thoth bg do stuff works
+    the same as /thoth background do stuff.
 
-    Plugin-registered slash commands are included so ``/hermes <plugin-cmd>``
+    Plugin-registered slash commands are included so ``/thoth <plugin-cmd>``
     routes through the plugin handler.
     """
     overrides = _resolve_config_gates()

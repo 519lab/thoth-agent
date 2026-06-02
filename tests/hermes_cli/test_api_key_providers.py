@@ -760,7 +760,7 @@ class TestHasAnyProviderConfigured:
         assert _has_any_provider_configured() is True
 
     def test_claude_code_creds_ignored_on_fresh_install(self, monkeypatch, tmp_path):
-        """Claude Code credentials should NOT skip the wizard when Hermes is unconfigured."""
+        """Claude Code credentials should NOT skip the wizard when Thoth is unconfigured."""
         from hermes_cli import config as config_module
         from hermes_cli.auth import PROVIDER_REGISTRY
         hermes_home = tmp_path / ".hermes"
@@ -876,7 +876,7 @@ class TestHasAnyProviderConfigured:
         assert _has_any_provider_configured() is False
 
     def test_claude_code_creds_counted_when_hermes_configured(self, monkeypatch, tmp_path):
-        """Claude Code credentials should count when Hermes has been explicitly configured."""
+        """Claude Code credentials should count when Thoth has been explicitly configured."""
         import yaml
         from hermes_cli import config as config_module
         hermes_home = tmp_path / ".hermes"

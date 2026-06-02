@@ -172,7 +172,7 @@ def test_coerce_result_maps_ids_and_normalises():
         ],
         "relationships": [
             {"subject_name": "Greg", "subject_type": "person", "predicate": "USES",
-             "object_name": "Hermes", "object_type": "spaceship",  # unknown → other
+             "object_name": "Thoth", "object_type": "spaceship",  # unknown → other
              "confidence": 5, "source_slice_ids": [str(sid)[:8]]},
             {"subject_name": "x"},  # incomplete → dropped
         ],

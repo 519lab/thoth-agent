@@ -6,7 +6,7 @@ description: "Run custom code at key lifecycle points — log activity, send ale
 
 # Event Hooks
 
-Hermes has three hook systems that run custom code at key lifecycle points:
+Thoth has three hook systems that run custom code at key lifecycle points:
 
 | System | Registered via | Runs in | Use case |
 |--------|---------------|---------|----------|
@@ -186,7 +186,7 @@ async def handle(event_type: str, context: dict):
 
 A popular pattern from the community: drop a Markdown checklist at `~/.hermes/BOOT.md`, and have the agent run it once every time the gateway starts. Useful for "on every boot, check overnight cron failures and ping me on Discord if anything failed," or "summarize the last 24h of deploy.log and post it to Slack #ops."
 
-This tutorial shows how to build it yourself as a user-defined hook. Hermes does not ship a built-in BOOT.md hook — you wire up exactly the behavior you want.
+This tutorial shows how to build it yourself as a user-defined hook. Thoth does not ship a built-in BOOT.md hook — you wire up exactly the behavior you want.
 
 #### What we're building
 
@@ -201,7 +201,7 @@ Create `~/.hermes/BOOT.md`. Write it as if you were giving instructions to a hum
 ```markdown
 # Startup Checklist
 
-1. Run `hermes cron list` and check if any scheduled jobs failed overnight.
+1. Run `thoth cron list` and check if any scheduled jobs failed overnight.
 2. If any failed, send a summary to Discord #ops using the `send_message` tool.
 3. Check if `/opt/app/deploy.log` has any ERROR lines from the last 24 hours. If yes, summarize them and include in the same Discord message.
 4. If nothing went wrong, reply with only `[SILENT]` so no message is sent.
@@ -314,13 +314,13 @@ Without these, a bare `AIAgent()` falls back to built-in defaults and will 401 a
 Restart the gateway:
 
 ```bash
-hermes gateway restart
+thoth gateway restart
 ```
 
 Watch the logs:
 
 ```bash
-hermes logs --follow --level INFO | grep boot-md
+thoth logs --follow --level INFO | grep boot-md
 ```
 
 You should see `Running BOOT.md (N chars)` followed by either `boot-md completed: ...` (summary of what the agent did) or `boot-md completed (nothing to report)` when the agent replied `[SILENT]`.
@@ -335,7 +335,7 @@ Delete `~/.hermes/BOOT.md` to disable the checklist — the hook stays loaded bu
 
 #### Why this isn't a built-in
 
-An earlier version of Hermes shipped this as a built-in hook and silently spawned an agent with bare defaults on every gateway boot. That surprised users with custom endpoints and made the feature invisible to users who didn't know it was running. Keeping it as a documented pattern — built by you, in your hooks directory — means you see exactly what it does and opt in by writing the files.
+An earlier version of Thoth shipped this as a built-in hook and silently spawned an agent with bare defaults on every gateway boot. That surprised users with custom endpoints and made the feature invisible to users who didn't know it was running. Keeping it as a documented pattern — built by you, in your hooks directory — means you see exactly what it does and opt in by writing the files.
 
 ### How It Works
 
@@ -536,7 +536,7 @@ return "Recalled memories:\n- User likes Python"
 return None
 ```
 
-**Where context is injected:** Always the **user message**, never the system prompt. This preserves the prompt cache — the system prompt stays identical across turns, so cached tokens are reused. The system prompt is Hermes's territory (model guidance, tool enforcement, personality, skills). Plugins contribute context alongside the user's input.
+**Where context is injected:** Always the **user message**, never the system prompt. This preserves the prompt cache — the system prompt stays identical across turns, so cached tokens are reused. The system prompt is Thoth's territory (model guidance, tool enforcement, personality, skills). Plugins contribute context alongside the user's input.
 
 All injected context is **ephemeral** — added at API call time only. The original user message in the conversation history is never mutated, and nothing is persisted to the session database.
 
@@ -954,7 +954,7 @@ def my_callback(
 import subprocess
 
 def notify_approval(command, description, session_key, **kwargs):
-    title = "Hermes needs approval"
+    title = "Thoth needs approval"
     body = f"{description}: {command[:80]}"
     subprocess.Popen([
         "osascript", "-e",
@@ -1139,7 +1139,7 @@ The hook is guarded on a non-empty, non-interrupted response — it will not fir
 
 ## Shell Hooks
 
-Declare shell-script hooks in your `cli-config.yaml` and Hermes will run them as subprocesses whenever the corresponding plugin-hook event fires — in both CLI and gateway sessions. No Python plugin authoring required.
+Declare shell-script hooks in your `cli-config.yaml` and Thoth will run them as subprocesses whenever the corresponding plugin-hook event fires — in both CLI and gateway sessions. No Python plugin authoring required.
 
 Use shell hooks when you want a drop-in, single-file script (Bash, Python, anything with a shebang) to:
 
@@ -1180,7 +1180,7 @@ Event names must be one of the [plugin hook events](#plugin-hooks); typos produc
 
 ### JSON wire protocol
 
-Each time the event fires, Hermes spawns a subprocess for every matching hook (matcher permitting), pipes a JSON payload to **stdin**, and reads **stdout** back as JSON.
+Each time the event fires, Thoth spawns a subprocess for every matching hook (matcher permitting), pipes a JSON payload to **stdin**, and reads **stdout** back as JSON.
 
 **stdin — payload the script receives:**
 
@@ -1202,7 +1202,7 @@ Each time the event fires, Hermes spawns a subprocess for every matching hook (m
 ```jsonc
 // Block a pre_tool_call (both shapes accepted; normalised internally):
 {"decision": "block", "reason":  "Forbidden: rm -rf"}   // Claude-Code style
-{"action":   "block", "message": "Forbidden: rm -rf"}   // Hermes-canonical
+{"action":   "block", "message": "Forbidden: rm -rf"}   // Thoth-canonical
 
 // Inject context for pre_llm_call:
 {"context": "Today is Friday, 2026-04-17"}
@@ -1277,7 +1277,7 @@ else
 fi
 ```
 
-Claude Code's `UserPromptSubmit` event is intentionally not a separate Hermes event — `pre_llm_call` fires at the same place and already supports context injection. Use it here.
+Claude Code's `UserPromptSubmit` event is intentionally not a separate Thoth event — `pre_llm_call` fires at the same place and already supports context injection. Use it here.
 
 #### 4. Log every subagent completion
 
@@ -1297,26 +1297,26 @@ printf '{}\n'
 
 ### Consent model
 
-Each unique `(event, command)` pair prompts the user for approval the first time Hermes sees it, then persists the decision to `~/.hermes/shell-hooks-allowlist.json`. Subsequent runs (CLI or gateway) skip the prompt.
+Each unique `(event, command)` pair prompts the user for approval the first time Thoth sees it, then persists the decision to `~/.hermes/shell-hooks-allowlist.json`. Subsequent runs (CLI or gateway) skip the prompt.
 
 Three escape hatches bypass the interactive prompt — any one is sufficient:
 
-1. `--accept-hooks` flag on the CLI (e.g. `hermes --accept-hooks chat`)
+1. `--accept-hooks` flag on the CLI (e.g. `thoth --accept-hooks chat`)
 2. `HERMES_ACCEPT_HOOKS=1` environment variable
 3. `hooks_auto_accept: true` in `cli-config.yaml`
 
 Non-TTY runs (gateway, cron, CI) need one of these three — otherwise any newly-added hook silently stays un-registered and logs a warning.
 
-**Script edits are silently trusted.** The allowlist keys on the exact command string, not the script's hash, so editing the script on disk does not invalidate consent. `hermes hooks doctor` flags mtime drift so you can spot edits and decide whether to re-approve.
+**Script edits are silently trusted.** The allowlist keys on the exact command string, not the script's hash, so editing the script on disk does not invalidate consent. `thoth hooks doctor` flags mtime drift so you can spot edits and decide whether to re-approve.
 
-### The `hermes hooks` CLI
+### The `thoth hooks` CLI
 
 | Command | What it does |
 |---------|--------------|
-| `hermes hooks list` | Dump configured hooks with matcher, timeout, and consent status |
-| `hermes hooks test <event> [--for-tool X] [--payload-file F]` | Fire every matching hook against a synthetic payload and print the parsed response |
-| `hermes hooks revoke <command>` | Remove every allowlist entry matching `<command>` (takes effect on next restart) |
-| `hermes hooks doctor` | For every configured hook: check exec bit, allowlist status, mtime drift, JSON output validity, and rough execution time |
+| `thoth hooks list` | Dump configured hooks with matcher, timeout, and consent status |
+| `thoth hooks test <event> [--for-tool X] [--payload-file F]` | Fire every matching hook against a synthetic payload and print the parsed response |
+| `thoth hooks revoke <command>` | Remove every allowlist entry matching `<command>` (takes effect on next restart) |
+| `thoth hooks doctor` | For every configured hook: check exec bit, allowlist status, mtime drift, JSON output validity, and rough execution time |
 
 ### Security
 
@@ -1324,7 +1324,7 @@ Shell hooks run with **your full user credentials** — same trust boundary as a
 
 - Only reference scripts you wrote or fully reviewed.
 - Keep scripts inside `~/.hermes/agent-hooks/` so the path is easy to audit.
-- Re-run `hermes hooks doctor` after you pull a shared config to spot newly-added hooks before they register.
+- Re-run `thoth hooks doctor` after you pull a shared config to spot newly-added hooks before they register.
 - If your config.yaml is version-controlled across a team, review PRs that change the `hooks:` section the same way you'd review CI config.
 
 ### Ordering and precedence

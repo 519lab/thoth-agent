@@ -9,7 +9,7 @@ the properties required for correct production behaviour:
   subprocesses (MCP stdio servers, git, bun, browser daemons) get reaped
   instead of accumulating as zombies (#15012).
 - Signal forwarding runs through the init so ``docker stop`` triggers
-  hermes's own graceful-shutdown path.
+  thoth's own graceful-shutdown path.
 """
 
 from __future__ import annotations
@@ -60,7 +60,7 @@ def _run_steps(dockerfile_text: str) -> list[str]:
 def test_dockerfile_installs_an_init_for_zombie_reaping(dockerfile_text):
     """Some init (tini, dumb-init, catatonit) must be installed.
 
-    Without a PID-1 init that handles SIGCHLD, hermes accumulates zombie
+    Without a PID-1 init that handles SIGCHLD, thoth accumulates zombie
     processes from MCP stdio subprocesses, git operations, browser
     daemons, etc.  In long-running Docker deployments this eventually
     exhausts the PID table.
@@ -72,7 +72,7 @@ def test_dockerfile_installs_an_init_for_zombie_reaping(dockerfile_text):
     assert installed, (
         "No PID-1 init detected in Dockerfile (looked for: "
         f"{', '.join(known_inits)}). Without an init process to reap "
-        "orphaned subprocesses, hermes accumulates zombies in Docker "
+        "orphaned subprocesses, thoth accumulates zombies in Docker "
         "deployments. See issue #15012."
     )
 
@@ -82,7 +82,7 @@ def test_dockerfile_entrypoint_routes_through_the_init(dockerfile_text):
 
     Installing tini is only half the fix — the container must actually run
     with tini as PID 1.  If the ENTRYPOINT executes the shell script
-    directly, the shell becomes PID 1 and will ``exec`` into hermes,
+    directly, the shell becomes PID 1 and will ``exec`` into thoth,
     which then runs as PID 1 without any zombie reaping.
     """
     # Find the last uncommented ENTRYPOINT line — Docker honours the final one.
@@ -100,7 +100,7 @@ def test_dockerfile_entrypoint_routes_through_the_init(dockerfile_text):
     routes_through_init = any(name in entrypoint_line for name in known_inits)
     assert routes_through_init, (
         f"ENTRYPOINT does not route through an init: {entrypoint_line!r}. "
-        "If tini is only installed but not wired into ENTRYPOINT, hermes "
+        "If tini is only installed but not wired into ENTRYPOINT, thoth "
         "still runs as PID 1 and zombies will accumulate (#15012)."
     )
 

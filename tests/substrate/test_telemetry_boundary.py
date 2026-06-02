@@ -33,7 +33,7 @@ def _now_utc() -> datetime:
 
 
 def test_is_perceptual_boundary():
-    """hermes.* is perception; substrate.* is operational telemetry."""
+    """thoth.* is perception; substrate.* is operational telemetry."""
     assert is_perceptual("thoth.world.user_message.cli")
     assert is_perceptual("thoth.self_state.tool_result")
     assert is_perceptual("thoth.self_action.tool_call")

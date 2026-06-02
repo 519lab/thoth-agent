@@ -534,7 +534,7 @@ def _(home, kb):
     anyone doing string interpolation without quoting."""
     # Note: home was already created with a safe prefix. We need to
     # reset to a weird one for this test.
-    weird = tempfile.mkdtemp(prefix="hermes with spaces ")
+    weird = tempfile.mkdtemp(prefix="thoth with spaces ")
     os.environ["HERMES_HOME"] = weird
     os.environ["HOME"] = weird
     kb._INITIALIZED_PATHS.clear()

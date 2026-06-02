@@ -192,7 +192,7 @@ class TestAppMentionHandler:
         assert "assistant_thread_started" in registered_events
         assert "assistant_thread_context_changed" in registered_events
         # Slack slash commands are registered via a single regex matcher
-        # covering every COMMAND_REGISTRY entry (e.g. /hermes, /btw, /stop,
+        # covering every COMMAND_REGISTRY entry (e.g. /thoth, /btw, /stop,
         # /model, ...) so users get native-slash parity with Discord and
         # Telegram. Verify the regex matches the key expected slashes.
         assert len(registered_commands) == 1, (
@@ -201,7 +201,7 @@ class TestAppMentionHandler:
         slash_matcher = registered_commands[0]
         import re as _re
         assert isinstance(slash_matcher, _re.Pattern)
-        for expected in ("/hermes", "/btw", "/stop", "/model", "/help"):
+        for expected in ("/thoth", "/btw", "/stop", "/model", "/help"):
             assert slash_matcher.match(expected), (
                 f"Slack slash regex does not match {expected}"
             )
@@ -761,11 +761,11 @@ class TestBangPrefixCommands:
 
     @pytest.mark.asyncio
     async def test_bang_with_bot_suffix_resolves(self, adapter):
-        """``!stop@hermes`` matches the get_command() ``@suffix`` stripping."""
-        await adapter._handle_slack_message(self._make_event("!stop@hermes"))
+        """``!stop@thoth`` matches the get_command() ``@suffix`` stripping."""
+        await adapter._handle_slack_message(self._make_event("!stop@thoth"))
 
         msg_event = adapter.handle_message.call_args[0][0]
-        assert msg_event.text.startswith("/stop@hermes")
+        assert msg_event.text.startswith("/stop@thoth")
         assert msg_event.message_type == MessageType.COMMAND
 
     @pytest.mark.asyncio
@@ -2329,13 +2329,13 @@ class TestSlashCommands:
 
     # ------------------------------------------------------------------
     # Native slash commands — /btw, /stop, /model, ... dispatched directly
-    # instead of as /hermes subcommands. This is the Discord/Telegram parity
+    # instead of as /thoth subcommands. This is the Discord/Telegram parity
     # fix: the slash name itself becomes the command.
     # ------------------------------------------------------------------
 
     @pytest.mark.asyncio
     async def test_native_btw_slash(self, adapter):
-        """/btw with args must dispatch to /background, not /hermes btw."""
+        """/btw with args must dispatch to /background, not /thoth btw."""
         command = {
             "command": "/btw",
             "text": "fix the failing test",

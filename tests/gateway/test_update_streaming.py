@@ -1,6 +1,6 @@
 """Tests for /update live streaming, prompt forwarding, and gateway IPC.
 
-Tests the new --gateway mode for hermes update, including:
+Tests the new --gateway mode for thoth update, including:
 - _gateway_prompt() file-based IPC
 - _watch_update_progress() output streaming and prompt detection
 - Message interception for update prompt responses
@@ -208,7 +208,7 @@ class TestRestoreStashWithInputFn:
 
 
 class TestUpdateCommandGatewayFlag:
-    """Verify the gateway spawns hermes update --gateway."""
+    """Verify the gateway spawns thoth update --gateway."""
 
     @pytest.mark.asyncio
     async def test_spawns_with_gateway_flag(self, tmp_path):

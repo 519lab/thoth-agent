@@ -1,4 +1,4 @@
-"""Tests for `hermes fallback` — chain reading, add/remove/clear, legacy migration."""
+"""Tests for `thoth fallback` — chain reading, add/remove/clear, legacy migration."""
 from __future__ import annotations
 
 import io
@@ -133,7 +133,7 @@ class TestListCommand:
         cmd_fallback_list(types.SimpleNamespace())
         out = capsys.readouterr().out
         assert "No fallback providers configured" in out
-        assert "hermes fallback add" in out
+        assert "thoth fallback add" in out
 
     def test_list_with_entries(self, isolated_home, capsys):
         _write_config(isolated_home, {
@@ -461,7 +461,7 @@ class TestDispatcher:
 # ---------------------------------------------------------------------------
 
 class TestArgparseWiring:
-    """Verify `hermes fallback` is wired into main.py's argparse tree.
+    """Verify `thoth fallback` is wired into main.py's argparse tree.
 
     main() builds the parser inline, so we invoke main([...]) via subprocess
     with --help to introspect registered subcommands without side effects.

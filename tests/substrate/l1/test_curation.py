@@ -23,8 +23,8 @@ async def test_merge_repoints_relationships_and_citations(hermes_db_initialized)
 
     greg1, _ = await store.upsert_entity("Greg", "person", aliases=["g"])
     greg2, _ = await store.upsert_entity("Greg Grace", "person")
-    hermes, _ = await store.upsert_entity("Hermes", "project")
-    # greg2 works_on hermes; greg2 cited by a slice.
+    hermes, _ = await store.upsert_entity("Thoth", "project")
+    # greg2 works_on thoth; greg2 cited by a slice.
     await store.upsert_relationship(greg2, "works_on", hermes)
     sid = uuid4()
     await store.add_citation(entity_id=greg2, slice_id=sid)

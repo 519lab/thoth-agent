@@ -79,7 +79,7 @@ def _discord_request(
         headers={
             "Authorization": f"Bot {token}",
             "Content-Type": "application/json",
-            "User-Agent": "Hermes-Agent (https://github.com/519lab/thoth-agent)",
+            "User-Agent": "Thoth-Agent (https://github.com/519lab/thoth-agent)",
         },
     )
 

@@ -1,4 +1,4 @@
-"""Built-in memory providers shipped with Hermes.
+"""Built-in memory providers shipped with Thoth.
 
 Phase C adds the SubstrateMemoryProvider — a substrate-backed memory
 provider that reads from the L0 substrate (Phase A storage) via the

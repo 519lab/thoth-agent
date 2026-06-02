@@ -1,6 +1,6 @@
 """Live regression guardrail for the keepalive/transport bug class (#10933).
 
-AlexKucera reported on Discord (2026-04-16) that after ``hermes update`` pulled
+AlexKucera reported on Discord (2026-04-16) that after ``thoth update`` pulled
 #10933, the FIRST chat in a session worked and EVERY subsequent chat failed
 with ``APIConnectionError('Connection error.')`` whose cause was
 ``RuntimeError: Cannot send a request, as the client has been closed``.

@@ -13,7 +13,7 @@ stuck blocked for too long, etc. Each one carries:
 Rules run over (task, recent events, recent runs) and emit diagnostics.
 They are stateless and read-only — no DB writes. Callers compute
 diagnostics on demand (on ``/board`` load, ``/tasks/:id`` fetch, or
-``hermes kanban diagnostics``).
+``thoth kanban diagnostics``).
 
 Design goals:
 
@@ -61,7 +61,7 @@ class DiagnosticAction:
     * ``unblock`` — PATCH status back to ``ready`` (for stuck-blocked
       diagnostics).
     * ``cli_hint`` — print/copy a shell command (e.g.
-      ``hermes -p <profile> auth``). No HTTP side effect.
+      ``thoth -p <profile> auth``). No HTTP side effect.
     * ``open_docs`` — deep-link to the docs URL named in ``payload.url``.
     * ``comment`` — nudge the operator to add a comment (for
       stuck-blocked tasks that need human input).
@@ -392,7 +392,7 @@ def _rule_triage_aux_unavailable(task, events, runs, now, cfg) -> list[Diagnosti
     With the auto-decompose dispatcher (kanban.auto_decompose, default True),
     triage tasks fan out via ``auxiliary.kanban_decomposer`` and fall back to
     ``auxiliary.triage_specifier`` when the decomposer returns ``fanout=false``.
-    With auto-decompose off, the user must run ``hermes kanban specify``,
+    With auto-decompose off, the user must run ``thoth kanban specify``,
     which only needs ``auxiliary.triage_specifier``.
 
     The default slot is ``provider: auto`` → auto-falls back to the main model,
@@ -435,7 +435,7 @@ def _rule_triage_aux_unavailable(task, events, runs, now, cfg) -> list[Diagnosti
         primary_desc = "specifier"
         detail_path = (
             "Auto-decompose is off, so triage tasks need "
-            "`hermes kanban specify`, which uses auxiliary.triage_specifier."
+            "`thoth kanban specify`, which uses auxiliary.triage_specifier."
         )
 
     # The primary slot is usable when either: it was explicitly configured by
@@ -451,7 +451,7 @@ def _rule_triage_aux_unavailable(task, events, runs, now, cfg) -> list[Diagnosti
             label=f"Configure {primary_slot}",
             payload={
                 "command": (
-                    f"hermes config set {primary_slot}.provider auto"
+                    f"thoth config set {primary_slot}.provider auto"
                 )
             },
             suggested=True,
@@ -463,15 +463,15 @@ def _rule_triage_aux_unavailable(task, events, runs, now, cfg) -> list[Diagnosti
             label=f"Or configure fallback {fallback_slot}",
             payload={
                 "command": (
-                    f"hermes config set {fallback_slot}.provider auto"
+                    f"thoth config set {fallback_slot}.provider auto"
                 )
             },
         ))
     if not auto_decompose:
         actions.append(DiagnosticAction(
             kind="cli_hint",
-            label=f"Specify manually: hermes kanban specify {task_id}",
-            payload={"command": f"hermes kanban specify {task_id}"},
+            label=f"Specify manually: thoth kanban specify {task_id}",
+            payload={"command": f"thoth kanban specify {task_id}"},
         ))
 
     return [Diagnostic(
@@ -586,14 +586,14 @@ def _rule_repeated_failures(task, events, runs, now, cfg) -> list[Diagnostic]:
         # Spawn is failing specifically — profile setup issue.
         actions.append(DiagnosticAction(
             kind="cli_hint",
-            label=f"Verify profile: hermes -p {assignee} doctor",
-            payload={"command": f"hermes -p {assignee} doctor"},
+            label=f"Verify profile: thoth -p {assignee} doctor",
+            payload={"command": f"thoth -p {assignee} doctor"},
             suggested=True,
         ))
         actions.append(DiagnosticAction(
             kind="cli_hint",
-            label=f"Fix profile auth: hermes -p {assignee} auth",
-            payload={"command": f"hermes -p {assignee} auth"},
+            label=f"Fix profile auth: thoth -p {assignee} auth",
+            payload={"command": f"thoth -p {assignee} auth"},
         ))
     elif most_recent_outcome in {"timed_out", "crashed"}:
         # Worker got off the ground but died. Logs are the right place
@@ -602,8 +602,8 @@ def _rule_repeated_failures(task, events, runs, now, cfg) -> list[Diagnostic]:
         if task_id:
             actions.append(DiagnosticAction(
                 kind="cli_hint",
-                label=f"Check logs: hermes kanban log {task_id}",
-                payload={"command": f"hermes kanban log {task_id}"},
+                label=f"Check logs: thoth kanban log {task_id}",
+                payload={"command": f"thoth kanban log {task_id}"},
                 suggested=True,
             ))
     actions.extend(_generic_recovery_actions(
@@ -704,8 +704,8 @@ def _rule_repeated_crashes(task, events, runs, now, cfg) -> list[Diagnostic]:
     if task_id:
         actions.append(DiagnosticAction(
             kind="cli_hint",
-            label=f"Check logs: hermes kanban log {task_id}",
-            payload={"command": f"hermes kanban log {task_id}"},
+            label=f"Check logs: thoth kanban log {task_id}",
+            payload={"command": f"thoth kanban log {task_id}"},
             suggested=True,
         ))
     running = _task_field(task, "status") == "running"
@@ -815,7 +815,7 @@ def _rule_stranded_in_ready(task, events, runs, now, cfg) -> list[Diagnostic]:
     on the dispatcher and a different operator response).
 
     The signal is age-based on purpose: it's identity-agnostic, so it
-    works for Hermes profiles, registered lanes, external workers, and
+    works for Thoth profiles, registered lanes, external workers, and
     typos uniformly. No registry to curate, no per-board allowlist.
     """
     threshold_seconds = float(
@@ -886,7 +886,7 @@ def _rule_stranded_in_ready(task, events, runs, now, cfg) -> list[Diagnostic]:
         DiagnosticAction(
             kind="cli_hint",
             label="Check dispatcher status",
-            payload={"command": "hermes kanban diagnostics"},
+            payload={"command": "thoth kanban diagnostics"},
         ),
     ]
 
@@ -978,7 +978,7 @@ def config_from_kanban_config(kanban_cfg: Optional[dict]) -> dict:
 
 
 def config_from_runtime_config(raw_config: Optional[dict]) -> dict:
-    """Build diagnostics config from the full Hermes runtime config.
+    """Build diagnostics config from the full Thoth runtime config.
 
     Carries through ``kanban``, ``auxiliary``, and ``model`` keys so triage-
     aware rules can inspect the active aux-helper and main-model state.

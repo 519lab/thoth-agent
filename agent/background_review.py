@@ -113,9 +113,9 @@ _SKILL_REVIEW_PROMPT = (
     "If you notice two existing skills that overlap, note it in your "
     "reply — the background curator handles consolidation at scale.\n\n"
     "Protected skills (DO NOT edit these):\n"
-    "  • Bundled skills (shipped with Hermes, e.g. 'hermes-agent').\n"
-    "  • Hub-installed skills (installed via 'hermes skills install').\n"
-    "  • Pinned skills (marked via 'hermes curator pin').\n"
+    "  • Bundled skills (shipped with Thoth, e.g. 'hermes-agent').\n"
+    "  • Hub-installed skills (installed via 'thoth skills install').\n"
+    "  • Pinned skills (marked via 'thoth curator pin').\n"
     "If the only skills that need updating are protected, say\n"
     "'Nothing to save.' and stop.\n\n"
     "Do NOT capture (these become persistent self-imposed constraints "
@@ -196,9 +196,9 @@ _COMBINED_REVIEW_PROMPT = (
     "If you notice overlapping existing skills, mention it — the "
     "background curator handles consolidation.\n\n"
     "Protected skills (DO NOT edit these):\n"
-    "  • Bundled skills (shipped with Hermes, e.g. 'hermes-agent').\n"
-    "  • Hub-installed skills (installed via 'hermes skills install').\n"
-    "  • Pinned skills (marked via 'hermes curator pin').\n"
+    "  • Bundled skills (shipped with Thoth, e.g. 'hermes-agent').\n"
+    "  • Hub-installed skills (installed via 'thoth skills install').\n"
+    "  • Pinned skills (marked via 'thoth curator pin').\n"
     "If the only skills that need updating are protected, say\n"
     "'Nothing to save.' and stop.\n\n"
     "Do NOT capture as skills (these become persistent self-imposed "
@@ -366,12 +366,12 @@ def _run_review_in_thread(
             _parent_runtime = agent._current_main_runtime()
             _parent_api_mode = _parent_runtime.get("api_mode") or None
             # The review fork needs to call agent-loop tools (memory,
-            # skill_manage). Those tools require Hermes' own dispatch,
+            # skill_manage). Those tools require Thoth's own dispatch,
             # which the codex_app_server runtime bypasses entirely
             # (it runs the turn inside codex's subprocess). So when
             # the parent is on codex_app_server, downgrade the review
             # fork to codex_responses — same auth/credentials, but
-            # talks to the OpenAI Responses API directly so Hermes
+            # talks to the OpenAI Responses API directly so Thoth
             # owns the loop and the agent-loop tools dispatch.
             if _parent_api_mode == "codex_app_server":
                 _parent_api_mode = "codex_responses"
