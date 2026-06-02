@@ -74,8 +74,10 @@ async def list_dreams(*, limit: int = 20, conn=None) -> list[dict]:
         return await _go(c)
 
 
-async def _dream(seed: str, *, client, model) -> str:
+async def _dream(seed: str, *, client, model, substrate=None) -> str:
     """LLM exploration seam (mocked in tests). Returns a free-text note."""
+    from substrate import cost
+
     prompt = (
         "You are the dreaming faculty of an AI agent's memory — free, "
         "associative, counterfactual. Given this seed from what the agent "
@@ -83,7 +85,10 @@ async def _dream(seed: str, *, client, model) -> str:
         "question worth pursuing. 2-4 sentences, speculative is fine.\n\n"
         f"Seed: {seed}"
     )
-    resp = await client.chat.completions.create(
+    resp = await cost.acreate_and_record(
+        client,
+        substrate=substrate,
+        agent="dreamer",
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.9,
@@ -116,7 +121,8 @@ class Dreamer(SubAgent):
         timeout_s = _env_int("DREAMER_TIMEOUT_S", 25)
         try:
             exploration = await asyncio.wait_for(
-                _dream(seed, client=client, model=model), timeout=timeout_s
+                _dream(seed, client=client, model=model, substrate=self._substrate),
+                timeout=timeout_s,
             )
         except Exception:
             self._log.debug("dreamer.tick.degraded", exc_info=True)

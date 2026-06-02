@@ -103,7 +103,7 @@ async def test_parser_extracts_persists_consolidates(booted, monkeypatch):
 
     await _seed(booted, "sess-1", ["Greg works on Hermes"] + [f"m{i}" for i in range(5)])
 
-    async def _fake_call(batch, *, client=None, model=None):
+    async def _fake_call(batch, *, client=None, model=None, substrate=None):
         sid = batch[0].slice_id
         return ParserResult(
             entities=[
@@ -155,7 +155,7 @@ async def test_parser_empty_still_consolidates(booted, monkeypatch):
 
     await _seed(booted, "sess-2", [f"m{i}" for i in range(6)])
 
-    async def _empty(batch, *, client=None, model=None):
+    async def _empty(batch, *, client=None, model=None, substrate=None):
         return ParserResult()
 
     monkeypatch.setattr(extract, "call_parser_llm", _empty)
@@ -176,7 +176,7 @@ async def test_parser_timeout_leaves_slices_unconsolidated(booted, monkeypatch):
 
     await _seed(booted, "sess-3", [f"m{i}" for i in range(6)])
 
-    async def _timeout(batch, *, client=None, model=None):
+    async def _timeout(batch, *, client=None, model=None, substrate=None):
         raise asyncio.TimeoutError()
 
     monkeypatch.setattr(extract, "call_parser_llm", _timeout)
@@ -197,7 +197,7 @@ async def test_parser_parse_error_consolidates_to_avoid_loop(booted, monkeypatch
 
     await _seed(booted, "sess-4", [f"m{i}" for i in range(6)])
 
-    async def _bad(batch, *, client=None, model=None):
+    async def _bad(batch, *, client=None, model=None, substrate=None):
         raise extract.ParseError("garbage JSON")
 
     monkeypatch.setattr(extract, "call_parser_llm", _bad)
@@ -218,7 +218,7 @@ async def test_parser_llm_error_leaves_unconsolidated(booted, monkeypatch):
 
     await _seed(booted, "sess-5", [f"m{i}" for i in range(6)])
 
-    async def _err(batch, *, client=None, model=None):
+    async def _err(batch, *, client=None, model=None, substrate=None):
         raise ValueError("provider down")
 
     monkeypatch.setattr(extract, "call_parser_llm", _err)

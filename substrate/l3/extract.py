@@ -97,8 +97,10 @@ def _coerce(data, ) -> PatternResult:
 
 
 async def call_pattern_llm(
-    context: str, *, client=None, model: Optional[str] = None
+    context: str, *, client=None, model: Optional[str] = None, substrate=None
 ) -> PatternResult:
+    from substrate import cost
+
     if not (context or "").strip():
         return PatternResult()
     if client is None:
@@ -111,7 +113,10 @@ async def call_pattern_llm(
     # Tier 1: JSON-schema response_format. Tier fallback: plain prompt.
     raw = ""
     try:
-        resp = await client.chat.completions.create(
+        resp = await cost.acreate_and_record(
+            client,
+            substrate=substrate,
+            agent="pattern-finder",
             model=model,
             messages=[{"role": "user", "content": prompt}],
             response_format={
@@ -122,7 +127,10 @@ async def call_pattern_llm(
         )
         raw = resp.choices[0].message.content or ""
     except Exception:
-        resp = await client.chat.completions.create(
+        resp = await cost.acreate_and_record(
+            client,
+            substrate=substrate,
+            agent="pattern-finder",
             model=model,
             messages=[{
                 "role": "user",

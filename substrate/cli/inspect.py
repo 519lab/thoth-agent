@@ -1017,6 +1017,63 @@ async def _print_health(conn: "asyncpg.Connection") -> None:
         print(f"Consolidation backlog: {ratio:.0%} "
               f"({pend:,} awaiting parse / {pend + done:,} parseable)")
 
+    # 6. Token usage — what the substrate spent running its own sub-agents.
+    # Reads the non-perceptual substrate_agent_cost sink (one row per
+    # auxiliary chat.completions.create, tagged by agent). Missing table on a
+    # pre-cost DB degrades to "no token usage recorded" rather than erroring.
+    await _print_health_token_usage(conn, now)
+
+
+async def _print_health_token_usage(conn: "asyncpg.Connection", now: datetime) -> None:
+    """Token-usage rollup for ``thoth substrate health``: per-agent SUM(total_
+    tokens) + COUNT(*) over the last 1h and 24h, plus an overall 24h total.
+    Best-effort — a missing/empty ``substrate_agent_cost`` prints a clean
+    'no token usage recorded'."""
+    try:
+        rows = await conn.fetch(
+            """
+            SELECT agent,
+                   COALESCE(SUM(total_tokens) FILTER (
+                       WHERE at > now() - interval '1 hour'), 0)::bigint AS tok_1h,
+                   COUNT(*) FILTER (
+                       WHERE at > now() - interval '1 hour')::bigint AS calls_1h,
+                   COALESCE(SUM(total_tokens) FILTER (
+                       WHERE at > now() - interval '24 hours'), 0)::bigint AS tok_24h,
+                   COUNT(*) FILTER (
+                       WHERE at > now() - interval '24 hours')::bigint AS calls_24h
+              FROM substrate_agent_cost
+             WHERE at > now() - interval '24 hours'
+             GROUP BY agent
+             ORDER BY tok_24h DESC, agent ASC
+            """
+        )
+    except Exception:
+        rows = []
+
+    print()
+    print("Token usage:")
+    if not rows:
+        print("  (no token usage recorded)")
+        return
+
+    print(f"  {'agent':22s}  {'1h tokens':>12s}  {'1h calls':>8s}  "
+          f"{'24h tokens':>12s}  {'24h calls':>9s}")
+    total_1h = total_24h = calls_1h_total = calls_24h_total = 0
+    for r in rows:
+        total_1h += r["tok_1h"]
+        total_24h += r["tok_24h"]
+        calls_1h_total += r["calls_1h"]
+        calls_24h_total += r["calls_24h"]
+        print(
+            f"  {r['agent']:22s}  {r['tok_1h']:>12,}  {r['calls_1h']:>8,}  "
+            f"{r['tok_24h']:>12,}  {r['calls_24h']:>9,}"
+        )
+    print("  " + "-" * 70)
+    print(
+        f"  {'TOTAL':22s}  {total_1h:>12,}  {calls_1h_total:>8,}  "
+        f"{total_24h:>12,}  {calls_24h_total:>9,}"
+    )
+
 
 # ---------------------------------------------------------------------------
 # Substrate boot status — reads the state_meta KV rows that

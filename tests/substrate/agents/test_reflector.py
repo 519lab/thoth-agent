@@ -49,7 +49,7 @@ async def test_reflector_writes_l3_and_l4(booted, monkeypatch):
     # Seed L3 material so _build_context has something to reflect on.
     await l3.upsert_pattern("deploys happen on fridays", "theme")
 
-    async def _fake(context, *, client=None, model=None):
+    async def _fake(context, *, client=None, model=None, substrate=None):
         assert "deploys happen" in context
         return ReflectorResult(reflections=[
             Reflection("the agent over-indexes on deploy topics", "l4", "bias", 0.8),
