@@ -57,6 +57,58 @@ _REINFORCE_LRU: dict[UUID, list[float]] = {}
 _REINFORCE_LRU_MAX_SIZE = 1024
 
 
+# ---------------------------------------------------------------------------
+# Coherence-pin cache (Task: pin coherence to recall).
+#
+# When substrate coherence dips, recall raises its relevance floor so only
+# high-confidence context reaches the foreground. Reading the coherence vital
+# sign hits L4, so we cache it behind a short monotonic-clock TTL to keep the
+# recall hot path off that query. Unavailable coherence is treated as 1.0
+# (no pinning) — a missing/erroring read never narrows recall.
+# ---------------------------------------------------------------------------
+
+
+_COHERENCE_CACHE_TTL_S = 30.0
+# (value, monotonic_deadline). ``value`` is the cached coherence in [0,1];
+# 1.0 means "no pinning". Module-level so it's shared across the in-process
+# AIAgent fleet.
+_COHERENCE_CACHE: tuple[float, float] = (1.0, 0.0)
+
+
+async def _cached_coherence() -> float:
+    """Return the latest substrate coherence in [0,1], cached for
+    ``_COHERENCE_CACHE_TTL_S`` against a monotonic clock.
+
+    Unavailable / erroring coherence resolves to 1.0 (no pinning). Uses
+    ``time.monotonic()`` deliberately — wall-clock jumps (NTP / suspend)
+    must not extend or collapse the TTL."""
+    global _COHERENCE_CACHE
+    now = time.monotonic()
+    value, deadline = _COHERENCE_CACHE
+    if now < deadline:
+        return value
+
+    coherence = 1.0
+    try:
+        from substrate.l4 import store as l4
+
+        obs = await l4.latest_coherence()
+        if obs is not None and obs.score is not None:
+            coherence = float(obs.score)
+    except Exception as exc:  # pragma: no cover — defensive
+        _log.debug("recall coherence read failed: %s", exc)
+        coherence = 1.0
+
+    _COHERENCE_CACHE = (coherence, now + _COHERENCE_CACHE_TTL_S)
+    return coherence
+
+
+def _reset_coherence_cache() -> None:
+    """Test hook — drop the cached coherence so the next read re-queries."""
+    global _COHERENCE_CACHE
+    _COHERENCE_CACHE = (1.0, 0.0)
+
+
 def _evict_lru_if_full() -> None:
     """Drop the oldest entry when the LRU dict grows past the cap."""
     if len(_REINFORCE_LRU) <= _REINFORCE_LRU_MAX_SIZE:
@@ -263,15 +315,30 @@ async def recall(
         recency_half_life_hours=_cfg.RECALL_RECENCY_HALF_LIFE_HOURS,
     )
 
+    # 3a0. Coherence pin — when the substrate's self-assessed identity
+    # health dips, raise the relevance floor so only high-confidence
+    # context reaches the foreground (low coherence => thin, precise
+    # recall). ``coherence``/``coherence_floor`` are recorded below so
+    # operators can explain a thin block. Gated behind
+    # RECALL_COHERENCE_PIN (default on); when off, coherence stays 1.0 and
+    # coherence_floor is 0.0 — byte-identical floor to pre-pin behaviour.
+    coherence = 1.0
+    coherence_floor = 0.0
+    if _cfg.RECALL_COHERENCE_PIN:
+        coherence = await _cached_coherence()
+        deficit = max(0.0, 1.0 - coherence)
+        coherence_floor = deficit * _cfg.RECALL_COHERENCE_FLOOR_MAX
+
     # 3a. Relevance floor — precision over volume. Keep only candidates
     # clearing BOTH an absolute floor (drop near-zero) and a relative
     # floor (fraction of the top score — adapts to the semantic/keyword
-    # score regime; the strongest hit always survives). This is what
-    # stops the substrate dumping loosely-related context.
+    # score regime; the strongest hit always survives), plus the
+    # coherence floor (0.0 when the pin is off / coherence is healthy).
+    # This is what stops the substrate dumping loosely-related context.
     if scored:
         top = scored[0].score
         rel_floor = _cfg.RECALL_RELATIVE_FLOOR * top
-        floor = max(_cfg.RECALL_MIN_RELEVANCE, rel_floor)
+        floor = max(_cfg.RECALL_MIN_RELEVANCE, rel_floor, coherence_floor)
         kept = [sc for sc in scored if sc.score >= floor] or scored[:1]
     else:
         kept = []
@@ -368,6 +435,12 @@ async def recall(
             str(c.slice_id): provenance.get(c.slice_id) for c in composed
         },
         candidates_kept=len(ranked),
+        # Coherence pin provenance — lets `recall recent` / `recall validate`
+        # explain a thin block as "coherence was low, floor was raised"
+        # rather than a silent recall miss. Stuffed into the existing
+        # metadata JSON (no DB column / migration).
+        coherence=coherence,
+        coherence_floor=coherence_floor,
     )
     _safe_enqueue_log(
         substrate, t_now, session_id, query, proj, extra_meta, error_text=None,
