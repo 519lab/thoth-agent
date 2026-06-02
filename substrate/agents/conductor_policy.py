@@ -59,6 +59,10 @@ class AdaptiveConductor(SubAgent):
         # rhythm survives restarts — MVS §3.6).
         self._ema: Optional[float] = None
         self._seeded = False
+        # Hysteresis latch for coherence-driven corrective re-prioritization:
+        # trips True below the floor, clears only once coherence recovers to
+        # the (higher) recovery threshold — avoids flapping in the band between.
+        self._coherence_low = False
 
     def forecast(self) -> Optional[float]:
         """The Conductor's current backlog forecast (EMA), or None if it
@@ -87,6 +91,20 @@ class AdaptiveConductor(SubAgent):
         trend_bias = max(-0.2, min(0.2, backlog - prev))
         signals["trend_bias"] = trend_bias
         signals["forecast"] = self._ema
+
+        # Coherence hysteresis: trip the corrective latch below the floor,
+        # clear it only once coherence recovers to the (higher) recovery
+        # threshold. In the band between the two we hold the prior latch
+        # value (no flapping). A None reading leaves the latch untouched.
+        coherence = signals.get("coherence")
+        if coherence is not None:
+            floor = _env_float("THOTH_CONDUCTOR_COHERENCE_FLOOR", 0.5)
+            recovery = _env_float("THOTH_CONDUCTOR_COHERENCE_RECOVERY", 0.6)
+            if coherence < floor:
+                self._coherence_low = True
+            elif coherence >= recovery:
+                self._coherence_low = False
+        signals["coherence_low"] = self._coherence_low
 
         targets = self._compute_targets(signals)
         conductor = getattr(self._substrate, "conductor", None)
@@ -148,11 +166,27 @@ class AdaptiveConductor(SubAgent):
                 """
             )
         denom = row["pending"] + row["done"]
-        return {
+        signals = {
             "pending": row["pending"],
             "consolidated": row["done"],
             "backlog_ratio": (row["pending"] / denom) if denom else 0.0,
         }
+
+        # Coherence vital sign (the Critic's self-assessed identity health).
+        # Drives corrective re-prioritization when it dips below the floor.
+        # Best-effort: a missing/erroring read leaves coherence None and the
+        # backlog policy runs unchanged.
+        coherence: Optional[float] = None
+        try:
+            from substrate.l4 import store as l4
+
+            obs = await l4.latest_coherence()
+            coherence = obs.score if obs else None
+        except Exception:
+            self._log.debug("conductor.read_coherence.failed", exc_info=True)
+            coherence = None
+        signals["coherence"] = coherence
+        return signals
 
     @staticmethod
     def _compute_targets(signals: dict) -> dict[str, Level]:
@@ -161,7 +195,22 @@ class AdaptiveConductor(SubAgent):
         Thresholds on an *effective* backlog = observed backlog + a trend
         bias (rising backlog escalates sooner, falling relaxes sooner). With
         no ``trend_bias`` in signals the bias is 0 and this is the plain
-        deterministic policy."""
+        deterministic policy.
+
+        Coherence override: when the coherence latch is tripped
+        (``coherence_low``), corrective re-prioritization takes precedence
+        over backlog — drive the Parser HIGH and the Critic to MODERATE
+        (re-ground + re-assess identity) and pause enrichment + dreaming so
+        scarce cycles go to recovering coherence first."""
+        if signals.get("coherence_low") is True:
+            return {
+                "parser": Level.HIGH,
+                "critic": Level.MODERATE,
+                "associator": Level.OFF,
+                "pattern-finder": Level.OFF,
+                "dreamer": Level.OFF,
+                "curator": Level.LOW,
+            }
         high = _env_float("CONDUCTOR_BACKLOG_HIGH", 0.5)
         low = _env_float("CONDUCTOR_BACKLOG_LOW", 0.1)
         backlog = signals["backlog_ratio"] + signals.get("trend_bias", 0.0)
@@ -199,6 +248,8 @@ class AdaptiveConductor(SubAgent):
                 event="conductor.dialed",
                 payload={
                     "backlog_ratio": signals["backlog_ratio"],
+                    "coherence": signals.get("coherence"),
+                    "coherence_low": signals.get("coherence_low", False),
                     "targets": {k: v.value for k, v in targets.items()},
                 },
             )

@@ -73,7 +73,9 @@ class PatternFinder(SubAgent):
         timeout_s = _env_int("PATTERNFINDER_TIMEOUT_S", 25)
         try:
             result = await asyncio.wait_for(
-                extract.call_pattern_llm(context, client=client, model=model),
+                extract.call_pattern_llm(
+                    context, client=client, model=model, substrate=self._substrate
+                ),
                 timeout=timeout_s,
             )
         except (asyncio.TimeoutError, extract.PatternError, Exception):

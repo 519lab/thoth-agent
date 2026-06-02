@@ -174,6 +174,22 @@ RECALL_EMBEDDING_BACKFILL_MAX_RETRIES = _envint(
     "HERMES_RECALL_EMBEDDING_BACKFILL_MAX_RETRIES", default=3
 )
 
+# ---------------------------------------------------------------------------
+# Recall coherence-pin knobs. THOTH_-only — nothing depends on these yet, so
+# no back-compat alias is needed. (The Conductor's own coherence thresholds —
+# THOTH_CONDUCTOR_COHERENCE_FLOOR / _RECOVERY — are read inline in
+# conductor_policy.py via its local _env_float, matching how it reads its
+# CONDUCTOR_BACKLOG_* knobs; they intentionally do not live here.)
+# ---------------------------------------------------------------------------
+
+# Recall: pin (always include) the coherence signal in the projection.
+RECALL_COHERENCE_PIN = _envbool("THOTH_RECALL_COHERENCE_PIN", default=True)
+# Recall: cap the coherence floor applied when pinning.
+RECALL_COHERENCE_FLOOR_MAX = _envfloat(
+    "THOTH_RECALL_COHERENCE_FLOOR_MAX", default=0.5
+)
+
+
 # Master toggle for the SubstrateMemoryProvider's prefetch (spec §6.1).
 # Default ON: this fork installs the substrate as the primary memory
 # backend; recall driving the per-turn <memory-context> is the point.
@@ -231,6 +247,8 @@ __all__ = [
     "RECALL_EMBEDDING_BATCH_SIZE",
     "RECALL_EMBEDDING_BACKFILL_INTERVAL_S",
     "RECALL_EMBEDDING_BACKFILL_MAX_RETRIES",
+    "RECALL_COHERENCE_PIN",
+    "RECALL_COHERENCE_FLOOR_MAX",
     "HERMES_SUBSTRATE_RECALL_ENABLED",
     "DEFAULT_RECALL_STREAMS",
 ]

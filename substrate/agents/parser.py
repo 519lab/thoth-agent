@@ -174,7 +174,9 @@ class Parser(SubAgent):
         timeout_s = _env_int("PARSER_TIMEOUT_S", 20)
         try:
             result = await asyncio.wait_for(
-                extract.call_parser_llm(batch, client=client, model=model),
+                extract.call_parser_llm(
+                    batch, client=client, model=model, substrate=self._substrate
+                ),
                 timeout=timeout_s,
             )
         except asyncio.TimeoutError:

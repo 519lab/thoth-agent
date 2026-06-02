@@ -107,10 +107,16 @@ async def evaluate_skill(
     *,
     client=None,
     model: Optional[str] = None,
+    substrate=None,
 ) -> Optional[Verdict]:
     """Judge a drafted ``SKILL.md``. Returns ``None`` when no evaluator client is
     configured or the call/parse fails (caller degrades gracefully — the skill
-    is simply un-vetted, never auto-approved). Never raises."""
+    is simply un-vetted, never auto-approved). Never raises.
+
+    ``substrate`` (optional) threads through to the create site so per-agent
+    token usage is recorded; ``None`` skips recording (back-compatible)."""
+    from substrate import cost
+
     if not (skill_md or "").strip():
         return None
     if client is None:
@@ -122,7 +128,10 @@ async def evaluate_skill(
 
     raw = ""
     try:
-        resp = await client.chat.completions.create(
+        resp = await cost.acreate_and_record(
+            client,
+            substrate=substrate,
+            agent="skill_evaluator",
             model=model,
             messages=[{"role": "user", "content": prompt}],
             response_format={
@@ -134,7 +143,10 @@ async def evaluate_skill(
         raw = resp.choices[0].message.content or ""
     except Exception:
         try:
-            resp = await client.chat.completions.create(
+            resp = await cost.acreate_and_record(
+                client,
+                substrate=substrate,
+                agent="skill_evaluator",
                 model=model,
                 messages=[{
                     "role": "user",

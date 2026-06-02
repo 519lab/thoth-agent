@@ -164,3 +164,142 @@ async def test_recall_floor_drops_loosely_related(booted, monkeypatch):
     assert len(proj.composed) < proj.candidates_seen
     # The relevant content survived.
     assert "kubernetes deployment" in proj.text
+
+
+# ---------------------------------------------------------------------------
+# recall() coherence pin — low coherence raises the relevance floor so only
+# high-confidence context reaches the foreground.
+# ---------------------------------------------------------------------------
+
+
+def _capture_recall_meta(monkeypatch):
+    """Spy on the recall-log enqueue so tests can read the provenance
+    metadata recall() records (coherence + coherence_floor). Returns a
+    list that fills with the final-call metadata dict."""
+    from substrate.recall import api
+
+    captured: list[dict] = []
+    real = api._safe_enqueue_log
+
+    def _spy(substrate, t_now, session_id, query, proj, metadata, **kw):
+        if metadata is not None:
+            captured.append(dict(metadata))
+        return real(substrate, t_now, session_id, query, proj, metadata, **kw)
+
+    monkeypatch.setattr(api, "_safe_enqueue_log", _spy)
+    return captured
+
+
+@pytest.fixture(autouse=True)
+def _reset_coherence_cache():
+    from substrate.recall import api
+
+    api._reset_coherence_cache()
+    yield
+    api._reset_coherence_cache()
+
+
+@pytest.mark.asyncio
+async def test_recall_low_coherence_raises_floor(booted, monkeypatch):
+    """When coherence is low and the pin is on, recall derives a coherence
+    floor of deficit * RECALL_COHERENCE_FLOOR_MAX and records it."""
+    import substrate.config as cfg
+    from substrate.recall import api
+
+    monkeypatch.setattr(cfg, "RECALL_INCLUDE_L1", False)
+    monkeypatch.setattr(cfg, "RECALL_COHERENCE_PIN", True)
+    monkeypatch.setattr(cfg, "RECALL_COHERENCE_FLOOR_MAX", 0.5)
+
+    async def _low(*_a, **_k):
+        return 0.2  # deficit 0.8 -> coherence_floor 0.4
+
+    monkeypatch.setattr(api, "_cached_coherence", _low)
+    meta = _capture_recall_meta(monkeypatch)
+
+    await _seed(booted, "the postgres migration is in progress", salience=0.9)
+    await recall(booted, "postgres migration")
+
+    assert meta, "recall did not enqueue a log row"
+    last = meta[-1]
+    assert last["coherence"] == pytest.approx(0.2)
+    # deficit 0.8 * floor_max 0.5 = 0.4 — the raised relevance floor.
+    assert last["coherence_floor"] == pytest.approx(0.4)
+
+
+@pytest.mark.asyncio
+async def test_recall_pin_disabled_floor_unchanged(booted, monkeypatch):
+    """With the pin off, coherence is never read and the coherence floor is
+    0.0 (byte-identical to pre-pin behaviour)."""
+    import substrate.config as cfg
+    from substrate.recall import api
+
+    monkeypatch.setattr(cfg, "RECALL_INCLUDE_L1", False)
+    monkeypatch.setattr(cfg, "RECALL_COHERENCE_PIN", False)
+
+    called = {"n": 0}
+
+    async def _spy(*_a, **_k):
+        called["n"] += 1
+        return 0.0
+
+    monkeypatch.setattr(api, "_cached_coherence", _spy)
+    meta = _capture_recall_meta(monkeypatch)
+
+    await _seed(booted, "the postgres migration is in progress", salience=0.9)
+    await recall(booted, "postgres migration")
+
+    # Pin off => coherence read is skipped entirely.
+    assert called["n"] == 0
+    # coherence defaults to 1.0, coherence_floor is 0.0 → no floor lift.
+    assert meta
+    last = meta[-1]
+    assert last["coherence"] == pytest.approx(1.0)
+    assert last["coherence_floor"] == pytest.approx(0.0)
+
+
+@pytest.mark.asyncio
+async def test_recall_coherence_unavailable_no_pinning(booted, monkeypatch):
+    """When the coherence read is missing, _cached_coherence resolves to 1.0
+    → deficit 0 → coherence_floor 0.0 (no pinning)."""
+    import substrate.config as cfg
+    from substrate.recall import api
+
+    monkeypatch.setattr(cfg, "RECALL_INCLUDE_L1", False)
+    monkeypatch.setattr(cfg, "RECALL_COHERENCE_PIN", True)
+
+    async def _missing(*_a, **_k):
+        return None  # no coherence observation yet
+
+    # Drive the real _cached_coherence through a missing observation by
+    # patching latest_coherence at its import site.
+    from substrate.l4 import store as l4
+    monkeypatch.setattr(l4, "latest_coherence", _missing)
+    api._reset_coherence_cache()
+
+    coherence = await api._cached_coherence()
+    assert coherence == 1.0  # unavailable -> no pinning
+
+    meta = _capture_recall_meta(monkeypatch)
+    await _seed(booted, "the postgres migration is in progress", salience=0.9)
+    await recall(booted, "postgres migration")
+
+    # coherence 1.0 => coherence_floor 0.0 => floor never lifted by the pin.
+    assert meta
+    last = meta[-1]
+    assert last["coherence"] == pytest.approx(1.0)
+    assert last["coherence_floor"] == pytest.approx(0.0)
+
+
+@pytest.mark.asyncio
+async def test_cached_coherence_swallows_errors(monkeypatch):
+    """A raising coherence read resolves to 1.0 (no pinning) — recall must
+    never narrow because the L4 query hiccupped."""
+    from substrate.recall import api
+    from substrate.l4 import store as l4
+
+    async def _boom(*_a, **_k):
+        raise RuntimeError("l4 down")
+
+    monkeypatch.setattr(l4, "latest_coherence", _boom)
+    api._reset_coherence_cache()
+    assert await api._cached_coherence() == 1.0

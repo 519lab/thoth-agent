@@ -85,6 +85,32 @@ async def test_conductor_intensity_off_is_noop(booted, monkeypatch):
     assert booted.conductor.snapshot() == {}
 
 
+def test_compute_targets_coherence_low_overrides_backlog():
+    """A tripped coherence latch drives the corrective dial regardless of
+    backlog — Parser HIGH, Critic MODERATE, enrichment + dreamer OFF."""
+    # Quiet backlog but coherence latch tripped → corrective, not baseline.
+    corrective = AdaptiveConductor._compute_targets(
+        {"backlog_ratio": 0.0, "coherence_low": True}
+    )
+    assert corrective["parser"] is Level.HIGH
+    assert corrective["critic"] is Level.MODERATE
+    assert corrective["associator"] is Level.OFF
+    assert corrective["pattern-finder"] is Level.OFF
+    assert corrective["dreamer"] is Level.OFF
+    assert corrective["curator"] is Level.LOW
+
+
+def test_compute_targets_coherence_not_low_falls_through_to_backlog():
+    """coherence_low False (or absent) leaves the backlog policy unchanged —
+    no Critic/Dreamer keys are introduced."""
+    base = AdaptiveConductor._compute_targets(
+        {"backlog_ratio": 0.0, "coherence_low": False}
+    )
+    assert base["parser"] is Level.LOW
+    assert "critic" not in base
+    assert "dreamer" not in base
+
+
 def test_trend_bias_escalates_sooner():
     """A rising-backlog trend pushes the effective backlog over the HIGH
     threshold even when raw backlog is just below it."""
@@ -124,3 +150,77 @@ async def test_conductor_seeds_forecast_from_log(booted, monkeypatch):
     c = AdaptiveConductor(booted)
     await c._seed_forecast()
     assert c.forecast() == pytest.approx(0.65)  # resumed the learned rhythm
+
+
+async def _set_coherence(score):
+    """Write the current coherence vital sign so latest_coherence() reads it."""
+    from substrate.l4 import store as l4
+
+    await l4.upsert_coherence(f"coherence {score:.2f}", score=score)
+
+
+@pytest.mark.asyncio
+async def test_conductor_coherence_below_floor_dials_corrective(booted, monkeypatch):
+    """Coherence below the floor trips the latch → corrective dial overrides
+    backlog (Parser HIGH, Critic MODERATE, Dreamer OFF) even when quiet."""
+    monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
+    monkeypatch.setenv("THOTH_CONDUCTOR_COHERENCE_FLOOR", "0.5")
+    monkeypatch.setenv("THOTH_CONDUCTOR_COHERENCE_RECOVERY", "0.6")
+    # No backlog (no pending slices) → would otherwise be baseline LOW.
+    await _set_coherence(0.3)
+    c = AdaptiveConductor(booted)
+    await c.tick()
+
+    assert c._coherence_low is True
+    snap = booted.conductor.snapshot()
+    assert snap["parser"] is Level.HIGH
+    assert snap["critic"] is Level.MODERATE
+    assert snap["dreamer"] is Level.OFF
+    assert snap["associator"] is Level.OFF
+
+
+@pytest.mark.asyncio
+async def test_conductor_coherence_hysteresis(booted, monkeypatch):
+    """Latch stays tripped in the band between floor and recovery, and only
+    clears once coherence reaches the recovery threshold."""
+    monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
+    monkeypatch.setenv("THOTH_CONDUCTOR_COHERENCE_FLOOR", "0.5")
+    monkeypatch.setenv("THOTH_CONDUCTOR_COHERENCE_RECOVERY", "0.6")
+    c = AdaptiveConductor(booted)
+
+    # Below floor → trips.
+    await _set_coherence(0.3)
+    await c.tick()
+    assert c._coherence_low is True
+
+    # In the band [floor, recovery) → stays low (no flap).
+    await _set_coherence(0.55)
+    await c.tick()
+    assert c._coherence_low is True
+    assert booted.conductor.snapshot()["critic"] is Level.MODERATE
+
+    # At/above recovery → clears.
+    await _set_coherence(0.6)
+    await c.tick()
+    assert c._coherence_low is False
+    # Back to backlog policy (no backlog → baseline LOW, no critic key pushed).
+    assert booted.conductor.snapshot()["parser"] is Level.LOW
+
+
+@pytest.mark.asyncio
+async def test_conductor_coherence_none_leaves_backlog_policy(booted, monkeypatch):
+    """No coherence observation → latch untouched, backlog policy unchanged."""
+    monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
+    monkeypatch.setenv("CONDUCTOR_BACKLOG_HIGH", "0.5")
+    # No coherence row written. Heavy backlog → normal HIGH catch-up policy.
+    await _seed_pending(booted, 8)
+    c = AdaptiveConductor(booted)
+    await c.tick()
+
+    assert c._coherence_low is False
+    snap = booted.conductor.snapshot()
+    assert snap["parser"] is Level.HIGH
+    assert snap["associator"] is Level.OFF
+    # Corrective-only keys must not appear under the plain backlog policy.
+    assert "critic" not in snap
+    assert "dreamer" not in snap
