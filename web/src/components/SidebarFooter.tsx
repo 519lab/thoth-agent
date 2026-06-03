@@ -23,7 +23,7 @@ export function SidebarFooter() {
       </Typography>
 
       <a
-        href="https://nousresearch.com"
+        href="https://519lab.com"
         target="_blank"
         rel="noopener noreferrer"
         className={cn(

@@ -149,7 +149,7 @@ export async function performHeapDump(trigger: MemoryTrigger = 'manual'): Promis
 
     await mkdir(dir, { recursive: true })
 
-    const base = `hermes-${new Date().toISOString().replace(/[:.]/g, '-')}-${process.pid}-${trigger}`
+    const base = `thoth-${new Date().toISOString().replace(/[:.]/g, '-')}-${process.pid}-${trigger}`
     const heapPath = join(dir, `${base}.heapsnapshot`)
     const diagPath = join(dir, `${base}.diagnostics.json`)
 

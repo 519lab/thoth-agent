@@ -1,7 +1,7 @@
 """L1 storage helpers — async PG read/write over the ``l1_*`` tables.
 
 Module-level async functions (not a repo class) per the Phase D spec §2,
-sharing the Hermes ``hermes_db`` pool. Every function accepts an optional
+sharing the Thoth ``hermes_db`` pool. Every function accepts an optional
 ``conn=`` so a transactional caller (the Parser's consolidation handshake)
 can run the whole write — entities, relationships, citations, and the
 ``substrate_slices`` flip — inside one transaction.

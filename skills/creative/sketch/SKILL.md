@@ -2,7 +2,7 @@
 name: sketch
 description: "Throwaway HTML mockups: 2-3 design variants to compare."
 version: 1.0.0
-author: Hermes Agent (adapted from gsd-build/get-shit-done)
+author: Thoth Agent (adapted from gsd-build/get-shit-done)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -85,7 +85,7 @@ Each variant is a **single self-contained HTML file**:
 
 Open it in a browser. If it looks broken, fix it before showing the user.
 
-**Verify variants visually — use Hermes' browser tools.** Don't just write HTML and hope it renders; load each variant and look at it:
+**Verify variants visually — use Thoth' browser tools.** Don't just write HTML and hope it renders; load each variant and look at it:
 
 ```
 browser_navigate(url="file:///absolute/path/to/sketches/001-calm-editorial/index.html")

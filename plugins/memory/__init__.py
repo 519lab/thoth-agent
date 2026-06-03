@@ -2,7 +2,7 @@
 
 Scans two directories for memory provider plugins:
 
-1. Bundled providers: ``plugins/memory/<name>/`` (shipped with hermes-agent)
+1. Bundled providers: ``plugins/memory/<name>/`` (shipped with thoth-agent)
 2. User-installed providers: ``$HERMES_HOME/plugins/<name>/``
 
 Each subdirectory must contain ``__init__.py`` with a class implementing

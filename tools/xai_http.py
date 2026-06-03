@@ -77,7 +77,7 @@ def resolve_xai_http_credentials(*, force_refresh: bool = False) -> Dict[str, st
 
     Prefers Thoth-managed xAI OAuth credentials when available, then falls back
     to ``XAI_API_KEY`` resolved via ``hermes_cli.config.get_env_value`` so keys
-    stored in ``~/.hermes/.env`` (the standard Hermes location) are honored —
+    stored in ``~/.hermes/.env`` (the standard Thoth location) are honored —
     not just ones already exported into ``os.environ``. This keeps direct xAI
     endpoints (images, TTS, STT, etc.) aligned with the main runtime auth model
     and preserves the regression contract from PR #17140 / #17163.

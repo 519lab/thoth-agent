@@ -1,15 +1,15 @@
 #!/bin/bash
 # ============================================================================
-# Hermes Agent installer
+# Thoth Agent installer
 # ============================================================================
-# Hermes uses PostgreSQL 17 + pgvector for all state (session transcripts,
+# Thoth uses PostgreSQL 17 + pgvector for all state (session transcripts,
 # kanban, substrate slices). No SQLite.
 #
 # Defaults:
 #
 #   - INSTALL_DIR:  ~/.hermes/hermes-agent
 #   - HERMES_HOME:  ~/.hermes
-#   - CLI command:  hermes
+#   - CLI command:  thoth
 #   - PostgreSQL:   docker compose service on port 5432, db `hermes`
 #
 # If you are installing on a machine that already has an upstream
@@ -134,7 +134,7 @@ while [[ $# -gt 0 ]]; do
         --force-rewrite-config) FORCE_REWRITE_CONFIG=true; shift ;;
         -h|--help)
             cat <<HELP_EOF
-Hermes Agent installer
+Thoth Agent installer
 
 Usage: install.sh [OPTIONS]
 
@@ -162,9 +162,9 @@ Options:
                         default: ~/.hermes
                         (Override env: HERMES_HOME)
   --cli-name NAME     Name for the CLI shim
-                        default: hermes
-                        Pass a different name (e.g. hermes-substrate) to
-                        coexist with another Hermes install on the same machine.
+                        default: thoth
+                        Pass a different name (e.g. thoth-substrate) to
+                        coexist with another Thoth install on the same machine.
                         (Override env: THOTH_CLI_NAME)
   --pg-dsn URL        PostgreSQL DSN to use
                         default: postgresql://hermes:hermes@localhost:5432/hermes
@@ -205,7 +205,7 @@ print_banner() {
     echo ""
     echo -e "${MAGENTA}${BOLD}"
     echo "┌─────────────────────────────────────────────────────────┐"
-    echo "│   ⚕ Hermes Agent                                        │"
+    echo "│   ⚕ Thoth Agent                                         │"
     echo "└─────────────────────────────────────────────────────────┘"
     echo -e "${NC}"
 }
@@ -344,14 +344,14 @@ get_hermes_command_path() {
 #
 #   1. ``$HERMES_HOME`` already contains a directory that's NOT one of
 #      ours (no ``.hermes_install`` marker file).
-#   2. An existing ``hermes`` on PATH resolves to a different real file
+#   2. An existing ``thoth`` on PATH resolves to a different real file
 #      than the one we're about to write. ``command -v`` plus
 #      ``readlink -f`` canonicalize both sides so re-installing the
 #      same launcher from a path that includes ``~`` vs ``/home/user``
 #      vs a symlinked dir compares equal and the check stays quiet.
 #
 # When neither check fires (which is the common case — first-time install
-# OR a re-install of the same Hermes), the function exits silently.
+# OR a re-install of the same Thoth), the function exits silently.
 warn_upstream_collision() {
     local hermes_home_dir="$HOME/.hermes"
     local saw_collision=false
@@ -439,8 +439,8 @@ install_uv() {
     fi
     log_info "Installing uv (fast Python package manager)..."
     local _log _inst
-    _log="$(mktemp 2>/dev/null || echo "/tmp/hermes-uv-install.$$.log")"
-    _inst="$(mktemp 2>/dev/null || echo "/tmp/hermes-uv-installer.$$.sh")"
+    _log="$(mktemp 2>/dev/null || echo "/tmp/thoth-uv-install.$$.log")"
+    _inst="$(mktemp 2>/dev/null || echo "/tmp/thoth-uv-installer.$$.sh")"
     if ! curl -LsSf https://astral.sh/uv/install.sh -o "$_inst" 2>"$_log"; then
         log_error "Failed to download uv installer"; sed 's/^/    /' "$_log" >&2
         rm -f "$_log" "$_inst"; exit 1
@@ -526,7 +526,7 @@ check_docker() {
     log_info "Checking Docker (for PostgreSQL)..."
     if ! command -v docker >/dev/null 2>&1; then
         log_error "Docker not found"
-        log_info "Hermes needs PostgreSQL. Install Docker Desktop or Docker Engine, then re-run."
+        log_info "Thoth needs PostgreSQL. Install Docker Desktop or Docker Engine, then re-run."
         case "$OS" in
             linux)   log_info "  https://docs.docker.com/engine/install/" ;;
             macos)   log_info "  https://docs.docker.com/desktop/install/mac-install/" ;;
@@ -740,7 +740,7 @@ clone_repo() {
             cd "$INSTALL_DIR"
             local autostash_ref=""
             if [ -n "$(git status --porcelain)" ]; then
-                local stash_name="hermes-install-autostash-$(date -u +%Y%m%d-%H%M%S)"
+                local stash_name="thoth-install-autostash-$(date -u +%Y%m%d-%H%M%S)"
                 log_info "Local changes detected, stashing before update..."
                 git stash push --include-untracked -m "$stash_name"
                 autostash_ref="stash@{0}"
@@ -914,7 +914,7 @@ verify_core_deps() {
 #     prefixed name varies) BEFORE compose-up, so the install starts from
 #     a genuinely clean database.
 _warn_or_reset_pg_volume() {
-    # $1 (optional): name of the existing, still-running Hermes pg container,
+    # $1 (optional): name of the existing, still-running Thoth pg container,
     # used only to probe the inherited alembic_version before we tear it down.
     local probe_container="${1:-}"
     # Resolve the compose-prefixed volume name. `docker compose` knows the
@@ -1191,7 +1191,7 @@ setup_path() {
     fi
     cat > "$link_dir/$CLI_NAME" <<EOF
 #!/usr/bin/env bash
-# Launcher generated by Hermes Substrate installer.
+# Launcher generated by Thoth Substrate installer.
 # Do not edit by hand — re-run install.sh to regenerate.
 unset PYTHONPATH
 unset PYTHONHOME
@@ -1223,7 +1223,7 @@ EOF
         for cfg in "$HOME/.bashrc" "$HOME/.bash_profile"; do
             [ -f "$cfg" ] || continue
             grep -v '^[[:space:]]*#' "$cfg" 2>/dev/null | grep -qE 'PATH=.*(/usr/local/bin|\$link_dir)' || {
-                printf '\n# Hermes Substrate — ensure /usr/local/bin is on PATH\n%s\n' "$PATH_LINE" >> "$cfg"
+                printf '\n# Thoth Substrate — ensure /usr/local/bin is on PATH\n%s\n' "$PATH_LINE" >> "$cfg"
                 log_success "Added /usr/local/bin to $cfg"
             }
         done
@@ -1246,7 +1246,7 @@ EOF
                 mkdir -p "$(dirname "$FISH_CONFIG")"
                 touch "$FISH_CONFIG"
                 grep -q 'fish_add_path.*\.local/bin' "$FISH_CONFIG" || {
-                    printf '\n# Hermes Substrate — ensure ~/.local/bin is on PATH\nfish_add_path "$HOME/.local/bin"\n' >> "$FISH_CONFIG"
+                    printf '\n# Thoth Substrate — ensure ~/.local/bin is on PATH\nfish_add_path "$HOME/.local/bin"\n' >> "$FISH_CONFIG"
                     log_success "Added ~/.local/bin to $FISH_CONFIG"
                 }
                 ;;
@@ -1257,7 +1257,7 @@ EOF
         local cfg
         for cfg in "${cfgs[@]}"; do
             grep -v '^[[:space:]]*#' "$cfg" 2>/dev/null | grep -qE 'PATH=.*\.local/bin' || {
-                printf '\n# Hermes Substrate — ensure ~/.local/bin is on PATH\n%s\n' "$PATH_LINE" >> "$cfg"
+                printf '\n# Thoth Substrate — ensure ~/.local/bin is on PATH\n%s\n' "$PATH_LINE" >> "$cfg"
                 log_success "Added ~/.local/bin to $cfg"
             }
         done
@@ -1357,11 +1357,11 @@ copy_config_templates() {
 
     if [ ! -f "$HERMES_HOME/SOUL.md" ]; then
         cat > "$HERMES_HOME/SOUL.md" <<'SOUL_EOF'
-# Hermes Agent Persona
+# Thoth Agent Persona
 
 <!--
 This file defines the agent's personality and tone.
-Edit to customize how Hermes communicates with you.
+Edit to customize how Thoth communicates with you.
 Loaded fresh each message — no restart needed.
 -->
 SOUL_EOF
@@ -1555,7 +1555,7 @@ setup_substrate_worker_service() {
     # Choose scope: system mode (FHS layout, root install) vs user mode.
     local scope=""
     local unit_dir=""
-    local unit_name="hermes-substrate-worker.service"
+    local unit_name="thoth-substrate-worker.service"
     if [ "$ROOT_FHS_LAYOUT" = true ]; then
         scope="--system"
         unit_dir="/etc/systemd/system"
@@ -1589,7 +1589,7 @@ setup_substrate_worker_service() {
     mkdir -p "$unit_dir"
     local unit_path="$unit_dir/$unit_name"
 
-    # Render the unit. We don't copy ``scripts/hermes-substrate-worker.service``
+    # Render the unit. We don't copy ``scripts/thoth-substrate-worker.service``
     # verbatim because that file uses ``%h`` (systemd home substitution)
     # which only works for ``--user`` units AND assumes the standard
     # install layout — operators with custom ``--hermes-home`` /
@@ -1612,7 +1612,7 @@ setup_substrate_worker_service() {
 
     cat > "$unit_path" <<UNIT
 [Unit]
-# Hermes substrate sub-agent worker. Installed by install.sh; do NOT
+# Thoth substrate sub-agent worker. Installed by install.sh; do NOT
 # hand-edit (your changes will be overwritten on the next install
 # run). For local overrides use a drop-in at
 # ${unit_path}.d/override.conf
@@ -1622,11 +1622,11 @@ setup_substrate_worker_service() {
 # pool + event loop (no cross-loop contention — see
 # substrate/cli/worker.py for the 2026-05-26 incident).
 
-Description=Hermes Substrate Sub-Agent Worker (Sentinel, Curator, etc.)
+Description=Thoth Substrate Sub-Agent Worker (Sentinel, Curator, etc.)
 Documentation=https://github.com/519lab/thoth-agent#substrate
 After=network-online.target
 Wants=network-online.target
-After=hermes-gateway.service
+After=thoth-gateway.service
 
 [Service]
 Type=simple
@@ -1730,9 +1730,9 @@ print_success() {
         local _wscope="--user"
         if [ "$ROOT_FHS_LAYOUT" = true ]; then _wscope="--system"; fi
         echo -e "${CYAN}${BOLD}🧠 Substrate worker (Sentinel + Curator):${NC}"
-        echo -e "   systemctl $_wscope status hermes-substrate-worker"
-        echo -e "   journalctl $_wscope -u hermes-substrate-worker -f"
-        echo -e "   systemctl $_wscope restart hermes-substrate-worker"
+        echo -e "   systemctl $_wscope status thoth-substrate-worker"
+        echo -e "   journalctl $_wscope -u thoth-substrate-worker -f"
+        echo -e "   systemctl $_wscope restart thoth-substrate-worker"
         echo ""
     fi
 
@@ -1744,9 +1744,9 @@ print_success() {
     echo -e "   ${GREEN}$CLI_NAME gateway install${NC}    Background gateway service (messaging + cron)"
     echo ""
 
-    if [ "$CLI_NAME" != "hermes" ]; then
+    if [ "$CLI_NAME" != "thoth" ]; then
         echo -e "${BLUE}ℹ${NC}  Installed as ${BOLD}$CLI_NAME${NC} to avoid colliding with any existing upstream"
-        echo "    Hermes install. Pass ${BOLD}--cli-name hermes${NC} on a clean machine to use the natural name."
+        echo "    Hermes install. Pass ${BOLD}--cli-name thoth${NC} on a clean machine to use the natural name."
         echo ""
     fi
 

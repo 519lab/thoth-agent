@@ -332,7 +332,7 @@ class AIAgent:
     """
 
     _TOOL_CALL_ARGUMENTS_CORRUPTION_MARKER = (
-        "[hermes-agent: tool call arguments were corrupted in this session and "
+        "[thoth-agent: tool call arguments were corrupted in this session and "
         "have been dropped to keep the conversation alive. See issue #15236.]"
     )
 
@@ -4259,10 +4259,10 @@ def main(
 
 def _cli_main():
     """Console-script entry point — dispatches argv through ``fire`` so that
-    ``hermes-agent --help`` / ``hermes-agent --query 'foo'`` work.
+    ``thoth-agent --help`` / ``thoth-agent --query 'foo'`` work.
 
     Setuptools' generated stub calls the console_scripts function with no
-    arguments; without this wrapper, ``hermes-agent --help`` would run
+    arguments; without this wrapper, ``thoth-agent --help`` would run
     ``main()`` with kwargs at defaults, then crash on the first thing that
     expects a configured LLM provider (instead of just printing help).
     Calling ``main()`` programmatically from Python still works the same

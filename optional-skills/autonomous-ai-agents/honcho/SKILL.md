@@ -1,8 +1,8 @@
 ---
 name: honcho
-description: Configure and use Honcho memory with Hermes -- cross-session user modeling, multi-profile peer isolation, observation config, dialectic reasoning, session summaries, and context budget enforcement. Use when setting up Honcho, troubleshooting memory, managing profiles with Honcho peers, or tuning observation, recall, and dialectic settings.
+description: Configure and use Honcho memory with Thoth -- cross-session user modeling, multi-profile peer isolation, observation config, dialectic reasoning, session summaries, and context budget enforcement. Use when setting up Honcho, troubleshooting memory, managing profiles with Honcho peers, or tuning observation, recall, and dialectic settings.
 version: 2.0.0
-author: Hermes Agent
+author: Thoth Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -14,9 +14,9 @@ prerequisites:
   pip: [honcho-ai]
 ---
 
-# Honcho Memory for Hermes
+# Honcho Memory for Thoth
 
-Honcho provides AI-native cross-session user modeling. It learns who the user is across conversations and gives every Hermes profile its own peer identity while sharing a unified view of the user.
+Honcho provides AI-native cross-session user modeling. It learns who the user is across conversations and gives every Thoth profile its own peer identity while sharing a unified view of the user.
 
 ## When to Use
 
@@ -59,7 +59,7 @@ When Honcho injects context into the system prompt (in `hybrid` or `context` rec
 
 1. **Session summary** -- a short digest of the current session so far (placed first so the model has immediate conversational continuity)
 2. **User representation** -- Honcho's accumulated model of the user (preferences, facts, patterns)
-3. **AI peer card** -- the identity card for this Hermes profile's AI peer
+3. **AI peer card** -- the identity card for this Thoth profile's AI peer
 
 The session summary is generated automatically by Honcho at the start of each turn (when a prior session exists). It gives the model a warm start without replaying full history.
 
@@ -76,10 +76,10 @@ You do not need to configure this -- it is automatic based on session state.
 
 ### Peers
 
-Honcho models conversations as interactions between **peers**. Hermes creates two peers per session:
+Honcho models conversations as interactions between **peers**. Thoth creates two peers per session:
 
 - **User peer** (`peerName`): represents the human. Honcho builds a user representation from observed messages.
-- **AI peer** (`aiPeer`): represents this Hermes instance. Each profile gets its own AI peer so agents develop independent views.
+- **AI peer** (`aiPeer`): represents this Thoth instance. Each profile gets its own AI peer so agents develop independent views.
 
 ### Observation
 
@@ -120,7 +120,7 @@ Honcho sessions scope where messages and observations land. Strategy options:
 |----------|----------|
 | `per-directory` (default) | One session per working directory |
 | `per-repo` | One session per git repository root |
-| `per-session` | New Honcho session each Hermes run |
+| `per-session` | New Honcho session each Thoth run |
 | `global` | Single session across all directories |
 
 Manual override: `hermes honcho map my-project-name`
@@ -196,7 +196,7 @@ Higher levels produce richer synthesis but cost more tokens on Honcho's backend.
 
 ## Multi-Profile Setup
 
-Each Hermes profile gets its own Honcho AI peer while sharing the same workspace (user context). This means:
+Each Thoth profile gets its own Honcho AI peer while sharing the same workspace (user context). This means:
 
 - All profiles see the same user representation
 - Each profile builds its own AI identity and observations
@@ -288,7 +288,7 @@ honcho_conclude delete_id="abc123"    # PII removal
 
 ## Agent Usage Patterns
 
-Guidelines for Hermes when Honcho memory is active.
+Guidelines for Thoth when Honcho memory is active.
 
 ### On conversation start
 
@@ -424,8 +424,8 @@ Session summary requires at least one prior turn in the current Honcho session. 
 | `hermes honcho sessions` | List known directory-to-session-name mappings |
 | `hermes honcho map <name>` | Map current working directory to a Honcho session name |
 | `hermes honcho identity` | Seed AI peer identity or show both peer representations |
-| `hermes honcho sync` | Create host blocks for all Hermes profiles that don't have one yet |
-| `hermes honcho migrate` | Step-by-step migration guide from OpenClaw native memory to Hermes + Honcho |
+| `hermes honcho sync` | Create host blocks for all Thoth profiles that don't have one yet |
+| `hermes honcho migrate` | Step-by-step migration guide from OpenClaw native memory to Thoth + Honcho |
 | `hermes memory setup` | Generic memory provider picker (selecting "honcho" runs the same wizard) |
 | `hermes memory status` | Show active memory provider and config |
 | `hermes memory off` | Disable external memory provider |

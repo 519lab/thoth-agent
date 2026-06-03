@@ -1,8 +1,8 @@
-# Hermes-Agent PR #30035 — Bitwarden Secrets Manager Integration
+# Thoth-Agent PR #30035 — Bitwarden Secrets Manager Integration
 
 ## Hero
 **ONE TOKEN, EVERY KEY**
-Rotate once. Every Hermes process picks it up on next start.
+Rotate once. Every Thoth process picks it up on next start.
 `secrets.bitwarden.override_existing: true` (default)
 
 ## Cells
@@ -15,14 +15,14 @@ Rotate once. Every Hermes process picks it up on next start.
 - Cross-platform: linux gnu+musl, macos universal, windows x86_64+arm64
 
 ### CLI Surface
-- `hermes secrets bitwarden setup`     wizard
-- `hermes secrets bitwarden status`    diagnose
-- `hermes secrets bitwarden sync`      dry-run / --apply
-- `hermes secrets bitwarden install`   binary only
-- `hermes secrets bitwarden disable`   off switch
+- `thoth secrets bitwarden setup`     wizard
+- `thoth secrets bitwarden status`    diagnose
+- `thoth secrets bitwarden sync`      dry-run / --apply
+- `thoth secrets bitwarden install`   binary only
+- `thoth secrets bitwarden disable`   off switch
 
 ### Source of Truth
-- Bitwarden WINS on every Hermes start
+- Bitwarden WINS on every Thoth start
 - BSM values overwrite stale `.env` lines
 - Rotate a key once → all your machines reload it
 - Bootstrap token `BWS_ACCESS_TOKEN` is the lone exception (never overwritten)

@@ -2,7 +2,7 @@
 
 Provider profiles can live in two places:
 
-1. Bundled plugins: ``plugins/model-providers/<name>/`` (shipped with hermes-agent)
+1. Bundled plugins: ``plugins/model-providers/<name>/`` (shipped with thoth-agent)
 2. User plugins: ``$HERMES_HOME/plugins/model-providers/<name>/``
 
 Each plugin directory contains:
@@ -153,7 +153,7 @@ def _discover_providers() -> None:
         return
     _discovered = True
 
-    # 1. Bundled plugins — shipped with hermes-agent.
+    # 1. Bundled plugins — shipped with thoth-agent.
     if _BUNDLED_PLUGINS_DIR.is_dir():
         for child in sorted(_BUNDLED_PLUGINS_DIR.iterdir()):
             if not child.is_dir() or child.name.startswith(("_", ".")):

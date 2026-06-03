@@ -2,7 +2,7 @@
 name: requesting-code-review
 description: "Pre-commit review: security scan, quality gates, auto-fix."
 version: 2.0.0
-author: Hermes Agent (adapted from obra/superpowers + MorAlekss)
+author: Thoth Agent (adapted from obra/superpowers + MorAlekss)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

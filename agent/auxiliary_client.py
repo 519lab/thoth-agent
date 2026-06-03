@@ -373,7 +373,7 @@ def build_or_headers(or_config: dict | None = None) -> dict:
 # NVIDIA NIM cloud billing attribution.  Keep this host-gated because the
 # nvidia provider also supports local/on-prem NIM endpoints via NVIDIA_BASE_URL.
 _NVIDIA_NIM_CLOUD_HEADERS = {
-    "X-BILLING-INVOKE-ORIGIN": "HermesAgent",
+    "X-BILLING-INVOKE-ORIGIN": "ThothAgent",
 }
 
 
@@ -391,7 +391,7 @@ from hermes_cli import __version__ as _HERMES_VERSION
 _AI_GATEWAY_HEADERS = {
     "HTTP-Referer": "https://thoth.519lab.com",
     "X-Title": "Thoth Agent",
-    "User-Agent": f"HermesAgent/{_HERMES_VERSION}",
+    "User-Agent": f"ThothAgent/{_HERMES_VERSION}",
 }
 
 # Nous Portal extra_body for product attribution.
@@ -460,7 +460,7 @@ def _codex_cloudflare_headers(access_token: str) -> Dict[str, str]:
     crash at client construction.
     """
     headers = {
-        "User-Agent": "codex_cli_rs/0.0.0 (Hermes Agent)",
+        "User-Agent": "codex_cli_rs/0.0.0 (Thoth Agent)",
         "originator": "codex_cli_rs",
     }
     if not isinstance(access_token, str) or not access_token.strip():

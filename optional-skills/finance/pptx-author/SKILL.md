@@ -2,7 +2,7 @@
 name: pptx-author
 description: Build PowerPoint decks headless with python-pptx. Pairs with excel-author for model-backed decks where every number traces to a workbook cell. Use for pitch decks, IC memos, earnings notes.
 version: 1.0.0
-author: Anthropic (adapted by Nous Research)
+author: Anthropic (adapted by 519lab)
 license: Apache-2.0
 platforms: [linux, macos, windows]
 metadata:

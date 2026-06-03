@@ -690,7 +690,7 @@ def on_pre_llm_call(*, task_id: str = "", session_id: str = "", platform: str = 
                     provider: str = "", base_url: str = "", api_mode: str = "",
                     api_call_count: int = 0, messages: Any = None, turn_type: str = "user",
                     conversation_history: Any = None, user_message: Any = None, **_: Any) -> None:
-    # Older Hermes branches used pre_llm_call for request-scoped tracing and
+    # Older Thoth branches used pre_llm_call for request-scoped tracing and
     # passed the actual API messages. Current Thoth also has a turn-scoped
     # pre_llm_call used for context injection; tracing that hook creates an
     # extra orphan/root trace before the real request trace. Only trace the

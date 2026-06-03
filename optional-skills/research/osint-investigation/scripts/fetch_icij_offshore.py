@@ -63,7 +63,7 @@ def _download(dest: Path, force: bool = False) -> Path:
     print(f"Downloading ICIJ bulk database (~70 MB) to {zip_path}", file=sys.stderr)
     req = urllib.request.Request(
         BULK_URL,
-        headers={"User-Agent": "hermes-agent osint-investigation skill"},
+        headers={"User-Agent": "thoth-agent osint-investigation skill"},
     )
     with urllib.request.urlopen(req, timeout=120) as resp:  # noqa: S310
         tmp = zip_path.with_suffix(".zip.tmp")

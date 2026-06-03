@@ -388,12 +388,12 @@ Common fixes:
 ```python
 # Display text: line breaks control visual layout
 QUOTES = [
-    ("It can do far more than the Claws,\nand you don't need to buy a Mac Mini.\nNous Research has a winner here.", "Brian Roemmele"),
+    ("It can do far more than the Claws,\nand you don't need to buy a Mac Mini.\n519lab has a winner here.", "Brian Roemmele"),
 ]
 
 # TTS text: flat, phonetically corrected for speech
 QUOTES_TTS = [
-    "It can do far more than the Claws, and you don't need to buy a Mac Mini. Noose Research has a winner here.",
+    "It can do far more than the Claws, and you don't need to buy a Mac Mini. 519lab has a winner here.",
 ]
 # Keep both arrays in sync -- same indices
 ```

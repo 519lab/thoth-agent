@@ -3643,7 +3643,7 @@ class GatewayRunner:
         logger.info("Session storage: %s", self.config.sessions_dir)
 
         # Sanity-check that systemd's TimeoutStopSec covers our drain
-        # window.  When the user upgraded hermes-agent without re-running
+        # window.  When the user upgraded thoth-agent without re-running
         # ``thoth setup``, their unit file may still encode the old
         # default — in which case SIGKILL hits mid-drain and looks like
         # a phantom kill in the journal.  Best-effort, never raises.
@@ -6018,7 +6018,7 @@ class GatewayRunner:
         elif platform == Platform.SLACK:
             from gateway.platforms.slack import SlackAdapter, check_slack_requirements
             if not check_slack_requirements():
-                logger.warning("Slack: slack-bolt not installed. Run: pip install 'hermes-agent[slack]'")
+                logger.warning("Slack: slack-bolt not installed. Run: pip install 'thoth-agent[slack]'")
                 return None
             return SlackAdapter(config)
 
@@ -15254,7 +15254,7 @@ class GatewayRunner:
             headers["X-Thoth-Session-Id"] = session_id
 
         body = {
-            "model": "hermes-agent",
+            "model": "thoth-agent",
             "messages": api_messages,
             "stream": True,
         }

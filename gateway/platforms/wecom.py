@@ -1059,7 +1059,7 @@ class WeComAdapter(BasePlatformAdapter):
                 "GET",
                 url,
                 headers={
-                    "User-Agent": "HermesAgent/1.0",
+                    "User-Agent": "ThothAgent/1.0",
                     "Accept": "*/*",
                 },
             ) as response:
@@ -1520,7 +1520,7 @@ def qr_scan_for_bot_info(
     # ── Step 1: Fetch QR code ──
     print("  Connecting to WeCom...", end="", flush=True)
     try:
-        req = urllib.request.Request(generate_url, headers={"User-Agent": "HermesAgent/1.0"})
+        req = urllib.request.Request(generate_url, headers={"User-Agent": "ThothAgent/1.0"})
         with urllib.request.urlopen(req, timeout=15) as resp:
             raw = json.loads(resp.read().decode("utf-8"))
     except Exception as exc:
@@ -1570,7 +1570,7 @@ def qr_scan_for_bot_info(
 
     while time.monotonic() < deadline:
         try:
-            req = urllib.request.Request(query_url, headers={"User-Agent": "HermesAgent/1.0"})
+            req = urllib.request.Request(query_url, headers={"User-Agent": "ThothAgent/1.0"})
             with urllib.request.urlopen(req, timeout=10) as resp:
                 result = json.loads(resp.read().decode("utf-8"))
         except Exception as exc:

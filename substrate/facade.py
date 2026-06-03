@@ -465,7 +465,7 @@ class Substrate:
         """Stop sub-agents, flush pending audit emissions, unbind hooks.
 
         The asyncpg pool is NOT closed here — that belongs to
-        ``hermes_db.close()`` which is owned by Hermes's own shutdown
+        ``hermes_db.close()`` which is owned by Thoth's own shutdown
         sequence (spec §8.2).
         """
         # Unbind hooks first so any in-flight Thoth call site that
