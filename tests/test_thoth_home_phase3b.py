@@ -30,8 +30,8 @@ def test_windows_wrapper_and_task_set_both():
         encoding="utf-8",
     ).read()
     assert 'set "HERMES_HOME=' in src and 'set "THOTH_HOME=' in src
-    assert '"HERMES_HOME": hermes_home,' in src
-    assert '"THOTH_HOME": hermes_home,' in src
+    assert '"HERMES_HOME": thoth_home,' in src
+    assert '"THOTH_HOME": thoth_home,' in src
 
 
 def test_profile_env_context_sets_and_restores_both(tmp_path, monkeypatch):

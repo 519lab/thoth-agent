@@ -1089,19 +1089,19 @@ class TestThothHomeIsolation:
 
     def test_conftest_isolation_prevents_real_home_writes(self):
         """The conftest autouse fixture sets HERMES_HOME; verify it's active."""
-        hermes_home = os.getenv("HERMES_HOME")
-        assert hermes_home is not None, "HERMES_HOME should be set by conftest"
-        assert "hermes_test" in hermes_home, "Should point to test temp dir"
+        thoth_home = os.getenv("HERMES_HOME")
+        assert thoth_home is not None, "HERMES_HOME should be set by conftest"
+        assert "hermes_test" in thoth_home, "Should point to test temp dir"
 
     def test_get_hermes_home_fallback(self):
         """Without HERMES_HOME/THOTH_HOME set, falls back to ~/.thoth (new default)."""
-        from tools.tirith_security import _get_hermes_home
+        from tools.tirith_security import _get_thoth_home
         with patch.dict(os.environ, {}, clear=True):
             # Remove all home env vars. With HOME also absent, expanduser
             # falls back to the account database; compute expected under the
             # same environment instead of after patch.dict restores HOME.
             expected = os.path.join(os.path.expanduser("~"), ".thoth")
-            result = _get_hermes_home()
+            result = _get_thoth_home()
         assert result == expected
 
 

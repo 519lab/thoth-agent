@@ -625,7 +625,7 @@ async def get_status():
     return {
         "version": __version__,
         "release_date": __release_date__,
-        "hermes_home": str(get_thoth_home()),
+        "thoth_home": str(get_thoth_home()),
         "config_path": str(get_config_path()),
         "env_path": str(get_env_path()),
         "config_version": current_ver,
@@ -1320,19 +1320,19 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
     """
     try:
         from agent.anthropic_adapter import (
-            read_hermes_oauth_credentials,
+            read_thoth_oauth_credentials,
             read_claude_code_credentials,
             _THOTH_OAUTH_FILE,
         )
     except ImportError:
         read_claude_code_credentials = None  # type: ignore
-        read_hermes_oauth_credentials = None  # type: ignore
+        read_thoth_oauth_credentials = None  # type: ignore
         _THOTH_OAUTH_FILE = None  # type: ignore
 
     hermes_creds = None
-    if read_hermes_oauth_credentials:
+    if read_thoth_oauth_credentials:
         try:
-            hermes_creds = read_hermes_oauth_credentials()
+            hermes_creds = read_thoth_oauth_credentials()
         except Exception:
             hermes_creds = None
     if hermes_creds and hermes_creds.get("accessToken"):
@@ -2598,7 +2598,7 @@ def _annotate_cron_job(job: Dict[str, Any], profile: str, home: Path) -> Dict[st
     annotated = dict(job)
     annotated["profile"] = profile
     annotated["profile_name"] = profile
-    annotated["hermes_home"] = str(home)
+    annotated["thoth_home"] = str(home)
     annotated["is_default_profile"] = profile == "default"
     return annotated
 
@@ -2791,7 +2791,7 @@ def _fallback_profile_dicts(profiles_mod) -> List[Dict[str, Any]]:
             return default
 
     profiles: List[Dict[str, Any]] = []
-    default_home = profiles_mod._get_default_hermes_home()
+    default_home = profiles_mod._get_default_thoth_home()
     if default_home.is_dir():
         model, provider = _safe(lambda: profiles_mod._read_config_model(default_home), (None, None))
         profiles.append({

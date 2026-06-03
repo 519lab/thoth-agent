@@ -1200,8 +1200,8 @@ def _dump_subagent_timeout_diagnostic(
         import sys as _sys
         import traceback as _traceback
 
-        hermes_home = get_thoth_home()
-        logs_dir = hermes_home / "logs"
+        thoth_home = get_thoth_home()
+        logs_dir = thoth_home / "logs"
         try:
             logs_dir.mkdir(parents=True, exist_ok=True)
         except Exception:

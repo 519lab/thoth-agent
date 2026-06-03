@@ -155,7 +155,7 @@ COMPONENT_PREFIXES = {
 
 def setup_logging(
     *,
-    hermes_home: Optional[Path] = None,
+    thoth_home: Optional[Path] = None,
     log_level: Optional[str] = None,
     max_size_mb: Optional[int] = None,
     backup_count: Optional[int] = None,
@@ -169,7 +169,7 @@ def setup_logging(
 
     Parameters
     ----------
-    hermes_home
+    thoth_home
         Override for the Thoth home directory.  Falls back to
         ``get_thoth_home()`` (profile-aware).
     log_level
@@ -195,7 +195,7 @@ def setup_logging(
         The ``logs/`` directory where files are written.
     """
     global _logging_initialized
-    home = hermes_home or get_thoth_home()
+    home = thoth_home or get_thoth_home()
     log_dir = home / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
 

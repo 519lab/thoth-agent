@@ -136,7 +136,7 @@ def _clone_all_copytree_ignore(source_dir: Path):
     clone.
     """
     source_resolved = source_dir.resolve()
-    is_default_source = source_resolved == _get_default_hermes_home().resolve()
+    is_default_source = source_resolved == _get_default_thoth_home().resolve()
 
     def _ignore(directory: str, names: List[str]) -> List[str]:
         ignored: list[str] = []
@@ -221,23 +221,23 @@ def _get_profiles_root() -> Path:
     ``~/.hermes``, profiles live under ``HERMES_HOME/profiles/`` so
     they persist on the mounted volume.
     """
-    return _get_default_hermes_home() / "profiles"
+    return _get_default_thoth_home() / "profiles"
 
 
-def _get_default_hermes_home() -> Path:
+def _get_default_thoth_home() -> Path:
     """Return the default (pre-profile) HERMES_HOME path.
 
     In standard deployments this is ``~/.hermes``.
     In Docker/custom deployments where HERMES_HOME is outside ``~/.hermes``
     (e.g. ``/opt/data``), returns HERMES_HOME directly.
     """
-    from thoth_constants import get_default_hermes_root
-    return get_default_hermes_root()
+    from thoth_constants import get_default_thoth_root
+    return get_default_thoth_root()
 
 
 def _get_active_profile_path() -> Path:
     """Return the path to the sticky active_profile file."""
-    return _get_default_hermes_home() / "active_profile"
+    return _get_default_thoth_home() / "active_profile"
 
 
 def _get_wrapper_dir() -> Path:
@@ -301,7 +301,7 @@ def get_profile_dir(name: str) -> Path:
     """Resolve a profile name to its HERMES_HOME directory."""
     canon = normalize_profile_name(name)
     if canon == "default":
-        return _get_default_hermes_home()
+        return _get_default_thoth_home()
     return _get_profiles_root() / canon
 
 
@@ -580,7 +580,7 @@ def list_profiles() -> List[ProfileInfo]:
     wrapper_dir = _get_wrapper_dir()
 
     # Default profile
-    default_home = _get_default_hermes_home()
+    default_home = _get_default_thoth_home()
     if default_home.is_dir():
         model, provider = _read_config_model(default_home)
         dist_name, dist_version, dist_source = _read_distribution_meta(default_home)
@@ -1105,10 +1105,10 @@ def get_active_profile_name() -> str:
     Returns ``"custom"`` if HERMES_HOME is set to an unrecognized path.
     """
     from thoth_constants import get_thoth_home
-    hermes_home = get_thoth_home()
-    resolved = hermes_home.resolve()
+    thoth_home = get_thoth_home()
+    resolved = thoth_home.resolve()
 
-    default_resolved = _get_default_hermes_home().resolve()
+    default_resolved = _get_default_thoth_home().resolve()
     if resolved == default_resolved:
         return "default"
 
@@ -1347,7 +1347,7 @@ def _migrate_honcho_profile_host(old_name: str, new_name: str, new_dir: Path) ->
 
     candidates = [
         new_dir / "honcho.json",
-        _get_default_hermes_home() / "honcho.json",
+        _get_default_thoth_home() / "honcho.json",
         Path.home() / ".honcho" / "config.json",
     ]
 

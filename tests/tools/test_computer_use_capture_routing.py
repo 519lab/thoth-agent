@@ -13,7 +13,7 @@ deterministic stubs for:
 * ``should_route_capture_to_aux_vision`` (the policy decision)
 * ``_run_async`` (sync->async bridge)
 * ``vision_analyze_tool`` (the aux LLM call)
-* ``thoth_constants.get_hermes_dir`` (cache path)
+* ``thoth_constants.get_thoth_dir`` (cache path)
 
 …so the full code path is covered without a live cua-driver, a real
 auxiliary client, or network access.
@@ -50,14 +50,14 @@ _JPEG_B64 = (
 
 @pytest.fixture
 def tmp_cache_dir(tmp_path):
-    """Override get_hermes_dir so cache writes land under tmp_path."""
+    """Override get_thoth_dir so cache writes land under tmp_path."""
     cache_dir = tmp_path / "cache_vision"
     cache_dir.mkdir()
 
     def _fake_get(*_args, **_kw):
         return cache_dir
 
-    with patch("thoth_constants.get_hermes_dir", _fake_get):
+    with patch("thoth_constants.get_thoth_dir", _fake_get):
         yield cache_dir
 
 

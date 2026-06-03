@@ -66,14 +66,14 @@ def test_all_34_profiles_register():
 def test_user_plugin_overrides_bundled(tmp_path, monkeypatch):
     """A user plugin with the same name must override the bundled profile."""
     # Point HERMES_HOME at a fresh temp dir
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    thoth_home = tmp_path / ".hermes"
+    thoth_home.mkdir()
+    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
     # get_thoth_home() may be module-cached depending on codebase; ensure the
     # env var is the source of truth. Most code paths re-read it each call.
 
     # Drop a user plugin that replaces 'gmi'
-    user_gmi = hermes_home / "plugins" / "model-providers" / "gmi"
+    user_gmi = thoth_home / "plugins" / "model-providers" / "gmi"
     user_gmi.mkdir(parents=True)
     (user_gmi / "__init__.py").write_text(
         "from providers import register_provider\n"
@@ -114,12 +114,12 @@ def test_general_plugin_manager_skips_model_provider_kind(tmp_path, monkeypatch)
     (providers/__init__.py handles them). It records the manifest only."""
     from thoth_cli import plugins as plugin_mod
 
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    thoth_home = tmp_path / ".hermes"
+    thoth_home.mkdir()
+    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
 
     # Create a user-installed plugin with an explicit kind: model-provider.
-    user_plugin = hermes_home / "plugins" / "test-model-provider"
+    user_plugin = thoth_home / "plugins" / "test-model-provider"
     user_plugin.mkdir(parents=True)
     (user_plugin / "plugin.yaml").write_text(
         "name: test-model-provider\n"

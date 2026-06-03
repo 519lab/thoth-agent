@@ -1283,14 +1283,14 @@ class LineAdapter(BasePlatformAdapter):
 
         try:
             from thoth_constants import get_thoth_home
-            hermes_home = Path(get_thoth_home()).resolve()
+            thoth_home = Path(get_thoth_home()).resolve()
         except Exception:
-            hermes_home = Path.home().joinpath(".hermes").resolve()
+            thoth_home = Path.home().joinpath(".hermes").resolve()
 
         allowed_roots = {
             Path(tempfile.gettempdir()).resolve(),
             Path("/tmp").resolve(),  # → /private/tmp on macOS
-            hermes_home,
+            thoth_home,
         }
         resolved = path.resolve()
         if not any(_is_relative_to(resolved, r) for r in allowed_roots):

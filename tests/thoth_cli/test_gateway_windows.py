@@ -55,7 +55,7 @@ def test_build_gateway_argv_uses_base_pythonw_for_uv_venv_launcher(monkeypatch, 
     monkeypatch.setattr(gateway_windows.sys, "platform", "win32")
     monkeypatch.setattr(gateway, "PROJECT_ROOT", project)
     monkeypatch.setattr(gateway, "get_python_path", lambda: str(venv_python))
-    monkeypatch.setattr(gateway, "_profile_arg", lambda hermes_home: "")
+    monkeypatch.setattr(gateway, "_profile_arg", lambda thoth_home: "")
     monkeypatch.setattr("thoth_cli.config.get_thoth_home", lambda: str(tmp_path / "hermes-home"))
 
     argv, cwd, env_overlay = gateway_windows._build_gateway_argv()

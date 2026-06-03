@@ -21,12 +21,12 @@ import pytest
 
 
 @pytest.fixture
-def hermes_home(tmp_path, monkeypatch):
+def thoth_home(tmp_path, monkeypatch):
     home = tmp_path / ".hermes"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     monkeypatch.setenv("HERMES_HOME", str(home))
-    # Clear any cached hermes_home computation
+    # Clear any cached thoth_home computation
     import thoth_constants
     if hasattr(thoth_constants, "_hermes_home_cache"):
         thoth_constants._hermes_home_cache = None
@@ -43,7 +43,7 @@ def _make_stub_cli(history):
     )
 
 
-def test_save_conversation_writes_under_hermes_home(hermes_home, tmp_path, monkeypatch, capsys):
+def test_save_conversation_writes_under_hermes_home(thoth_home, tmp_path, monkeypatch, capsys):
     """Snapshot must land under ~/.hermes/sessions/saved/, not CWD."""
     # Change CWD to a different directory to prove the file does NOT go there.
     work = tmp_path / "somewhere-else"
@@ -69,7 +69,7 @@ def test_save_conversation_writes_under_hermes_home(hermes_home, tmp_path, monke
     assert not cwd_leak, f"snapshot leaked to CWD: {cwd_leak}"
 
     # File MUST be under ~/.hermes/sessions/saved/
-    saved_dir = hermes_home / "sessions" / "saved"
+    saved_dir = thoth_home / "sessions" / "saved"
     assert saved_dir.is_dir(), "expected saved/ subdirectory to be created"
     files = list(saved_dir.glob("hermes_conversation_*.json"))
     assert len(files) == 1, files
@@ -88,7 +88,7 @@ def test_save_conversation_writes_under_hermes_home(hermes_home, tmp_path, monke
     assert "thoth --resume 20260101_120000_abc123" in out, out
 
 
-def test_save_conversation_empty_history_does_nothing(hermes_home, capsys):
+def test_save_conversation_empty_history_does_nothing(thoth_home, capsys):
     for mod in [m for m in sys.modules if m.startswith("cli") or m == "thoth_constants"]:
         sys.modules.pop(mod, None)
     import cli
@@ -96,7 +96,7 @@ def test_save_conversation_empty_history_does_nothing(hermes_home, capsys):
     stub = _make_stub_cli([])
     cli.ThothCLI.save_conversation(stub)
 
-    saved_dir = hermes_home / "sessions" / "saved"
+    saved_dir = thoth_home / "sessions" / "saved"
     assert not saved_dir.exists() or not list(saved_dir.iterdir())
     out = capsys.readouterr().out
     assert "No conversation to save" in out

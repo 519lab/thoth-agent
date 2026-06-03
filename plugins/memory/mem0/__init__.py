@@ -143,11 +143,11 @@ class Mem0MemoryProvider(MemoryProvider):
         cfg = _load_config()
         return bool(cfg.get("api_key"))
 
-    def save_config(self, values, hermes_home):
+    def save_config(self, values, thoth_home):
         """Write config to $HERMES_HOME/mem0.json."""
         import json
         from pathlib import Path
-        config_path = Path(hermes_home) / "mem0.json"
+        config_path = Path(thoth_home) / "mem0.json"
         existing = {}
         if config_path.exists():
             try:

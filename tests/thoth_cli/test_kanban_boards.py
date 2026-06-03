@@ -49,7 +49,7 @@ def fresh_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     PG; the table lives in the per-test PG database now (not
     ``~/.hermes/kanban.db``).
     """
-    home = tmp_path / "hermes_home"
+    home = tmp_path / "thoth_home"
     home.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(home))
     for var in (
@@ -59,7 +59,7 @@ def fresh_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
         "HERMES_KANBAN_BOARD",
     ):
         monkeypatch.delenv(var, raising=False)
-    # Also reset thoth_constants cache so get_default_hermes_root() re-reads.
+    # Also reset thoth_constants cache so get_default_thoth_root() re-reads.
     try:
         import thoth_constants
         thoth_constants._cached_default_hermes_root = None  # type: ignore[attr-defined]

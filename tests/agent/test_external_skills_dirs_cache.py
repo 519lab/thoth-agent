@@ -25,7 +25,7 @@ from agent.skill_utils import (
 
 
 @pytest.fixture
-def hermes_home_with_config(tmp_path, monkeypatch):
+def thoth_home_with_config(tmp_path, monkeypatch):
     """Isolated ``~/.hermes/`` with a config.yaml referencing one external dir."""
     home = tmp_path / ".hermes"
     home.mkdir()
@@ -47,15 +47,15 @@ def hermes_home_with_config(tmp_path, monkeypatch):
     _external_dirs_cache_clear()
 
 
-def test_returns_configured_external_dir(hermes_home_with_config):
-    _home, external, _cfg = hermes_home_with_config
+def test_returns_configured_external_dir(thoth_home_with_config):
+    _home, external, _cfg = thoth_home_with_config
     result = get_external_skills_dirs()
     assert result == [external.resolve()]
 
 
-def test_cache_reuses_result_without_reparsing(hermes_home_with_config):
+def test_cache_reuses_result_without_reparsing(thoth_home_with_config):
     """Subsequent calls hit the cache and skip YAML parsing entirely."""
-    _home, _external, _cfg = hermes_home_with_config
+    _home, _external, _cfg = thoth_home_with_config
 
     # Prime cache
     get_external_skills_dirs()
@@ -71,9 +71,9 @@ def test_cache_reuses_result_without_reparsing(hermes_home_with_config):
             get_external_skills_dirs()
 
 
-def test_cache_invalidates_on_mtime_change(hermes_home_with_config):
+def test_cache_invalidates_on_mtime_change(thoth_home_with_config):
     """A config.yaml edit invalidates the cache on the next call."""
-    _home, external, config = hermes_home_with_config
+    _home, external, config = thoth_home_with_config
     other = external.parent / "other_skills"
     other.mkdir()
 
@@ -109,7 +109,7 @@ def test_returns_empty_when_config_missing(tmp_path, monkeypatch):
     assert get_external_skills_dirs() == []
 
 
-def test_returned_list_is_a_copy(hermes_home_with_config):
+def test_returned_list_is_a_copy(thoth_home_with_config):
     """Callers can't poison the cache by mutating the returned list."""
     first = get_external_skills_dirs()
     first.append(Path("/tmp/should-not-persist"))
@@ -147,3 +147,6 @@ def test_cache_key_is_per_config_path(tmp_path, monkeypatch):
     # And switching back still works — both entries coexist in the cache.
     monkeypatch.setenv("HERMES_HOME", str(home_a))
     assert get_external_skills_dirs() == [ext_a.resolve()]
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+hermes_home_with_config = thoth_home_with_config

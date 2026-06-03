@@ -292,7 +292,7 @@ def get_external_skills_dirs() -> List[Path]:
 
     from thoth_constants import get_thoth_home
 
-    hermes_home = get_thoth_home()
+    thoth_home = get_thoth_home()
     local_skills = get_skills_dir().resolve()
     seen: Set[Path] = set()
     result = []
@@ -306,7 +306,7 @@ def get_external_skills_dirs() -> List[Path]:
         p = Path(expanded)
         # Resolve relative paths against HERMES_HOME, not cwd
         if not p.is_absolute():
-            p = (hermes_home / p).resolve()
+            p = (thoth_home / p).resolve()
         else:
             p = p.resolve()
         if p == local_skills:

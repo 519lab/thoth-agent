@@ -51,9 +51,9 @@ from agent.retry_utils import jittered_backoff
 # Load .env from HERMES_HOME first, then project root as a dev fallback.
 from thoth_cli.env_loader import load_thoth_dotenv
 
-_hermes_home = get_thoth_home()
+_thoth_home = get_thoth_home()
 _project_env = Path(__file__).parent / ".env"
-load_thoth_dotenv(hermes_home=_hermes_home, project_env=_project_env)
+load_thoth_dotenv(thoth_home=_thoth_home, project_env=_project_env)
 
 
 def _effective_temperature_for_model(

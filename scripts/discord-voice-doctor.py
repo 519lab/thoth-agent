@@ -179,7 +179,7 @@ def check_env_vars():
         from thoth_cli.env_loader import load_thoth_dotenv
 
         load_thoth_dotenv(
-            hermes_home=ENV_FILE.parent,
+            thoth_home=ENV_FILE.parent,
             project_env=PROJECT_ROOT / ".env",
         )
     except ImportError:

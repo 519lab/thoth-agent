@@ -25,7 +25,7 @@ from thoth_cli.profile_distribution import (
     _env_template_from_manifest,
     _looks_like_git_url,
     _parse_semver,
-    check_hermes_requires,
+    check_thoth_requires,
     describe_distribution,
     install_distribution,
     plan_install,
@@ -179,10 +179,10 @@ class TestVersionRequires:
     ])
     def test_check_matrix(self, spec, cur, ok):
         if ok:
-            check_hermes_requires(spec, cur)
+            check_thoth_requires(spec, cur)
         else:
             with pytest.raises(DistributionError, match="requires Thoth"):
-                check_hermes_requires(spec, cur)
+                check_thoth_requires(spec, cur)
 
     def test_parse_semver_handles_prerelease(self):
         assert _parse_semver("0.12.0-rc1") == (0, 12, 0)

@@ -161,9 +161,9 @@ def _apply_profile_override() -> None:
     # 2. If no flag, check active_profile in the thoth root
     if profile_name is None:
         try:
-            from thoth_constants import get_default_hermes_root
+            from thoth_constants import get_default_thoth_root
 
-            active_path = get_default_hermes_root() / "active_profile"
+            active_path = get_default_thoth_root() / "active_profile"
             if active_path.exists():
                 name = active_path.read_text().strip()
                 if name and name != "default":
@@ -177,7 +177,7 @@ def _apply_profile_override() -> None:
         try:
             from thoth_cli.profiles import resolve_profile_env
 
-            hermes_home = resolve_profile_env(profile_name)
+            thoth_home = resolve_profile_env(profile_name)
         except (ValueError, FileNotFoundError) as exc:
             print(f"Error: {exc}", file=sys.stderr)
             sys.exit(1)
@@ -188,7 +188,7 @@ def _apply_profile_override() -> None:
                 file=sys.stderr,
             )
             return
-        os.environ["HERMES_HOME"] = hermes_home
+        os.environ["HERMES_HOME"] = thoth_home
         # Strip the flag from argv so argparse doesn't choke
         if consume > 0:
             for i, arg in enumerate(argv):
@@ -1208,9 +1208,9 @@ def _ensure_tui_node() -> None:
         return
 
     from thoth_constants import get_thoth_home
-    from thoth_env import propagate_hermes_home
+    from thoth_env import propagate_thoth_home
 
-    hermes_home = str(get_thoth_home())
+    thoth_home = str(get_thoth_home())
     try:
         # Helper writes logs to stderr; we ask bash to print `command -v node`
         # on stdout once ensure_node succeeds. Subshell PATH edits don't leak
@@ -1221,7 +1221,7 @@ def _ensure_tui_node() -> None:
                 "-c",
                 f'source "{helper}" >&2 && ensure_node >&2 && command -v node',
             ],
-            env=propagate_hermes_home(os.environ, hermes_home),
+            env=propagate_thoth_home(os.environ, thoth_home),
             capture_output=True,
             text=True,
             check=False,
@@ -1236,7 +1236,7 @@ def _ensure_tui_node() -> None:
     if resolved:
         extras.append(Path(resolved).resolve().parent)
 
-    extras.extend([Path(hermes_home) / "node" / "bin", Path.home() / ".local" / "bin"])
+    extras.extend([Path(thoth_home) / "node" / "bin", Path.home() / ".local" / "bin"])
 
     for extra in extras:
         s = str(extra)
@@ -7445,9 +7445,9 @@ def _invalidate_update_cache():
     """
     homes = []
     # Default profile home (Docker-aware — uses /opt/data in Docker)
-    from thoth_constants import get_default_hermes_root
+    from thoth_constants import get_default_thoth_root
 
-    default_home = get_default_hermes_root()
+    default_home = get_default_thoth_root()
     homes.append(default_home)
     # Named profiles under <root>/profiles/
     profiles_root = default_home / "profiles"
@@ -8188,9 +8188,9 @@ def _install_hangup_protection(gateway_mode: bool = False):
     try:
         # Late-bound import so tests can monkeypatch
         # thoth_cli.config.get_thoth_home to simulate setup failure.
-        from thoth_cli.config import get_thoth_home as _get_hermes_home
+        from thoth_cli.config import get_thoth_home as _get_thoth_home
 
-        logs_dir = _get_hermes_home() / "logs"
+        logs_dir = _get_thoth_home() / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
         log_path = logs_dir / "update.log"
         log_file = open(log_path, "a", buffering=1, encoding="utf-8")

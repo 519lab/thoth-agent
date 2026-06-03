@@ -73,8 +73,8 @@ class TestIsWriteDenied:
     def test_thoth_control_files_and_mcp_tokens_denied(self, path):
         """Thoth control files and mcp-tokens entries must be write-denied."""
         from thoth_constants import get_thoth_home
-        hermes_home = get_thoth_home()
-        full_path = str(hermes_home / path)
+        thoth_home = get_thoth_home()
+        full_path = str(thoth_home / path)
         assert _is_write_denied(full_path) is True
 
     @pytest.mark.parametrize(
@@ -88,8 +88,8 @@ class TestIsWriteDenied:
     def test_thoth_control_files_traversal_denied(self, path):
         """Path traversal attempts to control files must be blocked by realpath."""
         from thoth_constants import get_thoth_home
-        hermes_home = get_thoth_home()
-        full_path = str(hermes_home / path)
+        thoth_home = get_thoth_home()
+        full_path = str(thoth_home / path)
         assert _is_write_denied(full_path) is True
 
     @pytest.mark.parametrize(

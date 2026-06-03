@@ -72,7 +72,7 @@ class TestNonInteractiveSetup:
         args = _make_setup_args(non_interactive=True)
 
         with (
-            patch("thoth_cli.setup.ensure_hermes_home"),
+            patch("thoth_cli.setup.ensure_thoth_home"),
             patch("thoth_cli.setup.load_config", return_value={}),
             patch("thoth_cli.setup.get_thoth_home", return_value="/tmp/.hermes"),
             patch("thoth_cli.auth.get_active_provider", side_effect=AssertionError("wizard continued")),
@@ -90,7 +90,7 @@ class TestNonInteractiveSetup:
         args = _make_setup_args(non_interactive=False)
 
         with (
-            patch("thoth_cli.setup.ensure_hermes_home"),
+            patch("thoth_cli.setup.ensure_thoth_home"),
             patch("thoth_cli.setup.load_config", return_value={}),
             patch("thoth_cli.setup.get_thoth_home", return_value="/tmp/.hermes"),
             patch("thoth_cli.auth.get_active_provider", side_effect=AssertionError("wizard continued")),

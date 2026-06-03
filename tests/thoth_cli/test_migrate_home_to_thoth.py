@@ -48,7 +48,7 @@ class TestMigrateHomeToThoth:
         assert result is False
 
     def test_noop_when_hermes_absent(self, tmp_path):
-        """Neither directory exists (fresh install) → no-op; ensure_hermes_home handles it."""
+        """Neither directory exists (fresh install) → no-op; ensure_thoth_home handles it."""
         with patch("thoth_cli.config.Path.home", return_value=tmp_path):
             result = migrate_home_to_thoth(quiet=True)
 
@@ -89,8 +89,8 @@ class TestMigrateHomeToThoth:
         assert Path(link.readlink()).is_absolute()
 
     def test_ensure_hermes_home_triggers_migration_silently(self, tmp_path, monkeypatch):
-        """ensure_hermes_home() auto-creates the symlink without printing."""
-        from thoth_cli.config import ensure_hermes_home
+        """ensure_thoth_home() auto-creates the symlink without printing."""
+        from thoth_cli.config import ensure_thoth_home
 
         hermes = tmp_path / ".hermes"
         hermes.mkdir()
@@ -103,7 +103,7 @@ class TestMigrateHomeToThoth:
             old = sys.stdout
             sys.stdout = buf
             try:
-                ensure_hermes_home()
+                ensure_thoth_home()
             finally:
                 sys.stdout = old
             captured = buf.getvalue()

@@ -710,7 +710,7 @@ def _read_systemd_unit_environment(system: bool = False) -> dict[str, str]:
     return parsed
 
 
-def _sync_hermes_home_from_systemd_unit(system: bool) -> None:
+def _sync_thoth_home_from_systemd_unit(system: bool) -> None:
     """When acting on a system-scope unit, adopt its ``HERMES_HOME``.
 
     Under ``sudo``, ``HERMES_HOME`` is stripped and ``HOME=/root``, so
@@ -1275,9 +1275,9 @@ def _profile_suffix() -> str:
     """
     import hashlib
     import re
-    from thoth_constants import get_default_hermes_root
+    from thoth_constants import get_default_thoth_root
     home = get_thoth_home().resolve()
-    default = get_default_hermes_root().resolve()
+    default = get_default_thoth_root().resolve()
     if home == default:
         return ""
     # Detect <root>/profiles/<name> pattern → use the profile name
@@ -1293,21 +1293,21 @@ def _profile_suffix() -> str:
     return hashlib.sha256(str(home).encode()).hexdigest()[:8]
 
 
-def _profile_arg(hermes_home: str | None = None) -> str:
+def _profile_arg(thoth_home: str | None = None) -> str:
     """Return ``--profile <name>`` only when HERMES_HOME is a named profile.
 
     For ``~/.hermes/profiles/<name>``, returns ``"--profile <name>"``.
     For the default profile or hash-based custom paths, returns the empty string.
 
     Args:
-        hermes_home: Optional explicit HERMES_HOME path. Defaults to the current
+        thoth_home: Optional explicit HERMES_HOME path. Defaults to the current
             ``get_thoth_home()`` value. Should be passed when generating a
             service definition for a different user (e.g. system service).
     """
     import re
-    from thoth_constants import get_default_hermes_root
-    home = Path(hermes_home or str(get_thoth_home())).resolve()
-    default = get_default_hermes_root().resolve()
+    from thoth_constants import get_default_thoth_root
+    home = Path(thoth_home or str(get_thoth_home())).resolve()
+    default = get_default_thoth_root().resolve()
     if home == default:
         return ""
     profiles_root = (default / "profiles").resolve()
@@ -2091,7 +2091,7 @@ def _remap_path_for_user(path: str, target_home_dir: str) -> str:
         return str(p)
 
 
-def _hermes_home_for_target_user(target_home_dir: str) -> str:
+def _thoth_home_for_target_user(target_home_dir: str) -> str:
     """Remap the current HERMES_HOME to the equivalent under a target user's home.
 
     When installing a system service via sudo, get_thoth_home() resolves to
@@ -2154,11 +2154,11 @@ def _build_service_path_dirs(project_root: Path | None = None) -> list[str]:
     if _is_dir(node_bin):
         candidates.append(str(node_bin))
 
-    hermes_home = get_thoth_home()
-    hermes_node = hermes_home / "node" / "bin"
+    thoth_home = get_thoth_home()
+    hermes_node = thoth_home / "node" / "bin"
     if _is_dir(hermes_node):
         candidates.append(str(hermes_node))
-    hermes_nm = hermes_home / "node_modules" / ".bin"
+    hermes_nm = thoth_home / "node_modules" / ".bin"
     if _is_dir(hermes_nm):
         candidates.append(str(hermes_nm))
 
@@ -2190,8 +2190,8 @@ def generate_systemd_unit(system: bool = False, run_as_user: str | None = None) 
 
     if system:
         username, group_name, home_dir = _system_service_identity(run_as_user)
-        hermes_home = _hermes_home_for_target_user(home_dir)
-        profile_arg = _profile_arg(hermes_home)
+        thoth_home = _thoth_home_for_target_user(home_dir)
+        profile_arg = _profile_arg(thoth_home)
         # Remap all paths that may resolve under the calling user's home
         # (e.g. /root/) to the target user's home so the service can
         # actually access them.
@@ -2220,8 +2220,8 @@ Environment="USER={username}"
 Environment="LOGNAME={username}"
 Environment="PATH={sane_path}"
 Environment="VIRTUAL_ENV={venv_dir}"
-Environment="HERMES_HOME={hermes_home}"
-Environment="THOTH_HOME={hermes_home}"
+Environment="HERMES_HOME={thoth_home}"
+Environment="THOTH_HOME={thoth_home}"
 Restart=always
 RestartSec=5
 RestartMaxDelaySec=300
@@ -2238,8 +2238,8 @@ StandardError=journal
 WantedBy=multi-user.target
 """
 
-    hermes_home = str(get_thoth_home().resolve())
-    profile_arg = _profile_arg(hermes_home)
+    thoth_home = str(get_thoth_home().resolve())
+    profile_arg = _profile_arg(thoth_home)
     path_entries.extend(_build_user_local_paths(Path.home(), path_entries))
     path_entries.extend(_build_wsl_interop_paths(path_entries))
     path_entries.extend(common_bin_paths)
@@ -2256,8 +2256,8 @@ ExecStart={python_path} -m thoth_cli.main{f" {profile_arg}" if profile_arg else 
 WorkingDirectory={working_dir}
 Environment="PATH={sane_path}"
 Environment="VIRTUAL_ENV={venv_dir}"
-Environment="HERMES_HOME={hermes_home}"
-Environment="THOTH_HOME={hermes_home}"
+Environment="HERMES_HOME={thoth_home}"
+Environment="THOTH_HOME={thoth_home}"
 Restart=always
 RestartSec=5
 RestartMaxDelaySec=300
@@ -2274,15 +2274,15 @@ StandardError=journal
 WantedBy=default.target
 """
 
-def _systemd_unit_content(hermes_home: str) -> str:
+def _systemd_unit_content(thoth_home: str) -> str:
     """Return the system-scope unit snippet containing HERMES_HOME and THOTH_HOME."""
-    home = hermes_home or str(get_thoth_home())
+    home = thoth_home or str(get_thoth_home())
     return f'Environment="HERMES_HOME={home}"\nEnvironment="THOTH_HOME={home}"\n'
 
 
-def _user_systemd_unit_content(hermes_home: str) -> str:
+def _user_systemd_unit_content(thoth_home: str) -> str:
     """Return the user-scope unit snippet containing HERMES_HOME and THOTH_HOME."""
-    home = hermes_home or str(get_thoth_home())
+    home = thoth_home or str(get_thoth_home())
     return f'Environment="HERMES_HOME={home}"\nEnvironment="THOTH_HOME={home}"\n'
 
 
@@ -2590,7 +2590,7 @@ def systemd_stop(system: bool = False):
     if system:
         _require_root_for_system_service("stop")
     _require_service_installed("stop", system=system)
-    _sync_hermes_home_from_systemd_unit(system=system)
+    _sync_thoth_home_from_systemd_unit(system=system)
     try:
         from gateway.status import get_running_pid, write_planned_stop_marker
         pid = get_running_pid(cleanup_stale=False)
@@ -2619,7 +2619,7 @@ def systemd_restart(system: bool = False):
         _preflight_user_systemd()
     _require_service_installed("restart", system=system)
     refresh_systemd_unit_if_needed(system=system)
-    _sync_hermes_home_from_systemd_unit(system=system)
+    _sync_thoth_home_from_systemd_unit(system=system)
     from gateway.status import get_running_pid
 
     pid = get_running_pid() or _systemd_main_pid(system=system)
@@ -2715,7 +2715,7 @@ def systemd_status(deep: bool = False, system: bool = False, full: bool = False)
         print(f"  Run: {'sudo ' if system else ''}{cli_name()} gateway install{scope_flag}")
         return
 
-    _sync_hermes_home_from_systemd_unit(system=system)
+    _sync_thoth_home_from_systemd_unit(system=system)
 
     if has_conflicting_systemd_units():
         print_systemd_scope_conflict_warning()
@@ -2868,11 +2868,11 @@ def _bootout_legacy_launchd_agent() -> None:
 def generate_launchd_plist() -> str:
     python_path = get_python_path()
     working_dir = str(PROJECT_ROOT)
-    hermes_home = str(get_thoth_home().resolve())
+    thoth_home = str(get_thoth_home().resolve())
     log_dir = get_thoth_home() / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     label = get_launchd_label()
-    profile_arg = _profile_arg(hermes_home)
+    profile_arg = _profile_arg(thoth_home)
     # Build a sane PATH for the launchd plist.  launchd provides only a
     # minimal default (/usr/bin:/bin:/usr/sbin:/sbin) which misses Homebrew,
     # nvm, cargo, etc.  We prepend venv/bin and node_modules/.bin (matching
@@ -2930,9 +2930,9 @@ def generate_launchd_plist() -> str:
         <key>VIRTUAL_ENV</key>
         <string>{venv_dir}</string>
         <key>HERMES_HOME</key>
-        <string>{hermes_home}</string>
+        <string>{thoth_home}</string>
         <key>THOTH_HOME</key>
-        <string>{hermes_home}</string>
+        <string>{thoth_home}</string>
     </dict>
     
     <key>RunAtLoad</key>

@@ -832,8 +832,8 @@ def _global_auth_file_path() -> Optional[Path]:
     See issue #18594 follow-up (credential_pool shadowing).
     """
     try:
-        from thoth_constants import get_default_hermes_root
-        global_root = get_default_hermes_root()
+        from thoth_constants import get_default_thoth_root
+        global_root = get_default_thoth_root()
     except Exception:
         return None
     profile_home = get_thoth_home()
@@ -861,7 +861,7 @@ def _load_global_auth_store() -> Dict[str, Any]:
     Seat belt: under pytest, refuses to read the real user's
     ``~/.hermes/auth.json`` even when HERMES_HOME is set to a profile
     path. The hermetic conftest does not redirect ``HOME``, so
-    ``get_default_hermes_root()`` for a profile-shaped HERMES_HOME can
+    ``get_default_thoth_root()`` for a profile-shaped HERMES_HOME can
     still resolve to the real user's home on a dev machine. That would
     leak real credentials into tests. This guard uses the unmodified
     ``HOME`` env var (what ``os.path.expanduser('~')`` would resolve to),
@@ -4005,7 +4005,7 @@ def _poll_for_token(
 #
 # File lives at ${HERMES_SHARED_AUTH_DIR}/nous_auth.json, defaulting to
 # ``<hermes-root>/shared/nous_auth.json`` where ``<hermes-root>`` is what
-# ``get_default_hermes_root()`` returns — ``~/.hermes`` on Linux/macOS,
+# ``get_default_thoth_root()`` returns — ``~/.hermes`` on Linux/macOS,
 # ``%LOCALAPPDATA%\thoth`` on native Windows, or the Docker/custom root.
 # It is OUTSIDE any named profile's HERMES_HOME so named profiles (which
 # typically live under ``<hermes-root>/profiles/<name>/``) all see the
@@ -4027,7 +4027,7 @@ def _nous_shared_auth_dir() -> Path:
     Honors ``HERMES_SHARED_AUTH_DIR`` so tests can redirect it to a tmp
     path without touching the real user's home. Defaults to
     ``<hermes-root>/shared/``, where ``<hermes-root>`` is what
-    :func:`thoth_constants.get_default_hermes_root` returns — so
+    :func:`thoth_constants.get_default_thoth_root` returns — so
     Linux/macOS classic installs land at ``~/.hermes/shared/``, native
     Windows installs at ``%LOCALAPPDATA%\\thoth\\shared\\``, and
     Docker / custom ``HERMES_HOME`` deployments at
@@ -4037,8 +4037,8 @@ def _nous_shared_auth_dir() -> Path:
     override = os.getenv("HERMES_SHARED_AUTH_DIR", "").strip()
     if override:
         return Path(override).expanduser()
-    from thoth_constants import get_default_hermes_root
-    return get_default_hermes_root() / "shared"
+    from thoth_constants import get_default_thoth_root
+    return get_default_thoth_root() / "shared"
 
 
 def _nous_shared_store_path() -> Path:
@@ -4050,9 +4050,9 @@ def _nous_shared_store_path() -> Path:
     # so forgetting to set it fails loudly instead of writing to the real
     # shared store).
     if os.environ.get("PYTEST_CURRENT_TEST"):
-        from thoth_constants import get_default_hermes_root
+        from thoth_constants import get_default_thoth_root
         real_home_shared = (
-            get_default_hermes_root() / "shared" / NOUS_SHARED_STORE_FILENAME
+            get_default_thoth_root() / "shared" / NOUS_SHARED_STORE_FILENAME
         ).resolve(strict=False)
         try:
             resolved = path.resolve(strict=False)

@@ -233,7 +233,7 @@ def _sanitize_env_file_if_needed(path: Path) -> None:
 
 def load_thoth_dotenv(
     *,
-    hermes_home: str | os.PathLike | None = None,
+    thoth_home: str | os.PathLike | None = None,
     project_env: str | os.PathLike | None = None,
 ) -> list[Path]:
     """Load Thoth environment files with user config taking precedence.
@@ -251,8 +251,8 @@ def load_thoth_dotenv(
     # THOTH_HOME → HERMES_HOME → disk default, so no explicit normalization call
     # is needed here (and calling normalize_thoth_home_env() would write THOTH_HOME
     # to os.environ as a side-effect that pollutes test env isolation).
-    if hermes_home is not None:
-        home_path = Path(hermes_home)
+    if thoth_home is not None:
+        home_path = Path(thoth_home)
     else:
         from thoth_constants import get_thoth_home
 

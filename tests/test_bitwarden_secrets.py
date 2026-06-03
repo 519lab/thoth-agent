@@ -40,7 +40,7 @@ def _reset_caches():
 
 
 @pytest.fixture
-def hermes_home(tmp_path, monkeypatch):
+def thoth_home(tmp_path, monkeypatch):
     """Point Thoth at an isolated home directory."""
     home = tmp_path / ".hermes"
     home.mkdir()
@@ -99,7 +99,7 @@ def _make_fake_zip(binary_bytes: bytes) -> bytes:
     return buf.getvalue()
 
 
-def test_install_bws_happy_path(hermes_home, monkeypatch):
+def test_install_bws_happy_path(thoth_home, monkeypatch):
     fake_binary = b"#!/bin/sh\necho 'bws fake 2.0.0'\n"
     zip_bytes = _make_fake_zip(fake_binary)
     asset_name = bw._platform_asset_name()
@@ -125,7 +125,7 @@ def test_install_bws_happy_path(hermes_home, monkeypatch):
     assert path.stat().st_mode & stat.S_IXUSR
 
 
-def test_install_bws_checksum_mismatch(hermes_home, monkeypatch):
+def test_install_bws_checksum_mismatch(thoth_home, monkeypatch):
     zip_bytes = _make_fake_zip(b"contents")
     asset_name = bw._platform_asset_name()
     wrong_checksum = "0" * 64
@@ -143,7 +143,7 @@ def test_install_bws_checksum_mismatch(hermes_home, monkeypatch):
         bw.install_bws()
 
 
-def test_install_bws_missing_checksum_entry(hermes_home, monkeypatch):
+def test_install_bws_missing_checksum_entry(thoth_home, monkeypatch):
     zip_bytes = _make_fake_zip(b"x")
 
     def fake_download(url, dest):

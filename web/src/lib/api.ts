@@ -376,7 +376,7 @@ export interface StatusResponse {
   gateway_running: boolean;
   gateway_state: string | null;
   gateway_updated_at: string | null;
-  hermes_home: string;
+  thoth_home: string;
   latest_config_version: number;
   release_date: string;
   version: string;
@@ -556,7 +556,7 @@ export interface CronJob {
   id: string;
   profile?: string | null;
   profile_name?: string | null;
-  hermes_home?: string | null;
+  thoth_home?: string | null;
   is_default_profile?: boolean;
   name?: string | null;
   prompt?: string | null;

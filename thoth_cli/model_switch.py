@@ -1334,9 +1334,9 @@ def list_authenticated_providers(
             try:
                 from agent.anthropic_adapter import (
                     read_claude_code_credentials,
-                    read_hermes_oauth_credentials,
+                    read_thoth_oauth_credentials,
                 )
-                hermes_creds = read_hermes_oauth_credentials()
+                hermes_creds = read_thoth_oauth_credentials()
                 cc_creds = read_claude_code_credentials()
                 if (hermes_creds and hermes_creds.get("accessToken")) or \
                    (cc_creds and cc_creds.get("accessToken")):

@@ -296,7 +296,7 @@ def get_startup_entry_path() -> Path:
 def _build_gateway_cmd_script(
     python_path: str,
     working_dir: str,
-    hermes_home: str,
+    thoth_home: str,
     profile_arg: str,
 ) -> str:
     """Build the ``gateway.cmd`` wrapper content (CRLF-terminated).
@@ -313,8 +313,8 @@ def _build_gateway_cmd_script(
     """
     lines = ["@echo off", f"rem {_TASK_DESCRIPTION}"]
     lines.append(f"cd /d {_quote_cmd_script_arg(working_dir)}")
-    lines.append(f'set "HERMES_HOME={hermes_home}"')
-    lines.append(f'set "THOTH_HOME={hermes_home}"')
+    lines.append(f'set "HERMES_HOME={thoth_home}"')
+    lines.append(f'set "THOTH_HOME={thoth_home}"')
     lines.append('set "PYTHONIOENCODING=utf-8"')
     lines.append('set "HERMES_GATEWAY_DETACHED=1"')
     # VIRTUAL_ENV lets the gateway's own python detection find the venv
@@ -363,10 +363,10 @@ def _write_task_script() -> Path:
 
     python_path = get_python_path()
     working_dir = str(PROJECT_ROOT)
-    hermes_home = str(Path(get_thoth_home()).resolve())
-    profile_arg = _profile_arg(hermes_home)
+    thoth_home = str(Path(get_thoth_home()).resolve())
+    profile_arg = _profile_arg(thoth_home)
 
-    content = _build_gateway_cmd_script(python_path, working_dir, hermes_home, profile_arg)
+    content = _build_gateway_cmd_script(python_path, working_dir, thoth_home, profile_arg)
     script_path = get_task_script_path()
     script_path.write_text(content, encoding="utf-8", newline="")
     return script_path
@@ -526,8 +526,8 @@ def _build_gateway_argv() -> tuple[list[str], str, dict[str, str]]:
 
     python_exe, venv_dir, extra_pythonpath = _resolve_detached_python(get_python_path())
     working_dir = str(PROJECT_ROOT)
-    hermes_home = str(Path(get_thoth_home()).resolve())
-    profile_arg = _profile_arg(hermes_home)
+    thoth_home = str(Path(get_thoth_home()).resolve())
+    profile_arg = _profile_arg(thoth_home)
 
     argv = [python_exe, "-m", "thoth_cli.main"]
     if profile_arg:
@@ -535,8 +535,8 @@ def _build_gateway_argv() -> tuple[list[str], str, dict[str, str]]:
     argv.extend(["gateway", "run"])
 
     env_overlay = {
-        "HERMES_HOME": hermes_home,
-        "THOTH_HOME": hermes_home,
+        "HERMES_HOME": thoth_home,
+        "THOTH_HOME": thoth_home,
         "PYTHONIOENCODING": "utf-8",
         "HERMES_GATEWAY_DETACHED": "1",
         "VIRTUAL_ENV": str(venv_dir),
@@ -844,11 +844,11 @@ def _report_gateway_start(via: str) -> None:
 def _print_next_steps() -> None:
     from thoth_cli.config import get_thoth_home
 
-    hermes_home = Path(get_thoth_home()).resolve()
+    thoth_home = Path(get_thoth_home()).resolve()
     print()
     print("Next steps:")
     print(f"  {cli_name()} gateway status                      # Check status")
-    print(f"  type {hermes_home}\\logs\\gateway.log       # View logs")
+    print(f"  type {thoth_home}\\logs\\gateway.log       # View logs")
 
 
 def uninstall() -> None:

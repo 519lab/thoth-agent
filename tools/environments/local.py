@@ -171,7 +171,7 @@ def _build_provider_env_blocklist() -> frozenset:
 _THOTH_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
 
 
-def _inject_context_hermes_home(env: dict) -> None:
+def _inject_context_thoth_home(env: dict) -> None:
     """Bridge the context-local Thoth home override into subprocess env."""
     try:
         from thoth_constants import get_hermes_home_override
@@ -205,7 +205,7 @@ def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = Non
         elif key not in _THOTH_PROVIDER_ENV_BLOCKLIST or _is_passthrough(key):
             sanitized[key] = value
 
-    _inject_context_hermes_home(sanitized)
+    _inject_context_thoth_home(sanitized)
 
     # Per-profile HOME isolation for background processes (same as _make_run_env).
     from thoth_constants import get_subprocess_home
@@ -307,7 +307,7 @@ def _make_run_env(env: dict) -> dict:
     if not _IS_WINDOWS and "/usr/bin" not in existing_path.split(":"):
         run_env["PATH"] = f"{existing_path}:{_SANE_PATH}" if existing_path else _SANE_PATH
 
-    _inject_context_hermes_home(run_env)
+    _inject_context_thoth_home(run_env)
 
     # Per-profile HOME isolation: redirect system tool configs (git, ssh, gh,
     # npm …) into {HERMES_HOME}/home/ when that directory exists.  Only the

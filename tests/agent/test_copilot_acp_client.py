@@ -175,12 +175,12 @@ def _fake_popen_capture(captured):
 
 
 def test_run_prompt_prefers_profile_home_when_available(monkeypatch, tmp_path):
-    hermes_home = tmp_path / "hermes"
-    profile_home = hermes_home / "home"
+    thoth_home = tmp_path / "hermes"
+    profile_home = thoth_home / "home"
     profile_home.mkdir(parents=True)
 
     monkeypatch.delenv("HOME", raising=False)
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
 
     captured = {}
     client = _make_home_client(tmp_path)

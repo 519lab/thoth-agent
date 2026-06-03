@@ -171,7 +171,7 @@ def normalize_thoth_home_env(env: Optional[MutableMapping[str, str]] = None) -> 
     return changed
 
 
-def propagate_hermes_home_into(env: MutableMapping[str, str], value: str) -> None:
+def propagate_thoth_home_into(env: MutableMapping[str, str], value: str) -> None:
     """Set BOTH HERMES_HOME and THOTH_HOME in *env* to *value*.
 
     MANDATORY at every subprocess-spawn site that overrides the child's home:
@@ -182,8 +182,12 @@ def propagate_hermes_home_into(env: MutableMapping[str, str], value: str) -> Non
     env["THOTH_HOME"] = value
 
 
-def propagate_hermes_home(base, value: str) -> dict:
+def propagate_thoth_home(base, value: str) -> dict:
     """Return a copy of *base* with both home spellings set to *value*."""
     env = dict(base)
-    propagate_hermes_home_into(env, value)
+    propagate_thoth_home_into(env, value)
     return env
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+propagate_hermes_home = propagate_thoth_home
+propagate_hermes_home_into = propagate_thoth_home_into

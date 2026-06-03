@@ -78,22 +78,22 @@ def test_get_hermes_home_legacy_install(fake_home):
     assert thoth_constants.get_thoth_home() == fake_home / ".hermes"
 
 
-# ── get_default_hermes_root ─────────────────────────────────────────────────
+# ── get_default_thoth_root ─────────────────────────────────────────────────
 
 def test_default_root_profile_mode_thoth(fake_home, monkeypatch):
     (fake_home / ".thoth").mkdir()
     monkeypatch.setenv("THOTH_HOME", str(fake_home / ".thoth" / "profiles" / "coder"))
-    assert thoth_constants.get_default_hermes_root() == fake_home / ".thoth"
+    assert thoth_constants.get_default_thoth_root() == fake_home / ".thoth"
 
 
 def test_default_root_docker_custom(fake_home, monkeypatch):
     monkeypatch.setenv("THOTH_HOME", "/opt/data")
-    assert thoth_constants.get_default_hermes_root() == Path("/opt/data")
+    assert thoth_constants.get_default_thoth_root() == Path("/opt/data")
 
 
 def test_default_root_docker_profile(fake_home, monkeypatch):
     monkeypatch.setenv("THOTH_HOME", "/opt/data/profiles/coder")
-    assert thoth_constants.get_default_hermes_root() == Path("/opt/data")
+    assert thoth_constants.get_default_thoth_root() == Path("/opt/data")
 
 
 # ── get_subprocess_home honors THOTH_HOME ───────────────────────────────────
@@ -139,13 +139,13 @@ def test_normalize_home_idempotent():
 
 def test_propagate_home_sets_both():
     env = {"PATH": "/x"}
-    thoth_env.propagate_hermes_home_into(env, "/profile")
+    thoth_env.propagate_thoth_home_into(env, "/profile")
     assert env["HERMES_HOME"] == "/profile" and env["THOTH_HOME"] == "/profile"
 
 
 def test_propagate_home_copy_does_not_mutate_base():
     base = {"HERMES_HOME": "/parent", "THOTH_HOME": "/parent"}
-    child = thoth_env.propagate_hermes_home(base, "/child")
+    child = thoth_env.propagate_thoth_home(base, "/child")
     assert child["HERMES_HOME"] == "/child" and child["THOTH_HOME"] == "/child"
     assert base["HERMES_HOME"] == "/parent"  # base untouched
 
