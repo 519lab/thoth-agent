@@ -121,7 +121,7 @@ SECTIONS: list[tuple[str, list[tuple[str, str, str | None]]]] = [
         ("guides/use-mcp-with-thoth", "Use MCP with Thoth", None),
         ("guides/use-voice-mode-with-thoth", "Use Voice Mode with Thoth", None),
         ("guides/use-soul-with-thoth", "Use SOUL.md with Thoth", None),
-        ("guides/build-a-hermes-plugin", "Build a Thoth Plugin", None),
+        ("guides/build-a-thoth-plugin", "Build a Thoth Plugin", None),
         ("guides/automate-with-cron", "Automate with Cron", None),
         ("guides/work-with-skills", "Work with Skills", None),
         ("guides/delegation-patterns", "Delegation Patterns", None),
@@ -200,13 +200,15 @@ def emit_llms_index() -> str:
     lines.append("# Thoth Agent")
     lines.append("")
     lines.append(
-        "> The self-improving AI agent built by Nous Research. A terminal-native "
-        "autonomous coding and task agent with persistent memory, agent-created skills, "
-        "and a messaging gateway that lives on 21+ messaging platforms — 19 native to "
-        "the gateway plus IRC and Microsoft Teams via plugins (Telegram, Discord, Slack, "
-        "SMS, Matrix, ...). Runs on local, Docker, SSH, Daytona, Modal, or Singularity "
-        "backends. Works with Nous Portal, OpenRouter, OpenAI, Anthropic, Google, or any "
-        "OpenAI-compatible endpoint."
+        "> A self-improving, terminal-native coding and task agent built on a "
+        "five-layer cognitive memory substrate (Postgres + pgvector) that consolidates "
+        "rather than accumulates — perception, entities, associations, patterns, and a "
+        "self-model, maintained by a roster of continuously-running sub-agents. Ships "
+        "agent-created skills and a messaging gateway that lives on 21+ messaging "
+        "platforms — 19 native to the gateway plus IRC and Microsoft Teams via plugins "
+        "(Telegram, Discord, Slack, SMS, Matrix, ...). Runs on local, Docker, SSH, "
+        "Daytona, Modal, or Singularity backends. Works with OpenRouter, OpenAI, "
+        "Anthropic, Google, Nous Portal, or any OpenAI-compatible endpoint."
     )
     lines.append("")
     lines.append(

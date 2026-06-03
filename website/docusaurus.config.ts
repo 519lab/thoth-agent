@@ -3,8 +3,8 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
-  title: 'Hermes Agent',
-  tagline: 'The self-improving AI agent',
+  title: 'Thoth Agent',
+  tagline: 'The self-improving agent with a cognitive memory substrate',
   favicon: 'img/favicon.ico',
 
   url: 'https://thoth.519lab.com',
@@ -88,7 +88,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/hermes-agent-banner.png',
+    image: 'img/thoth-banner.png',
     colorMode: {
       defaultMode: 'dark',
       respectPrefersColorScheme: true,
@@ -100,9 +100,9 @@ const config: Config = {
       },
     },
     navbar: {
-      title: 'Hermes Agent',
+      title: 'Thoth Agent',
       logo: {
-        alt: 'Hermes Agent',
+        alt: 'Thoth Agent',
         src: 'img/logo.png',
       },
       items: [
@@ -160,7 +160,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Built by <a href="https://nousresearch.com">Nous Research</a> · MIT License · ${new Date().getFullYear()}`,
+      copyright: `Built by <a href="https://github.com/519lab">519lab</a> · MIT-licensed fork of Hermes by <a href="https://nousresearch.com">Nous Research</a> · ${new Date().getFullYear()}`,
     },
     prism: {
       theme: prismThemes.github,

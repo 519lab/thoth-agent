@@ -8,8 +8,10 @@
 .docusaurus
 .cache-loader
 src/data/skills.json
-static/llms.txt
-static/llms-full.txt
+# Note: static/llms.txt + static/llms-full.txt are intentionally committed
+# (regenerate-and-commit policy) so the served files are the source of truth,
+# PR diffs are honest, and CI builds are reproducible. Regenerate via
+# `python3 website/scripts/generate-llms-txt.py` and commit the result.
 
 # Misc
 .DS_Store

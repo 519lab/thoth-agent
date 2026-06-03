@@ -1,0 +1,135 @@
+# Thoth Agent
+
+> A self-improving, terminal-native coding and task agent built on a five-layer cognitive memory substrate (Postgres + pgvector) that consolidates rather than accumulates — perception, entities, associations, patterns, and a self-model, maintained by a roster of continuously-running sub-agents. Ships agent-created skills and a messaging gateway that lives on 21+ messaging platforms — 19 native to the gateway plus IRC and Microsoft Teams via plugins (Telegram, Discord, Slack, SMS, Matrix, ...). Runs on local, Docker, SSH, Daytona, Modal, or Singularity backends. Works with OpenRouter, OpenAI, Anthropic, Google, Nous Portal, or any OpenAI-compatible endpoint.
+
+Install: `curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | bash`  (Linux, macOS, WSL2, Termux)
+
+Repo: https://github.com/519lab/thoth-agent
+
+## Getting Started
+
+- [Installation](https://thoth.519lab.com/docs/getting-started/installation): Install Thoth Agent on Linux, macOS, WSL2, native Windows (early beta), or Android via Termux
+- [Quickstart](https://thoth.519lab.com/docs/getting-started/quickstart): Your first conversation with Thoth Agent — from install to chatting in under 5 minutes
+- [Learning Path](https://thoth.519lab.com/docs/getting-started/learning-path): Choose your learning path through the Thoth Agent documentation based on your experience level and goals.
+- [Updating](https://thoth.519lab.com/docs/getting-started/updating): How to update Thoth Agent to the latest version or uninstall it
+- [Termux (Android)](https://thoth.519lab.com/docs/getting-started/termux): Run Thoth Agent directly on an Android phone with Termux
+- [Nix Setup](https://thoth.519lab.com/docs/getting-started/nix-setup): Install and deploy Thoth Agent with Nix — from quick `nix run` to fully declarative NixOS module with container mode
+
+## Using Thoth
+
+- [CLI](https://thoth.519lab.com/docs/user-guide/cli): Master the Thoth Agent terminal interface — commands, keybindings, personalities, and more
+- [TUI (Ink terminal UI)](https://thoth.519lab.com/docs/user-guide/tui): Launch the modern terminal UI for Thoth — mouse-friendly, rich overlays, and non-blocking input.
+- [Configuration](https://thoth.519lab.com/docs/user-guide/configuration): Configure Thoth Agent — config.yaml, providers, models, API keys, and more
+- [Configuring Models](https://thoth.519lab.com/docs/user-guide/configuring-models)
+- [Sessions](https://thoth.519lab.com/docs/user-guide/sessions): Session persistence, resume, search, management, and per-platform session tracking
+- [Profiles](https://thoth.519lab.com/docs/user-guide/profiles)
+- [Git Worktrees](https://thoth.519lab.com/docs/user-guide/git-worktrees): Run multiple Thoth agents safely on the same repository using git worktrees and isolated checkouts
+- [Docker Backend](https://thoth.519lab.com/docs/user-guide/docker): Running Thoth Agent in Docker and using Docker as a terminal backend
+- [Security](https://thoth.519lab.com/docs/user-guide/security): Security model, dangerous command approval, user authorization, container isolation, and production deployment best practices
+- [Checkpoints & Rollback](https://thoth.519lab.com/docs/user-guide/checkpoints-and-rollback): Filesystem safety nets for destructive operations using shadow git repos and automatic snapshots
+
+## Core Features
+
+- [Features Overview](https://thoth.519lab.com/docs/user-guide/features/overview)
+- [Tools](https://thoth.519lab.com/docs/user-guide/features/tools): Overview of Thoth Agent's tools — what's available, how toolsets work, and terminal backends
+- [Skills System](https://thoth.519lab.com/docs/user-guide/features/skills): On-demand knowledge documents — progressive disclosure, agent-managed skills, and the Skills Hub
+- [Curator](https://thoth.519lab.com/docs/user-guide/features/curator): Background maintenance for agent-created skills — usage tracking, staleness, archival, and LLM-driven review
+- [Memory](https://thoth.519lab.com/docs/user-guide/features/memory): How Thoth Agent remembers across sessions — MEMORY.md, USER.md, and session search
+- [Memory Providers](https://thoth.519lab.com/docs/user-guide/features/memory-providers): External memory provider plugins — Honcho, OpenViking, Mem0, Hindsight, Holographic, RetainDB, ByteRover, Supermemory
+- [Context Files](https://thoth.519lab.com/docs/user-guide/features/context-files): Project context files — .hermes.md, AGENTS.md, CLAUDE.md, global SOUL.md, and .cursorrules — automatically injected into every conversation
+- [Context References](https://thoth.519lab.com/docs/user-guide/features/context-references): Inline @-syntax for attaching files, folders, git diffs, and URLs directly into your messages
+- [Personality & SOUL.md](https://thoth.519lab.com/docs/user-guide/features/personality): Customize Thoth Agent's personality with a global SOUL.md, built-in personalities, and custom persona definitions
+- [Plugins](https://thoth.519lab.com/docs/user-guide/features/plugins): Extend Thoth with custom tools, hooks, and integrations via the plugin system
+- [Built-in Plugins](https://thoth.519lab.com/docs/user-guide/features/built-in-plugins): Plugins shipped with Thoth Agent that run automatically via lifecycle hooks — disk-cleanup and friends
+
+## Automation
+
+- [Cron Jobs](https://thoth.519lab.com/docs/user-guide/features/cron): Schedule automated tasks with natural language, manage them with one cron tool, and attach one or more skills
+- [Delegation](https://thoth.519lab.com/docs/user-guide/features/delegation): Spawn isolated child agents for parallel workstreams with delegate_task
+- [Kanban Multi-Agent](https://thoth.519lab.com/docs/user-guide/features/kanban): Durable SQLite-backed task board for coordinating multiple Thoth profiles
+- [Kanban Tutorial](https://thoth.519lab.com/docs/user-guide/features/kanban-tutorial)
+- [Persistent Goals](https://thoth.519lab.com/docs/user-guide/features/goals): Set a standing goal and let Thoth keep working across turns until it's done. Our take on the Ralph loop.
+- [Code Execution](https://thoth.519lab.com/docs/user-guide/features/code-execution): Programmatic Python execution with RPC tool access — collapse multi-step workflows into a single turn
+- [Hooks](https://thoth.519lab.com/docs/user-guide/features/hooks): Run custom code at key lifecycle points — log activity, send alerts, post to webhooks
+- [Batch Processing](https://thoth.519lab.com/docs/user-guide/features/batch-processing): Generate agent trajectories at scale — parallel processing, checkpointing, and toolset distributions
+
+## Media & Web
+
+- [Voice Mode](https://thoth.519lab.com/docs/user-guide/features/voice-mode): Real-time voice conversations with Thoth Agent — CLI, Telegram, Discord (DMs, text channels, and voice channels)
+- [Browser](https://thoth.519lab.com/docs/user-guide/features/browser)
+- [Vision](https://thoth.519lab.com/docs/user-guide/features/vision)
+- [Image Generation](https://thoth.519lab.com/docs/user-guide/features/image-generation)
+- [Text-to-Speech](https://thoth.519lab.com/docs/user-guide/features/tts): Text-to-speech and voice message transcription across all platforms
+
+## Messaging Platforms
+
+- [Overview](https://thoth.519lab.com/docs/user-guide/messaging/index): Chat with Thoth from Telegram, Discord, Slack, WhatsApp, Signal, SMS, Email, Home Assistant, Mattermost, Matrix, DingTalk, Yuanbao, Microsoft Teams, LINE, Webhooks, or any OpenAI-compatible frontend via the API server — architecture and setup overview
+- [Telegram](https://thoth.519lab.com/docs/user-guide/messaging/telegram): Set up Thoth Agent as a Telegram bot
+- [Discord](https://thoth.519lab.com/docs/user-guide/messaging/discord): Set up Thoth Agent as a Discord bot
+- [Slack](https://thoth.519lab.com/docs/user-guide/messaging/slack): Set up Thoth Agent as a Slack bot using Socket Mode
+- [WhatsApp](https://thoth.519lab.com/docs/user-guide/messaging/whatsapp): Set up Thoth Agent as a WhatsApp bot via the built-in Baileys bridge
+- [Signal](https://thoth.519lab.com/docs/user-guide/messaging/signal): Set up Thoth Agent as a Signal messenger bot via signal-cli daemon
+- [Email](https://thoth.519lab.com/docs/user-guide/messaging/email): Set up Thoth Agent as an email assistant via IMAP/SMTP
+- [SMS](https://thoth.519lab.com/docs/user-guide/messaging/sms): Set up Thoth Agent as an SMS chatbot via Twilio
+- [Matrix](https://thoth.519lab.com/docs/user-guide/messaging/matrix): Set up Thoth Agent as a Matrix bot
+- [Mattermost](https://thoth.519lab.com/docs/user-guide/messaging/mattermost): Set up Thoth Agent as a Mattermost bot
+- [Home Assistant](https://thoth.519lab.com/docs/user-guide/messaging/homeassistant)
+- [Webhooks](https://thoth.519lab.com/docs/user-guide/messaging/webhooks): Receive events from GitHub, GitLab, and other services to trigger Thoth agent runs
+
+## Integrations
+
+- [Integrations Overview](https://thoth.519lab.com/docs/integrations/index)
+- [Providers](https://thoth.519lab.com/docs/integrations/providers)
+- [MCP (Model Context Protocol)](https://thoth.519lab.com/docs/user-guide/features/mcp): Connect Thoth Agent to external tool servers via MCP — and control exactly which MCP tools Thoth loads
+- [ACP (Agent Context Protocol)](https://thoth.519lab.com/docs/user-guide/features/acp): Use Thoth Agent inside ACP-compatible editors such as VS Code, Zed, and JetBrains
+- [API Server](https://thoth.519lab.com/docs/user-guide/features/api-server): Expose hermes-agent as an OpenAI-compatible API for any frontend
+- [Honcho Memory](https://thoth.519lab.com/docs/user-guide/features/honcho): AI-native persistent memory via Honcho — dialectic reasoning, multi-agent user modeling, and deep personalization
+- [Provider Routing](https://thoth.519lab.com/docs/user-guide/features/provider-routing)
+- [Fallback Providers](https://thoth.519lab.com/docs/user-guide/features/fallback-providers)
+- [Credential Pools](https://thoth.519lab.com/docs/user-guide/features/credential-pools)
+
+## Guides & Tutorials
+
+- [Tips & Best Practices](https://thoth.519lab.com/docs/guides/tips): Practical advice to get the most out of Thoth Agent — prompt tips, CLI shortcuts, context files, memory, cost optimization, and security
+- [Local LLMs on Mac](https://thoth.519lab.com/docs/guides/local-llm-on-mac): Set up a local OpenAI-compatible LLM server on macOS with llama.cpp or MLX, including model selection, memory optimization, and real benchmarks on Apple Silicon
+- [Daily Briefing Bot](https://thoth.519lab.com/docs/guides/daily-briefing-bot): Build an automated daily briefing bot that researches topics, summarizes findings, and delivers them to Telegram or Discord every morning
+- [Team Telegram Assistant](https://thoth.519lab.com/docs/guides/team-telegram-assistant): Step-by-step guide to setting up a Telegram bot that your whole team can use for code help, research, system admin, and more
+- [Use Thoth as a Python Library](https://thoth.519lab.com/docs/guides/python-library): Embed AIAgent in your own Python scripts, web apps, or automation pipelines — no CLI required
+- [Use MCP with Thoth](https://thoth.519lab.com/docs/guides/use-mcp-with-thoth): A practical guide to connecting MCP servers to Thoth Agent, filtering their tools, and using them safely in real workflows
+- [Use Voice Mode with Thoth](https://thoth.519lab.com/docs/guides/use-voice-mode-with-thoth): A practical guide to setting up and using Thoth voice mode across CLI, Telegram, Discord, and Discord voice channels
+- [Use SOUL.md with Thoth](https://thoth.519lab.com/docs/guides/use-soul-with-thoth): How to use SOUL.md to shape Thoth Agent's default voice, what belongs there, and how it differs from AGENTS.md and /personality
+- [Build a Thoth Plugin](https://thoth.519lab.com/docs/guides/build-a-thoth-plugin): Step-by-step guide to building a complete Thoth plugin with tools, hooks, data files, and skills
+- [Automate with Cron](https://thoth.519lab.com/docs/guides/automate-with-cron): Real-world automation patterns using Thoth cron — monitoring, reports, pipelines, and multi-skill workflows
+- [Work with Skills](https://thoth.519lab.com/docs/guides/work-with-skills): Find, install, use, and create skills — on-demand knowledge that teaches Thoth new workflows
+- [Delegation Patterns](https://thoth.519lab.com/docs/guides/delegation-patterns): When and how to use subagent delegation — patterns for parallel research, code review, and multi-file work
+- [GitHub PR Review Agent](https://thoth.519lab.com/docs/guides/github-pr-review-agent): Build an automated AI code reviewer that monitors your repos, reviews pull requests, and delivers feedback — hands-free
+
+## Developer Guide
+
+- [Contributing](https://thoth.519lab.com/docs/developer-guide/contributing): How to contribute to Thoth Agent — dev setup, code style, PR process
+- [Architecture](https://thoth.519lab.com/docs/developer-guide/architecture): Thoth Agent internals — major subsystems, execution paths, data flow, and where to read next
+- [Agent Loop](https://thoth.519lab.com/docs/developer-guide/agent-loop): Detailed walkthrough of AIAgent execution, API modes, tools, callbacks, and fallback behavior
+- [Prompt Assembly](https://thoth.519lab.com/docs/developer-guide/prompt-assembly): How Thoth builds the system prompt, preserves cache stability, and injects ephemeral layers
+- [Context Compression & Caching](https://thoth.519lab.com/docs/developer-guide/context-compression-and-caching)
+- [Gateway Internals](https://thoth.519lab.com/docs/developer-guide/gateway-internals): How the messaging gateway boots, authorizes users, routes sessions, and delivers messages
+- [Session Storage](https://thoth.519lab.com/docs/developer-guide/session-storage)
+- [Provider Runtime](https://thoth.519lab.com/docs/developer-guide/provider-runtime): How Thoth resolves providers, credentials, API modes, and auxiliary models at runtime
+- [Adding Tools](https://thoth.519lab.com/docs/developer-guide/adding-tools): How to add a new tool to Thoth Agent — schemas, handlers, registration, and toolsets
+- [Adding Providers](https://thoth.519lab.com/docs/developer-guide/adding-providers): How to add a new inference provider to Thoth Agent — auth, runtime resolution, CLI flows, adapters, tests, and docs
+- [Adding Platform Adapters](https://thoth.519lab.com/docs/developer-guide/adding-platform-adapters)
+- [Creating Skills](https://thoth.519lab.com/docs/developer-guide/creating-skills): How to create skills for Thoth Agent — SKILL.md format, guidelines, and publishing
+- [Extending the CLI](https://thoth.519lab.com/docs/developer-guide/extending-the-cli): Build wrapper CLIs that extend the Thoth TUI with custom widgets, keybindings, and layout changes
+
+## Reference
+
+- [CLI Commands](https://thoth.519lab.com/docs/reference/cli-commands): Authoritative reference for Thoth terminal commands and command families
+- [Slash Commands](https://thoth.519lab.com/docs/reference/slash-commands): Complete reference for interactive CLI and messaging slash commands
+- [Profile Commands](https://thoth.519lab.com/docs/reference/profile-commands)
+- [Environment Variables](https://thoth.519lab.com/docs/reference/environment-variables): Complete reference of all environment variables used by Thoth Agent
+- [Tools Reference](https://thoth.519lab.com/docs/reference/tools-reference): Authoritative reference for Thoth built-in tools, grouped by toolset
+- [Toolsets Reference](https://thoth.519lab.com/docs/reference/toolsets-reference): Reference for Thoth core, composite, platform, and dynamic toolsets
+- [MCP Config Reference](https://thoth.519lab.com/docs/reference/mcp-config-reference): Reference for Thoth Agent MCP configuration keys, filtering semantics, and utility-tool policy
+- [Model Catalog](https://thoth.519lab.com/docs/reference/model-catalog)
+- [Bundled Skills Catalog](https://thoth.519lab.com/docs/reference/skills-catalog): Table of all ~90 skills bundled with Thoth
+- [Optional Skills Catalog](https://thoth.519lab.com/docs/reference/optional-skills-catalog): Table of ~60 additional installable skills
+- [FAQ & Troubleshooting](https://thoth.519lab.com/docs/reference/faq): Frequently asked questions and solutions to common issues with Thoth Agent
