@@ -17,7 +17,7 @@ Contract (from Phase A spec §4.2):
 * If ``conn`` is passed, the INSERT runs on that connection so the
   caller can wrap it in a transaction shared with e.g.
   ``messages.append_message``. Otherwise the function acquires a
-  connection from ``hermes_db.pool()`` for the duration of the call.
+  connection from ``thoth_db.pool()`` for the duration of the call.
 * Never uses ``::jsonb`` casts (the pool's JSONB codec handles
   encode/decode, per the Phase 0 ADR).
 """
@@ -215,7 +215,7 @@ def commit_slice_sync(
     payload_blob_ref: Optional[str] = None,
 ) -> Address:
     """Sync facade — bridges to the async ``commit_slice`` via
-    :func:`hermes_db.run_sync`.
+    :func:`thoth_db.run_sync`.
 
     Must NOT be called from inside a running event loop. The Phase 0
     ``run_sync`` helper raises ``RuntimeError`` in that case
@@ -225,11 +225,11 @@ def commit_slice_sync(
     Async callers should ``await commit_slice(...)`` directly.
     """
     # Imported here, not at module top, so this module can be imported
-    # in environments where hermes_db isn't loaded yet (e.g. doc-only
+    # in environments where thoth_db isn't loaded yet (e.g. doc-only
     # tooling that just wants to read the function signatures).
-    import hermes_db
+    import thoth_db
 
-    return hermes_db.run_sync(
+    return thoth_db.run_sync(
         commit_slice(
             substrate,
             stream_id,
@@ -288,12 +288,12 @@ def reinforce_slice_sync(
     bump: Optional[float] = None,
 ) -> None:
     """Sync facade for :func:`reinforce_slice`. Bridges via
-    :func:`hermes_db.run_sync`. Must NOT be called from inside a
+    :func:`thoth_db.run_sync`. Must NOT be called from inside a
     running event loop (the underlying ``run_sync`` raises).
     """
-    import hermes_db
+    import thoth_db
 
-    return hermes_db.run_sync(
+    return thoth_db.run_sync(
         reinforce_slice(substrate, slice_id, bump=bump)
     )
 
@@ -305,7 +305,7 @@ async def set_slice_pinned(
     release (the "never forget this" control). Pinning also lifts salience
     to 1.0 so the slice surfaces in recall and won't be sitting near the
     release threshold if later unpinned. Returns True if a row changed."""
-    import hermes_db
+    import thoth_db
 
     sql = (
         "UPDATE substrate_slices "
@@ -321,7 +321,7 @@ async def set_slice_pinned(
 
     if conn is not None:
         return await _go(conn)
-    async with hermes_db.connection() as own:
+    async with thoth_db.connection() as own:
         return await _go(own)
 
 
@@ -331,7 +331,7 @@ async def forget_slice(
     """Forget a slice: drop its salience to 0 and unpin it, so the
     Curator releases it (per its decay-profile tombstone policy) on its
     next cycle. Returns True if a row changed."""
-    import hermes_db
+    import thoth_db
 
     sql = (
         "UPDATE substrate_slices "
@@ -345,7 +345,7 @@ async def forget_slice(
 
     if conn is not None:
         return await _go(conn)
-    async with hermes_db.connection() as own:
+    async with thoth_db.connection() as own:
         return await _go(own)
 
 

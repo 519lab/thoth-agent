@@ -12,8 +12,8 @@ from pathlib import Path
 
 _profile_fallback_warned: bool = False
 _UNSET = object()
-_HERMES_HOME_OVERRIDE: ContextVar[str | object] = ContextVar(
-    "_HERMES_HOME_OVERRIDE", default=_UNSET
+_THOTH_HOME_OVERRIDE: ContextVar[str | object] = ContextVar(
+    "_THOTH_HOME_OVERRIDE", default=_UNSET
 )
 
 
@@ -24,17 +24,17 @@ def set_hermes_home_override(path: str | Path | None) -> Token:
     ``os.environ`` because that is shared by every thread in the process.
     """
     value: str | object = _UNSET if path is None else str(path)
-    return _HERMES_HOME_OVERRIDE.set(value)
+    return _THOTH_HOME_OVERRIDE.set(value)
 
 
 def reset_hermes_home_override(token: Token) -> None:
     """Restore the previous context-local Thoth home override."""
-    _HERMES_HOME_OVERRIDE.reset(token)
+    _THOTH_HOME_OVERRIDE.reset(token)
 
 
 def get_thoth_home_override() -> str | None:
     """Return the active context-local Thoth home override, if any."""
-    override = _HERMES_HOME_OVERRIDE.get()
+    override = _THOTH_HOME_OVERRIDE.get()
     if override is _UNSET or not override:
         return None
     return str(override)
@@ -72,7 +72,7 @@ def get_thoth_home() -> Path:
     Resolution (rename Phase 3): context override → ``THOTH_HOME`` env →
     ``HERMES_HOME`` env → ``~/.thoth`` if present → ``~/.hermes`` if present →
     ``~/.thoth`` (new-install default). ``THOTH_HOME`` is canonical; both env
-    spellings are kept in sync by ``hermes_env.normalize_thoth_home_env`` at
+    spellings are kept in sync by ``thoth_env.normalize_thoth_home_env`` at
     startup, so reading either here returns the same value.
     This is the single source of truth — all other copies should import this.
 
@@ -254,7 +254,7 @@ def get_hermes_dir(new_subpath: str, old_name: str) -> Path:
     return home / new_subpath
 
 
-def display_hermes_home() -> str:
+def display_thoth_home() -> str:
     """Return a user-friendly display string for the current HERMES_HOME.
 
     Uses ``~/`` shorthand for readability::
@@ -414,7 +414,7 @@ def get_config_path() -> Path:
     """Return the path to ``config.yaml`` under HERMES_HOME.
 
     Replaces the ``get_thoth_home() / "config.yaml"`` pattern repeated
-    in 7+ files (skill_utils.py, hermes_logging.py, hermes_time.py, etc.).
+    in 7+ files (skill_utils.py, thoth_logging.py, thoth_time.py, etc.).
     """
     return get_thoth_home() / "config.yaml"
 
@@ -455,7 +455,7 @@ def apply_ipv4_preference(force: bool = False) -> None:
     import socket
 
     # Guard against double-patching
-    if getattr(socket.getaddrinfo, "_hermes_ipv4_patched", False):
+    if getattr(socket.getaddrinfo, "_thoth_ipv4_patched", False):
         return
 
     _original_getaddrinfo = socket.getaddrinfo
@@ -471,7 +471,7 @@ def apply_ipv4_preference(force: bool = False) -> None:
                 return _original_getaddrinfo(host, port, family, type, proto, flags)
         return _original_getaddrinfo(host, port, family, type, proto, flags)
 
-    _ipv4_getaddrinfo._hermes_ipv4_patched = True  # type: ignore[attr-defined]
+    _ipv4_getaddrinfo._thoth_ipv4_patched = True  # type: ignore[attr-defined]
     socket.getaddrinfo = _ipv4_getaddrinfo  # type: ignore[assignment]
 
 

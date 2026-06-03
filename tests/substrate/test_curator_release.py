@@ -28,9 +28,9 @@ from substrate.storage import (
 
 @pytest_asyncio.fixture
 async def substrate(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
-    return Substrate.from_pool(hermes_db.pool())
+    return Substrate.from_pool(thoth_db.pool())
 
 
 def _now_utc() -> datetime:
@@ -82,13 +82,13 @@ async def _seed_releasable_slice(
 ) -> UUID:
     """Commit a slice + set sentinel=passed + force salience low + set
     consolidation_state. Returns slice_id."""
-    import hermes_db
+    import thoth_db
 
     await commit_slice(
         substrate, stream_id, {"k": uuid4().hex[:6]},
         event_time_world=_now_utc(),
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         slice_id = await conn.fetchval(
             """
             UPDATE substrate_slices
@@ -117,7 +117,7 @@ async def _seed_releasable_slice(
 
 @pytest.mark.asyncio
 async def test_release_thin_policy_nulls_payload_and_marks_released(substrate):
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile(
         substrate.pool, "test-thin-release",
@@ -140,7 +140,7 @@ async def test_release_thin_policy_nulls_payload_and_marks_released(substrate):
     assert released[0].slice_id == slice_id
     assert released[0].tombstone_policy == "thin"
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             """
             SELECT payload, payload_blob_ref, salience_score,
@@ -160,7 +160,7 @@ async def test_release_thin_policy_nulls_payload_and_marks_released(substrate):
 
 @pytest.mark.asyncio
 async def test_release_full_policy_keeps_salience(substrate):
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile(
         substrate.pool, "test-full-release",
@@ -181,7 +181,7 @@ async def test_release_full_policy_keeps_salience(substrate):
     released = await curator._evaluate_releases()
     assert len(released) == 1
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             "SELECT salience_score, consolidation_state, payload FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -194,7 +194,7 @@ async def test_release_full_policy_keeps_salience(substrate):
 
 @pytest.mark.asyncio
 async def test_release_none_policy_deletes_row(substrate):
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile(
         substrate.pool, "test-none-release",
@@ -216,7 +216,7 @@ async def test_release_none_policy_deletes_row(substrate):
     released = await curator._evaluate_releases()
     assert len(released) == 1
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             "SELECT slice_id FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -228,7 +228,7 @@ async def test_release_none_policy_deletes_row(substrate):
 async def test_release_respects_release_after_consolidation(substrate):
     """Profile with release_after_consolidation=TRUE does NOT release
     unconsolidated slices, even if salience is below threshold."""
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile(
         substrate.pool, "test-gate-release",
@@ -253,7 +253,7 @@ async def test_release_respects_release_after_consolidation(substrate):
     released = await curator._evaluate_releases()
     assert released == []
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             "SELECT payload, consolidation_state FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -266,7 +266,7 @@ async def test_release_respects_release_after_consolidation(substrate):
 async def test_release_passes_when_consolidated(substrate):
     """Same profile (release_after_consolidation=TRUE) DOES release
     a slice whose consolidation_state is 'consolidated'."""
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile(
         substrate.pool, "test-gate-consol",
@@ -294,7 +294,7 @@ async def test_release_passes_when_consolidated(substrate):
 @pytest.mark.asyncio
 async def test_release_skips_already_released(substrate):
     """A slice already at consolidation_state='released' is not re-touched."""
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile(
         substrate.pool, "test-already-released",
@@ -322,7 +322,7 @@ async def test_release_skips_already_released(substrate):
 @pytest.mark.asyncio
 async def test_release_bounded_by_batch_limit(substrate):
     """500 eligible slices, one tick releases exactly 200."""
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile(
         substrate.pool, "test-bounded",
@@ -350,7 +350,7 @@ async def test_release_bounded_by_batch_limit(substrate):
 async def test_release_concurrent_curators_no_double_release(substrate):
     """Two Curators racing on the same eligibility set don't release
     the same slice twice (FOR UPDATE SKIP LOCKED gate)."""
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile(
         substrate.pool, "test-concurrent",

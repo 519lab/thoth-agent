@@ -491,7 +491,7 @@ class TestCLI:
         parent's ``os.environ``. ``hermes_db_initialized_sync`` sets
         that env var via the underlying ``hermes_db_dsn`` fixture, so
         the subprocess can lazy-init the pool against the per-test PG.
-        Without this, every test hits ``RuntimeError: hermes_db.init()
+        Without this, every test hits ``RuntimeError: thoth_db.init()
         not called`` in the subprocess.
         """
         yield

@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
-import hermes_db
+import thoth_db
 from substrate.skill_proposals import store
 from tools import skill_proposal_tool as tool
 
@@ -24,7 +24,7 @@ def _seed(slug, *, content=None, salience=0.8, l3_ids=None,
         f"---\nname: {slug}\ndescription: A test skill for {slug}\n---\n"
         f"# {slug}\n\n1. Do the thing.\n"
     )
-    hermes_db.run_sync(
+    thoth_db.run_sync(
         store.insert_proposal(
             slug=slug,
             title=f"Title {slug}",
@@ -80,7 +80,7 @@ def test_approve_installs_marks_and_flips(hermes_db_initialized_sync, _skill_san
     # Marked agent-created so the skills Curator adopts it.
     mark.assert_called_once_with("install-me")
     # Proposal flipped to approved with a decider stamp.
-    p = hermes_db.run_sync(store.get_proposal("install-me"))
+    p = thoth_db.run_sync(store.get_proposal("install-me"))
     assert p.status == "approved" and p.decided_by == "user"
 
 
@@ -100,7 +100,7 @@ def test_approve_failure_leaves_pending(hermes_db_initialized_sync, _skill_sandb
     res = json.loads(tool.skill_proposal("approve", "bad-skill"))
     assert res["success"] is False
     assert "Install failed" in res["error"]
-    p = hermes_db.run_sync(store.get_proposal("bad-skill"))
+    p = thoth_db.run_sync(store.get_proposal("bad-skill"))
     assert p.status == "pending"
 
 
@@ -108,10 +108,10 @@ def test_reject_flips_and_blocks_reproposal(hermes_db_initialized_sync, _skill_s
     _seed("nope-skill")
     res = json.loads(tool.skill_proposal("reject", "nope-skill"))
     assert res["success"]
-    p = hermes_db.run_sync(store.get_proposal("nope-skill"))
+    p = thoth_db.run_sync(store.get_proposal("nope-skill"))
     assert p.status == "rejected" and p.decided_by == "user"
     # has_similar now true → the SkillScout won't re-propose this slug.
-    assert hermes_db.run_sync(store.has_similar("nope-skill")) is True
+    assert thoth_db.run_sync(store.has_similar("nope-skill")) is True
 
 
 def test_unknown_action_and_missing_slug(hermes_db_initialized_sync, _skill_sandbox):

@@ -318,7 +318,7 @@ def check_api_server_requirements() -> bool:
 
 
 # Filesystem markers for WAL-mode incompatibility. Lifted verbatim from
-# the pre-Phase-0 ``hermes_state.apply_wal_with_fallback`` so the
+# the pre-Phase-0 ``thoth_state.apply_wal_with_fallback`` so the
 # response_store DB behaves identically on NFS/SMB/FUSE mounts.
 _WAL_INCOMPAT_MARKERS = (
     "locking protocol",
@@ -336,7 +336,7 @@ def _apply_wal_with_fallback(conn: sqlite3.Connection, *, db_label: str) -> str:
     """Set ``journal_mode=WAL`` on ``conn``; fall back to DELETE if the
     filesystem rejects WAL. Returns the mode actually applied.
 
-    Replaces the removed ``hermes_state.apply_wal_with_fallback`` helper
+    Replaces the removed ``thoth_state.apply_wal_with_fallback`` helper
     for the gateway's response_store. The session DB itself no longer
     needs this — it moved to PostgreSQL in Phase 0.
     """
@@ -385,7 +385,7 @@ class ResponseStore:
             self._conn = sqlite3.connect(":memory:", check_same_thread=False)
         # WAL journal mode with graceful fallback so response_store.db
         # degrades safely on NFS/SMB/FUSE-mounted HERMES_HOME. The shared
-        # helper that used to live in hermes_state was removed when the
+        # helper that used to live in thoth_state was removed when the
         # session DB moved to PostgreSQL in Phase 0; this is the response-
         # store's own copy of the same logic.
         _apply_wal_with_fallback(self._conn, db_label="response_store.db")
@@ -880,7 +880,7 @@ class APIServerAdapter(BasePlatformAdapter):
         """
         if self._session_db is None:
             try:
-                from hermes_state import SessionDB
+                from thoth_state import SessionDB
                 self._session_db = SessionDB()
             except Exception as e:
                 logger.debug("SessionDB unavailable for API server: %s", e)

@@ -7,7 +7,7 @@ replace), get_messages (ordering/hydration), and get_messages_as_conversation
 import pytest
 import pytest_asyncio
 
-from hermes_state import _AsyncSessionDB
+from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture
@@ -31,11 +31,11 @@ async def test_append_message_returns_int_id(db):
 @pytest.mark.asyncio
 async def test_append_message_increments_message_count(db):
     """Each append_message call increments sessions.message_count by 1."""
-    import hermes_db
+    import thoth_db
     await db.create_session("S2", source="cli")
     await db.append_message("S2", role="user", content="one")
     await db.append_message("S2", role="assistant", content="two")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow("SELECT message_count FROM sessions WHERE id = $1", "S2")
     assert row["message_count"] == 2
 
@@ -54,11 +54,11 @@ async def test_append_message_tool_calls_jsonb_stored_as_list(db):
 @pytest.mark.asyncio
 async def test_append_message_tool_calls_increments_tool_call_count(db):
     """tool_calls increments sessions.tool_call_count by the number of calls."""
-    import hermes_db
+    import thoth_db
     await db.create_session("S4", source="cli")
     tc = [{"id": "t1"}, {"id": "t2"}]
     await db.append_message("S4", role="assistant", content="", tool_calls=tc)
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             "SELECT message_count, tool_call_count FROM sessions WHERE id = $1", "S4"
         )
@@ -126,7 +126,7 @@ async def test_replace_messages_clears_and_reinserts(db):
 @pytest.mark.asyncio
 async def test_replace_messages_resets_counters(db):
     """replace_messages resets message_count and tool_call_count to new values."""
-    import hermes_db
+    import thoth_db
     await db.create_session("R2", source="cli")
     # Seed old messages (includes a tool call)
     await db.append_message("R2", role="assistant", content="", tool_calls=[{"id": "t1"}])
@@ -137,7 +137,7 @@ async def test_replace_messages_resets_counters(db):
         {"role": "user", "content": "fresh start"},
     ])
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             "SELECT message_count, tool_call_count FROM sessions WHERE id = $1", "R2"
         )

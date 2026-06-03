@@ -1,13 +1,13 @@
 """Tests for _AsyncSessionDB.search_messages / search_sessions (PostgreSQL path).
 
 Requires:  docker-compose up -d postgres  + migrations applied.
-Run with:  uv run pytest tests/hermes_state/test_search_pg.py -v -o addopts=""
+Run with:  uv run pytest tests/thoth_state/test_search_pg.py -v -o addopts=""
 """
 
 import pytest
 import pytest_asyncio
 
-from hermes_state import _AsyncSessionDB
+from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture

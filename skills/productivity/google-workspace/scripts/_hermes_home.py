@@ -2,7 +2,7 @@
 
 Skill scripts may run outside the Hermes process (e.g. system Python,
 nix env, CI) where ``thoth_constants`` is not importable.  This module
-provides the same ``get_thoth_home()`` and ``display_hermes_home()``
+provides the same ``get_thoth_home()`` and ``display_thoth_home()``
 contracts as ``thoth_constants`` without requiring it on ``sys.path``.
 
 When ``thoth_constants`` IS available it is used directly so that any
@@ -20,7 +20,7 @@ import os
 from pathlib import Path
 
 try:
-    from thoth_constants import display_hermes_home as display_hermes_home
+    from thoth_constants import display_thoth_home as display_thoth_home
     from thoth_constants import get_thoth_home as get_thoth_home
 except (ModuleNotFoundError, ImportError):
 
@@ -31,10 +31,10 @@ except (ModuleNotFoundError, ImportError):
         val = os.environ.get("HERMES_HOME", "").strip()
         return Path(val) if val else Path.home() / ".hermes"
 
-    def display_hermes_home() -> str:
+    def display_thoth_home() -> str:
         """Return a user-friendly ``~/``-shortened display string.
 
-        Mirrors ``thoth_constants.display_hermes_home()``."""
+        Mirrors ``thoth_constants.display_thoth_home()``."""
         home = get_thoth_home()
         try:
             return "~/" + str(home.relative_to(Path.home()))

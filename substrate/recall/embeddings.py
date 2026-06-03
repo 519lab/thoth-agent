@@ -73,8 +73,8 @@ async def _get_schema_dim() -> int:
     if _schema_dim_cache is not None:
         return _schema_dim_cache
     try:
-        import hermes_db
-        async with hermes_db.connection() as conn:
+        import thoth_db
+        async with thoth_db.connection() as conn:
             row = await conn.fetchrow(
                 """
                 SELECT format_type(atttypid, atttypmod) AS coltype

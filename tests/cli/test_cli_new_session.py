@@ -8,7 +8,7 @@ import sys
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from hermes_state import SessionDB
+from thoth_state import SessionDB
 from tests._helpers.sync_session_db import SyncSessionDB
 from tools.todo_tool import TodoStore
 
@@ -127,7 +127,7 @@ def _prepare_cli_with_active_session(tmp_path, *, hermes_db_initialized_sync=Non
     Phase 0 moved sessions from SQLite to PG: ``SessionDB`` is now an
     alias for ``_AsyncSessionDB``, so every method returns a coroutine.
     Production code in ``cli.py`` drives them through
-    ``hermes_db.run_sync``; test bodies use the ``SyncSessionDB`` shim
+    ``thoth_db.run_sync``; test bodies use the ``SyncSessionDB`` shim
     so they can write the same ``db.get_session(id)["end_reason"]``
     pattern they used to.
     """
@@ -241,7 +241,7 @@ def test_new_session_resets_token_counters(tmp_path, hermes_db_initialized_sync)
 
 def _make_async_session_db_mock(**overrides):
     """Build a SessionDB mock whose async methods are AsyncMock so
-    ``hermes_db.run_sync(db.method(...))`` doesn't raise
+    ``thoth_db.run_sync(db.method(...))`` doesn't raise
     ``TypeError: An asyncio.Future, a coroutine or an awaitable is required``.
     """
     mock_db = MagicMock()

@@ -217,7 +217,7 @@ def _get_session_db() -> Optional[Any]:
     """
     try:
         from thoth_constants import get_thoth_home
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
 
         home = str(get_thoth_home())
     except Exception as exc:  # pragma: no cover
@@ -244,7 +244,7 @@ def load_goal(session_id: str) -> Optional[GoalState]:
     if db is None:
         return None
     try:
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         raw = _hermes_db.run_sync(db.get_meta(_meta_key(session_id)))
     except Exception as exc:
         logger.debug("GoalManager: get_meta failed: %s", exc)
@@ -266,7 +266,7 @@ def save_goal(session_id: str, state: GoalState) -> None:
     if db is None:
         return
     try:
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         _hermes_db.run_sync(db.set_meta(_meta_key(session_id), state.to_json()))
     except Exception as exc:
         logger.debug("GoalManager: set_meta failed: %s", exc)

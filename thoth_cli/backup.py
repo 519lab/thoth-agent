@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from thoth_cli.cli_name import cli_name
-from thoth_constants import get_default_hermes_root, get_thoth_home, display_hermes_home
+from thoth_constants import get_default_hermes_root, get_thoth_home, display_thoth_home
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +153,7 @@ def run_backup(args) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Collect files
-    print(f"Scanning {display_hermes_home()} ...")
+    print(f"Scanning {display_thoth_home()} ...")
     files_to_add: list[tuple[Path, Path]] = []  # (absolute, relative)
     skipped_dirs = set()
 
@@ -331,7 +331,7 @@ def run_import(args) -> None:
         file_count = len(members)
 
         print(f"Backup contains {file_count} files")
-        print(f"Target: {display_hermes_home()}")
+        print(f"Target: {display_thoth_home()}")
 
         if prefix:
             print(f"Detected archive prefix: {prefix!r} (will be stripped)")
@@ -399,7 +399,7 @@ def run_import(args) -> None:
         # Summary
         print()
         print(f"Import complete: {restored} files restored in {elapsed:.1f}s")
-        print(f"  Target: {display_hermes_home()}")
+        print(f"  Target: {display_thoth_home()}")
 
         if errors:
             print(f"\n  Warnings ({len(errors)} files skipped):")
@@ -696,7 +696,7 @@ def run_quick_backup(args) -> None:
     if snap_id:
         print(f"State snapshot created: {snap_id}")
         snaps = list_quick_snapshots()
-        print(f"  {len(snaps)} snapshot(s) stored in {display_hermes_home()}/state-snapshots/")
+        print(f"  {len(snaps)} snapshot(s) stored in {display_thoth_home()}/state-snapshots/")
         print(f"  Restore with: /snapshot restore {snap_id}")
     else:
         print("No state files found to snapshot.")

@@ -95,10 +95,10 @@ class InsightsEngine:
     Analyzes session history and produces usage insights.
 
     Works against the process-wide asyncpg pool managed by
-    ``hermes_db``. The ``db`` argument is accepted for call-site
+    ``thoth_db``. The ``db`` argument is accepted for call-site
     compatibility (the legacy sqlite ``_AsyncSessionDB`` ancestor used
     to expose ``_conn``) but ignored — all queries route through
-    ``hermes_db.run_sync`` so the engine can stay synchronously
+    ``thoth_db.run_sync`` so the engine can stay synchronously
     callable from CLI / gateway code.
     """
 
@@ -130,25 +130,25 @@ class InsightsEngine:
 
     def _fetchall(self, sql: str, params: tuple = ()) -> list[dict]:
         """Synchronous wrapper: run a SELECT and return list-of-dicts."""
-        import hermes_db
+        import thoth_db
         sql_pg = self._translate(sql)
 
         async def _do():
-            async with hermes_db.connection() as conn:
+            async with thoth_db.connection() as conn:
                 rows = await conn.fetch(sql_pg, *params)
                 return [dict(r) for r in rows]
-        return hermes_db.run_sync(_do())
+        return thoth_db.run_sync(_do())
 
     def _fetchone(self, sql: str, params: tuple = ()) -> Optional[dict]:
         """Synchronous wrapper: run a SELECT and return first row as dict."""
-        import hermes_db
+        import thoth_db
         sql_pg = self._translate(sql)
 
         async def _do():
-            async with hermes_db.connection() as conn:
+            async with thoth_db.connection() as conn:
                 row = await conn.fetchrow(sql_pg, *params)
                 return dict(row) if row is not None else None
-        return hermes_db.run_sync(_do())
+        return thoth_db.run_sync(_do())
 
     def generate(self, days: int = 30, source: str = None) -> Dict[str, Any]:
         """

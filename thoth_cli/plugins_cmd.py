@@ -235,7 +235,7 @@ def _prompt_plugin_env_vars(manifest: dict, console) -> None:
         return
 
     from thoth_cli.config import get_env_value, save_env_value  # noqa: F811
-    from thoth_constants import display_hermes_home
+    from thoth_constants import display_thoth_home
 
     # Normalise to list-of-dicts
     env_specs: list[dict] = []
@@ -273,15 +273,15 @@ def _prompt_plugin_env_vars(manifest: dict, console) -> None:
             else:
                 value = input(f"  {name}: ").strip()
         except (EOFError, KeyboardInterrupt):
-            console.print(f"\n[dim]  Skipped (you can set these later in {display_hermes_home()}/.env)[/dim]")
+            console.print(f"\n[dim]  Skipped (you can set these later in {display_thoth_home()}/.env)[/dim]")
             return
 
         if value:
             save_env_value(name, value)
             os.environ[name] = value
-            console.print(f"  [green]✓[/green] Saved to {display_hermes_home()}/.env")
+            console.print(f"  [green]✓[/green] Saved to {display_thoth_home()}/.env")
         else:
-            console.print(f"  [dim]  Skipped (set {name} in {display_hermes_home()}/.env later)[/dim]")
+            console.print(f"  [dim]  Skipped (set {name} in {display_thoth_home()}/.env later)[/dim]")
 
     console.print()
 

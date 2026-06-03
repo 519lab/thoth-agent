@@ -40,9 +40,9 @@ async def _commit_passed(substrate, text):
         substrate, stream.stream_id, text,
         event_time_world=datetime.now(timezone.utc), born_passed=True,
     )
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         return await conn.fetchval(
             "SELECT slice_id FROM substrate_slices WHERE stream_id=$1 "
             "ORDER BY ingest_time_world DESC LIMIT 1",
@@ -51,9 +51,9 @@ async def _commit_passed(substrate, text):
 
 
 async def _row(slice_id):
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         return await conn.fetchrow(
             "SELECT pinned, salience_score, consolidation_state "
             "FROM substrate_slices WHERE slice_id=$1",
@@ -74,12 +74,12 @@ async def test_set_pinned_and_unpin(booted):
 
 @pytest.mark.asyncio
 async def test_pinned_slice_survives_decay(booted):
-    import hermes_db
+    import thoth_db
 
     sid = await _commit_passed(booted, "pinned memory")
     await set_slice_pinned(sid, True)
     # Backdate salience_updated_at so a decay pass would normally erode it.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET salience_updated_at = now() - interval '30 days' "
             "WHERE slice_id=$1",
@@ -92,12 +92,12 @@ async def test_pinned_slice_survives_decay(booted):
 
 @pytest.mark.asyncio
 async def test_pinned_slice_not_released(booted):
-    import hermes_db
+    import thoth_db
 
     sid = await _commit_passed(booted, "do not release me")
     await set_slice_pinned(sid, True)
     # Drive salience below any retain threshold — but pinned ⇒ not eligible.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET salience_score=0.0 WHERE slice_id=$1", sid
         )
@@ -130,10 +130,10 @@ def test_register_subparser_pin_forget():
 
 @pytest.mark.asyncio
 async def test_cli_pin_and_bad_id(booted):
-    import hermes_db
+    import thoth_db
 
     sid = await _commit_passed(booted, "cli pin target")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         buf = io.StringIO()
         with redirect_stdout(buf):
             await inspect_mod._do_pin(conn, str(sid), True)

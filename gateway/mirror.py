@@ -154,8 +154,8 @@ def _append_to_sqlite(session_id: str, message: dict) -> None:
     """Append a message to the PG session database."""
     db = None
     try:
-        from hermes_state import SessionDB
-        import hermes_db as _hermes_db
+        from thoth_state import SessionDB
+        import thoth_db as _hermes_db
         db = SessionDB()
         _hermes_db.run_sync(db.append_message(
             session_id=session_id,

@@ -15,7 +15,7 @@ Two Phase-0 patches both apply to every test in this subdirectory:
 
 2.  ``thoth_cli.goals.GoalManager`` persists state via
     ``SessionDB.set_meta`` / ``get_meta`` — both async, both run
-    through ``hermes_db.run_sync``. The ``test_goal_command.py`` tests
+    through ``thoth_db.run_sync``. The ``test_goal_command.py`` tests
     rely on those writes landing for follow-up assertions, but the
     GoalManager swallows DB errors (intentionally — it must not crash
     the agent if the DB is down), so without a migrated per-test PG
@@ -35,16 +35,16 @@ import pytest
 @pytest.fixture(autouse=True)
 def _pass_through_run_sync_for_sync_mocks(monkeypatch):
     """See module docstring (issue 1)."""
-    import hermes_db
+    import thoth_db
 
-    real_run_sync = hermes_db.run_sync
+    real_run_sync = thoth_db.run_sync
 
     def _passthrough(value):
         if inspect.iscoroutine(value) or inspect.isawaitable(value):
             return real_run_sync(value)
         return value
 
-    monkeypatch.setattr(hermes_db, "run_sync", _passthrough)
+    monkeypatch.setattr(thoth_db, "run_sync", _passthrough)
 
 
 @pytest.fixture(autouse=True)

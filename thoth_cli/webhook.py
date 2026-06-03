@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 from typing import Dict
 
-from thoth_constants import display_hermes_home
+from thoth_constants import display_thoth_home
 from utils import atomic_replace
 from thoth_cli.cli_name import cli_name
 from thoth_cli.config import cfg_get
@@ -80,7 +80,7 @@ def _get_webhook_base_url() -> str:
 
 
 def _setup_hint() -> str:
-    _dhh = display_hermes_home()
+    _dhh = display_thoth_home()
     return f"""
   Webhook platform is not enabled. To set it up:
 

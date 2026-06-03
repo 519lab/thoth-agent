@@ -123,7 +123,7 @@ def test_trend_bias_escalates_sooner():
 
 @pytest.mark.asyncio
 async def test_conductor_forecasts_and_logs(booted, monkeypatch):
-    import hermes_db
+    import thoth_db
 
     monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
     await _seed_pending(booted, 8)
@@ -132,18 +132,18 @@ async def test_conductor_forecasts_and_logs(booted, monkeypatch):
 
     # Forecast (EMA) is now populated and a decision was logged.
     assert c.forecast() is not None
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         n = await conn.fetchval("SELECT COUNT(*) FROM substrate_conductor_log")
     assert n == 1
 
 
 @pytest.mark.asyncio
 async def test_conductor_seeds_forecast_from_log(booted, monkeypatch):
-    import hermes_db
+    import thoth_db
 
     monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
     # Pre-seed a prior forecast in the persistent log.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "INSERT INTO substrate_conductor_log (backlog_ratio, forecast) VALUES (0.7, 0.65)"
         )

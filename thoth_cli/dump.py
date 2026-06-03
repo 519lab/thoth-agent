@@ -15,7 +15,7 @@ from pathlib import Path
 
 from thoth_cli.config import get_thoth_home, get_env_path, get_project_root, load_config
 from thoth_cli.env_loader import load_hermes_dotenv
-from thoth_constants import display_hermes_home
+from thoth_constants import display_thoth_home
 from agent.skill_utils import is_excluded_skill_path
 
 
@@ -255,7 +255,7 @@ def run_dump(args):
     lines.append(f"python:           {sys.version.split()[0]}")
     lines.append(f"openai_sdk:       {openai_ver}")
     lines.append(f"profile:          {profile}")
-    lines.append(f"hermes_home:      {display_hermes_home()}")
+    lines.append(f"hermes_home:      {display_thoth_home()}")
     lines.append(f"model:            {model}")
     lines.append(f"provider:         {provider}")
     lines.append(f"terminal:         {backend}")

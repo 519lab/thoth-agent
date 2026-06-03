@@ -3,7 +3,7 @@
 Tests use `hermes_db_initialized_sync` from tests/conftest.py which:
   - Creates a fresh per-test PG database via pytest-postgresql
   - Runs Alembic upgrade head (including the kanban schema migration)
-  - Initialises the hermes_db pool
+  - Initialises the thoth_db pool
   - Yields the DSN
 
 The kanban_db module detects HERMES_PG_DSN and uses PG automatically.
@@ -57,13 +57,13 @@ def named_board(kb):
 
 def test_init_db_creates_default_board(kb, hermes_db_initialized_sync):
     """init_db in PG mode inserts the board slug into kanban_boards."""
-    import hermes_db
+    import thoth_db
     kb.init_db(board="default")
     async def _check():
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             row = await conn.fetchrow("SELECT slug FROM kanban_boards WHERE slug = 'default'")
             return row
-    row = hermes_db.run_sync(_check())
+    row = thoth_db.run_sync(_check())
     assert row is not None
     assert row["slug"] == "default"
 
@@ -289,7 +289,7 @@ def test_add_comment_and_list_comments(kb, default_board):
 
 def test_cascade_delete_on_board_deletion(kb, hermes_db_initialized_sync):
     """Deleting a board cascades to kanban_tasks, task_events, etc."""
-    import hermes_db
+    import thoth_db
 
     kb.create_board("ephemeral-board")
     with kb.connect(board="ephemeral-board") as conn:
@@ -298,13 +298,13 @@ def test_cascade_delete_on_board_deletion(kb, hermes_db_initialized_sync):
 
     # Delete board via direct SQL (remove_board is filesystem-based in SQLite mode)
     async def _delete():
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             await conn.execute("DELETE FROM kanban_boards WHERE slug = 'ephemeral-board'")
-    hermes_db.run_sync(_delete())
+    thoth_db.run_sync(_delete())
 
     # Tasks and comments should be gone (CASCADE)
     async def _verify():
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             task_count = await conn.fetchval(
                 "SELECT COUNT(*) FROM kanban_tasks WHERE board_slug = 'ephemeral-board'"
             )
@@ -312,7 +312,7 @@ def test_cascade_delete_on_board_deletion(kb, hermes_db_initialized_sync):
                 "SELECT COUNT(*) FROM kanban_task_comments WHERE board_slug = 'ephemeral-board'"
             )
             return task_count, comment_count
-    task_count, comment_count = hermes_db.run_sync(_verify())
+    task_count, comment_count = thoth_db.run_sync(_verify())
     assert task_count == 0
     assert comment_count == 0
 

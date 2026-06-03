@@ -81,7 +81,7 @@ class _MockPool:
 
 
 class _FakeHermesDB:
-    """Mock of the hermes_db module used by kanban_db's lazy imports."""
+    """Mock of the thoth_db module used by kanban_db's lazy imports."""
 
     def __init__(self, pool):
         self._pool = pool
@@ -100,15 +100,15 @@ class _FakeHermesDB:
 
 @pytest.fixture
 def install_fake_hermes_db(monkeypatch):
-    """Install a fake ``hermes_db`` module so kanban_db's ``import hermes_db``
+    """Install a fake ``thoth_db`` module so kanban_db's ``import thoth_db``
     inside methods resolves to our mock."""
 
     def _install(pool):
-        fake = types.ModuleType("hermes_db")
+        fake = types.ModuleType("thoth_db")
         impl = _FakeHermesDB(pool)
         fake.pool = impl.pool
         fake.run_sync = impl.run_sync
-        monkeypatch.setitem(sys.modules, "hermes_db", fake)
+        monkeypatch.setitem(sys.modules, "thoth_db", fake)
         return fake
 
     return _install

@@ -686,7 +686,7 @@ def test_heartbeat_uses_env_default_ttl(kanban_home, monkeypatch):
         "in-process ThreadPoolExecutor where each thread opens its own sqlite "
         "connection. Under PG/asyncpg this no longer maps: kb.connect() is a "
         "sync facade that bridges to the shared asyncpg pool via "
-        "hermes_db.run_sync, which serialises through a single persistent "
+        "thoth_db.run_sync, which serialises through a single persistent "
         "event loop (_sync_loop). 8 threads competing for that loop trigger "
         "'run_sync called from inside its own sync loop' rather than the "
         "row-level race the test wants to exercise. Single-writer atomicity "
@@ -1825,7 +1825,7 @@ class TestSharedBoardPaths:
         # HERMES_HOME perspectives. Under sqlite this proved the two
         # processes opened the same on-disk file; under PG the two
         # ``kb.connect()`` calls dispatch through the same shared
-        # ``hermes_db`` pool, so the property under test becomes "the
+        # ``thoth_db`` pool, so the property under test becomes "the
         # dispatcher's row is visible to the worker after a HERMES_HOME
         # swap" — still the regression that originally motivated the
         # test.
@@ -2044,7 +2044,7 @@ def test_latest_summaries_batch_omits_tasks_without_summary(kanban_home):
 
 
 # ---------------------------------------------------------------------------
-# NFS / network-filesystem fallback (see hermes_state.apply_wal_with_fallback)
+# NFS / network-filesystem fallback (see thoth_state.apply_wal_with_fallback)
 # ---------------------------------------------------------------------------
 
 @pytest.mark.skip(
@@ -2084,7 +2084,7 @@ def test_connect_falls_back_to_delete_on_locking_protocol(kanban_home, caplog):
         )
 
     with _patch("thoth_cli.kanban_db.sqlite3.connect", side_effect=wal_blocking_connect):
-        with caplog.at_level("WARNING", logger="hermes_state"):
+        with caplog.at_level("WARNING", logger="thoth_state"):
             conn = kb.connect()
 
     # One fallback warning, naming kanban.db

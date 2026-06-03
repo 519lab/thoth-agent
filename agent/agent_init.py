@@ -516,7 +516,7 @@ def init_agent(
     # Centralized logging — agent.log (INFO+) and errors.log (WARNING+)
     # both live under ~/.hermes/logs/.  Idempotent, so gateway mode
     # (which creates a new AIAgent per message) won't duplicate handlers.
-    from hermes_logging import setup_logging, setup_verbose_logging
+    from thoth_logging import setup_logging, setup_verbose_logging
     setup_logging(hermes_home=_ra()._hermes_home)
 
     if agent.verbose_logging:
@@ -528,11 +528,11 @@ def init_agent(
         # root logger's file handlers (agent.log, errors.log) from
         # ever seeing the records, because Python checks
         # logger.isEnabledFor() before handler propagation. We rely
-        # on the fact that hermes_logging.setup_logging() does not
+        # on the fact that thoth_logging.setup_logging() does not
         # install a console StreamHandler in quiet mode — so INFO
         # records flow to the file handlers but never reach a
         # console. Any future noise reduction belongs at the
-        # handler level inside hermes_logging.py, not here.
+        # handler level inside thoth_logging.py, not here.
         pass
     
     # Internal stream callback (set during streaming TTS).

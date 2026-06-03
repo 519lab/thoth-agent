@@ -57,7 +57,7 @@ def _row(**overrides) -> RecallLogRow:
 async def test_recall_writes_log_row(booted_substrate):
     """After a recall() call, a row appears in substrate_recall_log
     within the drain window."""
-    import hermes_db
+    import thoth_db
 
     # Seed a slice so the recall has something to do.
     stream = await booted_substrate.streams.get_by_name(
@@ -69,7 +69,7 @@ async def test_recall_writes_log_row(booted_substrate):
         "hello",
         event_time_world=datetime.now(timezone.utc),
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET sentinel_state='passed', trust_score=0.95, pending_committed_at=NULL WHERE sentinel_state='pending'"
         )
@@ -80,7 +80,7 @@ async def test_recall_writes_log_row(booted_substrate):
     # Wait for the drain (1s interval).
     for _ in range(40):  # up to 4 seconds
         await asyncio.sleep(0.1)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             row = await conn.fetchrow(
                 "SELECT * FROM substrate_recall_log WHERE session_id = 'sess-test' ORDER BY log_id DESC LIMIT 1"
             )
@@ -110,7 +110,7 @@ async def test_recall_log_bounded_queue_drops_oldest(booted_substrate):
 @pytest.mark.asyncio
 async def test_recall_log_writer_drains_in_background(booted_substrate):
     """A row enqueued lands in PG within the drain window."""
-    import hermes_db
+    import thoth_db
 
     booted_substrate.recall_log.enqueue(
         _row(session_id="sess-drain", query_excerpt="drain-test")
@@ -118,7 +118,7 @@ async def test_recall_log_writer_drains_in_background(booted_substrate):
     # Wait for drain.
     for _ in range(40):
         await asyncio.sleep(0.1)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             row = await conn.fetchrow(
                 "SELECT * FROM substrate_recall_log WHERE session_id = 'sess-drain' ORDER BY log_id DESC LIMIT 1"
             )

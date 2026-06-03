@@ -36,11 +36,11 @@ from substrate.storage import (
 
 @pytest_asyncio.fixture
 async def substrate(hermes_db_initialized):
-    """A Substrate constructed from the test's hermes_db pool, no
+    """A Substrate constructed from the test's thoth_db pool, no
     sub-agents started (we just need the L0 surface)."""
-    import hermes_db
+    import thoth_db
 
-    return Substrate.from_pool(hermes_db.pool())
+    return Substrate.from_pool(thoth_db.pool())
 
 
 def _now_utc() -> datetime:
@@ -78,9 +78,9 @@ async def test_commit_creates_pending_slice(substrate):
     # ``now()`` when the host clock is slightly ahead (CHECK-constraint
     # safety net), so equality on the original ``now`` value isn't
     # guaranteed.
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             """
             SELECT sentinel_state, payload, payload_modality, trust_score,
@@ -118,9 +118,9 @@ async def test_commit_text_wraps_payload_uniformly(substrate):
     now = _now_utc()
     await commit_slice(substrate, stream.stream_id, "hello", event_time_world=now)
 
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         payload = await conn.fetchval(
             """
             SELECT payload FROM substrate_slices
@@ -149,7 +149,7 @@ async def test_commit_rejects_unknown_stream(substrate):
 
 @pytest.mark.asyncio
 async def test_commit_rejects_inactive_stream(substrate):
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.paused",
@@ -167,7 +167,7 @@ async def test_commit_rejects_inactive_stream(substrate):
         )
 
     # And no row was inserted (the lifecycle check runs before INSERT).
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         count = await conn.fetchval(
             "SELECT count(*) FROM substrate_slices WHERE stream_id = $1",
             stream.stream_id,
@@ -270,7 +270,7 @@ async def test_commit_with_conn_rolls_back_on_outer_failure(substrate):
     back, the slice INSERT is rolled back too. This is the atomicity
     guarantee that lets ``on_session_start`` share a txn with the
     ``sessions`` row INSERT."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.shared_txn",
@@ -285,7 +285,7 @@ async def test_commit_with_conn_rolls_back_on_outer_failure(substrate):
     # Try-except on the outer txn — we deliberately raise inside the
     # block to force ROLLBACK.
     try:
-        async with hermes_db.transaction() as conn:
+        async with thoth_db.transaction() as conn:
             await commit_slice(
                 substrate,
                 stream.stream_id,
@@ -297,7 +297,7 @@ async def test_commit_with_conn_rolls_back_on_outer_failure(substrate):
     except RuntimeError:
         pass
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         count = await conn.fetchval(
             "SELECT count(*) FROM substrate_slices WHERE stream_id = $1",
             stream.stream_id,
@@ -316,7 +316,7 @@ def test_commit_slice_sync_works_from_sync_context(hermes_db_dsn):
     next test.)
 
     We deliberately AVOID the async ``hermes_db_initialized`` fixture
-    here: that fixture awaits ``hermes_db.init`` inside pytest-asyncio's
+    here: that fixture awaits ``thoth_db.init`` inside pytest-asyncio's
     per-test loop, which binds the asyncpg pool to that loop. The sync
     facade would then drive the pool from the persistent ``_sync_loop``
     instead — a cross-loop access that asyncpg flags as "another
@@ -326,15 +326,15 @@ def test_commit_slice_sync_works_from_sync_context(hermes_db_dsn):
     """
     import os
 
-    import hermes_db
+    import thoth_db
     from substrate.facade import Substrate
 
     # Manually init the pool on the persistent sync loop.
     os.environ["THOTH_PG_DSN"] = hermes_db_dsn
     os.environ["HERMES_PG_DSN"] = hermes_db_dsn
-    assert hermes_db.ensure_pool_sync() is True
+    assert thoth_db.ensure_pool_sync() is True
     try:
-        substrate = Substrate.from_pool(hermes_db.pool())
+        substrate = Substrate.from_pool(thoth_db.pool())
 
         async def _setup():
             return await substrate.streams.register(
@@ -346,7 +346,7 @@ def test_commit_slice_sync_works_from_sync_context(hermes_db_dsn):
                 decay_profile_id=DEFAULT_TEXT_PROFILE,
             )
 
-        stream = hermes_db.run_sync(_setup())
+        stream = thoth_db.run_sync(_setup())
         address = commit_slice_sync(
             substrate,
             stream.stream_id,
@@ -355,7 +355,7 @@ def test_commit_slice_sync_works_from_sync_context(hermes_db_dsn):
         )
         assert address.stream_id == stream.stream_id
     finally:
-        hermes_db.run_sync(hermes_db.close())
+        thoth_db.run_sync(thoth_db.close())
 
 
 @pytest.mark.asyncio

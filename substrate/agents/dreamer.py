@@ -42,7 +42,7 @@ def _env_int(name: str, default: int) -> int:
 
 async def append_dream(seed: str, exploration: str, *, metadata=None, conn=None) -> UUID:
     """Append one exploration to the persistent dreamer log."""
-    import hermes_db
+    import thoth_db
 
     async def _go(c):
         return await c.fetchval(
@@ -53,12 +53,12 @@ async def append_dream(seed: str, exploration: str, *, metadata=None, conn=None)
 
     if conn is not None:
         return await _go(conn)
-    async with hermes_db.connection() as c:
+    async with thoth_db.connection() as c:
         return await _go(c)
 
 
 async def list_dreams(*, limit: int = 20, conn=None) -> list[dict]:
-    import hermes_db
+    import thoth_db
 
     async def _go(c):
         rows = await c.fetch(
@@ -70,7 +70,7 @@ async def list_dreams(*, limit: int = 20, conn=None) -> list[dict]:
 
     if conn is not None:
         return await _go(conn)
-    async with hermes_db.connection() as c:
+    async with thoth_db.connection() as c:
         return await _go(c)
 
 
@@ -140,9 +140,9 @@ class Dreamer(SubAgent):
 
     async def _pick_seed(self) -> Optional[str]:
         """Seed from a salient L3 pattern, else a couple of L1 entities."""
-        import hermes_db
+        import thoth_db
 
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             pat = await conn.fetchval(
                 "SELECT statement FROM l3_patterns "
                 "ORDER BY salience_score DESC, last_seen_at DESC LIMIT 1"

@@ -30,7 +30,7 @@ def test_tool_name_persisted_to_session_db():
     append_message so the column is populated on first flush to the session DB.
 
     Phase 0: ``_AsyncSessionDB.append_message`` / ``create_session`` are
-    coroutines and ``run_agent`` wraps each call with ``hermes_db.run_sync``.
+    coroutines and ``run_agent`` wraps each call with ``thoth_db.run_sync``.
     Use ``AsyncMock`` for those methods so the wrapper sees an awaitable
     instead of a plain ``MagicMock`` (which crashes
     ``loop.run_until_complete`` with "An asyncio.Future, a coroutine or

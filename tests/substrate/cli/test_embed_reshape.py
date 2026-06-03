@@ -27,12 +27,12 @@ from substrate.cli import embed as embed_cli
 @pytest_asyncio.fixture
 async def seeded_substrate(hermes_db_initialized):
     """Seed a stream + a handful of slices with NULL embeddings."""
-    import hermes_db
+    import thoth_db
     from substrate import Substrate
     from substrate.l0 import commit_slice
     from substrate.storage import DEFAULT_TEXT_PROFILE, Family, Modality
 
-    sub = Substrate.from_pool(hermes_db.pool())
+    sub = Substrate.from_pool(thoth_db.pool())
     stream = await sub.streams.register(
         name="hermes.test.embed_reshape",
         family=Family.EXTEROCEPTIVE,
@@ -51,7 +51,7 @@ async def seeded_substrate(hermes_db_initialized):
             ),
         )
     # Flip pending → passed so the reshape's count queries see them.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET sentinel_state = 'passed', "
             "pending_committed_at = NULL WHERE stream_id = $1",
@@ -92,7 +92,7 @@ async def test_reshape_noop_when_dim_matches(seeded_substrate, capsys):
 async def test_reshape_changes_column_dim_and_clears(seeded_substrate, monkeypatch):
     """target != current → drop index, NULL embeddings, ALTER, recreate.
     Verify the column is now vector(768) and embeddings are NULL."""
-    import hermes_db
+    import thoth_db
     from substrate.recall import embeddings as _embed
 
     # Stub the provider so re-embed produces deterministic 768-d vectors.
@@ -114,7 +114,7 @@ async def test_reshape_changes_column_dim_and_clears(seeded_substrate, monkeypat
     # Verify embeddings were re-populated (mock path is synchronous +
     # deterministic; all 5 seeded slices on our stream should now have
     # non-NULL 768-d vectors).
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             "SELECT embedding FROM substrate_slices "
             "WHERE stream_id IN "
@@ -130,7 +130,7 @@ async def test_reshape_changes_column_dim_and_clears(seeded_substrate, monkeypat
 async def test_reshape_no_reembed_leaves_nulls(seeded_substrate):
     """--no-reembed: reshape happens, embeddings stay NULL, Curator
     backfills later."""
-    import hermes_db
+    import thoth_db
 
     rc = await embed_cli._reshape_async(
         target=1024, interactive=False, reembed=False, batch_size=10
@@ -140,7 +140,7 @@ async def test_reshape_no_reembed_leaves_nulls(seeded_substrate):
     new_dim = await embed_cli._current_schema_dim()
     assert new_dim == 1024
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             "SELECT embedding FROM substrate_slices "
             "WHERE stream_id IN "
@@ -156,13 +156,13 @@ async def test_reshape_includes_upper_layers(seeded_substrate):
     """reshape moves l3_patterns/l4_observations embedding too, not just
     substrate_slices. Regression: leaving them at the old dim stalls the
     Curator's L3/L4 backfill (1536-vs-768 mismatch incident)."""
-    import hermes_db
+    import thoth_db
 
     rc = await embed_cli._reshape_async(
         target=1024, interactive=False, reembed=False, batch_size=10
     )
     assert rc == 0
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         for tbl in ("substrate_slices", "l3_patterns", "l4_observations"):
             dim = await embed_cli._table_vector_dim(conn, tbl)
             assert dim == 1024, f"{tbl} not reshaped to 1024 (got {dim})"
@@ -175,7 +175,7 @@ async def test_reshape_includes_upper_layers(seeded_substrate):
 
 def test_cmd_embed_reshape_drives_sync_loop(hermes_db_initialized_sync):
     """Regression: the sync entrypoint must drive the coro via
-    hermes_db.run_sync (the loop the asyncpg pool is bound to), not a fresh
+    thoth_db.run_sync (the loop the asyncpg pool is bound to), not a fresh
     event loop — otherwise asyncpg raises 'another operation is in progress'
     / 'attached to a different loop'. Exercise with a no-op (target == current
     dim) so it runs the connection path without mutating the schema."""

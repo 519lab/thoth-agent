@@ -2143,7 +2143,7 @@ def delegate_task(
         # Single task -- still run inside a worker thread (not directly on the
         # caller's thread).  Running _run_single_child here means its SYNC
         # substrate facades (on_subagent_spawn / on_subagent_return ->
-        # hermes_db.run_sync) execute on a thread that has NO live asyncio
+        # thoth_db.run_sync) execute on a thread that has NO live asyncio
         # loop, so run_sync takes its pure-sync Case 1 path.  Calling directly
         # on an async caller (e.g. the pytest-asyncio loop thread driving
         # acp_agent.prompt) drives run_sync onto the shared _sync_loop, which

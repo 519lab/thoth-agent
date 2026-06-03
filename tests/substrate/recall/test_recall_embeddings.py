@@ -169,16 +169,16 @@ async def test_get_schema_dim_fallback_when_pg_unreachable(monkeypatch):
     integration tests that have a live pool.
     """
     embeddings.reset_schema_dim_cache()
-    # Force the inner ``import hermes_db`` to fail by removing the
+    # Force the inner ``import thoth_db`` to fail by removing the
     # entry from sys.modules and shadowing the path. Easier: monkeypatch
-    # the hermes_db module to a stub whose ``connection`` access raises.
-    import hermes_db
+    # the thoth_db module to a stub whose ``connection`` access raises.
+    import thoth_db
     class _Boom:
         def __getattr__(self, name):
             raise RuntimeError("simulated PG down")
-    monkeypatch.setattr("substrate.recall.embeddings.hermes_db", _Boom(), raising=False)
-    # The function uses a late ``import hermes_db`` inside its body.
-    # Easier than fighting that import path: just rig hermes_db.connection
+    monkeypatch.setattr("substrate.recall.embeddings.thoth_db", _Boom(), raising=False)
+    # The function uses a late ``import thoth_db`` inside its body.
+    # Easier than fighting that import path: just rig thoth_db.connection
     # to be a no-op context manager that yields a conn whose fetchrow raises.
     import contextlib
 
@@ -189,7 +189,7 @@ async def test_get_schema_dim_fallback_when_pg_unreachable(monkeypatch):
                 raise RuntimeError("simulated PG down")
         yield _C()
 
-    monkeypatch.setattr(hermes_db, "connection", _broken_connection, raising=True)
+    monkeypatch.setattr(thoth_db, "connection", _broken_connection, raising=True)
     dim = await embeddings._get_schema_dim()
     assert dim == embeddings.EMBEDDING_DIM
 

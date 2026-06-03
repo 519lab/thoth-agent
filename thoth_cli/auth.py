@@ -6238,7 +6238,7 @@ def _login_openai_codex(
     config_path = _update_config_for_provider("openai-codex", creds.get("base_url", DEFAULT_CODEX_BASE_URL))
     print()
     print("Login successful!")
-    from thoth_constants import display_hermes_home as _dhh
+    from thoth_constants import display_thoth_home as _dhh
     print(f"  Auth state: {_dhh()}/auth.json")
     print(f"  Config updated: {config_path} (model.provider=openai-codex)")
 
@@ -6298,7 +6298,7 @@ def _login_xai_oauth(
     config_path = _update_config_for_provider("xai-oauth", creds.get("base_url", DEFAULT_XAI_OAUTH_BASE_URL))
     print()
     print("Login successful!")
-    from thoth_constants import display_hermes_home as _dhh
+    from thoth_constants import display_thoth_home as _dhh
     print(f"  Auth state: {_dhh()}/auth.json")
     print(f"  Config updated: {config_path} (model.provider=xai-oauth)")
 

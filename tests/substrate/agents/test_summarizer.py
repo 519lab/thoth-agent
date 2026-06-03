@@ -35,7 +35,7 @@ def _summarizer_on(monkeypatch):
 
 async def _commit_old(substrate, text, *, age_h):
     """Commit an OLD passed slice (event_time backdated) for a session."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     t = datetime.now(timezone.utc) - timedelta(hours=age_h)
@@ -44,7 +44,7 @@ async def _commit_old(substrate, text, *, age_h):
         metadata={"session_id": "sess-old", "source": "cli"}, born_passed=True,
     )
     # commit_slice clamps event_time to <= now via SQL; force the backdate.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET event_time_world=$1 "
             "WHERE payload->>'text'=$2 AND event_time_world > $1",
@@ -54,7 +54,7 @@ async def _commit_old(substrate, text, *, age_h):
 
 @pytest.mark.asyncio
 async def test_summarizer_compresses_old_session(booted, monkeypatch):
-    import hermes_db
+    import thoth_db
 
     for i in range(5):
         await _commit_old(booted, f"old message {i} about the postgres migration", age_h=48)
@@ -73,7 +73,7 @@ async def test_summarizer_compresses_old_session(booted, monkeypatch):
     # A summary slice landed in the summary stream, citing the originals.
     stream = await booted.streams.get_by_name(SUMMARY_STREAM)
     assert stream is not None
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         srow = await conn.fetchrow(
             "SELECT payload, summary_of FROM substrate_slices WHERE stream_id=$1",
             stream.stream_id,
@@ -93,7 +93,7 @@ async def test_summarizer_compresses_old_session(booted, monkeypatch):
 @pytest.mark.asyncio
 async def test_summarizer_skips_recent_slices(booted, monkeypatch):
     # Recent slices (age 0) must NOT be summarized.
-    import hermes_db
+    import thoth_db
 
     stream = await booted.streams.get_by_name("thoth.world.user_message.cli")
     for i in range(5):
@@ -125,7 +125,7 @@ async def test_summarizer_disabled_is_noop(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_summarizer_does_not_resummarize(booted, monkeypatch):
-    import hermes_db
+    import thoth_db
 
     for i in range(4):
         await _commit_old(booted, f"old item {i}", age_h=48)
@@ -139,7 +139,7 @@ async def test_summarizer_does_not_resummarize(booted, monkeypatch):
     await Summarizer(booted).tick()
 
     stream = await booted.streams.get_by_name(SUMMARY_STREAM)
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         n = await conn.fetchval(
             "SELECT COUNT(*) FROM substrate_slices WHERE stream_id=$1", stream.stream_id
         )

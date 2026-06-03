@@ -126,20 +126,20 @@ def _seed_session_db(session_id, messages):
 
     Phase 0: the sqlite scaffolding that used to build a per-test sqlite
     file is gone — ``messages_read`` in ``mcp_serve.py`` drives the async
-    SessionDB through ``hermes_db.run_sync(db.get_messages(...))``, which
+    SessionDB through ``thoth_db.run_sync(db.get_messages(...))``, which
     would crash against a sync mock. So we seed real rows into the
     per-test PG database via the same async API production uses.
     """
-    import hermes_db
-    from hermes_state import SessionDB
+    import thoth_db
+    from thoth_state import SessionDB
 
     db = SessionDB()
-    hermes_db.run_sync(db.create_session(session_id=session_id, source="gateway"))
+    thoth_db.run_sync(db.create_session(session_id=session_id, source="gateway"))
     for msg in messages:
         content = msg.get("content", "")
         if isinstance(content, (list, dict)):
             content = json.dumps(content)
-        hermes_db.run_sync(
+        thoth_db.run_sync(
             db.append_message(
                 session_id=session_id,
                 role=msg["role"],
@@ -159,7 +159,7 @@ def mock_session_db(tmp_path, populated_sessions_dir, hermes_db_initialized_sync
     ``hermes_db_initialized_sync`` runs Alembic upgrade head against the
     per-test database and binds the asyncpg pool to it. ``_seed_session_db``
     then writes rows through the same async API production reads with —
-    so ``mcp_serve.messages_read``'s ``hermes_db.run_sync(db.get_messages(...))``
+    so ``mcp_serve.messages_read``'s ``thoth_db.run_sync(db.get_messages(...))``
     sees real rows instead of crashing on a sync mock and returning
     ``{"error": "Failed to read messages: ..."}``.
     """
@@ -1126,7 +1126,7 @@ class TestEventBridgePollE2E:
         self, tmp_path, monkeypatch, hermes_db_initialized_sync
     ):
         """Write a new message via the async SessionDB after first poll, verify it's detected."""
-        import hermes_db
+        import thoth_db
         import mcp_serve
         sessions_dir = tmp_path / "sessions"
         sessions_dir.mkdir()
@@ -1156,7 +1156,7 @@ class TestEventBridgePollE2E:
         assert len(r1["events"]) == 1
 
         # Add a new message via the async session DB (the production write path).
-        hermes_db.run_sync(
+        thoth_db.run_sync(
             db.append_message(
                 session_id=session_id,
                 role="assistant",

@@ -12,11 +12,11 @@ tests pin that behaviour.
 """
 from datetime import datetime, timedelta, timezone
 
-import hermes_db
+import thoth_db
 import pytest
 import pytest_asyncio
 
-from hermes_state import _AsyncSessionDB
+from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture
@@ -30,7 +30,7 @@ async def _make_chain(db: _AsyncSessionDB, ids_with_parent):
     for i, (sid, parent) in enumerate(ids_with_parent):
         await db.create_session(sid, source="cli", parent_session_id=parent)
         started_at = base_dt + timedelta(seconds=i * 100)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             await conn.execute(
                 "UPDATE sessions SET started_at = $1 WHERE id = $2",
                 started_at, sid,

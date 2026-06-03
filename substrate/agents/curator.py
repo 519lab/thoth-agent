@@ -228,9 +228,9 @@ class Curator(SubAgent):
         * ``sentinel_state != 'passed'`` (pending + quarantined are Sentinel territory).
         * ``consolidation_state = 'released'`` (already at 0; no-op).
         """
-        import hermes_db
+        import thoth_db
 
-        async with hermes_db.transaction() as conn:
+        async with thoth_db.transaction() as conn:
             await conn.execute(
                 """
                 UPDATE substrate_slices sl
@@ -263,9 +263,9 @@ class Curator(SubAgent):
         the profile does not require consolidation before release OR the
         slice is consolidated.
         """
-        import hermes_db
+        import thoth_db
 
-        async with hermes_db.transaction() as conn:
+        async with thoth_db.transaction() as conn:
             return await self._substrate.slices.release_eligible(
                 conn, limit=self.RELEASE_BATCH_LIMIT
             )
@@ -340,10 +340,10 @@ class Curator(SubAgent):
            ``substrate.self_state`` rows and any future ``substrate.*``
            stream — see ``substrate.storage.streams.is_perceptual``.)
         """
-        import hermes_db
+        import thoth_db
 
         alarmed: list[dict] = []
-        async with hermes_db.transaction() as conn:
+        async with thoth_db.transaction() as conn:
             rows = await conn.fetch(
                 """
                 SELECT sl.slice_id, sl.stream_id, sl.ingest_time_world,
@@ -421,9 +421,9 @@ class Curator(SubAgent):
         """
         from substrate import config as _cfg
 
-        import hermes_db
+        import thoth_db
 
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             rows = await self._substrate.slices.list_unembedded(
                 conn, limit=_cfg.RECALL_EMBEDDING_BATCH_SIZE
             )
@@ -450,7 +450,7 @@ class Curator(SubAgent):
             await self._persist_failures_if_maxed(rows)
             return
 
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             async with conn.transaction():
                 for row, vec in zip(rows, vectors):
                     if vec is None:
@@ -616,7 +616,7 @@ class Curator(SubAgent):
         counter."""
         from substrate import config as _cfg
 
-        import hermes_db
+        import thoth_db
 
         to_persist: list[UUID] = []
         cap = _cfg.RECALL_EMBEDDING_BACKFILL_MAX_RETRIES
@@ -627,7 +627,7 @@ class Curator(SubAgent):
                 to_persist.append(sid)
         if not to_persist:
             return
-        async with hermes_db.transaction() as conn:
+        async with thoth_db.transaction() as conn:
             for sid in to_persist:
                 try:
                     await self._substrate.slices.mark_embedding_failed(conn, sid)

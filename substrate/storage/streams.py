@@ -70,7 +70,7 @@ def is_perceptual(stream_name: str) -> bool:
 class StreamRepo:
     """Registration + lookup for substrate streams.
 
-    Holds a reference to the shared ``hermes_db.pool()`` for read-only
+    Holds a reference to the shared ``thoth_db.pool()`` for read-only
     methods. Methods that participate in caller-controlled transactions
     accept an explicit ``conn``.
     """

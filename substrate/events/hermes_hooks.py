@@ -10,7 +10,7 @@ The hook layer exposes matched pairs:
   that's already in an async context (gateway loop, conversation loop,
   ACP server).
 * a sync facade ``on_*(...)`` — used from sync call sites (cron, legacy
-  CLI paths). Bridges via :func:`hermes_db.run_sync`.
+  CLI paths). Bridges via :func:`thoth_db.run_sync`.
 
 The substrate instance is bound at boot via :func:`_bind`. Hooks called
 before boot are silent no-ops (the ``_guard`` decorator checks).
@@ -211,15 +211,15 @@ def on_user_message(
     text: str,
     t_event: datetime,
 ) -> None:
-    """Sync facade — bridges via :func:`hermes_db.run_sync`. Use only
+    """Sync facade — bridges via :func:`thoth_db.run_sync`. Use only
     from sync call sites; calling from inside an event loop raises (the
     underlying ``run_sync`` guard)."""
     if _substrate is None:
         return None
-    import hermes_db
+    import thoth_db
 
     try:
-        hermes_db.run_sync(
+        thoth_db.run_sync(
             on_user_message_async(session_id, source, text, t_event)
         )
     except Exception:
@@ -263,10 +263,10 @@ def on_assistant_response(
 ) -> None:
     if _substrate is None:
         return None
-    import hermes_db
+    import thoth_db
 
     try:
-        hermes_db.run_sync(
+        thoth_db.run_sync(
             on_assistant_response_async(session_id, model, text, t_event)
         )
     except Exception:
@@ -312,10 +312,10 @@ def on_tool_call(
 ) -> None:
     if _substrate is None:
         return None
-    import hermes_db
+    import thoth_db
 
     try:
-        hermes_db.run_sync(
+        thoth_db.run_sync(
             on_tool_call_async(session_id, tool_name, args, t_event)
         )
     except Exception:
@@ -366,10 +366,10 @@ def on_tool_result(
 ) -> None:
     if _substrate is None:
         return None
-    import hermes_db
+    import thoth_db
 
     try:
-        hermes_db.run_sync(
+        thoth_db.run_sync(
             on_tool_result_async(session_id, tool_name, result, error, t_event)
         )
     except Exception:
@@ -414,10 +414,10 @@ def on_subagent_spawn(
 ) -> None:
     if _substrate is None:
         return None
-    import hermes_db
+    import thoth_db
 
     try:
-        hermes_db.run_sync(
+        thoth_db.run_sync(
             on_subagent_spawn_async(parent_session_id, child_id, goal, t_event)
         )
     except Exception:
@@ -459,10 +459,10 @@ def on_subagent_return(
 ) -> None:
     if _substrate is None:
         return None
-    import hermes_db
+    import thoth_db
 
     try:
-        hermes_db.run_sync(
+        thoth_db.run_sync(
             on_subagent_return_async(parent_session_id, child_id, summary, t_event)
         )
     except Exception:
@@ -526,10 +526,10 @@ def on_session_start(
     asyncpg.Connection is async-only)."""
     if _substrate is None:
         return None
-    import hermes_db
+    import thoth_db
 
     try:
-        hermes_db.run_sync(
+        thoth_db.run_sync(
             on_session_start_async(session_id, source, model, t_event)
         )
     except Exception:
@@ -572,8 +572,8 @@ async def on_session_end_async(
     # effort: query failures fall back to a minimal summary so the
     # session_end emit above isn't blocked.
     try:
-        import hermes_db
-        async with hermes_db.connection() as conn:
+        import thoth_db
+        async with thoth_db.connection() as conn:
             rows = await conn.fetch(
                 """
                 SELECT st.name, count(sl.slice_id) AS n
@@ -617,10 +617,10 @@ def on_session_end(
 ) -> None:
     if _substrate is None:
         return None
-    import hermes_db
+    import thoth_db
 
     try:
-        hermes_db.run_sync(
+        thoth_db.run_sync(
             on_session_end_async(session_id, reason, t_event)
         )
     except Exception:
@@ -656,10 +656,10 @@ def on_cron_fire(job_id: str, t_event: datetime) -> None:
     """Cron is sync at the call site — this is the primary entry point."""
     if _substrate is None:
         return None
-    import hermes_db
+    import thoth_db
 
     try:
-        hermes_db.run_sync(on_cron_fire_async(job_id, t_event))
+        thoth_db.run_sync(on_cron_fire_async(job_id, t_event))
     except Exception:
         _substrate.log.exception("substrate.hook.error hook=on_cron_fire")
 

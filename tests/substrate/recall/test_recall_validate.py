@@ -43,13 +43,13 @@ async def booted_substrate(hermes_db_initialized):
 
 
 async def _seed_passed_slice(substrate, *, text: str) -> None:
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     await commit_slice(
         substrate, stream.stream_id, text, event_time_world=datetime.now(timezone.utc)
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             """
             UPDATE substrate_slices
@@ -75,10 +75,10 @@ def test_register_subparser_recall_validate():
 @pytest.mark.asyncio
 async def test_validate_not_ready_when_empty(booted_substrate):
     """No perception in the window → NOT READY verdict."""
-    import hermes_db
+    import thoth_db
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await cli_inspect.validate(conn, query="anything")
     out = buf.getvalue()
@@ -92,7 +92,7 @@ async def test_validate_composes_block_with_slices(booted_substrate):
     """With passed slices, the probe composes a real block. Coverage is 0%
     here (seeded slices carry no embedding), so the verdict is DEGRADED —
     recall works via the keyword path — and the composed block is shown."""
-    import hermes_db
+    import thoth_db
 
     for text in (
         "the moon landing was in 1969",
@@ -102,7 +102,7 @@ async def test_validate_composes_block_with_slices(booted_substrate):
         await _seed_passed_slice(booted_substrate, text=text)
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await cli_inspect.validate(conn, query="moon landing apollo")
     out = buf.getvalue()

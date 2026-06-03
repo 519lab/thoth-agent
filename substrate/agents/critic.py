@@ -76,9 +76,9 @@ class Critic(SubAgent):
         await self._emit_self_state(signals)
 
     async def _compute_signals(self) -> dict:
-        import hermes_db
+        import thoth_db
 
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             pr = await conn.fetchrow(
                 """
                 SELECT COUNT(*) FILTER (WHERE outcome='ok')::int AS ok,

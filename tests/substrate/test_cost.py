@@ -17,7 +17,7 @@ from __future__ import annotations
 import pytest
 import pytest_asyncio
 
-import hermes_db
+import thoth_db
 from substrate import Substrate
 from substrate.config import SubstrateConfig
 from substrate import cost
@@ -74,7 +74,7 @@ class _FakeClient:
 
 
 async def _rows_for(agent: str) -> list[dict]:
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         return [
             dict(r)
             for r in await conn.fetch(

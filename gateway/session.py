@@ -394,7 +394,7 @@ def build_session_context_prompt(
     lines.append("")
     lines.append("**Delivery options for scheduled tasks:**")
 
-    from thoth_constants import display_hermes_home
+    from thoth_constants import display_thoth_home
 
     # Origin delivery
     if context.source.platform == Platform.LOCAL:
@@ -407,7 +407,7 @@ def build_session_context_prompt(
 
     # Local always available
     lines.append(
-        f"- `\"local\"` → Save to local files only ({display_hermes_home()}/cron/output/)"
+        f"- `\"local\"` → Save to local files only ({display_thoth_home()}/cron/output/)"
     )
 
     # Platform home channels
@@ -685,7 +685,7 @@ class SessionStore:
         # Initialize SQLite session database
         self._db = None
         try:
-            from hermes_state import SessionDB
+            from thoth_state import SessionDB
             self._db = SessionDB()
         except Exception as e:
             print(f"[gateway] Warning: SQLite session store unavailable, falling back to JSONL: {e}")
@@ -844,7 +844,7 @@ class SessionStore:
         """
         if self._db:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 return _hermes_db.run_sync(self._db.session_count()) > 1
             except Exception:
                 pass  # fall through to heuristic
@@ -943,14 +943,14 @@ class SessionStore:
         # SQLite operations outside the lock
         if self._db and db_end_session_id:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(self._db.end_session(db_end_session_id, "session_reset"))
             except Exception as e:
                 logger.debug("Session DB operation failed: %s", e)
 
         if self._db and db_create_kwargs:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(self._db.create_session(**db_create_kwargs))
             except Exception as e:
                 print(f"[gateway] Warning: Failed to create SQLite session: {e}")
@@ -1170,14 +1170,14 @@ class SessionStore:
 
         if self._db and db_end_session_id:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(self._db.end_session(db_end_session_id, "session_reset"))
             except Exception as e:
                 logger.debug("Session DB operation failed: %s", e)
 
         if self._db and db_create_kwargs:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(self._db.create_session(**db_create_kwargs))
             except Exception as e:
                 logger.debug("Session DB operation failed: %s", e)
@@ -1227,14 +1227,14 @@ class SessionStore:
 
         if self._db and db_end_session_id:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(self._db.end_session(db_end_session_id, "session_switch"))
             except Exception as e:
                 logger.debug("Session DB end_session failed: %s", e)
 
         if self._db:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(self._db.reopen_session(target_session_id))
             except Exception as e:
                 logger.debug("Session DB reopen_session failed: %s", e)
@@ -1266,7 +1266,7 @@ class SessionStore:
         """
         if self._db and not skip_db:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(self._db.append_message(
                     session_id=session_id,
                     role=message.get("role", "unknown"),
@@ -1297,7 +1297,7 @@ class SessionStore:
         """
         if self._db:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(self._db.replace_messages(session_id, messages))
             except Exception as e:
                 logger.debug("Failed to rewrite transcript in DB: %s", e)
@@ -1312,7 +1312,7 @@ class SessionStore:
         if not self._db:
             return []
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             return _hermes_db.run_sync(self._db.get_messages_as_conversation(session_id))
         except Exception as e:
             logger.debug("Could not load messages from DB: %s", e)

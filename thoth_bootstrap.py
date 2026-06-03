@@ -122,15 +122,15 @@ def apply_windows_utf8_bootstrap() -> bool:
     return True
 
 
-# Apply on import — entry points just need ``import hermes_bootstrap``
-# (or ``from hermes_bootstrap import apply_windows_utf8_bootstrap``) at
+# Apply on import — entry points just need ``import thoth_bootstrap``
+# (or ``from thoth_bootstrap import apply_windows_utf8_bootstrap``) at
 # the very top of their module, before importing anything else.  The
 # import side effect does the right thing.
 apply_windows_utf8_bootstrap()
 
 # thoth→thoth env bridge (rename Phase 2): mirror HERMES_* <-> THOTH_* in
 # os.environ so either spelling works, BEFORE any HERMES_*/THOTH_* read. This
-# is the universal hook — every shipped entry point imports hermes_bootstrap
+# is the universal hook — every shipped entry point imports thoth_bootstrap
 # first (same invariant the Windows bootstrap relies on). Pure-stdlib + guarded
 # so a partial install can never brick startup. (load_hermes_dotenv re-runs it
 # after the .env is loaded; see thoth_cli/env_loader.py.)
@@ -160,13 +160,13 @@ def init_db_sync() -> None:
     Idempotent — subsequent calls after the first are a no-op.  Sync entry
     points (run_agent.py, cli.py, cron/scheduler.py, acp_adapter/entry.py) call
     this once at the top of main().  Pure-async entry points (gateway/run.py)
-    call ``await hermes_db.init(dsn)`` directly inside their asyncio.run().
+    call ``await thoth_db.init(dsn)`` directly inside their asyncio.run().
 
     Raises RuntimeError if HERMES_PG_DSN is not set in the environment.
 
-    Drives the init via ``hermes_db.run_sync`` so the pool binds to the
+    Drives the init via ``thoth_db.run_sync`` so the pool binds to the
     always-running DB loop rather than a transient ``asyncio.run`` loop.
-    asyncpg pools are loop-bound; an ``asyncio.run(hermes_db.init(dsn))``
+    asyncpg pools are loop-bound; an ``asyncio.run(thoth_db.init(dsn))``
     call would create a fresh loop, bind the pool to it, then close that
     loop on return — leaving every subsequent ``run_sync`` call holding a
     pool against a dead loop. The DB loop runs for the lifetime of the
@@ -210,10 +210,10 @@ def init_db_sync() -> None:
 # Substrate bootstrap helper (Phase A Task 14)
 # ---------------------------------------------------------------------------
 #
-# Called after init_db_sync / hermes_db.init has populated the asyncpg pool.
+# Called after init_db_sync / thoth_db.init has populated the asyncpg pool.
 # Pure-async entry points (gateway/run.py) ``await bootstrap_substrate()``
 # from inside asyncio.run(); sync entry points use the sync wrapper which
-# bridges via hermes_db.run_sync.
+# bridges via thoth_db.run_sync.
 #
 # Bootstrap failure is non-fatal for writer-mode callers: a logged error,
 # no substrate emission, Thoth runs as before (Phase A spec §0 — substrate
@@ -362,7 +362,7 @@ async def bootstrap_substrate(log=None, *, mode: str = "writer"):
 def bootstrap_substrate_sync(log=None, *, mode: str = "writer"):
     """Sync facade for ``bootstrap_substrate``.
 
-    Bridges via :func:`hermes_db.run_sync`. Must NOT be called from inside
+    Bridges via :func:`thoth_db.run_sync`. Must NOT be called from inside
     a running event loop — async entry points should ``await
     bootstrap_substrate(log, mode=...)`` directly.
     """

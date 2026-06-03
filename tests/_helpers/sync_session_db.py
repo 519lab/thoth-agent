@@ -13,7 +13,7 @@ mostly mechanical: change the fixture, leave the test body alone.
 Two pieces:
 
 * ``SyncSessionDB`` — wraps an ``_AsyncSessionDB`` and dispatches
-  every method through ``hermes_db.run_sync`` so callers don't need
+  every method through ``thoth_db.run_sync`` so callers don't need
   ``await``. Drop-in replacement for the old ``SessionDB`` in test
   bodies.
 
@@ -30,13 +30,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Optional
 
-import hermes_db
+import thoth_db
 
 
 class SyncSessionDB:
     """Drop-in sync replacement for the pre-Phase-0 SessionDB.
 
-    Dispatches every method call through ``hermes_db.run_sync``. Async
+    Dispatches every method call through ``thoth_db.run_sync``. Async
     iterators / streams are not supported (no test in the affected
     suite uses them today).
 
@@ -44,7 +44,7 @@ class SyncSessionDB:
 
         @pytest.fixture
         def db(hermes_db_initialized_sync):
-            from hermes_state import _AsyncSessionDB
+            from thoth_state import _AsyncSessionDB
             return SyncSessionDB(_AsyncSessionDB())
 
         def test_something(db):
@@ -68,7 +68,7 @@ class SyncSessionDB:
         def _wrapper(*args, **kwargs):
             result = attr(*args, **kwargs)
             if asyncio.iscoroutine(result):
-                return hermes_db.run_sync(result)
+                return thoth_db.run_sync(result)
             return result
 
         return _wrapper
@@ -110,14 +110,14 @@ def set_session_meta_sync(
     where_pos = len(updates) + 1
 
     async def _do():
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             await conn.execute(
                 f"UPDATE sessions SET {set_sql} WHERE id = ${where_pos}",
                 *(val for _, val in updates),
                 session_id,
             )
 
-    hermes_db.run_sync(_do())
+    thoth_db.run_sync(_do())
 
 
 __all__ = ["SyncSessionDB", "set_session_meta_sync"]

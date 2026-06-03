@@ -77,13 +77,13 @@ async def test_print_summary_after_boot_contains_expected_sections(
 ):
     """The default summary lists streams + slice counts + pending +
     sub-agents headings (spec §10.2)."""
-    import hermes_db
+    import thoth_db
 
     # Emit one user-message slice so the summary has non-zero counts.
     await on_user_message_async("sess-cli-1", "cli", "hello", _now_utc())
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_summary(conn)
     out = buf.getvalue()
@@ -105,10 +105,10 @@ async def test_print_summary_after_boot_contains_expected_sections(
 
 @pytest.mark.asyncio
 async def test_print_streams_lists_autoregistered(booted_substrate):
-    import hermes_db
+    import thoth_db
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_streams(conn)
     out = buf.getvalue()
@@ -132,7 +132,7 @@ async def test_print_streams_lists_autoregistered(booted_substrate):
 async def test_print_slices_for_named_stream(booted_substrate):
     """``inspect slices --stream NAME`` returns the most-recent slices for
     that stream and prints their addresses + payload preview."""
-    import hermes_db
+    import thoth_db
 
     for i in range(3):
         await on_user_message_async(
@@ -140,7 +140,7 @@ async def test_print_slices_for_named_stream(booted_substrate):
         )
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_slices(
                 conn, stream_name="thoth.world.user_message.cli", limit=10
@@ -153,10 +153,10 @@ async def test_print_slices_for_named_stream(booted_substrate):
 
 @pytest.mark.asyncio
 async def test_print_slices_unknown_stream(booted_substrate):
-    import hermes_db
+    import thoth_db
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_slices(
                 conn, stream_name="hermes.does.not.exist", limit=5
@@ -168,10 +168,10 @@ async def test_print_slices_unknown_stream(booted_substrate):
 @pytest.mark.asyncio
 async def test_print_pending_reports_zero_initially(booted_substrate):
     """With sub-agents off and no commits, pending queue is empty."""
-    import hermes_db
+    import thoth_db
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_pending(conn)
     out = buf.getvalue()
@@ -182,11 +182,11 @@ async def test_print_pending_reports_zero_initially(booted_substrate):
 @pytest.mark.asyncio
 async def test_print_pending_reports_age_after_emit(booted_substrate):
     """A fresh commit shows up with depth=1 and an age in seconds."""
-    import hermes_db
+    import thoth_db
 
     await on_user_message_async("sess-p", "cli", "queued", _now_utc())
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_pending(conn)
     out = buf.getvalue()
@@ -197,10 +197,10 @@ async def test_print_pending_reports_age_after_emit(booted_substrate):
 
 @pytest.mark.asyncio
 async def test_print_profiles_lists_4_seeded(booted_substrate):
-    import hermes_db
+    import thoth_db
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_profiles(conn)
     out = buf.getvalue()
@@ -245,10 +245,10 @@ async def _seed_heartbeat(conn, name, *, age_seconds, level="full", is_sentinel=
 async def test_print_agents_all_down_when_no_worker(booted_substrate):
     """With no heartbeats (worker never started), every expected agent
     reads DOWN and the worker-down warning fires."""
-    import hermes_db
+    import thoth_db
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_agents(conn)
     out = buf.getvalue()
@@ -262,9 +262,9 @@ async def test_print_agents_all_down_when_no_worker(booted_substrate):
 @pytest.mark.asyncio
 async def test_agent_liveness_classifies_by_age(booted_substrate):
     """Fresh beat → live, ~45s → stale, ~120s → down, missing → down."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await _seed_heartbeat(conn, "sentinel", age_seconds=1, is_sentinel=True)
         await _seed_heartbeat(conn, "curator", age_seconds=45, level="low")
         await _seed_heartbeat(conn, "force-reject", age_seconds=120, level="low")
@@ -285,16 +285,16 @@ async def test_agent_liveness_classifies_by_age(booted_substrate):
 @pytest.mark.asyncio
 async def test_print_agents_reports_live(booted_substrate):
     """All four agents beating recently → live + the OK line, no warning."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await _seed_heartbeat(conn, "sentinel", age_seconds=2, is_sentinel=True)
         await _seed_heartbeat(conn, "curator", age_seconds=3, level="low")
         await _seed_heartbeat(conn, "force-reject", age_seconds=4, level="low")
         await _seed_heartbeat(conn, "partition-maintenance", age_seconds=5)
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_agents(conn)
     out = buf.getvalue()
@@ -349,11 +349,11 @@ def test_register_subparser_recall_subtree():
 @pytest.mark.asyncio
 async def test_print_recall_summary_empty_substrate(booted_substrate):
     """With no recall calls yet, summary still produces the right format."""
-    import hermes_db
+    import thoth_db
     from substrate.recall.cli_inspect import print_summary
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await print_summary(conn)
     out = buf.getvalue()
@@ -366,11 +366,11 @@ async def test_print_recall_summary_empty_substrate(booted_substrate):
 @pytest.mark.asyncio
 async def test_print_recall_summary_after_recall(booted_substrate, monkeypatch):
     """After enqueuing a fake recall log row, summary reflects the count."""
-    import hermes_db
+    import thoth_db
     from datetime import datetime, timezone
     from substrate.recall.cli_inspect import print_summary
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             """
             INSERT INTO substrate_recall_log
@@ -382,7 +382,7 @@ async def test_print_recall_summary_after_recall(booted_substrate, monkeypatch):
             '{"embedding_path": "semantic"}',
         )
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await print_summary(conn)
     out = buf.getvalue()
@@ -392,10 +392,10 @@ async def test_print_recall_summary_after_recall(booted_substrate, monkeypatch):
 @pytest.mark.asyncio
 async def test_print_recall_recent_after_log_row(booted_substrate):
     """recent prints any seeded log row with the right session id."""
-    import hermes_db
+    import thoth_db
     from substrate.recall.cli_inspect import print_recent
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             """
             INSERT INTO substrate_recall_log
@@ -406,7 +406,7 @@ async def test_print_recall_recent_after_log_row(booted_substrate):
             """
         )
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await print_recent(conn, limit=10)
     out = buf.getvalue()
@@ -416,11 +416,11 @@ async def test_print_recall_recent_after_log_row(booted_substrate):
 @pytest.mark.asyncio
 async def test_print_recall_config(booted_substrate):
     """config dumps the RECALL_* knobs."""
-    import hermes_db
+    import thoth_db
     from substrate.recall.cli_inspect import print_config
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await print_config(conn)
     out = buf.getvalue()

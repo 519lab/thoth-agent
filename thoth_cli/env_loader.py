@@ -15,7 +15,7 @@ from utils import atomic_replace
 # just-loaded value authoritative for the keys a source set (so a rotated
 # value on reload isn't reverted by a stale mirror); ``normalize_thoth_env``
 # mirrors everything else (shell-set vars).
-from hermes_env import (
+from thoth_env import (
     normalize_thoth_env,
     sync_thoth_aliases,
 )

@@ -294,22 +294,22 @@ class TestHermesConstantsFallback:
         assert module.get_thoth_home() == Path.home() / ".hermes"
 
     def test_fallback_display_hermes_home_shortens_path(self, monkeypatch):
-        """Fallback display_hermes_home() uses ~/ shorthand like the real one."""
+        """Fallback display_thoth_home() uses ~/ shorthand like the real one."""
         monkeypatch.delenv("HERMES_HOME", raising=False)
         module = self._load_helper(monkeypatch)
-        assert module.display_hermes_home() == "~/.hermes"
+        assert module.display_thoth_home() == "~/.hermes"
 
     def test_fallback_display_hermes_home_profile_path(self, monkeypatch):
-        """Fallback display_hermes_home() handles profile paths under ~/."""
+        """Fallback display_thoth_home() handles profile paths under ~/."""
         monkeypatch.setenv("HERMES_HOME", str(Path.home() / ".hermes/profiles/coder"))
         module = self._load_helper(monkeypatch)
-        assert module.display_hermes_home() == "~/.hermes/profiles/coder"
+        assert module.display_thoth_home() == "~/.hermes/profiles/coder"
 
     def test_fallback_display_hermes_home_custom_path(self, monkeypatch):
-        """Fallback display_hermes_home() returns full path for non-home locations."""
+        """Fallback display_thoth_home() returns full path for non-home locations."""
         monkeypatch.setenv("HERMES_HOME", "/opt/hermes-custom")
         module = self._load_helper(monkeypatch)
-        assert module.display_hermes_home() == "/opt/hermes-custom"
+        assert module.display_thoth_home() == "/opt/hermes-custom"
 
     def test_delegates_to_hermes_constants_when_available(self):
         """When thoth_constants IS importable, _hermes_home delegates to it."""
@@ -321,4 +321,4 @@ class TestHermesConstantsFallback:
         spec.loader.exec_module(module)
         import thoth_constants
         assert module.get_thoth_home is thoth_constants.get_thoth_home
-        assert module.display_hermes_home is thoth_constants.display_hermes_home
+        assert module.display_thoth_home is thoth_constants.display_thoth_home

@@ -64,15 +64,15 @@ async def _seed_streams(conn):
 @pytest.mark.asyncio
 async def test_migrate_renames_and_slice_follows(hermes_db_initialized):
     """Rename rewrites hermes.* -> thoth.*; slices follow by stream_id."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.transaction() as conn:
+    async with thoth_db.transaction() as conn:
         await _seed_streams(conn)
 
     rows = await migrate_from_hermes()
     assert rows == 2
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         # (1) stream names are now thoth.*
         name_a = await conn.fetchval(
             "SELECT name FROM substrate_streams WHERE stream_id = $1", STREAM_A
@@ -104,9 +104,9 @@ async def test_migrate_renames_and_slice_follows(hermes_db_initialized):
 @pytest.mark.asyncio
 async def test_migrate_is_idempotent(hermes_db_initialized):
     """A second pass after a clean cutover matches zero rows."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.transaction() as conn:
+    async with thoth_db.transaction() as conn:
         await _seed_streams(conn)
 
     first = await migrate_from_hermes()
@@ -120,15 +120,15 @@ async def test_migrate_is_idempotent(hermes_db_initialized):
 @pytest.mark.asyncio
 async def test_dry_run_counts_without_writing(hermes_db_initialized):
     """dry_run returns the matching count and leaves names untouched."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.transaction() as conn:
+    async with thoth_db.transaction() as conn:
         await _seed_streams(conn)
 
     counted = await migrate_from_hermes(dry_run=True)
     assert counted == 2
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         still_hermes = await conn.fetchval(
             "SELECT count(*) FROM substrate_streams WHERE name LIKE 'hermes.%'"
         )

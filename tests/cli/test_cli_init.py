@@ -270,7 +270,7 @@ class TestHistoryDisplay:
         cli.session_id = "current"
         cli._session_db = MagicMock()
         # Phase 0: list_sessions_rich is an async coroutine on _AsyncSessionDB.
-        # AsyncMock makes ``hermes_db.run_sync(db.list_sessions_rich(...))``
+        # AsyncMock makes ``thoth_db.run_sync(db.list_sessions_rich(...))``
         # in production code resolve to our payload rather than blow up with
         # "An asyncio.Future, a coroutine or an awaitable is required".
         cli._session_db.list_sessions_rich = AsyncMock(return_value=[

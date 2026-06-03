@@ -17,7 +17,7 @@ import time
 import pytest
 import pytest_asyncio
 
-from hermes_state import SessionDB
+from thoth_state import SessionDB
 
 
 class TestHandoffStateDB:

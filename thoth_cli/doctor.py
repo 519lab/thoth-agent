@@ -14,11 +14,11 @@ from pathlib import Path
 from thoth_cli.cli_name import cli_name
 from thoth_cli.config import get_project_root, get_thoth_home, get_env_path
 from thoth_cli.env_loader import load_hermes_dotenv
-from thoth_constants import display_hermes_home
+from thoth_constants import display_thoth_home
 
 PROJECT_ROOT = get_project_root()
 HERMES_HOME = get_thoth_home()
-_DHH = display_hermes_home()  # user-facing display path (e.g. ~/.hermes or ~/.hermes/profiles/coder)
+_DHH = display_thoth_home()  # user-facing display path (e.g. ~/.hermes or ~/.hermes/profiles/coder)
 
 # Load environment variables from ~/.hermes/.env so API key checks work
 _env_path = get_env_path()

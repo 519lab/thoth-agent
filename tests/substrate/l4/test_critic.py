@@ -89,11 +89,11 @@ async def test_critic_calibration_goes_to_telemetry_not_l4(booted, monkeypatch):
     substrate_telemetry, NOT durable self-model. L4 keeps only the coherence
     vital sign (a single maintained row). Repeated status writes to L4 were
     what flooded it."""
-    import hermes_db
+    import thoth_db
 
     monkeypatch.setenv("HERMES_SUBSTRATE_CRITIC", "1")
     # Seed a parser_log row so reliability has data.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "INSERT INTO substrate_parser_log (batch_size, latency_ms, model, outcome) "
             "VALUES (10, 100, 'm', 'ok')"
@@ -106,7 +106,7 @@ async def test_critic_calibration_goes_to_telemetry_not_l4(booted, monkeypatch):
     # Calibration is NO LONGER written to L4.
     assert await l4.list_observations(kind="calibration") == []
     # …it went to telemetry, with the status fields in the payload.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             "SELECT payload FROM substrate_telemetry "
             "WHERE event='critic.assessed' ORDER BY at DESC LIMIT 1"
@@ -154,11 +154,11 @@ def test_register_subparser_l4():
 
 @pytest.mark.asyncio
 async def test_print_l4(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
     await l4.record_observation("coherence", "substrate", "coherence 0.88", score=0.88)
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_l4(conn)
     out = buf.getvalue()

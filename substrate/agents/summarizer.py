@@ -120,11 +120,11 @@ class Summarizer(SubAgent):
         return stream
 
     async def _sessions_with_old_slices(self) -> list[str]:
-        import hermes_db
+        import thoth_db
 
         min_age = _env_float("SUMMARIZER_MIN_AGE_HOURS", 24.0)
         min_slices = _env_int("SUMMARIZER_MIN_SLICES", 8)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             rows = await conn.fetch(
                 """
                 SELECT sl.metadata->>'session_id' AS session_id
@@ -149,13 +149,13 @@ class Summarizer(SubAgent):
         return [r["session_id"] for r in rows]
 
     async def _summarize_session(self, session_id: str) -> None:
-        import hermes_db
+        import thoth_db
         from substrate.l0.api import commit_slice
         from substrate.storage.types import Address
 
         min_age = _env_float("SUMMARIZER_MIN_AGE_HOURS", 24.0)
         batch = _env_int("SUMMARIZER_BATCH", 40)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             rows = await conn.fetch(
                 """
                 SELECT sl.slice_id, sl.stream_id, sl.time_start_world,
@@ -220,7 +220,7 @@ class Summarizer(SubAgent):
         # their salience forward and the raw history compresses over time.
         source_decay = _env_float("SUMMARIZER_SOURCE_DECAY", 0.5)
         slice_ids = [r["slice_id"] for r in rows]
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             await conn.execute(
                 """
                 UPDATE substrate_slices

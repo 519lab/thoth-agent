@@ -57,7 +57,7 @@ class TestHandleTitleCommand:
     @pytest.mark.asyncio
     async def test_set_title(self, hermes_db_initialized):
         """Setting a title returns confirmation."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("test_session_123", "telegram")
 
@@ -73,7 +73,7 @@ class TestHandleTitleCommand:
     @pytest.mark.asyncio
     async def test_show_title_when_set(self, hermes_db_initialized):
         """Showing title when one is set returns the title."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("test_session_123", "telegram")
         await db.set_session_title("test_session_123", "Existing Title")
@@ -87,7 +87,7 @@ class TestHandleTitleCommand:
     @pytest.mark.asyncio
     async def test_show_title_when_not_set(self, hermes_db_initialized):
         """Showing title when none is set returns usage hint."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("test_session_123", "telegram")
 
@@ -100,7 +100,7 @@ class TestHandleTitleCommand:
     @pytest.mark.asyncio
     async def test_title_conflict(self, hermes_db_initialized):
         """Setting a title already used by another session returns error."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("other_session", "telegram")
         await db.set_session_title("other_session", "Taken Title")
@@ -123,7 +123,7 @@ class TestHandleTitleCommand:
     @pytest.mark.asyncio
     async def test_title_too_long(self, hermes_db_initialized):
         """Setting a title that exceeds max length returns error."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("test_session_123", "telegram")
 
@@ -137,7 +137,7 @@ class TestHandleTitleCommand:
     @pytest.mark.asyncio
     async def test_title_control_chars_sanitized(self, hermes_db_initialized):
         """Control characters are stripped and sanitized title is stored."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("test_session_123", "telegram")
 
@@ -150,7 +150,7 @@ class TestHandleTitleCommand:
     @pytest.mark.asyncio
     async def test_title_only_control_chars(self, hermes_db_initialized):
         """Title with only control chars returns empty error."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("test_session_123", "telegram")
 
@@ -162,7 +162,7 @@ class TestHandleTitleCommand:
     @pytest.mark.asyncio
     async def test_works_across_platforms(self, hermes_db_initialized):
         """The /title command works for Discord and Telegram too."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         for i, platform in enumerate([Platform.DISCORD, Platform.TELEGRAM]):
             session_id = f"test_session_platform_{i}"
             title = f"Cross-Platform Test {platform.value}"  # unique per platform

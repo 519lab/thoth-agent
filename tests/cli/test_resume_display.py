@@ -531,7 +531,7 @@ class TestPreloadResumedSession:
         ``_AsyncSessionDB`` surface used by ``_preload_resumed_session``.
 
         Phase 0 moved sessions from sqlite (sync ``conn.execute``) to PG
-        (async coroutines driven through ``hermes_db.run_sync``), so a
+        (async coroutines driven through ``thoth_db.run_sync``), so a
         plain ``MagicMock`` produces ``MagicMock`` objects where the
         production code expects coroutines and run_sync raises
         ``TypeError: An asyncio.Future, a coroutine or an awaitable is
@@ -609,7 +609,7 @@ class TestPreloadResumedSession:
         cli._preload_resumed_session()
 
         # Phase 0: production code now calls the async ``reopen_session``
-        # via ``hermes_db.run_sync`` instead of poking ``_conn.execute``
+        # via ``thoth_db.run_sync`` instead of poking ``_conn.execute``
         # with a raw UPDATE — see cli.py:_preload_resumed_session.
         mock_db.reopen_session.assert_awaited_once_with("reopen_session")
 

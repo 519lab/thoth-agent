@@ -12,12 +12,12 @@ Usage:
     python cli.py --list-tools             # List available tools and exit
 """
 
-# IMPORTANT: hermes_bootstrap must be the very first import — UTF-8 stdio
-# on Windows.  No-op on POSIX.  See hermes_bootstrap.py for full rationale.
+# IMPORTANT: thoth_bootstrap must be the very first import — UTF-8 stdio
+# on Windows.  No-op on POSIX.  See thoth_bootstrap.py for full rationale.
 try:
-    import hermes_bootstrap  # noqa: F401
+    import thoth_bootstrap  # noqa: F401
 except ModuleNotFoundError:
-    # Graceful fallback when hermes_bootstrap isn't registered in the venv
+    # Graceful fallback when thoth_bootstrap isn't registered in the venv
     # yet — happens during partial ``thoth update`` where git-reset landed
     # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
     # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
@@ -103,7 +103,7 @@ _COMMAND_SPINNER_FRAMES = ("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧
 
 # Load .env from ~/.hermes/.env first, then project root as dev fallback.
 # User-managed env files should override stale shell exports on restart.
-from thoth_constants import get_thoth_home, display_hermes_home
+from thoth_constants import get_thoth_home, display_thoth_home
 from thoth_cli.browser_connect import (
     DEFAULT_BROWSER_CDP_URL,
     is_browser_debug_ready,
@@ -625,7 +625,7 @@ CLI_CONFIG = load_cli_config()
 # Initialize centralized logging early — agent.log + errors.log in ~/.hermes/logs/.
 # This ensures CLI sessions produce a log trail even before AIAgent is instantiated.
 try:
-    from hermes_logging import setup_logging
+    from thoth_logging import setup_logging
     setup_logging(mode="cli")
 except Exception:
     pass  # Logging setup is best-effort — don't crash the CLI
@@ -1090,7 +1090,7 @@ def _run_state_db_auto_maintenance(session_db) -> None:
     try:
         from thoth_cli.config import load_config as _load_full_config
         from thoth_constants import get_thoth_home as _get_hermes_home
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         _hermes_home_maint = _get_hermes_home()
 
         # Skip maintenance unless the asyncpg pool is already initialised.
@@ -2911,7 +2911,7 @@ class ThothCLI:
         # Initialize SQLite session store early so /title works before first message
         self._session_db = None
         try:
-            from hermes_state import SessionDB
+            from thoth_state import SessionDB
             self._session_db = SessionDB()
         except Exception as e:
             logger.warning("Failed to initialize SessionDB — session will NOT be indexed for search: %s", e)
@@ -4537,7 +4537,7 @@ class ThothCLI:
         # Initialize SQLite session store for CLI sessions (if not already done in __init__)
         if self._session_db is None:
             try:
-                from hermes_state import SessionDB
+                from thoth_state import SessionDB
                 self._session_db = SessionDB()
             except Exception as e:
                 logger.warning("SQLite session store not available — session will NOT be indexed: %s", e)
@@ -4547,7 +4547,7 @@ class ThothCLI:
         # run() for immediate display).  In that case, conversation_history
         # is non-empty and we skip the DB round-trip.
         if self._resumed and self._session_db and not self.conversation_history:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             session_meta = _hermes_db.run_sync(self._session_db.get_session(self.session_id))
             if not session_meta:
                 _cprint(f"\033[1;31mSession not found: {self.session_id}{_RST}")
@@ -4672,7 +4672,7 @@ class ThothCLI:
                 try:
                     self.agent._ensure_db_session()
                     if self.agent._session_db_created:
-                        import hermes_db as _hermes_db
+                        import thoth_db as _hermes_db
                         _hermes_db.run_sync(self._session_db.set_session_title(self.session_id, self._pending_title))
                         _cprint(f"  Session title applied: {self._pending_title}")
                         self._pending_title = None
@@ -4804,7 +4804,7 @@ class ThothCLI:
         if not self._resumed or not self._session_db:
             return False
 
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         session_meta = _hermes_db.run_sync(self._session_db.get_session(self.session_id))
         if not session_meta:
             self._console_print(
@@ -5179,7 +5179,7 @@ class ThothCLI:
             create_quick_snapshot, list_quick_snapshots,
             restore_quick_snapshot, prune_quick_snapshots,
         )
-        from thoth_constants import display_hermes_home
+        from thoth_constants import display_thoth_home
 
         parts = command.split()
         subcmd = parts[1].lower() if len(parts) > 1 else "list"
@@ -5190,7 +5190,7 @@ class ThothCLI:
                 print("  No state snapshots yet.")
                 print("  Create one: /snapshot create [label]")
                 return
-            print(f"  State snapshots ({display_hermes_home()}/state-snapshots/):\n")
+            print(f"  State snapshots ({display_thoth_home()}/state-snapshots/):\n")
             print(f"  {'#':>3}  {'ID':<35} {'Files':>5} {'Size':>10} {'Label'}")
             print(f"  {'─'*3}  {'─'*35} {'─'*5} {'─'*10} {'─'*20}")
             for i, s in enumerate(snaps, 1):
@@ -5560,7 +5560,7 @@ class ThothCLI:
         session_meta = {}
         if self._session_db:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 session_meta = _hermes_db.run_sync(self._session_db.get_session(self.session_id)) or {}
             except Exception:
                 session_meta = {}
@@ -5596,7 +5596,7 @@ class ThothCLI:
             "Thoth CLI Status",
             "",
             f"Session ID: {self.session_id}",
-            f"Path: {display_hermes_home()}",
+            f"Path: {display_thoth_home()}",
         ]
         if title:
             lines.append(f"Title: {title}")
@@ -5845,10 +5845,10 @@ class ThothCLI:
     
     def _handle_profile_command(self):
         """Display active profile name and home directory."""
-        from thoth_constants import display_hermes_home
+        from thoth_constants import display_thoth_home
         from thoth_cli.profiles import get_active_profile_name
 
-        display = display_hermes_home()
+        display = display_thoth_home()
         profile_name = get_active_profile_name()
 
         print()
@@ -5919,7 +5919,7 @@ class ThothCLI:
         if not self._session_db:
             return []
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             sessions = _hermes_db.run_sync(self._session_db.list_sessions_rich(
                 source="cli",
                 exclude_sources=["tool"],
@@ -6054,7 +6054,7 @@ class ThothCLI:
         old_session_id = self.session_id
         if self._session_db and old_session_id:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(self._session_db.end_session(old_session_id, "new_session"))
             except Exception:
                 pass
@@ -6084,7 +6084,7 @@ class ThothCLI:
 
             if self._session_db:
                 try:
-                    import hermes_db as _hermes_db
+                    import thoth_db as _hermes_db
                     self.agent._session_db_created = False
                     _hermes_db.run_sync(self._session_db.create_session(
                         session_id=self.session_id,
@@ -6099,7 +6099,7 @@ class ThothCLI:
                 except Exception:
                     pass
                 if title and self._session_db:
-                    from hermes_state import SessionDB
+                    from thoth_state import SessionDB
                     try:
                         sanitized = SessionDB.sanitize_title(title)
                     except ValueError as e:
@@ -6108,7 +6108,7 @@ class ThothCLI:
                         title = None
                     if sanitized:
                         try:
-                            import hermes_db as _hermes_db
+                            import thoth_db as _hermes_db
                             _hermes_db.run_sync(self._session_db.set_session_title(self.session_id, sanitized))
                             self._pending_title = None
                             title = sanitized
@@ -6162,7 +6162,7 @@ class ThothCLI:
         Returns:
             False to signal CLI exit, True to keep going.
         """
-        from hermes_state import format_session_db_unavailable
+        from thoth_state import format_session_db_unavailable
 
         parts = cmd_original.split(maxsplit=1)
         if len(parts) < 2 or not parts[1].strip():
@@ -6212,7 +6212,7 @@ class ThothCLI:
         # Make sure we have a SessionDB handle.
         if not self._session_db:
             try:
-                from hermes_state import SessionDB
+                from thoth_state import SessionDB
                 self._session_db = SessionDB()
             except Exception:
                 pass
@@ -6224,7 +6224,7 @@ class ThothCLI:
         # are written via _flush_messages_to_session_db on the first turn
         # already, but if the user tries to hand off an empty session we
         # still want a row to mark.
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         try:
             row = _hermes_db.run_sync(self._session_db.get_session(self.session_id))
             if not row:
@@ -6309,7 +6309,7 @@ class ThothCLI:
             return
 
         if not self._session_db:
-            from hermes_state import format_session_db_unavailable
+            from thoth_state import format_session_db_unavailable
             _cprint(f"  {format_session_db_unavailable()}")
             return
 
@@ -6318,7 +6318,7 @@ class ThothCLI:
         resolved = _resolve_session_by_name_or_id(target)
         target_id = resolved or target
 
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         session_meta = _hermes_db.run_sync(self._session_db.get_session(target_id))
         if not session_meta:
             _cprint(f"  Session not found: {target}")
@@ -6432,7 +6432,7 @@ class ThothCLI:
         # Bare /sessions or /sessions list — show recent sessions inline.
         if not arg or sub in {"list", "ls", "browse"}:
             if not self._session_db:
-                from hermes_state import format_session_db_unavailable
+                from thoth_state import format_session_db_unavailable
                 _cprint(f"  {format_session_db_unavailable()}")
                 return
             if not self._show_recent_sessions(reason="sessions"):
@@ -6454,7 +6454,7 @@ class ThothCLI:
             return
 
         if not self._session_db:
-            from hermes_state import format_session_db_unavailable
+            from thoth_state import format_session_db_unavailable
             _cprint(f"  {format_session_db_unavailable()}")
             return
 
@@ -6472,7 +6472,7 @@ class ThothCLI:
             branch_title = branch_name
         else:
             # Auto-generate from the current session title
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             current_title = None
             if self._session_db:
                 current_title = _hermes_db.run_sync(self._session_db.get_session_title(self.session_id))
@@ -6483,7 +6483,7 @@ class ThothCLI:
         parent_session_id = self.session_id
 
         # End the old session
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         try:
             _hermes_db.run_sync(self._session_db.end_session(self.session_id, "branched"))
         except Exception:
@@ -7825,7 +7825,7 @@ class ThothCLI:
             print("  To start the gateway:")
             print("    python cli.py --gateway")
             print()
-            print(f"  Configuration file: {display_hermes_home()}/config.yaml")
+            print(f"  Configuration file: {display_thoth_home()}/config.yaml")
             print()
             
         except Exception as e:
@@ -7835,7 +7835,7 @@ class ThothCLI:
             print("    1. Set environment variables:")
             print("       TELEGRAM_BOT_TOKEN=your_token")
             print("       DISCORD_BOT_TOKEN=your_token")
-            print(f"    2. Or configure settings in {display_hermes_home()}/config.yaml")
+            print(f"    2. Or configure settings in {display_thoth_home()}/config.yaml")
             print()
     
     def process_command(self, command: str) -> bool:
@@ -7969,7 +7969,7 @@ class ThothCLI:
                     if self._session_db:
                         # Sanitize the title early so feedback matches what gets stored
                         try:
-                            from hermes_state import SessionDB
+                            from thoth_state import SessionDB
                             new_title = SessionDB.sanitize_title(raw_title)
                         except ValueError as e:
                             _cprint(f"  {e}")
@@ -7977,7 +7977,7 @@ class ThothCLI:
                         if not new_title:
                             _cprint("  Title is empty after cleanup. Please use printable characters.")
                         else:
-                            import hermes_db as _hermes_db
+                            import thoth_db as _hermes_db
                             if _hermes_db.run_sync(self._session_db.get_session(self.session_id)):
                                 # Session exists in DB — set title directly
                                 try:
@@ -7997,13 +7997,13 @@ class ThothCLI:
                                     self._pending_title = new_title
                                     _cprint(f"  Session title queued: {new_title} (will be saved on first message)")
                     else:
-                        from hermes_state import format_session_db_unavailable
+                        from thoth_state import format_session_db_unavailable
                         _cprint(f"  {format_session_db_unavailable()}")
                 else:
                     _cprint("  Usage: /title <your session title>")
             # Show current title and session ID if no argument given
             elif self._session_db:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _cprint(f"  Session ID: {self.session_id}")
                 session = _hermes_db.run_sync(self._session_db.get_session(self.session_id))
                 if session and session.get("title"):
@@ -8013,7 +8013,7 @@ class ThothCLI:
                 else:
                     _cprint("  No title set. Usage: /title <your session title>")
             else:
-                from hermes_state import format_session_db_unavailable
+                from thoth_state import format_session_db_unavailable
                 _cprint(f"  {format_session_db_unavailable()}")
         elif canonical == "handoff":
             if not self._handle_handoff_command(cmd_original):
@@ -8125,7 +8125,7 @@ class ThothCLI:
                 plugins = mgr.list_plugins()
                 if not plugins:
                     print("No plugins installed.")
-                    print(f"Drop plugin directories into {display_hermes_home()}/plugins/ to get started.")
+                    print(f"Drop plugin directories into {display_thoth_home()}/plugins/ to get started.")
                 else:
                     print(f"Plugins ({len(plugins)}):")
                     for p in plugins:
@@ -9051,7 +9051,7 @@ class ThothCLI:
                 source = f" ({s['source']})" if s["source"] == "user" else ""
                 print(f"   {marker} {s['name']}{source} — {s['description']}")
             print("\n  Usage: /skin <name>")
-            print(f"  Custom skins: drop a YAML file in {display_hermes_home()}/skins/\n")
+            print(f"  Custom skins: drop a YAML file in {display_thoth_home()}/skins/\n")
             return
 
         new_skin = parts[1].strip().lower()
@@ -9600,7 +9600,7 @@ class ThothCLI:
             # above the file handler level filters records before they
             # reach handlers, so agent.log / errors.log lose visibility
             # into stream-retry events, credential rotations, etc.
-            # Console quietness is enforced by hermes_logging not
+            # Console quietness is enforced by thoth_logging not
             # installing a console StreamHandler in non-verbose mode.
 
     def _show_insights(self, command: str = "/insights"):
@@ -9628,7 +9628,7 @@ class ThothCLI:
                 i += 1
 
         try:
-            from hermes_state import SessionDB
+            from thoth_state import SessionDB
             from agent.insights import InsightsEngine
 
             db = SessionDB()
@@ -11635,7 +11635,7 @@ class ThothCLI:
             session_title = None
             if self._session_db:
                 try:
-                    import hermes_db as _hermes_db
+                    import thoth_db as _hermes_db
                     session_title = _hermes_db.run_sync(self._session_db.get_session_title(self.session_id))
                 except Exception:
                     pass
@@ -14190,7 +14190,7 @@ class ThothCLI:
             # Close session in PG
             if hasattr(self, '_session_db') and self._session_db and self.agent:
                 try:
-                    import hermes_db as _hermes_db
+                    import thoth_db as _hermes_db
                     _hermes_db.run_sync(self._session_db.end_session(self.agent.session_id, "cli_close"))
                 except (Exception, KeyboardInterrupt) as e:
                     logger.debug("Could not close session in DB: %s", e)
@@ -14198,7 +14198,7 @@ class ThothCLI:
                 # and DB history. Ported from google-gemini/gemini-cli#19332.
                 if getattr(self, '_delete_session_on_exit', False):
                     try:
-                        import hermes_db as _hermes_db
+                        import thoth_db as _hermes_db
                         from thoth_constants import get_thoth_home as _ghh
                         _sessions_dir = _ghh() / "sessions"
                         _sid = self.agent.session_id
@@ -14304,7 +14304,7 @@ def main(
 
     # Phase 0: initialise PG pool (idempotent; raises if HERMES_PG_DSN unset).
     try:
-        from hermes_bootstrap import init_db_sync
+        from thoth_bootstrap import init_db_sync
         init_db_sync()
     except RuntimeError:
         pass  # No HERMES_PG_DSN → legacy path still works during cutover period.
@@ -14312,7 +14312,7 @@ def main(
     # Phase A: bootstrap the substrate so perception hooks emit slices.
     # Non-fatal — substrate failure must not crash Thoth (spec §0).
     try:
-        from hermes_bootstrap import bootstrap_substrate_sync
+        from thoth_bootstrap import bootstrap_substrate_sync
         bootstrap_substrate_sync()
     except Exception:  # noqa: BLE001 — defensive
         pass

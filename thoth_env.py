@@ -18,7 +18,7 @@ Design (agreed by two independent model reviews):
 * **Empty-string guard.** An empty ``THOTH_X`` does NOT clobber a non-empty
   ``HERMES_X`` (avoids a stray ``THOTH_X=`` wiping a deployment value).
 * **Idempotent** — safe to call repeatedly (gateway hot-reload re-runs it).
-* **Pure stdlib, import-safe.** Imported from ``hermes_bootstrap`` before
+* **Pure stdlib, import-safe.** Imported from ``thoth_bootstrap`` before
   anything heavy; must not import ``dotenv``/``yaml``/``thoth_constants``.
 
 Scope: the home directory (``HERMES_HOME`` / ``THOTH_HOME``) is deliberately

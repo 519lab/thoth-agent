@@ -20,12 +20,12 @@ Usage:
     response = agent.run_conversation("Tell me about the latest Python updates")
 """
 
-# IMPORTANT: hermes_bootstrap must be the very first import — UTF-8 stdio
-# on Windows.  No-op on POSIX.  See hermes_bootstrap.py for full rationale.
+# IMPORTANT: thoth_bootstrap must be the very first import — UTF-8 stdio
+# on Windows.  No-op on POSIX.  See thoth_bootstrap.py for full rationale.
 try:
-    import hermes_bootstrap  # noqa: F401
+    import thoth_bootstrap  # noqa: F401
 except ModuleNotFoundError:
-    # Graceful fallback when hermes_bootstrap isn't registered in the venv
+    # Graceful fallback when thoth_bootstrap isn't registered in the venv
     # yet — happens during partial ``thoth update`` where git-reset landed
     # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
     # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
@@ -494,7 +494,7 @@ class AIAgent:
         if self._session_db is not None:
             return self._session_db
         try:
-            from hermes_state import SessionDB
+            from thoth_state import SessionDB
 
             self._session_db = SessionDB()
             return self._session_db
@@ -507,7 +507,7 @@ class AIAgent:
         if self._session_db_created or not self._session_db:
             return
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             _hermes_db.run_sync(self._session_db.create_session(
                 session_id=self.session_id,
                 source=self.platform or os.environ.get("HERMES_SESSION_SOURCE", "cli"),
@@ -1279,7 +1279,7 @@ class AIAgent:
                     ]
                 elif isinstance(msg.get("tool_calls"), list):
                     tool_calls_data = msg["tool_calls"]
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(self._session_db.append_message(
                     session_id=self.session_id,
                     role=role,
@@ -4067,14 +4067,14 @@ def main(
     """
     # Phase 0: initialise PG pool (idempotent; raises if HERMES_PG_DSN unset).
     try:
-        from hermes_bootstrap import init_db_sync
+        from thoth_bootstrap import init_db_sync
         init_db_sync()
     except RuntimeError:
         pass  # No HERMES_PG_DSN → legacy path still works during cutover period.
 
     # Phase A: bootstrap the substrate so perception hooks emit slices.
     try:
-        from hermes_bootstrap import bootstrap_substrate_sync
+        from thoth_bootstrap import bootstrap_substrate_sync
         bootstrap_substrate_sync()
     except Exception:  # noqa: BLE001 — defensive, substrate failure is non-fatal
         pass

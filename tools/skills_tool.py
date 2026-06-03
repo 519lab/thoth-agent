@@ -69,7 +69,7 @@ Usage:
 import json
 import logging
 
-from thoth_constants import get_thoth_home, display_hermes_home
+from thoth_constants import get_thoth_home, display_thoth_home
 import os
 import re
 from enum import Enum
@@ -412,7 +412,7 @@ def _gateway_setup_hint() -> str:
 
         return GATEWAY_SECRET_CAPTURE_UNSUPPORTED_MESSAGE
     except Exception:
-        return f"Secure secret entry is not available. Load this skill in the local CLI to be prompted, or add the key to {display_hermes_home()}/.env manually."
+        return f"Secure secret entry is not available. Load this skill in the local CLI to be prompted, or add the key to {display_thoth_home()}/.env manually."
 
 
 def _build_setup_note(
@@ -694,7 +694,7 @@ def skills_list(category: str = None, task_id: str = None) -> str:
                     "success": True,
                     "skills": [],
                     "categories": [],
-                    "message": f"No skills found. Skills directory created at {display_hermes_home()}/skills/",
+                    "message": f"No skills found. Skills directory created at {display_thoth_home()}/skills/",
                 },
                 ensure_ascii=False,
             )

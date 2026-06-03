@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from thoth_constants import display_hermes_home
+from thoth_constants import display_thoth_home
 
 logger = logging.getLogger(__name__)
 
@@ -666,7 +666,7 @@ Important safety rule: cron-run sessions should not recursively schedule more cr
             },
             "script": {
                 "type": "string",
-                "description": f"Optional path to a script that runs each tick. In the default mode its stdout is injected into the agent's prompt as context (data-collection / change-detection pattern). With no_agent=True, the script IS the job and its stdout is delivered verbatim (classic watchdog pattern). Relative paths resolve under {display_hermes_home()}/scripts/. ``.sh``/``.bash`` extensions run via bash, everything else via Python. On update, pass empty string to clear."
+                "description": f"Optional path to a script that runs each tick. In the default mode its stdout is injected into the agent's prompt as context (data-collection / change-detection pattern). With no_agent=True, the script IS the job and its stdout is delivered verbatim (classic watchdog pattern). Relative paths resolve under {display_thoth_home()}/scripts/. ``.sh``/``.bash`` extensions run via bash, everything else via Python. On update, pass empty string to clear."
             },
             "no_agent": {
                 "type": "boolean",

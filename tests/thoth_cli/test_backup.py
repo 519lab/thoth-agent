@@ -20,7 +20,7 @@ def _make_hermes_tree(root: Path) -> None:
     (root / "config.yaml").write_text("model:\n  provider: openrouter\n")
     (root / ".env").write_text("OPENROUTER_API_KEY=sk-test-123\n")
     (root / "memory_store.db").write_bytes(b"fake-sqlite")
-    (root / "hermes_state.db").write_bytes(b"fake-state")
+    (root / "thoth_state.db").write_bytes(b"fake-state")
 
     # Sessions
     (root / "sessions").mkdir(exist_ok=True)
@@ -278,10 +278,10 @@ class TestValidateBackupZip:
         assert ok, reason
 
     def test_old_wrong_db_name_fails(self, tmp_path):
-        """A zip with only hermes_state.db (old wrong name) is rejected."""
+        """A zip with only thoth_state.db (old wrong name) is rejected."""
         from thoth_cli.backup import _validate_backup_zip
         zip_path = tmp_path / "old.zip"
-        self._make_zip(zip_path, ["hermes_state.db", "memory_store.db"])
+        self._make_zip(zip_path, ["thoth_state.db", "memory_store.db"])
         with zipfile.ZipFile(zip_path, "r") as zf:
             ok, reason = _validate_backup_zip(zf)
         assert not ok

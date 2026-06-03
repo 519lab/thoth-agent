@@ -11,11 +11,11 @@ Public surface (grows as Phase A tasks land):
     from substrate.l0 import commit_slice, commit_slice_sync
 
     async def main():
-        await hermes_db.init(dsn)         # Phase 0 pool
+        await thoth_db.init(dsn)         # Phase 0 pool
         sub = await Substrate.boot()
         await commit_slice(sub, stream_id, "hello", event_time_world=...)
         await sub.shutdown()
-        await hermes_db.close()
+        await thoth_db.close()
 
 Hooks live in ``substrate.events.hermes_hooks`` and are bound to the
 booted Substrate instance via ``Substrate.boot()`` (binding lands in

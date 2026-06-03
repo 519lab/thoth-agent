@@ -24,7 +24,7 @@ def session_db(tmp_path, hermes_db_initialized_sync):
 
     Test BODIES call ``session_db.get_session(...)``, ``get_session_title``,
     etc. as if they were sync — so this fixture returns a ``SyncSessionDB``
-    that auto-runs coroutines via ``hermes_db.run_sync``.
+    that auto-runs coroutines via ``thoth_db.run_sync``.
 
     Notice that ``cli_instance`` below assigns a DIFFERENT object to
     ``cli._session_db`` — that one is the raw ``_AsyncSessionDB`` so the
@@ -36,7 +36,7 @@ def session_db(tmp_path, hermes_db_initialized_sync):
     """
     os.environ["HERMES_HOME"] = str(tmp_path / ".hermes")
     os.makedirs(tmp_path / ".hermes", exist_ok=True)
-    from hermes_state import _AsyncSessionDB
+    from thoth_state import _AsyncSessionDB
 
     from tests._helpers.sync_session_db import SyncSessionDB
     db = SyncSessionDB(_AsyncSessionDB())
@@ -52,7 +52,7 @@ def cli_instance(tmp_path, session_db):
 
     cli = MagicMock()
     # The production _handle_branch_command does its own
-    # ``hermes_db.run_sync(db.x(...))`` so it expects ``cli._session_db``
+    # ``thoth_db.run_sync(db.x(...))`` so it expects ``cli._session_db``
     # to be the raw async _AsyncSessionDB. Use the SyncSessionDB's
     # ``.async_db`` escape hatch to hand the production code the right
     # shape while keeping the test BODIES' sync assertions working

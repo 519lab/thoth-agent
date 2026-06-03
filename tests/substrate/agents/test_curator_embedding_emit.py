@@ -39,7 +39,7 @@ async def booted_substrate(hermes_db_initialized):
 
 
 async def _seed_passed_slice(substrate, *, text: str) -> None:
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     await commit_slice(
@@ -48,7 +48,7 @@ async def _seed_passed_slice(substrate, *, text: str) -> None:
         text,
         event_time_world=datetime.now(timezone.utc),
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET sentinel_state='passed', trust_score=0.95, pending_committed_at=NULL WHERE sentinel_state='pending'"
         )
@@ -71,8 +71,8 @@ async def test_curator_embeds_unembedded_slice(booted_substrate, monkeypatch):
     curator = Curator(booted_substrate)
     await curator._emit_embeddings_for_unembedded()
 
-    import hermes_db
-    async with hermes_db.connection() as conn:
+    import thoth_db
+    async with thoth_db.connection() as conn:
         emb = await conn.fetchval(
             "SELECT embedding FROM substrate_slices WHERE payload->>'text' = 'needs embedding'"
         )
@@ -86,8 +86,8 @@ async def test_curator_idempotent_under_concurrent_emit(booted_substrate, monkey
     _force_interval_zero(monkeypatch)
     await _seed_passed_slice(booted_substrate, text="immune to overwrite")
 
-    import hermes_db
-    async with hermes_db.connection() as conn:
+    import thoth_db
+    async with thoth_db.connection() as conn:
         sid = await conn.fetchval(
             "SELECT slice_id FROM substrate_slices WHERE payload->>'text' = 'immune to overwrite'"
         )
@@ -118,8 +118,8 @@ async def test_curator_backfill_batch_size(booted_substrate, monkeypatch):
     curator = Curator(booted_substrate)
     await curator._emit_embeddings_for_unembedded()
 
-    import hermes_db
-    async with hermes_db.connection() as conn:
+    import thoth_db
+    async with thoth_db.connection() as conn:
         embedded_count = await conn.fetchval(
             "SELECT COUNT(*) FROM substrate_slices WHERE embedding IS NOT NULL AND payload->>'text' LIKE 'batch_%'"
         )
@@ -127,7 +127,7 @@ async def test_curator_backfill_batch_size(booted_substrate, monkeypatch):
 
     # Second cycle picks up the next batch.
     await curator._emit_embeddings_for_unembedded()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         embedded_count_2 = await conn.fetchval(
             "SELECT COUNT(*) FROM substrate_slices WHERE embedding IS NOT NULL AND payload->>'text' LIKE 'batch_%'"
         )
@@ -156,15 +156,15 @@ async def test_curator_embedding_api_failure_leaves_slice_unembedded(
     curator = Curator(booted_substrate)
     await curator._emit_embeddings_for_unembedded()
 
-    import hermes_db
-    async with hermes_db.connection() as conn:
+    import thoth_db
+    async with thoth_db.connection() as conn:
         emb = await conn.fetchval(
             "SELECT embedding FROM substrate_slices WHERE payload->>'text' = 'api fails'"
         )
     assert emb is None
     assert call_count == 1
     # The slice is still in list_unembedded — not yet marked failed.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await booted_substrate.slices.list_unembedded(conn, limit=100)
     assert any(
         (r["payload"].get("text") if isinstance(r["payload"], dict) else None) == "api fails"
@@ -192,14 +192,14 @@ async def test_curator_embedding_repeated_failures_mark_slice(
     for _ in range(4):
         await curator._emit_embeddings_for_unembedded()
 
-    import hermes_db
-    async with hermes_db.connection() as conn:
+    import thoth_db
+    async with thoth_db.connection() as conn:
         marked = await conn.fetchval(
             "SELECT (metadata->>'embedding_failed')::bool FROM substrate_slices WHERE payload->>'text' = 'poisoned payload'"
         )
     assert marked is True
     # And list_unembedded excludes it now.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await booted_substrate.slices.list_unembedded(conn, limit=100)
     assert not any(
         (r["payload"].get("text") if isinstance(r["payload"], dict) else None) == "poisoned payload"

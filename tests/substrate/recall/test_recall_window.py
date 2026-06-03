@@ -27,9 +27,9 @@ from substrate.storage import (
 
 @pytest_asyncio.fixture
 async def substrate(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
-    return Substrate.from_pool(hermes_db.pool())
+    return Substrate.from_pool(thoth_db.pool())
 
 
 def _now_utc() -> datetime:
@@ -39,9 +39,9 @@ def _now_utc() -> datetime:
 async def _pass_all_pending(substrate) -> None:
     """Helper: flip every pending slice to ``passed`` so it's eligible
     for recall. The real Sentinel does this on a tick; tests bypass."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             """
             UPDATE substrate_slices
@@ -56,7 +56,7 @@ async def _pass_all_pending(substrate) -> None:
 @pytest.mark.asyncio
 async def test_recall_window_orders_by_salience_then_recency(substrate):
     """Higher salience wins on equal recency; more recent wins on equal salience."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.recall_order",
@@ -75,7 +75,7 @@ async def test_recall_window_orders_by_salience_then_recency(substrate):
 
     # Bump salience scores by hand: high → 0.9, mid → 0.6, low stays at 1.0 default...
     # Reset everything to known scores so the ordering check is deterministic.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET salience_score = 0.3 WHERE payload->>'text' = 'low salience'"
         )
@@ -101,7 +101,7 @@ async def test_recall_window_orders_by_salience_then_recency(substrate):
 @pytest.mark.asyncio
 async def test_recall_window_unwraps_text_payload(substrate):
     """Text-modality payloads stored as ``{"text": "..."}`` arrive as bare strings."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.recall_unwrap",
@@ -115,7 +115,7 @@ async def test_recall_window_unwraps_text_payload(substrate):
     await commit_slice(substrate, stream.stream_id, "hello world", event_time_world=t)
     await _pass_all_pending(substrate)
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         candidates = await substrate.slices.recall_window(
             conn,
             t_now=t + timedelta(seconds=1),
@@ -132,7 +132,7 @@ async def test_recall_window_unwraps_text_payload(substrate):
 @pytest.mark.asyncio
 async def test_recall_window_preserves_structured_payload(substrate):
     """Structured-event payloads stay as dicts (no auto-unwrap)."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.recall_structured",
@@ -148,7 +148,7 @@ async def test_recall_window_preserves_structured_payload(substrate):
     )
     await _pass_all_pending(substrate)
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         candidates = await substrate.slices.recall_window(
             conn,
             t_now=t + timedelta(seconds=1),
@@ -164,7 +164,7 @@ async def test_recall_window_preserves_structured_payload(substrate):
 @pytest.mark.asyncio
 async def test_recall_window_respects_time_window(substrate):
     """Slices outside the window are excluded."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.recall_window_filter",
@@ -186,7 +186,7 @@ async def test_recall_window_respects_time_window(substrate):
     )
     await _pass_all_pending(substrate)
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         candidates = await substrate.slices.recall_window(
             conn,
             t_now=t + timedelta(seconds=1),
@@ -203,7 +203,7 @@ async def test_recall_window_respects_time_window(substrate):
 @pytest.mark.asyncio
 async def test_recall_window_excludes_released_and_pending(substrate):
     """Released + pending + quarantined slices are all excluded."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.recall_state_filter",
@@ -221,7 +221,7 @@ async def test_recall_window_excludes_released_and_pending(substrate):
     await commit_slice(substrate, stream.stream_id, "pending", event_time_world=t)
     await _pass_all_pending(substrate)
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         # Flip the "released" one back from passed → released.
         await conn.execute(
             """
@@ -260,7 +260,7 @@ async def test_recall_window_excludes_released_and_pending(substrate):
 @pytest.mark.asyncio
 async def test_recall_window_respects_min_salience(substrate):
     """Slices below ``min_salience`` are excluded."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.recall_minsal",
@@ -275,7 +275,7 @@ async def test_recall_window_respects_min_salience(substrate):
     await commit_slice(substrate, stream.stream_id, "dim", event_time_world=t)
     await _pass_all_pending(substrate)
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET salience_score = 0.9 WHERE payload->>'text' = 'bright'"
         )
@@ -297,7 +297,7 @@ async def test_recall_window_respects_min_salience(substrate):
 @pytest.mark.asyncio
 async def test_recall_window_returns_embedding_when_present(substrate):
     """When ``embedding`` is populated the candidate carries it as a 1536-d list."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.recall_embedding",
@@ -314,7 +314,7 @@ async def test_recall_window_returns_embedding_when_present(substrate):
 
     embedding = [0.1] * 1536
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         # Set the embedding for one slice via set_embedding.
         rows = await conn.fetch(
             "SELECT slice_id FROM substrate_slices WHERE payload->>'text' = 'with embedding'"
@@ -341,7 +341,7 @@ async def test_set_embedding_idempotent_under_concurrent_writers(substrate):
     """The ``embedding IS NULL`` predicate makes set_embedding a no-op
     on the second call — preventing a slow writer from clobbering a
     fast writer's result."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.set_embed_idempotent",
@@ -358,7 +358,7 @@ async def test_set_embedding_idempotent_under_concurrent_writers(substrate):
     first = [0.1] * 1536
     second = [0.9] * 1536
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             "SELECT slice_id FROM substrate_slices WHERE payload->>'text' = 'to embed'"
         )
@@ -378,7 +378,7 @@ async def test_set_embedding_idempotent_under_concurrent_writers(substrate):
 async def test_list_unembedded_orders_newest_first(substrate):
     """``list_unembedded`` returns passed + unembedded slices, newest-first,
     and excludes ones marked ``embedding_failed=true``."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.list_unembedded",
@@ -395,7 +395,7 @@ async def test_list_unembedded_orders_newest_first(substrate):
     await commit_slice(substrate, stream.stream_id, "failed", event_time_world=t)
     await _pass_all_pending(substrate)
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         # Mark one as failed.
         failed_row = await conn.fetchrow(
             "SELECT slice_id FROM substrate_slices WHERE payload->>'text' = 'failed'"

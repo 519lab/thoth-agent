@@ -27,7 +27,7 @@ def server():
             ),
             "thoth_cli.env_loader": MagicMock(),
             "thoth_cli.banner": MagicMock(),
-            "hermes_state": MagicMock(),
+            "thoth_state": MagicMock(),
         },
     ):
         import importlib

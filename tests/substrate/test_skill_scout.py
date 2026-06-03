@@ -22,22 +22,22 @@ from substrate.skill_proposals.author import DraftedSkill
 
 @pytest_asyncio.fixture
 async def substrate(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
-    return Substrate.from_pool(hermes_db.pool())
+    return Substrate.from_pool(thoth_db.pool())
 
 
 @pytest_asyncio.fixture
 async def salient_need():
     """A high-salience recurring L3 pattern — a candidate need."""
-    import hermes_db
+    import thoth_db
 
     pid, _ = await l3.upsert_pattern(
         "Greg repeatedly queries the UniFi controller for site/device status",
         "recurring_structure",
         cites=["e-unifi"],
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE l3_patterns SET salience_score = 0.85 WHERE id = $1", pid
         )

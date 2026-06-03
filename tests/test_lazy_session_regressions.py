@@ -23,16 +23,16 @@ import pytest
 
 def _make_session_db(hermes_db_initialized_sync=None):
     """Create a real SessionDB (PG-backed via hermes_db_initialized_sync fixture)."""
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
     return SessionDB()
 
 
 async def _set_started_at_old_async(session_id: str, age_seconds: float = 800000) -> None:
     """Set a session's started_at to the past (for orphan-prune tests)."""
-    import hermes_db
+    import thoth_db
     from datetime import datetime, timezone
     old_dt = datetime.fromtimestamp(time.time() - age_seconds, tz=timezone.utc)
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1 WHERE id = $2",
             old_dt,
@@ -42,8 +42,8 @@ async def _set_started_at_old_async(session_id: str, age_seconds: float = 800000
 
 def _set_started_at_old(session_id: str, age_seconds: float = 800000) -> None:
     """Sync wrapper for _set_started_at_old_async."""
-    import hermes_db
-    hermes_db.run_sync(_set_started_at_old_async(session_id, age_seconds))
+    import thoth_db
+    thoth_db.run_sync(_set_started_at_old_async(session_id, age_seconds))
 
 
 def _tui_session(agent=None, session_key="session-key-old", **extra):
@@ -79,16 +79,16 @@ class TestFinalizeSessionUsesAgentSessionId:
         """Reproduction: agent.session_id rotated by compression, but
         session['session_key'] still holds old value. _finalize_session()
         should end the agent's current session."""
-        import hermes_db
+        import thoth_db
         from tui_gateway import server
 
         db = _make_session_db()
 
         # Create two sessions: parent (already ended by compression) and continuation
-        hermes_db.run_sync(db.create_session(session_id="parent-session", source="tui", model="test"))
-        hermes_db.run_sync(db.end_session("parent-session", "compression"))
+        thoth_db.run_sync(db.create_session(session_id="parent-session", source="tui", model="test"))
+        thoth_db.run_sync(db.end_session("parent-session", "compression"))
 
-        hermes_db.run_sync(db.create_session(
+        thoth_db.run_sync(db.create_session(
             session_id="continuation-session",
             source="tui",
             model="test",
@@ -115,7 +115,7 @@ class TestFinalizeSessionUsesAgentSessionId:
                 server._finalize_session(session, end_reason="tui_close")
 
         # The continuation session should be ended
-        continuation = hermes_db.run_sync(db.get_session("continuation-session"))
+        continuation = thoth_db.run_sync(db.get_session("continuation-session"))
         assert continuation["ended_at"] is not None, (
             "_finalize_session should end the agent's current session (continuation), "
             "not the already-ended parent"
@@ -125,11 +125,11 @@ class TestFinalizeSessionUsesAgentSessionId:
     def test_finalize_fallback_to_session_key_when_agent_is_none(self, hermes_db_initialized_sync):
         """When agent is None (e.g. session never fully initialized),
         _finalize_session falls back to session_key."""
-        import hermes_db
+        import thoth_db
         from tui_gateway import server
 
         db = _make_session_db()
-        hermes_db.run_sync(db.create_session(session_id="orphan-key", source="tui", model="test"))
+        thoth_db.run_sync(db.create_session(session_id="orphan-key", source="tui", model="test"))
 
         session = _tui_session(agent=None, session_key="orphan-key")
 
@@ -137,7 +137,7 @@ class TestFinalizeSessionUsesAgentSessionId:
             with patch.object(server, "_notify_session_boundary", lambda *a: None):
                 server._finalize_session(session, end_reason="tui_close")
 
-        row = hermes_db.run_sync(db.get_session("orphan-key"))
+        row = thoth_db.run_sync(db.get_session("orphan-key"))
         assert row["ended_at"] is not None
         assert row["end_reason"] == "tui_close"
 
@@ -447,120 +447,120 @@ class TestFinalizeOrphanedCompressionSessions:
 
     def test_marks_ghost_continuation_with_compression_parent(self, hermes_db_initialized_sync):
         """Ghost session with compression-ended parent + messages → finalized."""
-        import hermes_db
+        import thoth_db
         db = _make_session_db()
 
         # Parent session (ended by compression — this is the key condition)
-        hermes_db.run_sync(db.create_session(session_id="parent", source="tui", model="test"))
-        hermes_db.run_sync(db.end_session("parent", "compression"))
+        thoth_db.run_sync(db.create_session(session_id="parent", source="tui", model="test"))
+        thoth_db.run_sync(db.end_session("parent", "compression"))
 
         # Ghost continuation (has messages, never finalized)
-        hermes_db.run_sync(db.create_session(
+        thoth_db.run_sync(db.create_session(
             session_id="ghost-cont",
             source="tui",
             model="test",
             parent_session_id="parent",
         ))
-        hermes_db.run_sync(db.append_message("ghost-cont", role="user", content="hello"))
-        hermes_db.run_sync(db.append_message("ghost-cont", role="assistant", content="hi"))
+        thoth_db.run_sync(db.append_message("ghost-cont", role="user", content="hello"))
+        thoth_db.run_sync(db.append_message("ghost-cont", role="assistant", content="hi"))
 
         # Make it old enough (fake started_at)
         _set_started_at_old("ghost-cont")
 
-        count = hermes_db.run_sync(db.finalize_orphaned_compression_sessions())
+        count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 1
 
-        session = hermes_db.run_sync(db.get_session("ghost-cont"))
+        session = thoth_db.run_sync(db.get_session("ghost-cont"))
         assert session["ended_at"] is not None
         assert session["end_reason"] == "orphaned_compression"
 
     def test_skips_session_without_parent(self, hermes_db_initialized_sync):
         """Ghost session without parent_session_id is NOT a compression
         continuation — should not be touched by this prune."""
-        import hermes_db
+        import thoth_db
         db = _make_session_db()
 
-        hermes_db.run_sync(db.create_session(session_id="ghost-notitle", source="tui", model="test"))
-        hermes_db.run_sync(db.append_message("ghost-notitle", role="user", content="test"))
+        thoth_db.run_sync(db.create_session(session_id="ghost-notitle", source="tui", model="test"))
+        thoth_db.run_sync(db.append_message("ghost-notitle", role="user", content="test"))
         _set_started_at_old("ghost-notitle")
 
-        count = hermes_db.run_sync(db.finalize_orphaned_compression_sessions())
+        count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 0
 
     def test_skips_recent_sessions(self, hermes_db_initialized_sync):
         """Sessions younger than 7 days are not touched."""
-        import hermes_db
+        import thoth_db
         db = _make_session_db()
 
         # Create parent first to satisfy FK constraint
-        hermes_db.run_sync(db.create_session(session_id="some-parent", source="tui", model="test"))
-        hermes_db.run_sync(db.create_session(
+        thoth_db.run_sync(db.create_session(session_id="some-parent", source="tui", model="test"))
+        thoth_db.run_sync(db.create_session(
             session_id="recent",
             source="tui",
             model="test",
             parent_session_id="some-parent",
         ))
-        hermes_db.run_sync(db.append_message("recent", role="user", content="hello"))
+        thoth_db.run_sync(db.append_message("recent", role="user", content="hello"))
         # started_at is now() — within 7 days
 
-        count = hermes_db.run_sync(db.finalize_orphaned_compression_sessions())
+        count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 0
 
     def test_skips_sessions_with_end_reason(self, hermes_db_initialized_sync):
         """Properly finalized sessions (even without api_call_count) are skipped."""
-        import hermes_db
+        import thoth_db
         db = _make_session_db()
 
         # Create parent first to satisfy FK constraint
-        hermes_db.run_sync(db.create_session(session_id="parent", source="tui", model="test"))
-        hermes_db.run_sync(db.end_session("parent", "compression"))
+        thoth_db.run_sync(db.create_session(session_id="parent", source="tui", model="test"))
+        thoth_db.run_sync(db.end_session("parent", "compression"))
 
-        hermes_db.run_sync(db.create_session(
+        thoth_db.run_sync(db.create_session(
             session_id="already-ended",
             source="tui",
             model="test",
             parent_session_id="parent",
         ))
-        hermes_db.run_sync(db.append_message("already-ended", role="user", content="hello"))
-        hermes_db.run_sync(db.end_session("already-ended", "user_exit"))
+        thoth_db.run_sync(db.append_message("already-ended", role="user", content="hello"))
+        thoth_db.run_sync(db.end_session("already-ended", "user_exit"))
         _set_started_at_old("already-ended")
 
-        count = hermes_db.run_sync(db.finalize_orphaned_compression_sessions())
+        count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 0
 
     def test_skips_session_with_non_compression_parent(self, hermes_db_initialized_sync):
         """Child session whose parent was NOT ended by compression should
         not be touched — it's not from the compression continuation path."""
-        import hermes_db
+        import thoth_db
         db = _make_session_db()
 
         # Parent ended by user_exit, not compression
-        hermes_db.run_sync(db.create_session(session_id="parent", source="tui", model="test"))
-        hermes_db.run_sync(db.end_session("parent", "user_exit"))
+        thoth_db.run_sync(db.create_session(session_id="parent", source="tui", model="test"))
+        thoth_db.run_sync(db.end_session("parent", "user_exit"))
 
-        hermes_db.run_sync(db.create_session(
+        thoth_db.run_sync(db.create_session(
             session_id="child",
             source="tui",
             model="test",
             parent_session_id="parent",
         ))
-        hermes_db.run_sync(db.append_message("child", role="user", content="hello"))
+        thoth_db.run_sync(db.append_message("child", role="user", content="hello"))
         _set_started_at_old("child")
 
-        count = hermes_db.run_sync(db.finalize_orphaned_compression_sessions())
+        count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 0
 
     def test_skips_sessions_without_messages(self, hermes_db_initialized_sync):
         """Empty sessions (no messages) are NOT targeted by this prune —
         those are handled by prune_empty_ghost_sessions()."""
-        import hermes_db
+        import thoth_db
         db = _make_session_db()
 
         # Create parent first to satisfy FK constraint
-        hermes_db.run_sync(db.create_session(session_id="parent", source="tui", model="test"))
-        hermes_db.run_sync(db.end_session("parent", "compression"))
+        thoth_db.run_sync(db.create_session(session_id="parent", source="tui", model="test"))
+        thoth_db.run_sync(db.end_session("parent", "compression"))
 
-        hermes_db.run_sync(db.create_session(
+        thoth_db.run_sync(db.create_session(
             session_id="empty-ghost",
             source="tui",
             model="test",
@@ -569,32 +569,32 @@ class TestFinalizeOrphanedCompressionSessions:
         # No messages appended
         _set_started_at_old("empty-ghost")
 
-        count = hermes_db.run_sync(db.finalize_orphaned_compression_sessions())
+        count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 0
 
     def test_titled_ghost_with_parent_is_caught(self, hermes_db_initialized_sync):
         """Ghost continuation that HAS a title (propagated from parent by
         _compress_context) is still caught via parent with end_reason='compression'."""
-        import hermes_db
+        import thoth_db
         db = _make_session_db()
 
         # Create parent first — ended by compression
-        hermes_db.run_sync(db.create_session(session_id="parent", source="tui", model="test"))
-        hermes_db.run_sync(db.set_session_title("parent", "Chat"))
-        hermes_db.run_sync(db.end_session("parent", "compression"))
+        thoth_db.run_sync(db.create_session(session_id="parent", source="tui", model="test"))
+        thoth_db.run_sync(db.set_session_title("parent", "Chat"))
+        thoth_db.run_sync(db.end_session("parent", "compression"))
 
-        hermes_db.run_sync(db.create_session(
+        thoth_db.run_sync(db.create_session(
             session_id="titled-ghost",
             source="tui",
             model="test",
             parent_session_id="parent",
         ))
-        hermes_db.run_sync(db.set_session_title("titled-ghost", "Chat (2)"))
-        hermes_db.run_sync(db.append_message("titled-ghost", role="user", content="continued..."))
+        thoth_db.run_sync(db.set_session_title("titled-ghost", "Chat (2)"))
+        thoth_db.run_sync(db.append_message("titled-ghost", role="user", content="continued..."))
         _set_started_at_old("titled-ghost")
 
-        count = hermes_db.run_sync(db.finalize_orphaned_compression_sessions())
+        count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 1
 
-        session = hermes_db.run_sync(db.get_session("titled-ghost"))
+        session = thoth_db.run_sync(db.get_session("titled-ghost"))
         assert session["end_reason"] == "orphaned_compression"

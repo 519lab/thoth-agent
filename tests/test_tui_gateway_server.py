@@ -15,7 +15,7 @@ from tui_gateway import server
 
 @pytest.fixture(autouse=True)
 def _pass_through_run_sync_for_sync_mocks(monkeypatch):
-    """Make ``hermes_db.run_sync`` accept the sync mock returns this file uses.
+    """Make ``thoth_db.run_sync`` accept the sync mock returns this file uses.
 
     Phase 0 turned every ``SessionDB`` method into an async coroutine, and
     ``tui_gateway.server`` correspondingly wraps every DB call with
@@ -35,16 +35,16 @@ def _pass_through_run_sync_for_sync_mocks(monkeypatch):
     e.g. an ``async def`` mock or a production code path under test,
     keeps its existing semantics).
     """
-    import hermes_db
+    import thoth_db
 
-    real_run_sync = hermes_db.run_sync
+    real_run_sync = thoth_db.run_sync
 
     def _passthrough(value):
         if inspect.iscoroutine(value) or inspect.isawaitable(value):
             return real_run_sync(value)
         return value
 
-    monkeypatch.setattr(hermes_db, "run_sync", _passthrough)
+    monkeypatch.setattr(thoth_db, "run_sync", _passthrough)
 
 
 class _ChunkyStdout:
@@ -3356,14 +3356,14 @@ def test_session_create_no_race_keeps_worker_alive(monkeypatch):
 
 
 def test_get_db_degrades_cleanly_when_sessiondb_init_fails(monkeypatch):
-    fake_mod = types.ModuleType("hermes_state")
+    fake_mod = types.ModuleType("thoth_state")
 
     class _BrokenSessionDB:
         def __init__(self):
             raise RuntimeError("locking protocol")
 
     fake_mod.SessionDB = _BrokenSessionDB
-    monkeypatch.setitem(sys.modules, "hermes_state", fake_mod)
+    monkeypatch.setitem(sys.modules, "thoth_state", fake_mod)
     monkeypatch.setattr(server, "_db", None)
     monkeypatch.setattr(server, "_db_error", None)
 

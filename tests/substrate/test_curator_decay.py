@@ -31,9 +31,9 @@ async def substrate(hermes_db_initialized):
     """Substrate built via from_pool — no sub-agent loops running.
     Tests drive Curator.tick() directly so the timing is deterministic.
     """
-    import hermes_db
+    import thoth_db
 
-    return Substrate.from_pool(hermes_db.pool())
+    return Substrate.from_pool(thoth_db.pool())
 
 
 def _now_utc() -> datetime:
@@ -50,7 +50,7 @@ async def _make_passed_slice(
 ) -> UUID:
     """Commit a slice, mark it passed, and force salience to a known
     value with a specific updated_at offset (default 1 hour ago)."""
-    import hermes_db
+    import thoth_db
 
     address = await commit_slice(
         substrate,
@@ -58,7 +58,7 @@ async def _make_passed_slice(
         payload,
         event_time_world=_now_utc(),
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         slice_id = await conn.fetchval(
             """
             UPDATE substrate_slices
@@ -102,9 +102,9 @@ async def test_reinforce_bumps_by_profile_default(substrate):
     )
     await reinforce_slice(substrate, slice_id)
 
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         salience = await conn.fetchval(
             "SELECT salience_score FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -127,9 +127,9 @@ async def test_reinforce_caps_at_1(substrate):
         substrate, stream.stream_id, {"k": 1}, salience=0.9
     )
     await reinforce_slice(substrate, slice_id)
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         salience = await conn.fetchval(
             "SELECT salience_score FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -151,9 +151,9 @@ async def test_reinforce_explicit_bump_overrides_profile(substrate):
         substrate, stream.stream_id, {"k": 1}, salience=0.3
     )
     await reinforce_slice(substrate, slice_id, bump=0.05)
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         salience = await conn.fetchval(
             "SELECT salience_score FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -175,9 +175,9 @@ async def test_reinforce_updates_salience_updated_at(substrate):
         substrate, stream.stream_id, {"k": 1}, salience=0.3
     )
     await reinforce_slice(substrate, slice_id)
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         age_seconds = await conn.fetchval(
             """
             SELECT EXTRACT(EPOCH FROM (now() - salience_updated_at))::float
@@ -198,7 +198,7 @@ async def test_decay_halves_salience_after_one_half_life(substrate):
     """Slice with salience 1.0 on the default-text profile (half-life
     1h), ``salience_updated_at`` = 1 hour ago → after one tick salience
     ≈ 0.5 ± 0.02 (PG clock granularity wobble)."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.decay_half_life",
@@ -216,7 +216,7 @@ async def test_decay_halves_salience_after_one_half_life(substrate):
     curator = Curator(substrate)
     await curator._apply_natural_decay()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         salience = await conn.fetchval(
             "SELECT salience_score FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -227,7 +227,7 @@ async def test_decay_halves_salience_after_one_half_life(substrate):
 @pytest.mark.asyncio
 async def test_decay_does_not_touch_recently_updated(substrate):
     """Slice updated <1s ago is skipped by the decay UPDATE."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.decay_recent_skip",
@@ -244,7 +244,7 @@ async def test_decay_does_not_touch_recently_updated(substrate):
     )
     curator = Curator(substrate)
     await curator._apply_natural_decay()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         salience = await conn.fetchval(
             "SELECT salience_score FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -254,7 +254,7 @@ async def test_decay_does_not_touch_recently_updated(substrate):
 
 @pytest.mark.asyncio
 async def test_decay_skips_released_slices(substrate):
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.decay_released",
@@ -269,7 +269,7 @@ async def test_decay_skips_released_slices(substrate):
         salience=0.0, salience_updated_at_offset_s=3600.0,
     )
     # Mark released. Curator should skip it.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             """
             UPDATE substrate_slices
@@ -285,7 +285,7 @@ async def test_decay_skips_released_slices(substrate):
         )
     curator = Curator(substrate)
     await curator._apply_natural_decay()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         ts_after = await conn.fetchval(
             "SELECT salience_updated_at FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -296,7 +296,7 @@ async def test_decay_skips_released_slices(substrate):
 @pytest.mark.asyncio
 async def test_decay_skips_pending_slices(substrate):
     """``sentinel_state = 'pending'`` is the design §5.8 hard floor."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.decay_pending",
@@ -309,7 +309,7 @@ async def test_decay_skips_pending_slices(substrate):
     # commit_slice leaves the slice in pending state; explicit force-
     # set salience + age it.
     await commit_slice(substrate, stream.stream_id, "p", event_time_world=_now_utc())
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         slice_id = await conn.fetchval(
             """
             UPDATE substrate_slices
@@ -327,7 +327,7 @@ async def test_decay_skips_pending_slices(substrate):
 
     curator = Curator(substrate)
     await curator._apply_natural_decay()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         salience = await conn.fetchval(
             "SELECT salience_score FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -337,7 +337,7 @@ async def test_decay_skips_pending_slices(substrate):
 
 @pytest.mark.asyncio
 async def test_decay_skips_quarantined_slices(substrate):
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.decay_quarantined",
@@ -348,7 +348,7 @@ async def test_decay_skips_quarantined_slices(substrate):
         decay_profile_id=DEFAULT_TEXT_PROFILE,
     )
     await commit_slice(substrate, stream.stream_id, "q", event_time_world=_now_utc())
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         slice_id = await conn.fetchval(
             """
             UPDATE substrate_slices
@@ -368,7 +368,7 @@ async def test_decay_skips_quarantined_slices(substrate):
         )
     curator = Curator(substrate)
     await curator._apply_natural_decay()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         salience = await conn.fetchval(
             "SELECT salience_score FROM substrate_slices WHERE slice_id = $1",
             slice_id,

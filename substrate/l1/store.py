@@ -1,7 +1,7 @@
 """L1 storage helpers — async PG read/write over the ``l1_*`` tables.
 
 Module-level async functions (not a repo class) per the Phase D spec §2,
-sharing the Thoth ``hermes_db`` pool. Every function accepts an optional
+sharing the Thoth ``thoth_db`` pool. Every function accepts an optional
 ``conn=`` so a transactional caller (the Parser's consolidation handshake)
 can run the whole write — entities, relationships, citations, and the
 ``substrate_slices`` flip — inside one transaction.
@@ -33,9 +33,9 @@ async def _acquire(conn) -> AsyncIterator[Any]:
     if conn is not None:
         yield conn
         return
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as fresh:
+    async with thoth_db.connection() as fresh:
         yield fresh
 
 

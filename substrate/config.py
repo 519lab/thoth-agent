@@ -43,7 +43,7 @@ class SubstrateConfig:
 
         Booleans are 'truthy if set to 1/true/yes (case-insensitive),
         falsy otherwise' — matches Thoth's convention across
-        ``hermes_db`` and ``hermes_bootstrap``.
+        ``thoth_db`` and ``thoth_bootstrap``.
         """
         return cls(
             auto_migrate=_envbool("HERMES_AUTO_MIGRATE", default=False),

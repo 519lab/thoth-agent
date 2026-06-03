@@ -33,9 +33,9 @@ def _vec(*lead: float) -> list[float]:
 
 @pytest_asyncio.fixture
 async def substrate(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
-    return Substrate.from_pool(hermes_db.pool())
+    return Substrate.from_pool(thoth_db.pool())
 
 
 @pytest.mark.asyncio
@@ -66,11 +66,11 @@ async def test_curator_merges_near_duplicate_patterns(substrate):
 @pytest.mark.asyncio
 async def test_release_stale_uncited_patterns(substrate):
     """Decayed, stale, uncited patterns are released; reinforced/cited ones stay."""
-    import hermes_db
+    import thoth_db
 
     keep, _ = await l3.upsert_pattern("durable cited pattern", "theme", cites=["e9"])
     drop, _ = await l3.upsert_pattern("ephemeral low-value pattern", "other")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE l3_patterns SET salience_score=0.05, "
             "last_seen_at = now() - interval '30 days', cites='[]'::jsonb WHERE id=$1",
@@ -87,10 +87,10 @@ async def test_release_stale_uncited_patterns(substrate):
 async def test_decay_lowers_salience_over_time(substrate):
     """Decay anchored on salience_updated_at reduces salience of un-refreshed
     patterns."""
-    import hermes_db
+    import thoth_db
 
     pid, _ = await l3.upsert_pattern("aging pattern", "theme")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE l3_patterns SET salience_score=0.8, "
             "salience_updated_at = now() - interval '7 days' WHERE id=$1",
@@ -98,7 +98,7 @@ async def test_decay_lowers_salience_over_time(substrate):
         )
     # One half-life (7 days) elapsed → ~halve.
     await l3.decay(half_life_seconds=7 * 86400)
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         sal = await conn.fetchval("SELECT salience_score FROM l3_patterns WHERE id=$1", pid)
     assert 0.35 <= sal <= 0.45
 

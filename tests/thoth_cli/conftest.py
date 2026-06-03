@@ -41,7 +41,7 @@ def _suppress_concurrent_hermes_gate(request, monkeypatch):
         from thoth_cli import main as _cli_main
     except Exception:
         return
-    # hermes_bootstrap (imported via thoth_cli.main) calls normalize_thoth_home_env()
+    # thoth_bootstrap (imported via thoth_cli.main) calls normalize_thoth_home_env()
     # at module-load time, which sets THOTH_HOME = HERMES_HOME. On the first import
     # inside a test this runs AFTER the root conftest cleared THOTH_HOME, undoing the
     # clear. Re-clear so tests that only patch HERMES_HOME are not shadowed by THOTH_HOME.

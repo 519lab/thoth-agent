@@ -31,7 +31,7 @@ from thoth_cli.config import (
     read_raw_config,
     save_env_value,
 )
-# display_hermes_home is imported lazily at call sites to avoid ImportError
+# display_thoth_home is imported lazily at call sites to avoid ImportError
 # when thoth_constants is cached from a pre-update version during `thoth update`.
 from thoth_cli.setup import (
     print_header, print_info, print_success, print_warning, print_error,
@@ -3015,7 +3015,7 @@ def launchd_install(force: bool = False):
     print()
     print("Next steps:")
     print(f"  {cli_name()} gateway status             # Check status")
-    from thoth_constants import display_hermes_home as _dhh
+    from thoth_constants import display_thoth_home as _dhh
     print(f"  tail -f {_dhh()}/logs/gateway.log  # View logs")
 
 def launchd_uninstall():
@@ -5104,7 +5104,7 @@ def gateway_setup():
                 print_info(f"  For persistence:   tmux new -s thoth '{cli_name()} gateway run'")
                 print_info("  To enable systemd: add systemd=true to /etc/wsl.conf, then 'wsl --shutdown'")
             elif is_termux():
-                from thoth_constants import display_hermes_home as _dhh
+                from thoth_constants import display_thoth_home as _dhh
                 print_info("  Termux does not use systemd/launchd services.")
                 print_info(f"  Run in foreground: {cli_name()} gateway run")
                 print_info(f"  Or start it manually in the background (best effort): nohup {cli_name()} gateway run >{_dhh()}/logs/gateway.log 2>&1 &")

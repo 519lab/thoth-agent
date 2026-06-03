@@ -607,7 +607,7 @@ async def get_status():
 
     active_sessions = 0
     try:
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         try:
             sessions = await db.list_sessions_rich(limit=50)
@@ -776,7 +776,7 @@ async def get_action_status(name: str, lines: int = 200):
 @app.get("/api/sessions")
 async def get_sessions(limit: int = 20, offset: int = 0):
     try:
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         try:
             sessions = await db.list_sessions_rich(limit=limit, offset=offset)
@@ -801,7 +801,7 @@ async def search_sessions(q: str = "", limit: int = 20):
     if not q or not q.strip():
         return {"results": []}
     try:
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         try:
             # Auto-add prefix wildcards so partial words match
@@ -2366,7 +2366,7 @@ def _session_latest_descendant(session_id: str):
     /model may create child sessions. Dashboard refresh should continue the
     newest child instead of reopening the old parent.
     """
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
 
     def row_get(row, key, index):
         if isinstance(row, dict):
@@ -2379,7 +2379,7 @@ def _session_latest_descendant(session_id: str):
             except Exception:
                 return None
 
-    import hermes_db as _hermes_db
+    import thoth_db as _hermes_db
     db = SessionDB()
     try:
         sid = _hermes_db.run_sync(db.resolve_session_id(session_id))
@@ -2441,7 +2441,7 @@ def _session_latest_descendant(session_id: str):
 
 @app.get("/api/sessions/{session_id}")
 async def get_session_detail(session_id: str):
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
     db = SessionDB()
     try:
         sid = await db.resolve_session_id(session_id)
@@ -2468,7 +2468,7 @@ async def get_session_latest_descendant(session_id: str):
 
 @app.get("/api/sessions/{session_id}/messages")
 async def get_session_messages(session_id: str):
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
     db = SessionDB()
     try:
         sid = await db.resolve_session_id(session_id)
@@ -2482,7 +2482,7 @@ async def get_session_messages(session_id: str):
 
 @app.delete("/api/sessions/{session_id}")
 async def delete_session_endpoint(session_id: str):
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
     db = SessionDB()
     try:
         if not await db.delete_session(session_id):
@@ -2515,7 +2515,7 @@ async def get_logs(
         return {"file": file, "lines": []}
 
     try:
-        from hermes_logging import COMPONENT_PREFIXES
+        from thoth_logging import COMPONENT_PREFIXES
     except ImportError:
         COMPONENT_PREFIXES = {}
 
@@ -3101,7 +3101,7 @@ async def update_config_raw(body: RawConfigUpdate):
 async def get_usage_analytics(days: int = 30):
     # NOTE: Phase 0 Task 23 will port these raw SQLite queries to PG.
     # Until then, return an empty response on PG so the dashboard doesn't 500.
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
     from agent.insights import InsightsEngine
 
     db = SessionDB()
@@ -3180,7 +3180,7 @@ async def get_models_analytics(days: int = 30):
     """
     # NOTE: Phase 0 Task 23 will port these raw SQLite queries to PG.
     # Until then, return an empty response on PG so the dashboard doesn't 500.
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
 
     db = SessionDB()
     if not hasattr(db, "_conn"):

@@ -8,15 +8,15 @@ from types import SimpleNamespace
 import pytest
 from unittest.mock import MagicMock, patch
 
-import hermes_db
+import thoth_db
 from acp_adapter import session as acp_session
 from acp_adapter.session import SessionManager, SessionState
-from hermes_state import SessionDB
+from thoth_state import SessionDB
 
 
 def _sync(coro):
     """Tiny shim — wrap an async SessionDB call so tests stay sync-shaped."""
-    return hermes_db.run_sync(coro)
+    return thoth_db.run_sync(coro)
 
 
 def _mock_agent():
@@ -30,7 +30,7 @@ def manager(hermes_db_initialized_sync):
     Depends on ``hermes_db_initialized_sync`` so the per-test PG database
     is created (Alembic upgrade head) and the asyncpg pool is bound to
     the persistent sync loop BEFORE any test body or production code in
-    ``SessionManager._get_db`` calls ``hermes_db.ensure_pool_sync()``.
+    ``SessionManager._get_db`` calls ``thoth_db.ensure_pool_sync()``.
     Without this dependency the manager's lazy ``_get_db`` may bind the
     pool to a stale or wrong DSN — leaving the test connected to a
     database where Alembic never ran and producing

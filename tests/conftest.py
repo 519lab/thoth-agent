@@ -954,17 +954,17 @@ async def hermes_db_initialized(hermes_db_dsn):
     """Pool initialised on pytest-asyncio's per-test event loop.
 
     Use this in ``@pytest.mark.asyncio`` tests that ``await`` against
-    ``hermes_db.pool()`` / ``connection()`` / ``transaction()`` directly.
+    ``thoth_db.pool()`` / ``connection()`` / ``transaction()`` directly.
     Don't use it from sync test bodies that bridge via
-    ``hermes_db.run_sync`` — the pool would be bound to pytest-asyncio's
+    ``thoth_db.run_sync`` — the pool would be bound to pytest-asyncio's
     loop but ``run_sync`` uses the persistent sync loop, surfacing as
     ``InterfaceError: cannot perform operation: another operation is
     in progress``. Sync tests should use :func:`hermes_db_initialized_sync`
     below.
 
     Defensive loop-binding check: a prior test (or a ``run_sync`` call
-    that lazy-bootstrapped the pool on ``hermes_db._sync_loop``) may
-    have left ``hermes_db._pool`` bound to a loop other than this
+    that lazy-bootstrapped the pool on ``thoth_db._sync_loop``) may
+    have left ``thoth_db._pool`` bound to a loop other than this
     test's pytest-asyncio loop. ``init()`` is idempotent — it would
     silently return without rebinding — so the async test body would
     inherit the stale pool and explode on teardown with a cross-loop
@@ -972,34 +972,34 @@ async def hermes_db_initialized(hermes_db_dsn):
     here and close the stale pool on its own binding loop first.
     """
     import asyncio
-    import hermes_db
-    if hermes_db._pool is not None:
+    import thoth_db
+    if thoth_db._pool is not None:
         current = asyncio.get_running_loop()
-        pool_loop = getattr(hermes_db._pool, "_loop", None)
+        pool_loop = getattr(thoth_db._pool, "_loop", None)
         if pool_loop is not current:
             # Pool is bound to a different loop (typically the
             # persistent _sync_loop from a sibling sync test). Close
             # via run_sync, which detects the cross-loop situation and
             # offloads the close onto the binding loop's worker thread.
             try:
-                hermes_db.run_sync(hermes_db.close())
+                thoth_db.run_sync(thoth_db.close())
             except Exception:
                 # Binding loop is dead (e.g., a prior pytest-asyncio
                 # per-test loop). Orphan the pool — Postgres will reap
                 # the idle connections, Python GC will clean up the
                 # holders. Leaks briefly but tests are independent.
-                hermes_db._pool = None
-    await hermes_db.init(hermes_db_dsn)
+                thoth_db._pool = None
+    await thoth_db.init(hermes_db_dsn)
     yield hermes_db_dsn
-    await hermes_db.close()
+    await thoth_db.close()
 
 
 @pytest.fixture
 def hermes_db_initialized_sync(hermes_db_dsn):
-    """Pool initialised on hermes_db's persistent sync loop.
+    """Pool initialised on thoth_db's persistent sync loop.
 
     Use this in **synchronous** test bodies that bridge to async DB
-    calls via ``hermes_db.run_sync(coro)``. The pool's binding loop
+    calls via ``thoth_db.run_sync(coro)``. The pool's binding loop
     matches the sync loop, so ``run_sync`` round-trips cleanly. Async
     tests in pytest-asyncio scope should NOT use this fixture — they
     should use :func:`hermes_db_initialized` (above) which binds to the
@@ -1009,17 +1009,17 @@ def hermes_db_initialized_sync(hermes_db_dsn):
     schema, different binding loop. The split exists because asyncpg
     pools are loop-bound and we have two different "current loop"
     notions in the test suite — pytest-asyncio's per-test loop vs.
-    ``hermes_db._get_sync_loop()``'s persistent one.
+    ``thoth_db._get_sync_loop()``'s persistent one.
     """
-    import hermes_db
+    import thoth_db
 
-    # ensure_pool_sync uses hermes_db._get_sync_loop() to run the
+    # ensure_pool_sync uses thoth_db._get_sync_loop() to run the
     # asyncpg.create_pool coroutine — binding the pool to that loop.
     # Subsequent run_sync(coro) calls reuse the same loop, so the
     # binding matches.
-    assert hermes_db.ensure_pool_sync(), "ensure_pool_sync failed; HERMES_PG_DSN should be set by hermes_db_dsn"
+    assert thoth_db.ensure_pool_sync(), "ensure_pool_sync failed; HERMES_PG_DSN should be set by hermes_db_dsn"
     try:
         yield hermes_db_dsn
     finally:
         # Close on the same loop the pool was opened on.
-        hermes_db.run_sync(hermes_db.close())
+        thoth_db.run_sync(thoth_db.close())

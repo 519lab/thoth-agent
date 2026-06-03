@@ -13,12 +13,12 @@ Usage::
     hermes-acp
 """
 
-# IMPORTANT: hermes_bootstrap must be the very first import — UTF-8 stdio
-# on Windows.  No-op on POSIX.  See hermes_bootstrap.py for full rationale.
+# IMPORTANT: thoth_bootstrap must be the very first import — UTF-8 stdio
+# on Windows.  No-op on POSIX.  See thoth_bootstrap.py for full rationale.
 try:
-    import hermes_bootstrap  # noqa: F401
+    import thoth_bootstrap  # noqa: F401
 except ModuleNotFoundError:
-    # Graceful fallback when hermes_bootstrap isn't registered in the venv
+    # Graceful fallback when thoth_bootstrap isn't registered in the venv
     # yet — happens during partial ``thoth update`` where git-reset landed
     # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
     # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
@@ -149,7 +149,7 @@ def _print_version() -> None:
 
 def _run_check() -> None:
     import acp  # noqa: F401
-    from acp_adapter.server import HermesACPAgent  # noqa: F401
+    from acp_adapter.server import ThothACPAgent  # noqa: F401
 
     print("Thoth ACP check OK")
 
@@ -235,14 +235,14 @@ def main(argv: list[str] | None = None) -> None:
 
     # Phase 0: initialise PG pool (idempotent; no-op if HERMES_PG_DSN unset).
     try:
-        from hermes_bootstrap import init_db_sync
+        from thoth_bootstrap import init_db_sync
         init_db_sync()
     except RuntimeError:
         pass  # No HERMES_PG_DSN → legacy path still works during cutover period.
 
     # Phase A: bootstrap the substrate so perception hooks emit slices.
     try:
-        from hermes_bootstrap import bootstrap_substrate_sync
+        from thoth_bootstrap import bootstrap_substrate_sync
         bootstrap_substrate_sync()
     except Exception:  # noqa: BLE001 — defensive, substrate failure is non-fatal
         pass
@@ -253,7 +253,7 @@ def main(argv: list[str] | None = None) -> None:
         sys.path.insert(0, project_root)
 
     import acp
-    from .server import HermesACPAgent
+    from .server import ThothACPAgent
 
     # MCP tool discovery from config.yaml — run before asyncio.run() so
     # it's safe to use blocking waits.  (ACP also registers per-session
@@ -266,7 +266,7 @@ def main(argv: list[str] | None = None) -> None:
     except Exception:
         logger.debug("MCP tool discovery failed at ACP startup", exc_info=True)
 
-    agent = HermesACPAgent()
+    agent = ThothACPAgent()
     try:
         asyncio.run(acp.run_agent(agent, use_unstable_protocol=True))
     except KeyboardInterrupt:

@@ -43,21 +43,21 @@ Usage:
     thoth claw migrate --dry-run  # Preview migration without changes
 """
 
-# IMPORTANT: hermes_bootstrap must be the very first import — it sets up
+# IMPORTANT: thoth_bootstrap must be the very first import — it sets up
 # UTF-8 stdio on Windows so print()/subprocess children don't hit
 # UnicodeEncodeError with non-ASCII characters.  No-op on POSIX.
 #
-# Guarded against ModuleNotFoundError because ``hermes_bootstrap`` is a
+# Guarded against ModuleNotFoundError because ``thoth_bootstrap`` is a
 # top-level module registered via pyproject.toml's ``py-modules`` list.
 # When the user upgrades code via ``git pull`` (or ``thoth update``
 # crashes between ``git reset --hard`` and ``uv pip install -e .``), the
-# new code references ``hermes_bootstrap`` but the editable install's
+# new code references ``thoth_bootstrap`` but the editable install's
 # ``.pth`` file still points at the old set of top-level modules.  Without
 # this guard, thoth crashes on import and the user can't run
 # ``thoth update`` to recover.  Missing the bootstrap means UTF-8 stdio
 # setup is skipped on Windows — degraded, not broken.  POSIX is unaffected.
 try:
-    import hermes_bootstrap  # noqa: F401
+    import thoth_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     pass
 
@@ -213,7 +213,7 @@ from thoth_cli.env_loader import load_hermes_dotenv
 load_hermes_dotenv(project_env=PROJECT_ROOT / ".env")
 
 # Bridge security.redact_secrets from config.yaml → HERMES_REDACT_SECRETS env
-# var BEFORE hermes_logging imports agent.redact (which snapshots the flag at
+# var BEFORE thoth_logging imports agent.redact (which snapshots the flag at
 # module-import time). Without this, config.yaml's toggle is ignored because
 # the setup_logging() call below imports agent.redact, which reads the env var
 # exactly once. Env var in .env still wins — this is config.yaml fallback only.
@@ -237,7 +237,7 @@ except Exception:
 # Initialize centralized file logging early — all `thoth` subcommands
 # (chat, setup, gateway, config, etc.) write to agent.log + errors.log.
 try:
-    from hermes_logging import setup_logging as _setup_logging
+    from thoth_logging import setup_logging as _setup_logging
 
     _setup_logging(mode="cli")
 except Exception:
@@ -792,8 +792,8 @@ def _resolve_last_session(source: str = "cli") -> Optional[str]:
     """Look up the most recently-used session ID for a source."""
     db = None
     try:
-        from hermes_state import SessionDB
-        import hermes_db as _hermes_db
+        from thoth_state import SessionDB
+        import thoth_db as _hermes_db
 
         db = SessionDB()
         sessions = _hermes_db.run_sync(db.search_sessions(source=source, limit=1))
@@ -932,8 +932,8 @@ def _resolve_session_by_name_or_id(name_or_id: str) -> Optional[str]:
       resumed at the live tip instead of a stale parent with no messages.
     """
     try:
-        from hermes_state import SessionDB
-        import hermes_db as _hermes_db
+        from thoth_state import SessionDB
+        import thoth_db as _hermes_db
 
         db = SessionDB()
 
@@ -986,8 +986,8 @@ def _print_tui_exit_summary(
 
     db = None
     try:
-        from hermes_state import SessionDB
-        import hermes_db as _hermes_db
+        from thoth_state import SessionDB
+        import thoth_db as _hermes_db
 
         db = SessionDB()
         session = _hermes_db.run_sync(db.get_session(target))
@@ -1208,7 +1208,7 @@ def _ensure_tui_node() -> None:
         return
 
     from thoth_constants import get_thoth_home
-    from hermes_env import propagate_hermes_home
+    from thoth_env import propagate_hermes_home
 
     hermes_home = str(get_thoth_home())
     try:
@@ -5785,7 +5785,7 @@ def _run_anthropic_oauth_flow(save_env_value):
         ):
             use_anthropic_claude_code_credentials(save_fn=save_env_value)
             print("  ✓ Claude Code credentials linked.")
-            from thoth_constants import display_hermes_home as _dhh_fn
+            from thoth_constants import display_thoth_home as _dhh_fn
 
             print(
                 f"    Thoth will use Claude's credential store directly instead of copying a setup-token into {_dhh_fn()}/.env."
@@ -8483,13 +8483,13 @@ def _run_pre_update_backup(args) -> None:
         size_bytes /= 1024
         size_str = f"{size_bytes:.1f} {unit}"
 
-    # Render path using display_hermes_home so the user sees ~/.hermes/...
+    # Render path using display_thoth_home so the user sees ~/.hermes/...
     try:
-        from thoth_constants import get_thoth_home, display_hermes_home
+        from thoth_constants import get_thoth_home, display_thoth_home
 
         home = get_thoth_home()
         try:
-            display_path = f"{display_hermes_home()}/{out_path.relative_to(home)}"
+            display_path = f"{display_thoth_home()}/{out_path.relative_to(home)}"
         except ValueError:
             display_path = str(out_path)
     except Exception:
@@ -9273,7 +9273,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         # After git pull, source files on disk are newer than cached Python
         # modules in this process.  Reload thoth_constants so that any lazy
         # import executed below (skills sync, gateway restart) sees new
-        # attributes like display_hermes_home() added since the last release.
+        # attributes like display_thoth_home() added since the last release.
         try:
             import importlib
             import thoth_constants as _hc
@@ -10189,14 +10189,14 @@ def cmd_profile(args):
         _is_wrapper_dir_in_path,
         _get_wrapper_dir,
     )
-    from thoth_constants import display_hermes_home
+    from thoth_constants import display_thoth_home
 
     action = getattr(args, "profile_action", None)
 
     if action is None:
         # Bare `thoth profile` — show current profile status
         profile_name = get_active_profile_name()
-        dhh = display_hermes_home()
+        dhh = display_thoth_home()
         print(f"\nActive profile: {profile_name}")
         print(f"Path:           {dhh}")
 
@@ -11243,18 +11243,18 @@ def _try_termux_fast_tui_launch() -> bool:
 def main():
     """Main entry point for thoth CLI."""
     # PG pool initialisation: eager when ``HERMES_PG_DSN`` is set, no-op
-    # otherwise. ``hermes_db.ensure_pool_sync()`` returns False without
+    # otherwise. ``thoth_db.ensure_pool_sync()`` returns False without
     # raising when the DSN env var isn't configured, so subcommands like
     # ``thoth --help`` or ``thoth version`` that never touch the DB
     # still work in environments without a live PG (Nix sandbox smoke,
     # CI smoke tests, fresh installs before first ``setup``). When the
     # DSN IS set, the pool gets created up-front on
-    # ``hermes_db._sync_loop`` so downstream ``run_sync(coro)`` calls
+    # ``thoth_db._sync_loop`` so downstream ``run_sync(coro)`` calls
     # don't have to (``run_sync`` used to lazy-bootstrap, which fired
     # asyncpg's segfault-prone pool init inside pytest unit tests that
     # exercise mocked DB code paths).
     try:
-        import hermes_db as _hermes_db_eager_init
+        import thoth_db as _hermes_db_eager_init
         _hermes_db_eager_init.ensure_pool_sync()
     except Exception:
         # Never block CLI startup on pool issues — if PG is unreachable,
@@ -12924,7 +12924,7 @@ Examples:
             print("\n  ✓ Memory provider: built-in only")
             print("  Saved to config.yaml\n")
         elif sub == "reset":
-            from thoth_constants import get_thoth_home, display_hermes_home
+            from thoth_constants import get_thoth_home, display_thoth_home
 
             mem_dir = get_thoth_home() / "memories"
             target = getattr(args, "target", "all")
@@ -12940,7 +12940,7 @@ Examples:
             ]
             if not existing:
                 print(
-                    f"\n  Nothing to reset — no memory files found in {display_hermes_home()}/memories/\n"
+                    f"\n  Nothing to reset — no memory files found in {display_thoth_home()}/memories/\n"
                 )
                 return
 
@@ -12967,7 +12967,7 @@ Examples:
             print(
                 f"\n  Memory reset complete. New sessions will start with a blank slate."
             )
-            print(f"  Files were in: {display_hermes_home()}/memories/\n")
+            print(f"  Files were in: {display_thoth_home()}/memories/\n")
         else:
             from thoth_cli.memory_setup import memory_command
 
@@ -13281,13 +13281,13 @@ Examples:
         import json as _json
 
         try:
-            from hermes_state import SessionDB
-            import hermes_db as _hermes_db
+            from thoth_state import SessionDB
+            import thoth_db as _hermes_db
 
             db = SessionDB()
             # Bootstrap the asyncpg pool from the sync entry-point so the
             # subsequent ``_hermes_db.run_sync(...)`` calls don't hit the
-            # ``hermes_db.init() not called`` raise. The lazy bootstrap in
+            # ``thoth_db.init() not called`` raise. The lazy bootstrap in
             # ``pool()`` only fires when no loop is running; inside
             # ``run_sync``'s ``run_until_complete`` the loop IS running,
             # so we need to prime the pool here from sync context.
@@ -13475,7 +13475,7 @@ Examples:
 
     def cmd_insights(args):
         try:
-            from hermes_state import SessionDB
+            from thoth_state import SessionDB
             from agent.insights import InsightsEngine
 
             db = SessionDB()

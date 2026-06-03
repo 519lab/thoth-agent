@@ -316,7 +316,7 @@ def _finalize_session(session: dict | None, end_reason: str = "tui_close") -> No
         try:
             db = _get_db()
             if db is not None:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(db.end_session(session_id, end_reason))
         except Exception:
             pass
@@ -342,7 +342,7 @@ atexit.register(_shutdown_sessions)
 def _get_db():
     global _db, _db_error
     if _db is None:
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
 
         try:
             _db = SessionDB()
@@ -2311,7 +2311,7 @@ def _(rid, params: dict) -> dict:
         # short; the compression-tip projection in ``list_sessions_rich``
         # can also merge rows.
         fetch_limit = max(limit * 2, 200)
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         rows = [
             s
             for s in _hermes_db.run_sync(db.list_sessions_rich(source=None, limit=fetch_limit))
@@ -2361,7 +2361,7 @@ def _(rid, params: dict) -> dict:
         # users (lots of recent ``tool`` rows) don't get a false
         # "no eligible session" answer.  ``session.list`` uses a
         # similar over-fetch strategy.
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         rows = _hermes_db.run_sync(db.list_sessions_rich(source=None, limit=200))
         for row in rows:
             src = (row.get("source") or "").strip().lower()
@@ -2390,7 +2390,7 @@ def _(rid, params: dict) -> dict:
     db = _get_db()
     if db is None:
         return _db_unavailable_error(rid, code=5000)
-    import hermes_db as _hermes_db
+    import thoth_db as _hermes_db
     found = _hermes_db.run_sync(db.get_session(target))
     if not found:
         found = _hermes_db.run_sync(db.get_session_by_title(target))
@@ -2460,7 +2460,7 @@ def _(rid, params: dict) -> dict:
         return _err(rid, 4023, "cannot delete an active session")
     sessions_dir = get_thoth_home() / "sessions"
     try:
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         deleted = _hermes_db.run_sync(db.delete_session(target, sessions_dir=sessions_dir))
     except Exception as e:
         return _err(rid, 5036, f"delete failed: {e}")
@@ -2481,7 +2481,7 @@ def _(rid, params: dict) -> dict:
     if "title" not in params:
         fallback = session.get("pending_title") or ""
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             resolved_title = _hermes_db.run_sync(db.get_session_title(key)) or ""
             if fallback:
                 if _hermes_db.run_sync(db.set_session_title(key, fallback)):
@@ -2510,7 +2510,7 @@ def _(rid, params: dict) -> dict:
     if not title:
         return _err(rid, 4021, "title required")
     try:
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         if _hermes_db.run_sync(db.set_session_title(key, title)):
             session["pending_title"] = None
             return _ok(rid, {"pending": False, "title": title})
@@ -2556,7 +2556,7 @@ def _(rid, params: dict) -> dict:
     if err:
         return err
 
-    from thoth_constants import display_hermes_home
+    from thoth_constants import display_thoth_home
 
     key = session.get("session_key") or params.get("session_id") or ""
     agent = session.get("agent")
@@ -2564,7 +2564,7 @@ def _(rid, params: dict) -> dict:
     db = _get_db()
     if db and key:
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             meta = _hermes_db.run_sync(db.get_session(key)) or {}
         except Exception:
             meta = {}
@@ -2591,7 +2591,7 @@ def _(rid, params: dict) -> dict:
         "Thoth TUI Status",
         "",
         f"Session ID: {key}",
-        f"Path: {display_hermes_home()}",
+        f"Path: {display_thoth_home()}",
     ]
     title = (meta.get("title") or "").strip()
     if title:
@@ -2617,7 +2617,7 @@ def _(rid, params: dict) -> dict:
     db = _get_db()
     if db is not None and session.get("session_key"):
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             history = _hermes_db.run_sync(db.get_messages_as_conversation(
                 session["session_key"], include_ancestors=True
             ))
@@ -2826,7 +2826,7 @@ def _(rid, params: dict) -> dict:
     new_key = _new_session_key()
     branch_name = params.get("name", "")
     try:
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         if branch_name:
             title = branch_name
         else:
@@ -3532,7 +3532,7 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
                 if _pdb:
                     _session_key = session.get("session_key") or sid
                     try:
-                        import hermes_db as _hermes_db
+                        import thoth_db as _hermes_db
                         if _hermes_db.run_sync(_pdb.set_session_title(_session_key, _pending)):
                             session["pending_title"] = None
                     except ValueError as exc:
@@ -4303,9 +4303,9 @@ def _(rid, params: dict) -> dict:
         except Exception as e:
             return _err(rid, 5013, str(e))
     if key == "profile":
-        from thoth_constants import display_hermes_home
+        from thoth_constants import display_thoth_home
 
-        return _ok(rid, {"home": str(_hermes_home), "display": display_hermes_home()})
+        return _ok(rid, {"home": str(_hermes_home), "display": display_thoth_home()})
     if key == "full":
         return _ok(rid, {"config": _load_cfg()})
     if key == "prompt":
@@ -6017,7 +6017,7 @@ def _(rid, params: dict) -> dict:
         return _db_unavailable_error(rid, code=5017)
     try:
         cutoff = time.time() - days * 86400
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         rows = [
             s
             for s in _hermes_db.run_sync(db.list_sessions_rich(limit=500))

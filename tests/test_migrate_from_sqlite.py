@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-import hermes_db
+import thoth_db
 from thoth_cli.db_commands import migrate_from_sqlite
 
 # Path to the upstream schema fixture (relative to the project root).
@@ -59,7 +59,7 @@ async def test_migrate_from_sqlite_copies_sessions_and_messages(
     assert n_sessions == 2
     assert n_messages == 2
 
-    async with hermes_db.connection() as c:
+    async with thoth_db.connection() as c:
         s = await c.fetchrow("SELECT * FROM sessions WHERE id = 's1'")
         assert s is not None
         assert s["source"] == "cli"
@@ -99,7 +99,7 @@ async def test_migrate_from_sqlite_dry_run_does_not_write(
     assert n_sessions == 1
     assert n_messages == 1  # dry_run counts messages too
 
-    async with hermes_db.connection() as c:
+    async with thoth_db.connection() as c:
         s = await c.fetchrow("SELECT id FROM sessions WHERE id = 'dr1'")
         assert s is None  # nothing was written
 
@@ -135,7 +135,7 @@ async def test_migrate_from_sqlite_idempotent(hermes_db_initialized, tmp_path):
     s2, _m2 = await migrate_from_sqlite(src)
     assert s2 == 1  # still counted (row attempted, silently skipped)
 
-    async with hermes_db.connection() as c:
+    async with thoth_db.connection() as c:
         count = await c.fetchval("SELECT COUNT(*) FROM sessions WHERE id = 'idem1'")
         assert count == 1  # exactly one row in PG
 
@@ -162,7 +162,7 @@ async def test_migrate_from_sqlite_jsonb_columns(hermes_db_initialized, tmp_path
 
     await migrate_from_sqlite(src)
 
-    async with hermes_db.connection() as c:
+    async with thoth_db.connection() as c:
         s = await c.fetchrow("SELECT model_config FROM sessions WHERE id = 'j1'")
         assert isinstance(s["model_config"], dict)
         assert s["model_config"]["temperature"] == 0.7
@@ -190,7 +190,7 @@ async def test_migrate_from_sqlite_requires_alembic_head(
     conn.close()
 
     # Wipe the alembic_version table so head is absent.
-    async with hermes_db.connection() as c:
+    async with thoth_db.connection() as c:
         await c.execute("DELETE FROM alembic_version")
 
     with pytest.raises(RuntimeError, match="PG schema not migrated"):

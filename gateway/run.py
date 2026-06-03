@@ -13,12 +13,12 @@ Usage:
     python cli.py --gateway
 """
 
-# IMPORTANT: hermes_bootstrap must be the very first import — UTF-8 stdio
-# on Windows.  No-op on POSIX.  See hermes_bootstrap.py for full rationale.
+# IMPORTANT: thoth_bootstrap must be the very first import — UTF-8 stdio
+# on Windows.  No-op on POSIX.  See thoth_bootstrap.py for full rationale.
 try:
-    import hermes_bootstrap  # noqa: F401
+    import thoth_bootstrap  # noqa: F401
 except ModuleNotFoundError:
-    # Graceful fallback when hermes_bootstrap isn't registered in the venv
+    # Graceful fallback when thoth_bootstrap isn't registered in the venv
     # yet — happens during partial ``thoth update`` where git-reset landed
     # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
     # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
@@ -139,9 +139,9 @@ class _PoolLoopRoutedSessionDB:
 
     The gateway runs its main asyncio loop (``L_gw``) via
     ``asyncio.run(start_gateway())``, but the shared asyncpg pool is bound
-    to ``hermes_db._sync_loop`` (created by ``main()``'s
+    to ``thoth_db._sync_loop`` (created by ``main()``'s
     ``ensure_pool_sync()`` before ``L_gw`` exists; the gateway's later
-    ``await hermes_db.init()`` is an idempotent no-op). asyncpg connections
+    ``await thoth_db.init()`` is an idempotent no-op). asyncpg connections
     are loop-bound, so async-native callers on ``L_gw`` — the handoff
     watcher and the ``/title`` / ``/resume`` / ``/branch`` + telegram-topic
     handlers, which ``await self._session_db.X()`` — would acquire from the
@@ -151,7 +151,7 @@ class _PoolLoopRoutedSessionDB:
 
     Wrapping the SessionDB at the single assignment point fixes every
     call site at once: each async method's coroutine is sent through
-    :func:`hermes_db.run_on_pool_loop`, which awaits it directly when the
+    :func:`thoth_db.run_on_pool_loop`, which awaits it directly when the
     caller is already on the pool's loop (the ``run_sync`` hot path — zero
     overhead) and otherwise drives it on the pool's loop via the
     ``run_sync`` bridge in a worker thread (never blocking ``L_gw``).
@@ -172,8 +172,8 @@ class _PoolLoopRoutedSessionDB:
         def _wrapped(*args: Any, **kwargs: Any) -> Any:
             result = attr(*args, **kwargs)
             if asyncio.iscoroutine(result):
-                import hermes_db
-                return hermes_db.run_on_pool_loop(result)
+                import thoth_db
+                return thoth_db.run_on_pool_loop(result)
             return result
 
         return _wrapped
@@ -309,7 +309,7 @@ def _telegramize_command_mentions(text: str, platform: Any) -> str:
 # after a gateway restart when the user's next message starts new work.
 #
 # The freshness signal is the timestamp of the last transcript row, which
-# ``hermes_state.get_messages`` carries on every persisted message.  This
+# ``thoth_state.get_messages`` carries on every persisted message.  This
 # handles the two auto-continue cases uniformly:
 #   * resume_pending (gateway restart/shutdown watchdog marked the session)
 #   * tool-tail     (last persisted message is a tool result the agent
@@ -1594,17 +1594,17 @@ class GatewayRunner:
         # Initialize session database for session_search tool support
         self._session_db = None
         try:
-            from hermes_state import SessionDB
+            from thoth_state import SessionDB
             # Wrap in a pool-loop router. The shared asyncpg pool is bound to
-            # hermes_db._sync_loop (created by main()'s ensure_pool_sync before
+            # thoth_db._sync_loop (created by main()'s ensure_pool_sync before
             # this gateway's asyncio.run loop existed). The hot path reaches it
-            # correctly via hermes_db.run_sync, but async-native callers on the
+            # correctly via thoth_db.run_sync, but async-native callers on the
             # gateway's own loop — the handoff watcher and /title /resume
             # /branch + telegram-topic handlers — would `await self._session_db.X()`
             # cross-loop and hit ConnectionDoesNotExistError / "another operation
             # is in progress". The proxy routes every coroutine onto the pool's
             # loop; calls already on that loop (run_sync callers) are awaited
-            # directly with no overhead. See hermes_db.run_on_pool_loop.
+            # directly with no overhead. See thoth_db.run_on_pool_loop.
             self._session_db = _PoolLoopRoutedSessionDB(SessionDB())
         except Exception as e:
             # WARNING (not DEBUG) so the failure appears in errors.log — matches
@@ -1612,7 +1612,7 @@ class GatewayRunner:
             # HERMES_HOME silently lost /resume, /title, /history, /branch, and
             # session search without this.  The underlying cause (usually
             # "locking protocol" from NFS) is now also captured by
-            # hermes_state.get_last_init_error() for slash-command error strings.
+            # thoth_state.get_last_init_error() for slash-command error strings.
             logger.warning("SQLite session store not available: %s", e)
 
         # Opportunistic state.db maintenance: prune ended sessions older
@@ -1626,7 +1626,7 @@ class GatewayRunner:
                 from thoth_cli.config import load_config as _load_full_config
                 _sess_cfg = (_load_full_config().get("sessions") or {})
                 if _sess_cfg.get("auto_prune", False):
-                    import hermes_db as _hermes_db_maint
+                    import thoth_db as _hermes_db_maint
                     _hermes_db_maint.run_sync(self._session_db.maybe_auto_prune_and_vacuum(
                         retention_days=int(_sess_cfg.get("retention_days", 90)),
                         min_interval_hours=int(_sess_cfg.get("min_interval_hours", 24)),
@@ -1993,7 +1993,7 @@ class GatewayRunner:
         if session_db is None:
             return False
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             raw = _hermes_db.run_sync(session_db.is_telegram_topic_mode_enabled(
                 chat_id=str(source.chat_id),
                 user_id=str(source.user_id),
@@ -2090,7 +2090,7 @@ class GatewayRunner:
         session_db = getattr(self, "_session_db", None)
         if session_db is None or not source.chat_id or not source.thread_id:
             return
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         _hermes_db.run_sync(session_db.bind_telegram_topic(
             chat_id=str(source.chat_id),
             thread_id=str(source.thread_id),
@@ -2125,7 +2125,7 @@ class GatewayRunner:
         if session_db is None:
             return None
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             bindings = _hermes_db.run_sync(session_db.list_telegram_topic_bindings_for_chat(
                 chat_id=str(source.chat_id),
             ))
@@ -9145,7 +9145,7 @@ class GatewayRunner:
         _title_arg = event.get_command_args().strip()
         _title_note = ""
         if _title_arg and self._session_db and new_entry:
-            from hermes_state import SessionDB
+            from thoth_state import SessionDB
             try:
                 sanitized = SessionDB.sanitize_title(_title_arg)
             except ValueError as e:
@@ -9197,10 +9197,10 @@ class GatewayRunner:
 
     async def _handle_profile_command(self, event: MessageEvent) -> str:
         """Handle /profile — show active profile name and home directory."""
-        from thoth_constants import display_hermes_home
+        from thoth_constants import display_thoth_home
         from thoth_cli.profiles import get_active_profile_name
 
-        display = display_hermes_home()
+        display = display_thoth_home()
         profile_name = get_active_profile_name()
 
         lines = [
@@ -10326,7 +10326,7 @@ class GatewayRunner:
 
     async def _handle_personality_command(self, event: MessageEvent) -> str:
         """Handle /personality command - list or set a personality."""
-        from thoth_constants import display_hermes_home
+        from thoth_constants import display_thoth_home
 
         args = event.get_command_args().strip().lower()
         config_path = _hermes_home / 'config.yaml'
@@ -10339,7 +10339,7 @@ class GatewayRunner:
             personalities = {}
 
         if not personalities:
-            return t("gateway.personality.none_configured", path=display_hermes_home())
+            return t("gateway.personality.none_configured", path=display_thoth_home())
 
         if not args:
             lines = [t("gateway.personality.header")]
@@ -12339,14 +12339,14 @@ class GatewayRunner:
     def _disable_telegram_topic_mode_for_chat(self, source: SessionSource) -> str:
         """Cleanly disable topic mode for a chat via /topic off."""
         if not self._session_db:
-            from hermes_state import format_session_db_unavailable
+            from thoth_state import format_session_db_unavailable
             return format_session_db_unavailable(prefix=t("gateway.shared.session_db_unavailable_prefix"))
         chat_id = str(source.chat_id or "")
         if not chat_id:
             return "Could not determine chat ID."
         # No-op if never enabled.
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             currently_enabled = _hermes_db.run_sync(self._session_db.is_telegram_topic_mode_enabled(
                 chat_id=chat_id,
                 user_id=str(source.user_id or ""),
@@ -12356,7 +12356,7 @@ class GatewayRunner:
         if not currently_enabled:
             return "Multi-session topic mode is not currently enabled for this chat."
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             _hermes_db.run_sync(self._session_db.disable_telegram_topic_mode(chat_id=chat_id))
         except Exception as exc:
             logger.exception("Failed to disable Telegram topic mode")
@@ -12380,7 +12380,7 @@ class GatewayRunner:
         if source.platform != Platform.TELEGRAM or source.chat_type != "dm":
             return t("gateway.topic.not_telegram_dm")
         if not self._session_db:
-            from hermes_state import format_session_db_unavailable
+            from thoth_state import format_session_db_unavailable
             return format_session_db_unavailable(prefix=t("gateway.shared.session_db_unavailable_prefix"))
 
         # Authorization: /topic activates multi-session mode and mutates
@@ -12473,7 +12473,7 @@ class GatewayRunner:
             "",
         ]
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             sessions = _hermes_db.run_sync(self._session_db.list_unlinked_telegram_sessions_for_user(
                 chat_id=str(source.chat_id),
                 user_id=str(source.user_id),
@@ -12571,7 +12571,7 @@ class GatewayRunner:
         session_id = session_entry.session_id
 
         if not self._session_db:
-            from hermes_state import format_session_db_unavailable
+            from thoth_state import format_session_db_unavailable
             return format_session_db_unavailable(prefix=t("gateway.shared.session_db_unavailable_prefix"))
 
         # Ensure session exists in SQLite DB (it may only exist in session_store
@@ -12616,7 +12616,7 @@ class GatewayRunner:
     async def _handle_resume_command(self, event: MessageEvent) -> str:
         """Handle /resume command — switch to a previously-named session."""
         if not self._session_db:
-            from hermes_state import format_session_db_unavailable
+            from thoth_state import format_session_db_unavailable
             return format_session_db_unavailable(prefix=t("gateway.shared.session_db_unavailable_prefix"))
 
         source = event.source
@@ -12699,7 +12699,7 @@ class GatewayRunner:
         import uuid as _uuid
 
         if not self._session_db:
-            from hermes_state import format_session_db_unavailable
+            from thoth_state import format_session_db_unavailable
             return format_session_db_unavailable(prefix=t("gateway.shared.session_db_unavailable_prefix"))
 
         source = event.source
@@ -12949,7 +12949,7 @@ class GatewayRunner:
                     i += 1
 
         try:
-            from hermes_state import SessionDB
+            from thoth_state import SessionDB
             from agent.insights import InsightsEngine
 
             loop = asyncio.get_running_loop()
@@ -16933,7 +16933,7 @@ class GatewayRunner:
                     and self._session_db is not None
                 ):
                     try:
-                        import hermes_db as _hermes_db
+                        import thoth_db as _hermes_db
                         _binding = _hermes_db.run_sync(self._session_db.get_telegram_topic_binding_by_session(
                             session_id=agent.session_id,
                         ))
@@ -17828,7 +17828,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     """
     # Phase 0: initialise PG pool (pure-async entry point — await directly).
     import os as _os
-    import hermes_db as _hermes_db
+    import thoth_db as _hermes_db
     _pg_dsn = _os.environ.get("HERMES_PG_DSN")
     if _pg_dsn:
         try:
@@ -17846,13 +17846,13 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     # (``thoth substrate worker run``, managed by the
     # ``hermes-substrate-worker.service`` systemd unit) so they get
     # their own asyncpg pool + event loop and don't collide with the
-    # gateway's ``hermes_db.run_sync`` worker-thread bridge.
+    # gateway's ``thoth_db.run_sync`` worker-thread bridge.
     # See ``substrate/cli/worker.py`` for the rationale (2026-05-26
     # cross-loop pool incident).
     # Failures are non-fatal — substrate problems must never crash the
     # gateway (spec §0). The helper itself logs the traceback.
     try:
-        from hermes_bootstrap import bootstrap_substrate as _bootstrap_substrate
+        from thoth_bootstrap import bootstrap_substrate as _bootstrap_substrate
         # Boot on the DB loop, where the asyncpg pool lives — awaiting it on
         # this gateway loop hits the pool cross-loop (ConnectionDoesNotExist)
         # AND orphans the writer's long-lived recall-log task. run_on_pool_loop
@@ -17983,7 +17983,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     # Centralized logging — agent.log (INFO+), errors.log (WARNING+),
     # and gateway.log (INFO+, gateway-component records only).
     # Idempotent, so repeated calls from AIAgent.__init__ won't duplicate.
-    from hermes_logging import setup_logging
+    from thoth_logging import setup_logging
     setup_logging(hermes_home=_hermes_home, mode="gateway")
 
     # Periodic process memory usage logging (gateway only) — emits a
@@ -18272,7 +18272,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
 
     # Phase 0: close PG pool at gateway shutdown.
     try:
-        import hermes_db as _hermes_db_shutdown
+        import thoth_db as _hermes_db_shutdown
         if _hermes_db_shutdown._pool:
             await _hermes_db_shutdown.close()
     except Exception:

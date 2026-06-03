@@ -128,7 +128,7 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
                 Family.SELF_STATE,
                 Modality.STRUCTURED_EVENT,
                 "agent",
-                "hermes_state",
+                "thoth_state",
                 DEFAULT_STRUCTURED_PROFILE,
             ),
             (
@@ -303,7 +303,7 @@ class Substrate:
     ) -> "Substrate":
         """Full Phase A boot sequence.
 
-        1. Assert ``hermes_db.pool()`` is initialised.
+        1. Assert ``thoth_db.pool()`` is initialised.
         2. Verify Alembic head is at or beyond
            ``20260523_0003_substrate_skeleton``. If older and
            ``HERMES_AUTO_MIGRATE=1`` (from ``SubstrateConfig.auto_migrate``)
@@ -327,9 +327,9 @@ class Substrate:
         caller (Thoth startup) decides whether to abort the process
         or degrade gracefully.
         """
-        import hermes_db
+        import thoth_db
 
-        pool = hermes_db.pool()  # raises if init() wasn't called
+        pool = thoth_db.pool()  # raises if init() wasn't called
         cfg = config or SubstrateConfig.from_env()
         substrate = cls.from_pool(pool, log=log, config=cfg)
 
@@ -340,7 +340,7 @@ class Substrate:
         # tick is the PartitionMaintenanceWorker started below).
         from substrate.storage.partitions import ensure_partitions
 
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             await ensure_partitions(conn, ahead_months=2)
 
         # 4. Auto-register §9 streams.
@@ -406,7 +406,7 @@ class Substrate:
         so they own their own event loop and asyncpg pool.
 
         Why the split: when sub-agents tick in a process that also
-        runs ``hermes_db.run_sync`` (worker-thread bridge for sync DB
+        runs ``thoth_db.run_sync`` (worker-thread bridge for sync DB
         callers like gateway session handlers), the substrate's
         main-loop pool and run_sync's ``_sync_loop`` pool collide. PG
         sees the same connection driven from two event loops, asyncpg
@@ -465,7 +465,7 @@ class Substrate:
         """Stop sub-agents, flush pending audit emissions, unbind hooks.
 
         The asyncpg pool is NOT closed here — that belongs to
-        ``hermes_db.close()`` which is owned by Thoth's own shutdown
+        ``thoth_db.close()`` which is owned by Thoth's own shutdown
         sequence (spec §8.2).
         """
         # Unbind hooks first so any in-flight Thoth call site that
@@ -512,9 +512,9 @@ class Substrate:
           * with ``auto_migrate=True``: run ``alembic upgrade head``.
           * otherwise: raise RuntimeError so the caller can prompt.
         """
-        import hermes_db
+        import thoth_db
 
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             current = await conn.fetchval(
                 "SELECT version_num FROM alembic_version"
             )
@@ -537,7 +537,7 @@ class Substrate:
         await asyncio.to_thread(_run_alembic_upgrade)
 
         # Verify the migration actually advanced the head.
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             after = await conn.fetchval(
                 "SELECT version_num FROM alembic_version"
             )

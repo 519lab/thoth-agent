@@ -52,7 +52,7 @@ from pathlib import Path
 from typing import Callable, Dict, Any, Optional
 from urllib.parse import urljoin
 
-from thoth_constants import display_hermes_home
+from thoth_constants import display_thoth_home
 
 logger = logging.getLogger(__name__)
 def get_env_value(name, default=None):
@@ -2350,7 +2350,7 @@ TTS_SCHEMA = {
             },
             "output_path": {
                 "type": "string",
-                "description": f"Optional custom file path to save the audio. Defaults to {display_hermes_home()}/audio_cache/<timestamp>.mp3"
+                "description": f"Optional custom file path to save the audio. Defaults to {display_thoth_home()}/audio_cache/<timestamp>.mp3"
             }
         },
         "required": ["text"]

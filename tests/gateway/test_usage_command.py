@@ -214,7 +214,7 @@ class TestUsageAccountSection:
         runner = _make_runner(SK)
         runner._session_db = MagicMock()
         # Phase 0: SessionDB.get_session is async. The production
-        # ``_handle_usage_command`` wraps it in ``hermes_db.run_sync`` —
+        # ``_handle_usage_command`` wraps it in ``thoth_db.run_sync`` —
         # a plain MagicMock returns a MagicMock (not a coroutine) and
         # run_sync raises TypeError, which the handler then catches and
         # falls through to the no-billing-info branch, leaving ``calls``

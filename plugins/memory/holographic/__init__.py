@@ -146,8 +146,8 @@ class HolographicMemoryProvider(MemoryProvider):
             pass
 
     def get_config_schema(self):
-        from thoth_constants import display_hermes_home
-        _default_db = f"{display_hermes_home()}/memory_store.db"
+        from thoth_constants import display_thoth_home
+        _default_db = f"{display_thoth_home()}/memory_store.db"
         return [
             {"key": "db_path", "description": "SQLite database path", "default": _default_db},
             {"key": "auto_extract", "description": "Auto-extract facts at session end", "default": "false", "choices": ["true", "false"]},

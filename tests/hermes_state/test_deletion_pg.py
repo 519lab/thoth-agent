@@ -4,12 +4,12 @@ Covers: clear_messages, delete_session (cascade + return value + filesystem clea
 and prune_sessions (age threshold + source filter + orphaning + filesystem cleanup).
 """
 
-import hermes_db
+import thoth_db
 import pytest
 import pytest_asyncio
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from hermes_state import _AsyncSessionDB
+from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture
@@ -24,7 +24,7 @@ async def db(hermes_db_initialized):
 async def _insert_message(session_id: str, role: str, content: str, offset_ms: int = 0):
     """Insert a raw message row with a deterministic timestamp."""
     ts = datetime.now(timezone.utc) + timedelta(milliseconds=offset_ms)
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             """
             INSERT INTO messages (session_id, role, content, timestamp)
@@ -36,7 +36,7 @@ async def _insert_message(session_id: str, role: str, content: str, offset_ms: i
 
 async def _get_message_count(session_id: str) -> int:
     """Get message count for a session."""
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         result = await conn.fetchval(
             "SELECT COUNT(*) FROM messages WHERE session_id = $1",
             session_id,
@@ -46,7 +46,7 @@ async def _get_message_count(session_id: str) -> int:
 
 async def _session_exists(session_id: str) -> bool:
     """Check if a session exists."""
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         result = await conn.fetchval(
             "SELECT 1 FROM sessions WHERE id = $1",
             session_id,
@@ -79,7 +79,7 @@ async def test_clear_messages_resets_counters(db):
     await _insert_message("d2", "user", "test")
 
     # Manually update counters to test reset
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET message_count = 5, tool_call_count = 3 WHERE id = $1",
             "d2",
@@ -87,7 +87,7 @@ async def test_clear_messages_resets_counters(db):
 
     await db.clear_messages("d2")
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         result = await conn.fetchrow(
             "SELECT message_count, tool_call_count FROM sessions WHERE id = $1",
             "d2",
@@ -140,7 +140,7 @@ async def test_delete_session_orphans_children(db):
     await db.delete_session("parent")
 
     # Child should still exist but parent_session_id should be NULL
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         result = await conn.fetchrow(
             "SELECT parent_session_id FROM sessions WHERE id = $1",
             "child",
@@ -203,7 +203,7 @@ async def test_prune_sessions_by_age(db):
 
     # Create old ended session
     await db.create_session(session_id="old_session", source="cli", model="m", model_config={}, system_prompt="")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1, ended_at = $2 WHERE id = $3",
             old_time, old_time + timedelta(seconds=1), "old_session",
@@ -211,7 +211,7 @@ async def test_prune_sessions_by_age(db):
 
     # Create recent session
     await db.create_session(session_id="new_session", source="cli", model="m", model_config={}, system_prompt="")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1, ended_at = $2 WHERE id = $3",
             now, now + timedelta(seconds=1), "new_session",
@@ -232,7 +232,7 @@ async def test_prune_sessions_only_ended(db):
 
     # Create old ended session
     await db.create_session(session_id="old_ended", source="cli", model="m", model_config={}, system_prompt="")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1, ended_at = $2 WHERE id = $3",
             old_time, old_time + timedelta(seconds=1), "old_ended",
@@ -240,7 +240,7 @@ async def test_prune_sessions_only_ended(db):
 
     # Create old active session (no ended_at)
     await db.create_session(session_id="old_active", source="cli", model="m", model_config={}, system_prompt="")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1 WHERE id = $2",
             old_time, "old_active",
@@ -261,7 +261,7 @@ async def test_prune_sessions_by_source(db):
 
     # Create old cli session
     await db.create_session(session_id="old_cli", source="cli", model="m", model_config={}, system_prompt="")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1, ended_at = $2 WHERE id = $3",
             old_time, old_time + timedelta(seconds=1), "old_cli",
@@ -269,7 +269,7 @@ async def test_prune_sessions_by_source(db):
 
     # Create old telegram session
     await db.create_session(session_id="old_telegram", source="telegram", model="m", model_config={}, system_prompt="")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1, ended_at = $2 WHERE id = $3",
             old_time, old_time + timedelta(seconds=1), "old_telegram",
@@ -290,7 +290,7 @@ async def test_prune_sessions_orphans_children(db):
 
     # Create old parent session
     await db.create_session(session_id="old_parent", source="cli", model="m", model_config={}, system_prompt="")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1, ended_at = $2 WHERE id = $3",
             old_time, old_time + timedelta(seconds=1), "old_parent",
@@ -313,7 +313,7 @@ async def test_prune_sessions_orphans_children(db):
     assert await _session_exists("child") is True
 
     # Child should be orphaned
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         result = await conn.fetchrow(
             "SELECT parent_session_id FROM sessions WHERE id = $1",
             "child",
@@ -329,7 +329,7 @@ async def test_prune_sessions_filesystem_cleanup(db, tmp_path):
 
     # Create old session
     await db.create_session(session_id="old_s", source="cli", model="m", model_config={}, system_prompt="")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1, ended_at = $2 WHERE id = $3",
             old_time, old_time + timedelta(seconds=1), "old_s",
@@ -367,7 +367,7 @@ async def test_prune_sessions_multiple(db):
     # Create 3 old sessions
     for i in range(3):
         await db.create_session(session_id=f"old_{i}", source="cli", model="m", model_config={}, system_prompt="")
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             await conn.execute(
                 "UPDATE sessions SET started_at = $1, ended_at = $2 WHERE id = $3",
                 old_time, old_time + timedelta(seconds=1), f"old_{i}",

@@ -84,11 +84,11 @@ class StubSentinel(SubAgent):
         return (s.slice_id, v.state, v.trust_score, v.reason)
 
     async def tick(self) -> None:
-        import hermes_db
+        import thoth_db
 
         # 1) Read pending batch + decide everyone, all in one txn so a
         #    partial failure leaves the pending queue unchanged.
-        async with hermes_db.transaction() as conn:
+        async with thoth_db.transaction() as conn:
             batch = await self._substrate.slices.list_pending(
                 conn, limit=self._batch_limit, lock=True
             )

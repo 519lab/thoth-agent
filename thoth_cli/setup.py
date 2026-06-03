@@ -145,7 +145,7 @@ from thoth_cli.config import (
     get_env_value,
     ensure_hermes_home,
 )
-# display_hermes_home imported lazily at call sites (stale-module safety during thoth update)
+# display_thoth_home imported lazily at call sites (stale-module safety during thoth update)
 
 from thoth_cli.colors import Colors, color
 
@@ -573,7 +573,7 @@ def _print_setup_summary(config: dict, hermes_home):
         print_warning(
             f"Some tools are disabled. Run '{cli_name()} setup tools' to configure them,"
         )
-        from thoth_constants import display_hermes_home as _dhh
+        from thoth_constants import display_thoth_home as _dhh
         print_warning(f"or edit {_dhh()}/.env directly to add the missing API keys.")
         print()
 
@@ -597,7 +597,7 @@ def _print_setup_summary(config: dict, hermes_home):
     print()
 
     # Show file locations prominently
-    from thoth_constants import display_hermes_home as _dhh
+    from thoth_constants import display_thoth_home as _dhh
     print(color(f"📁 All your files are in {_dhh()}/:", Colors.CYAN, Colors.BOLD))
     print()
     print(f"   {color('Settings:', Colors.YELLOW)}  {get_config_path()}")
@@ -1293,7 +1293,7 @@ def _setup_tts_provider(config: dict):
                     save_env_value("XAI_API_KEY", api_key)
                     print_success("xAI TTS API key saved")
                 else:
-                    from thoth_constants import display_hermes_home as _dhh
+                    from thoth_constants import display_thoth_home as _dhh
                     print_warning(
                         "No xAI API key provided for TTS. Configure XAI_API_KEY "
                         f"via {cli_name()} setup model or {_dhh()}/.env to use xAI TTS. "
@@ -2450,7 +2450,7 @@ def _setup_webhooks():
     save_env_value("WEBHOOK_ENABLED", "true")
     print()
     print_success("Webhooks enabled! Next steps:")
-    from thoth_constants import display_hermes_home as _dhh
+    from thoth_constants import display_thoth_home as _dhh
     print_info(f"   1. Define webhook routes in {_dhh()}/config.yaml")
     print_info("   2. Point your service (GitHub, GitLab, etc.) at:")
     print_info("      http://your-server:8644/webhooks/<route-name>")

@@ -550,11 +550,11 @@ class DockerEnvironment(BaseEnvironment):
         # win over the generic Thoth secret blocklist. Only implicit passthrough
         # keys are filtered.
         forward_keys = explicit_forward_keys | (passthrough_keys - _HERMES_PROVIDER_ENV_BLOCKLIST)
-        hermes_env = _load_hermes_env_vars() if forward_keys else {}
+        thoth_env = _load_hermes_env_vars() if forward_keys else {}
         for key in sorted(forward_keys):
             value = os.getenv(key)
             if value is None:
-                value = hermes_env.get(key)
+                value = thoth_env.get(key)
             if value is not None:
                 exec_env[key] = value
 

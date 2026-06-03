@@ -6,7 +6,7 @@ hermes_db_initialized fixture. Docker must be running:
 """
 import pytest
 import pytest_asyncio
-from hermes_state import _AsyncSessionDB
+from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture
@@ -97,7 +97,7 @@ async def test_get_session_missing(db):
 
 @pytest.mark.asyncio
 async def test_ensure_session_creates_if_missing(db):
-    # Behavior parity with upstream `ensure_session` — read `hermes_state.py:866-876`.
+    # Behavior parity with upstream `ensure_session` — read `thoth_state.py:866-876`.
     await db.ensure_session(session_id="ensure1", source="cli", model="m", model_config={}, system_prompt="")
     assert (await db.get_session("ensure1")) is not None
 
@@ -116,8 +116,8 @@ async def test_prune_empty_ghost_removes_old_unnamed_ended_tui_session(db):
     await db.create_session(session_id="ghost", source="tui", model="m", model_config={}, system_prompt="")
     await db.end_session("ghost", "x")
     # Force started_at into the past so the age filter matches.
-    import hermes_db
-    async with hermes_db.connection() as c:
+    import thoth_db
+    async with thoth_db.connection() as c:
         await c.execute(
             "UPDATE sessions SET started_at = now() - interval '25 hours' WHERE id = 'ghost'"
         )
@@ -131,8 +131,8 @@ async def test_prune_empty_ghost_keeps_cli_sessions(db):
     """source != 'tui' should never be pruned even if otherwise empty/old/ended."""
     await db.create_session(session_id="cli_old", source="cli", model="m", model_config={}, system_prompt="")
     await db.end_session("cli_old", "x")
-    import hermes_db
-    async with hermes_db.connection() as c:
+    import thoth_db
+    async with thoth_db.connection() as c:
         await c.execute(
             "UPDATE sessions SET started_at = now() - interval '25 hours' WHERE id = 'cli_old'"
         )
@@ -157,8 +157,8 @@ async def test_prune_empty_ghost_keeps_titled_session(db):
     """Sessions with a title are user-blessed; should never be pruned."""
     await db.create_session(session_id="titled_tui", source="tui", model="m", model_config={}, system_prompt="", title="My Session")
     await db.end_session("titled_tui", "x")
-    import hermes_db
-    async with hermes_db.connection() as c:
+    import thoth_db
+    async with thoth_db.connection() as c:
         await c.execute(
             "UPDATE sessions SET started_at = now() - interval '25 hours' WHERE id = 'titled_tui'"
         )
@@ -185,19 +185,19 @@ async def test_finalize_orphaned_compression_sessions(db):
     await db.end_session("parent1", "compression")
 
     # Create child session linked to parent, with a message (required by criteria)
-    import hermes_db
+    import thoth_db
     await db.create_session(
         session_id="child1", source="cli", model="m", model_config={}, system_prompt="",
         parent_session_id="parent1",
     )
     # Insert a message manually so EXISTS check passes
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "INSERT INTO messages (session_id, role, content) VALUES ($1, $2, $3)",
             "child1", "user", "orphan message",
         )
     # Backdate child's started_at to > 7 days ago so cutoff applies
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = now() - interval '8 days' WHERE id = $1",
             "child1",

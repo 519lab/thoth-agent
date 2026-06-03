@@ -73,7 +73,7 @@ logger = logging.getLogger("gateway.platforms.google_chat_user_oauth")
 # Use the project's HERMES_HOME helper so the token follows the user's
 # profile (e.g. tests can override via HERMES_HOME=/tmp/...).
 try:
-    from thoth_constants import display_hermes_home, get_thoth_home
+    from thoth_constants import display_thoth_home, get_thoth_home
 except (ModuleNotFoundError, ImportError):
     # Fallback for environments where thoth_constants isn't importable
     # (mirrors the same fallback used by the google-workspace skill's
@@ -82,7 +82,7 @@ except (ModuleNotFoundError, ImportError):
         val = os.environ.get("HERMES_HOME", "").strip()
         return Path(val) if val else Path.home() / ".hermes"
 
-    def display_hermes_home() -> str:
+    def display_thoth_home() -> str:
         home = get_thoth_home()
         try:
             return "~/" + str(home.relative_to(Path.home()))
@@ -554,9 +554,9 @@ def exchange_auth_code(code: str, email: Optional[str] = None) -> None:
 
     print(f"OK: Authenticated. Token saved to {token_path}")
     rel_label = (
-        f"{display_hermes_home()}/google_chat_user_tokens/{_sanitize_email(email)}.json"
+        f"{display_thoth_home()}/google_chat_user_tokens/{_sanitize_email(email)}.json"
         if email
-        else f"{display_hermes_home()}/google_chat_user_token.json"
+        else f"{display_thoth_home()}/google_chat_user_token.json"
     )
     print(f"Profile path: {rel_label}")
 

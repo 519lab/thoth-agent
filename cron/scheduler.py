@@ -33,13 +33,13 @@ from typing import List, Optional
 
 # Add parent directory to path for imports BEFORE repo-level imports.
 # Without this, standalone invocations (e.g. after `thoth update` reloads
-# the module) fail with ModuleNotFoundError for hermes_time et al.
+# the module) fail with ModuleNotFoundError for thoth_time et al.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from thoth_constants import get_thoth_home
 from thoth_cli._subprocess_compat import windows_hide_flags
 from thoth_cli.config import load_config, _expand_env_vars
-from hermes_time import now as _hermes_now
+from thoth_time import now as _hermes_now
 
 logger = logging.getLogger(__name__)
 
@@ -1263,7 +1263,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
     # and discoverable via session_search (same pattern as gateway/run.py).
     _session_db = None
     try:
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         _session_db = SessionDB()
     except Exception as e:
         logger.debug("Job '%s': SQLite session store not available: %s", job.get("id", "?"), e)
@@ -1768,7 +1768,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
             _VAR_MAP[_var_name].set("")
         if _session_db:
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 _hermes_db.run_sync(_session_db.end_session(_cron_session_id, "cron_complete"))
             except (Exception, KeyboardInterrupt) as e:
                 logger.debug("Job '%s': failed to end session: %s", job_id, e)
@@ -1813,14 +1813,14 @@ def tick(verbose: bool = True, adapters=None, loop=None) -> int:
     """
     # Phase 0: initialise PG pool (idempotent; no-op if HERMES_PG_DSN unset).
     try:
-        from hermes_bootstrap import init_db_sync
+        from thoth_bootstrap import init_db_sync
         init_db_sync()
     except RuntimeError:
         pass  # No HERMES_PG_DSN → legacy path still works during cutover period.
 
     # Phase A: bootstrap the substrate so on_cron_fire emissions land.
     try:
-        from hermes_bootstrap import bootstrap_substrate_sync
+        from thoth_bootstrap import bootstrap_substrate_sync
         bootstrap_substrate_sync()
     except Exception:  # noqa: BLE001 — defensive, substrate failure is non-fatal
         pass

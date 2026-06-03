@@ -54,7 +54,7 @@ async def booted_substrate(hermes_db_initialized):
 
 async def _seed_passed_slice(substrate, *, text: str, t_now: datetime) -> None:
     """Commit a slice and immediately flip it to passed."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.get_by_name(
         "thoth.world.user_message.cli"
@@ -66,7 +66,7 @@ async def _seed_passed_slice(substrate, *, text: str, t_now: datetime) -> None:
         text,
         event_time_world=t_now,
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             """
             UPDATE substrate_slices
@@ -124,7 +124,7 @@ async def test_recall_respects_time_window(booted_substrate):
 async def test_recall_default_streams_only(booted_substrate):
     """Slices on thoth.self_state.* aren't in the default projection;
     explicit stream_filter includes them."""
-    import hermes_db
+    import thoth_db
 
     t = datetime.now(timezone.utc)
     # Seed a slice on a non-default stream.
@@ -138,7 +138,7 @@ async def test_recall_default_streams_only(booted_substrate):
         {"event": "secret"},
         event_time_world=t,
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET sentinel_state='passed', trust_score=0.95, pending_committed_at=NULL WHERE sentinel_state='pending'"
         )
@@ -185,12 +185,12 @@ async def test_recall_db_error_returns_empty_projection(booted_substrate, monkey
 
 def test_recall_sync_facade_outside_loop(hermes_db_initialized_sync):
     """recall_sync works from a sync test body."""
-    import hermes_db
+    import thoth_db
 
     # Build a from_pool substrate (no boot side-effects needed for the
     # sync test — recall_window doesn't depend on subagents). We use
-    # the sync-loop fixture so the pool binds to hermes_db's sync loop.
-    sub = Substrate.from_pool(hermes_db.pool())
+    # the sync-loop fixture so the pool binds to thoth_db's sync loop.
+    sub = Substrate.from_pool(thoth_db.pool())
     proj = recall_sync(sub, "anything")
     assert isinstance(proj, RecallProjection)
     # Empty substrate → no_candidates.

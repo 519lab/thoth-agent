@@ -71,7 +71,7 @@ def _get_sessions_dir() -> Path:
 def _get_session_db():
     """Get a SessionDB instance for reading message transcripts."""
     try:
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         return SessionDB()
     except Exception as e:
         logger.debug("SessionDB unavailable: %s", e)
@@ -384,7 +384,7 @@ class EventBridge:
             last_seen = self._last_poll_timestamps.get(session_key, 0.0)
 
             try:
-                import hermes_db as _hermes_db
+                import thoth_db as _hermes_db
                 messages = _hermes_db.run_sync(db.get_messages(session_id))
             except Exception:
                 continue
@@ -589,7 +589,7 @@ def create_mcp_server(event_bridge: Optional[EventBridge] = None) -> "FastMCP":
             return json.dumps({"error": "Session database unavailable"})
 
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             all_messages = _hermes_db.run_sync(db.get_messages(session_id))
         except Exception as e:
             return json.dumps({"error": f"Failed to read messages: {e}"})
@@ -647,7 +647,7 @@ def create_mcp_server(event_bridge: Optional[EventBridge] = None) -> "FastMCP":
             return json.dumps({"error": "Session database unavailable"})
 
         try:
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             all_messages = _hermes_db.run_sync(db.get_messages(session_id))
         except Exception as e:
             return json.dumps({"error": f"Failed to read messages: {e}"})

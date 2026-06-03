@@ -58,13 +58,13 @@ class TestFlushAfterCompression:
         so flush_from = max(0, 0) = 0, and ALL compressed messages are written.
 
         Phase 0: the prior custom-event-loop-in-a-thread scaffolding was a
-        workaround for ``hermes_db.run_sync`` not being safe across loops.
+        workaround for ``thoth_db.run_sync`` not being safe across loops.
         After PR #26 (run_sync cross-loop offload) the simpler
         ``hermes_db_initialized_sync`` fixture binds the pool to
         ``_sync_loop`` and lets ``run_sync`` drive the queries directly.
         """
-        import hermes_db as _hermes_db
-        from hermes_state import SessionDB
+        import thoth_db as _hermes_db
+        from thoth_state import SessionDB
 
         db = SessionDB()
         agent = self._make_agent(db)
@@ -106,8 +106,8 @@ class TestFlushAfterCompression:
 
     def test_flush_with_stale_history_loses_messages(self, hermes_db_initialized_sync):
         """Demonstrates the bug condition: stale conversation_history causes data loss."""
-        import hermes_db as _hermes_db
-        from hermes_state import SessionDB
+        import thoth_db as _hermes_db
+        from thoth_state import SessionDB
 
         db = SessionDB()
         agent = self._make_agent(db)

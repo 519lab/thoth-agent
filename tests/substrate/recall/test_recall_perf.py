@@ -54,7 +54,7 @@ async def seeded_substrate(hermes_db_initialized):
     )
     try:
         # Seed N passed slices on the user_message.cli stream.
-        import hermes_db
+        import thoth_db
 
         stream = await sub.streams.get_by_name("thoth.world.user_message.cli")
         t = datetime.now(timezone.utc)
@@ -63,7 +63,7 @@ async def seeded_substrate(hermes_db_initialized):
                 sub, stream.stream_id, f"seed content {i}",
                 event_time_world=t,
             )
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             await conn.execute(
                 "UPDATE substrate_slices SET sentinel_state='passed', trust_score=0.95, pending_committed_at=NULL WHERE sentinel_state='pending'"
             )

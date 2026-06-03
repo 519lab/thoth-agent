@@ -47,8 +47,8 @@ async def test_session_roundtrip_emits_substrate_slices(booted):
     ``SessionDB.append_message`` (user_message, assistant_response,
     tool_call, tool_result) must fire for a normal turn.
     """
-    import hermes_db
-    from hermes_state import _AsyncSessionDB
+    import thoth_db
+    from thoth_state import _AsyncSessionDB
 
     db = _AsyncSessionDB()
     sid = await db.create_session(
@@ -77,7 +77,7 @@ async def test_session_roundtrip_emits_substrate_slices(booted):
     await db.append_message(sid, "tool", "4", tool_name="calculator")
 
     # End the session — emits session_end via on_session_end_async (NOT
-    # currently wired in hermes_state.end_session because the spec said
+    # currently wired in thoth_state.end_session because the spec said
     # the implementer "locates during build" — we accept the slice tally
     # WITHOUT this hook for now).
 
@@ -89,7 +89,7 @@ async def test_session_roundtrip_emits_substrate_slices(booted):
         "thoth.self_action.tool_call": 1,                # the calculator call
         "thoth.self_state.tool_result": 1,               # the tool response
     }
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             """
             SELECT st.name AS name, COUNT(*) AS n
@@ -119,8 +119,8 @@ async def test_inspect_summary_after_roundtrip_is_nonempty(booted):
     returns a non-empty summary with sensible counts after one or more
     real sessions."*
     """
-    import hermes_db
-    from hermes_state import _AsyncSessionDB
+    import thoth_db
+    from thoth_state import _AsyncSessionDB
 
     db = _AsyncSessionDB()
     sid = await db.create_session(
@@ -130,7 +130,7 @@ async def test_inspect_summary_after_roundtrip_is_nonempty(booted):
     await db.append_message(sid, "assistant", "hi")
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_summary(conn)
     out = buf.getvalue()
@@ -161,8 +161,8 @@ async def test_end_session_emits_substrate_slice(booted):
     ``create_session`` so the substrate sees the full session
     lifecycle without per-call-site hook plumbing.
     """
-    import hermes_db
-    from hermes_state import _AsyncSessionDB
+    import thoth_db
+    from thoth_state import _AsyncSessionDB
 
     db = _AsyncSessionDB()
     sid = await db.create_session(
@@ -172,7 +172,7 @@ async def test_end_session_emits_substrate_slice(booted):
     # First end_session call should emit a session_end slice.
     await db.end_session(sid, "user_quit")
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         end_count_first = await conn.fetchval(
             """
             SELECT COUNT(*) FROM substrate_slices sl
@@ -190,7 +190,7 @@ async def test_end_session_emits_substrate_slice(booted):
     # ``UPDATE 1`` command tag.
     await db.end_session(sid, "another_reason")
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         end_count_second = await conn.fetchval(
             """
             SELECT COUNT(*) FROM substrate_slices sl
@@ -215,15 +215,15 @@ async def test_session_start_shares_txn_with_session_row(booted):
     (the hook swallows errors per §6.2), but we can prove the txn is
     SHARED by checking the slice + session row land in the same instant.
     """
-    import hermes_db
-    from hermes_state import _AsyncSessionDB
+    import thoth_db
+    from thoth_state import _AsyncSessionDB
 
     db = _AsyncSessionDB()
     await db.create_session(
         session_id="e2e-atomic-1", source="cli", model="m"
     )
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         # The slice's ingest_time_world should be within a few ms of the
         # session row's started_at because the INSERT pair shared the
         # same transaction (= same DB clock tick).

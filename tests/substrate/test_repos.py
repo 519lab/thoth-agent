@@ -33,9 +33,9 @@ from substrate.storage import (
 class TestDecayProfileRepo:
     @pytest.mark.asyncio
     async def test_get_seeded_profile_by_id(self, hermes_db_initialized):
-        import hermes_db
+        import thoth_db
 
-        repo = DecayProfileRepo(hermes_db.pool())
+        repo = DecayProfileRepo(thoth_db.pool())
         profile = await repo.get(DEFAULT_TEXT_PROFILE)
         assert profile is not None
         assert profile.name == "default-text"
@@ -44,9 +44,9 @@ class TestDecayProfileRepo:
 
     @pytest.mark.asyncio
     async def test_get_by_name(self, hermes_db_initialized):
-        import hermes_db
+        import thoth_db
 
-        repo = DecayProfileRepo(hermes_db.pool())
+        repo = DecayProfileRepo(thoth_db.pool())
         profile = await repo.get_by_name("default-structured")
         assert profile is not None
         assert profile.profile_id == DEFAULT_STRUCTURED_PROFILE
@@ -54,9 +54,9 @@ class TestDecayProfileRepo:
 
     @pytest.mark.asyncio
     async def test_get_unknown_returns_none(self, hermes_db_initialized):
-        import hermes_db
+        import thoth_db
 
-        repo = DecayProfileRepo(hermes_db.pool())
+        repo = DecayProfileRepo(thoth_db.pool())
         profile = await repo.get(uuid4())
         assert profile is None
 
@@ -76,9 +76,9 @@ class TestDecayProfileRepo:
 class TestStreamRepo:
     @pytest.mark.asyncio
     async def test_register_returns_new_stream(self, hermes_db_initialized):
-        import hermes_db
+        import thoth_db
 
-        repo = StreamRepo(hermes_db.pool())
+        repo = StreamRepo(thoth_db.pool())
         stream = await repo.register(
             name="hermes.test.unique_stream",
             family=Family.EXTEROCEPTIVE,
@@ -93,9 +93,9 @@ class TestStreamRepo:
 
     @pytest.mark.asyncio
     async def test_register_is_idempotent_on_name_conflict(self, hermes_db_initialized):
-        import hermes_db
+        import thoth_db
 
-        repo = StreamRepo(hermes_db.pool())
+        repo = StreamRepo(thoth_db.pool())
         first = await repo.register(
             name="hermes.test.dupe",
             family=Family.SELF_STATE,
@@ -119,9 +119,9 @@ class TestStreamRepo:
 
     @pytest.mark.asyncio
     async def test_get_hits_cache_on_second_read(self, hermes_db_initialized):
-        import hermes_db
+        import thoth_db
 
-        repo = StreamRepo(hermes_db.pool())
+        repo = StreamRepo(thoth_db.pool())
         stream = await repo.register(
             name="hermes.test.cache_probe",
             family=Family.SELF_STATE,
@@ -137,9 +137,9 @@ class TestStreamRepo:
 
     @pytest.mark.asyncio
     async def test_get_by_name_uses_reverse_index(self, hermes_db_initialized):
-        import hermes_db
+        import thoth_db
 
-        repo = StreamRepo(hermes_db.pool())
+        repo = StreamRepo(thoth_db.pool())
         stream = await repo.register(
             name="hermes.test.by_name",
             family=Family.SELF_STATE,
@@ -153,9 +153,9 @@ class TestStreamRepo:
 
     @pytest.mark.asyncio
     async def test_invalidate_drops_cache_entry(self, hermes_db_initialized):
-        import hermes_db
+        import thoth_db
 
-        repo = StreamRepo(hermes_db.pool())
+        repo = StreamRepo(thoth_db.pool())
         stream = await repo.register(
             name="hermes.test.invalidate",
             family=Family.SELF_STATE,
@@ -185,11 +185,11 @@ def _now_utc() -> datetime:
 
 @pytest.mark.asyncio
 async def test_slice_repo_commit_inserts_pending(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
     from substrate.storage import DEFAULT_STRUCTURED_PROFILE
 
-    streams = StreamRepo(hermes_db.pool())
-    slices = SliceRepo(hermes_db.pool())
+    streams = StreamRepo(thoth_db.pool())
+    slices = SliceRepo(thoth_db.pool())
     stream = await streams.register(
         name="hermes.test.commit_pending",
         family=Family.SELF_STATE,
@@ -200,7 +200,7 @@ async def test_slice_repo_commit_inserts_pending(hermes_db_initialized):
     )
     now = _now_utc()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         sid, ingest = await slices.commit(
             conn=conn,
             stream_id=stream.stream_id,
@@ -229,10 +229,10 @@ async def test_slice_repo_commit_inserts_pending(hermes_db_initialized):
 async def test_slice_repo_list_pending_orders_oldest_first(hermes_db_initialized):
     import asyncio
 
-    import hermes_db
+    import thoth_db
 
-    streams = StreamRepo(hermes_db.pool())
-    slices = SliceRepo(hermes_db.pool())
+    streams = StreamRepo(thoth_db.pool())
+    slices = SliceRepo(thoth_db.pool())
     stream = await streams.register(
         name="hermes.test.list_pending",
         family=Family.SELF_STATE,
@@ -243,7 +243,7 @@ async def test_slice_repo_list_pending_orders_oldest_first(hermes_db_initialized
     )
 
     sids = []
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         for i in range(3):
             now = _now_utc()
             sid, _ = await slices.commit(
@@ -271,10 +271,10 @@ async def test_slice_repo_list_pending_orders_oldest_first(hermes_db_initialized
 
 @pytest.mark.asyncio
 async def test_slice_repo_decide_transitions_pending_to_passed(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
-    streams = StreamRepo(hermes_db.pool())
-    slices = SliceRepo(hermes_db.pool())
+    streams = StreamRepo(thoth_db.pool())
+    slices = SliceRepo(thoth_db.pool())
     stream = await streams.register(
         name="hermes.test.decide_one",
         family=Family.SELF_STATE,
@@ -285,7 +285,7 @@ async def test_slice_repo_decide_transitions_pending_to_passed(hermes_db_initial
     )
     now = _now_utc()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         sid, _ = await slices.commit(
             conn=conn,
             stream_id=stream.stream_id,
@@ -317,10 +317,10 @@ async def test_slice_repo_decide_transitions_pending_to_passed(hermes_db_initial
 async def test_slice_repo_decide_rejects_pending_outcome(hermes_db_initialized):
     """``decide`` only accepts PASSED or QUARANTINED — PENDING is not a
     legal target (Sentinel only moves *away* from pending)."""
-    import hermes_db
+    import thoth_db
 
-    slices = SliceRepo(hermes_db.pool())
-    async with hermes_db.connection() as conn:
+    slices = SliceRepo(thoth_db.pool())
+    async with thoth_db.connection() as conn:
         with pytest.raises(ValueError, match="invalid sentinel outcome"):
             await slices.decide(
                 conn,
@@ -332,10 +332,10 @@ async def test_slice_repo_decide_rejects_pending_outcome(hermes_db_initialized):
 
 @pytest.mark.asyncio
 async def test_slice_repo_decide_many_batch(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
-    streams = StreamRepo(hermes_db.pool())
-    slices = SliceRepo(hermes_db.pool())
+    streams = StreamRepo(thoth_db.pool())
+    slices = SliceRepo(thoth_db.pool())
     stream = await streams.register(
         name="hermes.test.decide_many",
         family=Family.SELF_STATE,
@@ -347,7 +347,7 @@ async def test_slice_repo_decide_many_batch(hermes_db_initialized):
     now = _now_utc()
 
     sids = []
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         for _ in range(5):
             sid, _ = await slices.commit(
                 conn=conn,
@@ -385,11 +385,11 @@ async def test_slice_repo_force_reject_expired_uses_ttl(hermes_db_initialized):
     doesn't need to sleep 16 seconds; the worker only cares about
     ``pending_committed_at + dp.pending_ttl < now()``.
     """
-    import hermes_db
+    import thoth_db
     from datetime import timedelta as td
 
-    streams = StreamRepo(hermes_db.pool())
-    slices = SliceRepo(hermes_db.pool())
+    streams = StreamRepo(thoth_db.pool())
+    slices = SliceRepo(thoth_db.pool())
     stream = await streams.register(
         name="hermes.test.force_reject",
         family=Family.SELF_STATE,
@@ -400,7 +400,7 @@ async def test_slice_repo_force_reject_expired_uses_ttl(hermes_db_initialized):
     )
     now = _now_utc()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         sid, _ = await slices.commit(
             conn=conn,
             stream_id=stream.stream_id,

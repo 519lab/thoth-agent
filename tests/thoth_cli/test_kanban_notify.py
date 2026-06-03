@@ -16,9 +16,9 @@ def kanban_home(tmp_path, monkeypatch, hermes_db_initialized_sync):
     """Phase 0: depends on hermes_db_initialized_sync so the per-test PG
     database is migrated and the asyncpg pool is bound to the persistent
     sync loop. The async test bodies that follow call sync ``kb.*``
-    helpers; those internally use ``hermes_db.run_sync`` which now
+    helpers; those internally use ``thoth_db.run_sync`` which now
     offloads to a worker thread when invoked from inside a running
-    asyncio loop (added in this PR's hermes_db change).
+    asyncio loop (added in this PR's thoth_db change).
     """
     home = tmp_path / ".hermes"
     home.mkdir()

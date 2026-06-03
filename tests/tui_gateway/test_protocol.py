@@ -25,7 +25,7 @@ def server():
         "thoth_constants": MagicMock(get_thoth_home=MagicMock(return_value="/tmp/hermes_test")),
         "thoth_cli.env_loader": MagicMock(),
         "thoth_cli.banner": MagicMock(),
-        "hermes_state": MagicMock(),
+        "thoth_state": MagicMock(),
     }):
         import importlib
         mod = importlib.import_module("tui_gateway.server")

@@ -131,14 +131,14 @@ async def booted(hermes_db_initialized):
 
 
 async def _seed(substrate, text, *, salience=1.0):
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     await commit_slice(
         substrate, stream.stream_id, text,
         event_time_world=datetime.now(timezone.utc), born_passed=True,
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET salience_score=$1 WHERE payload->>'text'=$2",
             salience, text,

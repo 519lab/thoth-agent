@@ -39,7 +39,7 @@ def _run_memory_reset(target="all", yes=False, monkeypatch=None, confirm_input="
 
     Simulates what happens when `thoth memory reset` is run.
     """
-    from thoth_constants import get_thoth_home, display_hermes_home
+    from thoth_constants import get_thoth_home, display_thoth_home
 
     mem_dir = get_thoth_home() / "memories"
     files_to_reset = []
