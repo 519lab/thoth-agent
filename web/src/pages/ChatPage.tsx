@@ -1,5 +1,5 @@
 /**
- * ChatPage — embeds `hermes --tui` inside the dashboard.
+ * ChatPage — embeds `thoth --tui` inside the dashboard.
  *
  *   <div host> (dashboard chrome)                                         .
  *     └─ <div wrapper> (rounded, dark bg, padded — the "terminal window"  .
@@ -118,7 +118,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
   // body doesn't have to setState (React 19's set-state-in-effect rule).
   const [banner, setBanner] = useState<string | null>(() =>
     typeof window !== "undefined" && !window.__HERMES_SESSION_TOKEN__
-      ? "Session token unavailable. Open this page through `hermes dashboard`, not directly."
+      ? "Session token unavailable. Open this page through `thoth dashboard`, not directly."
       : null,
   );
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
@@ -288,7 +288,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
       fontWeightBold: "700",
       macOptionIsMeta: true,
       // Hold Option (Alt on Linux/Windows) to force native text selection
-      // even when the inner Hermes TUI has enabled xterm mouse-events
+      // even when the inner Thoth TUI has enabled xterm mouse-events
       // mode (CSI ?1000h family). Without this, click-and-drag in the
       // chat canvas selects nothing and Cmd+C falls back to copying the
       // entire visible buffer, which is rarely what the user wants.
@@ -314,7 +314,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
     //      terminal has a selection, then emits an OSC 52 escape.  Our
     //      OSC 52 handler below decodes that escape and writes to the
     //      browser clipboard — so the flow works just like it does in
-    //      `hermes --tui`.
+    //      `thoth --tui`.
     //
     //   2. **Ctrl/Cmd+Shift+C.**  Belt-and-suspenders shortcut that
     //      operates directly on xterm's selection, useful if the TUI
@@ -440,7 +440,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
         term.loadAddon(webgl);
       } catch (err) {
         console.warn(
-          "[hermes-chat] WebGL renderer unavailable; falling back to default",
+          "[thoth-chat] WebGL renderer unavailable; falling back to default",
           err,
         );
       }
@@ -603,7 +603,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
     //
     // For the browser embed we prefer input stability over terminal-style
     // mouse reporting, so we drop SGR mouse reports entirely instead of
-    // forwarding them into Hermes. Keyboard input, paste, and resize still
+    // forwarding them into Thoth. Keyboard input, paste, and resize still
     // behave normally.
     // eslint-disable-next-line no-control-regex -- intentional ESC byte in xterm SGR mouse report parser
     const SGR_MOUSE_RE = /^\x1b\[<(\d+);(\d+);(\d+)([Mm])$/;
@@ -812,7 +812,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
         >
           <div
             ref={hostRef}
-            className="hermes-chat-xterm-host min-h-0 min-w-0 flex-1"
+            className="thoth-chat-xterm-host min-h-0 min-w-0 flex-1"
           />
 
           <Button

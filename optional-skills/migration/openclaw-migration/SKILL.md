@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [Migration, OpenClaw, Hermes, Memory, Persona, Import]
-    related_skills: [hermes-agent]
+    related_skills: [thoth-agent]
 ---
 
 # OpenClaw -> Hermes Migration

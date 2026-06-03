@@ -17,7 +17,7 @@
 
 可以在 $5 的 VPS 上运行，也可以在 GPU 集群上运行，或者使用空闲时几乎零成本的 Serverless 基础设施。它不绑定你的笔记本——你可以在 Telegram 上与它对话，而它在云端 VM 上工作。
 
-支持任意模型——[OpenRouter](https://openrouter.ai)（200+ 模型）、[NovitaAI](https://novita.ai)、[NVIDIA NIM](https://build.nvidia.com)（Nemotron）、[小米 MiMo](https://platform.xiaomimimo.com)、[z.ai/GLM](https://z.ai)、[Kimi/Moonshot](https://platform.moonshot.ai)、[MiniMax](https://www.minimax.io)、[Hugging Face](https://huggingface.co)、[Nous Portal](https://portal.nousresearch.com)、OpenAI，或你自己的端点。使用 `hermes model` 即可切换——无需改代码，无锁定。
+支持任意模型——[OpenRouter](https://openrouter.ai)（200+ 模型）、[NovitaAI](https://novita.ai)、[NVIDIA NIM](https://build.nvidia.com)（Nemotron）、[小米 MiMo](https://platform.xiaomimimo.com)、[z.ai/GLM](https://z.ai)、[Kimi/Moonshot](https://platform.moonshot.ai)、[MiniMax](https://www.minimax.io)、[Hugging Face](https://huggingface.co)、[Nous Portal](https://portal.nousresearch.com)、OpenAI，或你自己的端点。使用 `thoth model` 即可切换——无需改代码，无锁定。
 
 <table>
 <tr><td><b>真正的终端界面</b></td><td>完整的 TUI，支持多行编辑、斜杠命令自动补全、对话历史、中断重定向和流式工具输出。</td></tr>
@@ -30,7 +30,7 @@
 <tr><td><b>研究就绪</b></td><td>批量轨迹生成、轨迹压缩——用于训练下一代工具调用模型。</td></tr>
 </table>
 
-> **关于名字的说明：** 项目名为 **Thoth**，但命令行工具仍以 `hermes` 调用（配置也仍位于 `~/.hermes` 下）。可执行文件 / 命名空间的重命名正在进行中；本文档中的每一条命令都是当前可用的。
+> **关于名字的说明：** 项目名为 **Thoth**，命令行工具现已改为 `thoth`——本文档中的每个示例都使用它。旧的 `hermes` 命令仍作为别名可用，安装时配置也仍保留在 `~/.hermes` 下（数据库同样仍命名为 `hermes`），因此升级时不会有任何破坏。剩余的可执行文件 / 命名空间重命名正在进行中。
 
 ---
 
@@ -62,7 +62,7 @@ iex (irm https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/insta
 
 ```bash
 source ~/.bashrc    # 重新加载 shell（或: source ~/.zshrc）
-hermes              # 开始对话！
+thoth              # 开始对话！
 ```
 
 ---
@@ -84,7 +84,7 @@ uv run alembic -c migrations/alembic.ini upgrade head
 **从旧的基于 SQLite 的安装迁移？** 我们提供了一个一次性导入器：
 
 ```bash
-uv run hermes db migrate-from-sqlite --sqlite-path ~/.hermes/state.db   # 加 --dry-run 可预览
+uv run thoth db migrate-from-sqlite --sqlite-path ~/.hermes/state.db   # 加 --dry-run 可预览
 ```
 
 ---
@@ -104,13 +104,13 @@ uv run hermes db migrate-from-sqlite --sqlite-path ~/.hermes/state.db   # 加 --
 ### 查看基底状态
 
 ```bash
-hermes substrate            # 默认摘要（流、切片数、待处理）
-hermes substrate streams    # 每个流的切片数
-hermes substrate slices --stream thoth.world.user_message.cli --limit 20
-hermes substrate pending    # 当前待处理队列深度 + 最旧切片的年龄
-hermes substrate profiles   # 已植入的衰减配置
-hermes substrate curator    # Curator 衰减 / 释放活动
-hermes substrate recall     # 召回覆盖率 + 最近的调用
+thoth substrate            # 默认摘要（流、切片数、待处理）
+thoth substrate streams    # 每个流的切片数
+thoth substrate slices --stream thoth.world.user_message.cli --limit 20
+thoth substrate pending    # 当前待处理队列深度 + 最旧切片的年龄
+thoth substrate profiles   # 已植入的衰减配置
+thoth substrate curator    # Curator 衰减 / 释放活动
+thoth substrate recall     # 召回覆盖率 + 最近的调用
 ```
 
 如果 Thoth 启动时你的数据库处于较旧的 Alembic 修订版本，启动会抛出一个 `RuntimeError`，其中包含需要运行的升级命令；设置 `HERMES_AUTO_MIGRATE=1` 可在首次启动时自动升级。基底的操作员手册以内置技能形式随附——用 `/substrate` 加载。
@@ -120,23 +120,23 @@ hermes substrate recall     # 召回覆盖率 + 最近的调用
 ## 快速入门
 
 ```bash
-hermes              # 交互式 CLI — 开始对话
-hermes model        # 选择 LLM 提供商和模型
-hermes tools        # 配置启用的工具
-hermes config set   # 设置单个配置项
-hermes gateway      # 启动消息网关（Telegram、Discord 等）
-hermes setup        # 运行完整设置向导（一次性配置所有内容）
-hermes update       # 更新到最新版本
-hermes doctor       # 诊断问题
+thoth              # 交互式 CLI — 开始对话
+thoth model        # 选择 LLM 提供商和模型
+thoth tools        # 配置启用的工具
+thoth config set   # 设置单个配置项
+thoth gateway      # 启动消息网关（Telegram、Discord 等）
+thoth setup        # 运行完整设置向导（一次性配置所有内容）
+thoth update       # 更新到最新版本
+thoth doctor       # 诊断问题
 ```
 
 ### CLI 与消息平台 快速对照
 
-Thoth 有两种入口：用 `hermes` 启动终端 UI，或运行网关从 Telegram、Discord、Slack、WhatsApp、Signal 或 Email 与之对话。进入对话后，许多斜杠命令在两种界面中通用。
+Thoth 有两种入口：用 `thoth` 启动终端 UI，或运行网关从 Telegram、Discord、Slack、WhatsApp、Signal 或 Email 与之对话。进入对话后，许多斜杠命令在两种界面中通用。
 
 | 操作 | CLI | 消息平台 |
 |------|-----|----------|
-| 开始对话 | `hermes` | 运行 `hermes gateway setup` + `hermes gateway start`，然后给机器人发消息 |
+| 开始对话 | `thoth` | 运行 `thoth gateway setup` + `thoth gateway start`，然后给机器人发消息 |
 | 开始新对话 | `/new` 或 `/reset` | `/new` 或 `/reset` |
 | 更换模型 | `/model [provider:model]` | `/model [provider:model]` |
 | 设置人格 | `/personality [name]` | `/personality [name]` |
@@ -146,7 +146,7 @@ Thoth 有两种入口：用 `hermes` 启动终端 UI，或运行网关从 Telegr
 | 中断当前工作 | `Ctrl+C` 或发送新消息 | `/stop` 或发送新消息 |
 | 平台特定状态 | `/platforms` | `/status`、`/sethome` |
 
-运行 `hermes --help`（或 `hermes <command> --help`）查看完整命令列表。
+运行 `thoth --help`（或 `thoth <command> --help`）查看完整命令列表。
 
 ---
 
@@ -192,16 +192,16 @@ scripts/run_tests_docker.sh tests/substrate/ -- -v -k 'reinforce'
 
 ## 从 OpenClaw 迁移
 
-如果你来自 OpenClaw，Thoth 可以自动导入你的设置、记忆、技能和 API 密钥。安装向导（`hermes setup`）会检测 `~/.openclaw` 并在配置开始前提供迁移选项。安装后任意时间：
+如果你来自 OpenClaw，Thoth 可以自动导入你的设置、记忆、技能和 API 密钥。安装向导（`thoth setup`）会检测 `~/.openclaw` 并在配置开始前提供迁移选项。安装后任意时间：
 
 ```bash
-hermes claw migrate              # 交互式迁移（完整预设）
-hermes claw migrate --dry-run    # 预览将要迁移的内容
-hermes claw migrate --preset user-data   # 不含密钥地迁移
-hermes claw migrate --overwrite  # 覆盖已有冲突
+thoth claw migrate              # 交互式迁移（完整预设）
+thoth claw migrate --dry-run    # 预览将要迁移的内容
+thoth claw migrate --preset user-data   # 不含密钥地迁移
+thoth claw migrate --overwrite  # 覆盖已有冲突
 ```
 
-导入内容包括：人格文件（**SOUL.md**）、记忆（MEMORY.md / USER.md）、用户创建的技能、命令白名单、消息设置、白名单中的 API 密钥、TTS 资产，以及工作区指令（AGENTS.md）。所有选项请参阅 `hermes claw migrate --help`。
+导入内容包括：人格文件（**SOUL.md**）、记忆（MEMORY.md / USER.md）、用户创建的技能、命令白名单、消息设置、白名单中的 API 密钥、TTS 资产，以及工作区指令（AGENTS.md）。所有选项请参阅 `thoth claw migrate --help`。
 
 ---
 
@@ -211,7 +211,7 @@ hermes claw migrate --overwrite  # 覆盖已有冲突
 
 ```bash
 git clone https://github.com/519lab/thoth-agent.git
-cd hermes-agent
+cd thoth-agent
 ./setup-hermes.sh     # 安装 uv、创建 venv、安装 .[all]、创建符号链接 ~/.local/bin/hermes
 ./hermes              # 自动检测 venv，无需先 source
 ```

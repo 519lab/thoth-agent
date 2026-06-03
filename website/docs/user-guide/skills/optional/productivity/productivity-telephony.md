@@ -17,7 +17,7 @@ Give Thoth phone capabilities without core tool changes. Provision and persist a
 | Source | Optional — install with `thoth skills install official/productivity/telephony` |
 | Path | `optional-skills/productivity/telephony` |
 | Version | `1.0.0` |
-| Author | Nous Research |
+| Author | 519lab |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `telephony`, `phone`, `sms`, `mms`, `voice`, `twilio`, `bland.ai`, `vapi`, `calling`, `texting` |
@@ -157,8 +157,8 @@ If `SCRIPT` is empty, the skill is not installed yet.
 This is an official optional skill, so install it from the Skills Hub:
 
 ```bash
-thoth skills search telephony
-thoth skills install official/productivity/telephony
+hermes skills search telephony
+hermes skills install official/productivity/telephony
 ```
 
 ## Provider setup

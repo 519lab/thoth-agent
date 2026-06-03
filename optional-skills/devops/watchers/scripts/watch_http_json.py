@@ -76,7 +76,7 @@ def main() -> int:
                    help="HTTP timeout in seconds (default: 20)")
     args = p.parse_args()
 
-    req = urllib.request.Request(args.url, headers={"User-Agent": "Hermes-Watcher/1.0"})
+    req = urllib.request.Request(args.url, headers={"User-Agent": "Thoth-Watcher/1.0"})
     for k, v in args.header:
         req.add_header(k, v)
 

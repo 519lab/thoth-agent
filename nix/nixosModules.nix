@@ -37,7 +37,7 @@
     # Deep-merge config type (from 0xrsydn/nix-hermes-agent)
     deepConfigType = lib.types.mkOptionType {
       name = "hermes-config-attrs";
-      description = "Hermes YAML config (attrset), merged deeply via lib.recursiveUpdate.";
+      description = "Thoth YAML config (attrset), merged deeply via lib.recursiveUpdate.";
       check = builtins.isAttrs;
       merge = _loc: defs: lib.foldl' lib.recursiveUpdate { } (map (d: d.value) defs);
     };
@@ -203,7 +203,7 @@
 
   in {
     options.services.hermes-agent = with lib; {
-      enable = mkEnableOption "Hermes Agent gateway service";
+      enable = mkEnableOption "Thoth Agent gateway service";
 
       # ── Package ──────────────────────────────────────────────────────────
       package = mkOption {
@@ -259,7 +259,7 @@
         type = deepConfigType;
         default = { };
         description = ''
-          Declarative Hermes config (attrset). Deep-merged across module
+          Declarative Thoth config (attrset). Deep-merged across module
           definitions and rendered as config.yaml.
         '';
         example = literalExpression ''
@@ -478,7 +478,7 @@
         description = ''
           Directory-based plugin packages to symlink into the hermes plugins
           directory. Each package should contain a plugin.yaml and __init__.py
-          at its root. Hermes discovers these automatically on startup.
+          at its root. Thoth discovers these automatically on startup.
         '';
         example = literalExpression ''
           [
@@ -865,7 +865,7 @@
       # ══════════════════════════════════════════════════════════════════
       (lib.mkIf (!cfg.container.enable) {
         systemd.services.hermes-agent = {
-          description = "Hermes Agent Gateway";
+          description = "Thoth Agent Gateway";
           wantedBy = [ "multi-user.target" ];
           after = [ "network-online.target" ];
           wants = [ "network-online.target" ];
@@ -926,7 +926,7 @@
         virtualisation.docker.enable = lib.mkDefault (cfg.container.backend == "docker");
 
         systemd.services.hermes-agent = {
-          description = "Hermes Agent Gateway (container)";
+          description = "Thoth Agent Gateway (container)";
           wantedBy = [ "multi-user.target" ];
           after = [ "network-online.target" ]
             ++ lib.optional (cfg.container.backend == "docker") "docker.service";

@@ -28,7 +28,7 @@ class SubstrateConfig:
 
     # If true, ``Substrate.boot()`` runs ``alembic upgrade head`` when
     # the database is behind the expected revision. If false (default),
-    # boot raises so the operator can decide. Mirrors Hermes's
+    # boot raises so the operator can decide. Mirrors Thoth's
     # ``HERMES_AUTO_MIGRATE`` convention from the Phase 0 ADR.
     auto_migrate: bool = False
 
@@ -42,7 +42,7 @@ class SubstrateConfig:
         """Read settings from the process environment.
 
         Booleans are 'truthy if set to 1/true/yes (case-insensitive),
-        falsy otherwise' — matches Hermes's convention across
+        falsy otherwise' — matches Thoth's convention across
         ``hermes_db`` and ``hermes_bootstrap``.
         """
         return cls(

@@ -150,8 +150,9 @@ const sidebars: SidebarsConfig = {
                   items: [
                     'user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-claude-code',
                     'user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-codex',
-                    'user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-hermes-agent',
+                    'user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-kanban-codex-lane',
                     'user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-opencode',
+                    'user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-thoth-agent',
                   ],
                 },
                 {
@@ -355,8 +356,7 @@ const sidebars: SidebarsConfig = {
                   key: 'skills-bundled-software-development',
                   collapsed: true,
                   items: [
-                    'user-guide/skills/bundled/software-development/software-development-debugging-hermes-tui-commands',
-                    'user-guide/skills/bundled/software-development/software-development-hermes-agent-skill-authoring',
+                    'user-guide/skills/bundled/software-development/software-development-debugging-thoth-tui-commands',
                     'user-guide/skills/bundled/software-development/software-development-node-inspect-debugger',
                     'user-guide/skills/bundled/software-development/software-development-plan',
                     'user-guide/skills/bundled/software-development/software-development-python-debugpy',
@@ -365,7 +365,17 @@ const sidebars: SidebarsConfig = {
                     'user-guide/skills/bundled/software-development/software-development-subagent-driven-development',
                     'user-guide/skills/bundled/software-development/software-development-systematic-debugging',
                     'user-guide/skills/bundled/software-development/software-development-test-driven-development',
+                    'user-guide/skills/bundled/software-development/software-development-thoth-agent-skill-authoring',
                     'user-guide/skills/bundled/software-development/software-development-writing-plans',
+                  ],
+                },
+                {
+                  type: 'category',
+                  label: 'substrate',
+                  key: 'skills-bundled-substrate',
+                  collapsed: true,
+                  items: [
+                    'user-guide/skills/bundled/substrate/substrate-substrate',
                   ],
                 },
                 {

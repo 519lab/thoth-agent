@@ -1,33 +1,15 @@
 ---
-title: "Thoth Agent Skill Authoring — Author in-repo SKILL"
-sidebar_label: "Thoth Agent Skill Authoring"
-description: "Author in-repo SKILL"
+name: thoth-agent-skill-authoring
+description: "Author in-repo SKILL.md: frontmatter, validator, structure."
+version: 1.0.0
+author: Thoth Agent
+license: MIT
+platforms: [linux, macos, windows]
+metadata:
+  hermes:
+    tags: [skills, authoring, thoth-agent, conventions, skill-md]
+    related_skills: [writing-plans, requesting-code-review]
 ---
-
-{/* This page is auto-generated from the skill's SKILL.md by website/scripts/generate-skill-docs.py. Edit the source SKILL.md, not this page. */}
-
-# Thoth Agent Skill Authoring
-
-Author in-repo SKILL.md: frontmatter, validator, structure.
-
-## Skill metadata
-
-| | |
-|---|---|
-| Source | Bundled (installed by default) |
-| Path | `skills/software-development/hermes-agent-skill-authoring` |
-| Version | `1.0.0` |
-| Author | Thoth Agent |
-| License | MIT |
-| Platforms | linux, macos, windows |
-| Tags | `skills`, `authoring`, `hermes-agent`, `conventions`, `skill-md` |
-| Related skills | [`writing-plans`](/docs/user-guide/skills/bundled/software-development/software-development-writing-plans), [`requesting-code-review`](/docs/user-guide/skills/bundled/software-development/software-development-requesting-code-review) |
-
-## Reference: full SKILL.md
-
-:::info
-The following is the complete skill definition that Thoth loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
-:::
 
 # Authoring Thoth-Agent Skills (in-repo)
 
@@ -36,13 +18,13 @@ The following is the complete skill definition that Thoth loads when this skill 
 There are two places a SKILL.md can live:
 
 1. **User-local:** `~/.hermes/skills/<maybe-category>/<name>/SKILL.md` — personal, not shared. Created via `skill_manage(action='create')`.
-2. **In-repo (this skill is about this case):** `/home/bb/hermes-agent/skills/<category>/<name>/SKILL.md` — committed, shipped with the package. Use `write_file` + `git add`. `skill_manage(action='create')` does NOT target this tree.
+2. **In-repo (this skill is about this case):** `/home/bb/thoth-agent/skills/<category>/<name>/SKILL.md` — committed, shipped with the package. Use `write_file` + `git add`. `skill_manage(action='create')` does NOT target this tree.
 
 ## When to Use
 
 - User asks you to add a skill "in this branch / repo / commit"
-- You're committing a reusable workflow that should ship with hermes-agent
-- You're editing an existing skill under `/home/bb/hermes-agent/skills/` (use `patch` for small edits, `write_file` for rewrites; `skill_manage` still works for patch on in-repo skills, but not for `create`)
+- You're committing a reusable workflow that should ship with thoth-agent
+- You're editing an existing skill under `/home/bb/thoth-agent/skills/` (use `patch` for small edits, `write_file` for rewrites; `skill_manage` still works for patch on in-repo skills, but not for `create`)
 
 ## Required Frontmatter
 

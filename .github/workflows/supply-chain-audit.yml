@@ -100,7 +100,9 @@ jobs:
           # Allowlist (exact paths): files that match the filename heuristic but are
           # NOT real install hooks. thoth_cli/setup.py is the interactive setup *wizard*
           # module (imported at runtime, never run by pip or interpreter startup).
-          SETUP_HITS=$(git diff --name-only "$BASE".."$HEAD" | grep -E '(^|/)(setup\.py|setup\.cfg|sitecustomize\.py|usercustomize\.py|__init__\.pth)$' | grep -vxF 'thoth_cli/setup.py' || true)
+          # google-workspace/scripts/setup.py is a skill's OAuth setup CLI (argparse
+          # --check/--auth-url/…), never executed by pip or interpreter startup.
+          SETUP_HITS=$(git diff --name-only "$BASE".."$HEAD" | grep -E '(^|/)(setup\.py|setup\.cfg|sitecustomize\.py|usercustomize\.py|__init__\.pth)$' | grep -vxF -e 'thoth_cli/setup.py' -e 'skills/productivity/google-workspace/scripts/setup.py' || true)
           if [ -n "$SETUP_HITS" ]; then
             FINDINGS="${FINDINGS}
           ### 🚨 CRITICAL: Install-hook file added or modified

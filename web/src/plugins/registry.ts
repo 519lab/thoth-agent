@@ -117,7 +117,7 @@ export function exposePluginSDK() {
       createContext,
     },
 
-    // Hermes API client
+    // Thoth API client
     api,
     // Raw fetchJSON for plugin-specific endpoints
     fetchJSON,

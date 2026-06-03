@@ -17,7 +17,7 @@ Build institutional-quality DCF valuation models in Excel — revenue projection
 | Source | Optional — install with `thoth skills install official/finance/dcf-model` |
 | Path | `optional-skills/finance/dcf-model` |
 | Version | `1.0.0` |
-| Author | Anthropic (adapted by Nous Research) |
+| Author | Anthropic (adapted by 519lab) |
 | License | Apache-2.0 |
 | Platforms | linux, macos, windows |
 | Tags | `finance`, `valuation`, `dcf`, `excel`, `openpyxl`, `modeling`, `investment-banking` |

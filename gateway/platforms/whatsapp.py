@@ -244,7 +244,7 @@ class WhatsAppAdapter(BasePlatformAdapter):
     MAX_MESSAGE_LENGTH = 4096
     DEFAULT_REPLY_PREFIX = "⚕ *Thoth Agent*\n────────────\n"
     
-    # Default bridge location relative to the hermes-agent install
+    # Default bridge location relative to the thoth-agent install
     _DEFAULT_BRIDGE_DIR = Path(__file__).resolve().parents[2] / "scripts" / "whatsapp-bridge"
 
     def __init__(self, config: PlatformConfig):

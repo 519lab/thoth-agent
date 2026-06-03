@@ -1,6 +1,6 @@
-# Hermes Agent — Web UI
+# Thoth Agent — Web UI
 
-Browser-based dashboard for managing Hermes Agent configuration, API keys, and monitoring active sessions.
+Browser-based dashboard for managing Thoth Agent configuration, API keys, and monitoring active sessions.
 
 ## Stack
 
@@ -28,7 +28,7 @@ The Vite dev server proxies `/api` requests to `http://127.0.0.1:9119` (the Fast
 npm run build
 ```
 
-This outputs to `../hermes_cli/web_dist/`, which the FastAPI server serves as a static SPA. The built assets are included in the Python package via `pyproject.toml` package-data.
+This outputs to `../thoth_cli/web_dist/`, which the FastAPI server serves as a static SPA. The built assets are included in the Python package via `pyproject.toml` package-data.
 
 ## Structure
 

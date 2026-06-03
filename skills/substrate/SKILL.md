@@ -2,13 +2,13 @@
 name: substrate
 description: Inspect, tune, and troubleshoot the cognitive substrate.
 version: 0.1.0
-author: Hermes Substrate Edition (ggrace519)
+author: Thoth Substrate Edition (ggrace519)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [substrate, memory, perception, recall, postgres, operator]
-    related_skills: [hermes-agent]
+    related_skills: [thoth-agent]
 ---
 
 # Cognitive Substrate Skill
@@ -34,23 +34,23 @@ common workflows, troubleshooting.
 - "Tune the recall token budget / similarity weights / decay half-life"
 - "Pause / resume a sub-agent" or "the curator is too aggressive"
 
-If the user is asking about persistent memory (`hermes memory`), Honcho, the
+If the user is asking about persistent memory (`thoth memory`), Honcho, the
 skills registry, or session search FTS — those are upstream Hermes features
-covered by the `hermes-agent` skill, not this one. The substrate is additive
+covered by the `thoth-agent` skill, not this one. The substrate is additive
 infrastructure beneath them.
 
 ## Prerequisites
 
 - `THOTH_PG_DSN` (legacy `HERMES_PG_DSN` still honored via the env bridge)
   set and pointing at a PG 17+ instance with the `vector`,
-  `pg_trgm`, and `pgcrypto` extensions. Verify with `hermes doctor`.
+  `pg_trgm`, and `pgcrypto` extensions. Verify with `thoth doctor`.
 - Alembic at head (`uv run alembic -c migrations/alembic.ini current` should
   match the latest revision under `migrations/versions/`). If behind, run
   `uv run alembic -c migrations/alembic.ini upgrade head` or set
   `HERMES_AUTO_MIGRATE=1` so the substrate boot upgrades on first run.
 - For embeddings / recall coverage: an OpenAI-compatible API key for
   `text-embedding-3-small` (set via the upstream auxiliary-client config —
-  `hermes config set auxiliary.embedding.provider openai`).
+  `thoth config set auxiliary.embedding.provider openai`).
 
 ## What's Running
 
@@ -88,43 +88,43 @@ session lifecycle, and cron dispatch. Substrate self-state lands on
 
 ## Inspect Commands
 
-The `hermes substrate` tree is read-only and connects to the
+The `thoth substrate` tree is read-only and connects to the
 configured PG via the existing pool — safe to run against a live Hermes
 process from another shell.
 
 ```bash
 # default summary — streams, slice totals by state, pending queue, sub-agent list
-hermes substrate
+thoth substrate
 
 # all streams + per-stream slice counts
-hermes substrate streams
+thoth substrate streams
 
 # the most-recent N slices on a single stream
-hermes substrate slices --stream thoth.world.user_message.cli --limit 20
+thoth substrate slices --stream thoth.world.user_message.cli --limit 20
 
 # pending queue depth + oldest pending age
-hermes substrate pending
+thoth substrate pending
 
 # the 4 seeded decay profiles + their half-lives, TTLs, tombstone policies
-hermes substrate profiles
+thoth substrate profiles
 ```
 
 ### Curator (Phase B)
 
 ```bash
-hermes substrate curator              # release / pending consolidation / recent emissions
-hermes substrate curator histogram    # per-profile 10-bucket salience histogram
-hermes substrate curator recent --limit 20   # last N curator.* self-state emissions
-hermes substrate curator pressure     # per-stream density + 5m update rate
+thoth substrate curator              # release / pending consolidation / recent emissions
+thoth substrate curator histogram    # per-profile 10-bucket salience histogram
+thoth substrate curator recent --limit 20   # last N curator.* self-state emissions
+thoth substrate curator pressure     # per-stream density + 5m update rate
 ```
 
 ### Recall (Phase C)
 
 ```bash
-hermes substrate recall               # last-hour call stats + embedding coverage
-hermes substrate recall recent --limit 20
-hermes substrate recall sample --session-id <hermes-session-id>
-hermes substrate recall config        # current RECALL_* knobs
+thoth substrate recall               # last-hour call stats + embedding coverage
+thoth substrate recall recent --limit 20
+thoth substrate recall sample --session-id <hermes-session-id>
+thoth substrate recall config        # current RECALL_* knobs
 ```
 
 ## Tables
@@ -178,13 +178,13 @@ possibly empty with `empty_reason` set (`timeout`, `no_candidates`,
 
 ```bash
 # Are calls happening + landing in the log?
-hermes substrate recall
+thoth substrate recall
 
 # Look at a specific session's most-recent recall
-hermes substrate recall sample --session-id <id>
+thoth substrate recall sample --session-id <id>
 
 # What's the embedding coverage? (Curator backfills async — climbs toward 100%)
-hermes substrate recall    # "coverage" line in the summary
+thoth substrate recall    # "coverage" line in the summary
 ```
 
 Recall against slices without embeddings falls back to keyword Jaccard, so
@@ -196,13 +196,13 @@ coverage is an optimization target, not a correctness gate.
 
 ```bash
 # Find the session id (foreground)
-hermes sessions list | head
+thoth sessions list | head
 
 # All user-message slices for the CLI source, ordered most-recent first
-hermes substrate slices --stream thoth.world.user_message.cli --limit 50
+thoth substrate slices --stream thoth.world.user_message.cli --limit 50
 
 # Assistant responses
-hermes substrate slices --stream thoth.self_action.assistant_response --limit 50
+thoth substrate slices --stream thoth.self_action.assistant_response --limit 50
 ```
 
 For session-scoped filtering you currently need raw SQL — the `payload` JSON
@@ -219,7 +219,7 @@ SELECT event_time_world, payload->>'text' AS text
 
 ### "Why didn't recall return X?"
 
-1. `hermes substrate recall sample --session-id <id>` — look at
+1. `thoth substrate recall sample --session-id <id>` — look at
    the most recent recall row for that session. Check `empty_reason`,
    `returned_count`, and the candidate count.
 2. If `empty_reason='no_candidates'`: the time window
@@ -237,16 +237,16 @@ SELECT event_time_world, payload->>'text' AS text
 
 ```bash
 # Summary line includes embedding coverage %
-hermes substrate recall
+thoth substrate recall
 
 # Recent curator emissions — look for curator.embed_batch successes/failures
-hermes substrate curator recent --limit 50
+thoth substrate curator recent --limit 50
 ```
 
 If coverage is stuck below 100% and growing slowly, check:
 
 - The auxiliary embedding provider is configured and reachable
-  (`hermes config get auxiliary.embedding`)
+  (`thoth config get auxiliary.embedding`)
 - `HERMES_RECALL_EMBEDDING_BACKFILL_INTERVAL_S` (default 30 s) — lower this to
   embed more aggressively
 - `HERMES_RECALL_EMBEDDING_BATCH_SIZE` (default 32) — raise if your provider
@@ -356,19 +356,19 @@ A healthy substrate, freshly booted, should pass these checks:
 
 ```bash
 # 1. Streams present (15 — 7 user-message sources + 7 self-action/state + 1 substrate.self_state)
-hermes substrate streams | wc -l    # ~17 lines (header + 15)
+thoth substrate streams | wc -l    # ~17 lines (header + 15)
 
 # 2. Decay profiles seeded (4)
-hermes substrate profiles | wc -l    # ~6 lines (header + 4)
+thoth substrate profiles | wc -l    # ~6 lines (header + 4)
 
 # 3. Pending queue not growing without bound (depth should stay low under steady use)
-hermes substrate pending
+thoth substrate pending
 
 # 4. After a few turns of conversation, slices > 0
-hermes substrate    # "Slices: N total" should be non-zero
+thoth substrate    # "Slices: N total" should be non-zero
 
 # 5. After Curator has run at least once, recent curator emissions exist
-hermes substrate curator recent
+thoth substrate curator recent
 ```
 
 If any of these fail on a fresh install: re-run `alembic upgrade head`, then
@@ -385,7 +385,7 @@ restart Hermes.
 - **The substrate is write-mostly in steady state.** A long-running Hermes
   emits hundreds of slices per active session. If you see PG storage growing
   fast, the Curator is the throttle — verify it's ticking
-  (`hermes substrate curator recent`) and the
+  (`thoth substrate curator recent`) and the
   `consolidation_window` on your decay profiles is reasonable.
 - **`HERMES_SUBSTRATE_RECALL=1` is irreversible mid-process.** The
   `SubstrateMemoryProvider` checks the env var at construction time. To
@@ -402,36 +402,36 @@ restart Hermes.
 
 Start here when asking "is the substrate healthy?":
 
-- **`hermes substrate health`** — one-glance operator rollup: worker
+- **`thoth substrate health`** — one-glance operator rollup: worker
   liveness, last boot, the Critic's coherence vital sign, per-layer
   L0–L4 counts, and consolidation backlog. The first thing to run.
-- **`hermes substrate agents`** — per-sub-agent liveness (live/stale/down
+- **`thoth substrate agents`** — per-sub-agent liveness (live/stale/down
   by heartbeat age). All DOWN ⇒ the worker subprocess isn't running.
-- **`hermes substrate boot`** — last boot outcome per process role.
-- **`hermes substrate recall validate`** — runs a real recall and prints the
+- **`thoth substrate boot`** — last boot outcome per process role.
+- **`thoth substrate recall validate`** — runs a real recall and prints the
   composed `<memory-context>` block + a READY/DEGRADED/NOT-READY verdict.
-- **`hermes substrate l1 entities|relationships`** — L1 knowledge (Parser).
-- **`hermes substrate parser summary|recent`** — Parser activity + outcomes.
-- **`hermes substrate l2 associations`** — L2 graph (Associator).
-- **`hermes substrate l3 patterns`** — L3 generalizations (Pattern-finder).
-- **`hermes substrate l4 observations`** — L4 self-model + coherence (Critic).
+- **`thoth substrate l1 entities|relationships`** — L1 knowledge (Parser).
+- **`thoth substrate parser summary|recent`** — Parser activity + outcomes.
+- **`thoth substrate l2 associations`** — L2 graph (Associator).
+- **`thoth substrate l3 patterns`** — L3 generalizations (Pattern-finder).
+- **`thoth substrate l4 observations`** — L4 self-model + coherence (Critic).
 
 **Curation** (let users shape what the substrate keeps):
 
-- **`hermes substrate pin <slice_id>`** / **`unpin`** — pin a memory so the
+- **`thoth substrate pin <slice_id>`** / **`unpin`** — pin a memory so the
   Curator never decays or releases it (the "never forget this" override);
   pinning also lifts its salience so it surfaces in recall.
-- **`hermes substrate forget <slice_id>`** — drop a memory's salience to 0
+- **`thoth substrate forget <slice_id>`** — drop a memory's salience to 0
   so the Curator releases it on its next cycle.
-- **`hermes substrate l1 dupes`** — review likely-duplicate entities, then
+- **`thoth substrate l1 dupes`** — review likely-duplicate entities, then
   **`l1 merge --from X --into Y`** to consolidate fragmented memory.
-- **`hermes substrate l1 forget <name>`** / **`l1 edit <name> --summary …`**
+- **`thoth substrate l1 forget <name>`** / **`l1 edit <name> --summary …`**
   — delete or correct an entity.
 
 Recall precision is tunable via `HERMES_RECALL_MIN_RELEVANCE` /
 `_RELATIVE_FLOOR` (drop loosely-related context) + `_DEDUP_THRESHOLD`
 (near-duplicate excerpts) + `RECALL_SHOW_PROVENANCE=1` (inline "why
-injected"); see `hermes substrate recall config` / `recall validate`.
+injected"); see `thoth substrate recall config` / `recall validate`.
 
 The cognitive sub-agents are **ON by default** — set the env var to `0` to
 disable a given one. Each still registers + heartbeats regardless; the gate
@@ -449,7 +449,7 @@ when no auxiliary provider is configured.
 | `HERMES_SUBSTRATE_CONDUCTOR` | Conductor | adaptive intensity dialing |
 | `HERMES_SUBSTRATE_SUMMARIZER` | Summarizer | compress older context |
 
-All require the worker subprocess (`hermes substrate worker run`) to be
+All require the worker subprocess (`thoth substrate worker run`) to be
 running. They depend bottom-up (Parser feeds the rest), so on a fresh
 install L1+ fills only after the Parser has consolidated some L0.
 

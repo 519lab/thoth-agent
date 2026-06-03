@@ -230,7 +230,7 @@ def delete_paste(url: str) -> bool:
     target = f"{_PASTE_RS_URL}{paste_id}"
     req = urllib.request.Request(
         target, method="DELETE",
-        headers={"User-Agent": "hermes-agent/debug-share"},
+        headers={"User-Agent": "thoth-agent/debug-share"},
     )
     with urllib.request.urlopen(req, timeout=30) as resp:
         return 200 <= resp.status < 300
@@ -272,7 +272,7 @@ def _upload_paste_rs(content: str) -> str:
         _PASTE_RS_URL, data=data, method="POST",
         headers={
             "Content-Type": "text/plain; charset=utf-8",
-            "User-Agent": "hermes-agent/debug-share",
+            "User-Agent": "thoth-agent/debug-share",
         },
     )
     with urllib.request.urlopen(req, timeout=30) as resp:
@@ -308,7 +308,7 @@ def _upload_dpaste_com(content: str, expiry_days: int = 7) -> str:
         _DPASTE_COM_URL, data=body, method="POST",
         headers={
             "Content-Type": f"multipart/form-data; boundary={boundary}",
-            "User-Agent": "hermes-agent/debug-share",
+            "User-Agent": "thoth-agent/debug-share",
         },
     )
     with urllib.request.urlopen(req, timeout=30) as resp:

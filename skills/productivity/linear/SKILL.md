@@ -2,7 +2,7 @@
 name: linear
 description: "Linear: manage issues, projects, teams via GraphQL + curl."
 version: 1.0.0
-author: Hermes Agent
+author: Thoth Agent
 license: MIT
 platforms: [linux, macos, windows]
 prerequisites:
@@ -20,7 +20,7 @@ Manage Linear issues, projects, and teams directly via the GraphQL API using `cu
 ## Setup
 
 1. Get a personal API key from **Linear Settings > Account > Security & access > Personal API keys** (URL: https://linear.app/settings/account/security). Note: the org-level *Settings > API* page only shows OAuth apps and workspace-member keys, not personal keys.
-2. Set `LINEAR_API_KEY` in your environment (via `hermes setup` or your env config)
+2. Set `LINEAR_API_KEY` in your environment (via `thoth setup` or your env config)
 
 ## API Basics
 

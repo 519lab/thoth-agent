@@ -1,7 +1,7 @@
 # Kanban Setup — Project Bootstrap & Profile Configuration
 
 Once the brief is locked and the team is designed, the next step is producing
-the actual `setup.sh` that creates the project workspace, configures Hermes
+the actual `setup.sh` that creates the project workspace, configures Thoth
 profiles, and fires the initial kanban task.
 
 This file documents the patterns. The companion script
@@ -115,7 +115,7 @@ PY
 }
 ```
 
-PyYAML must be installed in the user's Python (it ships with most Hermes
+PyYAML must be installed in the user's Python (it ships with most Thoth
 installs). If absent: `pip install pyyaml`.
 
 The setup script should also **validate** the patch by re-reading the file

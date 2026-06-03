@@ -1,16 +1,33 @@
 ---
-name: hermes-agent
-description: "Configure, extend, or contribute to Hermes Agent."
-version: 2.1.0
-author: Hermes Agent + Teknium
-license: MIT
-platforms: [linux, macos, windows]
-metadata:
-  hermes:
-    tags: [hermes, setup, configuration, multi-agent, spawning, cli, gateway, development]
-    homepage: https://github.com/519lab/thoth-agent
-    related_skills: [claude-code, codex, opencode, substrate]
+title: "Thoth Agent — Configure, extend, or contribute to Hermes Agent"
+sidebar_label: "Thoth Agent"
+description: "Configure, extend, or contribute to Hermes Agent"
 ---
+
+{/* This page is auto-generated from the skill's SKILL.md by website/scripts/generate-skill-docs.py. Edit the source SKILL.md, not this page. */}
+
+# Thoth Agent
+
+Configure, extend, or contribute to Hermes Agent.
+
+## Skill metadata
+
+| | |
+|---|---|
+| Source | Bundled (installed by default) |
+| Path | `skills/autonomous-ai-agents/thoth-agent` |
+| Version | `2.1.0` |
+| Author | Hermes Agent + Teknium |
+| License | MIT |
+| Platforms | linux, macos, windows |
+| Tags | `hermes`, `setup`, `configuration`, `multi-agent`, `spawning`, `cli`, `gateway`, `development` |
+| Related skills | [`claude-code`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-claude-code), [`codex`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-codex), [`opencode`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-opencode), [`substrate`](/docs/user-guide/skills/bundled/substrate/substrate-substrate) |
+
+## Reference: full SKILL.md
+
+:::info
+The following is the complete skill definition that Thoth loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
+:::
 
 # Hermes Agent
 
@@ -41,7 +58,7 @@ curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/ins
 hermes
 
 # Single query
-hermes chat -q "What is the capital of France?"
+thoth chat -q "What is the capital of France?"
 
 # Setup wizard
 hermes setup
@@ -50,7 +67,7 @@ hermes setup
 hermes model
 
 # Check health
-hermes doctor
+thoth doctor
 ```
 
 ---
@@ -77,7 +94,7 @@ No subcommand defaults to `chat`.
 ### Chat
 
 ```
-hermes chat [flags]
+thoth chat [flags]
   -q, --query TEXT          Single query, non-interactive
   -m, --model MODEL         Model (e.g. anthropic/claude-sonnet-4)
   -t, --toolsets LIST       Comma-separated toolsets
@@ -93,16 +110,16 @@ hermes chat [flags]
 ```
 hermes setup [section]      Interactive wizard (model|terminal|gateway|tools|agent)
 hermes model                Interactive model/provider picker
-hermes config               View current config
-hermes config edit          Open config.yaml in $EDITOR
-hermes config set KEY VAL   Set a config value
-hermes config path          Print config.yaml path
-hermes config env-path      Print .env path
-hermes config check         Check for missing/outdated config
-hermes config migrate       Update config with new options
+thoth config               View current config
+thoth config edit          Open config.yaml in $EDITOR
+thoth config set KEY VAL   Set a config value
+thoth config path          Print config.yaml path
+thoth config env-path      Print .env path
+thoth config check         Check for missing/outdated config
+thoth config migrate       Update config with new options
 hermes login [--provider P] OAuth login (nous, openai-codex)
 hermes logout               Clear stored auth
-hermes doctor [--fix]       Check dependencies and config
+thoth doctor [--fix]       Check dependencies and config
 hermes status [--all]       Show component status
 ```
 
@@ -141,12 +158,12 @@ hermes mcp configure NAME   Toggle tool selection
 ### Gateway (Messaging Platforms)
 
 ```
-hermes gateway run          Start gateway foreground
-hermes gateway install      Install as background service
-hermes gateway start/stop   Control the service
-hermes gateway restart      Restart the service
-hermes gateway status       Check status
-hermes gateway setup        Configure platforms
+thoth gateway run          Start gateway foreground
+thoth gateway install      Install as background service
+thoth gateway start/stop   Control the service
+thoth gateway restart      Restart the service
+thoth gateway status       Check status
+thoth gateway setup        Configure platforms
 ```
 
 Supported platforms: Telegram, Discord, Slack, WhatsApp, Signal, Email, SMS, Matrix, Mattermost, Home Assistant, DingTalk, Feishu, WeCom, BlueBubbles (iMessage), Weixin (WeChat), API Server, Webhooks. Open WebUI connects via the API Server adapter.
@@ -156,13 +173,13 @@ Platform docs: https://thoth.519lab.com/docs/user-guide/messaging/
 ### Sessions
 
 ```
-hermes sessions list        List recent sessions
-hermes sessions browse      Interactive picker
-hermes sessions export OUT  Export to JSONL
-hermes sessions rename ID T Rename a session
-hermes sessions delete ID   Delete a session
-hermes sessions prune       Clean up old sessions (--older-than N days)
-hermes sessions stats       Session store statistics
+thoth sessions list        List recent sessions
+thoth sessions browse      Interactive picker
+thoth sessions export OUT  Export to JSONL
+thoth sessions rename ID T Rename a session
+thoth sessions delete ID   Delete a session
+thoth sessions prune       Clean up old sessions (--older-than N days)
+thoth sessions stats       Session store statistics
 ```
 
 ### Cron Jobs
@@ -217,7 +234,7 @@ hermes update               Update to latest version
 hermes pairing list/approve/revoke  DM authorization
 hermes plugins list/install/remove  Plugin management
 hermes honcho setup/status  Honcho memory integration (requires honcho plugin)
-hermes memory setup/status/off  Memory provider config
+thoth memory setup/status/off  Memory provider config
 hermes completion bash|zsh  Shell completions
 hermes acp                  ACP server (IDE integration)
 hermes claw migrate         Migrate from OpenClaw
@@ -355,7 +372,7 @@ Profiles use `~/.hermes/profiles/<name>/` with the same layout.
 
 ### Config Sections
 
-Edit with `hermes config edit` or `hermes config set section.key value`.
+Edit with `thoth config edit` or `thoth config set section.key value`.
 
 | Section | Key options |
 |---------|-------------|
@@ -456,14 +473,14 @@ Common "why is Hermes doing X to my output / tool calls / commands?" toggles —
 Secret redaction is **off by default** — tool output (terminal stdout, `read_file`, web content, subagent summaries, etc.) passes through unmodified. If the user wants Hermes to auto-mask strings that look like API keys, tokens, and secrets before they enter the conversation context and logs:
 
 ```bash
-hermes config set security.redact_secrets true       # enable globally
+thoth config set security.redact_secrets true       # enable globally
 ```
 
-**Restart required.** `security.redact_secrets` is snapshotted at import time — toggling it mid-session (e.g. via `export HERMES_REDACT_SECRETS=true` from a tool call) will NOT take effect for the running process. Tell the user to run `hermes config set security.redact_secrets true` in a terminal, then start a new session. This is deliberate — it prevents an LLM from flipping the toggle on itself mid-task.
+**Restart required.** `security.redact_secrets` is snapshotted at import time — toggling it mid-session (e.g. via `export HERMES_REDACT_SECRETS=true` from a tool call) will NOT take effect for the running process. Tell the user to run `thoth config set security.redact_secrets true` in a terminal, then start a new session. This is deliberate — it prevents an LLM from flipping the toggle on itself mid-task.
 
 Disable again with:
 ```bash
-hermes config set security.redact_secrets false
+thoth config set security.redact_secrets false
 ```
 
 ### PII redaction in gateway messages
@@ -471,8 +488,8 @@ hermes config set security.redact_secrets false
 Separate from secret redaction. When enabled, the gateway hashes user IDs and strips phone numbers from the session context before it reaches the model:
 
 ```bash
-hermes config set privacy.redact_pii true    # enable
-hermes config set privacy.redact_pii false   # disable (default)
+thoth config set privacy.redact_pii true    # enable
+thoth config set privacy.redact_pii false   # disable (default)
 ```
 
 ### Command approval prompts
@@ -484,8 +501,8 @@ By default (`approvals.mode: manual`), Hermes prompts the user before running sh
 - `off` — skip all approval prompts (equivalent to `--yolo`)
 
 ```bash
-hermes config set approvals.mode smart       # recommended middle ground
-hermes config set approvals.mode off         # bypass everything (not recommended)
+thoth config set approvals.mode smart       # recommended middle ground
+thoth config set approvals.mode off         # bypass everything (not recommended)
 ```
 
 Per-invocation bypass without changing config:
@@ -557,10 +574,10 @@ Run additional Hermes processes as fully independent subprocesses — separate s
 ### One-Shot Mode
 
 ```
-terminal(command="hermes chat -q 'Research GRPO papers and write summary to ~/research/grpo.md'", timeout=300)
+terminal(command="thoth chat -q 'Research GRPO papers and write summary to ~/research/grpo.md'", timeout=300)
 
 # Background for long tasks:
-terminal(command="hermes chat -q 'Set up CI/CD for ~/myapp'", background=true)
+terminal(command="thoth chat -q 'Set up CI/CD for ~/myapp'", background=true)
 ```
 
 ### Interactive PTY Mode (via tmux)
@@ -615,7 +632,7 @@ terminal(command="tmux new-session -d -s resumed 'hermes --resume 20260225_14305
 - **Prefer `delegate_task` for quick subtasks** — less overhead than spawning a full process
 - **Use `-w` (worktree mode)** when spawning agents that edit code — prevents git conflicts
 - **Set timeouts** for one-shot mode — complex tasks can take 5-10 minutes
-- **Use `hermes chat -q` for fire-and-forget** — no PTY needed
+- **Use `thoth chat -q` for fire-and-forget** — no PTY needed
 - **Use tmux for interactive sessions** — raw PTY mode has `\r` vs `\n` issues with prompt_toolkit
 - **For scheduled tasks**, use the `cronjob` tool instead of spawning — handles delivery and retry
 
@@ -759,10 +776,10 @@ the provider is active for explicit deeper-search asks.
 Introspect:
 
 ```bash
-hermes substrate            # streams + slice counts + pending queue
-hermes substrate streams    # per-stream counts
-hermes substrate curator    # decay/release activity
-hermes substrate recall     # recall coverage + recent calls
+thoth substrate            # streams + slice counts + pending queue
+thoth substrate streams    # per-stream counts
+thoth substrate curator    # decay/release activity
+thoth substrate recall     # recall coverage + recent calls
 ```
 
 Deeper operator workflow lives in the **substrate** bundled skill —
@@ -805,7 +822,7 @@ Ctrl+Enter?" This is how the Ctrl+Enter = c-j fact was established.
 
 **HTTP 400 "No models provided" on first run.** `config.yaml` was saved
 with a UTF-8 BOM (common when Windows apps write it). Re-save as UTF-8
-without BOM. `hermes config edit` writes without BOM; manual edits in
+without BOM. `thoth config edit` writes without BOM; manual edits in
 Notepad are the usual culprit.
 
 ### `execute_code` / Sandbox
@@ -873,7 +890,7 @@ and logs — avoids shell-escaping backslashes in bash.
 3. `/reset` after enabling tools
 
 ### Model/provider issues
-1. `hermes doctor` — check config and dependencies
+1. `thoth doctor` — check config and dependencies
 2. `hermes login` — re-authenticate OAuth providers
 3. Check `.env` has the right API key
 4. **Copilot 403**: `gh auth login` tokens do NOT work for Copilot API. You must use the Copilot-specific OAuth device code flow via `hermes model` → GitHub Copilot.
@@ -907,8 +924,8 @@ Common gateway problems:
 ### Auxiliary models not working
 If `auxiliary` tasks (vision, compression, session_search) fail silently, the `auto` provider can't find a backend. Either set `OPENROUTER_API_KEY` or `GOOGLE_API_KEY`, or explicitly configure each auxiliary task's provider:
 ```bash
-hermes config set auxiliary.vision.provider <your_provider>
-hermes config set auxiliary.vision.model <model_name>
+thoth config set auxiliary.vision.provider <your_provider>
+thoth config set auxiliary.vision.model <model_name>
 ```
 
 ---
@@ -917,20 +934,20 @@ hermes config set auxiliary.vision.model <model_name>
 
 | Looking for... | Location |
 |----------------|----------|
-| Config options | `hermes config edit` or [Configuration docs](https://thoth.519lab.com/docs/user-guide/configuration) |
+| Config options | `thoth config edit` or [Configuration docs](https://thoth.519lab.com/docs/user-guide/configuration) |
 | Available tools | `hermes tools list` or [Tools reference](https://thoth.519lab.com/docs/reference/tools-reference) |
 | Slash commands | `/help` in session or [Slash commands reference](https://thoth.519lab.com/docs/reference/slash-commands) |
 | Skills catalog | `hermes skills browse` or [Skills catalog](https://thoth.519lab.com/docs/reference/skills-catalog) |
 | Provider setup | `hermes model` or [Providers guide](https://thoth.519lab.com/docs/integrations/providers) |
-| Platform setup | `hermes gateway setup` or [Messaging docs](https://thoth.519lab.com/docs/user-guide/messaging/) |
+| Platform setup | `thoth gateway setup` or [Messaging docs](https://thoth.519lab.com/docs/user-guide/messaging/) |
 | MCP servers | `hermes mcp list` or [MCP guide](https://thoth.519lab.com/docs/user-guide/features/mcp) |
 | Profiles | `hermes profile list` or [Profiles docs](https://thoth.519lab.com/docs/user-guide/profiles) |
 | Cron jobs | `hermes cron list` or [Cron docs](https://thoth.519lab.com/docs/user-guide/features/cron) |
-| Memory | `hermes memory status` or [Memory docs](https://thoth.519lab.com/docs/user-guide/features/memory) |
-| Env variables | `hermes config env-path` or [Env vars reference](https://thoth.519lab.com/docs/reference/environment-variables) |
+| Memory | `thoth memory status` or [Memory docs](https://thoth.519lab.com/docs/user-guide/features/memory) |
+| Env variables | `thoth config env-path` or [Env vars reference](https://thoth.519lab.com/docs/reference/environment-variables) |
 | CLI commands | `hermes --help` or [CLI reference](https://thoth.519lab.com/docs/reference/cli-commands) |
 | Gateway logs | `~/.hermes/logs/gateway.log` |
-| Session files | `hermes sessions browse` (reads PostgreSQL `sessions` table; upstream reads `state.db`) |
+| Session files | `thoth sessions browse` (reads PostgreSQL `sessions` table; upstream reads `state.db`) |
 | Source code | `~/.hermes/hermes-agent/` |
 
 ---
@@ -941,6 +958,7 @@ For occasional contributors and PR authors. Full developer docs: https://thoth.5
 
 ### Project Layout
 
+<!-- ascii-guard-ignore -->
 ```
 hermes-agent/
 ├── run_agent.py          # AIAgent — core conversation loop
@@ -961,6 +979,7 @@ hermes-agent/
 ├── tests/                # ~3000 pytest tests
 └── website/              # Docusaurus docs site
 ```
+<!-- ascii-guard-ignore-end -->
 
 Config: `~/.hermes/config.yaml` (settings), `~/.hermes/.env` (API keys).
 

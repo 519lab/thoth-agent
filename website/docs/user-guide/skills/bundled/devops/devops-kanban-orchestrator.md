@@ -56,7 +56,7 @@ Create Kanban tasks when any of these are true:
 3. **The user might want to interject.** Human-in-the-loop at any step.
 4. **Multiple subtasks can run in parallel.** Fan-out for speed.
 5. **Review / iteration is expected.** A reviewer profile loops on drafter output.
-6. **The audit trail matters.** Board rows persist in SQLite forever.
+6. **The audit trail matters.** Board rows persist in the kanban store forever (PostgreSQL on the Substrate Edition fork, SQLite upstream).
 
 If *none* of those apply — it's a small one-shot reasoning task — use `delegate_task` instead or answer the user directly.
 

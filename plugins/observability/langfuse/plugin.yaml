@@ -1,6 +1,6 @@
 name: langfuse
 version: "1.0.0"
-description: "Optional Langfuse observability for Hermes — traces conversations, LLM calls, and tool usage. Opt-in via `hermes plugins enable observability/langfuse` (or check the box in `hermes plugins`)."
+description: "Optional Langfuse observability for Thoth — traces conversations, LLM calls, and tool usage. Opt-in via `thoth plugins enable observability/langfuse` (or check the box in `thoth plugins`)."
 author: 519lab
 requires_env:
   - HERMES_LANGFUSE_PUBLIC_KEY

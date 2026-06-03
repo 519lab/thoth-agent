@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================================
-REM Hermes Agent Installer for Windows (CMD wrapper)
+REM Thoth Agent Installer for Windows (CMD wrapper)
 REM ============================================================================
 REM This batch file launches the PowerShell installer for users running CMD.
 REM
@@ -12,7 +12,7 @@ REM   iex (irm https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts
 REM ============================================================================
 
 echo.
-echo  Hermes Agent Installer
+echo  Thoth Agent Installer
 echo  Launching PowerShell installer...
 echo.
 

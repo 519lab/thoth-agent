@@ -1173,7 +1173,9 @@ class TestImapIdExtensionForNetEase(unittest.TestCase):
             "LOGIN so 163/NetEase mailbox does not return 'Unsafe Login'.",
         )
         payload = id_calls[0].args[1]
-        self.assertIn("hermes-agent", payload)
+        self.assertIn("thoth-agent", payload)
+        self.assertIn("519lab", payload)
+        self.assertIn("noreply@519lab.com", payload)
 
         names = [c[0] for c in mock_imap.method_calls]
         self.assertIn("login", names)

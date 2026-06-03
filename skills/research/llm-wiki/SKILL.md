@@ -2,7 +2,7 @@
 name: llm-wiki
 description: "Karpathy's LLM Wiki: build/query interlinked markdown KB."
 version: 2.1.0
-author: Hermes Agent
+author: Thoth Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

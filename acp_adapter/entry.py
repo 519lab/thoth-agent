@@ -1,4 +1,4 @@
-"""CLI entry point for the hermes-agent ACP adapter.
+"""CLI entry point for the thoth-agent ACP adapter.
 
 Loads environment variables from ``~/.hermes/.env``, configures logging
 to write to stderr (so stdout is reserved for ACP JSON-RPC transport),
@@ -231,7 +231,7 @@ def main(argv: list[str] | None = None) -> None:
     _load_env()
 
     logger = logging.getLogger(__name__)
-    logger.info("Starting hermes-agent ACP adapter")
+    logger.info("Starting thoth-agent ACP adapter")
 
     # Phase 0: initialise PG pool (idempotent; no-op if HERMES_PG_DSN unset).
     try:

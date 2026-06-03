@@ -30,7 +30,7 @@ Create a professional infographic following these specifications:
 - Hero cell ("ONE TOKEN, EVERY KEY") takes the largest position (top-center or upper-left, 2x2)
 - Supporting cells around the hero, mixed cell sizes for rhythm
 - Each cell self-contained with its own title + icon + brief content
-- Title strip at the top: "BITWARDEN SECRETS MANAGER — HERMES-AGENT PR #30035"
+- Title strip at the top: "BITWARDEN SECRETS MANAGER — THOTH-AGENT PR #30035"
 - Footer strip at the bottom with commit SHA + repo
 
 ## Style Guidelines (retro-pop-grid)
@@ -59,13 +59,13 @@ Create a professional infographic following these specifications:
 Generate the infographic based on the content below:
 
 ### Title (top strip)
-BITWARDEN SECRETS MANAGER → HERMES-AGENT
+BITWARDEN SECRETS MANAGER → THOTH-AGENT
 PR #30035
 
 ### HERO CELL (largest, top-center, salmon pink background with thick black border)
 ONE TOKEN, EVERY KEY
 Rotate once in the Bitwarden web app.
-Every Hermes process picks it up on next start.
+Every Thoth process picks it up on next start.
 NEW DEFAULT: override_existing = true
 
 ### Cell — LAZY INSTALL (sky blue background)
@@ -76,7 +76,7 @@ No apt · no brew · no sudo
 Icon: wrench + downward arrow
 
 ### Cell — CLI SURFACE (mustard yellow background, checkerboard accents)
-$ hermes secrets bitwarden
+$ thoth secrets bitwarden
   setup    wizard
   status   diagnose
   sync     fetch

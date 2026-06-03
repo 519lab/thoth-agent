@@ -89,7 +89,7 @@ if [ ! -f "$HERMES_HOME/SOUL.md" ]; then
 fi
 
 # auth.json: bootstrap from env on first boot only.  Used by orchestrators
-# (e.g. provisioning a Hermes VPS from an account-management service) that
+# (e.g. provisioning a Thoth VPS from an account-management service) that
 # need to seed the OAuth refresh credential non-interactively, instead of
 # walking the user through `hermes setup` + the device-flow login dance.
 # Subsequent token rotations write back to the same file, which lives on a
