@@ -139,7 +139,7 @@ def _make_hermes_provider_class() -> Optional[type]:
             ``async_auth_flow`` takes the ``can_refresh_token()`` branch,
             and the SDK quietly refreshes before the first real request.
 
-            Paired with :class:`HermesTokenStorage` persisting an absolute
+            Paired with :class:`ThothTokenStorage` persisting an absolute
             ``expires_at`` timestamp (``mcp_oauth.py:set_tokens``) so the
             remaining TTL we compute here reflects real wall-clock age.
             """
@@ -154,9 +154,9 @@ def _make_hermes_provider_class() -> Optional[type]:
             # guessed ``{server_url}/token`` path (returns 404 on most real
             # providers) and require a full browser re-authorization.
             storage = self.context.storage
-            from tools.mcp_oauth import HermesTokenStorage
+            from tools.mcp_oauth import ThothTokenStorage
             if (
-                isinstance(storage, HermesTokenStorage)
+                isinstance(storage, ThothTokenStorage)
                 and self.context.oauth_metadata is None
             ):
                 meta = storage.load_oauth_metadata()
@@ -253,8 +253,8 @@ def _make_hermes_provider_class() -> Optional[type]:
                         # Persist immediately so a subsequent cold-load can
                         # skip discovery entirely.
                         storage = self.context.storage
-                        from tools.mcp_oauth import HermesTokenStorage
-                        if isinstance(storage, HermesTokenStorage):
+                        from tools.mcp_oauth import ThothTokenStorage
+                        if isinstance(storage, ThothTokenStorage):
                             storage.save_oauth_metadata(asm)
                         logger.debug(
                             "MCP OAuth '%s': pre-flight ASM discovered "
@@ -274,8 +274,8 @@ def _make_hermes_provider_class() -> Optional[type]:
             if meta is None:
                 return
             storage = self.context.storage
-            from tools.mcp_oauth import HermesTokenStorage
-            if not isinstance(storage, HermesTokenStorage):
+            from tools.mcp_oauth import ThothTokenStorage
+            if not isinstance(storage, ThothTokenStorage):
                 return
             existing = storage.load_oauth_metadata()
             if (
@@ -407,7 +407,7 @@ class MCPOAuthManager:
 
         # Local imports avoid circular deps at module import time.
         from tools.mcp_oauth import (
-            HermesTokenStorage,
+            ThothTokenStorage,
             _OAUTH_AVAILABLE,
             _build_client_metadata,
             _configure_callback_port,
@@ -421,7 +421,7 @@ class MCPOAuthManager:
             return None
 
         cfg = dict(entry.oauth_config or {})
-        storage = HermesTokenStorage(server_name)
+        storage = ThothTokenStorage(server_name)
 
         if not _is_interactive() and not storage.has_cached_tokens():
             logger.warning(

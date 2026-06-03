@@ -3145,7 +3145,7 @@ def _load_stale_index_cache() -> Optional[dict]:
     return None
 
 
-class HermesIndexSource(SkillSource):
+class ThothIndexSource(SkillSource):
     """Skill source backed by the centralized Thoth Skills Index.
 
     The index is a JSON catalog published to the docs site and rebuilt
@@ -3314,7 +3314,7 @@ def create_source_router(auth: Optional[GitHubAuth] = None) -> List[SkillSource]
 
     sources: List[SkillSource] = [
         OptionalSkillSource(),        # Official optional skills (highest priority)
-        HermesIndexSource(auth=auth), # Centralized index (search + resolved install paths)
+        ThothIndexSource(auth=auth), # Centralized index (search + resolved install paths)
         SkillsShSource(auth=auth),
         WellKnownSkillSource(),
         UrlSource(),                  # Direct HTTP(S) URL to a SKILL.md file
@@ -3443,3 +3443,6 @@ def unified_search(query: str, sources: List[SkillSource],
     deduped = list(seen.values())
 
     return deduped[:limit]
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+HermesIndexSource = ThothIndexSource

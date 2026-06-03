@@ -1216,7 +1216,7 @@ def list_authenticated_providers(
         # minimax-cn → MINIMAX_API_KEY instead of MINIMAX_CN_API_KEY).
         pconfig = PROVIDER_REGISTRY.get(hermes_id)
         # Skip non-API-key auth providers here — they are handled in
-        # section 2 (HERMES_OVERLAYS) with proper auth store checking.
+        # section 2 (THOTH_OVERLAYS) with proper auth store checking.
         if pconfig and pconfig.auth_type != "api_key":
             continue
         if pconfig and pconfig.api_key_env_vars:
@@ -1267,15 +1267,15 @@ def list_authenticated_providers(
         _record_builtin_endpoint(slug)
 
     # --- 2. Check Thoth-only providers (nous, openai-codex, copilot, opencode-go) ---
-    from thoth_cli.providers import HERMES_OVERLAYS
+    from thoth_cli.providers import THOTH_OVERLAYS
     from thoth_cli.auth import PROVIDER_REGISTRY as _auth_registry
 
     # Build reverse mapping: models.dev ID → Thoth provider ID.
-    # HERMES_OVERLAYS keys may be models.dev IDs (e.g. "github-copilot")
+    # THOTH_OVERLAYS keys may be models.dev IDs (e.g. "github-copilot")
     # while _PROVIDER_MODELS and config.yaml use Thoth IDs ("copilot").
     _mdev_to_hermes = {v: k for k, v in PROVIDER_TO_MODELS_DEV.items()}
 
-    for pid, overlay in HERMES_OVERLAYS.items():
+    for pid, overlay in THOTH_OVERLAYS.items():
         if pid.lower() in seen_slugs:
             continue
 
@@ -1388,7 +1388,7 @@ def list_authenticated_providers(
 
     # --- 2b. Cross-check canonical provider list ---
     # Catches providers that are in CANONICAL_PROVIDERS but weren't found
-    # in PROVIDER_TO_MODELS_DEV or HERMES_OVERLAYS (keeps /model in sync
+    # in PROVIDER_TO_MODELS_DEV or THOTH_OVERLAYS (keeps /model in sync
     # with `thoth model`).
     try:
         from thoth_cli.models import CANONICAL_PROVIDERS as _canon_provs
