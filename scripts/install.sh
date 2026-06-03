@@ -1497,15 +1497,15 @@ substrate_smoke() {
     script_out=$(HERMES_PG_DSN="$dsn" "$INSTALL_DIR/venv/bin/python" - <<'PY' 2>&1
 import asyncio, os, sys
 async def main():
-    import hermes_db
-    from hermes_bootstrap import bootstrap_substrate
-    await hermes_db.init(os.environ["HERMES_PG_DSN"])
+    import thoth_db
+    from thoth_bootstrap import bootstrap_substrate
+    await thoth_db.init(os.environ["HERMES_PG_DSN"])
     sub = await bootstrap_substrate()
     if sub is None:
         print("substrate-boot-FAIL: bootstrap_substrate returned None")
         sys.exit(2)
     print(f"substrate-boot-OK type={type(sub).__name__}")
-    await hermes_db.close()
+    await thoth_db.close()
 asyncio.run(main())
 PY
 )

@@ -67,21 +67,21 @@ jobs:
       - name: Build TUI bundle
         run: cd ui-tui && npm ci && npm run build
 
-      - name: Bundle TUI into hermes_cli
+      - name: Bundle TUI into thoth_cli
         run: |
-          mkdir -p hermes_cli/tui_dist
-          cp ui-tui/dist/entry.js hermes_cli/tui_dist/entry.js
+          mkdir -p thoth_cli/tui_dist
+          cp ui-tui/dist/entry.js thoth_cli/tui_dist/entry.js
 
       - name: Verify frontend assets exist
         run: |
-          test -f hermes_cli/web_dist/index.html || { echo "ERROR: web_dist not built"; exit 1; }
-          test -f hermes_cli/tui_dist/entry.js || { echo "ERROR: tui_dist not built"; exit 1; }
+          test -f thoth_cli/web_dist/index.html || { echo "ERROR: web_dist not built"; exit 1; }
+          test -f thoth_cli/tui_dist/entry.js || { echo "ERROR: tui_dist not built"; exit 1; }
 
       - name: Bundle install scripts into wheel
         run: |
-          mkdir -p hermes_cli/scripts
-          cp scripts/install.sh hermes_cli/scripts/install.sh
-          cp scripts/install.ps1 hermes_cli/scripts/install.ps1
+          mkdir -p thoth_cli/scripts
+          cp scripts/install.sh thoth_cli/scripts/install.sh
+          cp scripts/install.ps1 thoth_cli/scripts/install.ps1
 
       - name: Build wheel and sdist
         run: uv build --sdist --wheel

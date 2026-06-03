@@ -31,16 +31,16 @@ consumer calls `get_provider_profile()` or `list_providers()`. See
 The registry is populated on first access. After that, every downstream
 layer reads from it:
 
-- `hermes_cli/auth.py` extends `PROVIDER_REGISTRY` with every api-key
+- `thoth_cli/auth.py` extends `PROVIDER_REGISTRY` with every api-key
   profile it sees (skipping `copilot`, `kimi-coding`, `kimi-coding-cn`,
   `zai`, `openrouter`, `custom` — those need bespoke token resolution).
-- `hermes_cli/models.py` extends `CANONICAL_PROVIDERS` and calls
+- `thoth_cli/models.py` extends `CANONICAL_PROVIDERS` and calls
   `profile.fetch_models()` inside `provider_model_ids()`.
-- `hermes_cli/doctor.py` adds a `/models` health check for each
+- `thoth_cli/doctor.py` adds a `/models` health check for each
   `auth_type="api_key"` profile.
-- `hermes_cli/config.py` injects every `env_var` into
+- `thoth_cli/config.py` injects every `env_var` into
   `OPTIONAL_ENV_VARS` so the setup wizard knows about it.
-- `hermes_cli/runtime_provider.py` reads `profile.api_mode` as a fallback
+- `thoth_cli/runtime_provider.py` reads `profile.api_mode` as a fallback
   when URL detection finds nothing.
 - `agent/model_metadata.py` maps hostname → provider via
   `profile.get_hostname()`.

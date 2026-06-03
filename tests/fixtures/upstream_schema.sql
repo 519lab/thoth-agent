@@ -1,6 +1,6 @@
--- Snapshot of upstream hermes_state.py SCHEMA_SQL (non-FTS tables only).
+-- Snapshot of upstream thoth_state.py SCHEMA_SQL (non-FTS tables only).
 -- Used by tests/test_migrate_from_sqlite.py to build a realistic fixture SQLite DB.
--- Source: hermes_state.py SCHEMA_SQL (lines 195-262).
+-- Source: thoth_state.py SCHEMA_SQL (lines 195-262).
 -- FTS5 virtual tables and triggers are excluded — the migrator only reads sessions/messages.
 
 CREATE TABLE IF NOT EXISTS schema_version (

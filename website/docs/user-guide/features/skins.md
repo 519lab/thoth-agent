@@ -263,7 +263,7 @@ Thoth Mod respects the `HERMES_HOME` environment variable, so it works with [pro
 
 ## Operational notes
 
-- Built-in skins load from `hermes_cli/skin_engine.py`.
+- Built-in skins load from `thoth_cli/skin_engine.py`.
 - Unknown skins automatically fall back to `default`.
 - `/skin` updates the active CLI theme immediately for the current session.
 - User skins in `~/.hermes/skins/` take precedence over built-in skins with the same name.

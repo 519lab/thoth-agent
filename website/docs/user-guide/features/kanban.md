@@ -306,7 +306,7 @@ For engineering and review tasks, prefer this optional metadata shape:
 ```json
 {
   "changed_files": ["path/to/file.py"],
-  "verification": ["pytest tests/hermes_cli/test_kanban_db.py -q"],
+  "verification": ["pytest tests/thoth_cli/test_kanban_db.py -q"],
   "dependencies": ["parent task id or external issue, if any"],
   "blocked_reason": null,
   "retry_notes": "what failed before, if this was a retry",
@@ -648,7 +648,7 @@ All commands are also available as a slash command in the interactive CLI and in
 
 ## `/kanban` slash command {#kanban-slash-command}
 
-Every `thoth kanban <action>` verb is also reachable as `/kanban <action>` — from inside an interactive `thoth chat` session **and** from any gateway platform (Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Mattermost, email, SMS). Both surfaces call the exact same `hermes_cli.kanban.run_slash()` entry point that reuses the `thoth kanban` argparse tree, so the argument surface, flags, and output format are identical across CLI, `/kanban`, and `thoth kanban`. You don't have to leave the chat to drive the board.
+Every `thoth kanban <action>` verb is also reachable as `/kanban <action>` — from inside an interactive `thoth chat` session **and** from any gateway platform (Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Mattermost, email, SMS). Both surfaces call the exact same `thoth_cli.kanban.run_slash()` entry point that reuses the `thoth kanban` argparse tree, so the argument surface, flags, and output format are identical across CLI, `/kanban`, and `thoth kanban`. You don't have to leave the chat to drive the board.
 
 ```
 /kanban list

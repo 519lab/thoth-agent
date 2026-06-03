@@ -173,8 +173,8 @@ All storage paths **must** use the `hermes_home` kwarg from `initialize()`, not 
 
 ```python
 # CORRECT — profile-scoped
-from hermes_constants import get_hermes_home
-data_dir = get_hermes_home() / "my-provider"
+from thoth_constants import get_thoth_home
+data_dir = get_thoth_home() / "my-provider"
 
 # WRONG — shared across all profiles
 data_dir = Path("~/.hermes/my-provider").expanduser()

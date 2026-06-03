@@ -349,7 +349,7 @@ Normal Hermes agent flow for that topic's session lane.
 
 **Files likely touched:**
 
-- `hermes_state.py`
+- `thoth_state.py`
 - tests under `tests/`
 
 **Tests first:**
