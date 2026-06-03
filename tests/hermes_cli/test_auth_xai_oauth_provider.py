@@ -245,7 +245,7 @@ def test_xai_oauth_authorize_url_includes_referrer_hermes_agent():
         nonce="nonce-def",
     )
     params = _parse_authorize_url(url)
-    assert params["referrer"] == "hermes-agent"
+    assert params["referrer"] == "thoth-agent"
 
 
 def test_xai_oauth_authorize_url_includes_pkce_and_oidc_params():

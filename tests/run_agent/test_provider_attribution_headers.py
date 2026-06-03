@@ -45,7 +45,7 @@ def test_ai_gateway_base_url_applies_attribution_headers(mock_openai):
     headers = agent._client_kwargs["default_headers"]
     assert headers["HTTP-Referer"] == "https://thoth.519lab.com"
     assert headers["X-Title"] == "Thoth Agent"
-    assert headers["User-Agent"].startswith("HermesAgent/")
+    assert headers["User-Agent"].startswith("ThothAgent/")
 
 
 @patch("run_agent.OpenAI")
@@ -79,12 +79,12 @@ def test_nvidia_cloud_base_url_applies_billing_origin_header(mock_openai):
         skip_memory=True,
     )
 
-    assert agent._client_kwargs["default_headers"]["X-BILLING-INVOKE-ORIGIN"] == "HermesAgent"
+    assert agent._client_kwargs["default_headers"]["X-BILLING-INVOKE-ORIGIN"] == "ThothAgent"
 
     agent._apply_client_headers_for_base_url("https://integrate.api.nvidia.com/v1")
 
     headers = agent._client_kwargs["default_headers"]
-    assert headers["X-BILLING-INVOKE-ORIGIN"] == "HermesAgent"
+    assert headers["X-BILLING-INVOKE-ORIGIN"] == "ThothAgent"
 
 
 @patch("run_agent.OpenAI")
