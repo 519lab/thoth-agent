@@ -1,5 +1,5 @@
 ---
-name: debugging-hermes-tui-commands
+name: debugging-thoth-tui-commands
 description: "Debug Thoth TUI slash commands: Python, gateway, Ink UI."
 version: 1.0.0
 author: Thoth Agent
@@ -7,7 +7,7 @@ license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [debugging, hermes-agent, tui, slash-commands, typescript, python]
+    tags: [debugging, thoth-agent, tui, slash-commands, typescript, python]
     related_skills: [python-debugpy, node-inspect-debugger, systematic-debugging]
 ---
 

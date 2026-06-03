@@ -1,5 +1,5 @@
 ---
-name: hermes-agent-skill-authoring
+name: thoth-agent-skill-authoring
 description: "Author in-repo SKILL.md: frontmatter, validator, structure."
 version: 1.0.0
 author: Thoth Agent
@@ -7,7 +7,7 @@ license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [skills, authoring, hermes-agent, conventions, skill-md]
+    tags: [skills, authoring, thoth-agent, conventions, skill-md]
     related_skills: [writing-plans, requesting-code-review]
 ---
 

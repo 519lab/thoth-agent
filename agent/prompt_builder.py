@@ -143,7 +143,7 @@ DEFAULT_AGENT_IDENTITY = (
 
 HERMES_AGENT_HELP_GUIDANCE = (
     "If the user asks about configuring, setting up, or using Thoth Agent "
-    "itself, load the `hermes-agent` skill with skill_view(name='hermes-agent') "
+    "itself, load the `thoth-agent` skill with skill_view(name='thoth-agent') "
     "before answering. Docs: https://thoth.519lab.com/docs"
 )
 
@@ -1203,7 +1203,7 @@ def build_skills_system_prompt(
             "already know how to do, because the skill defines how it should be done here.\n"
             "Whenever the user asks you to configure, set up, install, enable, disable, modify, "
             "or troubleshoot Thoth Agent itself — its CLI, config, models, providers, tools, "
-            "skills, voice, gateway, plugins, or any feature — load the `hermes-agent` skill "
+            "skills, voice, gateway, plugins, or any feature — load the `thoth-agent` skill "
             "first. It has the actual commands (e.g. `thoth config set …`, `thoth tools`, "
             "`thoth setup`) so you don't have to guess or invent workarounds.\n"
             "If a skill has issues, fix it with skill_manage(action='patch').\n"

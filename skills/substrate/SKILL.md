@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [substrate, memory, perception, recall, postgres, operator]
-    related_skills: [hermes-agent]
+    related_skills: [thoth-agent]
 ---
 
 # Cognitive Substrate Skill
@@ -36,7 +36,7 @@ common workflows, troubleshooting.
 
 If the user is asking about persistent memory (`thoth memory`), Honcho, the
 skills registry, or session search FTS — those are upstream Hermes features
-covered by the `hermes-agent` skill, not this one. The substrate is additive
+covered by the `thoth-agent` skill, not this one. The substrate is additive
 infrastructure beneath them.
 
 ## Prerequisites

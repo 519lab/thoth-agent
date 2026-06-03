@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [kanban, codex, worktrees, autonomous-agents, prediction-market-bot]
-    related_skills: [kanban-worker, codex, hermes-agent]
+    related_skills: [kanban-worker, codex, thoth-agent]
 ---
 
 # Kanban Codex Lane
