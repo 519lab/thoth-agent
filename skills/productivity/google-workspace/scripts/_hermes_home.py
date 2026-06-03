@@ -1,6 +1,6 @@
 """Resolve HERMES_HOME for standalone skill scripts.
 
-Skill scripts may run outside the Hermes process (e.g. system Python,
+Skill scripts may run outside the Thoth process (e.g. system Python,
 nix env, CI) where ``thoth_constants`` is not importable.  This module
 provides the same ``get_thoth_home()`` and ``display_thoth_home()``
 contracts as ``thoth_constants`` without requiring it on ``sys.path``.
@@ -25,7 +25,7 @@ try:
 except (ModuleNotFoundError, ImportError):
 
     def get_thoth_home() -> Path:
-        """Return the Hermes home directory (default: ~/.hermes).
+        """Return the Thoth home directory (default: ~/.hermes).
 
         Mirrors ``thoth_constants.get_thoth_home()``."""
         val = os.environ.get("HERMES_HOME", "").strip()

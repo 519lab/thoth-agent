@@ -575,7 +575,7 @@ check_node() {
     fi
     if [ -x "$HERMES_HOME/node/bin/node" ]; then
         export PATH="$HERMES_HOME/node/bin:$PATH"
-        log_success "Node.js $("$HERMES_HOME/node/bin/node" --version) found (Hermes-managed)"
+        log_success "Node.js $("$HERMES_HOME/node/bin/node" --version) found (Thoth-managed)"
         HAS_NODE=true
         return 0
     fi
@@ -998,7 +998,7 @@ choose_pg_port() {
         fi
     }
 
-    # Upgrade-aware path: if a prior Hermes Postgres container exists
+    # Upgrade-aware path: if a prior Thoth Postgres container exists
     # (running OR stopped, current OR legacy name), reclaim its port
     # and remove the old container so the new compose-up can bind
     # cleanly. Without this, the substrate→hermes rename last week
@@ -1058,7 +1058,7 @@ choose_pg_port() {
         docker rm -f "$existing_container" >/dev/null 2>&1 || true
     fi
 
-    # No existing Hermes container found. A named data volume can still
+    # No existing Thoth container found. A named data volume can still
     # survive on its own (e.g. the container was removed out-of-band while
     # the volume persisted). If --reset-db was passed, drop it now so the
     # fresh compose-up starts clean; otherwise, if such a volume exists,

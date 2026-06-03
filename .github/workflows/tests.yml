@@ -105,7 +105,7 @@ jobs:
           POSTGRES_PASSWORD: hermes
           # CI runs against the ephemeral GH Actions PG service on 5432.
           # Local-dev pytest defaults to 5433 (the docker-compose
-          # `postgres-test` profile) so the developer's real Hermes DB on
+          # `postgres-test` profile) so the developer's real Thoth DB on
           # 5432 is never touched — see tests/conftest.py:_TEST_PG_PORT.
           HERMES_TEST_POSTGRES_PORT: "5432"
           # Ensure tests don't accidentally call real APIs

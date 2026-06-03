@@ -54,7 +54,7 @@ infrastructure beneath them.
 
 ## What's Running
 
-Four sub-agents run as asyncio tasks in the Hermes process. The Conductor is
+Four sub-agents run as asyncio tasks in the Thoth process. The Conductor is
 a data holder (Phase A stub — no policy yet); the others tick on their own
 cadence. Each writes audit slices to `substrate.self_state` so you can replay
 their decisions after the fact.
@@ -89,7 +89,7 @@ session lifecycle, and cron dispatch. Substrate self-state lands on
 ## Inspect Commands
 
 The `thoth substrate` tree is read-only and connects to the
-configured PG via the existing pool — safe to run against a live Hermes
+configured PG via the existing pool — safe to run against a live Thoth
 process from another shell.
 
 ```bash
@@ -323,12 +323,12 @@ SELECT substrate_create_partition_if_not_exists(date_trunc('month', now() + inte
 ### Sub-agent not ticking / Curator quiet
 
 ```bash
-# Check the Hermes process log for substrate sub-agent boot messages
+# Check the Thoth process log for substrate sub-agent boot messages
 tail -F ~/.hermes/logs/agent.log | grep -i substrate
 ```
 
 Sub-agents are spawned by `Substrate.boot()`. If any raised on startup,
-the boot path logs it but does NOT abort Hermes (substrate failures are
+the boot path logs it but does NOT abort Thoth (substrate failures are
 non-fatal). Look for "subagent failed to start" entries.
 
 ### Recall returning empty for everything
@@ -372,7 +372,7 @@ thoth substrate curator recent
 ```
 
 If any of these fail on a fresh install: re-run `alembic upgrade head`, then
-restart Hermes.
+restart Thoth.
 
 ## Pitfalls
 
@@ -382,7 +382,7 @@ restart Hermes.
   when running pytest directly — `pytest-postgresql` uses it to derive
   per-worker DB names so concurrent subprocesses don't race on the shared
   template DB.
-- **The substrate is write-mostly in steady state.** A long-running Hermes
+- **The substrate is write-mostly in steady state.** A long-running Thoth
   emits hundreds of slices per active session. If you see PG storage growing
   fast, the Curator is the throttle — verify it's ticking
   (`thoth substrate curator recent`) and the
@@ -395,7 +395,7 @@ restart Hermes.
   Phase F can land the real policy without a sub-agent refactor.
 - **Substrate failures are deliberately non-fatal.** The conversation keeps
   going even if every slice write fails. If you see "recall returned empty"
-  consistently, check the Hermes log for substrate exceptions before
+  consistently, check the Thoth log for substrate exceptions before
   concluding the data isn't there.
 
 ## Observability & layer commands (Phases D–G)

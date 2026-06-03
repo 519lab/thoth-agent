@@ -30,7 +30,7 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 | [`codex`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-codex) | Delegate coding to OpenAI Codex CLI (features, PRs). | `autonomous-ai-agents/codex` |
 | [`kanban-codex-lane`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-kanban-codex-lane) | Use when a Thoth Kanban worker wants to run Codex CLI as an isolated implementation lane while Thoth keeps ownership of task lifecycle, reconciliation, testing, and handoff. | `autonomous-ai-agents/kanban-codex-lane` |
 | [`opencode`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-opencode) | Delegate coding to OpenCode CLI (features, PR review). | `autonomous-ai-agents/opencode` |
-| [`thoth-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-thoth-agent) | Configure, extend, or contribute to Hermes Agent. | `autonomous-ai-agents/thoth-agent` |
+| [`thoth-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-thoth-agent) | Configure, extend, or contribute to Thoth Agent. | `autonomous-ai-agents/thoth-agent` |
 
 ## creative
 

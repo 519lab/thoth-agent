@@ -1,7 +1,7 @@
 ---
 sidebar_position: 12
 title: "Kanban (멀티 에이전트 보드)"
-description: "여러 Hermes 프로필을 조율하기 위한, 지속형 SQLite 기반 작업 보드"
+description: "여러 Thoth 프로필을 조율하기 위한, 지속형 SQLite 기반 작업 보드"
 sidebar_label: "Kanban"
 ---
 
@@ -9,14 +9,14 @@ sidebar_label: "Kanban"
 
 > **전체 흐름을 먼저 보고 싶다면?** [Kanban 튜토리얼](./kanban-tutorial)을 읽어보세요. 이 문서는 레퍼런스이고, 튜토리얼은 사용자 시나리오 중심 설명입니다.
 
-Hermes Kanban은 모든 Hermes 프로필이 함께 쓰는 **지속형 작업 보드**입니다. 취약한 in-process 서브에이전트 무리 대신, 이름 있는 여러 에이전트가 같은 작업을 협업할 수 있게 해줍니다. 모든 task는 `~/.hermes/kanban.db`의 한 row이고, 모든 handoff도 누구나 읽고 쓸 수 있는 row이며, 모든 worker는 자기 정체성을 가진 **독립 OS 프로세스**입니다.
+Thoth Kanban은 모든 Thoth 프로필이 함께 쓰는 **지속형 작업 보드**입니다. 취약한 in-process 서브에이전트 무리 대신, 이름 있는 여러 에이전트가 같은 작업을 협업할 수 있게 해줍니다. 모든 task는 `~/.hermes/kanban.db`의 한 row이고, 모든 handoff도 누구나 읽고 쓸 수 있는 row이며, 모든 worker는 자기 정체성을 가진 **독립 OS 프로세스**입니다.
 
 ### 두 개의 표면: 모델은 tool로 말하고, 사용자는 CLI로 다룹니다
 
 보드에는 두 개의 진입점이 있고, 둘 다 같은 `~/.hermes/kanban.db`를 사용합니다.
 
-- **에이전트는 전용 `kanban_*` toolset으로 보드를 다룹니다.** `kanban_show`, `kanban_complete`, `kanban_block`, `kanban_heartbeat`, `kanban_comment`, `kanban_create`, `kanban_link`가 여기에 포함됩니다. dispatcher는 worker를 띄울 때 이 tool들을 스키마에 넣어주며, 모델은 `hermes kanban` CLI를 shell로 호출하지 않고 **직접 tool call**로 task를 읽고 넘깁니다. 아래의 [작업자는 보드와 어떻게 상호작용하나](#how-workers-interact-with-the-board)를 참고하세요.
-- **사람(그리고 스크립트, cron)은 `hermes kanban …` CLI, `/kanban …` 슬래시 명령, 혹은 dashboard로 보드를 다룹니다.** 이 표면은 tool-calling 모델이 없는 인간/자동화를 위한 인터페이스입니다.
+- **에이전트는 전용 `kanban_*` toolset으로 보드를 다룹니다.** `kanban_show`, `kanban_complete`, `kanban_block`, `kanban_heartbeat`, `kanban_comment`, `kanban_create`, `kanban_link`가 여기에 포함됩니다. dispatcher는 worker를 띄울 때 이 tool들을 스키마에 넣어주며, 모델은 `thoth kanban` CLI를 shell로 호출하지 않고 **직접 tool call**로 task를 읽고 넘깁니다. 아래의 [작업자는 보드와 어떻게 상호작용하나](#how-workers-interact-with-the-board)를 참고하세요.
+- **사람(그리고 스크립트, cron)은 `thoth kanban …` CLI, `/kanban …` 슬래시 명령, 혹은 dashboard로 보드를 다룹니다.** 이 표면은 tool-calling 모델이 없는 인간/자동화를 위한 인터페이스입니다.
 
 두 표면 모두 같은 `kanban_db` 계층을 통하기 때문에, 읽기 결과는 일관되고 쓰기 결과가 어긋나지 않습니다. 이 문서는 복사해 쓰기 쉬운 CLI 예시를 중심으로 설명하지만, 여기 등장하는 CLI 동작은 전부 모델이 쓰는 tool-call 대응물이 있습니다.
 
@@ -89,31 +89,31 @@ board 단위 격리는 다음을 의미합니다.
 
 ```bash
 # 현재 디스크에 있는 board 확인
-hermes kanban boards list
+thoth kanban boards list
 
 # 새 board 생성
-hermes kanban boards create atm10-server \
+thoth kanban boards create atm10-server \
     --name "ATM10 Server" \
     --description "Minecraft modded server ops" \
     --icon 🎮 \
     --switch
 
 # switch 없이 특정 board만 대상으로 실행
-hermes kanban --board atm10-server list
-hermes kanban --board atm10-server create "Restart ATM server" --assignee ops
+thoth kanban --board atm10-server list
+thoth kanban --board atm10-server create "Restart ATM server" --assignee ops
 
 # 현재 board 바꾸기
-hermes kanban boards switch atm10-server
-hermes kanban boards show
+thoth kanban boards switch atm10-server
+thoth kanban boards show
 
 # 표시 이름 변경 (slug는 디렉터리 이름이라 immutable)
-hermes kanban boards rename atm10-server "ATM10 (Prod)"
+thoth kanban boards rename atm10-server "ATM10 (Prod)"
 
 # 아카이브(기본): dir을 boards/_archived/<slug>-<ts>/ 로 이동
-hermes kanban boards rm atm10-server
+thoth kanban boards rm atm10-server
 
 # 영구 삭제
-hermes kanban boards rm atm10-server --delete
+thoth kanban boards rm atm10-server --delete
 ```
 
 board 해석 우선순위는 다음과 같습니다.
@@ -127,7 +127,7 @@ slug는 소문자 영숫자 + `-` + `_`, 길이 1–64로 제한되며, 대문�
 
 ### Dashboard에서 board 관리
 
-`hermes dashboard`의 Kanban 탭은 board가 2개 이상이거나 task가 존재하면 상단에 board switcher를 표시합니다.
+`thoth dashboard`의 Kanban 탭은 board가 2개 이상이거나 task가 존재하면 상단에 board switcher를 표시합니다.
 
 - **Board dropdown** — 활성 board 선택. 브라우저 `localStorage`에 저장되므로 새로고침 후에도 유지됩니다.
 - **+ New board** — slug, display name, description, icon 입력 modal
@@ -141,23 +141,23 @@ slug는 소문자 영숫자 + `-` + `_`, 길이 1–64로 제한되며, 대문�
 
 ```bash
 # 1. board 생성
-hermes kanban init
+thoth kanban init
 
 # 2. gateway 시작 (내장 dispatcher 포함)
-hermes gateway start
+thoth gateway start
 
 # 3. task 생성
-hermes kanban create "research AI funding landscape" --assignee researcher
+thoth kanban create "research AI funding landscape" --assignee researcher
 
 # 4. 실시간 확인
-hermes kanban watch
+thoth kanban watch
 
 # 5. board 상태 보기
-hermes kanban list
-hermes kanban stats
+thoth kanban list
+thoth kanban stats
 ```
 
-dispatcher가 `t_abcd`를 집어 `researcher` profile을 worker로 띄우면, 그 worker가 제일 먼저 하는 일은 `kanban_show()` 호출입니다. `hermes kanban show t_abcd`를 shell로 실행하지 않습니다.
+dispatcher가 `t_abcd`를 집어 `researcher` profile을 worker로 띄우면, 그 worker가 제일 먼저 하는 일은 `kanban_show()` 호출입니다. `thoth kanban show t_abcd`를 shell로 실행하지 않습니다.
 
 ### Gateway 내장 dispatcher (기본값)
 
@@ -169,12 +169,12 @@ kanban:
   dispatch_interval_seconds: 60
 ```
 
-디버깅용으로만 `HERMES_KANBAN_DISPATCH_IN_GATEWAY=0`으로 끌 수 있습니다. `hermes kanban daemon` 단독 실행 방식은 **deprecated**이며, 가능하면 gateway를 쓰는 것이 권장됩니다.
+디버깅용으로만 `HERMES_KANBAN_DISPATCH_IN_GATEWAY=0`으로 끌 수 있습니다. `thoth kanban daemon` 단독 실행 방식은 **deprecated**이며, 가능하면 gateway를 쓰는 것이 권장됩니다.
 
 ### Idempotent create (자동화 / webhook용)
 
 ```bash
-hermes kanban create "nightly ops review" \
+thoth kanban create "nightly ops review" \
     --assignee ops \
     --idempotency-key "nightly-ops-$(date -u +%Y-%m-%d)" \
     --json
@@ -185,15 +185,15 @@ hermes kanban create "nightly ops review" \
 ### Bulk CLI verbs
 
 ```bash
-hermes kanban complete t_abc t_def t_hij --result "batch wrap"
-hermes kanban archive  t_abc t_def t_hij
-hermes kanban unblock  t_abc t_def
-hermes kanban block    t_abc "need input" --ids t_def t_hij
+thoth kanban complete t_abc t_def t_hij --result "batch wrap"
+thoth kanban archive  t_abc t_def t_hij
+thoth kanban unblock  t_abc t_def
+thoth kanban block    t_abc "need input" --ids t_def t_hij
 ```
 
 ## 작업자는 보드와 어떻게 상호작용하나 {#how-workers-interact-with-the-board}
 
-**Worker는 `hermes kanban`을 shell로 호출하지 않습니다.** dispatcher는 worker spawn 시 `HERMES_KANBAN_TASK=t_abcd`를 child env에 넣고, 그 환경변수가 모델 스키마에서 전용 **kanban toolset**을 활성화합니다. 이 7개 tool은 CLI와 동일하게 Python `kanban_db` 계층을 직접 호출합니다.
+**Worker는 `thoth kanban`을 shell로 호출하지 않습니다.** dispatcher는 worker spawn 시 `HERMES_KANBAN_TASK=t_abcd`를 child env에 넣고, 그 환경변수가 모델 스키마에서 전용 **kanban toolset**을 활성화합니다. 이 7개 tool은 CLI와 동일하게 Python `kanban_db` 계층을 직접 호출합니다.
 
 | Tool | 목적 | 필수 파라미터 |
 |---|---|---|
@@ -238,13 +238,13 @@ kanban_complete(summary="decomposed into 2 research tasks + 1 writer; linked dep
 
 `kanban_create`, `kanban_link`, 다른 task에 대한 `kanban_comment`는 모든 worker에게 기술적으로 열려 있지만, **worker profile은 fan-out하지 않고 orchestrator profile은 직접 실행하지 않는다**는 운영 규칙을 `kanban-orchestrator` skill이 강제하는 것이 권장됩니다.
 
-### 왜 `hermes kanban` shell 호출 대신 tool인가
+### 왜 `thoth kanban` shell 호출 대신 tool인가
 
 1. **백엔드 이식성** — terminal backend가 Docker / Modal / Singularity / SSH여도, kanban tool은 agent 자신의 Python 프로세스에서 돌아가므로 항상 `~/.hermes/kanban.db`에 도달합니다.
 2. **shell quoting 취약성 제거** — `--metadata '{"files": [...]}'` 같은 문자열 인자 문제를 피합니다.
 3. **더 좋은 오류 처리** — stderr 파싱이 아니라 structured JSON 결과를 모델이 바로 읽습니다.
 
-**일반 세션에는 schema footprint가 0입니다.** 평범한 `hermes chat` 세션에는 `kanban_*` tool이 나타나지 않습니다. `HERMES_KANBAN_TASK`가 있을 때만 `check_fn`이 True가 되기 때문입니다.
+**일반 세션에는 schema footprint가 0입니다.** 평범한 `thoth chat` 세션에는 `kanban_*` tool이 나타나지 않습니다. `HERMES_KANBAN_TASK`가 있을 때만 `check_fn`이 True가 되기 때문입니다.
 
 ### 추천 handoff evidence
 
@@ -287,7 +287,7 @@ kanban task를 처리할 수 있는 profile은 `kanban-worker` skill을 로드�
 설치 예시는 다음과 같습니다.
 
 ```bash
-hermes skills install devops/kanban-worker
+thoth skills install devops/kanban-worker
 ```
 
 dispatcher는 worker를 띄울 때 자동으로 `--skills kanban-worker`도 함께 넘기므로, profile 기본 skill 설정에 없더라도 실행 시점에는 항상 패턴 라이브러리를 갖게 됩니다.
@@ -315,11 +315,11 @@ kanban_create(
 **사람이 CLI / slash command에서**
 
 ```bash
-hermes kanban create "translate README to Japanese" \
+thoth kanban create "translate README to Japanese" \
     --assignee linguist \
     --skill translation
 
-hermes kanban create "audit auth flow" \
+thoth kanban create "audit auth flow" \
     --assignee reviewer \
     --skill security-pr-audit \
     --skill github-code-review
@@ -354,20 +354,20 @@ kanban_complete(
 설치:
 
 ```bash
-hermes skills install devops/kanban-orchestrator
+thoth skills install devops/kanban-orchestrator
 ```
 
 가장 깔끔한 운용은 orchestrator profile의 toolset을 board operation 위주(`kanban`, `gateway`, `memory`)로 제한해, 구현 작업을 **물리적으로 직접 실행할 수 없게** 만드는 것입니다.
 
 ## Dashboard (GUI)
 
-`/kanban` CLI와 slash command만으로도 headless 운영은 가능하지만, triage, cross-profile supervision, comment thread 읽기, 카드 drag/drop 같은 작업은 사람이 보기엔 시각 보드가 더 편합니다. Hermes는 이를 core 기능이 아니라 `plugins/kanban/`의 **bundled dashboard plugin**으로 제공합니다.
+`/kanban` CLI와 slash command만으로도 headless 운영은 가능하지만, triage, cross-profile supervision, comment thread 읽기, 카드 drag/drop 같은 작업은 사람이 보기엔 시각 보드가 더 편합니다. Thoth는 이를 core 기능이 아니라 `plugins/kanban/`의 **bundled dashboard plugin**으로 제공합니다.
 
 열기:
 
 ```bash
-hermes kanban init
-hermes dashboard
+thoth kanban init
+thoth dashboard
 ```
 
 ### Plugin이 제공하는 것
@@ -458,7 +458,7 @@ dashboard는 기본적으로 localhost에 bind되므로 plugin route들은 별�
 
 WebSocket은 브라우저 upgrade 요청 특성상 `Authorization` 헤더를 못 쓰기 때문에 `?token=…` query parameter로 dashboard session token을 요구합니다.
 
-`hermes dashboard --host 0.0.0.0`로 띄우면 모든 plugin route가 네트워크에 노출됩니다. **공유 호스트에서는 권장되지 않습니다.** task body, comment, workspace path 등 협업 surface 전체가 노출될 수 있습니다.
+`thoth dashboard --host 0.0.0.0`로 띄우면 모든 plugin route가 네트워크에 노출됩니다. **공유 호스트에서는 권장되지 않습니다.** task body, comment, workspace path 등 협업 surface 전체가 노출될 수 있습니다.
 
 ### Live updates
 
@@ -466,7 +466,7 @@ WebSocket은 브라우저 upgrade 요청 특성상 `Authorization` 헤더를 못
 
 ### 확장
 
-plugin은 표준 Hermes dashboard plugin contract를 사용합니다. 추가 컬럼, 커스텀 카드 UI, tenant-filtered layout, 전체 `tab.override` 교체도 plugin fork 없이 표현 가능합니다.
+plugin은 표준 Thoth dashboard plugin contract를 사용합니다. 추가 컬럼, 커스텀 카드 UI, tenant-filtered layout, 전체 `tab.override` 교체도 plugin fork 없이 표현 가능합니다.
 
 비활성화만 하고 싶다면 `config.yaml`에 다음을 추가하면 됩니다.
 
@@ -486,46 +486,46 @@ GUI는 의도적으로 얇습니다. auto-assignment, budget, governance gate, o
 이 표면은 **사람, 스크립트, cron, dashboard**가 보드를 조작할 때 씁니다. dispatcher 내부 worker는 동일 작업을 `kanban_*` [tool 표면](#how-workers-interact-with-the-board)으로 수행합니다.
 
 ```
-hermes kanban init
-hermes kanban create "<title>" [--body ...] [--assignee <profile>]
+thoth kanban init
+thoth kanban create "<title>" [--body ...] [--assignee <profile>]
                                 [--parent <id>]... [--tenant <name>]
                                 [--workspace scratch|worktree|dir:<path>]
                                 [--priority N] [--triage] [--idempotency-key KEY]
                                 [--max-runtime 30m|2h|1d|<seconds>]
                                 [--skill <name>]...
                                 [--json]
-hermes kanban list [--mine] [--assignee P] [--status S] [--tenant T] [--archived] [--json]
-hermes kanban show <id> [--json]
-hermes kanban assign <id> <profile>
-hermes kanban link <parent_id> <child_id>
-hermes kanban unlink <parent_id> <child_id>
-hermes kanban claim <id> [--ttl SECONDS]
-hermes kanban comment <id> "<text>" [--author NAME]
-hermes kanban complete <id>... [--result "..."]
-hermes kanban block <id> "<reason>" [--ids <id>...]
-hermes kanban unblock <id>...
-hermes kanban archive <id>...
-hermes kanban tail <id>
-hermes kanban watch [--assignee P] [--tenant T] [--kinds completed,blocked,…] [--interval SECS]
-hermes kanban heartbeat <id> [--note "..."]
-hermes kanban runs <id> [--json]
-hermes kanban assignees [--json]
-hermes kanban dispatch [--dry-run] [--max N] [--failure-limit N] [--json]
-hermes kanban daemon --force
-hermes kanban stats [--json]
-hermes kanban log <id> [--tail BYTES]
-hermes kanban notify-subscribe <id> --platform <name> --chat-id <id> [--thread-id <id>] [--user-id <id>]
-hermes kanban notify-list [<id>] [--json]
-hermes kanban notify-unsubscribe <id> --platform <name> --chat-id <id> [--thread-id <id>]
-hermes kanban context <id>
-hermes kanban gc [--event-retention-days N] [--log-retention-days N]
+thoth kanban list [--mine] [--assignee P] [--status S] [--tenant T] [--archived] [--json]
+thoth kanban show <id> [--json]
+thoth kanban assign <id> <profile>
+thoth kanban link <parent_id> <child_id>
+thoth kanban unlink <parent_id> <child_id>
+thoth kanban claim <id> [--ttl SECONDS]
+thoth kanban comment <id> "<text>" [--author NAME]
+thoth kanban complete <id>... [--result "..."]
+thoth kanban block <id> "<reason>" [--ids <id>...]
+thoth kanban unblock <id>...
+thoth kanban archive <id>...
+thoth kanban tail <id>
+thoth kanban watch [--assignee P] [--tenant T] [--kinds completed,blocked,…] [--interval SECS]
+thoth kanban heartbeat <id> [--note "..."]
+thoth kanban runs <id> [--json]
+thoth kanban assignees [--json]
+thoth kanban dispatch [--dry-run] [--max N] [--failure-limit N] [--json]
+thoth kanban daemon --force
+thoth kanban stats [--json]
+thoth kanban log <id> [--tail BYTES]
+thoth kanban notify-subscribe <id> --platform <name> --chat-id <id> [--thread-id <id>] [--user-id <id>]
+thoth kanban notify-list [<id>] [--json]
+thoth kanban notify-unsubscribe <id> --platform <name> --chat-id <id> [--thread-id <id>]
+thoth kanban context <id>
+thoth kanban gc [--event-retention-days N] [--log-retention-days N]
 ```
 
 모든 명령은 interactive CLI와 messaging gateway에서도 `/kanban` slash command로 쓸 수 있습니다.
 
 ## `/kanban` 슬래시 명령 {#kanban-slash-command}
 
-모든 `hermes kanban <action>`은 `/kanban <action>`으로도 호출할 수 있습니다. interactive `hermes chat` 세션과 Telegram/Discord/Slack/WhatsApp/Signal/Matrix/Mattermost/email/SMS 등 gateway 플랫폼에서 모두 동작합니다.
+모든 `thoth kanban <action>`은 `/kanban <action>`으로도 호출할 수 있습니다. interactive `thoth chat` 세션과 Telegram/Discord/Slack/WhatsApp/Signal/Matrix/Mattermost/email/SMS 등 gateway 플랫폼에서 모두 동작합니다.
 
 ```
 /kanban list
@@ -567,7 +567,7 @@ bot> ✓ t_9fc1a3 completed by transcriber
 
 ### 메시징 출력 잘림
 
-gateway 플랫폼은 메시지 길이 제한이 있어서 `/kanban list`, `/kanban show`, `/kanban tail` 결과가 약 3800자를 넘으면 잘려서 반환됩니다. 전체 출력은 터미널의 `hermes kanban …`를 쓰면 됩니다.
+gateway 플랫폼은 메시지 길이 제한이 있어서 `/kanban list`, `/kanban show`, `/kanban tail` 결과가 약 3800자를 넘으면 잘려서 반환됩니다. 전체 출력은 터미널의 `thoth kanban …`를 쓰면 됩니다.
 
 ### 자동완성
 
@@ -596,7 +596,7 @@ interactive CLI에서 `/kanban ` 뒤 Tab을 누르면 built-in subcommand hint�
 하나의 specialist fleet가 여러 비즈니스를 담당한다면 task에 tenant를 붙입니다.
 
 ```bash
-hermes kanban create "monthly report" \
+thoth kanban create "monthly report" \
     --assignee researcher \
     --tenant business-a \
     --workspace dir:~/tenants/business-a/data/
@@ -611,10 +611,10 @@ gateway에서 `/kanban create …`를 실행하면 원래 chat이 새 task에 �
 명시적으로 CLI에서 구독을 관리할 수도 있습니다.
 
 ```bash
-hermes kanban notify-subscribe t_abcd \
+thoth kanban notify-subscribe t_abcd \
     --platform telegram --chat-id 12345678 --thread-id 7
-hermes kanban notify-list
-hermes kanban notify-unsubscribe t_abcd \
+thoth kanban notify-list
+thoth kanban notify-unsubscribe t_abcd \
     --platform telegram --chat-id 12345678 --thread-id 7
 ```
 
@@ -648,12 +648,12 @@ kanban_complete(
 사람이 CLI로 직접 닫을 수도 있습니다.
 
 ```bash
-hermes kanban complete t_abcd \
+thoth kanban complete t_abcd \
     --result "rate limiter shipped" \
     --summary "implemented token bucket, keys on user_id with IP fallback, all tests pass" \
     --metadata '{"changed_files": ["limiter.py", "tests/test_limiter.py"], "tests_run": 14}'
 
-hermes kanban runs t_abcd
+thoth kanban runs t_abcd
 ```
 
 주의 사항:
@@ -708,7 +708,7 @@ v1 kernel은 routing에는 쓰지 않지만, client가 기록하는 것은 허�
 | `spawn_failed` | `{error, failures}` | spawn 시도 1회 실패 |
 | `gave_up` | `{failures, error}` | circuit breaker 발동 후 auto-block |
 
-개별 task 이벤트는 `hermes kanban tail <id>`, 보드 전체 이벤트는 `hermes kanban watch`로 볼 수 있습니다.
+개별 task 이벤트는 `thoth kanban tail <id>`, 보드 전체 이벤트는 `thoth kanban watch`로 볼 수 있습니다.
 
 ## 범위 밖
 
