@@ -145,8 +145,8 @@ acp = ["agent-client-protocol==0.9.0"]
 #   2. Add back: mistral = ["mistralai==<verified-version>"]
 #   3. Re-enable Mistral in:
 #        - tools/lazy_deps.py (LAZY_DEPS["tts.mistral"], LAZY_DEPS["stt.mistral"])
-#        - hermes_cli/tools_config.py (un-hide from provider picker)
-#        - hermes_cli/web_server.py (re-add to dashboard STT options)
+#        - thoth_cli/tools_config.py (un-hide from provider picker)
+#        - thoth_cli/web_server.py (re-add to dashboard STT options)
 #        - tools/transcription_tools.py / tools/tts_tool.py (drop disabled stubs)
 #   4. Run `uv lock` to regenerate transitives.
 #   5. Optionally re-add to [all] only after a few days of clean operation.
@@ -237,7 +237,7 @@ all = [
 thoth = "thoth_cli.main:main"
 thoth-agent = "run_agent:_cli_main"
 thoth-acp = "acp_adapter.entry:main"
-hermes = "hermes_cli.main:main"
+hermes = "thoth_cli.main:main"
 hermes-agent = "run_agent:_cli_main"
 hermes-acp = "acp_adapter.entry:main"
 
@@ -293,7 +293,7 @@ source = [
   "agent",
   "gateway",
   "tools",
-  "hermes_cli",
+  "thoth_cli",
   "substrate",
   "acp_adapter",
   "cron",

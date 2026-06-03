@@ -16,7 +16,7 @@ def _load_with_yaml_dict(yaml_dict: dict):
     def fake_exists(self):
         return str(self).endswith("config.yaml")
 
-    with patch("gateway.config.get_hermes_home", return_value=fake_home), \
+    with patch("gateway.config.get_thoth_home", return_value=fake_home), \
          patch.object(Path, "exists", fake_exists), \
          patch("builtins.open", create=True) as mock_file:
         mock_file.return_value.__enter__ = lambda s: s

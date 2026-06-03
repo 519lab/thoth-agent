@@ -7,10 +7,10 @@ import pytest
 
 
 def _make_cli_stub():
-    """Create a minimal HermesCLI-like object with stream state."""
-    from cli import HermesCLI
+    """Create a minimal ThothCLI-like object with stream state."""
+    from cli import ThothCLI
 
-    cli = HermesCLI.__new__(HermesCLI)
+    cli = ThothCLI.__new__(ThothCLI)
     cli.show_reasoning = False
     cli._stream_buf = ""
     cli._stream_started = False

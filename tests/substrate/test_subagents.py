@@ -39,9 +39,9 @@ from substrate.storage import (
 
 @pytest_asyncio.fixture
 async def substrate(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
-    return Substrate.from_pool(hermes_db.pool())
+    return Substrate.from_pool(thoth_db.pool())
 
 
 def _now_utc() -> datetime:
@@ -57,7 +57,7 @@ def _now_utc() -> datetime:
 async def test_sentinel_transitions_pending_to_passed(substrate):
     """One tick passes every pending slice with a non-null trust
     score."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.sentinel_pass",
@@ -78,7 +78,7 @@ async def test_sentinel_transitions_pending_to_passed(substrate):
     sentinel = StubSentinel(substrate)
     await sentinel.tick()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             """
             SELECT sentinel_state, trust_score, pending_committed_at
@@ -101,7 +101,7 @@ async def test_sentinel_transitions_pending_to_passed(substrate):
 async def test_sentinel_emits_batch_summary(substrate):
     """After the batch tick, a ``sentinel_batch_decision`` telemetry row
     records the decided slice IDs (operational telemetry, not a slice)."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.sentinel_audit",
@@ -118,7 +118,7 @@ async def test_sentinel_emits_batch_summary(substrate):
     sentinel = StubSentinel(substrate)
     await sentinel.tick()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         audit = await conn.fetchrow(
             """
             SELECT agent, event, payload
@@ -148,7 +148,7 @@ async def test_sentinel_audit_is_telemetry_not_a_slice(substrate):
     the audit is a telemetry row (not a self_state slice) and the second
     tick adds no new audit (nothing pending left to re-decide).
     """
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.sentinel_no_reentry",
@@ -167,7 +167,7 @@ async def test_sentinel_audit_is_telemetry_not_a_slice(substrate):
     sentinel = StubSentinel(substrate)
     # First tick decides the seeded slice + records one telemetry audit.
     await sentinel.tick()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         telem_after_first = await conn.fetchval(
             "SELECT count(*) FROM substrate_telemetry "
             "WHERE event = 'sentinel_batch_decision'"
@@ -191,7 +191,7 @@ async def test_sentinel_audit_is_telemetry_not_a_slice(substrate):
 
     # Second tick: nothing pending to decide → returns before emitting.
     await sentinel.tick()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         telem_after_second = await conn.fetchval(
             "SELECT count(*) FROM substrate_telemetry "
             "WHERE event = 'sentinel_batch_decision'"
@@ -205,9 +205,9 @@ async def test_sentinel_audit_is_telemetry_not_a_slice(substrate):
 @pytest.mark.asyncio
 async def test_sentinel_empty_pending_queue_is_noop(substrate):
     """A tick with no pending slices does not record an audit."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         before = await conn.fetchval(
             "SELECT count(*) FROM substrate_telemetry "
             "WHERE event = 'sentinel_batch_decision'"
@@ -216,7 +216,7 @@ async def test_sentinel_empty_pending_queue_is_noop(substrate):
     sentinel = StubSentinel(substrate)
     await sentinel.tick()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         after = await conn.fetchval(
             "SELECT count(*) FROM substrate_telemetry "
             "WHERE event = 'sentinel_batch_decision'"
@@ -230,7 +230,7 @@ async def test_sentinel_concurrent_ticks_no_double_decide(substrate):
     must not double-decide rows. SKIP LOCKED on ``list_pending`` is
     the contract that makes this safe.
     """
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.sentinel_concurrent",
@@ -249,7 +249,7 @@ async def test_sentinel_concurrent_ticks_no_double_decide(substrate):
     s2 = StubSentinel(substrate)
     await asyncio.gather(s1.tick(), s2.tick())
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             """
             SELECT sentinel_state, trust_score
@@ -281,7 +281,7 @@ def test_trust_for_modality():
 @pytest.mark.asyncio
 async def test_force_reject_deletes_expired_pending(substrate):
     """Slice past TTL is force-rejected + audit emitted."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.force_reject",
@@ -295,7 +295,7 @@ async def test_force_reject_deletes_expired_pending(substrate):
         substrate, stream.stream_id, {"doomed": True}, event_time_world=_now_utc()
     )
     # Backdate so the TTL has expired without waiting.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         slice_id = await conn.fetchval(
             "SELECT slice_id FROM substrate_slices WHERE stream_id = $1",
             stream.stream_id,
@@ -312,7 +312,7 @@ async def test_force_reject_deletes_expired_pending(substrate):
     worker = ForceRejectWorker(substrate)
     await worker.tick()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         gone = await conn.fetchval(
             "SELECT count(*) FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -320,7 +320,7 @@ async def test_force_reject_deletes_expired_pending(substrate):
     assert gone == 0  # row deleted
 
     # Audit recorded as a force_reject_ttl telemetry row (non-perceptual).
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         audit = await conn.fetchrow(
             """
             SELECT agent, event, payload
@@ -338,7 +338,7 @@ async def test_force_reject_deletes_expired_pending(substrate):
 @pytest.mark.asyncio
 async def test_force_reject_leaves_unexpired_pending(substrate):
     """Slice within TTL is NOT touched."""
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.register(
         name="hermes.test.force_reject_healthy",
@@ -355,7 +355,7 @@ async def test_force_reject_leaves_unexpired_pending(substrate):
     worker = ForceRejectWorker(substrate)
     await worker.tick()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         survives = await conn.fetchval(
             """
             SELECT sentinel_state FROM substrate_slices WHERE stream_id = $1
@@ -368,15 +368,15 @@ async def test_force_reject_leaves_unexpired_pending(substrate):
 @pytest.mark.asyncio
 async def test_force_reject_empty_queue_no_audit(substrate):
     """No expired rows → no force_reject_ttl telemetry recorded."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         before = await conn.fetchval(
             "SELECT count(*) FROM substrate_telemetry WHERE event = 'force_reject_ttl'"
         )
     worker = ForceRejectWorker(substrate)
     await worker.tick()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         after = await conn.fetchval(
             "SELECT count(*) FROM substrate_telemetry WHERE event = 'force_reject_ttl'"
         )
@@ -391,13 +391,13 @@ async def test_force_reject_empty_queue_no_audit(substrate):
 @pytest.mark.asyncio
 async def test_partition_maintenance_creates_ahead_window(substrate):
     """One tick creates partitions for current month + 2 ahead."""
-    import hermes_db
+    import thoth_db
     from substrate.storage.partitions import list_existing_partitions
 
     worker = PartitionMaintenanceWorker(substrate, ahead_months=2)
     await worker.tick()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         names = await list_existing_partitions(conn)
 
     # Default partition + at least 3 month partitions present.

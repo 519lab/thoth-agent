@@ -7,7 +7,7 @@ Stores session metadata, full message history, and model configuration for
 CLI and gateway sessions.
 
 Key design decisions:
-- asyncpg connection pool managed by hermes_db
+- asyncpg connection pool managed by thoth_db
 - Per-call connection acquisition (no per-instance state)
 - Compression-triggered session splitting via parent_session_id chains
 - Batch runner and RL trajectories are NOT stored here (separate systems)
@@ -210,9 +210,9 @@ class _AsyncSessionDB:
     accidental wiring is caught loudly.
 
     The class has no per-instance connection state; all methods are async and
-    acquire a connection from `hermes_db.pool()` for the duration of the call.
+    acquire a connection from `thoth_db.pool()` for the duration of the call.
     Callers in async contexts call methods directly; callers in sync contexts
-    wrap with `hermes_db.run_sync(...)`.
+    wrap with `thoth_db.run_sync(...)`.
     """
 
     def __init__(self, db_path: Optional[Path] = None, **_legacy_kwargs: Any) -> None:
@@ -443,7 +443,7 @@ class _AsyncSessionDB:
     async def prune_empty_ghost_sessions(self, sessions_dir=None) -> int:
         """Remove empty TUI ghost sessions (no messages, no title, >24hr old).
 
-        Matches upstream behavior (hermes_state.py:893-921). Only prunes
+        Matches upstream behavior (thoth_state.py:893-921). Only prunes
         sessions that are: source='tui', title IS NULL, ended,
         started >24 hours ago, and have zero messages. The optional
         sessions_dir FS-walk removes on-disk session files for pruned IDs.
@@ -480,7 +480,7 @@ class _AsyncSessionDB:
         api_call_count=0, and child is older than 7 days. Non-destructive —
         preserves all messages and sets end_reason='orphaned_compression'.
 
-        Mirrors upstream logic in hermes_state.py:907-944.
+        Mirrors upstream logic in thoth_state.py:907-944.
         """
         async with thoth_db.connection() as conn:
             rows = await conn.fetch(
@@ -513,7 +513,7 @@ class _AsyncSessionDB:
 
         JSONB columns (model_config, tool_calls, reasoning_details, etc.) are
         automatically decoded to Python objects by the pool-level JSONB codec
-        registered in hermes_db._setup_jsonb_codec.
+        registered in thoth_db._setup_jsonb_codec.
         """
         async with thoth_db.connection() as conn:
             row = await conn.fetchrow(
@@ -2173,10 +2173,10 @@ class _AsyncSessionDB:
     async def vacuum(self) -> None:
         """Run VACUUM ANALYZE on the PG database.
 
-        VACUUM cannot run inside a transaction. ``hermes_db.connection()``
+        VACUUM cannot run inside a transaction. ``thoth_db.connection()``
         acquires a plain connection without starting a transaction, so this
         is safe as long as the caller does not wrap in
-        ``hermes_db.transaction()``.
+        ``thoth_db.transaction()``.
         """
         async with thoth_db.connection() as conn:
             await conn.execute("VACUUM ANALYZE")
@@ -2374,7 +2374,7 @@ class _AsyncSessionDB:
     def close(self) -> None:
         """No-op: _AsyncSessionDB has no per-instance connection to close.
 
-        The process-wide pool is managed by hermes_db.init()/hermes_db.close().
+        The process-wide pool is managed by thoth_db.init()/thoth_db.close().
         This method exists so call sites that used to call db.close() on the
         legacy SQLite SessionDB continue to work without modification.
         """

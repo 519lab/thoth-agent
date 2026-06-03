@@ -10,7 +10,7 @@ once the operator has validated the substrate path manually.
 
 The provider is sync (matches Thoth's ``MemoryProvider`` ABC); it
 bridges to the async ``recall()`` via ``recall_sync`` (which goes
-through ``hermes_db.run_sync``). Failures are absorbed — substrate
+through ``thoth_db.run_sync``). Failures are absorbed — substrate
 errors never reach the Thoth call site (mirrors the Phase A hook
 discipline).
 

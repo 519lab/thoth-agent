@@ -97,11 +97,11 @@ class Parser(SubAgent):
     # ------------------------------------------------------------------
 
     async def _select_sessions(self) -> list[str]:
-        import hermes_db
+        import thoth_db
 
         min_pending = _env_int("PARSER_MIN_PENDING_SLICES", 5)
         limit = _env_int("PARSER_MAX_SESSIONS_PER_TICK", 4)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             rows = await conn.fetch(
                 """
                 SELECT metadata->>'session_id' AS session_id
@@ -122,10 +122,10 @@ class Parser(SubAgent):
         return [r["session_id"] for r in rows]
 
     async def _fetch_batch(self, session_id: str) -> list[extract.SliceText]:
-        import hermes_db
+        import thoth_db
 
         batch_size = _env_int("PARSER_BATCH_SLICES", 20)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             rows = await conn.fetch(
                 """
                 SELECT sl.slice_id, sl.payload, sl.payload_modality, st.name AS stream_name
@@ -155,7 +155,7 @@ class Parser(SubAgent):
     # ------------------------------------------------------------------
 
     async def _tick_session(self, session_id: str) -> None:
-        import hermes_db
+        import thoth_db
 
         batch = await self._fetch_batch(session_id)
         if not batch:
@@ -204,7 +204,7 @@ class Parser(SubAgent):
                             slices_consolidated=len(slice_ids))
             return
 
-        async with hermes_db.transaction() as conn:
+        async with thoth_db.transaction() as conn:
             addresses = await store.persist_extraction(result, conn=conn)
             n = await store.mark_slices_consolidated(slice_ids, addresses, conn=conn)
 
@@ -240,7 +240,7 @@ class Parser(SubAgent):
         self, outcome, session_id, batch_size, elapsed_s, *,
         model="", error=None, result=None, slices_consolidated=0,
     ) -> None:
-        import hermes_db
+        import thoth_db
 
         ents = len(result.entities) if result else 0
         rels = len(result.relationships) if result else 0
@@ -250,7 +250,7 @@ class Parser(SubAgent):
                 len(r.source_slice_ids) for r in result.relationships
             )
         try:
-            async with hermes_db.connection() as conn:
+            async with thoth_db.connection() as conn:
                 await conn.execute(
                     """
                     INSERT INTO substrate_parser_log

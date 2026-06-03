@@ -31,18 +31,18 @@ logger = logging.getLogger(__name__)
 def _run(coro):
     """Drive an async store coro from this sync tool. Ensures the asyncpg pool
     is bootstrapped (``run_sync`` deliberately doesn't lazy-init it)."""
-    import hermes_db
+    import thoth_db
 
-    hermes_db.ensure_pool_sync()
-    return hermes_db.run_sync(coro)
+    thoth_db.ensure_pool_sync()
+    return thoth_db.run_sync(coro)
 
 
 async def _emit_telemetry(event: str, payload: dict) -> None:
     """Append a row to ``substrate_telemetry`` directly (the tool has no
     Substrate handle, so we don't go through ``substrate.telemetry.write``)."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "INSERT INTO substrate_telemetry (agent, event, payload, at) "
             "VALUES ($1, $2, $3, now())",

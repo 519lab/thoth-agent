@@ -55,9 +55,9 @@ class PartitionMaintenanceWorker(SubAgent):
         self._level = Level.FULL
 
     async def tick(self) -> None:
-        import hermes_db
+        import thoth_db
 
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             created = await ensure_partitions(
                 conn, ahead_months=self._ahead_months
             )

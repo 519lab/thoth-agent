@@ -13,7 +13,7 @@ deterministic stubs for:
 * ``should_route_capture_to_aux_vision`` (the policy decision)
 * ``_run_async`` (sync->async bridge)
 * ``vision_analyze_tool`` (the aux LLM call)
-* ``hermes_constants.get_hermes_dir`` (cache path)
+* ``thoth_constants.get_hermes_dir`` (cache path)
 
 …so the full code path is covered without a live cua-driver, a real
 auxiliary client, or network access.
@@ -57,7 +57,7 @@ def tmp_cache_dir(tmp_path):
     def _fake_get(*_args, **_kw):
         return cache_dir
 
-    with patch("hermes_constants.get_hermes_dir", _fake_get):
+    with patch("thoth_constants.get_hermes_dir", _fake_get):
         yield cache_dir
 
 
@@ -341,7 +341,7 @@ class TestRoutingDecisionWiring:
                    return_value="openrouter"), \
              patch("agent.auxiliary_client._read_main_model",
                    return_value="tencent/hy3-preview"), \
-             patch("hermes_cli.config.load_config", return_value=cfg):
+             patch("thoth_cli.config.load_config", return_value=cfg):
             assert cu_tool._should_route_through_aux_vision() is True
 
     def test_no_explicit_aux_and_vision_capable_main_keeps_multimodal(self):
@@ -354,7 +354,7 @@ class TestRoutingDecisionWiring:
                    return_value="anthropic"), \
              patch("agent.auxiliary_client._read_main_model",
                    return_value="claude-opus-4-5"), \
-             patch("hermes_cli.config.load_config", return_value=cfg), \
+             patch("thoth_cli.config.load_config", return_value=cfg), \
              patch("tools.computer_use.vision_routing._lookup_supports_vision",
                    return_value=True), \
              patch("tools.computer_use.vision_routing."
@@ -365,7 +365,7 @@ class TestRoutingDecisionWiring:
     def test_config_load_failure_disables_routing_safely(self):
         from tools.computer_use import tool as cu_tool
 
-        with patch("hermes_cli.config.load_config",
+        with patch("thoth_cli.config.load_config",
                    side_effect=RuntimeError("config.yaml unreadable")):
             # No exception should bubble up — fail open by returning False
             # so the legacy multimodal envelope continues to work.
@@ -379,7 +379,7 @@ class TestRoutingDecisionWiring:
                    return_value="openrouter"), \
              patch("agent.auxiliary_client._read_main_model",
                    return_value="x"), \
-             patch("hermes_cli.config.load_config", return_value={}), \
+             patch("thoth_cli.config.load_config", return_value={}), \
              patch.object(vr_mod, "should_route_capture_to_aux_vision",
                           side_effect=ValueError("policy bug")):
             assert cu_tool._should_route_through_aux_vision() is False

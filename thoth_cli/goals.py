@@ -21,7 +21,7 @@ Design notes / invariants:
   prompt and also pauses the goal loop for that turn (we still re-judge
   after, so if the user's message happens to complete the goal the judge
   will say ``done``).
-- This module has zero hard dependency on ``cli.HermesCLI`` or the gateway
+- This module has zero hard dependency on ``cli.ThothCLI`` or the gateway
   runner — both wire the same ``GoalManager`` in.
 
 Nothing in this module touches the agent's system prompt or toolset.
@@ -216,10 +216,10 @@ def _get_session_db() -> Optional[Any]:
     non-standard launchers can still use the GoalManager.
     """
     try:
-        from hermes_constants import get_hermes_home
-        from hermes_state import SessionDB
+        from thoth_constants import get_thoth_home
+        from thoth_state import SessionDB
 
-        home = str(get_hermes_home())
+        home = str(get_thoth_home())
     except Exception as exc:  # pragma: no cover
         logger.debug("GoalManager: SessionDB bootstrap failed (%s)", exc)
         return None
@@ -244,7 +244,7 @@ def load_goal(session_id: str) -> Optional[GoalState]:
     if db is None:
         return None
     try:
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         raw = _hermes_db.run_sync(db.get_meta(_meta_key(session_id)))
     except Exception as exc:
         logger.debug("GoalManager: get_meta failed: %s", exc)
@@ -266,7 +266,7 @@ def save_goal(session_id: str, state: GoalState) -> None:
     if db is None:
         return
     try:
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         _hermes_db.run_sync(db.set_meta(_meta_key(session_id), state.to_json()))
     except Exception as exc:
         logger.debug("GoalManager: set_meta failed: %s", exc)

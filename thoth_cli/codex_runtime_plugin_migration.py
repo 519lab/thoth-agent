@@ -568,7 +568,7 @@ def _build_hermes_tools_mcp_entry() -> dict:
     env: dict[str, str] = {}
     # HERMES_HOME passes through IF SET so the MCP subprocess sees the same
     # config / auth / sessions DB as the parent CLI. Read from os.environ
-    # (not get_hermes_home()) on purpose: when the env var is unset we want
+    # (not get_thoth_home()) on purpose: when the env var is unset we want
     # codex's subprocess to inherit whatever HERMES_HOME its launcher sets
     # at runtime (systemd unit, gateway, kanban dispatcher, custom shell),
     # rather than burning the migrate-time resolved default into config.toml

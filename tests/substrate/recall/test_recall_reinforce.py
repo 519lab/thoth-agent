@@ -46,7 +46,7 @@ async def booted_substrate(hermes_db_initialized):
 
 
 async def _seed_passed_slice(substrate, *, text: str, t_now: datetime, salience: float = 0.5):
-    import hermes_db
+    import thoth_db
 
     stream = await substrate.streams.get_by_name("thoth.world.user_message.cli")
     addr = await commit_slice(
@@ -54,7 +54,7 @@ async def _seed_passed_slice(substrate, *, text: str, t_now: datetime, salience:
     )
     # Only target THIS slice by payload — guards against multiple
     # pending slices in the test fixture racing for the same UPDATE.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             """
             UPDATE substrate_slices
@@ -72,9 +72,9 @@ async def _seed_passed_slice(substrate, *, text: str, t_now: datetime, salience:
 
 
 async def _get_salience(substrate, *, text: str) -> float:
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         return float(
             await conn.fetchval(
                 "SELECT salience_score FROM substrate_slices WHERE payload->>'text' = $1",

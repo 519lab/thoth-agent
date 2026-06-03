@@ -21,7 +21,7 @@ async def _two_entities():
 
 @pytest.mark.asyncio
 async def test_bump_canonicalises_and_accumulates(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
     a, b = await _two_entities()
     id1 = await l2.bump_edge(a, b, "co_occurrence", delta=2.0, reason="co_occurrence_bump")
@@ -29,7 +29,7 @@ async def test_bump_canonicalises_and_accumulates(hermes_db_initialized):
     id2 = await l2.bump_edge(b, a, "co_occurrence", delta=3.0, reason="co_occurrence_bump")
     assert id1 == id2
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch("SELECT src_id, dst_id, weight FROM substrate_associations")
     assert len(rows) == 1
     assert rows[0]["weight"] == pytest.approx(5.0)
@@ -77,12 +77,12 @@ def test_register_subparser_l2():
 
 @pytest.mark.asyncio
 async def test_print_l2_associations(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
     a, b = await _two_entities()
     await l2.bump_edge(a, b, "co_occurrence", delta=4.0, reason="r")
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_l2_associations(conn)
     out = buf.getvalue()

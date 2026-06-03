@@ -488,9 +488,9 @@ async def _fetch_candidates(
     connection-acquisition + SQL execution are both inside the
     asyncio.wait_for boundary.
     """
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         return await substrate.slices.recall_window(
             conn,
             t_now=t_now,
@@ -550,12 +550,12 @@ def recall_sync(
     metadata: Optional[dict] = None,
 ) -> RecallProjection:
     """Sync facade — bridges to the async ``recall`` via
-    :func:`hermes_db.run_sync`. Must NOT be called from inside a
+    :func:`thoth_db.run_sync`. Must NOT be called from inside a
     running event loop (the underlying ``run_sync`` raises).
     """
-    import hermes_db
+    import thoth_db
 
-    return hermes_db.run_sync(
+    return thoth_db.run_sync(
         recall(
             substrate,
             query,

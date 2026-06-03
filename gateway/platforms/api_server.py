@@ -318,7 +318,7 @@ def check_api_server_requirements() -> bool:
 
 
 # Filesystem markers for WAL-mode incompatibility. Lifted verbatim from
-# the pre-Phase-0 ``hermes_state.apply_wal_with_fallback`` so the
+# the pre-Phase-0 ``thoth_state.apply_wal_with_fallback`` so the
 # response_store DB behaves identically on NFS/SMB/FUSE mounts.
 _WAL_INCOMPAT_MARKERS = (
     "locking protocol",
@@ -336,7 +336,7 @@ def _apply_wal_with_fallback(conn: sqlite3.Connection, *, db_label: str) -> str:
     """Set ``journal_mode=WAL`` on ``conn``; fall back to DELETE if the
     filesystem rejects WAL. Returns the mode actually applied.
 
-    Replaces the removed ``hermes_state.apply_wal_with_fallback`` helper
+    Replaces the removed ``thoth_state.apply_wal_with_fallback`` helper
     for the gateway's response_store. The session DB itself no longer
     needs this — it moved to PostgreSQL in Phase 0.
     """
@@ -375,8 +375,8 @@ class ResponseStore:
         self._max_size = max_size
         if db_path is None:
             try:
-                from hermes_cli.config import get_hermes_home
-                db_path = str(get_hermes_home() / "response_store.db")
+                from thoth_cli.config import get_thoth_home
+                db_path = str(get_thoth_home() / "response_store.db")
             except Exception:
                 db_path = ":memory:"
         try:
@@ -385,7 +385,7 @@ class ResponseStore:
             self._conn = sqlite3.connect(":memory:", check_same_thread=False)
         # WAL journal mode with graceful fallback so response_store.db
         # degrades safely on NFS/SMB/FUSE-mounted HERMES_HOME. The shared
-        # helper that used to live in hermes_state was removed when the
+        # helper that used to live in thoth_state was removed when the
         # session DB moved to PostgreSQL in Phase 0; this is the response-
         # store's own copy of the same logic.
         _apply_wal_with_fallback(self._conn, db_label="response_store.db")
@@ -739,7 +739,7 @@ class APIServerAdapter(BasePlatformAdapter):
         if explicit and explicit.strip():
             return explicit.strip()
         try:
-            from hermes_cli.profiles import get_active_profile_name
+            from thoth_cli.profiles import get_active_profile_name
             profile = get_active_profile_name()
             if profile and profile not in {"default", "custom"}:
                 return profile
@@ -880,7 +880,7 @@ class APIServerAdapter(BasePlatformAdapter):
         """
         if self._session_db is None:
             try:
-                from hermes_state import SessionDB
+                from thoth_state import SessionDB
                 self._session_db = SessionDB()
             except Exception as e:
                 logger.debug("SessionDB unavailable for API server: %s", e)
@@ -917,7 +917,7 @@ class APIServerAdapter(BasePlatformAdapter):
         """
         from run_agent import AIAgent
         from gateway.run import _resolve_runtime_agent_kwargs, _resolve_gateway_model, _load_gateway_config, GatewayRunner
-        from hermes_cli.tools_config import _get_platform_tools
+        from thoth_cli.tools_config import _get_platform_tools
 
         runtime_kwargs = _resolve_runtime_agent_kwargs()
         reasoning_config = GatewayRunner._load_reasoning_config()
@@ -3485,7 +3485,7 @@ class APIServerAdapter(BasePlatformAdapter):
             # Ported from openclaw/openclaw#64586.
             if is_network_accessible(self._host) and self._api_key:
                 try:
-                    from hermes_cli.auth import has_usable_secret
+                    from thoth_cli.auth import has_usable_secret
                     if not has_usable_secret(self._api_key, min_length=8):
                         logger.error(
                             "[%s] Refusing to start: API_SERVER_KEY is set to a "

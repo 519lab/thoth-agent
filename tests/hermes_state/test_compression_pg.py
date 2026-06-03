@@ -12,7 +12,7 @@ import time
 from datetime import datetime, timedelta, timezone
 import pytest
 import pytest_asyncio
-from hermes_state import _AsyncSessionDB
+from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture
@@ -28,7 +28,7 @@ async def _make_chain(db, ids_with_parent_and_end_reason):
     where end_reason is None to leave session open, or a string like 'compression'.
     """
     base_dt = datetime.now(timezone.utc) - timedelta(seconds=10_000)
-    import hermes_db
+    import thoth_db
     for i, (sid, parent, end_reason) in enumerate(ids_with_parent_and_end_reason):
         # Create session with fake started_at
         await db.create_session(
@@ -41,7 +41,7 @@ async def _make_chain(db, ids_with_parent_and_end_reason):
         )
         # Update started_at to make ordering deterministic.
         started_at = base_dt + timedelta(milliseconds=i * 100)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             await conn.execute(
                 "UPDATE sessions SET started_at = $1 WHERE id = $2",
                 started_at,
@@ -53,7 +53,7 @@ async def _make_chain(db, ids_with_parent_and_end_reason):
             await db.end_session(sid, end_reason)
             # Update ended_at to be right after started_at so children can be created after
             ended_at = started_at + timedelta(milliseconds=50)
-            async with hermes_db.connection() as conn:
+            async with thoth_db.connection() as conn:
                 await conn.execute(
                     "UPDATE sessions SET ended_at = $1 WHERE id = $2",
                     ended_at,
@@ -133,7 +133,7 @@ async def test_ignores_child_created_before_parent_ended(db):
     """Ignores children created while parent was still running (not compressions)."""
     # This tests the "started_at >= ended_at" condition for distinguishing
     # compression continuations from delegate children or branch children.
-    import hermes_db
+    import thoth_db
 
     base_dt = datetime.now(timezone.utc) - timedelta(seconds=10_000)
 
@@ -149,7 +149,7 @@ async def test_ignores_child_created_before_parent_ended(db):
     # Set parent's started_at and ended_at
     parent_start = base_dt
     parent_end = base_dt + timedelta(milliseconds=1000)
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1 WHERE id = $2",
             parent_start,
@@ -159,7 +159,7 @@ async def test_ignores_child_created_before_parent_ended(db):
     # End parent
     await db.end_session("parent", "compression")
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET ended_at = $1 WHERE id = $2",
             parent_end,
@@ -176,7 +176,7 @@ async def test_ignores_child_created_before_parent_ended(db):
         parent_session_id="parent",
     )
     child1_start = base_dt + timedelta(milliseconds=500)  # Before parent ended
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1 WHERE id = $2",
             child1_start,
@@ -193,7 +193,7 @@ async def test_ignores_child_created_before_parent_ended(db):
         parent_session_id="parent",
     )
     child2_start = base_dt + timedelta(milliseconds=1100)  # After parent ended
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1 WHERE id = $2",
             child2_start,

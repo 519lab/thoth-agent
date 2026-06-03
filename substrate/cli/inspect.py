@@ -17,7 +17,7 @@ tables, and prints a fixed-format report. Safe to run against a Thoth
 deployment that is already booted in another process.
 
 Wired into Thoth's top-level argparse via :func:`register_subparser`
-called from ``hermes_cli/main.py``. Mutating/admin operations on
+called from ``thoth_cli/main.py``. Mutating/admin operations on
 embeddings live under the separate ``thoth embed`` namespace; see
 ``substrate/cli/embed.py``.
 """
@@ -35,7 +35,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 # ---------------------------------------------------------------------------
-# Subparser registration — called from hermes_cli/main.py.
+# Subparser registration — called from thoth_cli/main.py.
 # ---------------------------------------------------------------------------
 
 
@@ -318,7 +318,7 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Command handlers — each one is sync and bridges via hermes_db.run_sync.
+# Command handlers — each one is sync and bridges via thoth_db.run_sync.
 # This matches the rest of the Thoth CLI, where command callbacks are
 # synchronous and call asyncio.run / run_sync as needed.
 # ---------------------------------------------------------------------------
@@ -518,9 +518,9 @@ def _run_inspect(action) -> int:
     to the printer. Closes the pool on exit so the CLI doesn't leave a
     dangling asyncpg pool behind.
     """
-    import hermes_db
+    import thoth_db
 
-    if not hermes_db.ensure_pool_sync():
+    if not thoth_db.ensure_pool_sync():
         print(
             "error: THOTH_PG_DSN is not set and no pool is initialised; "
             "configure it before running `thoth substrate`.",
@@ -529,7 +529,7 @@ def _run_inspect(action) -> int:
         return 1
 
     async def _go() -> int:
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             try:
                 await action(conn)
             except Exception as exc:  # pragma: no cover — defensive
@@ -538,12 +538,12 @@ def _run_inspect(action) -> int:
         return 0
 
     try:
-        return hermes_db.run_sync(_go())
+        return thoth_db.run_sync(_go())
     finally:
         # The Thoth CLI process is one-shot; release the pool so it
         # doesn't hold a connection open past the subcommand's exit.
         try:
-            hermes_db.run_sync(hermes_db.close())
+            thoth_db.run_sync(thoth_db.close())
         except Exception:  # pragma: no cover — close is best-effort
             pass
 
@@ -1083,7 +1083,7 @@ async def _print_health_token_usage(conn: "asyncpg.Connection", now: datetime) -
 # ---------------------------------------------------------------------------
 
 
-# Key prefix must match hermes_bootstrap._BOOT_STATUS_KEY_PREFIX.
+# Key prefix must match thoth_bootstrap._BOOT_STATUS_KEY_PREFIX.
 _BOOT_STATUS_KEY_PREFIX = "substrate.boot_status."
 # Roster shown even when a mode has never booted, so a never-started worker
 # is visible rather than simply absent.

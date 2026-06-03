@@ -22,9 +22,9 @@ from substrate.storage import Family, Modality
 
 @pytest_asyncio.fixture
 async def substrate(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
-    return Substrate.from_pool(hermes_db.pool())
+    return Substrate.from_pool(thoth_db.pool())
 
 
 def _now_utc() -> datetime:
@@ -61,7 +61,7 @@ async def _register_profile(
 @pytest.mark.asyncio
 async def test_release_emits_telemetry(substrate):
     """One release → one ``curator.release`` row in ``substrate_telemetry``."""
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile(substrate.pool, "test-emit-rel")
     stream = await substrate.streams.register(
@@ -75,7 +75,7 @@ async def test_release_emits_telemetry(substrate):
     await commit_slice(
         substrate, stream.stream_id, {"x": 1}, event_time_world=_now_utc()
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         slice_id = await conn.fetchval(
             """
             UPDATE substrate_slices
@@ -97,7 +97,7 @@ async def test_release_emits_telemetry(substrate):
     assert len(released) == 1
     await curator._emit_release_audit(released)
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             """
             SELECT event, payload
@@ -118,7 +118,7 @@ async def test_release_emits_telemetry(substrate):
 
 @pytest.mark.asyncio
 async def test_alarm_emits_telemetry(substrate):
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile(
         substrate.pool, "test-emit-alarm",
@@ -135,7 +135,7 @@ async def test_alarm_emits_telemetry(substrate):
     await commit_slice(
         substrate, stream.stream_id, {"x": 1}, event_time_world=_now_utc()
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         slice_id = await conn.fetchval(
             """
             UPDATE substrate_slices
@@ -165,7 +165,7 @@ async def test_alarm_emits_telemetry(substrate):
     assert len(alarmed) == 1
     await curator._emit_alarm_audit(alarmed)
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             """
             SELECT event, payload
@@ -191,13 +191,13 @@ async def test_alarm_emits_telemetry(substrate):
 async def test_no_emit_when_nothing_to_audit(substrate):
     """Quiet tick (nothing to release, nothing to alarm) produces zero
     ``curator.*`` telemetry rows."""
-    import hermes_db
+    import thoth_db
 
     curator = Curator(substrate)
     await curator._emit_release_audit([])
     await curator._emit_alarm_audit([])
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         n = await conn.fetchval(
             "SELECT COUNT(*) FROM substrate_telemetry WHERE event LIKE 'curator.%'"
         )

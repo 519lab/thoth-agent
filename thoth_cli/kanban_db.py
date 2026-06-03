@@ -1,7 +1,7 @@
 """PostgreSQL-backed Kanban board for multi-profile, multi-project collaboration (Phase 0+).
 
 All kanban data lives in PostgreSQL 17 (via the shared asyncpg pool from
-hermes_db). Each board is identified by a ``slug`` stored in the
+thoth_db). Each board is identified by a ``slug`` stored in the
 ``kanban_boards`` table; all task/event rows carry a ``board_slug`` column
 for isolation. The ``_PgConnection`` shim presents a sqlite3-compatible
 interface so query functions work unchanged.
@@ -59,7 +59,7 @@ _log = logging.getLogger(__name__)
 # PostgreSQL connection layer (Phase 0 port)
 # ---------------------------------------------------------------------------
 # When HERMES_PG_DSN is set, kanban_db uses the shared asyncpg pool via
-# hermes_db instead of per-board SQLite files.  The _PgCursor and
+# thoth_db instead of per-board SQLite files.  The _PgCursor and
 # _PgConnection shim classes present a sqlite3-compatible interface to the
 # rest of this module so all existing query functions work without changes.
 #
@@ -268,8 +268,8 @@ class _PgConnection:
 
     def _run(self, coro):
         """Run a coroutine on the pool's event loop synchronously."""
-        import hermes_db
-        return hermes_db.run_sync(coro)
+        import thoth_db
+        return thoth_db.run_sync(coro)
 
     def _terminate_and_reacquire(self) -> None:
         """Evict the dead raw connection and rebind a fresh one.
@@ -280,11 +280,11 @@ class _PgConnection:
         connection is acquired from the pool. The fresh connection is bound
         to ``self._conn`` so the failed operation can be retried.
 
-        All pool/connection work runs through ``hermes_db.run_sync`` so it
+        All pool/connection work runs through ``thoth_db.run_sync`` so it
         executes on the pool's owning loop (asyncpg connections must only be
         used from the loop that created them).
         """
-        import hermes_db
+        import thoth_db
 
         dead = self._conn
         # terminate() is synchronous and idempotent-ish; guard so a second
@@ -294,7 +294,7 @@ class _PgConnection:
         except Exception:  # pragma: no cover - terminate rarely raises
             _log.debug("kanban_db: terminate() on dead PG conn raised", exc_info=True)
         # Acquire a fresh connection on the pool's owning loop.
-        fresh = hermes_db.run_sync(hermes_db.pool().acquire())
+        fresh = thoth_db.run_sync(thoth_db.pool().acquire())
         self._conn = fresh
         # The handle still holds the OLD raw conn in _raw_conn; mark it dead
         # so close() terminates (never releases) the original, and rebind the
@@ -615,10 +615,10 @@ class _PgConnectionHandle:
     """
 
     def __init__(self, board_slug: str) -> None:
-        import hermes_db
+        import thoth_db
 
-        self._hermes_db = hermes_db
-        self._raw_conn = hermes_db.run_sync(hermes_db.pool().acquire())
+        self._hermes_db = thoth_db
+        self._raw_conn = thoth_db.run_sync(thoth_db.pool().acquire())
         self._inner = _PgConnection(self._raw_conn, board_slug)
         self._closed = False
 
@@ -686,7 +686,7 @@ def _pg_connect(board_slug: str) -> "_PgConnectionHandle":
 
     Returns a ``_PgConnectionHandle`` that supports both
     ``with connect() as conn:`` AND ``conn = connect(); ... conn.close()``
-    usage patterns. All async operations run via hermes_db.run_sync so
+    usage patterns. All async operations run via thoth_db.run_sync so
     they share the same event loop that owns the pool — asyncpg's
     requirement that connections only be used from their owning loop.
     """
@@ -795,7 +795,7 @@ def kanban_home() -> Path:
     override = os.environ.get("HERMES_KANBAN_HOME", "").strip()
     if override:
         return Path(override).expanduser()
-    from hermes_constants import get_default_hermes_root
+    from thoth_constants import get_default_hermes_root
     return get_default_hermes_root()
 
 
@@ -915,16 +915,16 @@ def board_exists(board: Optional[str] = None) -> bool:
     slug = _normalize_board_slug(board) or DEFAULT_BOARD
     if slug == DEFAULT_BOARD:
         return True
-    import hermes_db
+    import thoth_db
     async def _check():
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             row = await conn.fetchrow(
                 "SELECT 1 FROM kanban_boards "
                 "WHERE slug = $1 AND archived_at IS NULL",
                 slug,
             )
             return row is not None
-    return hermes_db.run_sync(_check())
+    return thoth_db.run_sync(_check())
 
 
 def kanban_db_path(board: Optional[str] = None) -> Path:
@@ -1029,9 +1029,9 @@ def read_board_metadata(board: Optional[str] = None) -> dict:
         "created_at": None,
         "archived": False,
     }
-    import hermes_db
+    import thoth_db
     async def _read():
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             return await conn.fetchrow(
                 "SELECT slug, name, description, icon, color, default_workdir, "
                 "created_at, archived_at "
@@ -1039,7 +1039,7 @@ def read_board_metadata(board: Optional[str] = None) -> dict:
                 slug,
             )
     try:
-        row = hermes_db.run_sync(_read())
+        row = thoth_db.run_sync(_read())
     except RuntimeError:
         # Pool not initialised yet — fall back to synthesised defaults.
         return meta
@@ -1076,10 +1076,10 @@ def write_board_metadata(
     resulting metadata dict.
     """
     slug = _normalize_board_slug(board) or DEFAULT_BOARD
-    import hermes_db
+    import thoth_db
     # Make sure the row exists (idempotent insert) before update.
     async def _upsert():
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             await conn.execute(
                 "INSERT INTO kanban_boards (slug) VALUES ($1) "
                 "ON CONFLICT (slug) DO NOTHING",
@@ -1116,7 +1116,7 @@ def write_board_metadata(
                     f"UPDATE kanban_boards SET {', '.join(assignments)} WHERE slug = $1",
                     *params,
                 )
-    hermes_db.run_sync(_upsert())
+    thoth_db.run_sync(_upsert())
     return read_board_metadata(slug)
 
 
@@ -1164,16 +1164,16 @@ def list_boards(*, include_archived: bool = True) -> list[dict]:
     surfaced, even when it doesn't yet have an explicit row (synthesised
     by :func:`read_board_metadata`).
     """
-    import hermes_db
+    import thoth_db
     async def _list():
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             return await conn.fetch(
                 "SELECT slug, name, description, icon, color, default_workdir, "
                 "created_at, archived_at "
                 "FROM kanban_boards ORDER BY slug"
             )
     try:
-        rows = hermes_db.run_sync(_list())
+        rows = thoth_db.run_sync(_list())
     except RuntimeError:
         rows = []
 
@@ -1229,13 +1229,13 @@ def remove_board(slug: str, *, archive: bool = True) -> dict:
     if normed == DEFAULT_BOARD:
         raise ValueError("the 'default' board cannot be removed")
 
-    import hermes_db
+    import thoth_db
     async def _check():
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             return await conn.fetchval(
                 "SELECT 1 FROM kanban_boards WHERE slug = $1", normed
             )
-    if not hermes_db.run_sync(_check()):
+    if not thoth_db.run_sync(_check()):
         raise ValueError(f"board {normed!r} does not exist")
 
     # If the user removed the currently-active board, revert to default.
@@ -1244,20 +1244,20 @@ def remove_board(slug: str, *, archive: bool = True) -> dict:
 
     if archive:
         async def _archive():
-            async with hermes_db.connection() as conn:
+            async with thoth_db.connection() as conn:
                 await conn.execute(
                     "UPDATE kanban_boards SET archived_at = now() WHERE slug = $1",
                     normed,
                 )
-        hermes_db.run_sync(_archive())
+        thoth_db.run_sync(_archive())
         return {"slug": normed, "action": "archived"}
     else:
         async def _delete():
-            async with hermes_db.connection() as conn:
+            async with thoth_db.connection() as conn:
                 await conn.execute(
                     "DELETE FROM kanban_boards WHERE slug = $1", normed
                 )
-        hermes_db.run_sync(_delete())
+        thoth_db.run_sync(_delete())
         return {"slug": normed, "action": "deleted"}
 
 
@@ -1713,20 +1713,20 @@ def init_db(
     Ensures the asyncpg pool is initialised before touching the DB —
     sync call sites (CLI subcommands, kanban_notifier, test fixtures)
     rely on this implicit initialisation. Without it the first DB
-    operation raises ``RuntimeError: hermes_db.init() not called``.
+    operation raises ``RuntimeError: thoth_db.init() not called``.
     """
     slug = _normalize_board_slug(board) or DEFAULT_BOARD
-    import hermes_db
+    import thoth_db
     # Lazy-bootstrap the pool on the persistent sync loop so subsequent
     # run_sync calls bind correctly. No-op if pool is already inited.
-    hermes_db.ensure_pool_sync()
+    thoth_db.ensure_pool_sync()
     async def _ensure():
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             await conn.execute(
                 "INSERT INTO kanban_boards (slug) VALUES ($1) ON CONFLICT (slug) DO NOTHING",
                 slug,
             )
-    hermes_db.run_sync(_ensure())
+    thoth_db.run_sync(_ensure())
     return slug
 
 
@@ -5731,7 +5731,7 @@ def _rotate_worker_log(
 
 def _module_hermes_argv() -> list[str]:
     """Return the interpreter-bound Thoth CLI invocation."""
-    # ``hermes_cli.main`` is the console-script target declared in
+    # ``thoth_cli.main`` is the console-script target declared in
     # pyproject.toml, NOT a top-level ``thoth`` package — there is no
     # ``thoth`` package to import.
     return [sys.executable, "-m", "thoth_cli.main"]
@@ -5818,14 +5818,14 @@ def _resolve_hermes_argv() -> list[str]:
        launching batch shims is also unsafe with task-derived argv. The
        dispatcher therefore falls back to the interpreter-bound module form
        for implicit ``.cmd`` / ``.bat`` shims.
-    3. ``sys.executable -m hermes_cli.main`` — fallback for setups where
+    3. ``sys.executable -m thoth_cli.main`` — fallback for setups where
        Thoth is launched from a venv and the ``thoth`` shim is not on
        the dispatcher's ``$PATH`` (cron, systemd ``User=`` services,
        launchd jobs, detached processes, etc.). Goes through the running
        interpreter so the result is independent of ``$PATH``.
 
     Mirrors ``gateway.run._resolve_hermes_bin`` for the same reason. Kept
-    local (not imported from gateway) because ``hermes_cli`` sits below
+    local (not imported from gateway) because ``thoth_cli`` sits below
     ``gateway`` in the dependency order.
     """
     import shutil
@@ -5943,8 +5943,8 @@ def _default_spawn(
     # (fallback_providers, toolsets, agent settings, etc.) instead of the root
     # config.  Without this, `env = dict(os.environ)` copies only the parent's
     # env, and when the child process starts `thoth -p <name>` the
-    # _apply_profile_override() runs *before* hermes_constants is imported.
-    # If HERMES_HOME is absent from the child's env, get_hermes_home() falls
+    # _apply_profile_override() runs *before* thoth_constants is imported.
+    # If HERMES_HOME is absent from the child's env, get_thoth_home() falls
     # back to Path.home() / ".hermes" (the DEFAULT profile root), ignoring the
     # profile-specific config entirely.  Fixes profile-scoped fallback_providers
     # being invisible to kanban workers.
@@ -6752,11 +6752,11 @@ def list_profiles_on_disk() -> list[str]:
     - the implicit ``default`` profile when the default Thoth root exists
 
     Reads profile paths directly so this module has no import dependency on
-    ``hermes_cli.profiles`` (which pulls in a large chunk of the CLI startup
+    ``thoth_cli.profiles`` (which pulls in a large chunk of the CLI startup
     path).
     """
     try:
-        from hermes_constants import get_default_hermes_root
+        from thoth_constants import get_default_hermes_root
         default_root = get_default_hermes_root()
         profiles_dir = default_root / "profiles"
     except Exception:

@@ -46,11 +46,11 @@ async def loaded_substrate(hermes_db_initialized):
     """Boot substrate (sub-agents off) + bulk-insert 10k slices across
     the 15 auto-registered streams + age them past the 1-second decay
     minimum interval."""
-    import hermes_db
+    import thoth_db
 
     sub = await Substrate.boot(start_subagents=False)
     # Bulk insert via raw SQL — faster than commit_slice per row.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         stream_ids = await conn.fetch(
             "SELECT stream_id FROM substrate_streams WHERE lifecycle_state = 'active'"
         )

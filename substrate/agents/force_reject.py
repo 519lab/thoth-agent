@@ -52,12 +52,12 @@ class ForceRejectWorker(SubAgent):
         self._batch_limit = 100
 
     async def tick(self) -> None:
-        import hermes_db
+        import thoth_db
 
         # Single transaction for the CTE + DELETE + RETURNING. The
         # audit emissions run AFTER commit so a slow audit doesn't
         # hold the row locks open.
-        async with hermes_db.transaction() as conn:
+        async with thoth_db.transaction() as conn:
             expired = await self._substrate.slices.force_reject_expired(
                 conn, limit=self._batch_limit
             )

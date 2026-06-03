@@ -157,7 +157,7 @@ class TestTruncateTokenCallable:
     def test_callable_returns_placeholder(self):
         """Dashboard preview must render the Entra placeholder, NOT
         ``"<function ...>"``."""
-        from hermes_cli.web_server import _truncate_token
+        from thoth_cli.web_server import _truncate_token
 
         invoked = {"count": 0}
 
@@ -171,13 +171,13 @@ class TestTruncateTokenCallable:
         assert invoked["count"] == 0
 
     def test_string_jwt_still_truncated_to_signature_tail(self):
-        from hermes_cli.web_server import _truncate_token
+        from thoth_cli.web_server import _truncate_token
         # JWT shape: header.payload.signature → only signature tail shown.
         out = _truncate_token("aaaa.bbbb.cccccccsig", visible=4)
         assert out == "…csig"
 
     def test_empty_returns_empty(self):
-        from hermes_cli.web_server import _truncate_token
+        from thoth_cli.web_server import _truncate_token
         assert _truncate_token(None) == ""
         assert _truncate_token("") == ""
 
@@ -271,7 +271,7 @@ class TestCliEnsureRuntimeCredentialsCallable:
     cleaner ``callable(...)`` check used elsewhere.
 
     We verify the source pattern (rather than spinning up a real
-    ``HermesCLI`` instance) — the predicate change is the load-bearing
+    ``ThothCLI`` instance) — the predicate change is the load-bearing
     fix and is invariant under the surrounding orchestration code."""
 
     def test_callable_predicate_present_in_cli_runtime_validation(self):
@@ -318,7 +318,7 @@ class TestInlinedDisplayMasks:
         )
 
     def test_cli_show_config_handles_callable(self):
-        """``cli.HermesCLI.show_config`` previously did
+        """``cli.ThothCLI.show_config`` previously did
         ``self.api_key[-4:]`` / ``len(self.api_key)`` which crashes on
         callable Entra ID providers. The inlined version uses
         ``is_token_provider`` and prints the same static label as the
@@ -327,12 +327,12 @@ class TestInlinedDisplayMasks:
         src = (Path(__file__).resolve().parent.parent.parent
                / "cli.py").read_text()
         assert "is_token_provider(self.api_key)" in src, (
-            "cli.HermesCLI.show_config must guard self.api_key via "
+            "cli.ThothCLI.show_config must guard self.api_key via "
             "is_token_provider so callable Entra ID providers don't "
             "crash /config."
         )
         assert '"Microsoft Entra ID"' in src, (
-            "cli.HermesCLI.show_config must print the static "
+            "cli.ThothCLI.show_config must print the static "
             "'Microsoft Entra ID' label (matching run_agent banners) "
             "instead of attempting to slice the callable."
         )

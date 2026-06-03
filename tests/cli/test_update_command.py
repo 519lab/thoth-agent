@@ -1,13 +1,13 @@
 """Tests for the /update slash command in the classic CLI and TUI launcher.
 
-Verifies that ``HermesCLI._handle_update_command`` correctly:
+Verifies that ``ThothCLI._handle_update_command`` correctly:
 - Refuses to run under a managed install (Homebrew, Docker, etc.)
 - Sets ``_pending_relaunch`` and returns ``True`` on confirmation
 - Cancels cleanly on a "no"-shaped answer or unrecognized input
 - Cancels cleanly when ``_prompt_text_input_modal`` returns None (timeout /
   modal dismissed)
 
-Also verifies that ``hermes_cli.main._launch_tui`` correctly handles exit
+Also verifies that ``thoth_cli.main._launch_tui`` correctly handles exit
 code 42 (the TUI's signal to trigger an update) by calling
 ``relaunch(["update"], preserve_inherited=False)`` from the Python wrapper
 side.  The companion Vitest (``ui-tui/src/__tests__/createSlashHandler.test.ts``)
@@ -22,9 +22,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from cli import HermesCLI
+from cli import ThothCLI
 
-import hermes_cli.main as hmain
+import thoth_cli.main as hmain
 
 
 def _bound(fn, instance):
@@ -36,7 +36,7 @@ def _make_self(modal_response):
     """Build a minimal stand-in 'self' for ``_handle_update_command``.
 
     Uses the same SimpleNamespace pattern as ``test_destructive_slash_confirm``
-    so we don't need a full ``HermesCLI`` construction.
+    so we don't need a full ``ThothCLI`` construction.
     ``_prompt_text_input_modal`` is stubbed to return *modal_response*
     directly so tests can drive the entire confirmation branch without
     touching stdin or prompt_toolkit internals.
@@ -47,14 +47,14 @@ def _make_self(modal_response):
         _prompt_text_input_modal=lambda **_kw: modal_response,
     )
     self_._normalize_slash_confirm_choice = _bound(
-        HermesCLI._normalize_slash_confirm_choice, self_
+        ThothCLI._normalize_slash_confirm_choice, self_
     )
     return self_
 
 
 def _call(self_):
     """Invoke the real ``_handle_update_command`` on the stub."""
-    return HermesCLI._handle_update_command(self_)
+    return ThothCLI._handle_update_command(self_)
 
 
 # ---------------------------------------------------------------------------
@@ -72,12 +72,12 @@ def test_managed_install_refuses_and_does_not_set_pending_relaunch(capsys):
         _prompt_text_input_modal=lambda **_kw: pytest.fail("Modal should not be called"),
     )
     self_._normalize_slash_confirm_choice = _bound(
-        HermesCLI._normalize_slash_confirm_choice, self_
+        ThothCLI._normalize_slash_confirm_choice, self_
     )
     with (
-        patch("hermes_cli.config.is_managed", return_value=True),
+        patch("thoth_cli.config.is_managed", return_value=True),
         patch(
-            "hermes_cli.config.format_managed_message",
+            "thoth_cli.config.format_managed_message",
             return_value="Use `brew upgrade hermes-agent` to update.",
         ),
     ):
@@ -100,7 +100,7 @@ def test_affirmative_answer_sets_pending_relaunch_and_returns_true(answer, capsy
     ``_pending_relaunch = ["update"]`` and return ``True`` so the caller
     (process_command) can trigger the main-thread app-exit path."""
     self_ = _make_self(modal_response=answer)
-    with patch("hermes_cli.config.is_managed", return_value=False):
+    with patch("thoth_cli.config.is_managed", return_value=False):
         result = _call(self_)
 
     assert self_._pending_relaunch == ["update"]
@@ -117,7 +117,7 @@ def test_affirmative_answer_sets_pending_relaunch_and_returns_true(answer, capsy
 def test_negative_answer_cancels(answer, capsys):
     """Any "no"-shaped answer cancels without setting ``_pending_relaunch``."""
     self_ = _make_self(modal_response=answer)
-    with patch("hermes_cli.config.is_managed", return_value=False):
+    with patch("thoth_cli.config.is_managed", return_value=False):
         result = _call(self_)
 
     assert self_._pending_relaunch is None
@@ -128,7 +128,7 @@ def test_negative_answer_cancels(answer, capsys):
 def test_none_response_cancels(capsys):
     """``None`` from the modal (timeout or dismiss) cancels cleanly."""
     self_ = _make_self(modal_response=None)
-    with patch("hermes_cli.config.is_managed", return_value=False):
+    with patch("thoth_cli.config.is_managed", return_value=False):
         result = _call(self_)
 
     assert self_._pending_relaunch is None
@@ -145,7 +145,7 @@ def test_unrecognized_or_cancel_input_cancels(answer, capsys):
     everything else (including empty string, "cancel", typos) cancels.
     """
     self_ = _make_self(modal_response=answer)
-    with patch("hermes_cli.config.is_managed", return_value=False):
+    with patch("thoth_cli.config.is_managed", return_value=False):
         result = _call(self_)
 
     assert self_._pending_relaunch is None
@@ -206,9 +206,9 @@ class TestRestartSubstrateWorkers:
         runner = _systemctl_runner({"hermes-substrate-worker"})
         with (
             patch(
-                "hermes_cli.gateway.supports_systemd_services", return_value=True
+                "thoth_cli.gateway.supports_systemd_services", return_value=True
             ),
-            patch("hermes_cli.gateway._ensure_user_systemd_env", lambda: None),
+            patch("thoth_cli.gateway._ensure_user_systemd_env", lambda: None),
             patch.object(hmain.subprocess, "run", runner),
         ):
             restarted = hmain._restart_substrate_workers()
@@ -227,9 +227,9 @@ class TestRestartSubstrateWorkers:
         runner = _systemctl_runner({"hermes-substrate-worker"})
         with (
             patch(
-                "hermes_cli.gateway.supports_systemd_services", return_value=True
+                "thoth_cli.gateway.supports_systemd_services", return_value=True
             ),
-            patch("hermes_cli.gateway._ensure_user_systemd_env", lambda: None),
+            patch("thoth_cli.gateway._ensure_user_systemd_env", lambda: None),
             patch.object(hmain.subprocess, "run", runner),
         ):
             hmain._restart_substrate_workers()
@@ -245,7 +245,7 @@ class TestRestartSubstrateWorkers:
         called = MagicMock()
         with (
             patch(
-                "hermes_cli.gateway.supports_systemd_services", return_value=False
+                "thoth_cli.gateway.supports_systemd_services", return_value=False
             ),
             patch.object(hmain.subprocess, "run", called),
         ):
@@ -272,9 +272,9 @@ class TestRestartSubstrateWorkers:
 
         with (
             patch(
-                "hermes_cli.gateway.supports_systemd_services", return_value=True
+                "thoth_cli.gateway.supports_systemd_services", return_value=True
             ),
-            patch("hermes_cli.gateway._ensure_user_systemd_env", lambda: None),
+            patch("thoth_cli.gateway._ensure_user_systemd_env", lambda: None),
             patch.object(hmain.subprocess, "run", _run),
         ):
             restarted = hmain._restart_substrate_workers()
@@ -299,9 +299,9 @@ class TestRestartSubstrateWorkers:
 
         with (
             patch(
-                "hermes_cli.gateway.supports_systemd_services", return_value=True
+                "thoth_cli.gateway.supports_systemd_services", return_value=True
             ),
-            patch("hermes_cli.gateway._ensure_user_systemd_env", lambda: None),
+            patch("thoth_cli.gateway._ensure_user_systemd_env", lambda: None),
             patch.object(hmain.subprocess, "run", _run),
         ):
             restarted = hmain._restart_substrate_workers()

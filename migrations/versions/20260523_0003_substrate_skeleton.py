@@ -1,6 +1,6 @@
 """substrate skeleton — Phase A storage layer
 
-Adds three substrate_* tables to the Hermes PG database:
+Adds three substrate_* tables to the Thoth PG database:
 
 * substrate_decay_profiles  — bundle of decay/consolidation/tombstone
                               settings; 4 default profiles seeded.

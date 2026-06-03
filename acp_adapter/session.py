@@ -8,10 +8,10 @@ history.
 """
 from __future__ import annotations
 
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 
 import copy
-import hermes_db  # PG pool + sync bridge for async SessionDB calls.
+import thoth_db  # PG pool + sync bridge for async SessionDB calls.
 import json
 import logging
 import os
@@ -46,7 +46,7 @@ def _translate_acp_cwd(cwd: str) -> str:
     sessions all agree on the usable workspace. Native Linux/macOS keeps the
     original cwd unchanged.
     """
-    from hermes_constants import is_wsl
+    from thoth_constants import is_wsl
 
     if not is_wsl():
         return cwd
@@ -295,7 +295,7 @@ class SessionManager:
 
         if db is not None:
             try:
-                for row in hermes_db.run_sync(db.list_sessions_rich(source="acp", limit=1000)):
+                for row in thoth_db.run_sync(db.list_sessions_rich(source="acp", limit=1000)):
                     persisted_rows[str(row["id"])] = dict(row)
             except Exception:
                 logger.debug("Failed to load ACP sessions from DB", exc_info=True)
@@ -384,11 +384,11 @@ class SessionManager:
         db = self._get_db()
         if db is not None:
             try:
-                rows = hermes_db.run_sync(db.search_sessions(source="acp", limit=10000))
+                rows = thoth_db.run_sync(db.search_sessions(source="acp", limit=10000))
                 for row in rows:
                     sid = row["id"]
                     _clear_task_cwd(sid)
-                    hermes_db.run_sync(db.delete_session(sid))
+                    thoth_db.run_sync(db.delete_session(sid))
             except Exception:
                 logger.debug("Failed to cleanup ACP sessions from DB", exc_info=True)
 
@@ -419,14 +419,14 @@ class SessionManager:
         if self._db_instance is not None:
             return self._db_instance
         try:
-            from hermes_state import SessionDB
+            from thoth_state import SessionDB
             # Ensure the asyncpg pool exists before we hand back an
-            # _AsyncSessionDB — its methods will hit ``hermes_db.connection()``
+            # _AsyncSessionDB — its methods will hit ``thoth_db.connection()``
             # via ``run_sync`` and need a live pool. We do this once here
             # (sync, outside any event loop) so the inner async calls don't
             # have to bootstrap from inside a running loop.
             try:
-                if not hermes_db.ensure_pool_sync():
+                if not thoth_db.ensure_pool_sync():
                     logger.debug(
                         "No HERMES_PG_DSN configured; ACP persistence disabled"
                     )
@@ -443,7 +443,7 @@ class SessionManager:
                     "Cannot bootstrap PG pool from inside event loop: %s", exc
                 )
                 return None
-            hermes_home = get_hermes_home()
+            hermes_home = get_thoth_home()
             self._db_instance = SessionDB(db_path=hermes_home / "state.db")
             return self._db_instance
         except Exception:
@@ -476,9 +476,9 @@ class SessionManager:
 
         try:
             # Ensure the session record exists.
-            existing = hermes_db.run_sync(db.get_session(state.session_id))
+            existing = thoth_db.run_sync(db.get_session(state.session_id))
             if existing is None:
-                hermes_db.run_sync(db.create_session(
+                thoth_db.run_sync(db.create_session(
                     session_id=state.session_id,
                     source="acp",
                     model=model_str,
@@ -491,7 +491,7 @@ class SessionManager:
                 # port replaces that with a parameterised asyncpg update
                 # through the shared pool.
                 async def _update_meta() -> None:
-                    async with hermes_db.connection() as conn:
+                    async with thoth_db.connection() as conn:
                         await conn.execute(
                             "UPDATE sessions "
                             "   SET model_config = $1, "
@@ -502,14 +502,14 @@ class SessionManager:
                             state.session_id,
                         )
                 try:
-                    hermes_db.run_sync(_update_meta())
+                    thoth_db.run_sync(_update_meta())
                 except Exception:
                     logger.debug("Failed to update ACP session metadata", exc_info=True)
 
             # Replace stored messages with current history atomically so a
             # mid-rewrite failure rolls back and the previously persisted
             # conversation is preserved (salvaged from #13675).
-            hermes_db.run_sync(db.replace_messages(state.session_id, state.history))
+            thoth_db.run_sync(db.replace_messages(state.session_id, state.history))
         except Exception:
             logger.warning("Failed to persist ACP session %s", state.session_id, exc_info=True)
 
@@ -522,7 +522,7 @@ class SessionManager:
             return None
 
         try:
-            row = hermes_db.run_sync(db.get_session(session_id))
+            row = thoth_db.run_sync(db.get_session(session_id))
         except Exception:
             logger.debug("Failed to query DB for ACP session %s", session_id, exc_info=True)
             return None
@@ -562,7 +562,7 @@ class SessionManager:
 
         # Load conversation history.
         try:
-            history = hermes_db.run_sync(db.get_messages_as_conversation(session_id))
+            history = thoth_db.run_sync(db.get_messages_as_conversation(session_id))
         except Exception:
             logger.warning("Failed to load messages for ACP session %s", session_id, exc_info=True)
             history = []
@@ -600,7 +600,7 @@ class SessionManager:
         if db is None:
             return False
         try:
-            return hermes_db.run_sync(db.delete_session(session_id))
+            return thoth_db.run_sync(db.delete_session(session_id))
         except Exception:
             logger.debug("Failed to delete ACP session %s from DB", session_id, exc_info=True)
             return False
@@ -621,8 +621,8 @@ class SessionManager:
             return self._agent_factory()
 
         from run_agent import AIAgent
-        from hermes_cli.config import load_config
-        from hermes_cli.runtime_provider import resolve_runtime_provider
+        from thoth_cli.config import load_config
+        from thoth_cli.runtime_provider import resolve_runtime_provider
 
         config = load_config()
         model_cfg = config.get("model")

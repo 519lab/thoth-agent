@@ -5,8 +5,8 @@ Provides a FastAPI backend serving the Vite/React frontend and REST API
 endpoints for managing configuration, environment variables, and sessions.
 
 Usage:
-    python -m hermes_cli.main web          # Start on http://127.0.0.1:9119
-    python -m hermes_cli.main web --port 8080
+    python -m thoth_cli.main web          # Start on http://127.0.0.1:9119
+    python -m thoth_cli.main web --port 8080
 """
 
 import asyncio
@@ -39,7 +39,7 @@ from thoth_cli.config import (
     OPTIONAL_ENV_VARS,
     get_config_path,
     get_env_path,
-    get_hermes_home,
+    get_thoth_home,
     load_config,
     load_env,
     save_config,
@@ -607,7 +607,7 @@ async def get_status():
 
     active_sessions = 0
     try:
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         try:
             sessions = await db.list_sessions_rich(limit=50)
@@ -625,7 +625,7 @@ async def get_status():
     return {
         "version": __version__,
         "release_date": __release_date__,
-        "hermes_home": str(get_hermes_home()),
+        "hermes_home": str(get_thoth_home()),
         "config_path": str(get_config_path()),
         "env_path": str(get_env_path()),
         "config_version": current_ver,
@@ -651,7 +651,7 @@ async def get_status():
 # the dashboard can tail them back to the user.
 # ---------------------------------------------------------------------------
 
-_ACTION_LOG_DIR: Path = get_hermes_home() / "logs"
+_ACTION_LOG_DIR: Path = get_thoth_home() / "logs"
 
 # Short ``name`` (from the URL) → absolute log file path.
 _ACTION_LOG_FILES: Dict[str, str] = {
@@ -667,7 +667,7 @@ _ACTION_PROCS: Dict[str, subprocess.Popen] = {}
 def _spawn_hermes_action(subcommand: List[str], name: str) -> subprocess.Popen:
     """Spawn ``thoth <subcommand>`` detached and record the Popen handle.
 
-    Uses the running interpreter's ``hermes_cli.main`` module so the action
+    Uses the running interpreter's ``thoth_cli.main`` module so the action
     inherits the same venv/PYTHONPATH the web server is using.
     """
     log_file_name = _ACTION_LOG_FILES[name]
@@ -776,7 +776,7 @@ async def get_action_status(name: str, lines: int = 200):
 @app.get("/api/sessions")
 async def get_sessions(limit: int = 20, offset: int = 0):
     try:
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         try:
             sessions = await db.list_sessions_rich(limit=limit, offset=offset)
@@ -801,7 +801,7 @@ async def search_sessions(q: str = "", limit: int = 20):
     if not q or not q.strip():
         return {"results": []}
     try:
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         try:
             # Auto-add prefix wildcards so partial words match
@@ -971,7 +971,7 @@ def get_model_info():
 # ---------------------------------------------------------------------------
 
 # Canonical auxiliary task slots. Keep in sync with DEFAULT_CONFIG["auxiliary"]
-# in hermes_cli/config.py — listed here for deterministic ordering in the UI.
+# in thoth_cli/config.py — listed here for deterministic ordering in the UI.
 _AUX_TASK_SLOTS: Tuple[str, ...] = (
     "vision",
     "web_extract",
@@ -2366,7 +2366,7 @@ def _session_latest_descendant(session_id: str):
     /model may create child sessions. Dashboard refresh should continue the
     newest child instead of reopening the old parent.
     """
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
 
     def row_get(row, key, index):
         if isinstance(row, dict):
@@ -2379,7 +2379,7 @@ def _session_latest_descendant(session_id: str):
             except Exception:
                 return None
 
-    import hermes_db as _hermes_db
+    import thoth_db as _hermes_db
     db = SessionDB()
     try:
         sid = _hermes_db.run_sync(db.resolve_session_id(session_id))
@@ -2441,7 +2441,7 @@ def _session_latest_descendant(session_id: str):
 
 @app.get("/api/sessions/{session_id}")
 async def get_session_detail(session_id: str):
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
     db = SessionDB()
     try:
         sid = await db.resolve_session_id(session_id)
@@ -2468,7 +2468,7 @@ async def get_session_latest_descendant(session_id: str):
 
 @app.get("/api/sessions/{session_id}/messages")
 async def get_session_messages(session_id: str):
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
     db = SessionDB()
     try:
         sid = await db.resolve_session_id(session_id)
@@ -2482,7 +2482,7 @@ async def get_session_messages(session_id: str):
 
 @app.delete("/api/sessions/{session_id}")
 async def delete_session_endpoint(session_id: str):
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
     db = SessionDB()
     try:
         if not await db.delete_session(session_id):
@@ -2510,12 +2510,12 @@ async def get_logs(
     log_name = LOG_FILES.get(file)
     if not log_name:
         raise HTTPException(status_code=400, detail=f"Unknown log file: {file}")
-    log_path = get_hermes_home() / "logs" / log_name
+    log_path = get_thoth_home() / "logs" / log_name
     if not log_path.exists():
         return {"file": file, "lines": []}
 
     try:
-        from hermes_logging import COMPONENT_PREFIXES
+        from thoth_logging import COMPONENT_PREFIXES
     except ImportError:
         COMPONENT_PREFIXES = {}
 
@@ -3101,7 +3101,7 @@ async def update_config_raw(body: RawConfigUpdate):
 async def get_usage_analytics(days: int = 30):
     # NOTE: Phase 0 Task 23 will port these raw SQLite queries to PG.
     # Until then, return an empty response on PG so the dashboard doesn't 500.
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
     from agent.insights import InsightsEngine
 
     db = SessionDB()
@@ -3180,7 +3180,7 @@ async def get_models_analytics(days: int = 30):
     """
     # NOTE: Phase 0 Task 23 will port these raw SQLite queries to PG.
     # Until then, return an empty response on PG so the dashboard doesn't 500.
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
 
     db = SessionDB()
     if not hasattr(db, "_conn"):
@@ -3346,7 +3346,7 @@ def _resolve_chat_argv(
     so nothing has to build Node or the TUI bundle.
 
     Session resume is propagated via the ``HERMES_TUI_RESUME`` env var —
-    matching what ``hermes_cli.main._launch_tui`` does for the CLI path.
+    matching what ``thoth_cli.main._launch_tui`` does for the CLI path.
     Appending ``--resume <id>`` to argv doesn't work because ``ui-tui`` does
     not parse its argv.
 
@@ -3995,7 +3995,7 @@ def _discover_user_themes() -> list:
     to the frontend, so the client can apply them without a secondary
     round-trip or a built-in stub.
     """
-    themes_dir = get_hermes_home() / "dashboard-themes"
+    themes_dir = get_thoth_home() / "dashboard-themes"
     if not themes_dir.is_dir():
         return []
     result = []
@@ -4063,7 +4063,7 @@ async def set_dashboard_theme(body: ThemeSetBody):
 def _discover_dashboard_plugins() -> list:
     """Scan plugins/*/dashboard/manifest.json for dashboard extensions.
 
-    Checks three plugin sources (same as hermes_cli.plugins):
+    Checks three plugin sources (same as thoth_cli.plugins):
     1. User plugins:    ~/.hermes/plugins/<name>/dashboard/manifest.json
     2. Bundled plugins: <repo>/plugins/<name>/dashboard/manifest.json  (memory/, etc.)
     3. Project plugins: ./.hermes/plugins/  (only if HERMES_ENABLE_PROJECT_PLUGINS)
@@ -4074,7 +4074,7 @@ def _discover_dashboard_plugins() -> list:
     from thoth_cli.plugins import get_bundled_plugins_dir
     bundled_root = get_bundled_plugins_dir()
     search_dirs = [
-        (get_hermes_home() / "plugins", "user"),
+        (get_thoth_home() / "plugins", "user"),
         (bundled_root / "memory", "bundled"),
         (bundled_root, "bundled"),
     ]
@@ -4207,7 +4207,7 @@ def _merged_plugins_hub() -> Dict[str, Any]:
     config = load_config()
     hidden_plugins: list = cfg_get(config, "dashboard", "hidden_plugins", default=[]) or []
 
-    plugins_root_resolved = (get_hermes_home() / "plugins").resolve()
+    plugins_root_resolved = (get_thoth_home() / "plugins").resolve()
     rows: List[Dict[str, Any]] = []
 
     for name, version, description, source, dir_str in _discover_all_plugins():

@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from hermes_state import _AsyncSessionDB
+from thoth_state import _AsyncSessionDB
 from tests._helpers.sync_session_db import SyncSessionDB, set_session_meta_sync
 from tools.session_search_tool import (
     SESSION_SEARCH_SCHEMA,
@@ -30,7 +30,7 @@ def db(hermes_db_initialized_sync):
     Phase 0 moved SessionDB from SQLite to async PG. This fixture
     keeps the pre-Phase-0 test bodies intact by wrapping
     ``_AsyncSessionDB`` with a sync shim — every ``db.<method>(...)``
-    call dispatches through ``hermes_db.run_sync``. The
+    call dispatches through ``thoth_db.run_sync``. The
     ``hermes_db_initialized_sync`` fixture (from tests/conftest.py)
     binds the pool to the persistent sync loop and runs Alembic head.
     """

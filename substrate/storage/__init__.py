@@ -3,7 +3,7 @@
 All repos are async. Repos that participate in caller-controlled
 transactions accept an explicit ``asyncpg.Connection`` argument;
 read-only no-txn helpers may acquire from the shared
-``hermes_db.pool()`` themselves.
+``thoth_db.pool()`` themselves.
 """
 
 from substrate.storage.decay_profiles import (

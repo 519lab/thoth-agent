@@ -16,7 +16,7 @@ Resolution order (see ``cli_name``):
        ``sessions browse`` / post-setup re-execs.
     2. ``sys.argv[0]`` basename — for invocations that don't go through the
        shim (a renamed standalone executable, a dev checkout). Skipped for
-       module/interpreter launches (``python -m hermes_cli.main`` →
+       module/interpreter launches (``python -m thoth_cli.main`` →
        ``__main__.py``) which don't reflect a user-facing command name.
     3. ``os.path.basename(sys.executable)`` — last-resort interpreter name.
     4. ``"thoth"`` — default.

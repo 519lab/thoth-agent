@@ -4,7 +4,7 @@ All tests run against the docker-compose postgres cluster via the
 hermes_db_initialized fixture. Docker must be running:
     docker compose up -d postgres
 
-Upstream behavior (matched from hermes_state.py:992-1148):
+Upstream behavior (matched from thoth_state.py:992-1148):
   - MAX_TITLE_LENGTH = 100
   - sanitize_title raises ValueError if cleaned title > 100 chars
   - Lineage suffix format is " #N" (not " (N)")
@@ -13,7 +13,7 @@ Upstream behavior (matched from hermes_state.py:992-1148):
 """
 import pytest
 import pytest_asyncio
-from hermes_state import _AsyncSessionDB
+from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture

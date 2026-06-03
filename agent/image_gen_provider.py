@@ -164,9 +164,9 @@ def resolve_aspect_ratio(value: Optional[str]) -> str:
 
 def _images_cache_dir() -> Path:
     """Return ``$HERMES_HOME/cache/images/``, creating parents as needed."""
-    from hermes_constants import get_hermes_home
+    from thoth_constants import get_thoth_home
 
-    path = get_hermes_home() / "cache" / "images"
+    path = get_thoth_home() / "cache" / "images"
     path.mkdir(parents=True, exist_ok=True)
     return path
 

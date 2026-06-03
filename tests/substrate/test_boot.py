@@ -52,11 +52,11 @@ async def test_boot_passes_alembic_head_check(booted_no_subagents):
 async def test_boot_refuses_old_alembic_head(hermes_db_initialized, monkeypatch):
     """When the DB is on an older revision (mocked), boot raises so the
     caller knows to migrate (or set HERMES_AUTO_MIGRATE=1)."""
-    import hermes_db
+    import thoth_db
 
     # Replace the version_num value via SQL — pretend the DB is one
     # revision behind.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE alembic_version SET version_num = '20260522_0002'"
         )
@@ -77,13 +77,13 @@ async def test_streams_autoregister(booted_no_subagents):
     The migration seeds ``substrate.self_state``; boot adds the rest.
     The full §9 list is 15 streams.
     """
-    import hermes_db
+    import thoth_db
 
     expected_names = {name for (name, *_rest) in _autoregister_specs()}
     expected_names.add("substrate.self_state")
     assert len(expected_names) == 15  # spec §9
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             "SELECT name, lifecycle_state FROM substrate_streams"
         )
@@ -97,15 +97,15 @@ async def test_streams_autoregister(booted_no_subagents):
 async def test_streams_autoregister_idempotent(booted_no_subagents):
     """Re-running auto-register doesn't duplicate streams (the ON
     CONFLICT (name) DO NOTHING path)."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         before = await conn.fetchval("SELECT count(*) FROM substrate_streams")
 
     # Run the auto-register helper again on the same booted substrate.
     await booted_no_subagents._autoregister_streams()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         after = await conn.fetchval("SELECT count(*) FROM substrate_streams")
     assert before == after
 
@@ -182,7 +182,7 @@ async def test_shutdown_unbinds_hooks(booted_with_subagents):
 
 @pytest.mark.asyncio
 async def test_does_not_open_own_pool(monkeypatch, hermes_db_initialized):
-    """``Substrate.boot()`` must reuse ``hermes_db.pool()`` — it must
+    """``Substrate.boot()`` must reuse ``thoth_db.pool()`` — it must
     NOT call ``asyncpg.create_pool`` directly."""
     import asyncpg
 
@@ -197,7 +197,7 @@ async def test_does_not_open_own_pool(monkeypatch, hermes_db_initialized):
     monkeypatch.setattr("asyncpg.create_pool", _spy)
     sub = await Substrate.boot(start_subagents=False)
     try:
-        # The hermes_db fixture initialised the pool BEFORE we replaced
+        # The thoth_db fixture initialised the pool BEFORE we replaced
         # the symbol, so any create_pool call during ``Substrate.boot``
         # would be by substrate code itself.
         assert create_calls == 0, "Substrate must not call asyncpg.create_pool"
@@ -207,12 +207,12 @@ async def test_does_not_open_own_pool(monkeypatch, hermes_db_initialized):
 
 @pytest.mark.asyncio
 async def test_shutdown_does_not_close_pool(booted_with_subagents):
-    """``Substrate.shutdown()`` does NOT close ``hermes_db.pool()`` —
-    that's the responsibility of ``hermes_db.close()`` which is owned
+    """``Substrate.shutdown()`` does NOT close ``thoth_db.pool()`` —
+    that's the responsibility of ``thoth_db.close()`` which is owned
     by Thoth's own shutdown sequence."""
-    import hermes_db
+    import thoth_db
 
-    pool = hermes_db.pool()
+    pool = thoth_db.pool()
     await booted_with_subagents.shutdown()
     # The pool is still usable after substrate shutdown.
     async with pool.acquire() as conn:

@@ -131,7 +131,7 @@ function overrideVars(
 // ---------------------------------------------------------------------------
 
 /** Well-known named asset slots a theme may populate. Kept in sync with
- *  `_THEME_NAMED_ASSET_KEYS` in `hermes_cli/web_server.py`. */
+ *  `_THEME_NAMED_ASSET_KEYS` in `thoth_cli/web_server.py`. */
 const NAMED_ASSET_KEYS = ["bg", "hero", "logo", "crest", "sidebar", "header"] as const;
 
 /** Component buckets mirrored from the backend's `_THEME_COMPONENT_BUCKETS`.

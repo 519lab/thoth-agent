@@ -103,13 +103,13 @@ class PatternFinder(SubAgent):
         produces reworded duplicates of patterns we already have."""
         import asyncio
 
-        import hermes_db
+        import thoth_db
 
         interval = _env_int("PATTERNFINDER_INTERVAL_S", 300)
         now_mono = asyncio.get_event_loop().time()
         if self._last_run_mono and (now_mono - self._last_run_mono) < interval:
             return False
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             l1_max = await conn.fetchval("SELECT max(last_seen_at) FROM l1_entities")
         if (
             l1_max is not None
@@ -126,10 +126,10 @@ class PatternFinder(SubAgent):
     async def _build_context(self):
         """Recent L1 entities (+ a few relationships each) → a text block the
         model reads, plus a name→id map for citation resolution."""
-        import hermes_db
+        import thoth_db
 
         limit = _env_int("PATTERNFINDER_CONTEXT_ENTITIES", 40)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             ents = await conn.fetch(
                 """
                 SELECT id, name, entity_type, summary

@@ -285,7 +285,7 @@ async def validate(
     """
     import os
 
-    import hermes_db
+    import thoth_db
     from substrate import Substrate, config as _cfg
     from substrate.recall.api import recall
     from substrate.storage.slices import SliceRepo
@@ -320,7 +320,7 @@ async def validate(
         query = await _derive_probe_query(conn)
     print(f"Probe query: {query!r}")
 
-    sub = Substrate.from_pool(hermes_db.pool())
+    sub = Substrate.from_pool(thoth_db.pool())
     proj = await recall(
         sub, query, session_id="recall-validate", token_budget=token_budget
     )

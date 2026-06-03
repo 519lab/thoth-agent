@@ -7,7 +7,7 @@ it, sub-agent tick loops never fire (slices accumulate as ``pending``
 and never get embedded, salience decay never runs).
 
 Why a separate process: the gateway hosts BOTH a perception emitter
-(async hooks on the main loop) AND ``hermes_db.run_sync`` callers
+(async hooks on the main loop) AND ``thoth_db.run_sync`` callers
 (session/telegram handlers offloading to a worker-thread ``_sync_loop``).
 Both share one ``asyncpg.Pool`` singleton, but asyncpg connections are
 loop-bound. Driving sub-agent ticks on the gateway's main loop while
@@ -87,7 +87,7 @@ async def _run_worker_async() -> int:
     import logging
     import os
 
-    import hermes_db
+    import thoth_db
 
     # Configure logging to stderr; systemd captures into journal.
     logging.basicConfig(
@@ -105,26 +105,26 @@ async def _run_worker_async() -> int:
         return 1
 
     log.info("substrate worker starting — dsn=%s", _redacted(dsn))
-    # ``hermes_cli.main.main()`` eagerly binds the global asyncpg pool to
-    # ``hermes_db._sync_loop`` via ``ensure_pool_sync()``. This worker runs
+    # ``thoth_cli.main.main()`` eagerly binds the global asyncpg pool to
+    # ``thoth_db._sync_loop`` via ``ensure_pool_sync()``. This worker runs
     # its own ``asyncio.run`` loop, and asyncpg pools are loop-bound — so we
     # must drop any inherited pool and re-init on THIS loop. Otherwise every
     # DB call (alembic check, stream registration, sub-agent ticks) raises
     # ``got Future ... attached to a different loop`` and the worker
     # crash-loops on boot.
-    hermes_db.reset_pool_for_new_loop()
+    thoth_db.reset_pool_for_new_loop()
     try:
-        await hermes_db.init(dsn)
+        await thoth_db.init(dsn)
     except Exception:
-        log.exception("hermes_db.init failed; exiting 1")
+        log.exception("thoth_db.init failed; exiting 1")
         return 1
 
-    from hermes_bootstrap import bootstrap_substrate
+    from thoth_bootstrap import bootstrap_substrate
 
     substrate = await bootstrap_substrate(log=log, mode="worker")
     if substrate is None:
         log.error("bootstrap_substrate(mode=worker) returned None; exiting 1")
-        await hermes_db.close()
+        await thoth_db.close()
         return 1
 
     # Wait on a stop event tripped by SIGINT/SIGTERM.
@@ -153,9 +153,9 @@ async def _run_worker_async() -> int:
     except Exception:
         log.exception("substrate.shutdown raised; continuing to pool close")
     try:
-        await hermes_db.close()
+        await thoth_db.close()
     except Exception:
-        log.exception("hermes_db.close raised; exiting anyway")
+        log.exception("thoth_db.close raised; exiting anyway")
     log.info("substrate worker stopped cleanly")
     return 0
 

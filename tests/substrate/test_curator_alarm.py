@@ -26,9 +26,9 @@ from substrate.storage import (
 
 @pytest_asyncio.fixture
 async def substrate(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
-    return Substrate.from_pool(hermes_db.pool())
+    return Substrate.from_pool(thoth_db.pool())
 
 
 def _now_utc() -> datetime:
@@ -65,13 +65,13 @@ async def _seed_passed_unconsolidated(
 ) -> UUID:
     """Commit + mark passed + age the row so it's past the
     consolidation_window."""
-    import hermes_db
+    import thoth_db
 
     await commit_slice(
         substrate, stream_id, {"k": uuid4().hex[:6]},
         event_time_world=_now_utc(),
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         # Move event_time_world / perception_time_world / ingest_time_world
         # all back by the same offset so the
         # ``event ≤ perception ≤ ingest`` CHECK constraint holds.
@@ -141,7 +141,7 @@ async def test_alarm_does_not_bump_salience(substrate):
     observational. It does NOT modify salience_score — bumping defeats
     the decay loop and produced the production amplification observed
     on 2026-05-26 (913 alarms/hour saturating slices at salience 1.0)."""
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile_with_short_window(
         substrate.pool, "test-alarm-no-bump",
@@ -167,7 +167,7 @@ async def test_alarm_does_not_bump_salience(substrate):
     # ``bumped_to`` now reflects current (unchanged) salience.
     assert alarmed[0]["bumped_to"] == pytest.approx(0.3, abs=0.001)
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         salience = await conn.fetchval(
             "SELECT salience_score FROM substrate_slices WHERE slice_id = $1",
             slice_id,
@@ -245,7 +245,7 @@ async def test_alarm_excludes_substrate_self_state_stream(substrate):
 
 @pytest.mark.asyncio
 async def test_alarm_does_not_fire_for_consolidated(substrate):
-    import hermes_db
+    import thoth_db
 
     profile_id = await _register_profile_with_short_window(
         substrate.pool, "test-alarm-consolidated", window_seconds=60,
@@ -263,7 +263,7 @@ async def test_alarm_does_not_fire_for_consolidated(substrate):
         ingest_offset_seconds=120.0, salience=0.4,
     )
     # Flip to consolidated.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET consolidation_state='consolidated' WHERE slice_id = $1",
             slice_id,

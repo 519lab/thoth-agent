@@ -1,4 +1,4 @@
-"""Tests for acp_adapter.server — HermesACPAgent ACP server."""
+"""Tests for acp_adapter.server — ThothACPAgent ACP server."""
 
 import asyncio
 import os
@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, AsyncMock, patch
 import pytest
 
 import acp
-import hermes_db
+import thoth_db
 from acp.agent.router import build_agent_router
 from acp.schema import (
     AgentCapabilities,
@@ -39,9 +39,9 @@ from acp.schema import (
     UserMessageChunk,
 )
 from acp_adapter.auth import TERMINAL_SETUP_AUTH_METHOD_ID
-from acp_adapter.server import HermesACPAgent, HERMES_VERSION
+from acp_adapter.server import ThothACPAgent, HERMES_VERSION
 from acp_adapter.session import SessionManager
-from hermes_state import SessionDB
+from thoth_state import SessionDB
 
 
 @pytest.fixture()
@@ -52,8 +52,8 @@ def mock_manager():
 
 @pytest.fixture()
 def agent(mock_manager):
-    """HermesACPAgent backed by a mock session manager."""
-    return HermesACPAgent(session_manager=mock_manager)
+    """ThothACPAgent backed by a mock session manager."""
+    return ThothACPAgent(session_manager=mock_manager)
 
 
 @pytest.mark.asyncio
@@ -245,10 +245,10 @@ class TestSessionOps:
         manager = SessionManager(
             agent_factory=lambda: SimpleNamespace(model="gpt-5.4", provider="openai-codex")
         )
-        acp_agent = HermesACPAgent(session_manager=manager)
+        acp_agent = ThothACPAgent(session_manager=manager)
 
         with patch(
-            "hermes_cli.models.curated_models_for_provider",
+            "thoth_cli.models.curated_models_for_provider",
             return_value=[("gpt-5.4", "recommended"), ("gpt-5.4-mini", "")],
         ):
             resp = await acp_agent.new_session(cwd="/tmp")
@@ -370,7 +370,7 @@ class TestSessionOps:
         state.history = [
             {"role": "system", "content": "hidden system"},
             {"role": "user", "content": "what controls the / slash commands?"},
-            {"role": "assistant", "content": "HermesACPAgent._ADVERTISED_COMMANDS controls them."},
+            {"role": "assistant", "content": "ThothACPAgent._ADVERTISED_COMMANDS controls them."},
             {
                 "role": "assistant",
                 "content": "",
@@ -408,7 +408,7 @@ class TestSessionOps:
         assert isinstance(replay_calls[0].kwargs["update"], UserMessageChunk)
         assert replay_calls[0].kwargs["update"].content.text == "what controls the / slash commands?"
         assert isinstance(replay_calls[1].kwargs["update"], AgentMessageChunk)
-        assert replay_calls[1].kwargs["update"].content.text.startswith("HermesACPAgent")
+        assert replay_calls[1].kwargs["update"].content.text.startswith("ThothACPAgent")
 
         tool_updates = [
             call.kwargs["update"]
@@ -753,7 +753,7 @@ class TestSessionOps:
     @pytest.mark.skip(
         reason=(
             "pytest-caplog × module-level import-of-acp_adapter.server "
-            "interaction: when ``HermesACPAgent`` is imported at the test "
+            "interaction: when ``ThothACPAgent`` is imported at the test "
             "file's top (rather than lazily inside a fixture), caplog's "
             "LogCaptureHandler on root does not receive WARNINGs emitted "
             "from inside the ``_replay_session_history`` exception path, "
@@ -993,17 +993,17 @@ class TestSessionConfiguration:
                 api_mode=kwargs.get("api_mode"),
             )
 
-        monkeypatch.setattr("hermes_cli.config.load_config", lambda: {
+        monkeypatch.setattr("thoth_cli.config.load_config", lambda: {
             "model": {"provider": "openrouter", "default": "openrouter/gpt-5"}
         })
         monkeypatch.setattr(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "thoth_cli.runtime_provider.resolve_runtime_provider",
             fake_resolve_runtime_provider,
         )
         manager = SessionManager(db=SessionDB(tmp_path / "state.db"))
 
         with patch("run_agent.AIAgent", side_effect=fake_agent):
-            acp_agent = HermesACPAgent(session_manager=manager)
+            acp_agent = ThothACPAgent(session_manager=manager)
             state = manager.create_session(cwd="/tmp")
             result = await acp_agent.set_session_model(
                 model_id="anthropic:claude-sonnet-4-6",
@@ -1266,7 +1266,7 @@ class TestPrompt:
         })
 
         def fake_auto_title(db, session_id, user_text, final_response, history, **kwargs):
-            hermes_db.run_sync(db.set_session_title(session_id, "Fix Zed titles"))
+            thoth_db.run_sync(db.set_session_title(session_id, "Fix Zed titles"))
             kwargs["title_callback"]("Fix Zed titles")
 
         with patch("agent.title_generator.maybe_auto_title", side_effect=fake_auto_title):
@@ -1565,17 +1565,17 @@ class TestSlashCommands:
                 api_mode=kwargs.get("api_mode"),
             )
 
-        monkeypatch.setattr("hermes_cli.config.load_config", lambda: {
+        monkeypatch.setattr("thoth_cli.config.load_config", lambda: {
             "model": {"provider": "openrouter", "default": "openrouter/gpt-5"}
         })
         monkeypatch.setattr(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "thoth_cli.runtime_provider.resolve_runtime_provider",
             fake_resolve_runtime_provider,
         )
         manager = SessionManager(db=SessionDB(tmp_path / "state.db"))
 
         with patch("run_agent.AIAgent", side_effect=fake_agent):
-            acp_agent = HermesACPAgent(session_manager=manager)
+            acp_agent = ThothACPAgent(session_manager=manager)
             state = manager.create_session(cwd="/tmp")
             result = acp_agent._cmd_model("anthropic:claude-sonnet-4-6", state)
 

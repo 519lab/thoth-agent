@@ -34,7 +34,7 @@ import threading
 import time
 import urllib.request
 
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ def _load_security_config() -> dict:
         "tirith_fail_open": True,
     }
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         cfg = load_config().get("security", {}) or {}
     except Exception:
         cfg = {}
@@ -135,7 +135,7 @@ _MARKER_TTL = 86400  # 24 hours
 
 def _get_hermes_home() -> str:
     """Return the Thoth home directory, respecting HERMES_HOME env var."""
-    return str(get_hermes_home())
+    return str(get_thoth_home())
 
 
 def _failure_marker_path() -> str:

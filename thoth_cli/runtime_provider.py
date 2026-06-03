@@ -30,7 +30,7 @@ from thoth_cli.auth import (
     has_usable_secret,
 )
 from thoth_cli.config import get_compatible_custom_providers, load_config
-from hermes_constants import OPENROUTER_BASE_URL
+from thoth_constants import OPENROUTER_BASE_URL
 from utils import base_url_host_matches, base_url_hostname
 
 
@@ -496,7 +496,7 @@ def _get_named_custom_provider(requested_provider: str) -> Optional[Dict[str, An
             # the request.  We only defer to the built-in when the raw name is
             # the canonical provider itself (``nous``, ``openrouter``, …) so
             # accidentally shadowing a canonical provider still resolves to
-            # the built-in. See tests/hermes_cli/test_runtime_provider_resolution.py
+            # the built-in. See tests/thoth_cli/test_runtime_provider_resolution.py
             # ``test_named_custom_provider_does_not_shadow_builtin_provider``.
             if (canonical or "").strip().lower() == requested_norm:
                 return None

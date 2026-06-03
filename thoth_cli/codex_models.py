@@ -20,7 +20,7 @@ DEFAULT_CODEX_MODELS: List[str] = [
     # the Codex CLI / OAuth backend (chatgpt.com/backend-api/codex/models)
     # for ChatGPT Pro subscribers. It is NOT available in the public OpenAI
     # API, so it intentionally stays out of the "openai" provider catalog
-    # in hermes_cli/models.py — only the openai-codex (OAuth) provider
+    # in thoth_cli/models.py — only the openai-codex (OAuth) provider
     # surfaces it. The Codex backend reports ``supported_in_api: false`` for
     # this slug; that flag describes API availability, not Codex backend
     # availability, so the fetch/cache code paths below intentionally do

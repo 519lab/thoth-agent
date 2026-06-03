@@ -2,7 +2,7 @@
 
 from unittest.mock import AsyncMock, MagicMock
 
-import hermes_db
+import thoth_db
 import pytest
 
 from gateway.config import GatewayConfig
@@ -15,17 +15,17 @@ def test_gateway_retry_replaces_last_user_turn_in_transcript(tmp_path, hermes_db
     """Verify /retry truncates the old user+assistant turn and re-runs the prompt.
 
     This test is sync because gateway/session.py's append_to_transcript and
-    load_transcript use hermes_db.run_sync, which cannot be called from inside
+    load_transcript use thoth_db.run_sync, which cannot be called from inside
     a running event loop.
     """
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
 
     config = GatewayConfig()
     store = SessionStore(sessions_dir=tmp_path, config=config)
 
     session_id = "retry_session"
     db = SessionDB()
-    hermes_db.run_sync(db.create_session(session_id=session_id, source="test"))
+    thoth_db.run_sync(db.create_session(session_id=session_id, source="test"))
     for msg in [
         {"role": "session_meta", "tools": []},
         {"role": "user", "content": "first question"},

@@ -12,7 +12,7 @@ badge. User can edit afterward to confirm.
 
 Design notes
 ------------
-- Mirrors the shape of ``hermes_cli/kanban_specify.py``: lazy aux
+- Mirrors the shape of ``thoth_cli/kanban_specify.py``: lazy aux
   client import inside the function, lenient response parse, never
   raises on expected failure modes.
 - Reads at most ``MAX_SKILLS_FOR_PROMPT`` skill names to keep the
@@ -180,8 +180,8 @@ def describe_profile(
 
     try:
         if canon == "default":
-            from hermes_constants import get_hermes_home  # type: ignore
-            profile_dir = Path(get_hermes_home())
+            from thoth_constants import get_thoth_home  # type: ignore
+            profile_dir = Path(get_thoth_home())
         else:
             profile_dir = profiles_mod.get_profile_dir(canon)
     except Exception as exc:

@@ -19,8 +19,8 @@ from pathlib import Path
 from typing import Optional
 
 from thoth_cli.cli_name import cli_name
-from thoth_cli.config import get_hermes_home, get_config_path, load_config, save_config
-from hermes_constants import get_optional_skills_dir
+from thoth_cli.config import get_thoth_home, get_config_path, load_config, save_config
+from thoth_constants import get_optional_skills_dir
 from thoth_cli.setup import (
     Colors,
     color,
@@ -45,7 +45,7 @@ _OPENCLAW_SCRIPT = (
 
 # Fallback: user may have installed the skill from the Hub
 _OPENCLAW_SCRIPT_INSTALLED = (
-    get_hermes_home()
+    get_thoth_home()
     / "skills"
     / "migration"
     / "openclaw-migration"
@@ -380,7 +380,7 @@ def _cmd_migrate(args):
         return
 
     # Show what we're doing
-    hermes_home = get_hermes_home()
+    hermes_home = get_thoth_home()
     auto_yes = getattr(args, "yes", False)
     print()
     print_header("Migration Settings")
@@ -500,7 +500,7 @@ def _cmd_migrate(args):
             return
 
     # ── Phase 2b: Pre-apply backup of the Thoth home ─────────
-    # Delegates to hermes_cli.backup.create_pre_migration_backup(), which
+    # Delegates to thoth_cli.backup.create_pre_migration_backup(), which
     # shares implementation with the pre-update backup (same exclusion
     # rules, same SQLite safe-copy, zip format) so the archive is
     # restorable with `thoth import`.  Mirrors OpenClaw's

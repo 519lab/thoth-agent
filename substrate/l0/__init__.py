@@ -3,7 +3,7 @@
 The only public functions are :func:`commit_slice` (async; preferred
 for async call sites — gateway, conversation loop, ACP server) and its
 sync facade :func:`commit_slice_sync` (used from cron and other sync
-sites; bridges via ``hermes_db.run_sync``).
+sites; bridges via ``thoth_db.run_sync``).
 
 Read endpoints (Sentinel batch tick, force-reject sweep) live in
 ``substrate.storage.slices.SliceRepo`` and are not exported here — they

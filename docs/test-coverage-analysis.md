@@ -65,7 +65,7 @@ proxies; the `--coverage` run above gives exact line/branch numbers.
    `trajectory_compressor.py` (1,508 / 4 importers).
 
 Per-area test/source LOC ratios: `cron` 2.12, `gateway` 1.32, `tools`
-1.22, `acp_adapter` 1.10, `hermes_cli` 0.86, `substrate` 0.78, `agent`
+1.22, `acp_adapter` 1.10, `thoth_cli` 0.86, `substrate` 0.78, `agent`
 0.75, **`tui_gateway` 0.21**.
 
 ## Prioritized roadmap

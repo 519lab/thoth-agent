@@ -33,14 +33,14 @@ from thoth_cli.config import (
 
 
 # ---------------------------------------------------------------------------
-# Argparse wiring — called from hermes_cli.main
+# Argparse wiring — called from thoth_cli.main
 # ---------------------------------------------------------------------------
 
 
 def register_cli(parent_parser: argparse.ArgumentParser) -> None:
     """Attach the ``bitwarden`` subcommand tree to a parent parser.
 
-    Called from ``hermes_cli.main`` as part of building the top-level
+    Called from ``thoth_cli.main`` as part of building the top-level
     ``thoth secrets`` parser.
     """
     sub = parent_parser.add_subparsers(dest="secrets_bw_command")

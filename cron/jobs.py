@@ -16,12 +16,12 @@ import re
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 from typing import Optional, Dict, List, Any, Union
 
 logger = logging.getLogger(__name__)
 
-from hermes_time import now as _hermes_now
+from thoth_time import now as _hermes_now
 from utils import atomic_replace
 
 try:
@@ -34,7 +34,7 @@ except ImportError:
 # Configuration
 # =============================================================================
 
-HERMES_DIR = get_hermes_home().resolve()
+HERMES_DIR = get_thoth_home().resolve()
 CRON_DIR = HERMES_DIR / "cron"
 JOBS_FILE = CRON_DIR / "jobs.json"
 
@@ -496,7 +496,7 @@ def _normalize_profile(profile: Optional[str]) -> Optional[str]:
     if not raw:
         return None
 
-    from hermes_cli.profiles import normalize_profile_name, resolve_profile_env
+    from thoth_cli.profiles import normalize_profile_name, resolve_profile_env
 
     normalized = normalize_profile_name(raw)
     # resolve_profile_env validates the canonical name and checks that named

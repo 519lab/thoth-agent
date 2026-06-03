@@ -156,11 +156,11 @@ def test_register_subparser_l3():
 
 @pytest.mark.asyncio
 async def test_print_l3_patterns(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
     await l3.upsert_pattern("Async is preferred", "theme", confidence=0.7)
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_l3_patterns(conn)
     assert "Async is preferred" in buf.getvalue() and "theme" in buf.getvalue()

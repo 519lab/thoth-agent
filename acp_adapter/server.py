@@ -77,7 +77,7 @@ from acp_adapter.tools import build_tool_complete, build_tool_start
 logger = logging.getLogger(__name__)
 
 try:
-    from hermes_cli import __version__ as HERMES_VERSION
+    from thoth_cli import __version__ as HERMES_VERSION
 except Exception:
     HERMES_VERSION = "0.0.0"
 
@@ -442,7 +442,7 @@ def _content_blocks_to_openai_user_content(
     return parts
 
 
-class HermesACPAgent(acp.Agent):
+class ThothACPAgent(acp.Agent):
     """ACP Agent implementation wrapping Thoth AIAgent."""
 
     _SLASH_COMMANDS = {
@@ -581,7 +581,7 @@ class HermesACPAgent(acp.Agent):
         provider = getattr(state.agent, "provider", None) or detect_provider() or "openrouter"
 
         try:
-            from hermes_cli.models import curated_models_for_provider, normalize_provider, provider_label
+            from thoth_cli.models import curated_models_for_provider, normalize_provider, provider_label
 
             normalized_provider = normalize_provider(provider)
             provider_name = provider_label(normalized_provider)
@@ -644,7 +644,7 @@ class HermesACPAgent(acp.Agent):
         new_model = raw_model.strip()
 
         try:
-            from hermes_cli.models import detect_provider_for_model, parse_model_input
+            from thoth_cli.models import detect_provider_for_model, parse_model_input
 
             target_provider, new_model = parse_model_input(new_model, current_provider)
             if target_provider == current_provider:
@@ -719,14 +719,14 @@ class HermesACPAgent(acp.Agent):
                 return
             # Phase 0: _AsyncSessionDB.get_session is a coroutine. We are
             # in an async context (ACP server's loop), but the pool was
-            # bound to ``hermes_db._sync_loop`` by the ACP entry point's
+            # bound to ``thoth_db._sync_loop`` by the ACP entry point's
             # ``ensure_pool_sync`` — asyncpg connections are loop-bound,
             # so a bare ``await db.get_session(...)`` from this loop
             # would deadlock (or InterfaceError). Route through
-            # ``hermes_db.run_sync`` instead — it now detects the
+            # ``thoth_db.run_sync`` instead — it now detects the
             # different-loop case and offloads to a worker thread that
             # drives ``_sync_loop`` directly.
-            import hermes_db as _hermes_db
+            import thoth_db as _hermes_db
             row = _hermes_db.run_sync(db.get_session(session_id))
         except Exception:
             logger.debug("Could not read ACP session info for %s", session_id, exc_info=True)
@@ -736,7 +736,7 @@ class HermesACPAgent(acp.Agent):
 
         title = row.get("title")
         # The `sessions` table does not have an `updated_at` column (see
-        # hermes_state.py schema — only started_at/ended_at). Use "now" as
+        # thoth_state.py schema — only started_at/ended_at). Use "now" as
         # the updated_at since we're emitting this notification precisely
         # because the title was just refreshed.
         updated_at = datetime.now(timezone.utc).isoformat()
@@ -1959,3 +1959,6 @@ class HermesACPAgent(acp.Agent):
         self.session_manager.save_session(session_id)
         logger.info("Session %s: config option %s updated", session_id, config_id)
         return SetSessionConfigOptionResponse(config_options=[])
+
+# Back-compat alias (Hermes→Thoth rename). Remove in a later cleanup phase.
+HermesACPAgent = ThothACPAgent

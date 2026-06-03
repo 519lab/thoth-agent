@@ -14,7 +14,7 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 from tools.environments.base import (
     BaseEnvironment,
     _load_json_store,
@@ -24,7 +24,7 @@ from tools.environments.base import (
 
 logger = logging.getLogger(__name__)
 
-_SNAPSHOT_STORE = get_hermes_home() / "singularity_snapshots.json"
+_SNAPSHOT_STORE = get_thoth_home() / "singularity_snapshots.json"
 
 
 def _find_singularity_executable() -> str:

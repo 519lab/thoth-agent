@@ -56,9 +56,9 @@ async def _seed(substrate, session_id, texts):
 
 
 async def _parser_log_rows(outcome=None):
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         if outcome:
             return await conn.fetch(
                 "SELECT * FROM substrate_parser_log WHERE outcome=$1", outcome
@@ -99,7 +99,7 @@ async def test_parser_intensity_off_is_noop(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_parser_extracts_persists_consolidates(booted, monkeypatch):
-    import hermes_db
+    import thoth_db
 
     await _seed(booted, "sess-1", ["Greg works on Thoth"] + [f"m{i}" for i in range(5)])
 
@@ -128,7 +128,7 @@ async def test_parser_extracts_persists_consolidates(booted, monkeypatch):
     assert any(r.predicate == "works_on" for r in rels)
 
     # Slices consolidated.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         unconsolidated = await conn.fetchval(
             "SELECT COUNT(*) FROM substrate_slices WHERE consolidation_state='unconsolidated' "
             "AND metadata->>'session_id'='sess-1'"
@@ -142,7 +142,7 @@ async def test_parser_extracts_persists_consolidates(booted, monkeypatch):
     # Audit log + parser.extracted telemetry row.
     ok = await _parser_log_rows("ok")
     assert len(ok) == 1 and ok[0]["entities_emitted"] == 2 and ok[0]["slices_consolidated"] == 6
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         selfstate = await conn.fetchval(
             "SELECT COUNT(*) FROM substrate_telemetry WHERE event='parser.extracted'"
         )
@@ -151,7 +151,7 @@ async def test_parser_extracts_persists_consolidates(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_parser_empty_still_consolidates(booted, monkeypatch):
-    import hermes_db
+    import thoth_db
 
     await _seed(booted, "sess-2", [f"m{i}" for i in range(6)])
 
@@ -161,7 +161,7 @@ async def test_parser_empty_still_consolidates(booted, monkeypatch):
     monkeypatch.setattr(extract, "call_parser_llm", _empty)
     await Parser(booted).tick()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         consolidated = await conn.fetchval(
             "SELECT COUNT(*) FROM substrate_slices WHERE consolidation_state='consolidated' "
             "AND metadata->>'session_id'='sess-2'"
@@ -172,7 +172,7 @@ async def test_parser_empty_still_consolidates(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_parser_timeout_leaves_slices_unconsolidated(booted, monkeypatch):
-    import hermes_db
+    import thoth_db
 
     await _seed(booted, "sess-3", [f"m{i}" for i in range(6)])
 
@@ -182,7 +182,7 @@ async def test_parser_timeout_leaves_slices_unconsolidated(booted, monkeypatch):
     monkeypatch.setattr(extract, "call_parser_llm", _timeout)
     await Parser(booted).tick()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         unconsolidated = await conn.fetchval(
             "SELECT COUNT(*) FROM substrate_slices WHERE consolidation_state='unconsolidated' "
             "AND metadata->>'session_id'='sess-3'"
@@ -193,7 +193,7 @@ async def test_parser_timeout_leaves_slices_unconsolidated(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_parser_parse_error_consolidates_to_avoid_loop(booted, monkeypatch):
-    import hermes_db
+    import thoth_db
 
     await _seed(booted, "sess-4", [f"m{i}" for i in range(6)])
 
@@ -203,7 +203,7 @@ async def test_parser_parse_error_consolidates_to_avoid_loop(booted, monkeypatch
     monkeypatch.setattr(extract, "call_parser_llm", _bad)
     await Parser(booted).tick()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         consolidated = await conn.fetchval(
             "SELECT COUNT(*) FROM substrate_slices WHERE consolidation_state='consolidated' "
             "AND metadata->>'session_id'='sess-4'"
@@ -214,7 +214,7 @@ async def test_parser_parse_error_consolidates_to_avoid_loop(booted, monkeypatch
 
 @pytest.mark.asyncio
 async def test_parser_llm_error_leaves_unconsolidated(booted, monkeypatch):
-    import hermes_db
+    import thoth_db
 
     await _seed(booted, "sess-5", [f"m{i}" for i in range(6)])
 
@@ -224,7 +224,7 @@ async def test_parser_llm_error_leaves_unconsolidated(booted, monkeypatch):
     monkeypatch.setattr(extract, "call_parser_llm", _err)
     await Parser(booted).tick()
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         unconsolidated = await conn.fetchval(
             "SELECT COUNT(*) FROM substrate_slices WHERE consolidation_state='unconsolidated' "
             "AND metadata->>'session_id'='sess-5'"

@@ -15,7 +15,7 @@ and then flips the task ``triage -> todo`` via
 Design notes
 ------------
 
-* This module intentionally mirrors ``hermes_cli/goals.py`` — same aux
+* This module intentionally mirrors ``thoth_cli/goals.py`` — same aux
   client pattern, same "empty config => skip, don't crash" tolerance.
   Keeps the surface area tiny and the failure modes predictable.
 
@@ -128,7 +128,7 @@ def _extract_json_blob(raw: str) -> Optional[dict]:
 
 
 def _profile_author() -> str:
-    """Mirror of ``hermes_cli.kanban._profile_author``. Kept local to
+    """Mirror of ``thoth_cli.kanban._profile_author``. Kept local to
     avoid a circular import when kanban.py imports this module."""
     return (
         os.environ.get("HERMES_PROFILE")

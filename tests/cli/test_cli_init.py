@@ -1,4 +1,4 @@
-"""Tests for HermesCLI initialization -- catches configuration bugs
+"""Tests for ThothCLI initialization -- catches configuration bugs
 that only manifest at runtime (not in mocked unit tests)."""
 
 import os
@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 def _make_cli(env_overrides=None, config_overrides=None, **kwargs):
-    """Create a HermesCLI instance with minimal mocking."""
+    """Create a ThothCLI instance with minimal mocking."""
     import importlib
 
     _clean_config = {
@@ -51,7 +51,7 @@ def _make_cli(env_overrides=None, config_overrides=None, **kwargs):
         _cli_mod = importlib.reload(_cli_mod)
         with patch.object(_cli_mod, "get_tool_definitions", return_value=[]), \
              patch.dict(_cli_mod.__dict__, {"CLI_CONFIG": _clean_config}):
-            return _cli_mod.HermesCLI(**kwargs)
+            return _cli_mod.ThothCLI(**kwargs)
 
 
 class TestMaxTurnsResolution:
@@ -270,7 +270,7 @@ class TestHistoryDisplay:
         cli.session_id = "current"
         cli._session_db = MagicMock()
         # Phase 0: list_sessions_rich is an async coroutine on _AsyncSessionDB.
-        # AsyncMock makes ``hermes_db.run_sync(db.list_sessions_rich(...))``
+        # AsyncMock makes ``thoth_db.run_sync(db.list_sessions_rich(...))``
         # in production code resolve to our payload rather than blow up with
         # "An asyncio.Future, a coroutine or an awaitable is required".
         cli._session_db.list_sessions_rich = AsyncMock(return_value=[
@@ -483,7 +483,7 @@ class TestRootLevelProviderOverride:
 
     def test_normalize_root_model_keys_moves_to_model(self):
         """_normalize_root_model_keys migrates root keys into model section."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from thoth_cli.config import _normalize_root_model_keys
 
         config = {
             "provider": "opencode-go",
@@ -502,7 +502,7 @@ class TestRootLevelProviderOverride:
 
     def test_normalize_root_model_keys_does_not_override_existing(self):
         """Existing model.provider is never overridden by root-level key."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from thoth_cli.config import _normalize_root_model_keys
 
         config = {
             "provider": "stale-provider",
@@ -517,7 +517,7 @@ class TestRootLevelProviderOverride:
 
     def test_normalize_root_context_length_migrates_to_model(self):
         """Root-level context_length is migrated into the model section."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from thoth_cli.config import _normalize_root_model_keys
 
         config = {
             "context_length": 128000,
@@ -531,7 +531,7 @@ class TestRootLevelProviderOverride:
 
     def test_normalize_root_context_length_does_not_override_existing(self):
         """Existing model.context_length is not overridden by root-level key."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from thoth_cli.config import _normalize_root_model_keys
 
         config = {
             "context_length": 256000,
@@ -546,7 +546,7 @@ class TestRootLevelProviderOverride:
 
     def test_normalize_root_context_length_with_string_model(self):
         """Root-level context_length is migrated even when model is a string."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from thoth_cli.config import _normalize_root_model_keys
 
         config = {
             "context_length": 128000,

@@ -26,7 +26,7 @@ from thoth_cli.cli_name import cli_name
 from thoth_cli.nous_subscription import get_nous_subscription_features
 from tools.tool_backend_helpers import managed_nous_tools_enabled
 from utils import base_url_hostname
-from hermes_constants import get_optional_skills_dir
+from thoth_constants import get_optional_skills_dir
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +135,7 @@ def _set_reasoning_effort(config: Dict[str, Any], effort: str) -> None:
 from thoth_cli.config import (
     cfg_get,
     DEFAULT_CONFIG,
-    get_hermes_home,
+    get_thoth_home,
     get_config_path,
     get_env_path,
     load_config,
@@ -145,7 +145,7 @@ from thoth_cli.config import (
     get_env_value,
     ensure_hermes_home,
 )
-# display_hermes_home imported lazily at call sites (stale-module safety during thoth update)
+# display_thoth_home imported lazily at call sites (stale-module safety during thoth update)
 
 from thoth_cli.colors import Colors, color
 
@@ -573,7 +573,7 @@ def _print_setup_summary(config: dict, hermes_home):
         print_warning(
             f"Some tools are disabled. Run '{cli_name()} setup tools' to configure them,"
         )
-        from hermes_constants import display_hermes_home as _dhh
+        from thoth_constants import display_thoth_home as _dhh
         print_warning(f"or edit {_dhh()}/.env directly to add the missing API keys.")
         print()
 
@@ -597,7 +597,7 @@ def _print_setup_summary(config: dict, hermes_home):
     print()
 
     # Show file locations prominently
-    from hermes_constants import display_hermes_home as _dhh
+    from thoth_constants import display_thoth_home as _dhh
     print(color(f"📁 All your files are in {_dhh()}/:", Colors.CYAN, Colors.BOLD))
     print()
     print(f"   {color('Settings:', Colors.YELLOW)}  {get_config_path()}")
@@ -1293,7 +1293,7 @@ def _setup_tts_provider(config: dict):
                     save_env_value("XAI_API_KEY", api_key)
                     print_success("xAI TTS API key saved")
                 else:
-                    from hermes_constants import display_hermes_home as _dhh
+                    from thoth_constants import display_thoth_home as _dhh
                     print_warning(
                         "No xAI API key provided for TTS. Configure XAI_API_KEY "
                         f"via {cli_name()} setup model or {_dhh()}/.env to use xAI TTS. "
@@ -2183,13 +2183,13 @@ def _write_slack_manifest_and_instruct():
     """
     try:
         from thoth_cli.slack_cli import _build_full_manifest
-        from hermes_constants import get_hermes_home
+        from thoth_constants import get_thoth_home
 
         manifest = _build_full_manifest(
             bot_name="Thoth",
             bot_description="Your Thoth agent on Slack",
         )
-        target = Path(get_hermes_home()) / "slack-manifest.json"
+        target = Path(get_thoth_home()) / "slack-manifest.json"
         target.parent.mkdir(parents=True, exist_ok=True)
         import json as _json
         target.write_text(
@@ -2450,7 +2450,7 @@ def _setup_webhooks():
     save_env_value("WEBHOOK_ENABLED", "true")
     print()
     print_success("Webhooks enabled! Next steps:")
-    from hermes_constants import display_hermes_home as _dhh
+    from thoth_constants import display_thoth_home as _dhh
     print_info(f"   1. Define webhook routes in {_dhh()}/config.yaml")
     print_info("   2. Point your service (GitHub, GitLab, etc.) at:")
     print_info("      http://your-server:8644/webhooks/<route-name>")
@@ -2682,7 +2682,7 @@ def setup_gateway(config: dict):
                     print_info(f"  Or as a boot-time service: sudo {cli_name()} gateway install --system")
                 print_info(f"  Or run in foreground:  {cli_name()} gateway")
         else:
-            from hermes_constants import is_container
+            from thoth_constants import is_container
             if is_container():
                 print_info("Start the gateway to bring your bots online:")
                 print_info(f"   {cli_name()} gateway run          # Run as container main process")
@@ -2726,7 +2726,7 @@ def _model_section_has_credentials(config: dict) -> bool:
     """Return True when any known inference provider has usable credentials.
 
     Sources of truth:
-      * ``PROVIDER_REGISTRY`` in ``hermes_cli.auth`` — lists every supported
+      * ``PROVIDER_REGISTRY`` in ``thoth_cli.auth`` — lists every supported
         provider along with its ``api_key_env_vars``.
       * ``active_provider`` in the auth store — covers OAuth device-code /
         external-OAuth providers (Nous, Codex, Qwen, Gemini CLI, ...).
@@ -2794,7 +2794,7 @@ def _get_section_config_summary(config: dict, section_key: str) -> Optional[str]
     """Return a short summary if a setup section is already configured, else None.
 
     Used after OpenClaw migration to detect which sections can be skipped.
-    ``get_env_value`` is the module-level import from hermes_cli.config
+    ``get_env_value`` is the module-level import from thoth_cli.config
     so that test patches on ``setup_mod.get_env_value`` take effect.
     """
     if section_key == "model":
@@ -3156,7 +3156,7 @@ def run_setup_wizard(args):
     quick_requested = bool(getattr(args, "quick", False))
 
     config = load_config()
-    hermes_home = get_hermes_home()
+    hermes_home = get_thoth_home()
 
     # Back up existing config before setup modifies it (#3522)
     config_path = get_config_path()

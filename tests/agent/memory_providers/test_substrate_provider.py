@@ -89,8 +89,8 @@ async def test_provider_disabled_returns_empty(booted_substrate, fresh_provider)
         booted_substrate, stream.stream_id, "secret data",
         event_time_world=datetime.now(timezone.utc),
     )
-    import hermes_db
-    async with hermes_db.connection() as conn:
+    import thoth_db
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE substrate_slices SET sentinel_state='passed', trust_score=0.95, pending_committed_at=NULL WHERE sentinel_state='pending'"
         )
@@ -155,13 +155,13 @@ def test_provider_handles_substrate_not_booted(monkeypatch):
 async def test_provider_sync_turn_is_noop(booted_substrate, fresh_provider):
     """sync_turn must not write any new substrate slice — Phase A hooks
     already did. We assert by counting slices before/after."""
-    import hermes_db
+    import thoth_db
 
     p = fresh_provider(enabled=True)
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         before = await conn.fetchval("SELECT COUNT(*) FROM substrate_slices")
     p.sync_turn("user said", "assistant said", session_id="x")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         after = await conn.fetchval("SELECT COUNT(*) FROM substrate_slices")
     assert after == before
 

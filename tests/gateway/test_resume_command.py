@@ -77,7 +77,7 @@ class TestHandleResumeCommand:
     @pytest.mark.asyncio
     async def test_list_named_sessions_when_no_arg(self, hermes_db_initialized):
         """With no argument, lists recently titled sessions."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("sess_001", "telegram")
         await db.create_session("sess_002", "telegram")
@@ -94,7 +94,7 @@ class TestHandleResumeCommand:
     @pytest.mark.asyncio
     async def test_list_shows_usage_when_no_titled(self, hermes_db_initialized):
         """With no arg and no titled sessions, shows instructions."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("sess_001", "telegram")  # No title
 
@@ -107,7 +107,7 @@ class TestHandleResumeCommand:
     @pytest.mark.asyncio
     async def test_resume_by_name(self, hermes_db_initialized):
         """Resolves a title and switches to that session."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("old_session_abc", "telegram")
         await db.set_session_title("old_session_abc", "My Project")
@@ -128,7 +128,7 @@ class TestHandleResumeCommand:
     @pytest.mark.asyncio
     async def test_resume_nonexistent_name(self, hermes_db_initialized):
         """Returns error for unknown session name."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("current_session_001", "telegram")
 
@@ -140,7 +140,7 @@ class TestHandleResumeCommand:
     @pytest.mark.asyncio
     async def test_resume_already_on_session(self, hermes_db_initialized):
         """Returns friendly message when already on the requested session."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("current_session_001", "telegram")
         await db.set_session_title("current_session_001", "Active Project")
@@ -154,7 +154,7 @@ class TestHandleResumeCommand:
     @pytest.mark.asyncio
     async def test_resume_auto_lineage(self, hermes_db_initialized):
         """Asking for 'My Project' when 'My Project #2' exists gets the latest."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("sess_v1", "telegram")
         await db.set_session_title("sess_v1", "My Project")
@@ -175,7 +175,7 @@ class TestHandleResumeCommand:
     @pytest.mark.asyncio
     async def test_resume_follows_compression_continuation(self, hermes_db_initialized):
         """Gateway /resume should reopen the live descendant after compression."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
 
         db = SessionDB()
         await db.create_session("compressed_root", "telegram")
@@ -208,7 +208,7 @@ class TestHandleResumeCommand:
     @pytest.mark.asyncio
     async def test_resume_clears_running_agent(self, hermes_db_initialized):
         """Switching sessions clears any cached running agent."""
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("old_session", "telegram")
         await db.set_session_title("old_session", "Old Work")
@@ -232,7 +232,7 @@ class TestHandleResumeCommand:
         and /reset. Without this, the cached agent's memory provider keeps
         writing into the wrong session. See #6672.
         """
-        from hermes_state import SessionDB
+        from thoth_state import SessionDB
         db = SessionDB()
         await db.create_session("old_session", "telegram")
         await db.set_session_title("old_session", "Old Work")

@@ -168,9 +168,9 @@ async def test_decay_profiles_seeded(hermes_db_initialized):
     """The migration seeded the 4 default-per-modality profiles with
     stable v5 UUIDs and INTERVAL values that round-trip to timedelta.
     """
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             """
             SELECT profile_id::text AS pid, name,
@@ -207,9 +207,9 @@ async def test_self_state_stream_seeded(hermes_db_initialized):
     so internal emissions (Sentinel batch audits, force-reject audits)
     have a target from the first boot.
     """
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             """
             SELECT stream_id::text AS sid, name, family, modality, source,
@@ -235,9 +235,9 @@ async def test_substrate_slices_is_partitioned(hermes_db_initialized):
     with at least the default partition + 2 month partitions present
     after migration.
     """
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         relkind = await conn.fetchval(
             "SELECT relkind::text FROM pg_class WHERE relname = 'substrate_slices'"
         )

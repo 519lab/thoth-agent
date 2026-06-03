@@ -7,11 +7,11 @@ project_compression_tips paths are exercised at a smoke level; the full
 compression-chain projection is covered more thoroughly in test_compression_pg.py.
 """
 
-import hermes_db
+import thoth_db
 import pytest
 import pytest_asyncio
 from datetime import datetime, timedelta, timezone
-from hermes_state import _AsyncSessionDB
+from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture
@@ -26,7 +26,7 @@ async def db(hermes_db_initialized):
 async def _insert_message(session_id: str, role: str, content: str, offset_ms: int = 0):
     """Insert a raw message row with a deterministic timestamp."""
     ts = datetime.now(timezone.utc) + timedelta(milliseconds=offset_ms)
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             """
             INSERT INTO messages (session_id, role, content, timestamp)
@@ -37,7 +37,7 @@ async def _insert_message(session_id: str, role: str, content: str, offset_ms: i
 
 
 async def _set_started_at(session_id: str, started_at: datetime):
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             "UPDATE sessions SET started_at = $1 WHERE id = $2",
             started_at, session_id,

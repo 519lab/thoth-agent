@@ -33,7 +33,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 from agent.skill_utils import is_excluded_skill_path
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ _VALID_STATES = {STATE_ACTIVE, STATE_STALE, STATE_ARCHIVED}
 
 
 def _skills_dir() -> Path:
-    return get_hermes_home() / "skills"
+    return get_thoth_home() / "skills"
 
 
 def _usage_file() -> Path:

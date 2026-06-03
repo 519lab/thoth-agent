@@ -20,12 +20,12 @@ def resolve_maybe_awaitable(value: Any) -> Any:
 
     This preserves compatibility with synchronous tests/fakes and the default
     SQLite session store while letting sync call sites safely use async-backed
-    SessionDB methods.  ``hermes_db.run_sync`` owns the event-loop bridging
+    SessionDB methods.  ``thoth_db.run_sync`` owns the event-loop bridging
     details used elsewhere in the project.
     """
     if not inspect.isawaitable(value):
         return value
 
-    import hermes_db as _hermes_db
+    import thoth_db as _hermes_db
 
     return _hermes_db.run_sync(value)

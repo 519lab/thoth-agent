@@ -2,7 +2,7 @@
 
 Most methods take an explicit ``asyncpg.Connection`` so the caller
 controls transactions. Sentinel batches and force-reject sweeps run
-inside ``hermes_db.transaction()`` blocks; the L0 ``commit_slice``
+inside ``thoth_db.transaction()`` blocks; the L0 ``commit_slice``
 helper passes its own ``conn`` so a Thoth hook can join the caller's
 transaction (e.g. ``on_session_start`` shares a txn with the
 ``sessions`` INSERT in ``SessionDB.create_session``).

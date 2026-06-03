@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import pytest
 from pathlib import Path
 
-from hermes_state import SessionDB
+from thoth_state import SessionDB
 from agent.insights import (
     InsightsEngine,
     _estimate_cost,
@@ -35,7 +35,7 @@ def db(tmp_path, hermes_db_initialized_sync):
     Phase 0 moved ``SessionDB`` to ``_AsyncSessionDB``; existing tests
     were written for the legacy SQLite ``SessionDB`` and call methods
     synchronously. The ``SyncSessionDB`` shim dispatches each call
-    through ``hermes_db.run_sync`` so test bodies stay sync-shaped.
+    through ``thoth_db.run_sync`` so test bodies stay sync-shaped.
     """
     return SyncSessionDB(SessionDB(db_path=tmp_path / "test_insights.db"))
 

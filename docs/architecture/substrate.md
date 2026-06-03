@@ -83,7 +83,7 @@ Each slice carries (`substrate/storage/types.py`, `substrate/l0/`):
 ### Writing perception (L0)
 
 `substrate.l0.api.commit_slice` (async) and `commit_slice_sync` (the
-`hermes_db.run_sync` bridge for cron/CLI) are the **only** public write
+`thoth_db.run_sync` bridge for cron/CLI) are the **only** public write
 surface. Thoth call sites emit perception through
 `substrate/events/hermes_hooks.py`, which `Substrate.boot()` binds so the
 conversation loop, gateway, and ACP server can record without importing
@@ -320,7 +320,7 @@ If you touch substrate code, these are the rules that keep it correct:
 - **Never block or break the foreground.** Slice writes and recall are
   best-effort; swallow and log, don't propagate. Substrate exceptions at boot
   are logged but do not abort Thoth.
-- **Obey the single DB loop.** All PG access goes through `hermes_db` per
+- **Obey the single DB loop.** All PG access goes through `thoth_db` per
   [`database-event-loop.md`](./database-event-loop.md). The worker subprocess
   runs its own loop and calls `reset_pool_for_new_loop()`.
 - **Config is read once at boot.** `substrate/config.py` reads `HERMES_*` env

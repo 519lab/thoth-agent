@@ -1,6 +1,6 @@
 import pytest
 import pytest_asyncio
-from hermes_state import _AsyncSessionDB
+from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture

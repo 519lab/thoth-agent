@@ -308,7 +308,7 @@ def pool() -> asyncpg.Pool:
     # at the entry point.
     dsn = os.environ.get("THOTH_PG_DSN")
     if not dsn:
-        raise RuntimeError("hermes_db.init() not called")
+        raise RuntimeError("thoth_db.init() not called")
 
     # Lazy bootstrap is ONLY safe from a pure-sync context (no running event
     # loop on this thread). asyncpg pools are loop-bound: binding a fresh
@@ -320,7 +320,7 @@ def pool() -> asyncpg.Pool:
     # running loop raises ``Cannot run the event loop while another loop is
     # running`` outright. Either way, a confusing crash. Convert it into a
     # clear, actionable error: async callers must ``await
-    # hermes_db.init(dsn)`` on their own loop first (own-loop entry points
+    # thoth_db.init(dsn)`` on their own loop first (own-loop entry points
     # also call ``reset_pool_for_new_loop()`` to drop any inherited pool).
     try:
         asyncio.get_running_loop()
@@ -329,17 +329,17 @@ def pool() -> asyncpg.Pool:
         inside_running_loop = False
     if inside_running_loop:
         raise RuntimeError(
-            "hermes_db.pool() accessed before init() from inside a running "
+            "thoth_db.pool() accessed before init() from inside a running "
             "event loop. asyncpg pools are loop-bound — call `await "
-            "hermes_db.init(dsn)` on this loop first. Own-loop entry points "
-            "should also call hermes_db.reset_pool_for_new_loop() to drop "
+            "thoth_db.init(dsn)` on this loop first. Own-loop entry points "
+            "should also call thoth_db.reset_pool_for_new_loop() to drop "
             "any pool inherited from the sync bridge."
         )
 
     # Pure-sync context: drive the init on the always-running DB loop.
     run_sync(init(dsn))
     if _pool is None:
-        raise RuntimeError("hermes_db.init() not called")
+        raise RuntimeError("thoth_db.init() not called")
     return _pool
 
 
@@ -401,7 +401,7 @@ def run_sync(coro: Awaitable[T]) -> T:
         if asyncio.iscoroutine(coro):
             coro.close()
         raise RuntimeError(
-            "hermes_db.run_sync called from inside the DB loop thread; "
+            "thoth_db.run_sync called from inside the DB loop thread; "
             "await the coroutine directly instead."
         )
     return asyncio.run_coroutine_threadsafe(_as_coroutine(coro), loop).result()
@@ -411,7 +411,7 @@ async def run_on_pool_loop(coro: Awaitable[T]) -> T:
     """Await a DB coroutine on the asyncpg pool's event loop.
 
     asyncpg connections are loop-bound: a coroutine that does
-    ``async with hermes_db.connection() as conn: await conn.fetch(...)`` can
+    ``async with thoth_db.connection() as conn: await conn.fetch(...)`` can
     only run on the loop the pool was created on. In a process that hosts DB
     access from more than one loop — e.g. the gateway runs its main loop
     ``L_gw`` via ``asyncio.run(start_gateway())`` while the pool lives on the
@@ -484,8 +484,8 @@ def ensure_pool_sync() -> bool:
         running = False
     if running:
         raise RuntimeError(
-            "hermes_db.ensure_pool_sync called from inside a running event "
-            "loop; await hermes_db.init(dsn) directly instead."
+            "thoth_db.ensure_pool_sync called from inside a running event "
+            "loop; await thoth_db.init(dsn) directly instead."
         )
     # Drive the init on the always-running DB loop; run_sync owns the
     # coroutine's lifecycle (and closes it on the re-entrant guard path).

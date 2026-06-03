@@ -72,14 +72,14 @@ async def test_merge_unknown_or_identical_returns_false(hermes_db_initialized):
 
 @pytest.mark.asyncio
 async def test_forget_entity_cascades(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
     e, _ = await store.upsert_entity("Ephemeral", "concept")
     o, _ = await store.upsert_entity("Other", "concept")
     await store.upsert_relationship(e, "rel", o)
     assert await store.forget_entity(e) is True
     assert await store.get_entity_by_id(e) is None
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         n = await conn.fetchval(
             "SELECT COUNT(*) FROM l1_relationships WHERE subject_id=$1", e
         )
@@ -130,11 +130,11 @@ def test_register_subparser_l1_curation():
 
 @pytest.mark.asyncio
 async def test_cli_merge_and_forget_behaviour(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
     await store.upsert_entity("Foo", "concept")
     await store.upsert_entity("Foo2", "concept")
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         buf = io.StringIO()
         with redirect_stdout(buf):
             await inspect_mod._do_l1_merge(conn, "Foo2", "Foo")

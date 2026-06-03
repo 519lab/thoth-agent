@@ -322,7 +322,7 @@ class TestBuildSessionContextPrompt:
         )
         ctx = build_session_context(source, config)
 
-        with patch("hermes_constants.display_hermes_home", return_value="~/.hermes/profiles/coder"):
+        with patch("thoth_constants.display_thoth_home", return_value="~/.hermes/profiles/coder"):
             prompt = build_session_context_prompt(ctx)
 
         assert "~/.hermes/profiles/coder/cron/output/" in prompt
@@ -505,13 +505,13 @@ class TestSessionStoreRewriteTranscript:
 
     @pytest.fixture()
     def store(self, tmp_path, hermes_db_initialized_sync):
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         config = GatewayConfig()
         s = SessionStore(sessions_dir=tmp_path, config=config)
         return s
 
     def test_rewrite_replaces_transcript(self, store, tmp_path):
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         session_id = "test_session_1"
         _hermes_db.run_sync(store._db.create_session(session_id=session_id, source="test"))
         # Write initial transcript
@@ -535,7 +535,7 @@ class TestSessionStoreRewriteTranscript:
         assert reloaded[1]["content"] == "hi"
 
     def test_rewrite_with_empty_list(self, store):
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         session_id = "test_session_2"
         _hermes_db.run_sync(store._db.create_session(session_id=session_id, source="test"))
         store.append_to_transcript(session_id, {"role": "user", "content": "hi"})
@@ -556,7 +556,7 @@ class TestLoadTranscriptDBOnly:
         assert result == []
 
     def test_db_only_returns_messages(self, tmp_path, hermes_db_initialized_sync):
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         config = GatewayConfig()
         store = SessionStore(sessions_dir=tmp_path, config=config)
         sid = "db_only_session"
@@ -574,8 +574,8 @@ class TestSessionStoreSwitchSession:
     """Regression coverage for gateway /resume session switching semantics."""
 
     def test_switch_session_reopens_target_session_in_db(self, tmp_path, hermes_db_initialized_sync):
-        import hermes_db as _hermes_db
-        from hermes_state import SessionDB
+        import thoth_db as _hermes_db
+        from thoth_state import SessionDB
 
         config = GatewayConfig()
         with patch("gateway.session.SessionStore._ensure_loaded"):
@@ -1007,7 +1007,7 @@ class TestHasAnySessions:
         store._entries = {"telegram:12345": MagicMock()}
         # But database has 3 sessions (current + 2 previous resets).
         # session_count is now async on _AsyncSessionDB; use AsyncMock so that
-        # hermes_db.run_sync(self._db.session_count()) receives a coroutine.
+        # thoth_db.run_sync(self._db.session_count()) receives a coroutine.
         store._db.session_count = AsyncMock(return_value=3)
 
         assert store.has_any_sessions() is True
@@ -1157,8 +1157,8 @@ class TestRewriteTranscriptPreservesReasoning:
     """rewrite_transcript must not drop reasoning fields (PG-backed)."""
 
     def test_reasoning_survives_rewrite(self, tmp_path, hermes_db_initialized_sync):
-        import hermes_db as _hermes_db
-        from hermes_state import SessionDB
+        import thoth_db as _hermes_db
+        from thoth_state import SessionDB
 
         db = SessionDB()
         session_id = "reasoning-test"

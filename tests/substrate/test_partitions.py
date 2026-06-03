@@ -62,17 +62,17 @@ async def test_ensure_partitions_creates_three_months(hermes_db_initialized):
     """A fresh call with the default ``ahead_months=2`` creates the
     current month + 2 ahead. The migration already created current + 1;
     one extra month should land here."""
-    import hermes_db
+    import thoth_db
 
     today = date(2026, 8, 15)  # deterministic — independent of system clock
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         names = await ensure_partitions(conn, ahead_months=2, today=today)
     assert names == [
         "substrate_slices_202608",
         "substrate_slices_202609",
         "substrate_slices_202610",
     ]
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         existing = await list_existing_partitions(conn)
     for name in names:
         assert name in existing, f"{name} not in {existing}"
@@ -83,10 +83,10 @@ async def test_ensure_partitions_idempotent(hermes_db_initialized):
     """Calling ``ensure_partitions`` twice with the same reference date
     is a no-op on the second call — no DDL errors, no duplicates.
     """
-    import hermes_db
+    import thoth_db
 
     today = date(2026, 9, 1)
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         first = await ensure_partitions(conn, ahead_months=1, today=today)
         second = await ensure_partitions(conn, ahead_months=1, today=today)
     assert first == second
@@ -98,12 +98,12 @@ async def test_write_routes_to_correct_month_partition(hermes_db_initialized):
     ``substrate_slices_YYYYMM``. We verify via ``tableoid::regclass``
     which PG fills in with the actual partition relation name.
     """
-    import hermes_db
+    import thoth_db
 
     # Use an arbitrary month that's neither in the migration's bootstrap
     # range nor today's system month — forces us to carve out a new one.
     target_month = date(2027, 3, 1)
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await ensure_partitions(conn, ahead_months=0, today=target_month)
         # Manual INSERT — sidestep commit_slice (Task 7) which doesn't
         # exist yet. We use the substrate.self_state stream + default-
@@ -140,10 +140,10 @@ async def test_write_outside_range_lands_in_default(hermes_db_initialized):
     partition) lands in ``substrate_slices_default`` rather than failing
     the INSERT — the default partition is the safety net.
     """
-    import hermes_db
+    import thoth_db
 
     # 1980 is well before any carved partition.
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             """
             INSERT INTO substrate_slices
@@ -177,9 +177,9 @@ async def test_partition_indexes_inherited_from_parent(hermes_db_initialized):
     parent's index pattern (PG mangles them — e.g.
     ``substrate_slices_default_stream_id_time_start_world_time_end_w_idx``).
     """
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             """
             SELECT indexname

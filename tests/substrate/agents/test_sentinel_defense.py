@@ -96,9 +96,9 @@ async def _state_counts(substrate):
     """Count by sentinel_state, scoped to the user-message stream so the
     Sentinel's own born-passed audit slice (on substrate.self_state) doesn't
     inflate the 'passed' total."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             """
             SELECT sl.sentinel_state, COUNT(*)::int n

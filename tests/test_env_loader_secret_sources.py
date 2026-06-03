@@ -1,4 +1,4 @@
-"""Tests for the secret-source tracking in ``hermes_cli.env_loader``.
+"""Tests for the secret-source tracking in ``thoth_cli.env_loader``.
 
 These cover the small public surface that lets `thoth model` / `thoth setup`
 label detected credentials with their origin ("from Bitwarden") so users
@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from hermes_cli import env_loader  # noqa: E402
+from thoth_cli import env_loader  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

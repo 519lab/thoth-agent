@@ -19,7 +19,7 @@ mode parameter):
      previews, timestamps).
 
 All three modes operate on the SQLite session DB via the FTS5 index and
-the get_anchored_view / get_messages_around primitives in hermes_state.
+the get_anchored_view / get_messages_around primitives in thoth_state.
 No LLM calls anywhere — every shape returns actual messages from the DB.
 
 History: PR #20238 (JabberELF) seeded a fast/summary dual-mode split; the
@@ -44,7 +44,7 @@ class _SyncDB:
 
     Allows the sync session_search tool code (which calls db.get_session(),
     db.search_messages(), etc. without await) to work against the async PG
-    backend via hermes_db.run_sync().  Only the methods actually called by
+    backend via thoth_db.run_sync().  Only the methods actually called by
     this module are delegated; everything else raises AttributeError.
     """
 
@@ -58,7 +58,7 @@ class _SyncDB:
 
     def __init__(self, async_db):
         self._async_db = async_db
-        import hermes_db as _hermes_db
+        import thoth_db as _hermes_db
         self._run_sync = _hermes_db.run_sync
 
     def __getattr__(self, name):
@@ -430,18 +430,18 @@ def session_search(
     """
     if db is None:
         try:
-            import hermes_db
-            hermes_db.pool()  # raises RuntimeError if pool not initialised
-            from hermes_state import _AsyncSessionDB
+            import thoth_db
+            thoth_db.pool()  # raises RuntimeError if pool not initialised
+            from thoth_state import _AsyncSessionDB
             db = _SyncDB(_AsyncSessionDB())
         except RuntimeError:
             # PG pool not initialised — nothing available.
             logging.debug("SessionDB unavailable for session_search: PG pool not initialised", exc_info=True)
-            from hermes_state import format_session_db_unavailable
+            from thoth_state import format_session_db_unavailable
             return tool_error(format_session_db_unavailable(), success=False)
         except Exception:
             logging.debug("SessionDB unavailable for session_search", exc_info=True)
-            from hermes_state import format_session_db_unavailable
+            from thoth_state import format_session_db_unavailable
             return tool_error(format_session_db_unavailable(), success=False)
 
     # Scroll shape takes precedence — explicit anchor beats any query.
@@ -492,7 +492,7 @@ def check_session_search_requirements() -> bool:
     """Requires the session store to be reachable.
 
     Substrate edition runs the session store on Postgres (via
-    ``hermes_db``), so availability means either the pool is already
+    ``thoth_db``), so availability means either the pool is already
     initialised or ``HERMES_PG_DSN`` is set so the pool can be
     bootstrapped on first use. The legacy SQLite ``DEFAULT_DB_PATH``
     check was a holdover from the upstream filesystem-backed store and
@@ -502,10 +502,10 @@ def check_session_search_requirements() -> bool:
     try:
         import os
 
-        import hermes_db
+        import thoth_db
     except ImportError:
         return False
-    if hermes_db._pool is not None:
+    if thoth_db._pool is not None:
         return True
     return bool(os.environ.get("HERMES_PG_DSN"))
 

@@ -24,10 +24,10 @@ def test_register_subparser_l1_and_parser():
 
 @pytest.mark.asyncio
 async def test_print_l1_entities_empty(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_l1_entities(conn)
     assert "no L1 entities" in buf.getvalue()
@@ -35,21 +35,21 @@ async def test_print_l1_entities_empty(hermes_db_initialized):
 
 @pytest.mark.asyncio
 async def test_print_l1_entities_lists(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
     subj, _ = await store.upsert_entity("Greg", "person", summary="maintainer")
     obj, _ = await store.upsert_entity("Thoth", "project")
     await store.upsert_relationship(subj, "works_on", obj)
 
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_l1_entities(conn)
         out = buf.getvalue()
     assert "Greg" in out and "person" in out
 
     buf2 = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf2):
             await inspect_mod._print_l1_relationships(conn)
     assert "works_on" in buf2.getvalue()
@@ -57,9 +57,9 @@ async def test_print_l1_entities_lists(hermes_db_initialized):
 
 @pytest.mark.asyncio
 async def test_print_parser_summary_and_recent(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         await conn.execute(
             """
             INSERT INTO substrate_parser_log

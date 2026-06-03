@@ -59,7 +59,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-from hermes_constants import get_hermes_home, secure_parent_dir
+from thoth_constants import get_thoth_home, secure_parent_dir
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +154,7 @@ class GoogleOAuthError(RuntimeError):
 # =============================================================================
 
 def _credentials_path() -> Path:
-    return get_hermes_home() / "auth" / "google_oauth.json"
+    return get_thoth_home() / "auth" / "google_oauth.json"
 
 
 def _lock_path() -> Path:

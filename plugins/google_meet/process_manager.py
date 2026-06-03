@@ -20,7 +20,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 
 # File + directory layout (under $HERMES_HOME):
 #
@@ -37,7 +37,7 @@ from hermes_constants import get_hermes_home
 
 
 def _root() -> Path:
-    return Path(get_hermes_home()) / "workspace" / "meetings"
+    return Path(get_thoth_home()) / "workspace" / "meetings"
 
 
 def _active_file() -> Path:

@@ -6,7 +6,7 @@ Covers:
 - Clean response without interrupt still drives the judge + enqueues.
 
 These tests exercise ``_maybe_continue_goal_after_turn`` directly on a
-minimal ``HermesCLI`` stub (pattern used elsewhere in tests/cli).
+minimal ``ThothCLI`` stub (pattern used elsewhere in tests/cli).
 """
 
 from __future__ import annotations
@@ -34,18 +34,18 @@ def hermes_home(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(home))
 
     # Bust the goal module's DB cache so it re-resolves HERMES_HOME each test.
-    from hermes_cli import goals
+    from thoth_cli import goals
     goals._DB_CACHE.clear()
     yield home
     goals._DB_CACHE.clear()
 
 
 def _make_cli_with_goal(session_id: str, goal_text: str = "build a thing"):
-    """Build a minimal HermesCLI stub with an active goal wired in."""
-    from cli import HermesCLI
-    from hermes_cli.goals import GoalManager
+    """Build a minimal ThothCLI stub with an active goal wired in."""
+    from cli import ThothCLI
+    from thoth_cli.goals import GoalManager
 
-    cli = HermesCLI.__new__(HermesCLI)
+    cli = ThothCLI.__new__(ThothCLI)
     # State the hook + helpers touch directly.
     cli._pending_input = queue.Queue()
     cli._last_turn_interrupted = False
@@ -81,7 +81,7 @@ class TestInterruptAutoPause:
 
         # Judge MUST NOT run on an interrupted turn. If it does, we've
         # regressed — fail loudly instead of silently querying a mock.
-        with patch("hermes_cli.goals.judge_goal") as judge_mock:
+        with patch("thoth_cli.goals.judge_goal") as judge_mock:
             judge_mock.side_effect = AssertionError(
                 "judge_goal called on an interrupted turn"
             )
@@ -106,7 +106,7 @@ class TestInterruptAutoPause:
         cli.conversation_history = [
             {"role": "assistant", "content": "partial"},
         ]
-        with patch("hermes_cli.goals.judge_goal"):
+        with patch("thoth_cli.goals.judge_goal"):
             cli._maybe_continue_goal_after_turn()
         assert mgr.state.status == "paused"
 
@@ -125,7 +125,7 @@ class TestEmptyResponseSkip:
             {"role": "assistant", "content": "   \n\n   "},
         ]
 
-        with patch("hermes_cli.goals.judge_goal") as judge_mock:
+        with patch("thoth_cli.goals.judge_goal") as judge_mock:
             judge_mock.side_effect = AssertionError(
                 "judge_goal called on an empty response"
             )
@@ -144,7 +144,7 @@ class TestEmptyResponseSkip:
             {"role": "user", "content": "go"},
         ]
 
-        with patch("hermes_cli.goals.judge_goal") as judge_mock:
+        with patch("thoth_cli.goals.judge_goal") as judge_mock:
             judge_mock.side_effect = AssertionError(
                 "judge_goal called without an assistant response"
             )
@@ -169,7 +169,7 @@ class TestHealthyTurnStillRuns:
 
         # Force the judge to say "continue" without touching the network.
         with patch(
-            "hermes_cli.goals.judge_goal",
+            "thoth_cli.goals.judge_goal",
             return_value=("continue", "needs more steps", False),
         ):
             cli._maybe_continue_goal_after_turn()
@@ -189,7 +189,7 @@ class TestHealthyTurnStillRuns:
         ]
 
         with patch(
-            "hermes_cli.goals.judge_goal",
+            "thoth_cli.goals.judge_goal",
             return_value=("done", "goal satisfied", False),
         ):
             cli._maybe_continue_goal_after_turn()
@@ -208,10 +208,10 @@ class TestInterruptFlagLifecycle:
         # We can't run chat() end-to-end here, but we can assert the reset
         # is the first thing after the secret-capture registration by
         # inspecting the source shape.
-        from cli import HermesCLI
+        from cli import ThothCLI
         import inspect
 
-        src = inspect.getsource(HermesCLI.chat)
+        src = inspect.getsource(ThothCLI.chat)
         # Look for an explicit reset near the top of chat().
         head = src.split("if not self._ensure_runtime_credentials", 1)[0]
         assert "self._last_turn_interrupted = False" in head, (

@@ -14,9 +14,9 @@ async def _acquire(conn) -> AsyncIterator[Any]:
     if conn is not None:
         yield conn
         return
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as fresh:
+    async with thoth_db.connection() as fresh:
         yield fresh
 
 

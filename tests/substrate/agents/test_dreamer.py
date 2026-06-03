@@ -91,11 +91,11 @@ async def test_dreamer_disabled_is_noop(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_inspect_dreamer(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
     await dreamer_mod.append_dream("a seed", "a vivid exploration")
     buf = io.StringIO()
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_dreamer(conn)
     assert "a seed" in buf.getvalue() and "vivid exploration" in buf.getvalue()

@@ -223,8 +223,8 @@ def _load_hermes_env() -> None:
         load_dotenv = None  # type: ignore[assignment]
 
     try:
-        from thoth_cli.config import get_hermes_home
-        home = get_hermes_home()
+        from thoth_cli.config import get_thoth_home
+        home = get_thoth_home()
     except Exception:
         return
 

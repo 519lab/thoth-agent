@@ -9,8 +9,8 @@ import yaml
 class TestCLIPersonalityNone:
 
     def _make_cli(self, personalities=None):
-        from cli import HermesCLI
-        cli = HermesCLI.__new__(HermesCLI)
+        from cli import ThothCLI
+        cli = ThothCLI.__new__(ThothCLI)
         cli.personalities = personalities or {
             "helpful": "You are helpful.",
             "concise": "You are concise.",
@@ -150,7 +150,7 @@ class TestGatewayPersonalityNone:
         (tmp_path / "config.yaml").write_text(yaml.dump({"agent": {"personalities": {}}}))
 
         with patch("gateway.run._hermes_home", tmp_path), \
-             patch("hermes_constants.display_hermes_home", return_value="~/.hermes/profiles/coder"):
+             patch("thoth_constants.display_thoth_home", return_value="~/.hermes/profiles/coder"):
             event = self._make_event("")
             result = await runner._handle_personality_command(event)
 
@@ -161,8 +161,8 @@ class TestPersonalityDictFormat:
     """Test dict-format custom personalities with description, tone, style."""
 
     def _make_cli(self, personalities):
-        from cli import HermesCLI
-        cli = HermesCLI.__new__(HermesCLI)
+        from cli import ThothCLI
+        cli = ThothCLI.__new__(ThothCLI)
         cli.personalities = personalities
         cli.system_prompt = ""
         cli.agent = None
@@ -211,14 +211,14 @@ class TestPersonalityDictFormat:
         assert cli.system_prompt == "You are helpful."
 
     def test_resolve_prompt_dict_no_tone_no_style(self):
-        from cli import HermesCLI
-        result = HermesCLI._resolve_personality_prompt({
+        from cli import ThothCLI
+        result = ThothCLI._resolve_personality_prompt({
             "description": "A helper",
             "system_prompt": "You are helpful.",
         })
         assert result == "You are helpful."
 
     def test_resolve_prompt_string(self):
-        from cli import HermesCLI
-        result = HermesCLI._resolve_personality_prompt("You are helpful.")
+        from cli import ThothCLI
+        result = ThothCLI._resolve_personality_prompt("You are helpful.")
         assert result == "You are helpful."

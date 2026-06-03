@@ -91,9 +91,9 @@ def list_providers() -> list[ProviderProfile]:
 def _user_plugins_dir() -> Path | None:
     """Return ``$HERMES_HOME/plugins/model-providers/`` if it exists."""
     try:
-        from hermes_constants import get_hermes_home
+        from thoth_constants import get_thoth_home
 
-        d = get_hermes_home() / "plugins" / "model-providers"
+        d = get_thoth_home() / "plugins" / "model-providers"
         return d if d.is_dir() else None
     except Exception:
         return None

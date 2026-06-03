@@ -6,10 +6,10 @@ Hermetic-test invariants enforced here (see AGENTS.md for rationale):
    (ending in _API_KEY, _TOKEN, _SECRET, _PASSWORD, _CREDENTIALS, etc.)
    are unset before every test. Local developer keys cannot leak in.
 2. **Isolated HERMES_HOME.** HERMES_HOME points to a per-test tempdir so
-   code reading ``~/.hermes/*`` via ``get_hermes_home()`` can't see the
+   code reading ``~/.hermes/*`` via ``get_thoth_home()`` can't see the
    real one. (We do NOT also redirect HOME — that broke subprocesses in
    CI. Code using ``Path.home() / ".hermes"`` instead of the canonical
-   ``get_hermes_home()`` is a bug to fix at the callsite.)
+   ``get_thoth_home()`` is a bug to fix at the callsite.)
 3. **Deterministic runtime.** TZ=UTC, LANG=C.UTF-8, PYTHONHASHSEED=0.
 4. **No HERMES_SESSION_* inheritance** — the agent's current gateway
    session must not leak into tests.
@@ -333,7 +333,7 @@ def _hermetic_environment(tmp_path, monkeypatch):
     for name in _HERMES_BEHAVIORAL_VARS:
         monkeypatch.delenv(name, raising=False)
 
-    # 2b. Clear THOTH_* (rename Phase 3). get_hermes_home() reads THOTH_HOME
+    # 2b. Clear THOTH_* (rename Phase 3). get_thoth_home() reads THOTH_HOME
     #     before HERMES_HOME, and normalize_thoth_home_env() can write THOTH_HOME
     #     into the real os.environ during a test (monkeypatch won't revert it).
     #     Clear (don't pin) so tests that set only HERMES_HOME aren't shadowed;
@@ -343,14 +343,14 @@ def _hermetic_environment(tmp_path, monkeypatch):
             monkeypatch.delenv(name, raising=False)
 
     # 3. Redirect HERMES_HOME to a per-test tempdir. Code that reads
-    #    ``~/.hermes/*`` via ``get_hermes_home()`` now gets the tempdir.
+    #    ``~/.hermes/*`` via ``get_thoth_home()`` now gets the tempdir.
     #
     #    NOTE: We do NOT also redirect HOME. Doing so broke CI because
     #    some tests (and their transitive deps) spawn subprocesses that
     #    inherit HOME and expect it to be stable. If a test genuinely
     #    needs HOME isolated, it should set it explicitly in its own
     #    fixture. Any code in the codebase reading ``~/.hermes/*`` via
-    #    ``Path.home() / ".hermes"`` instead of ``get_hermes_home()``
+    #    ``Path.home() / ".hermes"`` instead of ``get_thoth_home()``
     #    is a bug to fix at the callsite.
     fake_hermes_home = tmp_path / "hermes_test"
     fake_hermes_home.mkdir()
@@ -380,7 +380,7 @@ def _hermetic_environment(tmp_path, monkeypatch):
     #    ~/.hermes/plugins/ (which, per step 3, is now empty — but the
     #    singleton might still be cached from a previous test).
     try:
-        import hermes_cli.plugins as _plugins_mod
+        import thoth_cli.plugins as _plugins_mod
         monkeypatch.setattr(_plugins_mod, "_plugin_manager", None)
     except Exception:
         pass
@@ -499,7 +499,7 @@ def _ensure_current_event_loop(request):
 # environment and finds the developer's live ``hermes-gateway`` process
 # via ``psutil`` — sending it SIGTERM mid-test. The shutdown forensics in
 # PR #23285 caught this happening 5+ times in 3 days, every time
-# correlated with a ``tests/hermes_cli/`` pytest run starting up.
+# correlated with a ``tests/thoth_cli/`` pytest run starting up.
 #
 # This fixture makes the leak impossible by intercepting the two
 # primitives that actually do damage:
@@ -643,8 +643,8 @@ def _live_system_guard(request, monkeypatch):
     _HERMES_TOKENS = (
         "hermes-gateway",
         "hermes.service",
-        "hermes_cli.main gateway",
-        "hermes_cli/main.py gateway",
+        "thoth_cli.main gateway",
+        "thoth_cli/main.py gateway",
         "gateway/run.py",
         "thoth gateway",
     )
@@ -702,7 +702,7 @@ def _live_system_guard(request, monkeypatch):
                 low = cmd_str.lower()
                 # pkill -f pattern: catch hermes-themed patterns + a
                 # plain "python" -f which would catch the live gateway
-                # whose cmdline contains "python -m hermes_cli.main".
+                # whose cmdline contains "python -m thoth_cli.main".
                 if (
                     "hermes" in low
                     or "thoth" in low
@@ -954,17 +954,17 @@ async def hermes_db_initialized(hermes_db_dsn):
     """Pool initialised on pytest-asyncio's per-test event loop.
 
     Use this in ``@pytest.mark.asyncio`` tests that ``await`` against
-    ``hermes_db.pool()`` / ``connection()`` / ``transaction()`` directly.
+    ``thoth_db.pool()`` / ``connection()`` / ``transaction()`` directly.
     Don't use it from sync test bodies that bridge via
-    ``hermes_db.run_sync`` — the pool would be bound to pytest-asyncio's
+    ``thoth_db.run_sync`` — the pool would be bound to pytest-asyncio's
     loop but ``run_sync`` uses the persistent sync loop, surfacing as
     ``InterfaceError: cannot perform operation: another operation is
     in progress``. Sync tests should use :func:`hermes_db_initialized_sync`
     below.
 
     Defensive loop-binding check: a prior test (or a ``run_sync`` call
-    that lazy-bootstrapped the pool on ``hermes_db._sync_loop``) may
-    have left ``hermes_db._pool`` bound to a loop other than this
+    that lazy-bootstrapped the pool on ``thoth_db._sync_loop``) may
+    have left ``thoth_db._pool`` bound to a loop other than this
     test's pytest-asyncio loop. ``init()`` is idempotent — it would
     silently return without rebinding — so the async test body would
     inherit the stale pool and explode on teardown with a cross-loop
@@ -972,34 +972,34 @@ async def hermes_db_initialized(hermes_db_dsn):
     here and close the stale pool on its own binding loop first.
     """
     import asyncio
-    import hermes_db
-    if hermes_db._pool is not None:
+    import thoth_db
+    if thoth_db._pool is not None:
         current = asyncio.get_running_loop()
-        pool_loop = getattr(hermes_db._pool, "_loop", None)
+        pool_loop = getattr(thoth_db._pool, "_loop", None)
         if pool_loop is not current:
             # Pool is bound to a different loop (typically the
             # persistent _sync_loop from a sibling sync test). Close
             # via run_sync, which detects the cross-loop situation and
             # offloads the close onto the binding loop's worker thread.
             try:
-                hermes_db.run_sync(hermes_db.close())
+                thoth_db.run_sync(thoth_db.close())
             except Exception:
                 # Binding loop is dead (e.g., a prior pytest-asyncio
                 # per-test loop). Orphan the pool — Postgres will reap
                 # the idle connections, Python GC will clean up the
                 # holders. Leaks briefly but tests are independent.
-                hermes_db._pool = None
-    await hermes_db.init(hermes_db_dsn)
+                thoth_db._pool = None
+    await thoth_db.init(hermes_db_dsn)
     yield hermes_db_dsn
-    await hermes_db.close()
+    await thoth_db.close()
 
 
 @pytest.fixture
 def hermes_db_initialized_sync(hermes_db_dsn):
-    """Pool initialised on hermes_db's persistent sync loop.
+    """Pool initialised on thoth_db's persistent sync loop.
 
     Use this in **synchronous** test bodies that bridge to async DB
-    calls via ``hermes_db.run_sync(coro)``. The pool's binding loop
+    calls via ``thoth_db.run_sync(coro)``. The pool's binding loop
     matches the sync loop, so ``run_sync`` round-trips cleanly. Async
     tests in pytest-asyncio scope should NOT use this fixture — they
     should use :func:`hermes_db_initialized` (above) which binds to the
@@ -1009,17 +1009,17 @@ def hermes_db_initialized_sync(hermes_db_dsn):
     schema, different binding loop. The split exists because asyncpg
     pools are loop-bound and we have two different "current loop"
     notions in the test suite — pytest-asyncio's per-test loop vs.
-    ``hermes_db._get_sync_loop()``'s persistent one.
+    ``thoth_db._get_sync_loop()``'s persistent one.
     """
-    import hermes_db
+    import thoth_db
 
-    # ensure_pool_sync uses hermes_db._get_sync_loop() to run the
+    # ensure_pool_sync uses thoth_db._get_sync_loop() to run the
     # asyncpg.create_pool coroutine — binding the pool to that loop.
     # Subsequent run_sync(coro) calls reuse the same loop, so the
     # binding matches.
-    assert hermes_db.ensure_pool_sync(), "ensure_pool_sync failed; HERMES_PG_DSN should be set by hermes_db_dsn"
+    assert thoth_db.ensure_pool_sync(), "ensure_pool_sync failed; HERMES_PG_DSN should be set by hermes_db_dsn"
     try:
         yield hermes_db_dsn
     finally:
         # Close on the same loop the pool was opened on.
-        hermes_db.run_sync(hermes_db.close())
+        thoth_db.run_sync(thoth_db.close())

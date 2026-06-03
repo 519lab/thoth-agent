@@ -5,7 +5,7 @@ state.db/PG persists the platform-side ``message_id`` via the
 each message dict as ``message_id`` — so the recall guard's exact-id match
 path stays canonical.
 """
-import hermes_db
+import thoth_db
 from gateway.session import SessionStore
 from gateway.config import GatewayConfig
 
@@ -13,14 +13,14 @@ from gateway.config import GatewayConfig
 def test_recall_branch_a1_exact_id_match_round_trips_through_db(tmp_path, hermes_db_initialized_sync):
     """A user message persisted with ``message_id`` must round-trip through
     the DB so recall can find and redact it by exact id (branch A1)."""
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
 
     config = GatewayConfig()
     store = SessionStore(sessions_dir=tmp_path, config=config)
 
     sid = "test-yuanbao-recall-a1"
     db = SessionDB()
-    hermes_db.run_sync(db.create_session(session_id=sid, source="yuanbao:group:G"))
+    thoth_db.run_sync(db.create_session(session_id=sid, source="yuanbao:group:G"))
     store.append_to_transcript(sid, {
         "role": "user",
         "content": "sensitive content",
@@ -54,14 +54,14 @@ def test_recall_branch_a1_exact_id_match_round_trips_through_db(tmp_path, hermes
 def test_recall_branch_a2_content_match_when_no_platform_id(tmp_path, hermes_db_initialized_sync):
     """Rows that lack a platform_message_id (e.g. agent-processed @bot
     messages) still match by content as a fallback."""
-    from hermes_state import SessionDB
+    from thoth_state import SessionDB
 
     config = GatewayConfig()
     store = SessionStore(sessions_dir=tmp_path, config=config)
 
     sid = "test-yuanbao-recall-a2"
     db = SessionDB()
-    hermes_db.run_sync(db.create_session(session_id=sid, source="yuanbao:group:G"))
+    thoth_db.run_sync(db.create_session(session_id=sid, source="yuanbao:group:G"))
     # No message_id on the dict — simulates an agent-processed message
     # that did not carry the platform msg_id through.
     store.append_to_transcript(sid, {

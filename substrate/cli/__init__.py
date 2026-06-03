@@ -1,5 +1,5 @@
 """Substrate CLI subcommands. Wired into Thoth's argparse tree by
-``hermes_cli/main.py`` via :func:`substrate.cli.inspect.add_subparser`.
+``thoth_cli/main.py`` via :func:`substrate.cli.inspect.add_subparser`.
 
 Phase A surface is a single debug command::
 

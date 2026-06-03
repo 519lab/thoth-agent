@@ -87,10 +87,10 @@ class Associator(SubAgent):
     # ------------------------------------------------------------------
 
     async def _touched_entities(self, since: datetime) -> list:
-        import hermes_db
+        import thoth_db
 
         limit = _env_int("ASSOCIATOR_BATCH_SIZE", 32)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             rows = await conn.fetch(
                 "SELECT id FROM l1_entities WHERE last_seen_at > $1 "
                 "ORDER BY last_seen_at DESC LIMIT $2",
@@ -101,9 +101,9 @@ class Associator(SubAgent):
 
     async def _link_co_occurrence(self, entity_id) -> int:
         """Strengthen co_occurrence edges to entities sharing a cited slice."""
-        import hermes_db
+        import thoth_db
 
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             rows = await conn.fetch(
                 """
                 SELECT c2.entity_id AS other, COUNT(DISTINCT c1.slice_id) AS shared
@@ -128,9 +128,9 @@ class Associator(SubAgent):
 
     async def _link_shared_neighbor(self, entity_id) -> int:
         """Strengthen shared_neighbor edges to entities sharing a partner."""
-        import hermes_db
+        import thoth_db
 
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             rows = await conn.fetch(
                 """
                 WITH my_partners AS (

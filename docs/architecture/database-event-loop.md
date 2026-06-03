@@ -2,7 +2,7 @@
 
 This is the rule that prevents the bug class that produced **#117, #120,
 #123, #124, #125, and #126**. Read it before touching anything that opens a
-Postgres connection, calls `hermes_db.run_sync`, or runs DB code from the
+Postgres connection, calls `thoth_db.run_sync`, or runs DB code from the
 gateway.
 
 ## TL;DR — the invariant
@@ -11,14 +11,14 @@ gateway.
 > every DB operation must run on that loop. Never `await` a pooled connection
 > from any other loop.**
 
-`hermes_db` owns a single, continuously-running event loop on a dedicated
+`thoth_db` owns a single, continuously-running event loop on a dedicated
 daemon thread (`hermes-db-loop`). The pool is bound to it. All access routes
 there:
 
 | You are…                                   | Use                                  |
 | ------------------------------------------ | ------------------------------------ |
-| Sync code (CLI, hooks, cron, kanban, etc.) | `hermes_db.run_sync(coro)`           |
-| Async code on a **different** loop (the gateway's I/O loop `L_gw`) | `await hermes_db.run_on_pool_loop(coro)` |
+| Sync code (CLI, hooks, cron, kanban, etc.) | `thoth_db.run_sync(coro)`           |
+| Async code on a **different** loop (the gateway's I/O loop `L_gw`) | `await thoth_db.run_on_pool_loop(coro)` |
 | Async code already **on** the DB loop      | `await coro` directly                |
 | The substrate **worker** subprocess        | its own `asyncio.run` loop + `reset_pool_for_new_loop()` (see below) |
 
@@ -45,7 +45,7 @@ The gateway is the hard case: it runs **two** loops in one process.
   `asyncio.run(start_gateway())`. Telegram/Slack polling, the handoff
   watcher, slash-command handlers, and the substrate-writer bootstrap run
   here.
-- **The DB loop** — `hermes_db`'s loop, which owns the asyncpg pool.
+- **The DB loop** — `thoth_db`'s loop, which owns the asyncpg pool.
 
 `main()` calls `ensure_pool_sync()` for every subcommand, which creates the
 pool on the DB loop *before* `L_gw` exists. The gateway's hot path (session
@@ -57,7 +57,7 @@ That single structural fact produced every incident in the list above. The
 earlier PRs each patched *one* crossing; **#126** fixed the structure: make
 the DB loop run continuously and route everything to it.
 
-## How it works (`hermes_db.py`)
+## How it works (`thoth_db.py`)
 
 - `_get_sync_loop()` lazily creates the DB loop and starts the
   `hermes-db-loop` daemon thread running `loop.run_forever()`. Because the
@@ -79,7 +79,7 @@ the DB loop run continuously and route everything to it.
 The substrate **worker** subprocess is the one process that does *not* use
 the DB loop: it is fully async (`asyncio.run`), calls
 `reset_pool_for_new_loop()` to drop any inherited pool, and `await
-hermes_db.init(dsn)` on its own loop. It never calls `run_sync`, so the
+thoth_db.init(dsn)` on its own loop. It never calls `run_sync`, so the
 DB-loop thread never starts there. That's correct — a single-loop process
 owns its pool directly.
 
@@ -87,21 +87,21 @@ owns its pool directly.
 
 **Do**
 
-- Bridge sync→async DB with `hermes_db.run_sync(coro)`.
+- Bridge sync→async DB with `thoth_db.run_sync(coro)`.
 - From `L_gw` (or any loop that isn't the DB loop), route async DB work with
-  `await hermes_db.run_on_pool_loop(coro)`.
+  `await thoth_db.run_on_pool_loop(coro)`.
 - In the gateway, reach `SessionDB` through `self._session_db` — it is wrapped
   in `_PoolLoopRoutedSessionDB` (`gateway/run.py`), which routes every async
   method onto the DB loop for you. **Do not** unwrap it.
 
 **Don't**
 
-- ❌ `await hermes_db.connection()` / `await pool().acquire()` /
+- ❌ `await thoth_db.connection()` / `await pool().acquire()` /
   `await some_session_db.method()` directly from `L_gw` or any non-DB loop.
 - ❌ Call an `async def` SessionDB/DB method from **sync** code without
   `run_sync` (it returns an un-awaited coroutine — silently a no-op; this was
   #125).
-- ❌ `asyncio.run(hermes_db.init(dsn))` or any per-call `new_event_loop()` for
+- ❌ `asyncio.run(thoth_db.init(dsn))` or any per-call `new_event_loop()` for
   DB work — it binds the pool to a loop that's about to close.
 - ❌ Bind the pool to `L_gw` to "fix" an async caller — that just moves the
   cross-loop break onto the sync hot path.

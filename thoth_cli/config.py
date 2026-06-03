@@ -173,7 +173,7 @@ def get_managed_system() -> Optional[str]:
             return "NixOS"
         return _MANAGED_SYSTEM_NAMES.get(normalized, raw)
 
-    managed_marker = get_hermes_home() / ".managed"
+    managed_marker = get_thoth_home() / ".managed"
     if managed_marker.exists():
         return "NixOS"
     return None
@@ -212,7 +212,7 @@ def detect_install_method(project_root: Optional[Path] = None) -> str:
     4. .git directory presence -> 'git'
     5. Fallback -> 'pip'
     """
-    stamp = get_hermes_home() / ".install_method"
+    stamp = get_thoth_home() / ".install_method"
     try:
         method = stamp.read_text(encoding="utf-8").strip().lower()
         if method:
@@ -222,7 +222,7 @@ def detect_install_method(project_root: Optional[Path] = None) -> str:
     managed = get_managed_system()
     if managed:
         return managed.lower().replace(" ", "-")
-    from hermes_constants import is_container
+    from thoth_constants import is_container
     if is_container():
         return "docker"
     if project_root is None:
@@ -234,7 +234,7 @@ def detect_install_method(project_root: Optional[Path] = None) -> str:
 
 def stamp_install_method(method: str) -> None:
     """Write the install method to ~/.hermes/.install_method."""
-    stamp = get_hermes_home() / ".install_method"
+    stamp = get_thoth_home() / ".install_method"
     try:
         stamp.parent.mkdir(parents=True, exist_ok=True)
         stamp.write_text(method + "\n", encoding="utf-8")
@@ -319,11 +319,11 @@ def get_container_exec_info() -> Optional[dict]:
     if os.environ.get("HERMES_DEV") == "1":
         return None
 
-    from hermes_constants import is_container
+    from thoth_constants import is_container
     if is_container():
         return None
 
-    container_mode_file = get_hermes_home() / ".container-mode"
+    container_mode_file = get_thoth_home() / ".container-mode"
 
     try:
         info = {}
@@ -354,17 +354,17 @@ def get_container_exec_info() -> Optional[dict]:
 # Config paths
 # =============================================================================
 
-# Re-export from hermes_constants — canonical definition lives there.
-from hermes_constants import get_hermes_home  # noqa: F811,E402
+# Re-export from thoth_constants — canonical definition lives there.
+from thoth_constants import get_thoth_home  # noqa: F811,E402
 from utils import atomic_replace
 
 def get_config_path() -> Path:
     """Get the main config file path."""
-    return get_hermes_home() / "config.yaml"
+    return get_thoth_home() / "config.yaml"
 
 def get_env_path() -> Path:
     """Get the .env file path (for API keys)."""
-    return get_hermes_home() / ".env"
+    return get_thoth_home() / ".env"
 
 def get_project_root() -> Path:
     """Get the project installation directory."""
@@ -495,7 +495,7 @@ def ensure_hermes_home():
     # Silently create ~/.thoth → ~/.hermes symlink for existing installs upgrading
     # to Thoth. Non-destructive: only runs when ~/.hermes exists but ~/.thoth doesn't.
     migrate_home_to_thoth(quiet=True)
-    home = get_hermes_home()
+    home = get_thoth_home()
     if is_managed():
         old_umask = os.umask(0o007)
         try:
@@ -1528,7 +1528,7 @@ DEFAULT_CONFIG = {
         # compromised package, rotated credentials). Acked advisories no
         # longer trigger the startup banner. Add via `thoth doctor --ack
         # <id>`; remove by editing the list directly. See
-        # ``hermes_cli/security_advisories.py`` for the catalog.
+        # ``thoth_cli/security_advisories.py`` for the catalog.
         "acked_advisories": [],
         # Allow Thoth to lazy-install opt-in backend packages from PyPI
         # the first time the user enables a backend that needs them
@@ -3271,7 +3271,7 @@ def get_custom_provider_context_length(
     used by:
       * ``AIAgent.__init__`` (startup resolution)
       * ``AIAgent.switch_model`` (mid-session ``/model`` switch)
-      * ``hermes_cli.model_switch.resolve_display_context_length`` (``/model`` confirmation display)
+      * ``thoth_cli.model_switch.resolve_display_context_length`` (``/model`` confirmation display)
       * ``gateway.run._format_session_info`` (``/info`` display)
       * ``agent.model_metadata.get_model_context_length`` (when custom_providers is threaded through)
 
@@ -3881,7 +3881,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
             # Scan ``$HERMES_HOME/plugins/`` for currently installed user plugins.
             grandfathered: List[str] = []
             try:
-                user_plugins_dir = get_hermes_home() / "plugins"
+                user_plugins_dir = get_thoth_home() / "plugins"
                 if user_plugins_dir.is_dir():
                     for child in sorted(user_plugins_dir.iterdir()):
                         if not child.is_dir():
@@ -3942,7 +3942,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
     #      migration still benefit).
     if current_ver < 23:
         try:
-            curator_dir = get_hermes_home() / "logs" / "curator"
+            curator_dir = get_thoth_home() / "logs" / "curator"
             curator_dir.mkdir(parents=True, exist_ok=True)
         except Exception as e:
             results["warnings"].append(f"Could not create {curator_dir}: {e}")

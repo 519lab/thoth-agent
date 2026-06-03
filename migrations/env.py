@@ -21,7 +21,7 @@ else:
     dsn_sa = dsn
 config.set_main_option("sqlalchemy.url", dsn_sa)
 
-target_metadata = None  # Hermes uses raw SQL; no SQLAlchemy model autogen.
+target_metadata = None  # Thoth uses raw SQL; no SQLAlchemy model autogen.
 
 
 def run_migrations_offline() -> None:

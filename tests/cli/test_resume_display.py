@@ -17,9 +17,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 def _make_cli(config_overrides=None, env_overrides=None, **kwargs):
-    """Create a HermesCLI instance with minimal mocking."""
+    """Create a ThothCLI instance with minimal mocking."""
     import cli as _cli_mod
-    from cli import HermesCLI
+    from cli import ThothCLI
 
     _clean_config = {
         "model": {
@@ -46,7 +46,7 @@ def _make_cli(config_overrides=None, env_overrides=None, **kwargs):
         patch.dict("os.environ", clean_env, clear=False),
         patch.dict(_cli_mod.__dict__, {"CLI_CONFIG": _clean_config}),
     ):
-        return HermesCLI(**kwargs)
+        return ThothCLI(**kwargs)
 
 
 # ── Sample conversation histories for tests ──────────────────────────
@@ -531,7 +531,7 @@ class TestPreloadResumedSession:
         ``_AsyncSessionDB`` surface used by ``_preload_resumed_session``.
 
         Phase 0 moved sessions from sqlite (sync ``conn.execute``) to PG
-        (async coroutines driven through ``hermes_db.run_sync``), so a
+        (async coroutines driven through ``thoth_db.run_sync``), so a
         plain ``MagicMock`` produces ``MagicMock`` objects where the
         production code expects coroutines and run_sync raises
         ``TypeError: An asyncio.Future, a coroutine or an awaitable is
@@ -609,7 +609,7 @@ class TestPreloadResumedSession:
         cli._preload_resumed_session()
 
         # Phase 0: production code now calls the async ``reopen_session``
-        # via ``hermes_db.run_sync`` instead of poking ``_conn.execute``
+        # via ``thoth_db.run_sync`` instead of poking ``_conn.execute``
         # with a raw UPDATE — see cli.py:_preload_resumed_session.
         mock_db.reopen_session.assert_awaited_once_with("reopen_session")
 
@@ -665,8 +665,8 @@ class TestResumeDisplayConfig:
     """resume_display config option defaults and behavior."""
 
     def test_default_config_has_resume_display(self):
-        """DEFAULT_CONFIG in hermes_cli/config.py includes resume_display."""
-        from hermes_cli.config import DEFAULT_CONFIG
+        """DEFAULT_CONFIG in thoth_cli/config.py includes resume_display."""
+        from thoth_cli.config import DEFAULT_CONFIG
         display = DEFAULT_CONFIG.get("display", {})
         assert "resume_display" in display
         assert display["resume_display"] == "full"

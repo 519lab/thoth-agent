@@ -217,13 +217,13 @@ class Reflector(SubAgent):
         on its own L3 output)."""
         import asyncio
 
-        import hermes_db
+        import thoth_db
 
         interval = _env_int("REFLECTOR_INTERVAL_S", 600)
         now_mono = asyncio.get_event_loop().time()
         if self._last_run_mono and (now_mono - self._last_run_mono) < interval:
             return False
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             l1_max = await conn.fetchval("SELECT max(last_seen_at) FROM l1_entities")
         if (
             l1_max is not None
@@ -237,10 +237,10 @@ class Reflector(SubAgent):
         return True
 
     async def _build_context(self) -> tuple[str, bool]:
-        import hermes_db
+        import thoth_db
 
         n_entities = _env_int("REFLECTOR_MIN_PATTERNS", 1)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             patterns = await conn.fetch(
                 "SELECT kind, statement FROM l3_patterns "
                 "ORDER BY salience_score DESC, last_seen_at DESC LIMIT 30"

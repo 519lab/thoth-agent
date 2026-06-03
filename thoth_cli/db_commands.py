@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Tuple
 
-import hermes_db
+import thoth_db
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ async def migrate_from_sqlite(src_path: Path, *, dry_run: bool = False) -> Tuple
     m_count = 0
     try:
         # Verify PG schema is at head.
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             head = await conn.fetchval(
                 "SELECT version_num FROM alembic_version LIMIT 1"
             )
@@ -89,7 +89,7 @@ async def migrate_from_sqlite(src_path: Path, *, dry_run: bool = False) -> Tuple
         if dry_run:
             s_count = len(session_rows)
         else:
-            async with hermes_db.transaction() as conn:
+            async with thoth_db.transaction() as conn:
                 for row in session_rows:
                     d = dict(row)
                     await conn.execute(
@@ -154,7 +154,7 @@ async def migrate_from_sqlite(src_path: Path, *, dry_run: bool = False) -> Tuple
         if dry_run:
             m_count = len(message_rows)
         else:
-            async with hermes_db.transaction() as conn:
+            async with thoth_db.transaction() as conn:
                 for row in message_rows:
                     d = dict(row)
                     await conn.execute(
@@ -230,15 +230,15 @@ async def migrate_from_hermes(*, dry_run: bool = False) -> int:
     Returns ``rows_updated``. When ``dry_run=True`` only the matching-row count
     is returned and nothing is written.
 
-    Caller is responsible for ensuring PG is initialised (``hermes_db.init``).
+    Caller is responsible for ensuring PG is initialised (``thoth_db.init``).
     """
     if dry_run:
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             rows_updated = await conn.fetchval(
                 "SELECT count(*) FROM substrate_streams WHERE name LIKE 'hermes.%'"
             )
     else:
-        async with hermes_db.transaction() as conn:
+        async with thoth_db.transaction() as conn:
             status = await conn.execute(
                 """
                 UPDATE substrate_streams
@@ -273,14 +273,14 @@ def cli_migrate_from_sqlite(sqlite_path: str | None = None, dry_run: bool = Fals
         return "Error: THOTH_PG_DSN env var not set"
 
     async def _run():
-        await hermes_db.init(dsn)
+        await thoth_db.init(dsn)
         try:
             s, m = await migrate_from_sqlite(src, dry_run=dry_run)
         finally:
-            await hermes_db.close()
+            await thoth_db.close()
         return s, m
 
-    s, m = hermes_db.run_sync(_run())
+    s, m = thoth_db.run_sync(_run())
     prefix = "[dry-run] would copy" if dry_run else "Copied"
     return f"{prefix}: {s} sessions, {m} messages from {src}"
 
@@ -306,13 +306,13 @@ def cli_migrate_from_hermes(dry_run: bool = False) -> str:
         return "Error: THOTH_PG_DSN env var not set"
 
     async def _run():
-        await hermes_db.init(dsn)
+        await thoth_db.init(dsn)
         try:
             return await migrate_from_hermes(dry_run=dry_run)
         finally:
-            await hermes_db.close()
+            await thoth_db.close()
 
-    rows = hermes_db.run_sync(_run())
+    rows = thoth_db.run_sync(_run())
     prefix = "[dry-run] would rename" if dry_run else "Renamed"
     return f"{prefix}: {rows} substrate_streams hermes.* -> thoth.*"
 

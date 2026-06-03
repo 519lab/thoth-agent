@@ -7,7 +7,7 @@ base URL plus bearer for the proxy server to forward to.
 
 The ``agent_key`` field may hold either a NAS invoke JWT or the legacy
 opaque session key. The refresh helper handles both — see
-:func:`hermes_cli.auth.resolve_nous_runtime_credentials`.
+:func:`thoth_cli.auth.resolve_nous_runtime_credentials`.
 """
 
 from __future__ import annotations
@@ -148,7 +148,7 @@ class NousPortalAdapter(UpstreamAdapter):
 
     # ------------------------------------------------------------------
     # Internal helpers — auth.json access. Kept local rather than added
-    # to hermes_cli.auth to avoid expanding that module's public surface.
+    # to thoth_cli.auth to avoid expanding that module's public surface.
     # ------------------------------------------------------------------
 
     def _read_state(self) -> Optional[Dict[str, Any]]:

@@ -27,7 +27,7 @@ from acp.schema import (
     ToolCallStart,
 )
 
-from acp_adapter.server import HermesACPAgent
+from acp_adapter.server import ThothACPAgent
 from acp_adapter.session import SessionManager
 from acp_adapter.tools import build_tool_start
 
@@ -44,7 +44,7 @@ def mock_manager():
 
 @pytest.fixture()
 def acp_agent(mock_manager):
-    return HermesACPAgent(session_manager=mock_manager)
+    return ThothACPAgent(session_manager=mock_manager)
 
 
 # ---------------------------------------------------------------------------

@@ -15,12 +15,12 @@ PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 from thoth_cli.auth import AuthError, resolve_provider
 from thoth_cli.cli_name import cli_name
 from thoth_cli.colors import Colors, color
-from thoth_cli.config import get_env_path, get_env_value, get_hermes_home, load_config
+from thoth_cli.config import get_env_path, get_env_value, get_thoth_home, load_config
 from thoth_cli.models import provider_label
 from thoth_cli.nous_subscription import get_nous_subscription_features
 from thoth_cli.runtime_provider import resolve_requested_provider
 from thoth_cli.vercel_auth import describe_vercel_auth
-from hermes_constants import OPENROUTER_MODELS_URL
+from thoth_constants import OPENROUTER_MODELS_URL
 from tools.tool_backend_helpers import managed_nous_tools_enabled
 
 def check_mark(ok: bool) -> str:
@@ -85,7 +85,7 @@ def _effective_provider_label() -> str:
     return provider_label(effective)
 
 
-from hermes_constants import is_termux as _is_termux
+from thoth_constants import is_termux as _is_termux
 
 
 def show_status(args):
@@ -496,7 +496,7 @@ def show_status(args):
     print()
     print(color("◆ Scheduled Jobs", Colors.CYAN, Colors.BOLD))
 
-    jobs_file = get_hermes_home() / "cron" / "jobs.json"
+    jobs_file = get_thoth_home() / "cron" / "jobs.json"
     if jobs_file.exists():
         import json
         try:
@@ -516,7 +516,7 @@ def show_status(args):
     print()
     print(color("◆ Sessions", Colors.CYAN, Colors.BOLD))
 
-    sessions_file = get_hermes_home() / "sessions" / "sessions.json"
+    sessions_file = get_thoth_home() / "sessions" / "sessions.json"
     if sessions_file.exists():
         import json
         try:

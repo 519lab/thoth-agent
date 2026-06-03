@@ -38,7 +38,7 @@ class DecayProfileRepo:
     """Read-only repository for decay profiles.
 
     All methods are async and accept an optional ``conn`` — if absent,
-    the repo acquires from the shared ``hermes_db.pool()``.
+    the repo acquires from the shared ``thoth_db.pool()``.
     """
 
     def __init__(self, pool: "asyncpg.Pool") -> None:

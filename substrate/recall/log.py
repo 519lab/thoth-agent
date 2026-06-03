@@ -134,7 +134,7 @@ class RecallLogWriter:
         amortise the asyncpg roundtrip across many recall calls.
         """
         # Late import — keep this module light at import time.
-        import hermes_db
+        import thoth_db
 
         while not self._stopped.is_set():
             try:
@@ -152,7 +152,7 @@ class RecallLogWriter:
                 continue
 
             try:
-                async with hermes_db.transaction() as conn:
+                async with thoth_db.transaction() as conn:
                     await conn.executemany(
                         """
                         INSERT INTO substrate_recall_log

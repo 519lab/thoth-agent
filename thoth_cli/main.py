@@ -43,21 +43,21 @@ Usage:
     thoth claw migrate --dry-run  # Preview migration without changes
 """
 
-# IMPORTANT: hermes_bootstrap must be the very first import — it sets up
+# IMPORTANT: thoth_bootstrap must be the very first import — it sets up
 # UTF-8 stdio on Windows so print()/subprocess children don't hit
 # UnicodeEncodeError with non-ASCII characters.  No-op on POSIX.
 #
-# Guarded against ModuleNotFoundError because ``hermes_bootstrap`` is a
+# Guarded against ModuleNotFoundError because ``thoth_bootstrap`` is a
 # top-level module registered via pyproject.toml's ``py-modules`` list.
 # When the user upgrades code via ``git pull`` (or ``thoth update``
 # crashes between ``git reset --hard`` and ``uv pip install -e .``), the
-# new code references ``hermes_bootstrap`` but the editable install's
+# new code references ``thoth_bootstrap`` but the editable install's
 # ``.pth`` file still points at the old set of top-level modules.  Without
 # this guard, thoth crashes on import and the user can't run
 # ``thoth update`` to recover.  Missing the bootstrap means UTF-8 stdio
 # setup is skipped on Windows — degraded, not broken.  POSIX is unaffected.
 try:
-    import hermes_bootstrap  # noqa: F401
+    import thoth_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     pass
 
@@ -135,7 +135,7 @@ def _apply_profile_override() -> None:
 
     # 1b. Reject values that can't be valid profile names (e.g. pytest's
     # "-p no:xdist" would be misread as profile "no:xdist" otherwise).
-    # Mirrors hermes_cli.profiles._PROFILE_ID_RE so we never call
+    # Mirrors thoth_cli.profiles._PROFILE_ID_RE so we never call
     # resolve_profile_env() with a value it must reject + sys.exit on.
     if profile_name is not None and consume == 2:
         import re as _re
@@ -161,7 +161,7 @@ def _apply_profile_override() -> None:
     # 2. If no flag, check active_profile in the thoth root
     if profile_name is None:
         try:
-            from hermes_constants import get_default_hermes_root
+            from thoth_constants import get_default_hermes_root
 
             active_path = get_default_hermes_root() / "active_profile"
             if active_path.exists():
@@ -206,14 +206,14 @@ _apply_profile_override()
 
 # Load .env from ~/.hermes/.env first, then project root as dev fallback.
 # User-managed env files should override stale shell exports on restart.
-from thoth_cli.config import get_hermes_home
+from thoth_cli.config import get_thoth_home
 from thoth_cli.cli_name import cli_name
 from thoth_cli.env_loader import load_hermes_dotenv
 
 load_hermes_dotenv(project_env=PROJECT_ROOT / ".env")
 
 # Bridge security.redact_secrets from config.yaml → HERMES_REDACT_SECRETS env
-# var BEFORE hermes_logging imports agent.redact (which snapshots the flag at
+# var BEFORE thoth_logging imports agent.redact (which snapshots the flag at
 # module-import time). Without this, config.yaml's toggle is ignored because
 # the setup_logging() call below imports agent.redact, which reads the env var
 # exactly once. Env var in .env still wins — this is config.yaml fallback only.
@@ -221,7 +221,7 @@ try:
     if "HERMES_REDACT_SECRETS" not in os.environ:
         import yaml as _yaml_early
 
-        _cfg_path = get_hermes_home() / "config.yaml"
+        _cfg_path = get_thoth_home() / "config.yaml"
         if _cfg_path.exists():
             with open(_cfg_path, encoding="utf-8") as _f:
                 _early_sec_cfg = (_yaml_early.safe_load(_f) or {}).get("security", {})
@@ -237,7 +237,7 @@ except Exception:
 # Initialize centralized file logging early — all `thoth` subcommands
 # (chat, setup, gateway, config, etc.) write to agent.log + errors.log.
 try:
-    from hermes_logging import setup_logging as _setup_logging
+    from thoth_logging import setup_logging as _setup_logging
 
     _setup_logging(mode="cli")
 except Exception:
@@ -246,7 +246,7 @@ except Exception:
 # Apply IPv4 preference early, before any HTTP clients are created.
 try:
     from thoth_cli.config import load_config as _load_config_early
-    from hermes_constants import apply_ipv4_preference as _apply_ipv4
+    from thoth_constants import apply_ipv4_preference as _apply_ipv4
 
     _early_cfg = _load_config_early()
     _net = _early_cfg.get("network", {})
@@ -354,7 +354,7 @@ def _termux_bundled_skills_fingerprint() -> str:
 
 
 def _termux_bundled_skills_stamp_path() -> Path:
-    return get_hermes_home() / "skills" / ".termux_bundled_sync_stamp"
+    return get_thoth_home() / "skills" / ".termux_bundled_sync_stamp"
 
 
 def _termux_bundled_skills_sync_needed() -> bool:
@@ -435,7 +435,7 @@ def _relative_time(ts) -> str:
 
 def _has_any_provider_configured() -> bool:
     """Check if at least one inference provider is usable."""
-    from thoth_cli.config import get_env_path, get_hermes_home, load_config
+    from thoth_cli.config import get_env_path, get_thoth_home, load_config
     from thoth_cli.auth import get_auth_status
 
     # Determine whether Thoth itself has been explicitly configured (model
@@ -501,7 +501,7 @@ def _has_any_provider_configured() -> bool:
         pass
 
     # Check for Nous Portal OAuth credentials
-    auth_file = get_hermes_home() / "auth.json"
+    auth_file = get_thoth_home() / "auth.json"
     if auth_file.exists():
         try:
             import json
@@ -792,8 +792,8 @@ def _resolve_last_session(source: str = "cli") -> Optional[str]:
     """Look up the most recently-used session ID for a source."""
     db = None
     try:
-        from hermes_state import SessionDB
-        import hermes_db as _hermes_db
+        from thoth_state import SessionDB
+        import thoth_db as _hermes_db
 
         db = SessionDB()
         sessions = _hermes_db.run_sync(db.search_sessions(source=source, limit=1))
@@ -932,8 +932,8 @@ def _resolve_session_by_name_or_id(name_or_id: str) -> Optional[str]:
       resumed at the live tip instead of a stale parent with no messages.
     """
     try:
-        from hermes_state import SessionDB
-        import hermes_db as _hermes_db
+        from thoth_state import SessionDB
+        import thoth_db as _hermes_db
 
         db = SessionDB()
 
@@ -986,8 +986,8 @@ def _print_tui_exit_summary(
 
     db = None
     try:
-        from hermes_state import SessionDB
-        import hermes_db as _hermes_db
+        from thoth_state import SessionDB
+        import thoth_db as _hermes_db
 
         db = SessionDB()
         session = _hermes_db.run_sync(db.get_session(target))
@@ -1207,10 +1207,10 @@ def _ensure_tui_node() -> None:
     if not helper.is_file():
         return
 
-    from hermes_constants import get_hermes_home
-    from hermes_env import propagate_hermes_home
+    from thoth_constants import get_thoth_home
+    from thoth_env import propagate_hermes_home
 
-    hermes_home = str(get_hermes_home())
+    hermes_home = str(get_thoth_home())
     try:
         # Helper writes logs to stderr; we ask bash to print `command -v node`
         # on stdout once ensure_node succeeds. Subshell PATH edits don't leak
@@ -1922,7 +1922,7 @@ def cmd_whatsapp(args):
         print("✓ Bridge dependencies already installed")
 
     # ── Step 5: Check for existing session ───────────────────────────────
-    session_dir = get_hermes_home() / "whatsapp" / "session"
+    session_dir = get_thoth_home() / "whatsapp" / "session"
     session_dir.mkdir(parents=True, exist_ok=True)
 
     if (session_dir / "creds.json").exists():
@@ -2823,7 +2823,7 @@ def _prompt_provider_choice(choices, *, default=0):
 
 def _model_flow_openrouter(config, current_model=""):
     """OpenRouter provider: ensure API key, then pick model."""
-    from hermes_constants import OPENROUTER_BASE_URL
+    from thoth_constants import OPENROUTER_BASE_URL
     from thoth_cli.auth import (
         ProviderConfig,
         _prompt_model_selection,
@@ -2884,7 +2884,7 @@ def _model_flow_openrouter(config, current_model=""):
 
 def _model_flow_ai_gateway(config, current_model=""):
     """Vercel AI Gateway provider: ensure API key, then pick model with pricing."""
-    from hermes_constants import AI_GATEWAY_BASE_URL
+    from thoth_constants import AI_GATEWAY_BASE_URL
     from thoth_cli.auth import (
         PROVIDER_REGISTRY,
         _prompt_model_selection,
@@ -5785,7 +5785,7 @@ def _run_anthropic_oauth_flow(save_env_value):
         ):
             use_anthropic_claude_code_credentials(save_fn=save_env_value)
             print("  ✓ Claude Code credentials linked.")
-            from hermes_constants import display_hermes_home as _dhh_fn
+            from thoth_constants import display_thoth_home as _dhh_fn
 
             print(
                 f"    Thoth will use Claude's credential store directly instead of copying a setup-token into {_dhh_fn()}/.env."
@@ -6230,14 +6230,14 @@ def _clear_bytecode_cache(root: Path) -> int:
 # even run ``thoth update`` again to roll forward. The post-pull syntax
 # guard validates these and auto-rolls-back on failure.
 _UPDATE_CRITICAL_FILES = (
-    "hermes_cli/main.py",
-    "hermes_cli/config.py",
-    "hermes_cli/__init__.py",
+    "thoth_cli/main.py",
+    "thoth_cli/config.py",
+    "thoth_cli/__init__.py",
     "cli.py",
     "run_agent.py",
     "model_tools.py",
     "toolsets.py",
-    "hermes_constants.py",
+    "thoth_constants.py",
 )
 
 
@@ -6310,9 +6310,9 @@ def _gateway_prompt(prompt_text: str, default: str = "", timeout: float = 300.0)
     """
     import json as _json
     import uuid as _uuid
-    from hermes_constants import get_hermes_home
+    from thoth_constants import get_thoth_home
 
-    home = get_hermes_home()
+    home = get_thoth_home()
     prompt_path = home / ".update_prompt.json"
     response_path = home / ".update_response"
 
@@ -6351,12 +6351,12 @@ def _gateway_prompt(prompt_text: str, default: str = "", timeout: float = 300.0)
 def _web_ui_build_needed(web_dir: Path) -> bool:
     """Return True if the web UI dist is missing or stale.
 
-    The Vite build outputs to ``hermes_cli/web_dist/`` (per vite.config.ts
-    outDir: "../hermes_cli/web_dist"), NOT to ``web/dist/``.  Uses the Vite
+    The Vite build outputs to ``thoth_cli/web_dist/`` (per vite.config.ts
+    outDir: "../thoth_cli/web_dist"), NOT to ``web/dist/``.  Uses the Vite
     manifest as the sentinel because it is written last and therefore has the
     newest mtime of any build output.
     """
-    dist_dir = web_dir.parent / "hermes_cli" / "web_dist"
+    dist_dir = web_dir.parent / "thoth_cli" / "web_dist"
     sentinel = dist_dir / ".vite" / "manifest.json"
     if not sentinel.exists():
         sentinel = dist_dir / "index.html"
@@ -6448,7 +6448,7 @@ def _build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
     # (or similar) and will raise UnicodeEncodeError on arrow / check
     # glyphs unless PYTHONIOENCODING=utf-8 is set. Routing every print
     # in this function through _say() with errors="replace" keeps the
-    # build path usable on a stock `py -m hermes_cli.main web` invocation.
+    # build path usable on a stock `py -m thoth_cli.main web` invocation.
     def _say(text: str) -> None:
         try:
             print(text)
@@ -6515,7 +6515,7 @@ def _build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
     if r2.returncode != 0:
         stderr_preview = (r2.stderr or "").strip()
         stderr_tail = "\n  ".join(stderr_preview.splitlines()[-10:]) if stderr_preview else ""
-        dist_dir = web_dir.parent / "hermes_cli" / "web_dist"
+        dist_dir = web_dir.parent / "thoth_cli" / "web_dist"
         dist_index = dist_dir / "index.html"
 
         # If a stale dist exists, serve it as a fallback instead of failing.
@@ -6558,8 +6558,8 @@ def _find_stale_dashboard_pids() -> list[int]:
     """
     patterns = [
         "thoth dashboard",
-        "hermes_cli.main dashboard",
-        "hermes_cli/main.py dashboard",
+        "thoth_cli.main dashboard",
+        "thoth_cli/main.py dashboard",
     ]
     self_pid = os.getpid()
     dashboard_pids: list[int] = []
@@ -6602,7 +6602,7 @@ def _find_stale_dashboard_pids() -> list[int]:
             # Linux / macOS: scan the process table via ps and match against
             # the same explicit patterns list used on Windows.  Using ps
             # (rather than `pgrep -f "thoth.*dashboard"`) keeps us consistent
-            # with `hermes_cli.gateway._scan_gateway_pids` and avoids the
+            # with `thoth_cli.gateway._scan_gateway_pids` and avoids the
             # greedy regex matching unrelated cmdlines that merely contain
             # both words (e.g. a chat session discussing "dashboard").
             result = subprocess.run(
@@ -7290,17 +7290,17 @@ def _count_commits_between(git_cmd: list[str], cwd: Path, base: str, head: str) 
 
 def _should_skip_upstream_prompt() -> bool:
     """Check if user previously declined to add upstream."""
-    from hermes_constants import get_hermes_home
+    from thoth_constants import get_thoth_home
 
-    return (get_hermes_home() / SKIP_UPSTREAM_PROMPT_FILE).exists()
+    return (get_thoth_home() / SKIP_UPSTREAM_PROMPT_FILE).exists()
 
 
 def _mark_skip_upstream_prompt():
     """Create marker file to skip future upstream prompts."""
     try:
-        from hermes_constants import get_hermes_home
+        from thoth_constants import get_thoth_home
 
-        (get_hermes_home() / SKIP_UPSTREAM_PROMPT_FILE).touch()
+        (get_thoth_home() / SKIP_UPSTREAM_PROMPT_FILE).touch()
     except Exception:
         pass
 
@@ -7445,7 +7445,7 @@ def _invalidate_update_cache():
     """
     homes = []
     # Default profile home (Docker-aware — uses /opt/data in Docker)
-    from hermes_constants import get_default_hermes_root
+    from thoth_constants import get_default_hermes_root
 
     default_home = get_default_hermes_root()
     homes.append(default_home)
@@ -8187,8 +8187,8 @@ def _install_hangup_protection(gateway_mode: bool = False):
     # tolerance.  Any failure here is non-fatal; we just skip the wrap.
     try:
         # Late-bound import so tests can monkeypatch
-        # hermes_cli.config.get_hermes_home to simulate setup failure.
-        from thoth_cli.config import get_hermes_home as _get_hermes_home
+        # thoth_cli.config.get_thoth_home to simulate setup failure.
+        from thoth_cli.config import get_thoth_home as _get_hermes_home
 
         logs_dir = _get_hermes_home() / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
@@ -8483,13 +8483,13 @@ def _run_pre_update_backup(args) -> None:
         size_bytes /= 1024
         size_str = f"{size_bytes:.1f} {unit}"
 
-    # Render path using display_hermes_home so the user sees ~/.hermes/...
+    # Render path using display_thoth_home so the user sees ~/.hermes/...
     try:
-        from hermes_constants import get_hermes_home, display_hermes_home
+        from thoth_constants import get_thoth_home, display_thoth_home
 
-        home = get_hermes_home()
+        home = get_thoth_home()
         try:
-            display_path = f"{display_hermes_home()}/{out_path.relative_to(home)}"
+            display_path = f"{display_thoth_home()}/{out_path.relative_to(home)}"
         except ValueError:
             display_path = str(out_path)
     except Exception:
@@ -9106,7 +9106,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         update_succeeded = False
         # Capture the pre-pull SHA so we can auto-roll-back if the new code
         # has a syntax error in a critical-path file (PR #28452 incident:
-        # orphan merge-conflict markers in hermes_cli/config.py bricked
+        # orphan merge-conflict markers in thoth_cli/config.py bricked
         # every user who ran ``thoth update`` for the 7 minutes between
         # the bad commit and the fix landing).
         pre_pull_sha = _capture_head_sha(git_cmd, PROJECT_ROOT)
@@ -9203,7 +9203,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
         # Clear stale .pyc bytecode cache — prevents ImportError on gateway
         # restart when updated source references names that didn't exist in
-        # the old bytecode (e.g. get_hermes_home added to hermes_constants).
+        # the old bytecode (e.g. get_thoth_home added to thoth_constants).
         removed = _clear_bytecode_cache(PROJECT_ROOT)
         if removed:
             print(
@@ -9271,12 +9271,12 @@ def _cmd_update_impl(args, gateway_mode: bool):
         print("✓ Code updated!")
 
         # After git pull, source files on disk are newer than cached Python
-        # modules in this process.  Reload hermes_constants so that any lazy
+        # modules in this process.  Reload thoth_constants so that any lazy
         # import executed below (skills sync, gateway restart) sees new
-        # attributes like display_hermes_home() added since the last release.
+        # attributes like display_thoth_home() added since the last release.
         try:
             import importlib
-            import hermes_constants as _hc
+            import thoth_constants as _hc
 
             importlib.reload(_hc)
         except Exception:
@@ -9509,7 +9509,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         # before we attempt the restart — ensures the new gateway sees it
         # regardless of how we die.
         if gateway_mode:
-            _exit_code_path = get_hermes_home() / ".update_exit_code"
+            _exit_code_path = get_thoth_home() / ".update_exit_code"
             try:
                 _exit_code_path.write_text("0")
             except OSError:
@@ -9619,7 +9619,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             # systemd units without SIGUSR1 wiring this wait just times out
             # and we fall back to ``systemctl restart`` (the old behaviour).
             try:
-                from hermes_constants import (
+                from thoth_constants import (
                     DEFAULT_GATEWAY_RESTART_DRAIN_TIMEOUT as _DEFAULT_DRAIN,
                 )
             except Exception:
@@ -10189,14 +10189,14 @@ def cmd_profile(args):
         _is_wrapper_dir_in_path,
         _get_wrapper_dir,
     )
-    from hermes_constants import display_hermes_home
+    from thoth_constants import display_thoth_home
 
     action = getattr(args, "profile_action", None)
 
     if action is None:
         # Bare `thoth profile` — show current profile status
         profile_name = get_active_profile_name()
-        dhh = display_hermes_home()
+        dhh = display_thoth_home()
         print(f"\nActive profile: {profile_name}")
         print(f"Path:           {dhh}")
 
@@ -10420,7 +10420,7 @@ def cmd_profile(args):
         if name and not text_value and not auto_flag:
             try:
                 if _profiles_mod.normalize_profile_name(name) == "default":
-                    from hermes_constants import get_hermes_home as _hh
+                    from thoth_constants import get_thoth_home as _hh
                     profile_dir = Path(_hh())
                 else:
                     profile_dir = _profiles_mod.get_profile_dir(name)
@@ -10443,7 +10443,7 @@ def cmd_profile(args):
         if text_value:
             try:
                 if _profiles_mod.normalize_profile_name(name) == "default":
-                    from hermes_constants import get_hermes_home as _hh
+                    from thoth_constants import get_thoth_home as _hh
                     profile_dir = Path(_hh())
                 else:
                     profile_dir = _profiles_mod.get_profile_dir(name)
@@ -10888,7 +10888,7 @@ def cmd_dashboard(args):
         _dist_root = (
             Path(os.environ["HERMES_WEB_DIST"])
             if "HERMES_WEB_DIST" in os.environ
-            else PROJECT_ROOT / "hermes_cli" / "web_dist"
+            else PROJECT_ROOT / "thoth_cli" / "web_dist"
         )
         if not (_dist_root / "index.html").exists():
             print(f"✗ --skip-build was passed but no web dist found at: {_dist_root}")
@@ -10990,7 +10990,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
 # Top-level flags that take a value. Needed by ``_first_positional_argv``
 # so that in ``thoth -m gpt5 chat``, ``gpt5`` is correctly skipped as a
 # flag value rather than misclassified as a subcommand. Kept in sync with
-# the top-level flags declared in ``hermes_cli/_parser.py``.
+# the top-level flags declared in ``thoth_cli/_parser.py``.
 #
 # Correctness-safe either way: missing an entry here only makes the
 # fast-path bail out too eagerly (we run plugin discovery when we didn't
@@ -11243,18 +11243,18 @@ def _try_termux_fast_tui_launch() -> bool:
 def main():
     """Main entry point for thoth CLI."""
     # PG pool initialisation: eager when ``HERMES_PG_DSN`` is set, no-op
-    # otherwise. ``hermes_db.ensure_pool_sync()`` returns False without
+    # otherwise. ``thoth_db.ensure_pool_sync()`` returns False without
     # raising when the DSN env var isn't configured, so subcommands like
     # ``thoth --help`` or ``thoth version`` that never touch the DB
     # still work in environments without a live PG (Nix sandbox smoke,
     # CI smoke tests, fresh installs before first ``setup``). When the
     # DSN IS set, the pool gets created up-front on
-    # ``hermes_db._sync_loop`` so downstream ``run_sync(coro)`` calls
+    # ``thoth_db._sync_loop`` so downstream ``run_sync(coro)`` calls
     # don't have to (``run_sync`` used to lazy-bootstrap, which fired
     # asyncpg's segfault-prone pool init inside pytest unit tests that
     # exercise mocked DB code paths).
     try:
-        import hermes_db as _hermes_db_eager_init
+        import thoth_db as _hermes_db_eager_init
         _hermes_db_eager_init.ensure_pool_sync()
     except Exception:
         # Never block CLI startup on pool issues — if PG is unreachable,
@@ -12924,9 +12924,9 @@ Examples:
             print("\n  ✓ Memory provider: built-in only")
             print("  Saved to config.yaml\n")
         elif sub == "reset":
-            from hermes_constants import get_hermes_home, display_hermes_home
+            from thoth_constants import get_thoth_home, display_thoth_home
 
-            mem_dir = get_hermes_home() / "memories"
+            mem_dir = get_thoth_home() / "memories"
             target = getattr(args, "target", "all")
             files_to_reset = []
             if target in {"all", "memory"}:
@@ -12940,7 +12940,7 @@ Examples:
             ]
             if not existing:
                 print(
-                    f"\n  Nothing to reset — no memory files found in {display_hermes_home()}/memories/\n"
+                    f"\n  Nothing to reset — no memory files found in {display_thoth_home()}/memories/\n"
                 )
                 return
 
@@ -12967,7 +12967,7 @@ Examples:
             print(
                 f"\n  Memory reset complete. New sessions will start with a blank slate."
             )
-            print(f"  Files were in: {display_hermes_home()}/memories/\n")
+            print(f"  Files were in: {display_thoth_home()}/memories/\n")
         else:
             from thoth_cli.memory_setup import memory_command
 
@@ -13281,13 +13281,13 @@ Examples:
         import json as _json
 
         try:
-            from hermes_state import SessionDB
-            import hermes_db as _hermes_db
+            from thoth_state import SessionDB
+            import thoth_db as _hermes_db
 
             db = SessionDB()
             # Bootstrap the asyncpg pool from the sync entry-point so the
             # subsequent ``_hermes_db.run_sync(...)`` calls don't hit the
-            # ``hermes_db.init() not called`` raise. The lazy bootstrap in
+            # ``thoth_db.init() not called`` raise. The lazy bootstrap in
             # ``pool()`` only fires when no loop is running; inside
             # ``run_sync``'s ``run_until_complete`` the loop IS running,
             # so we need to prime the pool here from sync context.
@@ -13378,7 +13378,7 @@ Examples:
                 ):
                     print("Cancelled.")
                     return
-            sessions_dir = get_hermes_home() / "sessions"
+            sessions_dir = get_thoth_home() / "sessions"
             if _hermes_db.run_sync(db.delete_session(resolved_session_id, sessions_dir=sessions_dir)):
                 print(f"Deleted session '{resolved_session_id}'.")
             else:
@@ -13393,7 +13393,7 @@ Examples:
                 ):
                     print("Cancelled.")
                     return
-            sessions_dir = get_hermes_home() / "sessions"
+            sessions_dir = get_thoth_home() / "sessions"
             count = _hermes_db.run_sync(db.prune_sessions(
                 older_than_days=days, source=args.source, sessions_dir=sessions_dir
             ))
@@ -13475,7 +13475,7 @@ Examples:
 
     def cmd_insights(args):
         try:
-            from hermes_state import SessionDB
+            from thoth_state import SessionDB
             from agent.insights import InsightsEngine
 
             db = SessionDB()

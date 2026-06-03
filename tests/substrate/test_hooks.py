@@ -28,7 +28,7 @@ async def booted_substrate(hermes_db_initialized):
     the Sentinel loop racing against assertions). Hook module is bound
     in ``Substrate.boot()``.
     """
-    import hermes_db
+    import thoth_db
 
     sub = await Substrate.boot(start_subagents=False)
     yield sub
@@ -77,13 +77,13 @@ async def test_on_user_message_async_writes_slice(booted_substrate):
     ``thoth.world.user_message.<source>`` with TEXT modality wrap and
     session/source metadata.
     """
-    import hermes_db
+    import thoth_db
 
     await hermes_hooks.on_user_message_async(
         "sess-1", "cli", "hello from a test", _now_utc()
     )
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         rows = await conn.fetch(
             """
             SELECT sl.payload, sl.metadata, st.name AS stream_name
@@ -99,12 +99,12 @@ async def test_on_user_message_async_writes_slice(booted_substrate):
 
 @pytest.mark.asyncio
 async def test_on_assistant_response_async_writes_slice(booted_substrate):
-    import hermes_db
+    import thoth_db
 
     await hermes_hooks.on_assistant_response_async(
         "sess-2", "claude-sonnet-4-6", "ok done", _now_utc()
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             """
             SELECT sl.payload, sl.metadata
@@ -121,7 +121,7 @@ async def test_on_assistant_response_async_writes_slice(booted_substrate):
 @pytest.mark.asyncio
 async def test_on_tool_call_and_result_pair(booted_substrate):
     """One slice on tool_call + one slice on tool_result."""
-    import hermes_db
+    import thoth_db
 
     t = _now_utc()
     await hermes_hooks.on_tool_call_async(
@@ -131,7 +131,7 @@ async def test_on_tool_call_and_result_pair(booted_substrate):
         "sess-3", "bash", "file1\nfile2\n", None, t
     )
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         call_row = await conn.fetchrow(
             """
             SELECT payload FROM substrate_slices sl
@@ -157,13 +157,13 @@ async def test_on_tool_call_and_result_pair(booted_substrate):
 @pytest.mark.asyncio
 async def test_on_tool_result_summarises_large_result(booted_substrate):
     """``_summarize`` truncates long strings + appends length suffix."""
-    import hermes_db
+    import thoth_db
 
     big = "x" * 1000
     await hermes_hooks.on_tool_result_async(
         "sess-4", "search", big, None, _now_utc()
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         payload = await conn.fetchval(
             """
             SELECT payload FROM substrate_slices sl
@@ -178,7 +178,7 @@ async def test_on_tool_result_summarises_large_result(booted_substrate):
 
 @pytest.mark.asyncio
 async def test_on_subagent_spawn_and_return(booted_substrate):
-    import hermes_db
+    import thoth_db
 
     t = _now_utc()
     await hermes_hooks.on_subagent_spawn_async(
@@ -187,7 +187,7 @@ async def test_on_subagent_spawn_and_return(booted_substrate):
     await hermes_hooks.on_subagent_return_async(
         "parent-1", "child-A", "fixed and verified", t
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         spawn = await conn.fetchrow(
             """
             SELECT payload FROM substrate_slices sl
@@ -208,12 +208,12 @@ async def test_on_subagent_spawn_and_return(booted_substrate):
 
 @pytest.mark.asyncio
 async def test_on_session_start_async_writes_slice(booted_substrate):
-    import hermes_db
+    import thoth_db
 
     await hermes_hooks.on_session_start_async(
         "sess-5", "discord", "claude-haiku-4-5", _now_utc()
     )
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             """
             SELECT sl.payload, sl.metadata FROM substrate_slices sl
@@ -229,10 +229,10 @@ async def test_on_session_start_async_writes_slice(booted_substrate):
 
 @pytest.mark.asyncio
 async def test_on_session_end_async_writes_slice(booted_substrate):
-    import hermes_db
+    import thoth_db
 
     await hermes_hooks.on_session_end_async("sess-6", "user_quit", _now_utc())
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             """
             SELECT payload FROM substrate_slices sl
@@ -247,10 +247,10 @@ async def test_on_session_end_async_writes_slice(booted_substrate):
 
 @pytest.mark.asyncio
 async def test_on_cron_fire_async_writes_slice(booted_substrate):
-    import hermes_db
+    import thoth_db
 
     await hermes_hooks.on_cron_fire_async("job-7", _now_utc())
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             """
             SELECT payload FROM substrate_slices sl
@@ -275,10 +275,10 @@ async def test_on_session_start_shares_txn(booted_substrate):
     This is the atomicity contract exercised by
     ``SessionDB.create_session`` in production wiring.
     """
-    import hermes_db
+    import thoth_db
 
     try:
-        async with hermes_db.transaction() as conn:
+        async with thoth_db.transaction() as conn:
             await hermes_hooks.on_session_start_async(
                 "sess-rollback",
                 "cli",
@@ -291,7 +291,7 @@ async def test_on_session_start_shares_txn(booted_substrate):
     except RuntimeError:
         pass
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         count = await conn.fetchval(
             """
             SELECT count(*) FROM substrate_slices sl
@@ -337,11 +337,11 @@ async def test_hook_skips_when_stream_missing(hermes_db_initialized):
     and returns None rather than raising. The unknown-stream branch is
     inside ``commit_slice``'s caller, not ``commit_slice`` itself.
     """
-    import hermes_db
+    import thoth_db
     from substrate.facade import Substrate
 
     # Construct a substrate that DIDN'T auto-register §9 streams.
-    sub = Substrate.from_pool(hermes_db.pool())
+    sub = Substrate.from_pool(thoth_db.pool())
     hermes_hooks._bind(sub)
     try:
         result = await hermes_hooks.on_user_message_async(

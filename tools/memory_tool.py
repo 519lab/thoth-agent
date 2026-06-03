@@ -30,7 +30,7 @@ import re
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 from typing import Dict, Any, List, Optional
 
 from utils import atomic_replace
@@ -54,7 +54,7 @@ logger = logging.getLogger(__name__)
 # happened after the first import.
 def get_memory_dir() -> Path:
     """Return the profile-scoped memories directory."""
-    return get_hermes_home() / "memories"
+    return get_thoth_home() / "memories"
 
 ENTRY_DELIMITER = "\n§\n"
 
@@ -79,7 +79,7 @@ _MEMORY_THREAT_PATTERNS = [
     # Persistence via shell rc
     (r'authorized_keys', "ssh_backdoor"),
     (r'\$HOME/\.ssh|\~/\.ssh', "ssh_access"),
-    (r'\$HOME/\.hermes/\.env|\~/\.hermes/\.env', "hermes_env"),
+    (r'\$HOME/\.hermes/\.env|\~/\.hermes/\.env', "thoth_env"),
 ]
 
 # Subset of invisible chars for injection detection

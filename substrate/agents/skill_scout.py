@@ -178,13 +178,13 @@ class SkillScout(SubAgent):
     async def _should_run(self) -> bool:
         """Interval throttle AND a check that L3 gained/updated patterns since
         the last run — on a static L3 there's no new need to mine."""
-        import hermes_db
+        import thoth_db
 
         interval = _env_int("SKILL_SCOUT_INTERVAL_S", 3600)
         now_mono = asyncio.get_event_loop().time()
         if self._last_run_mono and (now_mono - self._last_run_mono) < interval:
             return False
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             l3_max = await conn.fetchval("SELECT max(last_seen_at) FROM l3_patterns")
         if (
             l3_max is not None
@@ -205,11 +205,11 @@ class SkillScout(SubAgent):
         can trace exactly what triggered the proposal. (L4 self-observations are
         a future enrichment — the ``source_l4_ids`` column is already wired.)
         """
-        import hermes_db
+        import thoth_db
 
         floor = _env_float("SKILL_SCOUT_SALIENCE_FLOOR", 0.7)
         limit = _env_int("SKILL_SCOUT_CANDIDATES", 10)
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             rows = await conn.fetch(
                 """
                 SELECT id, statement, kind, salience_score, cites

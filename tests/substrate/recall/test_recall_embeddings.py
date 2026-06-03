@@ -108,7 +108,7 @@ async def test_resolve_provider_openai_env_only(monkeypatch):
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     monkeypatch.setenv(embeddings.API_KEY_ENV_VAR, "sk-test-123")
     monkeypatch.setattr(
-        "hermes_cli.config.load_config",
+        "thoth_cli.config.load_config",
         lambda: {},
     )
     r = embeddings._resolve_embedding_provider()
@@ -123,7 +123,7 @@ async def test_resolve_provider_openrouter_env_fallback(monkeypatch):
     monkeypatch.delenv(embeddings.API_KEY_ENV_VAR, raising=False)
     monkeypatch.setenv("OPENROUTER_API_KEY", "or-test-456")
     monkeypatch.setattr(
-        "hermes_cli.config.load_config",
+        "thoth_cli.config.load_config",
         lambda: {},
     )
     r = embeddings._resolve_embedding_provider()
@@ -138,7 +138,7 @@ async def test_resolve_provider_openrouter_env_fallback(monkeypatch):
 async def test_resolve_provider_custom_config(monkeypatch):
     """Explicit custom config (e.g. Ollama) → custom routing."""
     monkeypatch.setattr(
-        "hermes_cli.config.load_config",
+        "thoth_cli.config.load_config",
         lambda: {
             "auxiliary": {
                 "embedding": {
@@ -169,16 +169,16 @@ async def test_get_schema_dim_fallback_when_pg_unreachable(monkeypatch):
     integration tests that have a live pool.
     """
     embeddings.reset_schema_dim_cache()
-    # Force the inner ``import hermes_db`` to fail by removing the
+    # Force the inner ``import thoth_db`` to fail by removing the
     # entry from sys.modules and shadowing the path. Easier: monkeypatch
-    # the hermes_db module to a stub whose ``connection`` access raises.
-    import hermes_db
+    # the thoth_db module to a stub whose ``connection`` access raises.
+    import thoth_db
     class _Boom:
         def __getattr__(self, name):
             raise RuntimeError("simulated PG down")
-    monkeypatch.setattr("substrate.recall.embeddings.hermes_db", _Boom(), raising=False)
-    # The function uses a late ``import hermes_db`` inside its body.
-    # Easier than fighting that import path: just rig hermes_db.connection
+    monkeypatch.setattr("substrate.recall.embeddings.thoth_db", _Boom(), raising=False)
+    # The function uses a late ``import thoth_db`` inside its body.
+    # Easier than fighting that import path: just rig thoth_db.connection
     # to be a no-op context manager that yields a conn whose fetchrow raises.
     import contextlib
 
@@ -189,7 +189,7 @@ async def test_get_schema_dim_fallback_when_pg_unreachable(monkeypatch):
                 raise RuntimeError("simulated PG down")
         yield _C()
 
-    monkeypatch.setattr(hermes_db, "connection", _broken_connection, raising=True)
+    monkeypatch.setattr(thoth_db, "connection", _broken_connection, raising=True)
     dim = await embeddings._get_schema_dim()
     assert dim == embeddings.EMBEDDING_DIM
 
@@ -206,11 +206,11 @@ def test_schema_dim_cache_resets():
 def test_resolve_dimensions_reads_config(monkeypatch):
     """auxiliary.embedding.dimensions → MRL truncation request; absent → None."""
     monkeypatch.setattr(
-        "hermes_cli.config.load_config",
+        "thoth_cli.config.load_config",
         lambda: {"auxiliary": {"embedding": {"dimensions": 1024}}},
     )
     assert embeddings._resolve_dimensions() == 1024
-    monkeypatch.setattr("hermes_cli.config.load_config", lambda: {})
+    monkeypatch.setattr("thoth_cli.config.load_config", lambda: {})
     assert embeddings._resolve_dimensions() is None
 
 
@@ -246,7 +246,7 @@ async def test_embed_omits_dimensions_when_unconfigured(monkeypatch):
     """No configured/passed dimensions → the param is not sent (so providers
     that don't support MRL truncation aren't broken)."""
     monkeypatch.delenv(embeddings.MOCK_ENV_VAR, raising=False)
-    monkeypatch.setattr("hermes_cli.config.load_config", lambda: {})
+    monkeypatch.setattr("thoth_cli.config.load_config", lambda: {})
     captured: dict = {}
 
     class _Emb:

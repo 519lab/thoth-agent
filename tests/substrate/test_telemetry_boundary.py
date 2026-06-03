@@ -23,9 +23,9 @@ from substrate.telemetry import write as telemetry_write
 
 @pytest_asyncio.fixture
 async def substrate(hermes_db_initialized):
-    import hermes_db
+    import thoth_db
 
-    return Substrate.from_pool(hermes_db.pool())
+    return Substrate.from_pool(thoth_db.pool())
 
 
 def _now_utc() -> datetime:
@@ -46,9 +46,9 @@ def test_is_perceptual_boundary():
 async def test_telemetry_write_creates_row_not_slice(substrate):
     """``telemetry.write`` appends to substrate_telemetry and creates NO
     substrate_slices row — that's what keeps it out of the awareness loop."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         slices_before = await conn.fetchval("SELECT count(*) FROM substrate_slices")
 
     await telemetry_write(
@@ -58,7 +58,7 @@ async def test_telemetry_write_creates_row_not_slice(substrate):
         payload={"slice_id": "abc-123", "tombstone_policy": "thin"},
     )
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             "SELECT agent, event, payload FROM substrate_telemetry "
             "WHERE event = 'curator.release' ORDER BY at DESC LIMIT 1"

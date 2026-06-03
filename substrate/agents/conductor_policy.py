@@ -118,10 +118,10 @@ class AdaptiveConductor(SubAgent):
     async def _seed_forecast(self) -> None:
         """Reconstruct the EMA from the persistent decision log so a restart
         resumes the learned rhythm instead of cold-starting."""
-        import hermes_db
+        import thoth_db
 
         try:
-            async with hermes_db.connection() as conn:
+            async with thoth_db.connection() as conn:
                 val = await conn.fetchval(
                     "SELECT forecast FROM substrate_conductor_log ORDER BY at DESC LIMIT 1"
                 )
@@ -131,10 +131,10 @@ class AdaptiveConductor(SubAgent):
             self._log.debug("conductor.seed_forecast.failed", exc_info=True)
 
     async def _log_decision(self, signals: dict, targets: dict) -> None:
-        import hermes_db
+        import thoth_db
 
         try:
-            async with hermes_db.connection() as conn:
+            async with thoth_db.connection() as conn:
                 await conn.execute(
                     "INSERT INTO substrate_conductor_log "
                     "(backlog_ratio, forecast, targets) VALUES ($1, $2, $3)",
@@ -146,9 +146,9 @@ class AdaptiveConductor(SubAgent):
             self._log.debug("conductor.log_decision.failed", exc_info=True)
 
     async def _read_load(self) -> dict:
-        import hermes_db
+        import thoth_db
 
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             row = await conn.fetchrow(
                 """
                 SELECT COUNT(*) FILTER (

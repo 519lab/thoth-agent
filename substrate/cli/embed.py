@@ -15,7 +15,7 @@ Future expansion (not in this PR):
     thoth embed test              # 1-call probe of the configured provider
 
 Wired into Thoth's top-level argparse via :func:`register_subparser`
-called from ``hermes_cli/main.py``.
+called from ``thoth_cli/main.py``.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 # ---------------------------------------------------------------------------
-# Subparser registration — called from hermes_cli/main.py.
+# Subparser registration — called from thoth_cli/main.py.
 # ---------------------------------------------------------------------------
 
 
@@ -105,7 +105,7 @@ def _cmd_embed_help(args: argparse.Namespace) -> int:
 
 def _cmd_embed_reshape(args: argparse.Namespace) -> int:
     """Validate args, prompt for confirmation, then drive the reshape."""
-    import hermes_db
+    import thoth_db
 
     target = args.dim
     if target < 1 or target > 16000:
@@ -115,19 +115,19 @@ def _cmd_embed_reshape(args: argparse.Namespace) -> int:
         )
         return 2
 
-    if not hermes_db.ensure_pool_sync():
+    if not thoth_db.ensure_pool_sync():
         print(
             "error: THOTH_PG_DSN not set; cannot connect to substrate PG.",
             file=sys.stderr,
         )
         return 1
 
-    # MUST drive via hermes_db.run_sync, not asyncio.get_event_loop() / asyncio.run:
-    # ensure_pool_sync() bound the asyncpg pool to hermes_db's persistent
+    # MUST drive via thoth_db.run_sync, not asyncio.get_event_loop() / asyncio.run:
+    # ensure_pool_sync() bound the asyncpg pool to thoth_db's persistent
     # ``_sync_loop``. Running the coro on any other loop hits asyncpg's
     # "another operation is in progress" / "attached to a different loop"
     # cross-loop error (same failure class as the 2026-05-26 incident).
-    return hermes_db.run_sync(
+    return thoth_db.run_sync(
         _reshape_async(
             target=target,
             interactive=not args.yes,
@@ -152,7 +152,7 @@ async def _reshape_async(
     model, so a split dim would stall the L3/L4 backfill. Slices are re-embedded
     inline here; L3/L4 are re-embedded by the Curator's curation pass (or
     ``scripts/curate_upper_now.py``)."""
-    import hermes_db
+    import thoth_db
 
     # 1. Read current per-table dims (slices is required; L3/L4 may be absent
     #    on a pre-0020 DB → skipped).
@@ -165,7 +165,7 @@ async def _reshape_async(
         )
         return 1
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         dims = {t: await _table_vector_dim(conn, t) for t in _EMBEDDING_TABLES}
         embedded = await conn.fetchval(
             "SELECT count(*) FROM substrate_slices WHERE embedding IS NOT NULL"
@@ -212,7 +212,7 @@ async def _reshape_async(
 
     # 3. Reshape each table (drop index, NULL embeddings, ALTER, recreate index).
     print(f"Reshaping {len(to_reshape)} column(s) to vector({target}) ...")
-    async with hermes_db.transaction() as conn:
+    async with thoth_db.transaction() as conn:
         for t in to_reshape:
             await _reshape_table(conn, t, target)
             print(f"  {t}: vector({dims[t]}) -> vector({target}), index rebuilt.")
@@ -280,9 +280,9 @@ async def _reshape_table(conn, table: str, target: int) -> None:
 async def _current_schema_dim() -> int | None:
     """Read the live vector(N) dim from pg_catalog. Returns None if the
     column is missing or isn't a vector type."""
-    import hermes_db
+    import thoth_db
 
-    async with hermes_db.connection() as conn:
+    async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             """
             SELECT format_type(atttypid, atttypmod) AS coltype
@@ -309,7 +309,7 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
     Returns 0 on full success, 1 if the provider failed at any point
     (the partial state is fine; Curator backfill picks up the rest).
     """
-    import hermes_db
+    import thoth_db
 
     # Late import — embed() needs the schema-dim cache cleared above.
     from substrate.recall.embeddings import embed
@@ -328,7 +328,7 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
     while True:
         # Pull a batch of NULL-embedding slice rows. Ordered for
         # deterministic resume-after-interrupt behaviour.
-        async with hermes_db.connection() as conn:
+        async with thoth_db.connection() as conn:
             rows = await conn.fetch(
                 """
                 SELECT slice_id, ingest_time_world, payload
@@ -355,7 +355,7 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
 
         # Write back per row. Skip rows where embed() returned None
         # (provider failure for that item only).
-        async with hermes_db.transaction() as conn:
+        async with thoth_db.transaction() as conn:
             for r, vec in zip(rows, vectors):
                 if vec is None:
                     failed += 1

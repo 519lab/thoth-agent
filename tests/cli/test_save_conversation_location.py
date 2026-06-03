@@ -27,9 +27,9 @@ def hermes_home(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     monkeypatch.setenv("HERMES_HOME", str(home))
     # Clear any cached hermes_home computation
-    import hermes_constants
-    if hasattr(hermes_constants, "_hermes_home_cache"):
-        hermes_constants._hermes_home_cache = None
+    import thoth_constants
+    if hasattr(thoth_constants, "_hermes_home_cache"):
+        thoth_constants._hermes_home_cache = None
     return home
 
 
@@ -51,7 +51,7 @@ def test_save_conversation_writes_under_hermes_home(hermes_home, tmp_path, monke
     monkeypatch.chdir(work)
 
     # Import fresh to pick up the HERMES_HOME fixture
-    for mod in [m for m in sys.modules if m.startswith("cli") or m == "hermes_constants"]:
+    for mod in [m for m in sys.modules if m.startswith("cli") or m == "thoth_constants"]:
         sys.modules.pop(mod, None)
 
     import cli  # noqa: F401  (module under test)
@@ -62,7 +62,7 @@ def test_save_conversation_writes_under_hermes_home(hermes_home, tmp_path, monke
     ])
 
     # Call the unbound method against our stub.
-    cli.HermesCLI.save_conversation(stub)
+    cli.ThothCLI.save_conversation(stub)
 
     # File must NOT be in CWD
     cwd_leak = list(work.glob("hermes_conversation_*.json"))
@@ -89,12 +89,12 @@ def test_save_conversation_writes_under_hermes_home(hermes_home, tmp_path, monke
 
 
 def test_save_conversation_empty_history_does_nothing(hermes_home, capsys):
-    for mod in [m for m in sys.modules if m.startswith("cli") or m == "hermes_constants"]:
+    for mod in [m for m in sys.modules if m.startswith("cli") or m == "thoth_constants"]:
         sys.modules.pop(mod, None)
     import cli
 
     stub = _make_stub_cli([])
-    cli.HermesCLI.save_conversation(stub)
+    cli.ThothCLI.save_conversation(stub)
 
     saved_dir = hermes_home / "sessions" / "saved"
     assert not saved_dir.exists() or not list(saved_dir.iterdir())

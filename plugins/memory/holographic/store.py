@@ -19,7 +19,7 @@ _log = logging.getLogger(__name__)
 
 
 # Filesystem markers for WAL-mode incompatibility. Mirrors the pre-Phase-0
-# ``hermes_state.apply_wal_with_fallback`` helper that was deleted when the
+# ``thoth_state.apply_wal_with_fallback`` helper that was deleted when the
 # session DB moved to PostgreSQL. The holographic store still uses SQLite
 # locally, so we keep a private copy of the helper here.
 _WAL_INCOMPAT_MARKERS = (
@@ -38,7 +38,7 @@ def _apply_wal_with_fallback(conn: sqlite3.Connection, *, db_label: str) -> str:
     """Set ``journal_mode=WAL`` on ``conn``; fall back to DELETE if the
     filesystem rejects WAL. Returns the mode actually applied.
 
-    Replaces the removed ``hermes_state.apply_wal_with_fallback`` helper.
+    Replaces the removed ``thoth_state.apply_wal_with_fallback`` helper.
     The session DB no longer needs WAL — it moved to PostgreSQL in
     Phase 0 — but the holographic memory store and the gateway's
     response_store still use SQLite locally.
@@ -153,8 +153,8 @@ class MemoryStore:
         hrr_dim: int = 1024,
     ) -> None:
         if db_path is None:
-            from hermes_constants import get_hermes_home
-            db_path = str(get_hermes_home() / "memory_store.db")
+            from thoth_constants import get_thoth_home
+            db_path = str(get_thoth_home() / "memory_store.db")
         self.db_path = Path(db_path).expanduser()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.default_trust = _clamp_trust(default_trust)
@@ -177,7 +177,7 @@ class MemoryStore:
         """Create tables, indexes, and triggers if they do not exist. Enable WAL mode."""
         # Use the local WAL-fallback helper so memory_store.db degrades
         # gracefully on NFS/SMB/FUSE-mounted HERMES_HOME. The shared
-        # helper that used to live in hermes_state was removed when the
+        # helper that used to live in thoth_state was removed when the
         # session DB moved to PostgreSQL in Phase 0.
         _apply_wal_with_fallback(self._conn, db_label="memory_store.db (holographic)")
         self._conn.executescript(_SCHEMA)

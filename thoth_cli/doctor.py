@@ -12,13 +12,13 @@ import importlib.util
 from pathlib import Path
 
 from thoth_cli.cli_name import cli_name
-from thoth_cli.config import get_project_root, get_hermes_home, get_env_path
+from thoth_cli.config import get_project_root, get_thoth_home, get_env_path
 from thoth_cli.env_loader import load_hermes_dotenv
-from hermes_constants import display_hermes_home
+from thoth_constants import display_thoth_home
 
 PROJECT_ROOT = get_project_root()
-HERMES_HOME = get_hermes_home()
-_DHH = display_hermes_home()  # user-facing display path (e.g. ~/.hermes or ~/.hermes/profiles/coder)
+HERMES_HOME = get_thoth_home()
+_DHH = display_thoth_home()  # user-facing display path (e.g. ~/.hermes or ~/.hermes/profiles/coder)
 
 # Load environment variables from ~/.hermes/.env so API key checks work
 _env_path = get_env_path()
@@ -27,7 +27,7 @@ load_hermes_dotenv(hermes_home=_env_path.parent, project_env=PROJECT_ROOT / ".en
 from thoth_cli.colors import Colors, color
 from thoth_cli.models import _HERMES_USER_AGENT
 from thoth_cli.vercel_auth import describe_vercel_auth
-from hermes_constants import OPENROUTER_MODELS_URL
+from thoth_constants import OPENROUTER_MODELS_URL
 from utils import base_url_host_matches
 
 
@@ -58,7 +58,7 @@ _PROVIDER_ENV_HINTS = (
 )
 
 
-from hermes_constants import is_termux as _is_termux
+from thoth_constants import is_termux as _is_termux
 
 
 def _python_install_cmd() -> str:

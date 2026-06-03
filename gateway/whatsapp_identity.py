@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 # full-width digits / Unicode word chars can't sneak through.
 _SAFE_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9@.+\-]+$")
 
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 
 
 def normalize_whatsapp_identifier(value: str) -> str:
@@ -82,7 +82,7 @@ def expand_whatsapp_aliases(identifier: str) -> Set[str]:
     if not normalized:
         return set()
 
-    session_dir = get_hermes_home() / "whatsapp" / "session"
+    session_dir = get_thoth_home() / "whatsapp" / "session"
     resolved: Set[str] = set()
     queue = [normalized]
 
