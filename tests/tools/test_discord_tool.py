@@ -620,15 +620,15 @@ class TestRegistration:
 # ---------------------------------------------------------------------------
 
 class TestToolsetInclusion:
-    def test_discord_tools_in_hermes_discord_toolset(self):
+    def test_discord_tools_in_thoth_discord_toolset(self):
         from toolsets import TOOLSETS
         assert "discord" in TOOLSETS["hermes-discord"]["tools"]
         assert "discord_admin" in TOOLSETS["hermes-discord"]["tools"]
 
     def test_discord_tools_not_in_core_tools(self):
-        from toolsets import _HERMES_CORE_TOOLS
-        assert "discord" not in _HERMES_CORE_TOOLS
-        assert "discord_admin" not in _HERMES_CORE_TOOLS
+        from toolsets import _THOTH_CORE_TOOLS
+        assert "discord" not in _THOTH_CORE_TOOLS
+        assert "discord_admin" not in _THOTH_CORE_TOOLS
 
     def test_discord_tools_not_in_other_toolsets(self):
         from toolsets import TOOLSETS

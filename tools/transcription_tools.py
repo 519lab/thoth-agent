@@ -769,7 +769,7 @@ def _transcribe_xai(file_path: str, model_name: str) -> Dict[str, Any]:
 
     try:
         import requests
-        from tools.xai_http import hermes_xai_user_agent
+        from tools.xai_http import thoth_xai_user_agent
 
         data: Dict[str, str] = {}
         if language:
@@ -784,7 +784,7 @@ def _transcribe_xai(file_path: str, model_name: str) -> Dict[str, Any]:
                 f"{base_url}/stt",
                 headers={
                     "Authorization": f"Bearer {api_key}",
-                    "User-Agent": hermes_xai_user_agent(),
+                    "User-Agent": thoth_xai_user_agent(),
                 },
                 files={
                     "file": (Path(file_path).name, audio_file),

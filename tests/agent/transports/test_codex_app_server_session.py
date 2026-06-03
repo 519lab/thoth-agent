@@ -450,7 +450,7 @@ class TestServerRequestRouting:
             for (rid, code, _msg) in client.error_responses
         )
 
-    def test_mcp_elicitation_for_hermes_tools_auto_accepts(self):
+    def test_mcp_elicitation_for_thoth_tools_auto_accepts(self):
         """When codex elicits on behalf of hermes-tools (our own callback),
         accept automatically — the user already opted in by enabling the
         runtime."""

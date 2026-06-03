@@ -22,7 +22,7 @@ from gateway.session import SessionSource, SessionStore, build_session_key
 
 
 @pytest.fixture()
-def store(tmp_path, hermes_db_initialized_sync):
+def store(tmp_path, thoth_db_initialized_sync):
     """SessionStore backed by PG — load_transcript reads from DB only."""
     config = GatewayConfig()
     s = SessionStore(sessions_dir=tmp_path, config=config)

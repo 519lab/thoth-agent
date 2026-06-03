@@ -9,7 +9,7 @@ Verifies that:
 Phase 0 port note: SessionDB became ``_AsyncSessionDB`` (re-exported as
 ``SessionDB``). Methods like ``create_session`` and ``get_messages`` are
 now coroutines that have to be driven through ``thoth_db.run_sync`` from
-sync test bodies; the ``hermes_db_initialized_sync`` fixture binds the
+sync test bodies; the ``thoth_db_initialized_sync`` fixture binds the
 asyncpg pool to the per-test PG database (and runs Alembic upgrade head)
 so those calls land in a migrated schema. The historical ``db_path=``
 kwarg is accepted-and-ignored by ``_AsyncSessionDB.__init__``.
@@ -48,7 +48,7 @@ class TestFlushDeduplication:
         agent._ensure_db_session()
         return agent
 
-    def test_flush_writes_only_new_messages(self, hermes_db_initialized_sync):
+    def test_flush_writes_only_new_messages(self, thoth_db_initialized_sync):
         """First flush writes all new messages, second flush writes none."""
         from thoth_state import SessionDB
 
@@ -75,7 +75,7 @@ class TestFlushDeduplication:
         rows = thoth_db.run_sync(db.get_messages(agent.session_id))
         assert len(rows) == 2, f"Expected still 2 messages after second flush, got {len(rows)}"
 
-    def test_flush_writes_incrementally(self, hermes_db_initialized_sync):
+    def test_flush_writes_incrementally(self, thoth_db_initialized_sync):
         """Messages added between flushes are written exactly once."""
         from thoth_state import SessionDB
 
@@ -102,7 +102,7 @@ class TestFlushDeduplication:
         assert len(rows) == 3, f"Expected 3 total messages, got {len(rows)}"
 
     def test_persist_session_multiple_calls_no_duplication(
-        self, hermes_db_initialized_sync
+        self, thoth_db_initialized_sync
     ):
         """Multiple _persist_session calls don't duplicate DB entries."""
         from thoth_state import SessionDB
@@ -125,7 +125,7 @@ class TestFlushDeduplication:
         rows = thoth_db.run_sync(db.get_messages(agent.session_id))
         assert len(rows) == 4, f"Expected 4 messages, got {len(rows)} (duplication bug!)"
 
-    def test_flush_reset_after_compression(self, hermes_db_initialized_sync):
+    def test_flush_reset_after_compression(self, thoth_db_initialized_sync):
         """After compression creates a new session, flush index resets."""
         from thoth_state import SessionDB
 
@@ -170,7 +170,7 @@ class TestFlushDeduplication:
 class TestAppendToTranscriptSkipDb:
     """Verify skip_db=True skips the SQLite write."""
 
-    def test_skip_db_prevents_sqlite_write(self, tmp_path, hermes_db_initialized_sync):
+    def test_skip_db_prevents_sqlite_write(self, tmp_path, thoth_db_initialized_sync):
         """With skip_db=True and a real session DB, message does NOT land in the DB."""
         from gateway.config import GatewayConfig
         from gateway.session import SessionStore
@@ -194,7 +194,7 @@ class TestAppendToTranscriptSkipDb:
         rows = thoth_db.run_sync(db.get_messages(session_id))
         assert len(rows) == 0, f"Expected 0 DB rows with skip_db=True, got {len(rows)}"
 
-    def test_default_writes_to_sqlite(self, tmp_path, hermes_db_initialized_sync):
+    def test_default_writes_to_sqlite(self, tmp_path, thoth_db_initialized_sync):
         """Without skip_db, message appears in the session DB."""
         from gateway.config import GatewayConfig
         from gateway.session import SessionStore

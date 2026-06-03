@@ -110,7 +110,7 @@ _install_results: Dict[str, Optional[str]] = {}
 _install_lock_meta = threading.Lock()
 
 
-def hermes_lsp_bin_dir() -> Path:
+def thoth_lsp_bin_dir() -> Path:
     """Return the Thoth-owned bin staging dir for LSP servers."""
     home = os.environ.get("HERMES_HOME")
     if home is None:
@@ -122,7 +122,7 @@ def hermes_lsp_bin_dir() -> Path:
 
 def _existing_binary(name: str) -> Optional[str]:
     """Probe the staging dir + PATH for a binary named ``name``."""
-    staged = hermes_lsp_bin_dir() / name
+    staged = thoth_lsp_bin_dir() / name
     if staged.exists() and os.access(staged, os.X_OK):
         return str(staged)
     on_path = shutil.which(name)
@@ -224,7 +224,7 @@ def _install_npm(
     if npm is None:
         logger.info("[install] cannot install %s: npm not on PATH", pkg)
         return None
-    staging = hermes_lsp_bin_dir().parent  # <HERMES_HOME>/lsp/
+    staging = thoth_lsp_bin_dir().parent  # <HERMES_HOME>/lsp/
     install_targets = [pkg] + list(extra_pkgs or [])
     try:
         logger.info(
@@ -258,7 +258,7 @@ def _install_npm(
     for c in candidates:
         if c.exists():
             # Symlink into our `lsp/bin/` for stable PATH access.
-            link = hermes_lsp_bin_dir() / c.name
+            link = thoth_lsp_bin_dir() / c.name
             if not link.exists():
                 try:
                     link.symlink_to(c)
@@ -279,7 +279,7 @@ def _install_go(pkg: str, bin_name: str) -> Optional[str]:
     if go is None:
         logger.info("[install] cannot install %s: go not on PATH", pkg)
         return None
-    staging = hermes_lsp_bin_dir()
+    staging = thoth_lsp_bin_dir()
     env = dict(os.environ)
     env["GOBIN"] = str(staging)
     try:
@@ -318,7 +318,7 @@ def _install_pip(pkg: str, bin_name: str) -> Optional[str]:
     ``<staging>/bin``.  Note: this only works for packages that ship a
     console script.
     """
-    pip_target = hermes_lsp_bin_dir().parent / "python-packages"
+    pip_target = thoth_lsp_bin_dir().parent / "python-packages"
     pip_target.mkdir(parents=True, exist_ok=True)
     try:
         logger.info("[install] pip install --target %s %s", pip_target, pkg)
@@ -340,7 +340,7 @@ def _install_pip(pkg: str, bin_name: str) -> Optional[str]:
     # Look for the script
     bin_path = pip_target / "bin" / bin_name
     if bin_path.exists():
-        link = hermes_lsp_bin_dir() / bin_name
+        link = thoth_lsp_bin_dir() / bin_name
         if not link.exists():
             try:
                 link.symlink_to(bin_path)
@@ -372,5 +372,8 @@ __all__ = [
     "INSTALL_RECIPES",
     "try_install",
     "detect_status",
-    "hermes_lsp_bin_dir",
+    "thoth_lsp_bin_dir",
 ]
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+hermes_lsp_bin_dir = thoth_lsp_bin_dir

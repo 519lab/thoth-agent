@@ -204,7 +204,7 @@ def _remove_claude_code(provider: str, removed) -> RemovalResult:
     ])
 
 
-def _remove_hermes_pkce(provider: str, removed) -> RemovalResult:
+def _remove_thoth_pkce(provider: str, removed) -> RemovalResult:
     """~/.hermes/.anthropic_oauth.json is ours — delete it outright."""
     from thoth_constants import get_thoth_home
 
@@ -408,7 +408,7 @@ def _register_all_sources() -> None:
     ))
     register(RemovalStep(
         provider="anthropic", source_id="hermes_pkce",
-        remove_fn=_remove_hermes_pkce,
+        remove_fn=_remove_thoth_pkce,
         description="~/.hermes/.anthropic_oauth.json",
     ))
     register(RemovalStep(

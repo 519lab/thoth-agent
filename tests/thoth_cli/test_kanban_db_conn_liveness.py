@@ -80,7 +80,7 @@ class _MockPool:
         self.released.append(conn)
 
 
-class _FakeHermesDB:
+class _FakeThothDB:
     """Mock of the thoth_db module used by kanban_db's lazy imports."""
 
     def __init__(self, pool):
@@ -99,13 +99,13 @@ class _FakeHermesDB:
 
 
 @pytest.fixture
-def install_fake_hermes_db(monkeypatch):
+def install_fake_thoth_db(monkeypatch):
     """Install a fake ``thoth_db`` module so kanban_db's ``import thoth_db``
     inside methods resolves to our mock."""
 
     def _install(pool):
         fake = types.ModuleType("thoth_db")
-        impl = _FakeHermesDB(pool)
+        impl = _FakeThothDB(pool)
         fake.pool = impl.pool
         fake.run_sync = impl.run_sync
         monkeypatch.setitem(sys.modules, "thoth_db", fake)
@@ -125,7 +125,7 @@ def test_connection_lost_errors_includes_asyncpg_types():
     assert ConnectionResetError in errs
 
 
-def test_execute_evicts_dead_conn_and_retries_on_fresh(install_fake_hermes_db):
+def test_execute_evicts_dead_conn_and_retries_on_fresh(install_fake_thoth_db):
     """A SELECT that raises ConnectionDoesNotExistError terminates the dead
     connection (does NOT release it) and retries once on a fresh connection,
     returning the retry's result."""
@@ -137,7 +137,7 @@ def test_execute_evicts_dead_conn_and_retries_on_fresh(install_fake_hermes_db):
     )
     fresh = _MockConn("fresh", fetch_result=[{"id": 1, "title": "ok"}])
     pool = _MockPool([fresh])
-    install_fake_hermes_db(pool)
+    install_fake_thoth_db(pool)
 
     conn = kanban_db._PgConnection(dead, board_slug="default")
     cursor = conn.execute("SELECT id, title FROM kanban_tasks")
@@ -155,7 +155,7 @@ def test_execute_evicts_dead_conn_and_retries_on_fresh(install_fake_hermes_db):
     assert rows[0]["title"] == "ok"
 
 
-def test_execute_retries_only_once_then_raises(install_fake_hermes_db):
+def test_execute_retries_only_once_then_raises(install_fake_thoth_db):
     """If the fresh connection ALSO fails with a connection-lost error, the
     error propagates (we retry exactly once, not in a loop)."""
     dead = _MockConn(
@@ -168,7 +168,7 @@ def test_execute_retries_only_once_then_raises(install_fake_hermes_db):
         fetch_error=asyncpg.exceptions.ConnectionDoesNotExistError("still dead"),
     )
     pool = _MockPool([fresh])
-    install_fake_hermes_db(pool)
+    install_fake_thoth_db(pool)
 
     conn = kanban_db._PgConnection(dead, board_slug="default")
     with pytest.raises(asyncpg.exceptions.ConnectionDoesNotExistError):
@@ -177,7 +177,7 @@ def test_execute_retries_only_once_then_raises(install_fake_hermes_db):
     assert dead.terminated is True
 
 
-def test_execute_in_txn_terminates_and_raises_without_retry(install_fake_hermes_db):
+def test_execute_in_txn_terminates_and_raises_without_retry(install_fake_thoth_db):
     """Mid-transaction, a half-open connection cannot be safely replayed:
     terminate + raise, no retry."""
     dead = _MockConn(
@@ -186,7 +186,7 @@ def test_execute_in_txn_terminates_and_raises_without_retry(install_fake_hermes_
     )
     fresh = _MockConn("fresh", fetch_result=[{"id": 1}])
     pool = _MockPool([fresh])
-    install_fake_hermes_db(pool)
+    install_fake_thoth_db(pool)
 
     conn = kanban_db._PgConnection(dead, board_slug="default")
     conn._in_txn = True
@@ -200,11 +200,11 @@ def test_execute_in_txn_terminates_and_raises_without_retry(install_fake_hermes_
     assert fresh.fetch_calls == 0
 
 
-def test_execute_healthy_conn_no_terminate(install_fake_hermes_db):
+def test_execute_healthy_conn_no_terminate(install_fake_thoth_db):
     """A healthy SELECT must not terminate or evict anything."""
     healthy = _MockConn("healthy", fetch_result=[{"id": 1, "title": "fine"}])
     pool = _MockPool([])  # no fresh conns needed
-    install_fake_hermes_db(pool)
+    install_fake_thoth_db(pool)
 
     conn = kanban_db._PgConnection(healthy, board_slug="default")
     cursor = conn.execute("SELECT id, title FROM kanban_tasks")
@@ -215,12 +215,12 @@ def test_execute_healthy_conn_no_terminate(install_fake_hermes_db):
     assert cursor.fetchall()[0]["title"] == "fine"
 
 
-def test_connection_reset_error_also_recovers(install_fake_hermes_db):
+def test_connection_reset_error_also_recovers(install_fake_thoth_db):
     """A bare ConnectionResetError (builtin) triggers the same eviction path."""
     dead = _MockConn("dead", fetch_error=ConnectionResetError("reset by peer"))
     fresh = _MockConn("fresh", fetch_result=[{"id": 2}])
     pool = _MockPool([fresh])
-    install_fake_hermes_db(pool)
+    install_fake_thoth_db(pool)
 
     conn = kanban_db._PgConnection(dead, board_slug="default")
     cursor = conn.execute("SELECT id FROM kanban_tasks")
@@ -234,7 +234,7 @@ def test_connection_reset_error_also_recovers(install_fake_hermes_db):
 # Handle.close() behaviour after a connection loss
 # ---------------------------------------------------------------------------
 
-def test_handle_close_terminates_dead_releases_fresh(install_fake_hermes_db):
+def test_handle_close_terminates_dead_releases_fresh(install_fake_thoth_db):
     """After recovery, the handle's close() must terminate the original dead
     conn and release the FRESH replacement (never release the dead one)."""
     dead = _MockConn(
@@ -243,7 +243,7 @@ def test_handle_close_terminates_dead_releases_fresh(install_fake_hermes_db):
     )
     fresh = _MockConn("fresh", fetch_result=[{"id": 1}])
     pool = _MockPool([dead, fresh])  # first acquire (handle init) -> dead
-    install_fake_hermes_db(pool)
+    install_fake_thoth_db(pool)
 
     handle = kanban_db._PgConnectionHandle(board_slug="default")
     assert handle._raw_conn is dead
@@ -260,12 +260,12 @@ def test_handle_close_terminates_dead_releases_fresh(install_fake_hermes_db):
     assert fresh in pool.released
 
 
-def test_handle_close_healthy_releases_conn(install_fake_hermes_db):
+def test_handle_close_healthy_releases_conn(install_fake_thoth_db):
     """A healthy handle close() releases the connection back to the pool
     exactly as before — no terminate."""
     healthy = _MockConn("healthy", fetch_result=[{"id": 1}])
     pool = _MockPool([healthy])
-    install_fake_hermes_db(pool)
+    install_fake_thoth_db(pool)
 
     handle = kanban_db._PgConnectionHandle(board_slug="default")
     handle.execute("SELECT id FROM kanban_tasks")
@@ -273,3 +273,6 @@ def test_handle_close_healthy_releases_conn(install_fake_hermes_db):
 
     assert healthy.terminated is False
     assert healthy in pool.released
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+install_fake_hermes_db = install_fake_thoth_db

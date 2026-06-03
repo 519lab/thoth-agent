@@ -208,9 +208,9 @@ _apply_profile_override()
 # User-managed env files should override stale shell exports on restart.
 from thoth_cli.config import get_thoth_home
 from thoth_cli.cli_name import cli_name
-from thoth_cli.env_loader import load_hermes_dotenv
+from thoth_cli.env_loader import load_thoth_dotenv
 
-load_hermes_dotenv(project_env=PROJECT_ROOT / ".env")
+load_thoth_dotenv(project_env=PROJECT_ROOT / ".env")
 
 # Bridge security.redact_secrets from config.yaml → HERMES_REDACT_SECRETS env
 # var BEFORE thoth_logging imports agent.redact (which snapshots the flag at

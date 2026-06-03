@@ -14,10 +14,10 @@ from thoth_cli import kanban_db as kb
 
 
 @pytest.fixture
-def kanban_home(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """Isolated HERMES_HOME with an empty kanban DB.
 
-    Depends on ``hermes_db_initialized_sync`` so the PG pool is bound
+    Depends on ``thoth_db_initialized_sync`` so the PG pool is bound
     to the persistent sync loop AND the schema is migrated before
     ``kb.init_db()`` runs. Phase 0 moved kanban_db from SQLite to PG;
     the test used to point at ~/.hermes/kanban.db (a per-test tempdir)
@@ -54,7 +54,7 @@ def test_init_db_is_idempotent(kanban_home):
     ".tables WHERE table_schema='public'``. The behaviour under test "
     "(init_db creates the kanban tables) is now structural: ``kb.init_db()`` "
     "is a no-op INSERT into kanban_boards; tables exist iff migrations "
-    "ran. That's exercised by the per-test ``hermes_db_initialized_sync`` "
+    "ran. That's exercised by the per-test ``thoth_db_initialized_sync`` "
     "fixture itself — every other kanban test in this file fails loudly "
     "if migrations didn't apply."
 )
@@ -1819,7 +1819,7 @@ class TestSharedBoardPaths:
         assert kb.kanban_home() == default_home
 
     def test_dispatcher_and_worker_share_a_real_database(
-        self, tmp_path, monkeypatch, hermes_db_initialized_sync
+        self, tmp_path, monkeypatch, thoth_db_initialized_sync
     ):
         # Belt-and-suspenders: round-trip a task across the two
         # HERMES_HOME perspectives. Under sqlite this proved the two
@@ -1830,7 +1830,7 @@ class TestSharedBoardPaths:
         # swap" — still the regression that originally motivated the
         # test.
         #
-        # ``hermes_db_initialized_sync`` is required so the per-test PG
+        # ``thoth_db_initialized_sync`` is required so the per-test PG
         # database has the kanban schema migrated AND the asyncpg pool
         # is bound to *that* database before ``kb.init_db()`` runs. With-
         # out it, the test inherits whichever DSN was last on the env

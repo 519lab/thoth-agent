@@ -12,7 +12,7 @@ from agent.prompt_builder import (
     _truncate_content,
     _parse_skill_file,
     _skill_should_show,
-    _find_hermes_md,
+    _find_thoth_md,
     _find_git_root,
     _strip_yaml_frontmatter,
     build_skills_system_prompt,
@@ -572,7 +572,7 @@ class TestBuildContextFilesPrompt:
         assert "pytest for testing" in result
         assert "Project Context" in result
 
-    def test_loads_hermes_md_uppercase(self, tmp_path):
+    def test_loads_thoth_md_uppercase(self, tmp_path):
         (tmp_path / "HERMES.md").write_text("Always use type hints.")
         result = build_context_files_prompt(cwd=str(tmp_path))
         assert "type hints" in result
@@ -604,7 +604,7 @@ class TestBuildContextFilesPrompt:
         result = build_context_files_prompt(cwd=str(child))
         assert "Parent rules" not in result
 
-    def test_hermes_md_strips_yaml_frontmatter(self, tmp_path):
+    def test_thoth_md_strips_yaml_frontmatter(self, tmp_path):
         content = "---\nmodel: claude-sonnet-4-20250514\ntools:\n  disabled: [tts]\n---\n\n# My Project\n\nUse Ruff for linting."
         (tmp_path / ".hermes.md").write_text(content)
         result = build_context_files_prompt(cwd=str(tmp_path))
@@ -695,29 +695,29 @@ class TestBuildContextFilesPrompt:
 # =========================================================================
 
 
-class TestFindHermesMd:
+class TestFindThothMd:
     def test_finds_in_cwd(self, tmp_path):
         (tmp_path / ".hermes.md").write_text("rules")
-        assert _find_hermes_md(tmp_path) == tmp_path / ".hermes.md"
+        assert _find_thoth_md(tmp_path) == tmp_path / ".hermes.md"
 
     def test_finds_uppercase(self, tmp_path):
         (tmp_path / "HERMES.md").write_text("rules")
-        assert _find_hermes_md(tmp_path) == tmp_path / "HERMES.md"
+        assert _find_thoth_md(tmp_path) == tmp_path / "HERMES.md"
 
     def test_prefers_lowercase(self, tmp_path):
         (tmp_path / ".hermes.md").write_text("lower")
         (tmp_path / "HERMES.md").write_text("upper")
-        assert _find_hermes_md(tmp_path) == tmp_path / ".hermes.md"
+        assert _find_thoth_md(tmp_path) == tmp_path / ".hermes.md"
 
     def test_walks_to_git_root(self, tmp_path):
         (tmp_path / ".git").mkdir()
         (tmp_path / ".hermes.md").write_text("root rules")
         sub = tmp_path / "a" / "b"
         sub.mkdir(parents=True)
-        assert _find_hermes_md(sub) == tmp_path / ".hermes.md"
+        assert _find_thoth_md(sub) == tmp_path / ".hermes.md"
 
     def test_returns_none_when_absent(self, tmp_path):
-        assert _find_hermes_md(tmp_path) is None
+        assert _find_thoth_md(tmp_path) is None
 
     def test_stops_at_git_root(self, tmp_path):
         """Does not walk past the git root."""
@@ -725,7 +725,7 @@ class TestFindHermesMd:
         repo = tmp_path / "repo"
         repo.mkdir()
         (repo / ".git").mkdir()
-        assert _find_hermes_md(repo) is None
+        assert _find_thoth_md(repo) is None
 
 
 class TestFindGitRoot:

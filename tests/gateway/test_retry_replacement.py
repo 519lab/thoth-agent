@@ -11,7 +11,7 @@ from gateway.run import GatewayRunner
 from gateway.session import SessionStore
 
 
-def test_gateway_retry_replaces_last_user_turn_in_transcript(tmp_path, hermes_db_initialized_sync):
+def test_gateway_retry_replaces_last_user_turn_in_transcript(tmp_path, thoth_db_initialized_sync):
     """Verify /retry truncates the old user+assistant turn and re-runs the prompt.
 
     This test is sync because gateway/session.py's append_to_transcript and

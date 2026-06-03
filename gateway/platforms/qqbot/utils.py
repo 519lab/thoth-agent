@@ -13,7 +13,7 @@ from .constants import QQBOT_VERSION
 # User-Agent
 # ---------------------------------------------------------------------------
 
-def _get_hermes_version() -> str:
+def _get_thoth_version() -> str:
     """Return the thoth-agent package version, or 'dev' if unavailable."""
     try:
         from importlib.metadata import version
@@ -35,7 +35,7 @@ def build_user_agent() -> str:
     """
     py_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     os_name = platform.system().lower()
-    hermes_version = _get_hermes_version()
+    hermes_version = _get_thoth_version()
     return f"QQBotAdapter/{QQBOT_VERSION} (Python/{py_version}; {os_name}; Thoth/{hermes_version})"
 
 

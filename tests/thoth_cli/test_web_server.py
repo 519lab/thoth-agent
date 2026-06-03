@@ -667,7 +667,7 @@ class TestNewEndpoints:
         assert resp.status_code == 200
         assert resp.json()["command"] == "coder setup"
 
-    def test_profile_setup_command_uses_hermes_for_default_profile(self):
+    def test_profile_setup_command_uses_thoth_for_default_profile(self):
         from thoth_constants import get_thoth_home
 
         get_thoth_home().mkdir(parents=True, exist_ok=True)

@@ -176,9 +176,9 @@ def check_env_vars():
 
     # Load .env
     try:
-        from thoth_cli.env_loader import load_hermes_dotenv
+        from thoth_cli.env_loader import load_thoth_dotenv
 
-        load_hermes_dotenv(
+        load_thoth_dotenv(
             hermes_home=ENV_FILE.parent,
             project_env=PROJECT_ROOT / ".env",
         )

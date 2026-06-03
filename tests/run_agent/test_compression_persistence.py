@@ -49,7 +49,7 @@ class TestFlushAfterCompression:
             )
         return agent
 
-    def test_flush_after_compression_with_long_history(self, hermes_db_initialized_sync):
+    def test_flush_after_compression_with_long_history(self, thoth_db_initialized_sync):
         """The actual bug: conversation_history longer than compressed messages.
 
         Before the fix, flush_from = max(len(conversation_history), 0) = 200,
@@ -60,7 +60,7 @@ class TestFlushAfterCompression:
         Phase 0: the prior custom-event-loop-in-a-thread scaffolding was a
         workaround for ``thoth_db.run_sync`` not being safe across loops.
         After PR #26 (run_sync cross-loop offload) the simpler
-        ``hermes_db_initialized_sync`` fixture binds the pool to
+        ``thoth_db_initialized_sync`` fixture binds the pool to
         ``_sync_loop`` and lets ``run_sync`` drive the queries directly.
         """
         import thoth_db as _hermes_db
@@ -104,7 +104,7 @@ class TestFlushAfterCompression:
             f"Compression persistence bug: messages not written to PG."
         )
 
-    def test_flush_with_stale_history_loses_messages(self, hermes_db_initialized_sync):
+    def test_flush_with_stale_history_loses_messages(self, thoth_db_initialized_sync):
         """Demonstrates the bug condition: stale conversation_history causes data loss."""
         import thoth_db as _hermes_db
         from thoth_state import SessionDB

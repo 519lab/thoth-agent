@@ -1178,7 +1178,7 @@ _OAUTH_CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
 _OAUTH_TOKEN_URL = "https://console.anthropic.com/v1/oauth/token"
 _OAUTH_REDIRECT_URI = "https://console.anthropic.com/oauth/code/callback"
 _OAUTH_SCOPES = "org:create_api_key user:profile user:inference"
-_HERMES_OAUTH_FILE = get_thoth_home() / ".anthropic_oauth.json"
+_THOTH_OAUTH_FILE = get_thoth_home() / ".anthropic_oauth.json"
 
 
 def _generate_pkce() -> tuple:
@@ -1194,7 +1194,7 @@ def _generate_pkce() -> tuple:
     return verifier, challenge
 
 
-def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
+def run_thoth_oauth_login_pure() -> Optional[Dict[str, Any]]:
     """Run Thoth-native OAuth PKCE flow and return credential state."""
     import secrets
     import time
@@ -1301,9 +1301,9 @@ def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
 
 def read_hermes_oauth_credentials() -> Optional[Dict[str, Any]]:
     """Read Thoth-managed OAuth credentials from ~/.hermes/.anthropic_oauth.json."""
-    if _HERMES_OAUTH_FILE.exists():
+    if _THOTH_OAUTH_FILE.exists():
         try:
-            data = json.loads(_HERMES_OAUTH_FILE.read_text(encoding="utf-8"))
+            data = json.loads(_THOTH_OAUTH_FILE.read_text(encoding="utf-8"))
             if data.get("accessToken"):
                 return data
         except (json.JSONDecodeError, OSError, IOError) as e:
@@ -2249,3 +2249,6 @@ def build_anthropic_kwargs(
         kwargs["extra_headers"] = {"anthropic-beta": ",".join(betas)}
 
     return kwargs
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+run_hermes_oauth_login_pure = run_thoth_oauth_login_pure

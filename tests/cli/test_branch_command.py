@@ -19,7 +19,7 @@ import pytest
 
 
 @pytest.fixture
-def session_db(tmp_path, hermes_db_initialized_sync):
+def session_db(tmp_path, thoth_db_initialized_sync):
     """Sync-wrapped PG SessionDB for /branch test assertions.
 
     Test BODIES call ``session_db.get_session(...)``, ``get_session_title``,

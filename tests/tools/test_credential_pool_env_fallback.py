@@ -62,7 +62,7 @@ class TestCredentialPoolSeedsFromDotEnv:
 
     This is the load-bearing behaviour for the fix: when a user adds a key to
     .env mid-session or via a non-CLI entry point that doesn't run
-    load_hermes_dotenv, the credential pool must still discover it.
+    load_thoth_dotenv, the credential pool must still discover it.
     """
 
     def test_deepseek_key_from_dotenv_only(self, isolated_hermes_home):

@@ -173,7 +173,7 @@ async def test_reshape_includes_upper_layers(seeded_substrate):
 # ---------------------------------------------------------------------------
 
 
-def test_cmd_embed_reshape_drives_sync_loop(hermes_db_initialized_sync):
+def test_cmd_embed_reshape_drives_sync_loop(thoth_db_initialized_sync):
     """Regression: the sync entrypoint must drive the coro via
     thoth_db.run_sync (the loop the asyncpg pool is bound to), not a fresh
     event loop — otherwise asyncpg raises 'another operation is in progress'

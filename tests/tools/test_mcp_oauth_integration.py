@@ -66,7 +66,7 @@ async def test_external_refresh_picked_up_without_restart(tmp_path, monkeypatch)
     assert provider.context.current_tokens.access_token == "OLD_ACCESS"
 
     # Now record the baseline mtime in the manager (this happens
-    # automatically via the HermesMCPOAuthProvider.async_auth_flow
+    # automatically via the ThothMCPOAuthProvider.async_auth_flow
     # pre-hook on the first real request, but we exercise it directly
     # here for test determinism).
     await mgr.invalidate_if_disk_changed("srv")

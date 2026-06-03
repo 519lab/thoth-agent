@@ -30,7 +30,7 @@ from tools.mcp_oauth import (
 # ThothTokenStorage
 # ---------------------------------------------------------------------------
 
-class TestHermesTokenStorage:
+class TestThothTokenStorage:
     def test_roundtrip_tokens(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
         storage = ThothTokenStorage("test-server")

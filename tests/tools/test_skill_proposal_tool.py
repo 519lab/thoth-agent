@@ -49,7 +49,7 @@ def _skill_sandbox(tmp_path):
         yield tmp_path, mark
 
 
-def test_list_and_show(hermes_db_initialized_sync, _skill_sandbox):
+def test_list_and_show(thoth_db_initialized_sync, _skill_sandbox):
     _seed("alpha-skill", l3_ids=["aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"])
 
     listed = json.loads(tool.skill_proposal("list"))
@@ -63,12 +63,12 @@ def test_list_and_show(hermes_db_initialized_sync, _skill_sandbox):
     assert "aaaaaaaa" in shown["provenance"]   # provenance surfaces the L3 id
 
 
-def test_show_unknown_returns_error(hermes_db_initialized_sync, _skill_sandbox):
+def test_show_unknown_returns_error(thoth_db_initialized_sync, _skill_sandbox):
     res = json.loads(tool.skill_proposal("show", "ghost"))
     assert res["success"] is False
 
 
-def test_approve_installs_marks_and_flips(hermes_db_initialized_sync, _skill_sandbox):
+def test_approve_installs_marks_and_flips(thoth_db_initialized_sync, _skill_sandbox):
     sandbox, mark = _skill_sandbox
     _seed("install-me")
 
@@ -84,7 +84,7 @@ def test_approve_installs_marks_and_flips(hermes_db_initialized_sync, _skill_san
     assert p.status == "approved" and p.decided_by == "user"
 
 
-def test_approve_twice_is_rejected(hermes_db_initialized_sync, _skill_sandbox):
+def test_approve_twice_is_rejected(thoth_db_initialized_sync, _skill_sandbox):
     _seed("once-only")
     assert json.loads(tool.skill_proposal("approve", "once-only"))["success"]
     again = json.loads(tool.skill_proposal("approve", "once-only"))
@@ -92,7 +92,7 @@ def test_approve_twice_is_rejected(hermes_db_initialized_sync, _skill_sandbox):
     assert "already approved" in again["error"]
 
 
-def test_approve_failure_leaves_pending(hermes_db_initialized_sync, _skill_sandbox):
+def test_approve_failure_leaves_pending(thoth_db_initialized_sync, _skill_sandbox):
     """A malformed draft fails skill_manage validation → status stays pending
     (so it can be fixed/retried), not silently approved."""
     _seed("bad-skill", content="no frontmatter here, just text")
@@ -104,7 +104,7 @@ def test_approve_failure_leaves_pending(hermes_db_initialized_sync, _skill_sandb
     assert p.status == "pending"
 
 
-def test_reject_flips_and_blocks_reproposal(hermes_db_initialized_sync, _skill_sandbox):
+def test_reject_flips_and_blocks_reproposal(thoth_db_initialized_sync, _skill_sandbox):
     _seed("nope-skill")
     res = json.loads(tool.skill_proposal("reject", "nope-skill"))
     assert res["success"]
@@ -114,14 +114,14 @@ def test_reject_flips_and_blocks_reproposal(hermes_db_initialized_sync, _skill_s
     assert thoth_db.run_sync(store.has_similar("nope-skill")) is True
 
 
-def test_unknown_action_and_missing_slug(hermes_db_initialized_sync, _skill_sandbox):
+def test_unknown_action_and_missing_slug(thoth_db_initialized_sync, _skill_sandbox):
     assert json.loads(tool.skill_proposal("frobnicate"))["success"] is False
     assert json.loads(tool.skill_proposal("approve"))["success"] is False
 
 
 # --- Phase 2: evaluator verdict surfacing ---------------------------------
 
-def test_show_and_list_render_verdict(hermes_db_initialized_sync, _skill_sandbox):
+def test_show_and_list_render_verdict(thoth_db_initialized_sync, _skill_sandbox):
     _seed("flagged-skill", eval_verdict="flag",
           eval_reasons=["scope creep"], eval_model="judge-x")
 
@@ -135,7 +135,7 @@ def test_show_and_list_render_verdict(hermes_db_initialized_sync, _skill_sandbox
     assert item["eval_verdict"] == "flag"
 
 
-def test_approve_flagged_installs_but_warns(hermes_db_initialized_sync, _skill_sandbox):
+def test_approve_flagged_installs_but_warns(thoth_db_initialized_sync, _skill_sandbox):
     """The evaluator is defense-in-depth, not a hard gate: a flagged proposal
     still installs on human approval, but the result carries a warning."""
     sandbox, _ = _skill_sandbox
@@ -147,7 +147,7 @@ def test_approve_flagged_installs_but_warns(hermes_db_initialized_sync, _skill_s
     assert "warning" in res and "flag" in res["warning"]
 
 
-def test_show_without_verdict_omits_evaluation(hermes_db_initialized_sync, _skill_sandbox):
+def test_show_without_verdict_omits_evaluation(thoth_db_initialized_sync, _skill_sandbox):
     _seed("plain-skill")  # no verdict
     shown = json.loads(tool.skill_proposal("show", "plain-skill"))
     assert "evaluation" not in shown

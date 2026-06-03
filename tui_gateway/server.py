@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from thoth_constants import get_thoth_home
-from thoth_cli.env_loader import load_hermes_dotenv
+from thoth_cli.env_loader import load_thoth_dotenv
 from utils import is_truthy_value
 from tui_gateway.transport import (
     StdioTransport,
@@ -29,7 +29,7 @@ from tui_gateway.transport import (
 logger = logging.getLogger(__name__)
 
 _hermes_home = get_thoth_home()
-load_hermes_dotenv(
+load_thoth_dotenv(
     hermes_home=_hermes_home, project_env=Path(__file__).parent.parent / ".env"
 )
 

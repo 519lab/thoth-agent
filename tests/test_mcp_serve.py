@@ -153,10 +153,10 @@ def _seed_session_db(session_id, messages):
 
 
 @pytest.fixture
-def mock_session_db(tmp_path, populated_sessions_dir, hermes_db_initialized_sync):
+def mock_session_db(tmp_path, populated_sessions_dir, thoth_db_initialized_sync):
     """Seed test messages into the per-test PG SessionDB and return the handle.
 
-    ``hermes_db_initialized_sync`` runs Alembic upgrade head against the
+    ``thoth_db_initialized_sync`` runs Alembic upgrade head against the
     per-test database and binds the asyncpg pool to it. ``_seed_session_db``
     then writes rows through the same async API production reads with —
     so ``mcp_serve.messages_read``'s ``thoth_db.run_sync(db.get_messages(...))``
@@ -1028,7 +1028,7 @@ class TestEventBridgePollE2E:
     """End-to-end tests for the EventBridge polling loop with real files."""
 
     def test_poll_detects_new_messages(
-        self, tmp_path, monkeypatch, hermes_db_initialized_sync
+        self, tmp_path, monkeypatch, thoth_db_initialized_sync
     ):
         """Seed the PG SessionDB + sessions.json, verify EventBridge picks it up."""
         import mcp_serve
@@ -1074,7 +1074,7 @@ class TestEventBridgePollE2E:
         assert result["events"][1]["role"] == "assistant"
 
     def test_poll_skips_when_unchanged(
-        self, tmp_path, monkeypatch, hermes_db_initialized_sync
+        self, tmp_path, monkeypatch, thoth_db_initialized_sync
     ):
         """Second poll with no file changes should be a no-op."""
         import mcp_serve
@@ -1123,7 +1123,7 @@ class TestEventBridgePollE2E:
             "Second poll should skip DB queries when files unchanged"
 
     def test_poll_detects_new_message_after_db_write(
-        self, tmp_path, monkeypatch, hermes_db_initialized_sync
+        self, tmp_path, monkeypatch, thoth_db_initialized_sync
     ):
         """Write a new message via the async SessionDB after first poll, verify it's detected."""
         import thoth_db

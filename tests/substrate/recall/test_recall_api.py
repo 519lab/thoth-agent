@@ -183,7 +183,7 @@ async def test_recall_db_error_returns_empty_projection(booted_substrate, monkey
     assert proj.text == ""
 
 
-def test_recall_sync_facade_outside_loop(hermes_db_initialized_sync):
+def test_recall_sync_facade_outside_loop(thoth_db_initialized_sync):
     """recall_sync works from a sync test body."""
     import thoth_db
 

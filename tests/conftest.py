@@ -920,7 +920,7 @@ postgresql = pg_factories.postgresql("postgresql_noproc")
 
 
 @pytest.fixture
-def hermes_db_dsn(postgresql):
+def thoth_db_dsn(postgresql):
     """A freshly-migrated PG DSN for one test.
 
     Runs Alembic upgrade head against a per-test database created against
@@ -950,7 +950,7 @@ def hermes_db_dsn(postgresql):
 
 
 @pytest_asyncio.fixture
-async def hermes_db_initialized(hermes_db_dsn):
+async def hermes_db_initialized(thoth_db_dsn):
     """Pool initialised on pytest-asyncio's per-test event loop.
 
     Use this in ``@pytest.mark.asyncio`` tests that ``await`` against
@@ -959,7 +959,7 @@ async def hermes_db_initialized(hermes_db_dsn):
     ``thoth_db.run_sync`` — the pool would be bound to pytest-asyncio's
     loop but ``run_sync`` uses the persistent sync loop, surfacing as
     ``InterfaceError: cannot perform operation: another operation is
-    in progress``. Sync tests should use :func:`hermes_db_initialized_sync`
+    in progress``. Sync tests should use :func:`thoth_db_initialized_sync`
     below.
 
     Defensive loop-binding check: a prior test (or a ``run_sync`` call
@@ -989,13 +989,13 @@ async def hermes_db_initialized(hermes_db_dsn):
                 # the idle connections, Python GC will clean up the
                 # holders. Leaks briefly but tests are independent.
                 thoth_db._pool = None
-    await thoth_db.init(hermes_db_dsn)
-    yield hermes_db_dsn
+    await thoth_db.init(thoth_db_dsn)
+    yield thoth_db_dsn
     await thoth_db.close()
 
 
 @pytest.fixture
-def hermes_db_initialized_sync(hermes_db_dsn):
+def thoth_db_initialized_sync(thoth_db_dsn):
     """Pool initialised on thoth_db's persistent sync loop.
 
     Use this in **synchronous** test bodies that bridge to async DB
@@ -1017,9 +1017,13 @@ def hermes_db_initialized_sync(hermes_db_dsn):
     # asyncpg.create_pool coroutine — binding the pool to that loop.
     # Subsequent run_sync(coro) calls reuse the same loop, so the
     # binding matches.
-    assert thoth_db.ensure_pool_sync(), "ensure_pool_sync failed; HERMES_PG_DSN should be set by hermes_db_dsn"
+    assert thoth_db.ensure_pool_sync(), "ensure_pool_sync failed; HERMES_PG_DSN should be set by thoth_db_dsn"
     try:
-        yield hermes_db_dsn
+        yield thoth_db_dsn
     finally:
         # Close on the same loop the pool was opened on.
         thoth_db.run_sync(thoth_db.close())
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+hermes_db_dsn = thoth_db_dsn
+hermes_db_initialized_sync = thoth_db_initialized_sync

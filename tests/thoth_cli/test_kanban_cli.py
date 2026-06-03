@@ -14,12 +14,12 @@ from thoth_cli import kanban_db as kb
 
 
 @pytest.fixture
-def kanban_home(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """Isolated HERMES_HOME with kanban schema migrated on the per-test PG db.
 
     Phase 0 moved kanban from sqlite to PG; ``kb.init_db()`` needs the
     pool bound to the per-test database (set up by
-    ``hermes_db_initialized_sync``) so the INSERT into kanban_boards
+    ``thoth_db_initialized_sync``) so the INSERT into kanban_boards
     lands somewhere Alembic has migrated.
     """
     home = tmp_path / ".hermes"

@@ -132,7 +132,7 @@ apply_windows_utf8_bootstrap()
 # os.environ so either spelling works, BEFORE any HERMES_*/THOTH_* read. This
 # is the universal hook — every shipped entry point imports thoth_bootstrap
 # first (same invariant the Windows bootstrap relies on). Pure-stdlib + guarded
-# so a partial install can never brick startup. (load_hermes_dotenv re-runs it
+# so a partial install can never brick startup. (load_thoth_dotenv re-runs it
 # after the .env is loaded; see thoth_cli/env_loader.py.)
 try:
     from thoth_env import normalize_thoth_env as _normalize_thoth_env
@@ -178,7 +178,7 @@ def init_db_sync() -> None:
     import thoth_db
 
     # Re-check ``_pool`` directly each call. Some test fixtures close
-    # the pool between tests (e.g. ``hermes_db_initialized_sync`` in
+    # the pool between tests (e.g. ``thoth_db_initialized_sync`` in
     # ``tests/conftest.py``); the module-level ``_db_initialized`` flag
     # would otherwise short-circuit and leave the next test running
     # against a closed pool.

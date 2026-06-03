@@ -67,7 +67,7 @@ def test_detect_concurrent_excludes_self_pid(_winp, tmp_path):
 
 
 @patch.object(cli_main, "_is_windows", return_value=True)
-def test_detect_concurrent_finds_other_hermes_process(_winp, tmp_path):
+def test_detect_concurrent_finds_other_thoth_process(_winp, tmp_path):
     scripts_dir = tmp_path
     shim = scripts_dir / "hermes.exe"
     shim.write_bytes(b"")

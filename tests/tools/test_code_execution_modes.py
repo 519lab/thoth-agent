@@ -351,7 +351,7 @@ class TestExecuteCodeModeIntegration(unittest.TestCase):
             self.assertEqual(result["status"], "success")
             self.assertIn("mock", result["output"])
 
-    def test_strict_mode_can_still_import_hermes_tools(self):
+    def test_strict_mode_can_still_import_thoth_tools(self):
         """Regression: strict mode's tmpdir CWD still works for imports."""
         code = (
             "from hermes_tools import terminal\n"

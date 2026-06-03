@@ -8,7 +8,7 @@ import pytest
 from toolsets import resolve_toolset, get_toolset, validate_toolset
 
 
-class TestHermesApiServerToolset:
+class TestThothApiServerToolset:
     """Tests for the hermes-api-server toolset definition."""
 
     def test_toolset_exists(self):

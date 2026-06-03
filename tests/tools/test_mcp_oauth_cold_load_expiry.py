@@ -23,7 +23,7 @@ These tests pin the contract for Fix A:
 - ``set_tokens`` persists an absolute ``expires_at`` wall-clock timestamp.
 - ``get_tokens`` reconstructs ``expires_in`` from ``expires_at - now`` so
   the SDK's ``update_token_expiry`` computes the correct absolute expiry.
-- ``HermesMCPOAuthProvider._initialize`` seeds ``context.token_expiry_time``
+- ``ThothMCPOAuthProvider._initialize`` seeds ``context.token_expiry_time``
   after loading, so ``is_token_valid()`` reports True only for tokens that
   are actually still valid, and the SDK's preemptive refresh fires for
   expired tokens with a live refresh_token.
@@ -211,7 +211,7 @@ class TestGetTokensReconstructsExpiresIn:
 
 
 # ---------------------------------------------------------------------------
-# HermesMCPOAuthProvider._initialize — seed token_expiry_time
+# ThothMCPOAuthProvider._initialize — seed token_expiry_time
 # ---------------------------------------------------------------------------
 
 
@@ -230,9 +230,9 @@ async def test_initialize_seeds_token_expiry_time_from_stored_tokens(
     from pydantic import AnyUrl
 
     from tools.mcp_oauth import ThothTokenStorage
-    from tools.mcp_oauth_manager import _HERMES_PROVIDER_CLS, reset_manager_for_tests
+    from tools.mcp_oauth_manager import _THOTH_PROVIDER_CLS, reset_manager_for_tests
 
-    assert _HERMES_PROVIDER_CLS is not None
+    assert _THOTH_PROVIDER_CLS is not None
     reset_manager_for_tests()
 
     storage = ThothTokenStorage("srv")
@@ -260,7 +260,7 @@ async def test_initialize_seeds_token_expiry_time_from_stored_tokens(
         redirect_uris=[AnyUrl("http://127.0.0.1:12345/callback")],
         client_name="Thoth Agent",
     )
-    provider = _HERMES_PROVIDER_CLS(
+    provider = _THOTH_PROVIDER_CLS(
         server_name="srv",
         server_url="https://example.com/mcp",
         client_metadata=metadata,
@@ -295,9 +295,9 @@ async def test_initialize_flags_expired_token_as_invalid(tmp_path, monkeypatch):
     from pydantic import AnyUrl
 
     from tools.mcp_oauth import ThothTokenStorage, _get_token_dir
-    from tools.mcp_oauth_manager import _HERMES_PROVIDER_CLS, reset_manager_for_tests
+    from tools.mcp_oauth_manager import _THOTH_PROVIDER_CLS, reset_manager_for_tests
 
-    assert _HERMES_PROVIDER_CLS is not None
+    assert _THOTH_PROVIDER_CLS is not None
     reset_manager_for_tests()
 
     # Write an already-expired token directly so we control the wall-clock.
@@ -330,7 +330,7 @@ async def test_initialize_flags_expired_token_as_invalid(tmp_path, monkeypatch):
         redirect_uris=[AnyUrl("http://127.0.0.1:12345/callback")],
         client_name="Thoth Agent",
     )
-    provider = _HERMES_PROVIDER_CLS(
+    provider = _THOTH_PROVIDER_CLS(
         server_name="srv",
         server_url="https://example.com/mcp",
         client_metadata=metadata,
@@ -391,9 +391,9 @@ async def test_initialize_prefetches_oauth_metadata_when_missing(
     from pydantic import AnyUrl
 
     from tools.mcp_oauth import ThothTokenStorage
-    from tools.mcp_oauth_manager import _HERMES_PROVIDER_CLS, reset_manager_for_tests
+    from tools.mcp_oauth_manager import _THOTH_PROVIDER_CLS, reset_manager_for_tests
 
-    assert _HERMES_PROVIDER_CLS is not None
+    assert _THOTH_PROVIDER_CLS is not None
     reset_manager_for_tests()
 
     storage = ThothTokenStorage("srv")
@@ -466,7 +466,7 @@ async def test_initialize_prefetches_oauth_metadata_when_missing(
         redirect_uris=[AnyUrl("http://127.0.0.1:12345/callback")],
         client_name="Thoth Agent",
     )
-    provider = _HERMES_PROVIDER_CLS(
+    provider = _THOTH_PROVIDER_CLS(
         server_name="srv",
         server_url="https://mcp.example.com",
         client_metadata=metadata,
@@ -502,10 +502,10 @@ async def test_initialize_skips_prefetch_when_no_tokens(tmp_path, monkeypatch):
     from mcp.shared.auth import OAuthClientMetadata
     from pydantic import AnyUrl
 
-    from tools.mcp_oauth_manager import _HERMES_PROVIDER_CLS, reset_manager_for_tests
+    from tools.mcp_oauth_manager import _THOTH_PROVIDER_CLS, reset_manager_for_tests
     from tools.mcp_oauth import ThothTokenStorage
 
-    assert _HERMES_PROVIDER_CLS is not None
+    assert _THOTH_PROVIDER_CLS is not None
     reset_manager_for_tests()
 
     calls: list[str] = []
@@ -530,7 +530,7 @@ async def test_initialize_skips_prefetch_when_no_tokens(tmp_path, monkeypatch):
         redirect_uris=[AnyUrl("http://127.0.0.1:12345/callback")],
         client_name="Thoth Agent",
     )
-    provider = _HERMES_PROVIDER_CLS(
+    provider = _THOTH_PROVIDER_CLS(
         server_name="srv",
         server_url="https://mcp.example.com",
         client_metadata=metadata,

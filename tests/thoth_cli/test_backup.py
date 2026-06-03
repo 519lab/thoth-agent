@@ -15,7 +15,7 @@ import pytest
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_hermes_tree(root: Path) -> None:
+def _make_thoth_tree(root: Path) -> None:
     """Create a realistic ~/.hermes directory structure for testing."""
     (root / "config.yaml").write_text("model:\n  provider: openrouter\n")
     (root / ".env").write_text("OPENROUTER_API_KEY=sk-test-123\n")
@@ -73,7 +73,7 @@ def _make_hermes_tree(root: Path) -> None:
 # ---------------------------------------------------------------------------
 
 class TestShouldExclude:
-    def test_excludes_hermes_agent(self):
+    def test_excludes_thoth_agent(self):
         from thoth_cli.backup import _should_exclude
         assert _should_exclude(Path("hermes-agent/run_agent.py"))
         assert _should_exclude(Path("hermes-agent/.git/HEAD"))
@@ -149,7 +149,7 @@ class TestBackup:
         """Backup creates a valid zip containing expected files."""
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
-        _make_hermes_tree(hermes_home)
+        _make_thoth_tree(hermes_home)
 
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
         # get_default_hermes_root needs this
@@ -179,11 +179,11 @@ class TestBackup:
             # Skins
             assert "skins/cyber.yaml" in names
 
-    def test_excludes_hermes_agent(self, tmp_path, monkeypatch):
+    def test_excludes_thoth_agent(self, tmp_path, monkeypatch):
         """Backup does NOT include hermes-agent/ directory."""
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
-        _make_hermes_tree(hermes_home)
+        _make_thoth_tree(hermes_home)
 
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -203,7 +203,7 @@ class TestBackup:
         """Backup does NOT include __pycache__ dirs."""
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
-        _make_hermes_tree(hermes_home)
+        _make_thoth_tree(hermes_home)
 
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -223,7 +223,7 @@ class TestBackup:
         """Backup does NOT include PID files."""
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
-        _make_hermes_tree(hermes_home)
+        _make_thoth_tree(hermes_home)
 
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -373,7 +373,7 @@ class TestImport:
         with pytest.raises(SystemExit):
             run_import(args)
 
-    def test_rejects_non_hermes_zip(self, tmp_path, monkeypatch):
+    def test_rejects_non_thoth_zip(self, tmp_path, monkeypatch):
         """Import rejects a zip that doesn't look like a thoth backup."""
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
@@ -508,7 +508,7 @@ class TestRoundTrip:
         # Source
         src_home = tmp_path / "source" / ".hermes"
         src_home.mkdir(parents=True)
-        _make_hermes_tree(src_home)
+        _make_thoth_tree(src_home)
 
         monkeypatch.setenv("HERMES_HOME", str(src_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "source")
@@ -1281,7 +1281,7 @@ class TestPreUpdateBackup:
     def hermes_home(self, tmp_path):
         root = tmp_path / ".hermes"
         root.mkdir()
-        _make_hermes_tree(root)
+        _make_thoth_tree(root)
         return root
 
     def test_creates_backup_under_backups_dir(self, hermes_home):
@@ -1430,7 +1430,7 @@ class TestRunPreUpdateBackup:
     def hermes_home(self, tmp_path, monkeypatch):
         root = tmp_path / ".hermes"
         root.mkdir()
-        _make_hermes_tree(root)
+        _make_thoth_tree(root)
         # Point HERMES_HOME at the temp dir so config + backup paths resolve here
         monkeypatch.setenv("HERMES_HOME", str(root))
         # Make Path.home() point at tmp_path for anything that uses it
@@ -1549,7 +1549,7 @@ class TestPreMigrationBackup:
     def hermes_home(self, tmp_path):
         root = tmp_path / ".hermes"
         root.mkdir()
-        _make_hermes_tree(root)
+        _make_thoth_tree(root)
         return root
 
     def test_creates_backup_under_backups_dir(self, hermes_home):

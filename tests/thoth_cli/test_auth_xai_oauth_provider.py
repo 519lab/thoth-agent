@@ -234,7 +234,7 @@ def test_xai_oauth_authorize_url_includes_plan_generic():
     assert params["plan"] == "generic"
 
 
-def test_xai_oauth_authorize_url_includes_referrer_hermes_agent():
+def test_xai_oauth_authorize_url_includes_referrer_thoth_agent():
     """Attribution: xAI's OAuth server can identify Thoth-originated logins
     via the referrer query param. Must always be present on the authorize URL."""
     url = _xai_oauth_build_authorize_url(

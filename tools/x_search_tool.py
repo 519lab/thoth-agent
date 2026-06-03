@@ -52,7 +52,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 
 from tools.registry import registry, tool_error
-from tools.xai_http import hermes_xai_user_agent, resolve_xai_http_credentials
+from tools.xai_http import thoth_xai_user_agent, resolve_xai_http_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -336,7 +336,7 @@ def x_search_tool(
                     headers={
                         "Authorization": f"Bearer {api_key}",
                         "Content-Type": "application/json",
-                        "User-Agent": hermes_xai_user_agent(),
+                        "User-Agent": thoth_xai_user_agent(),
                     },
                     json=payload,
                     timeout=timeout_seconds,

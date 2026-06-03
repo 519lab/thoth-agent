@@ -37,7 +37,7 @@ class TestModuleSurface:
             f"because codex has built-in equivalents: {leaked}"
         )
 
-    def test_expected_hermes_specific_tools_listed(self):
+    def test_expected_thoth_specific_tools_listed(self):
         """The Thoth-specific tools should be present so users on the
         codex runtime keep access to them."""
         from agent.transports.hermes_tools_mcp_server import EXPOSED_TOOLS

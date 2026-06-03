@@ -279,7 +279,7 @@
         description = ''
           Paths to environment files containing secrets (API keys, tokens).
           Contents are merged into $HERMES_HOME/.env at activation time.
-          Thoth reads this file on every startup via load_hermes_dotenv().
+          Thoth reads this file on every startup via load_thoth_dotenv().
         '';
       };
 
@@ -821,7 +821,7 @@
           ''}
 
           # Seed .env from Nix-declared environment + environmentFiles.
-          # Thoth reads $HERMES_HOME/.env at startup via load_hermes_dotenv(),
+          # Thoth reads $HERMES_HOME/.env at startup via load_thoth_dotenv(),
           # so this is the single source of truth for both native and container mode.
           ${lib.optionalString (cfg.environment != {} || cfg.environmentFiles != []) ''
             ENV_FILE="${cfg.stateDir}/.hermes/.env"
@@ -883,7 +883,7 @@
             WorkingDirectory = cfg.workingDirectory;
 
             # cfg.environment and cfg.environmentFiles are written to
-            # $HERMES_HOME/.env by the activation script. load_hermes_dotenv()
+            # $HERMES_HOME/.env by the activation script. load_thoth_dotenv()
             # reads them at Python startup — no systemd EnvironmentFile needed.
 
             ExecStart = lib.concatStringsSep " " ([

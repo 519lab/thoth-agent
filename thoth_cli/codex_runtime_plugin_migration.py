@@ -554,7 +554,7 @@ def _looks_like_test_tempdir(path: str) -> bool:
     return any(needle in normalized for needle in needles)
 
 
-def _build_hermes_tools_mcp_entry() -> dict:
+def _build_thoth_tools_mcp_entry() -> dict:
     """Build the codex stdio-transport entry that launches Thoth's own
     tool surface as an MCP server. Codex's subprocess will call back into
     this for browser/web/delegate_task/vision/memory/skills tools.
@@ -694,7 +694,7 @@ def migrate(
     # The server itself is agent/transports/hermes_tools_mcp_server.py
     # and is launched on demand by codex (stdio MCP).
     if expose_hermes_tools:
-        translated["hermes-tools"] = _build_hermes_tools_mcp_entry()
+        translated["hermes-tools"] = _build_thoth_tools_mcp_entry()
         if "hermes-tools" not in report.migrated:
             report.migrated.append("hermes-tools")
 

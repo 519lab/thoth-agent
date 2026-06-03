@@ -89,7 +89,7 @@ def _find_git_root(start: Path) -> Optional[Path]:
 _HERMES_MD_NAMES = (".hermes.md", "HERMES.md")
 
 
-def _find_hermes_md(cwd: Path) -> Optional[Path]:
+def _find_thoth_md(cwd: Path) -> Optional[Path]:
     """Discover the nearest ``.hermes.md`` or ``HERMES.md``.
 
     Search order: *cwd* first, then each parent directory up to (and
@@ -141,7 +141,7 @@ DEFAULT_AGENT_IDENTITY = (
     "Be targeted and efficient in your exploration and investigations."
 )
 
-HERMES_AGENT_HELP_GUIDANCE = (
+THOTH_AGENT_HELP_GUIDANCE = (
     "If the user asks about configuring, setting up, or using Thoth Agent "
     "itself, load the `thoth-agent` skill with skill_view(name='thoth-agent') "
     "before answering. Docs: https://thoth.519lab.com/docs"
@@ -1340,7 +1340,7 @@ def load_soul_md() -> Optional[str]:
 
 def _load_hermes_md(cwd_path: Path) -> str:
     """.hermes.md / HERMES.md — walk to git root."""
-    hermes_md_path = _find_hermes_md(cwd_path)
+    hermes_md_path = _find_thoth_md(cwd_path)
     if not hermes_md_path:
         return ""
     try:
@@ -1463,3 +1463,6 @@ def build_context_files_prompt(cwd: Optional[str] = None, skip_soul: bool = Fals
     if not sections:
         return ""
     return "# Project Context\n\nThe following project context files have been loaded and should be followed:\n\n" + "\n".join(sections)
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+HERMES_AGENT_HELP_GUIDANCE = THOTH_AGENT_HELP_GUIDANCE

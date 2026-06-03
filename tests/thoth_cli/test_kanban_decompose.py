@@ -20,8 +20,8 @@ from thoth_cli import kanban_decompose as decomp
 
 
 @pytest.fixture
-def kanban_home(tmp_path, monkeypatch, hermes_db_initialized_sync):
-    """Phase 0: depends on hermes_db_initialized_sync so the per-test PG
+def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
+    """Phase 0: depends on thoth_db_initialized_sync so the per-test PG
     database is migrated before kb.init_db() inserts into kanban_boards.
     """
     home = tmp_path / ".hermes"

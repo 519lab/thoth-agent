@@ -88,7 +88,7 @@ def test_install_npm_works_without_extras(tmp_path, monkeypatch):
     assert "pyright" in cmd
     # Should not blow up when extra_pkgs is omitted/None
     install_targets = [c for c in cmd if not c.startswith("-") and c not in {
-        "install", "--prefix", str(install_mod.hermes_lsp_bin_dir().parent),
+        "install", "--prefix", str(install_mod.thoth_lsp_bin_dir().parent),
         "/usr/bin/npm",
     }]
     assert install_targets == ["pyright"]

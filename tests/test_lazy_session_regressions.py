@@ -21,8 +21,8 @@ import pytest
 # Helpers
 # ===========================================================================
 
-def _make_session_db(hermes_db_initialized_sync=None):
-    """Create a real SessionDB (PG-backed via hermes_db_initialized_sync fixture)."""
+def _make_session_db(thoth_db_initialized_sync=None):
+    """Create a real SessionDB (PG-backed via thoth_db_initialized_sync fixture)."""
     from thoth_state import SessionDB
     return SessionDB()
 
@@ -75,7 +75,7 @@ class TestFinalizeSessionUsesAgentSessionId:
     must call end_session() on the NEW (current) session_id, not the stale
     session_key stored in the session dict."""
 
-    def test_finalize_targets_agent_session_id_not_stale_key(self, hermes_db_initialized_sync):
+    def test_finalize_targets_agent_session_id_not_stale_key(self, thoth_db_initialized_sync):
         """Reproduction: agent.session_id rotated by compression, but
         session['session_key'] still holds old value. _finalize_session()
         should end the agent's current session."""
@@ -122,7 +122,7 @@ class TestFinalizeSessionUsesAgentSessionId:
         )
         assert continuation["end_reason"] == "tui_close"
 
-    def test_finalize_fallback_to_session_key_when_agent_is_none(self, hermes_db_initialized_sync):
+    def test_finalize_fallback_to_session_key_when_agent_is_none(self, thoth_db_initialized_sync):
         """When agent is None (e.g. session never fully initialized),
         _finalize_session falls back to session_key."""
         import thoth_db
@@ -445,7 +445,7 @@ class TestGatewaySurfacesNullResponse:
 class TestFinalizeOrphanedCompressionSessions:
     """The prune migration marks ghost compression continuations as ended."""
 
-    def test_marks_ghost_continuation_with_compression_parent(self, hermes_db_initialized_sync):
+    def test_marks_ghost_continuation_with_compression_parent(self, thoth_db_initialized_sync):
         """Ghost session with compression-ended parent + messages → finalized."""
         import thoth_db
         db = _make_session_db()
@@ -474,7 +474,7 @@ class TestFinalizeOrphanedCompressionSessions:
         assert session["ended_at"] is not None
         assert session["end_reason"] == "orphaned_compression"
 
-    def test_skips_session_without_parent(self, hermes_db_initialized_sync):
+    def test_skips_session_without_parent(self, thoth_db_initialized_sync):
         """Ghost session without parent_session_id is NOT a compression
         continuation — should not be touched by this prune."""
         import thoth_db
@@ -487,7 +487,7 @@ class TestFinalizeOrphanedCompressionSessions:
         count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 0
 
-    def test_skips_recent_sessions(self, hermes_db_initialized_sync):
+    def test_skips_recent_sessions(self, thoth_db_initialized_sync):
         """Sessions younger than 7 days are not touched."""
         import thoth_db
         db = _make_session_db()
@@ -506,7 +506,7 @@ class TestFinalizeOrphanedCompressionSessions:
         count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 0
 
-    def test_skips_sessions_with_end_reason(self, hermes_db_initialized_sync):
+    def test_skips_sessions_with_end_reason(self, thoth_db_initialized_sync):
         """Properly finalized sessions (even without api_call_count) are skipped."""
         import thoth_db
         db = _make_session_db()
@@ -528,7 +528,7 @@ class TestFinalizeOrphanedCompressionSessions:
         count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 0
 
-    def test_skips_session_with_non_compression_parent(self, hermes_db_initialized_sync):
+    def test_skips_session_with_non_compression_parent(self, thoth_db_initialized_sync):
         """Child session whose parent was NOT ended by compression should
         not be touched — it's not from the compression continuation path."""
         import thoth_db
@@ -550,7 +550,7 @@ class TestFinalizeOrphanedCompressionSessions:
         count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 0
 
-    def test_skips_sessions_without_messages(self, hermes_db_initialized_sync):
+    def test_skips_sessions_without_messages(self, thoth_db_initialized_sync):
         """Empty sessions (no messages) are NOT targeted by this prune —
         those are handled by prune_empty_ghost_sessions()."""
         import thoth_db
@@ -572,7 +572,7 @@ class TestFinalizeOrphanedCompressionSessions:
         count = thoth_db.run_sync(db.finalize_orphaned_compression_sessions())
         assert count == 0
 
-    def test_titled_ghost_with_parent_is_caught(self, hermes_db_initialized_sync):
+    def test_titled_ghost_with_parent_is_caught(self, thoth_db_initialized_sync):
         """Ghost continuation that HAS a title (propagated from parent by
         _compress_context) is still caught via parent with end_reason='compression'."""
         import thoth_db
