@@ -77,11 +77,11 @@ class _ProviderEntry:
 
 
 # ---------------------------------------------------------------------------
-# HermesMCPOAuthProvider — OAuthClientProvider subclass with disk-watch
+# ThothMCPOAuthProvider — OAuthClientProvider subclass with disk-watch
 # ---------------------------------------------------------------------------
 
 
-def _make_hermes_provider_class() -> Optional[type]:
+def _make_thoth_provider_class() -> Optional[type]:
     """Lazy-import the SDK base class and return our subclass.
 
     Wrapped in a function so this module imports cleanly even when the
@@ -92,7 +92,7 @@ def _make_hermes_provider_class() -> Optional[type]:
     except ImportError:  # pragma: no cover — SDK required in CI
         return None
 
-    class HermesMCPOAuthProvider(OAuthClientProvider):
+    class ThothMCPOAuthProvider(OAuthClientProvider):
         """OAuthClientProvider with pre-flow disk-mtime reload.
 
         Before every ``async_auth_flow`` invocation, asks the manager to
@@ -324,11 +324,11 @@ def _make_hermes_provider_class() -> Optional[type]:
                 self._persist_oauth_metadata_if_changed()
                 return
 
-    return HermesMCPOAuthProvider
+    return ThothMCPOAuthProvider
 
 
 # Cached at import time. Tested and used by :class:`MCPOAuthManager`.
-_HERMES_PROVIDER_CLS: Optional[type] = _make_hermes_provider_class()
+_THOTH_PROVIDER_CLS: Optional[type] = _make_thoth_provider_class()
 
 
 # ---------------------------------------------------------------------------
@@ -392,14 +392,14 @@ class MCPOAuthManager:
     ) -> Optional[Any]:
         """Build the underlying OAuth provider.
 
-        Constructs :class:`HermesMCPOAuthProvider` directly using the helpers
+        Constructs :class:`ThothMCPOAuthProvider` directly using the helpers
         extracted from ``tools.mcp_oauth``. The subclass injects a pre-flow
         disk-watch hook so external token refreshes (cron, other CLI
         instances) are visible to running MCP sessions.
 
         Returns None if the MCP SDK's OAuth support is unavailable.
         """
-        if _HERMES_PROVIDER_CLS is None:
+        if _THOTH_PROVIDER_CLS is None:
             logger.warning(
                 "MCP OAuth '%s': SDK auth module unavailable", server_name,
             )
@@ -435,7 +435,7 @@ class MCPOAuthManager:
         client_metadata = _build_client_metadata(cfg)
         _maybe_preregister_client(storage, cfg, client_metadata)
 
-        return _HERMES_PROVIDER_CLS(
+        return _THOTH_PROVIDER_CLS(
             server_name=server_name,
             server_url=entry.server_url,
             client_metadata=client_metadata,
@@ -605,3 +605,5 @@ def reset_manager_for_tests() -> None:
     global _MANAGER
     with _MANAGER_LOCK:
         _MANAGER = None
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.

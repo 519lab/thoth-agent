@@ -44,10 +44,10 @@ def test_main_check_prints_ok_without_starting_server(monkeypatch, capsys):
 def test_main_setup_runs_model_configuration(monkeypatch):
     calls = {}
 
-    def fake_hermes_main():
+    def fake_thoth_main():
         calls["argv"] = sys.argv[:]
 
-    monkeypatch.setattr("thoth_cli.main.main", fake_hermes_main)
+    monkeypatch.setattr("thoth_cli.main.main", fake_thoth_main)
     # Pretend stdin is not a TTY so the follow-up browser prompt is skipped.
     # That keeps this test focused on the model-setup wiring; the
     # browser-prompt path has its own test below.
@@ -153,3 +153,5 @@ def test_main_setup_browser_propagates_browser_failure(monkeypatch):
     with pytest.raises(SystemExit) as excinfo:
         entry.main(["--setup-browser"])
     assert excinfo.value.code == 1
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.

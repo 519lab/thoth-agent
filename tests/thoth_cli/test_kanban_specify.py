@@ -20,10 +20,10 @@ from thoth_cli import kanban_specify as spec
 
 
 @pytest.fixture
-def kanban_home(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """Isolated HERMES_HOME with kanban schema migrated on the per-test PG db.
 
-    Depends on ``hermes_db_initialized_sync`` so ``kb.init_db()``
+    Depends on ``thoth_db_initialized_sync`` so ``kb.init_db()``
     inserts into the right kanban_boards table — without it the pool
     binds to the container-default DSN and INSERTs land in a database
     where Alembic never ran.

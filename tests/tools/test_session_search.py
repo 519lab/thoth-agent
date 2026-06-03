@@ -24,14 +24,14 @@ from tools.session_search_tool import (
 
 
 @pytest.fixture
-def db(hermes_db_initialized_sync):
+def db(thoth_db_initialized_sync):
     """Sync-wrapped PG-backed SessionDB.
 
     Phase 0 moved SessionDB from SQLite to async PG. This fixture
     keeps the pre-Phase-0 test bodies intact by wrapping
     ``_AsyncSessionDB`` with a sync shim — every ``db.<method>(...)``
     call dispatches through ``thoth_db.run_sync``. The
-    ``hermes_db_initialized_sync`` fixture (from tests/conftest.py)
+    ``thoth_db_initialized_sync`` fixture (from tests/conftest.py)
     binds the pool to the persistent sync loop and runs Alembic head.
     """
     return SyncSessionDB(_AsyncSessionDB())

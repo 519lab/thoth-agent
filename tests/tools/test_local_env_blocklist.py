@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 
 from tools.environments.local import (
     LocalEnvironment,
-    _HERMES_PROVIDER_ENV_BLOCKLIST,
+    _THOTH_PROVIDER_ENV_BLOCKLIST,
     _HERMES_PROVIDER_ENV_FORCE_PREFIX,
 )
 
@@ -199,7 +199,7 @@ class TestBlocklistCoverage:
             "ANTHROPIC_API_KEY",
             "LLM_MODEL",
         }
-        assert must_block.issubset(_HERMES_PROVIDER_ENV_BLOCKLIST)
+        assert must_block.issubset(_THOTH_PROVIDER_ENV_BLOCKLIST)
 
     def test_registry_vars_are_in_blocklist(self):
         """Every api_key_env_var and base_url_env_var from PROVIDER_REGISTRY
@@ -208,11 +208,11 @@ class TestBlocklistCoverage:
 
         for pconfig in PROVIDER_REGISTRY.values():
             for var in pconfig.api_key_env_vars:
-                assert var in _HERMES_PROVIDER_ENV_BLOCKLIST, (
+                assert var in _THOTH_PROVIDER_ENV_BLOCKLIST, (
                     f"Registry var {var} (provider={pconfig.id}) missing from blocklist"
                 )
             if pconfig.base_url_env_var:
-                assert pconfig.base_url_env_var in _HERMES_PROVIDER_ENV_BLOCKLIST, (
+                assert pconfig.base_url_env_var in _THOTH_PROVIDER_ENV_BLOCKLIST, (
                     f"Registry base_url_env_var {pconfig.base_url_env_var} "
                     f"(provider={pconfig.id}) missing from blocklist"
                 )
@@ -221,7 +221,7 @@ class TestBlocklistCoverage:
         """Non-registry auth vars (ANTHROPIC_TOKEN, CLAUDE_CODE_OAUTH_TOKEN)
         must also be in the blocklist."""
         extras = {"ANTHROPIC_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN"}
-        assert extras.issubset(_HERMES_PROVIDER_ENV_BLOCKLIST)
+        assert extras.issubset(_THOTH_PROVIDER_ENV_BLOCKLIST)
 
     def test_non_registry_provider_vars_are_in_blocklist(self):
         extras = {
@@ -236,7 +236,7 @@ class TestBlocklistCoverage:
             "XAI_API_KEY",
             "HELICONE_API_KEY",
         }
-        assert extras.issubset(_HERMES_PROVIDER_ENV_BLOCKLIST)
+        assert extras.issubset(_THOTH_PROVIDER_ENV_BLOCKLIST)
 
     def test_optional_tool_and_messaging_vars_are_in_blocklist(self):
         """Tool/messaging vars from OPTIONAL_ENV_VARS should stay covered."""
@@ -245,11 +245,11 @@ class TestBlocklistCoverage:
         for name, metadata in OPTIONAL_ENV_VARS.items():
             category = metadata.get("category")
             if category in {"tool", "messaging"}:
-                assert name in _HERMES_PROVIDER_ENV_BLOCKLIST, (
+                assert name in _THOTH_PROVIDER_ENV_BLOCKLIST, (
                     f"Optional env var {name} (category={category}) missing from blocklist"
                 )
             elif category == "setting" and metadata.get("password"):
-                assert name in _HERMES_PROVIDER_ENV_BLOCKLIST, (
+                assert name in _THOTH_PROVIDER_ENV_BLOCKLIST, (
                     f"Secret setting env var {name} missing from blocklist"
                 )
 
@@ -296,7 +296,7 @@ class TestBlocklistCoverage:
             "VERCEL_PROJECT_ID",
             "VERCEL_TEAM_ID",
         }
-        assert extras.issubset(_HERMES_PROVIDER_ENV_BLOCKLIST)
+        assert extras.issubset(_THOTH_PROVIDER_ENV_BLOCKLIST)
 
 
 class TestSanePathIncludesHomebrew:

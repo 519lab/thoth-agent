@@ -123,7 +123,7 @@ def _import_cli():
     return importlib.import_module("cli")
 
 
-def test_hermes_cli_init_does_not_eagerly_resolve_runtime_provider(monkeypatch):
+def test_thoth_cli_init_does_not_eagerly_resolve_runtime_provider(monkeypatch):
     cli = _import_cli()
     calls = {"count": 0}
 

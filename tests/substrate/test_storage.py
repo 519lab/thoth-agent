@@ -3,7 +3,7 @@
 Repository tests (round-trip via StreamRepo/DecayProfileRepo/SliceRepo) land
 in Task 6 once those modules exist. Phase A Task 4 (the Alembic revision) is
 verified here at the seeded-row level — the migration ran via the
-``hermes_db_dsn`` fixture before this test sees the database.
+``thoth_db_dsn`` fixture before this test sees the database.
 """
 
 from __future__ import annotations
@@ -159,7 +159,7 @@ class TestDataclasses:
 # ---------------------------------------------------------------------------
 # Alembic-seeded rows — verifies that the 20260523_0003 revision ran and
 # inserted the four default decay profiles + the substrate.self_state stream.
-# Uses the Phase 0 ``hermes_db_dsn`` fixture which already ran Alembic head.
+# Uses the Phase 0 ``thoth_db_dsn`` fixture which already ran Alembic head.
 # ---------------------------------------------------------------------------
 
 

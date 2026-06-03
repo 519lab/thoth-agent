@@ -311,7 +311,7 @@ imported by `discover_builtin_tools()` in `tools/registry.py` when `model_tools`
 loads. There is **no** manual import list in `model_tools.py` to maintain.
 
 You must still add the tool name to the appropriate list in `toolsets.py`
-(for example `_HERMES_CORE_TOOLS` or a dedicated toolset); otherwise the tool
+(for example `_THOTH_CORE_TOOLS` or a dedicated toolset); otherwise the tool
 registers but is never exposed to the agent. If you introduce a new toolset,
 add it in `toolsets.py` and wire it into the relevant platform presets.
 

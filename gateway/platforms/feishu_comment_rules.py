@@ -351,8 +351,8 @@ def _main() -> int:
     import sys
 
     try:
-        from thoth_cli.env_loader import load_hermes_dotenv
-        load_hermes_dotenv()
+        from thoth_cli.env_loader import load_thoth_dotenv
+        load_thoth_dotenv()
     except Exception:
         pass
 

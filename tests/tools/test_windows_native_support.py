@@ -853,7 +853,7 @@ class TestGatewayDetachedWatcherWindowsFlags:
     launcher must use CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS on
     Windows, not silent start_new_session=True."""
 
-    def test_hermes_cli_gateway_uses_compat_kwargs(self):
+    def test_thoth_cli_gateway_uses_compat_kwargs(self):
         root = Path(__file__).resolve().parents[2]
         source = (root / "thoth_cli" / "gateway.py").read_text(encoding="utf-8")
         assert "windows_detach_popen_kwargs" in source, (

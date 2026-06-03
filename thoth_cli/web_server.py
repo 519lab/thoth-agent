@@ -664,7 +664,7 @@ _ACTION_LOG_FILES: Dict[str, str] = {
 _ACTION_PROCS: Dict[str, subprocess.Popen] = {}
 
 
-def _spawn_hermes_action(subcommand: List[str], name: str) -> subprocess.Popen:
+def _spawn_thoth_action(subcommand: List[str], name: str) -> subprocess.Popen:
     """Spawn ``thoth <subcommand>`` detached and record the Popen handle.
 
     Uses the running interpreter's ``thoth_cli.main`` module so the action
@@ -718,7 +718,7 @@ def _tail_lines(path: Path, n: int) -> List[str]:
 async def restart_gateway():
     """Kick off a ``thoth gateway restart`` in the background."""
     try:
-        proc = _spawn_hermes_action(["gateway", "restart"], "gateway-restart")
+        proc = _spawn_thoth_action(["gateway", "restart"], "gateway-restart")
     except Exception as exc:
         _log.exception("Failed to spawn gateway restart")
         raise HTTPException(status_code=500, detail=f"Failed to restart gateway: {exc}")
@@ -733,7 +733,7 @@ async def restart_gateway():
 async def update_hermes():
     """Kick off ``thoth update`` in the background."""
     try:
-        proc = _spawn_hermes_action(["update"], "hermes-update")
+        proc = _spawn_thoth_action(["update"], "hermes-update")
     except Exception as exc:
         _log.exception("Failed to spawn thoth update")
         raise HTTPException(status_code=500, detail=f"Failed to start update: {exc}")
@@ -1322,12 +1322,12 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
         from agent.anthropic_adapter import (
             read_hermes_oauth_credentials,
             read_claude_code_credentials,
-            _HERMES_OAUTH_FILE,
+            _THOTH_OAUTH_FILE,
         )
     except ImportError:
         read_claude_code_credentials = None  # type: ignore
         read_hermes_oauth_credentials = None  # type: ignore
-        _HERMES_OAUTH_FILE = None  # type: ignore
+        _THOTH_OAUTH_FILE = None  # type: ignore
 
     hermes_creds = None
     if read_hermes_oauth_credentials:
@@ -1339,7 +1339,7 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
         return {
             "logged_in": True,
             "source": "hermes_pkce",
-            "source_label": f"Thoth PKCE ({_HERMES_OAUTH_FILE})",
+            "source_label": f"Thoth PKCE ({_THOTH_OAUTH_FILE})",
             "token_preview": _truncate_token(hermes_creds.get("accessToken")),
             "expires_at": hermes_creds.get("expiresAt"),
             "has_refresh_token": bool(hermes_creds.get("refreshToken")),
@@ -1568,9 +1568,9 @@ async def disconnect_oauth_provider(provider_id: str, request: Request):
     # want to undo a disconnect.
     if provider_id in {"anthropic", "claude-code"}:
         try:
-            from agent.anthropic_adapter import _HERMES_OAUTH_FILE
-            if _HERMES_OAUTH_FILE.exists():
-                _HERMES_OAUTH_FILE.unlink()
+            from agent.anthropic_adapter import _THOTH_OAUTH_FILE
+            if _THOTH_OAUTH_FILE.exists():
+                _THOTH_OAUTH_FILE.unlink()
         except Exception:
             pass
         # Also clear the credential pool entry if present.
@@ -1680,14 +1680,14 @@ def _save_anthropic_oauth_creds(access_token: str, refresh_token: str, expires_a
     Mirrors what auth_commands.add_command does so the dashboard flow leaves
     the system in the same state as ``thoth auth add anthropic``.
     """
-    from agent.anthropic_adapter import _HERMES_OAUTH_FILE
+    from agent.anthropic_adapter import _THOTH_OAUTH_FILE
     payload = {
         "accessToken": access_token,
         "refreshToken": refresh_token,
         "expiresAt": expires_at_ms,
     }
-    _HERMES_OAUTH_FILE.parent.mkdir(parents=True, exist_ok=True)
-    _HERMES_OAUTH_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    _THOTH_OAUTH_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _THOTH_OAUTH_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     # Best-effort credential-pool insert. Failure here doesn't invalidate
     # the file write — pool registration only matters for the rotation
     # strategy, not for runtime credential resolution.

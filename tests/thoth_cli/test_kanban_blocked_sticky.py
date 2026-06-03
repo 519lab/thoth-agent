@@ -38,7 +38,7 @@ from thoth_cli import kanban_db as kb
 
 
 @pytest.fixture
-def kanban_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, hermes_db_initialized_sync) -> Path:
+def kanban_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, thoth_db_initialized_sync) -> Path:
     """Isolated HERMES_HOME with an empty kanban DB on the per-test PG db."""
     home = tmp_path / ".hermes"
     home.mkdir()

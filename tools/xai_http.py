@@ -63,7 +63,7 @@ def get_env_value(name: str, default=None):
     return os.environ.get(name, default)
 
 
-def hermes_xai_user_agent() -> str:
+def thoth_xai_user_agent() -> str:
     """Return a stable Thoth-specific User-Agent for xAI HTTP calls."""
     try:
         from thoth_cli import __version__
@@ -126,3 +126,6 @@ def resolve_xai_http_credentials(*, force_refresh: bool = False) -> Dict[str, st
         "api_key": api_key,
         "base_url": base_url,
     }
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+hermes_xai_user_agent = thoth_xai_user_agent

@@ -29,7 +29,7 @@ def _epoch_to_dt(epoch: float) -> datetime:
 
 
 @pytest.fixture()
-def db(tmp_path, hermes_db_initialized_sync):
+def db(tmp_path, thoth_db_initialized_sync):
     """Sync-shaped SessionDB wrapper backed by the per-test PG database.
 
     Phase 0 moved ``SessionDB`` to ``_AsyncSessionDB``; existing tests

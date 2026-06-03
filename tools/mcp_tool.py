@@ -2253,8 +2253,8 @@ def _load_mcp_config() -> Dict[str, dict]:
             return {}
         # Ensure .env vars are available for interpolation
         try:
-            from thoth_cli.env_loader import load_hermes_dotenv
-            load_hermes_dotenv()
+            from thoth_cli.env_loader import load_thoth_dotenv
+            load_thoth_dotenv()
         except Exception:
             pass
         return {name: _interpolate_env_vars(cfg) for name, cfg in servers.items()}

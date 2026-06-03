@@ -20,7 +20,7 @@ Two Phase-0 patches both apply to every test in this subdirectory:
     GoalManager swallows DB errors (intentionally — it must not crash
     the agent if the DB is down), so without a migrated per-test PG
     database the assertions silently see ``mgr.state is None``.
-    ``_ensure_goal_pg_db`` requests ``hermes_db_initialized_sync`` for
+    ``_ensure_goal_pg_db`` requests ``thoth_db_initialized_sync`` for
     the goal tests so Alembic upgrade head has run and the asyncpg
     pool is bound to a real schema before any ``/goal`` command fires.
 """
@@ -48,6 +48,6 @@ def _pass_through_run_sync_for_sync_mocks(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _ensure_goal_pg_db(request, hermes_db_initialized_sync):
+def _ensure_goal_pg_db(request, thoth_db_initialized_sync):
     """See module docstring (issue 2)."""
-    return hermes_db_initialized_sync
+    return thoth_db_initialized_sync

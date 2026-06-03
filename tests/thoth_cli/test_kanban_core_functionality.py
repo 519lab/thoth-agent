@@ -45,10 +45,10 @@ def _decode_payload(p):
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def kanban_home(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """Isolated HERMES_HOME with the kanban schema migrated.
 
-    Depends on ``hermes_db_initialized_sync`` so the PG pool is bound
+    Depends on ``thoth_db_initialized_sync`` so the PG pool is bound
     to the persistent sync loop AND the schema is migrated before
     ``kb.init_db()`` runs. Phase 0 moved kanban_db from SQLite to PG;
     without the fixture the table lives in a fresh per-test PG
@@ -1247,7 +1247,7 @@ def test_spawned_event_emitted_with_pid(kanban_home, all_assignees_spawnable):
     "by Alembic without the legacy state, so the rename pass is intentionally "
     "skipped in PG mode (see thoth_cli/kanban_db.py:_migrate_add_optional_columns)."
 )
-def test_migration_renames_legacy_event_kinds(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def test_migration_renames_legacy_event_kinds(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """A DB created with the old vocab must have its event rows renamed
     in place on init_db()."""
     home = tmp_path / ".hermes"
@@ -1321,7 +1321,7 @@ def test_list_profiles_on_disk_custom_root(tmp_path, monkeypatch):
     assert names == ["default", "researcher", "writer"]
 
 
-def test_known_assignees_merges_disk_and_board(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def test_known_assignees_merges_disk_and_board(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """known_assignees unions profiles on disk with currently-assigned
     names, and reports per-status counts."""
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -2215,7 +2215,7 @@ def test_claim_task_recovers_from_invariant_leak(kanban_home):
 # Live-test findings (Apr 2026 third pass: auto-init, show --json carries runs)
 # -------------------------------------------------------------------------
 
-def test_cli_create_on_fresh_home_auto_inits(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def test_cli_create_on_fresh_home_auto_inits(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """First CLI action on a fresh HERMES_HOME must succeed end-to-end —
     auto-init runs on the kanban schema and the task is created.
 
@@ -2231,7 +2231,7 @@ def test_cli_create_on_fresh_home_auto_inits(tmp_path, monkeypatch, hermes_db_in
     import subprocess as _sp
     import sys as _sys
     worktree_root = Path(__file__).resolve().parents[2]
-    # Propagate HERMES_PG_DSN (set by hermes_db_initialized_sync) so the
+    # Propagate HERMES_PG_DSN (set by thoth_db_initialized_sync) so the
     # subprocess connects to the per-test database, not the real one.
     env = {**os.environ, "HERMES_HOME": str(home),
            "PYTHONPATH": str(worktree_root)}
@@ -2246,7 +2246,7 @@ def test_cli_create_on_fresh_home_auto_inits(tmp_path, monkeypatch, hermes_db_in
     assert out["status"] == "ready"
 
 
-def test_connect_auto_inits_fresh_db(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def test_connect_auto_inits_fresh_db(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """Calling connect() on a fresh HERMES_HOME must create the
     schema. Previously callers had to remember kb.init_db() first."""
     home = tmp_path / ".hermes"
@@ -2361,7 +2361,7 @@ def test_unblock_normal_path_no_spurious_run(kanban_home):
     "installs exactly ONE backfilled run row, not N) is specific to the "
     "sqlite legacy-DB backfill pass that's intentionally skipped in PG mode."
 )
-def test_migration_backfill_idempotent_under_re_run(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def test_migration_backfill_idempotent_under_re_run(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """init_db must be safe to re-run repeatedly. Each call should leave
     at most one run row per in-flight task, even if called while a
     dispatcher is simultaneously claiming."""

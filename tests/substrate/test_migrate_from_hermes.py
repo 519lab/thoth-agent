@@ -7,7 +7,7 @@ UNIQUE(name) constraint. Slices reference their stream by ``stream_id`` and so
 follow the rename automatically.
 
 These run against the per-test ``thoth`` PG fixture (Alembic head already
-applied by ``hermes_db_dsn``). The ``default-structured`` decay profile +
+applied by ``thoth_db_dsn``). The ``default-structured`` decay profile +
 the ``substrate.self_state`` stream are seeded by the skeleton migration.
 """
 

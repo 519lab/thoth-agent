@@ -5,8 +5,8 @@ import thoth_db
 
 
 @pytest_asyncio.fixture
-async def initialized_db(hermes_db_dsn):
-    """`hermes_db_dsn` fixture comes from tests/conftest.py (Task 6).
+async def initialized_db(thoth_db_dsn):
+    """`thoth_db_dsn` fixture comes from tests/conftest.py (Task 6).
 
     For Task 5's red phase the fixture does not exist yet; this test will
     fail at fixture collection. That's expected — Task 6 makes it pass.
@@ -28,7 +28,7 @@ async def initialized_db(hermes_db_dsn):
                 thoth_db.run_sync(thoth_db.close())
             except Exception:
                 thoth_db._pool = None
-    await thoth_db.init(hermes_db_dsn)
+    await thoth_db.init(thoth_db_dsn)
     yield
     await thoth_db.close()
 
@@ -227,7 +227,7 @@ async def test_run_on_pool_loop_direct_when_same_loop(initialized_db):
     assert await thoth_db.run_on_pool_loop(_q()) == 5
 
 
-def test_run_on_pool_loop_routes_across_loops(hermes_db_dsn):
+def test_run_on_pool_loop_routes_across_loops(thoth_db_dsn):
     """Regression for the gateway's recurring ConnectionDoesNotExistError.
 
     The gateway's pool is bound to ``_sync_loop`` (main()'s ensure_pool_sync
@@ -278,7 +278,7 @@ def test_db_loop_runs_continuously_on_its_own_thread():
     assert thoth_db._db_thread is not threading.current_thread()
 
 
-def test_run_sync_works_from_inside_a_different_running_loop(hermes_db_dsn):
+def test_run_sync_works_from_inside_a_different_running_loop(thoth_db_dsn):
     """run_sync must work when the caller's thread already drives another
     loop (the gateway's L_gw, pytest-asyncio). It submits to the DB loop
     rather than raising "loop already running"."""
@@ -300,7 +300,7 @@ def test_run_sync_works_from_inside_a_different_running_loop(hermes_db_dsn):
         thoth_db.run_sync(thoth_db.close())
 
 
-def test_run_sync_accepts_non_coroutine_awaitables(hermes_db_dsn):
+def test_run_sync_accepts_non_coroutine_awaitables(thoth_db_dsn):
     """Regression: run_sync(pool().acquire()) — a PoolAcquireContext is an
     awaitable but not a coroutine. run_coroutine_threadsafe rejects those,
     so run_sync coerces awaitables into coroutines (matching the old
@@ -318,7 +318,7 @@ def test_run_sync_accepts_non_coroutine_awaitables(hermes_db_dsn):
         thoth_db.run_sync(thoth_db.close())
 
 
-def test_long_lived_task_survives_after_routed_boot_returns(hermes_db_dsn):
+def test_long_lived_task_survives_after_routed_boot_returns(thoth_db_dsn):
     """Regression for the orphaned substrate RecallLogWriter task.
 
     Phase A booted the substrate via a one-shot run on a loop that then
@@ -356,7 +356,7 @@ def test_long_lived_task_survives_after_routed_boot_returns(hermes_db_dsn):
         thoth_db.run_sync(thoth_db.close())
 
 
-def test_run_sync_reentrant_from_db_loop_raises(hermes_db_dsn):
+def test_run_sync_reentrant_from_db_loop_raises(thoth_db_dsn):
     """Calling run_sync from inside the DB loop thread would deadlock; it
     must raise instead so the mis-wiring is loud rather than a hang."""
     if thoth_db._pool is not None:

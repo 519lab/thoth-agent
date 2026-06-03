@@ -75,12 +75,12 @@ def _send_imap_id(imap: "imaplib.IMAP4") -> None:
     """
     try:
         try:
-            from thoth_cli import __version__ as _hermes_version
+            from thoth_cli import __version__ as _thoth_version
         except Exception:  # noqa: BLE001 — keep ID best-effort if import fails
-            _hermes_version = "0"
+            _thoth_version = "0"
         imap.xatom(
             "ID",
-            f'("name" "thoth-agent" "version" "{_hermes_version}" '
+            f'("name" "thoth-agent" "version" "{_thoth_version}" '
             '"vendor" "519lab" '
             '"support-email" "noreply@519lab.com")',
         )

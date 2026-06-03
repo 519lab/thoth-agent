@@ -120,7 +120,7 @@ def _make_cli(env_overrides=None, config_overrides=None, **kwargs):
             return _cli_mod.ThothCLI(**kwargs)
 
 
-def _prepare_cli_with_active_session(tmp_path, *, hermes_db_initialized_sync=None):
+def _prepare_cli_with_active_session(tmp_path, *, thoth_db_initialized_sync=None):
     """Return (cli, sync_db) — production-shaped async DB on the CLI,
     plus a sync wrapper for test-body assertions.
 
@@ -151,7 +151,7 @@ def _prepare_cli_with_active_session(tmp_path, *, hermes_db_initialized_sync=Non
     return cli, sync_db
 
 
-def test_new_command_creates_real_fresh_session_and_resets_agent_state(tmp_path, hermes_db_initialized_sync):
+def test_new_command_creates_real_fresh_session_and_resets_agent_state(tmp_path, thoth_db_initialized_sync):
     cli, sync_db = _prepare_cli_with_active_session(tmp_path)
     old_session_id = cli.session_id
     old_session_start = cli.session_start
@@ -177,7 +177,7 @@ def test_new_command_creates_real_fresh_session_and_resets_agent_state(tmp_path,
     cli.agent._invalidate_system_prompt.assert_called_once()
 
 
-def test_reset_command_is_alias_for_new_session(tmp_path, hermes_db_initialized_sync):
+def test_reset_command_is_alias_for_new_session(tmp_path, thoth_db_initialized_sync):
     cli, sync_db = _prepare_cli_with_active_session(tmp_path)
     old_session_id = cli.session_id
 
@@ -188,7 +188,7 @@ def test_reset_command_is_alias_for_new_session(tmp_path, hermes_db_initialized_
     assert sync_db.get_session(cli.session_id) is not None
 
 
-def test_clear_command_starts_new_session_before_redrawing(tmp_path, hermes_db_initialized_sync):
+def test_clear_command_starts_new_session_before_redrawing(tmp_path, thoth_db_initialized_sync):
     cli, sync_db = _prepare_cli_with_active_session(tmp_path)
     cli.console = MagicMock()
     cli.show_banner = MagicMock()
@@ -204,7 +204,7 @@ def test_clear_command_starts_new_session_before_redrawing(tmp_path, hermes_db_i
     assert cli.conversation_history == []
 
 
-def test_new_session_resets_token_counters(tmp_path, hermes_db_initialized_sync):
+def test_new_session_resets_token_counters(tmp_path, thoth_db_initialized_sync):
     """Regression test for #2099: /new must zero all token counters."""
     cli, _sync_db = _prepare_cli_with_active_session(tmp_path)
 

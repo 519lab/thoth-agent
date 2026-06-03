@@ -147,11 +147,11 @@ def test_kanban_tools_visible_with_toolset_config(monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def worker_env(monkeypatch, tmp_path, hermes_db_initialized_sync):
+def worker_env(monkeypatch, tmp_path, thoth_db_initialized_sync):
     """Simulate being a worker: HERMES_HOME isolated, HERMES_KANBAN_TASK set
     after we've created the task.
 
-    Phase 0: depends on ``hermes_db_initialized_sync`` so the per-test
+    Phase 0: depends on ``thoth_db_initialized_sync`` so the per-test
     PG database is migrated before ``kb.init_db()`` inserts into
     kanban_boards. Without it the pool stays bound to the container
     default DSN and rows land where Alembic never ran.
@@ -1365,7 +1365,7 @@ def test_worker_complete_rejects_stale_run_id(worker_env, monkeypatch):
     assert d.get("ok") is True
 
 
-def test_orchestrator_complete_any_task_allowed(monkeypatch, tmp_path, hermes_db_initialized_sync):
+def test_orchestrator_complete_any_task_allowed(monkeypatch, tmp_path, thoth_db_initialized_sync):
     """Orchestrator profiles (no HERMES_KANBAN_TASK) can still complete
     any task via explicit task_id. The check only applies to workers."""
     monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
@@ -1405,7 +1405,7 @@ def test_orchestrator_complete_any_task_allowed(monkeypatch, tmp_path, hermes_db
 
 
 @pytest.fixture
-def multi_board_env(monkeypatch, tmp_path, hermes_db_initialized_sync):
+def multi_board_env(monkeypatch, tmp_path, thoth_db_initialized_sync):
     """Isolated Thoth home with two distinct kanban boards seeded.
 
     Returns ``("default", "alt")`` slugs. The default board has one
@@ -1413,7 +1413,7 @@ def multi_board_env(monkeypatch, tmp_path, hermes_db_initialized_sync):
     HERMES_KANBAN_TASK is pinned (orchestrator context) — workers test
     the env-task case via the existing ``worker_env`` fixture.
 
-    Phase 0: depends on ``hermes_db_initialized_sync`` so the per-test
+    Phase 0: depends on ``thoth_db_initialized_sync`` so the per-test
     PG database is migrated and the asyncpg pool bound before
     ``kb.init_db()`` / ``kb.create_board()`` writes.
     """
@@ -1431,7 +1431,7 @@ def multi_board_env(monkeypatch, tmp_path, hermes_db_initialized_sync):
 
     from thoth_cli import kanban_db as kb
     kb._INITIALIZED_PATHS.clear()
-    # Default board — implicit (created by init_db via hermes_db_initialized_sync)
+    # Default board — implicit (created by init_db via thoth_db_initialized_sync)
     kb.init_db()
     conn = kb.connect()
     try:
@@ -1629,7 +1629,7 @@ def test_board_param_routes_unblock_to_alt_board(multi_board_env):
         assert kb.get_task(conn, alt_seed).status == "ready"
 
 
-def test_board_param_routes_heartbeat_to_alt_board(monkeypatch, tmp_path, hermes_db_initialized_sync):
+def test_board_param_routes_heartbeat_to_alt_board(monkeypatch, tmp_path, thoth_db_initialized_sync):
     """kanban_heartbeat targets the alt board's DB. Worker-scoped, so we
     use the worker-env style fixture inline (pinning HERMES_KANBAN_TASK
     to a task that exists in the alt board)."""

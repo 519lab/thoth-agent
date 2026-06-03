@@ -227,7 +227,7 @@ _TOOL_STUBS = {
 }
 
 
-def generate_hermes_tools_module(enabled_tools: List[str],
+def generate_thoth_tools_module(enabled_tools: List[str],
                                  transport: str = "uds") -> str:
     """
     Build the source code for the hermes_tools.py stub module.
@@ -898,7 +898,7 @@ def _execute_remote(
         )
 
         # Generate and ship files
-        tools_src = generate_hermes_tools_module(
+        tools_src = generate_thoth_tools_module(
             list(sandbox_tools), transport="file",
         )
         _ship_file_to_remote(env, f"{sandbox_dir}/hermes_tools.py", tools_src)
@@ -1124,7 +1124,7 @@ def execute_code(
         # Python source files are decoded as UTF-8 by default (PEP 3120).
         # sandbox_tools is already the correct set (intersection with session
         # tools, or SANDBOX_ALLOWED_TOOLS as fallback — see lines above).
-        tools_src = generate_hermes_tools_module(list(sandbox_tools))
+        tools_src = generate_thoth_tools_module(list(sandbox_tools))
         with open(os.path.join(tmpdir, "hermes_tools.py"), "w", encoding="utf-8") as f:
             f.write(tools_src)
 
@@ -1781,3 +1781,6 @@ registry.register(
     emoji="🐍",
     max_result_size_chars=100_000,
 )
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+generate_hermes_tools_module = generate_thoth_tools_module

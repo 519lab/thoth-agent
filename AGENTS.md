@@ -23,7 +23,7 @@ entry points you'll actually edit.
 thoth-agent/
 ├── run_agent.py          # AIAgent class — core conversation loop (~12k LOC)
 ├── model_tools.py        # Tool orchestration, discover_builtin_tools(), handle_function_call()
-├── toolsets.py           # Toolset definitions, _HERMES_CORE_TOOLS list
+├── toolsets.py           # Toolset definitions, _THOTH_CORE_TOOLS list
 ├── cli.py                # HermesCLI class — interactive CLI orchestrator (~11k LOC)
 ├── thoth_state.py       # SessionDB — async PG-backed session store (PostgreSQL, no SQLite)
 ├── substrate/            # Cognitive substrate (perception sink + Curator + recall)
@@ -295,7 +295,7 @@ registry.register(
 )
 ```
 
-**2. Add to `toolsets.py`** — either `_HERMES_CORE_TOOLS` (all platforms) or a new toolset. **This step is required:** auto-discovery imports the tool and registers its schema, but the tool is only *exposed to an agent* if its name appears in a toolset. `_HERMES_CORE_TOOLS` is not dead code — it's the default bundle every platform's base toolset inherits from.
+**2. Add to `toolsets.py`** — either `_THOTH_CORE_TOOLS` (all platforms) or a new toolset. **This step is required:** auto-discovery imports the tool and registers its schema, but the tool is only *exposed to an agent* if its name appears in a toolset. `_THOTH_CORE_TOOLS` is not dead code — it's the default bundle every platform's base toolset inherits from.
 
 Auto-discovery: any `tools/*.py` file with a top-level `registry.register()` call is imported automatically — no manual import list to maintain. Wiring into a toolset is still a deliberate, manual step.
 
@@ -699,7 +699,7 @@ contributor skill PRs.
 
 All toolsets are defined in `toolsets.py` as a single `TOOLSETS` dict.
 Each platform's adapter picks a base toolset (e.g. Telegram uses
-`"messaging"`); `_HERMES_CORE_TOOLS` is the default bundle most
+`"messaging"`); `_THOTH_CORE_TOOLS` is the default bundle most
 platforms inherit from.
 
 Current toolset keys: `browser`, `clarify`, `code_execution`, `cronjob`,

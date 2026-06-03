@@ -310,7 +310,7 @@ async def test_commit_with_conn_rolls_back_on_outer_failure(substrate):
 # ---------------------------------------------------------------------------
 
 
-def test_commit_slice_sync_works_from_sync_context(hermes_db_dsn):
+def test_commit_slice_sync_works_from_sync_context(thoth_db_dsn):
     """Sync facade from a sync test function: must work without
     raising. (Inside an event loop it would raise — covered by the
     next test.)
@@ -320,7 +320,7 @@ def test_commit_slice_sync_works_from_sync_context(hermes_db_dsn):
     per-test loop, which binds the asyncpg pool to that loop. The sync
     facade would then drive the pool from the persistent ``_sync_loop``
     instead — a cross-loop access that asyncpg flags as "another
-    operation is in progress". Using the sync ``hermes_db_dsn`` fixture
+    operation is in progress". Using the sync ``thoth_db_dsn`` fixture
     + ``ensure_pool_sync()`` keeps the pool on the persistent loop end
     to end.
     """
@@ -330,8 +330,8 @@ def test_commit_slice_sync_works_from_sync_context(hermes_db_dsn):
     from substrate.facade import Substrate
 
     # Manually init the pool on the persistent sync loop.
-    os.environ["THOTH_PG_DSN"] = hermes_db_dsn
-    os.environ["HERMES_PG_DSN"] = hermes_db_dsn
+    os.environ["THOTH_PG_DSN"] = thoth_db_dsn
+    os.environ["HERMES_PG_DSN"] = thoth_db_dsn
     assert thoth_db.ensure_pool_sync() is True
     try:
         substrate = Substrate.from_pool(thoth_db.pool())

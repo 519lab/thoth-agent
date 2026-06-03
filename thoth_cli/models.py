@@ -20,7 +20,7 @@ from thoth_cli import __version__ as _HERMES_VERSION
 
 # Identify ourselves so endpoints fronted by Cloudflare's Browser Integrity
 # Check (error 1010) don't reject the default ``Python-urllib/*`` signature.
-_HERMES_USER_AGENT = f"hermes-cli/{_HERMES_VERSION}"
+_THOTH_USER_AGENT = f"hermes-cli/{_HERMES_VERSION}"
 
 COPILOT_BASE_URL = "https://api.githubcopilot.com"
 COPILOT_MODELS_URL = f"{COPILOT_BASE_URL}/models"
@@ -1408,7 +1408,7 @@ def fetch_models_with_pricing(
     url = cache_key.rstrip("/") + "/v1/models"
     headers: dict[str, str] = {
         "Accept": "application/json",
-        "User-Agent": _HERMES_USER_AGENT,
+        "User-Agent": _THOTH_USER_AGENT,
     }
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
@@ -1577,7 +1577,7 @@ def _fetch_novita_pricing(
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Accept": "application/json",
-        "User-Agent": _HERMES_USER_AGENT,
+        "User-Agent": _THOTH_USER_AGENT,
     }
 
     try:
@@ -2542,7 +2542,7 @@ def _lmstudio_server_root(base_url: Optional[str]) -> Optional[str]:
 
 def _lmstudio_request_headers(api_key: Optional[str] = None) -> dict:
     """Build HTTP headers for LM Studio native API requests."""
-    headers = {"User-Agent": _HERMES_USER_AGENT}
+    headers = {"User-Agent": _THOTH_USER_AGENT}
     token = str(api_key or "").strip()
     if token:
         headers["Authorization"] = f"Bearer {token}"
@@ -3101,7 +3101,7 @@ def probe_api_models(
         candidates.append((alternate_base, True))
 
     tried: list[str] = []
-    headers: dict[str, str] = {"User-Agent": _HERMES_USER_AGENT}
+    headers: dict[str, str] = {"User-Agent": _THOTH_USER_AGENT}
     if api_key and api_mode == "anthropic_messages":
         headers["x-api-key"] = api_key
         headers["anthropic-version"] = "2023-06-01"
@@ -3149,7 +3149,7 @@ def _fetch_ai_gateway_models(timeout: float = 5.0) -> Optional[list[str]]:
     url = base_url.rstrip("/") + "/models"
     headers: dict[str, str] = {
         "Authorization": f"Bearer {api_key}",
-        "User-Agent": _HERMES_USER_AGENT,
+        "User-Agent": _THOTH_USER_AGENT,
     }
     req = urllib.request.Request(url, headers=headers)
     try:

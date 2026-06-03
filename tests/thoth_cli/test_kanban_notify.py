@@ -12,8 +12,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def kanban_home(tmp_path, monkeypatch, hermes_db_initialized_sync):
-    """Phase 0: depends on hermes_db_initialized_sync so the per-test PG
+def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
+    """Phase 0: depends on thoth_db_initialized_sync so the per-test PG
     database is migrated and the asyncpg pool is bound to the persistent
     sync loop. The async test bodies that follow call sync ``kb.*``
     helpers; those internally use ``thoth_db.run_sync`` which now

@@ -305,7 +305,7 @@ class MiniSWERunner:
             })
         return json.dumps(formatted_tools, ensure_ascii=False)
     
-    def _convert_to_hermes_format(
+    def _convert_to_thoth_format(
         self,
         messages: List[Dict[str, Any]],
         user_query: str,
@@ -567,7 +567,7 @@ Complete the user's task step by step."""
             self._cleanup_env()
         
         # Convert to Thoth trajectory format
-        trajectory = self._convert_to_hermes_format(messages, task, completed)
+        trajectory = self._convert_to_thoth_format(messages, task, completed)
         
         return {
             "conversations": trajectory,

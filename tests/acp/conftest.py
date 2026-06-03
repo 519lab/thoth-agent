@@ -88,10 +88,10 @@ def _reset_substrate_state() -> None:
 
 
 @pytest.fixture(autouse=True)
-def _isolate_acp_session_db(hermes_db_initialized_sync):
+def _isolate_acp_session_db(thoth_db_initialized_sync):
     """Per-test cleanup: wipe sessions/messages before and after each test.
 
-    Depends on ``hermes_db_initialized_sync`` so the per-test PG database
+    Depends on ``thoth_db_initialized_sync`` so the per-test PG database
     is created (Alembic upgrade head) and the asyncpg pool is bound to
     THAT database BEFORE the truncate call runs. Without this dependency
     the autouse fixture initialises the pool with whatever

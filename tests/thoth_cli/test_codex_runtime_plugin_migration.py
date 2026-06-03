@@ -10,7 +10,7 @@ from thoth_cli.codex_runtime_plugin_migration import (
     MIGRATION_MARKER,
     MIGRATION_END_MARKER,
     MigrationReport,
-    _build_hermes_tools_mcp_entry,
+    _build_thoth_tools_mcp_entry,
     _format_toml_value,
     _looks_like_test_tempdir,
     _strip_existing_managed_block,
@@ -507,7 +507,7 @@ class TestMigrate:
         # And the entry is reported
         assert "hermes-tools" in report.migrated
 
-    def test_expose_hermes_tools_disabled_skips_entry(self, tmp_path):
+    def test_expose_thoth_tools_disabled_skips_entry(self, tmp_path):
         """expose_hermes_tools=False suppresses the callback registration."""
         migrate({}, codex_home=tmp_path,
                 discover_plugins=False,
@@ -800,7 +800,7 @@ class TestStripUnmanagedPluginTables:
 class TestHermesHomeLeakGuard:
     """Regression tests for issue #26250 Bug C.
 
-    Previously ``_build_hermes_tools_mcp_entry()`` read ``HERMES_HOME``
+    Previously ``_build_thoth_tools_mcp_entry()`` read ``HERMES_HOME``
     directly from ``os.environ``, so a pytest ``monkeypatch.setenv`` would
     leak a transient tempdir path into the user's real ``~/.codex/config.toml``
     once codex spawned the hermes-tools MCP subprocess.
@@ -825,12 +825,12 @@ class TestHermesHomeLeakGuard:
 
     def test_pytest_tempdir_not_burned_into_mcp_env(self, monkeypatch):
         """The headline regression: even when HERMES_HOME points at a pytest
-        tempdir, _build_hermes_tools_mcp_entry() must NOT propagate it."""
+        tempdir, _build_thoth_tools_mcp_entry() must NOT propagate it."""
         monkeypatch.setenv(
             "HERMES_HOME",
             "/private/var/folders/xx/pytest-of-user/pytest-99/test_x/hermes_test",
         )
-        entry = _build_hermes_tools_mcp_entry()
+        entry = _build_thoth_tools_mcp_entry()
         env = entry.get("env", {})
         assert "HERMES_HOME" not in env, (
             f"pytest-tempdir HERMES_HOME leaked into codex MCP entry: "
@@ -846,7 +846,7 @@ class TestHermesHomeLeakGuard:
         # markers, not for path existence.
         real_path = "/Users/alice/.hermes"
         monkeypatch.setenv("HERMES_HOME", real_path)
-        entry = _build_hermes_tools_mcp_entry()
+        entry = _build_thoth_tools_mcp_entry()
         env = entry.get("env", {})
         assert env.get("HERMES_HOME") == real_path
 
@@ -857,7 +857,7 @@ class TestHermesHomeLeakGuard:
         sets at runtime, rather than being pinned to migrate-time defaults.
         Regression guard for issue #26250 follow-up review."""
         monkeypatch.delenv("HERMES_HOME", raising=False)
-        entry = _build_hermes_tools_mcp_entry()
+        entry = _build_thoth_tools_mcp_entry()
         env = entry.get("env", {})
         assert "HERMES_HOME" not in env, (
             f"HERMES_HOME should not be set when env var is unset, got: "

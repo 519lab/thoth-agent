@@ -1069,7 +1069,7 @@ class TestDiskFailureMarker:
 # HERMES_HOME isolation
 # ---------------------------------------------------------------------------
 
-class TestHermesHomeIsolation:
+class TestThothHomeIsolation:
     def test_hermes_bin_dir_respects_hermes_home(self):
         """_hermes_bin_dir must use HERMES_HOME, not hardcoded ~/.hermes."""
         from tools.tirith_security import _hermes_bin_dir

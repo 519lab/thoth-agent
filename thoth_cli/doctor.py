@@ -13,7 +13,7 @@ from pathlib import Path
 
 from thoth_cli.cli_name import cli_name
 from thoth_cli.config import get_project_root, get_thoth_home, get_env_path
-from thoth_cli.env_loader import load_hermes_dotenv
+from thoth_cli.env_loader import load_thoth_dotenv
 from thoth_constants import display_thoth_home
 
 PROJECT_ROOT = get_project_root()
@@ -22,10 +22,10 @@ _DHH = display_thoth_home()  # user-facing display path (e.g. ~/.hermes or ~/.he
 
 # Load environment variables from ~/.hermes/.env so API key checks work
 _env_path = get_env_path()
-load_hermes_dotenv(hermes_home=_env_path.parent, project_env=PROJECT_ROOT / ".env")
+load_thoth_dotenv(hermes_home=_env_path.parent, project_env=PROJECT_ROOT / ".env")
 
 from thoth_cli.colors import Colors, color
-from thoth_cli.models import _HERMES_USER_AGENT
+from thoth_cli.models import _THOTH_USER_AGENT
 from thoth_cli.vercel_auth import describe_vercel_auth
 from thoth_constants import OPENROUTER_MODELS_URL
 from utils import base_url_host_matches
@@ -1537,7 +1537,7 @@ def run_doctor(args):
             url = (base.rstrip("/") + "/models") if base else default_url
             headers = {
                 "Authorization": f"Bearer {key}",
-                "User-Agent": _HERMES_USER_AGENT,
+                "User-Agent": _THOTH_USER_AGENT,
             }
             if base_url_host_matches(base, "api.kimi.com"):
                 headers["User-Agent"] = "claude-code/0.1.0"

@@ -504,7 +504,7 @@ class TestSessionStoreRewriteTranscript:
     """Regression: /retry and /undo must persist truncated history to DB."""
 
     @pytest.fixture()
-    def store(self, tmp_path, hermes_db_initialized_sync):
+    def store(self, tmp_path, thoth_db_initialized_sync):
         import thoth_db as _hermes_db
         config = GatewayConfig()
         s = SessionStore(sessions_dir=tmp_path, config=config)
@@ -549,13 +549,13 @@ class TestSessionStoreRewriteTranscript:
 class TestLoadTranscriptDBOnly:
     """After spec 002, load_transcript reads only from state.db (now PG)."""
 
-    def test_db_only_returns_empty_for_nonexistent(self, tmp_path, hermes_db_initialized_sync):
+    def test_db_only_returns_empty_for_nonexistent(self, tmp_path, thoth_db_initialized_sync):
         config = GatewayConfig()
         store = SessionStore(sessions_dir=tmp_path, config=config)
         result = store.load_transcript("nonexistent")
         assert result == []
 
-    def test_db_only_returns_messages(self, tmp_path, hermes_db_initialized_sync):
+    def test_db_only_returns_messages(self, tmp_path, thoth_db_initialized_sync):
         import thoth_db as _hermes_db
         config = GatewayConfig()
         store = SessionStore(sessions_dir=tmp_path, config=config)
@@ -573,7 +573,7 @@ class TestLoadTranscriptDBOnly:
 class TestSessionStoreSwitchSession:
     """Regression coverage for gateway /resume session switching semantics."""
 
-    def test_switch_session_reopens_target_session_in_db(self, tmp_path, hermes_db_initialized_sync):
+    def test_switch_session_reopens_target_session_in_db(self, tmp_path, thoth_db_initialized_sync):
         import thoth_db as _hermes_db
         from thoth_state import SessionDB
 
@@ -1156,7 +1156,7 @@ class TestLastPromptTokens:
 class TestRewriteTranscriptPreservesReasoning:
     """rewrite_transcript must not drop reasoning fields (PG-backed)."""
 
-    def test_reasoning_survives_rewrite(self, tmp_path, hermes_db_initialized_sync):
+    def test_reasoning_survives_rewrite(self, tmp_path, thoth_db_initialized_sync):
         import thoth_db as _hermes_db
         from thoth_state import SessionDB
 

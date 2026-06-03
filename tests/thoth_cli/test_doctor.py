@@ -528,7 +528,7 @@ def test_run_doctor_flags_missing_credentials_for_active_openrouter_provider(mon
         ("kimi-coding", "kimi-k2"),
     ],
 )
-def test_run_doctor_accepts_hermes_provider_ids_that_catalog_aliases(
+def test_run_doctor_accepts_thoth_provider_ids_that_catalog_aliases(
     monkeypatch, tmp_path, provider, default_model
 ):
     home = tmp_path / ".hermes"

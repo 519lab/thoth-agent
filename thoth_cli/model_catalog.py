@@ -68,7 +68,7 @@ DEFAULT_TTL_HOURS = 24
 DEFAULT_FETCH_TIMEOUT = 8.0
 SUPPORTED_SCHEMA_VERSION = 1
 
-_HERMES_USER_AGENT = f"hermes-cli/{_HERMES_VERSION}"
+_THOTH_USER_AGENT = f"hermes-cli/{_HERMES_VERSION}"
 
 # In-process cache to avoid repeated disk + parse work across multiple
 # calls within the same session. Invalidated by TTL against the disk file's
@@ -120,7 +120,7 @@ def _fetch_manifest(url: str, timeout: float) -> dict[str, Any] | None:
             url,
             headers={
                 "Accept": "application/json",
-                "User-Agent": _HERMES_USER_AGENT,
+                "User-Agent": _THOTH_USER_AGENT,
             },
         )
         with urllib.request.urlopen(req, timeout=timeout) as resp:

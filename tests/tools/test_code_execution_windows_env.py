@@ -462,8 +462,8 @@ class TestSandboxWritesUtf8:
         """The file-based RPC transport stub (used by remote backends)
         reads/writes JSON response files.  Those must also specify UTF-8
         so non-ASCII tool results survive the round-trip intact."""
-        from tools.code_execution_tool import generate_hermes_tools_module
-        stub = generate_hermes_tools_module(["terminal"], transport="file")
+        from tools.code_execution_tool import generate_thoth_tools_module
+        stub = generate_thoth_tools_module(["terminal"], transport="file")
         # The generated stub should open response + request files as UTF-8.
         assert 'encoding="utf-8"' in stub, (
             "File-based RPC stub does not specify encoding=\"utf-8\" — "
@@ -476,9 +476,9 @@ class TestSandboxWritesUtf8:
         sandbox does, and it must succeed even when the stub contains
         em-dashes (which it does — check the transport-header docstring).
         """
-        from tools.code_execution_tool import generate_hermes_tools_module
+        from tools.code_execution_tool import generate_thoth_tools_module
         import tempfile, ast
-        stub = generate_hermes_tools_module(
+        stub = generate_thoth_tools_module(
             ["terminal", "read_file", "write_file"], transport="uds"
         )
         # Sanity: stub actually contains a non-ASCII character, otherwise
@@ -516,10 +516,10 @@ class TestSandboxWritesUtf8:
         test ever starts failing (i.e. default write succeeds), it means
         Python's default encoding has changed and the explicit UTF-8
         requirement may be obsolete — reconsider the fix."""
-        from tools.code_execution_tool import generate_hermes_tools_module
+        from tools.code_execution_tool import generate_thoth_tools_module
         import tempfile
 
-        stub = generate_hermes_tools_module(["terminal"], transport="uds")
+        stub = generate_thoth_tools_module(["terminal"], transport="uds")
         # Find a non-ASCII character we can use to prove the corruption.
         non_ascii = [c for c in stub if ord(c) > 127]
         if not non_ascii:

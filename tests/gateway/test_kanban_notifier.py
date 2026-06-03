@@ -70,7 +70,7 @@ def _unseen_terminal_events(tid):
         conn.close()
 
 
-def test_kanban_notifier_dedupes_board_slugs_pointing_to_same_db(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def test_kanban_notifier_dedupes_board_slugs_pointing_to_same_db(tmp_path, monkeypatch, thoth_db_initialized_sync):
     db_path = tmp_path / "shared-kanban.db"
     monkeypatch.setenv("HERMES_KANBAN_DB", str(db_path))
     kb.init_db()
@@ -89,7 +89,7 @@ def test_kanban_notifier_dedupes_board_slugs_pointing_to_same_db(tmp_path, monke
     assert tid in adapter.sent[0]["text"]
 
 
-def test_kanban_notifier_claim_prevents_second_watcher_send(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def test_kanban_notifier_claim_prevents_second_watcher_send(tmp_path, monkeypatch, thoth_db_initialized_sync):
     db_path = tmp_path / "single-owner.db"
     monkeypatch.setenv("HERMES_KANBAN_DB", str(db_path))
     kb.init_db()
@@ -106,7 +106,7 @@ def test_kanban_notifier_claim_prevents_second_watcher_send(tmp_path, monkeypatc
     assert adapter2.sent == []
 
 
-def test_kanban_notifier_rewinds_claim_if_adapter_disconnects(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def test_kanban_notifier_rewinds_claim_if_adapter_disconnects(tmp_path, monkeypatch, thoth_db_initialized_sync):
     db_path = tmp_path / "adapter-disconnect.db"
     monkeypatch.setenv("HERMES_KANBAN_DB", str(db_path))
     kb.init_db()
@@ -122,7 +122,7 @@ def test_kanban_notifier_rewinds_claim_if_adapter_disconnects(tmp_path, monkeypa
     assert [ev.kind for ev in _unseen_terminal_events(tid)] == ["completed"]
 
 
-def test_kanban_db_path_is_test_isolated_from_real_home(hermes_db_initialized_sync):
+def test_kanban_db_path_is_test_isolated_from_real_home(thoth_db_initialized_sync):
     hermes_home = Path(kb.kanban_home())
     production_db = Path.home() / ".hermes" / "kanban.db"
     assert kb.kanban_db_path().resolve() != production_db.resolve()
@@ -149,7 +149,7 @@ class FailingAdapter:
         raise RuntimeError("simulated send failure")
 
 
-def test_kanban_notifier_rewinds_claim_on_send_exception(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def test_kanban_notifier_rewinds_claim_on_send_exception(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """A raising adapter rewinds the claim so the next tick can retry.
 
     This is the second rewind path (distinct from the adapter-disconnect path
@@ -174,7 +174,7 @@ def test_kanban_notifier_rewinds_claim_on_send_exception(tmp_path, monkeypatch, 
     assert [ev.kind for ev in _unseen_terminal_events(tid)] == ["completed"]
 
 
-def test_notifier_redelivers_same_kind_on_dispatch_cycle(tmp_path, monkeypatch, hermes_db_initialized_sync):
+def test_notifier_redelivers_same_kind_on_dispatch_cycle(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """A retry cycle (crashed → reclaimed → crashed) notifies the user twice.
 
     Before #21398 the notifier auto-unsubscribed on any terminal event kind

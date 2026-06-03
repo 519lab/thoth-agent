@@ -311,7 +311,7 @@ class TestHermesConstantsFallback:
         module = self._load_helper(monkeypatch)
         assert module.display_thoth_home() == "/opt/hermes-custom"
 
-    def test_delegates_to_hermes_constants_when_available(self):
+    def test_delegates_to_thoth_constants_when_available(self):
         """When thoth_constants IS importable, _hermes_home delegates to it."""
         spec = importlib.util.spec_from_file_location(
             "_hermes_home_happy", self.HELPER_PATH

@@ -540,7 +540,7 @@ class TestExpiredCodexFallback:
                 assert client is not None
 
 
-    def test_hermes_oauth_file_sets_oauth_flag(self, monkeypatch):
+    def test_thoth_oauth_file_sets_oauth_flag(self, monkeypatch):
         """OAuth-style tokens should get is_oauth=*** (token is not sk-ant-api-*)."""
         # Mock resolve_anthropic_token to return an OAuth-style token
         with patch("agent.anthropic_adapter.resolve_anthropic_token", return_value="sk-ant-oat-hermes-token"), \

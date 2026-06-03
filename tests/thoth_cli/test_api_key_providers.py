@@ -875,7 +875,7 @@ class TestHasAnyProviderConfigured:
         from thoth_cli.main import _has_any_provider_configured
         assert _has_any_provider_configured() is False
 
-    def test_claude_code_creds_counted_when_hermes_configured(self, monkeypatch, tmp_path):
+    def test_claude_code_creds_counted_when_thoth_configured(self, monkeypatch, tmp_path):
         """Claude Code credentials should count when Thoth has been explicitly configured."""
         import yaml
         from thoth_cli import config as config_module

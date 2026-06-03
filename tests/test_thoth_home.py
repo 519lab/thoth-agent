@@ -173,17 +173,17 @@ def test_main_import_user_env_over_shell_with_hermes_home(fake_home, monkeypatch
 
 def test_load_dotenv_legacy_install_resolves_hermes_env(fake_home):
     """Regression: with NO home env vars and only ~/.hermes on disk (no
-    ~/.thoth), load_hermes_dotenv must resolve the .env from ~/.hermes — not
+    ~/.thoth), load_thoth_dotenv must resolve the .env from ~/.hermes — not
     fall through to a non-existent ~/.thoth. Guards the disk-probe in
     get_thoth_home() (a direct THOTH_HOME-or-HERMES_HOME-or-~/.thoth shortcut
     would skip it and miss the legacy .env)."""
-    from thoth_cli.env_loader import load_hermes_dotenv
+    from thoth_cli.env_loader import load_thoth_dotenv
 
     hermes = fake_home / ".hermes"
     hermes.mkdir()
     (hermes / ".env").write_text("HERMES_PHASE3_LEGACY=present\n", encoding="utf-8")
     try:
-        loaded = load_hermes_dotenv()
+        loaded = load_thoth_dotenv()
         assert hermes / ".env" in loaded
         assert os.getenv("HERMES_PHASE3_LEGACY") == "present"
     finally:

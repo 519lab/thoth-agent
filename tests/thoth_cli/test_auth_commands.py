@@ -70,7 +70,7 @@ def test_auth_add_anthropic_oauth_persists_pool_entry(tmp_path, monkeypatch):
     _write_auth_store(tmp_path, {"version": 1, "providers": {}})
     token = _jwt_with_email("claude@example.com")
     monkeypatch.setattr(
-        "agent.anthropic_adapter.run_hermes_oauth_login_pure",
+        "agent.anthropic_adapter.run_thoth_oauth_login_pure",
         lambda: {
             "access_token": token,
             "refresh_token": "refresh-token",

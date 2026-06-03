@@ -16,7 +16,7 @@ from thoth_constants import (
 )
 
 
-class TestGetDefaultHermesRoot:
+class TestGetDefaultThothRoot:
     """Tests for get_default_hermes_root() — Docker/custom deployment awareness."""
 
     def test_no_hermes_home_returns_native(self, tmp_path, monkeypatch):

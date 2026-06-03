@@ -30,7 +30,7 @@ def fresh_constants(monkeypatch, tmp_path):
     return thoth_constants
 
 
-class TestGetHermesHomeProfileWarning:
+class TestGetThothHomeProfileWarning:
     def test_classic_mode_no_active_profile_no_warning(
         self, fresh_constants, tmp_path, capsys
     ):

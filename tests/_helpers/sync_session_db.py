@@ -43,7 +43,7 @@ class SyncSessionDB:
     Usage in a test::
 
         @pytest.fixture
-        def db(hermes_db_initialized_sync):
+        def db(thoth_db_initialized_sync):
             from thoth_state import _AsyncSessionDB
             return SyncSessionDB(_AsyncSessionDB())
 

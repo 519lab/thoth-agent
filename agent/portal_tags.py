@@ -34,7 +34,7 @@ from __future__ import annotations
 from typing import List
 
 
-def _hermes_version() -> str:
+def _thoth_version() -> str:
     """Return the current Thoth release version, e.g. ``"0.13.0"``.
 
     Falls back to ``"unknown"`` if ``thoth_cli`` cannot be imported (should
@@ -47,12 +47,12 @@ def _hermes_version() -> str:
         return "unknown"
 
 
-def hermes_client_tag() -> str:
+def thoth_client_tag() -> str:
     """Return the ``client=...`` tag for Nous Portal requests.
 
     Format: ``client=hermes-client-v<MAJOR>.<MINOR>.<PATCH>``.
     """
-    return f"client=hermes-client-v{_hermes_version()}"
+    return f"client=hermes-client-v{_thoth_version()}"
 
 
 def nous_portal_tags() -> List[str]:
@@ -61,4 +61,7 @@ def nous_portal_tags() -> List[str]:
     Always returns a fresh list so callers can mutate it freely
     (e.g. ``merged_extra.setdefault("tags", []).extend(nous_portal_tags())``).
     """
-    return ["product=hermes-agent", hermes_client_tag()]
+    return ["product=hermes-agent", thoth_client_tag()]
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+hermes_client_tag = thoth_client_tag

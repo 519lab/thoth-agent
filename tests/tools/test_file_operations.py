@@ -70,7 +70,7 @@ class TestIsWriteDenied:
             "mcp-tokens/subdir/token2.json",
         ],
     )
-    def test_hermes_control_files_and_mcp_tokens_denied(self, path):
+    def test_thoth_control_files_and_mcp_tokens_denied(self, path):
         """Thoth control files and mcp-tokens entries must be write-denied."""
         from thoth_constants import get_thoth_home
         hermes_home = get_thoth_home()
@@ -85,7 +85,7 @@ class TestIsWriteDenied:
             "mcp-tokens/../config.yaml",
         ],
     )
-    def test_hermes_control_files_traversal_denied(self, path):
+    def test_thoth_control_files_traversal_denied(self, path):
         """Path traversal attempts to control files must be blocked by realpath."""
         from thoth_constants import get_thoth_home
         hermes_home = get_thoth_home()
