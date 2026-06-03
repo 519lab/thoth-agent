@@ -1,9 +1,9 @@
 name: Claude Review
 
-# Tag-mode review triggered by the `claude-review` label.
-# The label is applied automatically by claude-autolabel.yml on PR open/sync.
-# Tag mode is required because use_sticky_comment is a no-op in agent mode
-# (anthropics/claude-code-action#1108) — track_progress: true forces tag mode.
+# Review triggered by the `claude-review` label, applied automatically by
+# claude-autolabel.yml on PR open/sync. The review step runs the
+# `/code-review --comment` skill, which posts findings as inline PR comments
+# directly (no sticky-comment workaround needed).
 #
 # Required repository secret: CLAUDE_CODE_OAUTH_TOKEN.
 
@@ -42,30 +42,13 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: --model claude-sonnet-4-6
-          # track_progress: true forces tag mode. In tag mode the action
-          # creates an initial sticky comment, passes its ID to the MCP
-          # comment server, and Claude updates it as the final step.
-          # Without this, agent mode runs and the sticky comment silently
-          # never publishes — see anthropics/claude-code-action#1108.
-          track_progress: true
-          use_sticky_comment: true
-          prompt: |
-            You are reviewing a pull request against `main`. Read the diff,
-            then OUTPUT your review as your final Markdown message. The
-            action will publish your final message as a sticky review
-            comment on the PR — you do not need to call any tool.
-
-            Keep the comment under 400 words. Cover:
-
-            1. **Correctness risks** — bugs, off-by-one errors, broken
-               invariants. Cite file:line. Skip stylistic nits.
-            2. **Security / safety** — auth, secrets, untrusted input,
-               injection, file/network sandboxing. Cite file:line.
-            3. **Tests** — coverage gaps, brittle assertions, flake risks.
-            4. **Migration / compatibility** — schema changes, breaking
-               API edits, data migration safety.
-
-            Clean diff → one-line "LGTM — no blocking issues."
-            Do NOT restate the PR description. Always produce output —
-            silence is a failure mode.
+          # Pin Opus — the action defaults to Sonnet otherwise.
+          claude_args: --model claude-opus-4-8
+          # The `/code-review --comment` skill posts findings as inline PR
+          # comments itself, so we no longer need the track_progress /
+          # use_sticky_comment workaround (anthropics/claude-code-action#1108)
+          # that previously left reviews silent.
+          prompt: /code-review --comment
+          # TEMP debug aid while validating the OAuth/comment path — drop
+          # once reviews are confirmed posting.
+          show_full_output: true
