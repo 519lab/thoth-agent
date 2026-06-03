@@ -21,10 +21,10 @@ from thoth_cli.config import (
     save_config,
     get_env_value,
     save_env_value,
-    get_hermes_home,  # noqa: F401 — used by test mocks
+    get_thoth_home,  # noqa: F401 — used by test mocks
 )
 from thoth_cli.colors import Colors, color
-from hermes_constants import display_hermes_home
+from thoth_constants import display_hermes_home
 from tools.mcp_tool import _ENV_VAR_PATTERN
 
 logger = logging.getLogger(__name__)
@@ -229,7 +229,7 @@ def cmd_mcp_add(args):
     url = getattr(args, "url", None)
     # Read from `mcp_command` (set by --command via explicit dest) — see
     # mcp_add_p.add_argument("--command", dest="mcp_command", ...) in
-    # hermes_cli/main.py for why the dest is renamed.
+    # thoth_cli/main.py for why the dest is renamed.
     command = getattr(args, "mcp_command", None)
     cmd_args = getattr(args, "args", None) or []
     auth_type = getattr(args, "auth", None)

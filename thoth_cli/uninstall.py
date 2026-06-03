@@ -11,7 +11,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 
 from thoth_cli.colors import Colors, color
 
@@ -108,9 +108,9 @@ def remove_wrapper_script():
     for wrapper in wrapper_paths:
         if wrapper.exists():
             try:
-                # Check if it's our wrapper (contains hermes_cli reference)
+                # Check if it's our wrapper (contains thoth_cli reference)
                 content = wrapper.read_text()
-                if 'hermes_cli' in content or 'hermes-agent' in content:
+                if 'thoth_cli' in content or 'hermes-agent' in content:
                     wrapper.unlink()
                     removed.append(wrapper)
             except Exception as e:
@@ -364,7 +364,7 @@ def _is_windows() -> bool:
 def _is_default_hermes_home(hermes_home: Path) -> bool:
     """Return True when ``hermes_home`` points at the default (non-profile) root."""
     try:
-        from hermes_constants import get_default_hermes_root
+        from thoth_constants import get_default_hermes_root
         return hermes_home.resolve() == get_default_hermes_root().resolve()
     except Exception:
         return False
@@ -400,7 +400,7 @@ def _uninstall_profile(profile) -> None:
     log_info(f"Uninstalling profile '{name}'...")
 
     # 1. Stop and remove this profile's gateway service.
-    #    Use `python -m hermes_cli.main` so we don't depend on a `thoth`
+    #    Use `python -m thoth_cli.main` so we don't depend on a `thoth`
     #    wrapper that may be half-removed mid-uninstall.
     hermes_invocation = [_sys.executable, "-m", "thoth_cli.main", "--profile", name]
     for subcmd in ("stop", "uninstall"):
@@ -444,7 +444,7 @@ def run_uninstall(args):
     - Keep data: removes code but keeps ~/.hermes/ for future reinstall
     """
     project_root = get_project_root()
-    hermes_home = get_hermes_home()
+    hermes_home = get_thoth_home()
 
     # Detect named profiles when uninstalling from the default root —
     # offer to clean them up too instead of leaving zombie HERMES_HOMEs

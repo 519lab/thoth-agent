@@ -22,7 +22,7 @@ from rich.table import Table
 
 # Lazy imports to avoid circular dependencies and slow startup.
 # tools.skills_hub and tools.skills_guard are imported inside functions.
-from hermes_constants import display_hermes_home
+from thoth_constants import display_hermes_home
 from agent.skill_utils import is_excluded_skill_path
 
 _console = Console()
@@ -1320,7 +1320,7 @@ def do_snapshot_import(input_path: str, force: bool = False,
 # ---------------------------------------------------------------------------
 
 def skills_command(args) -> None:
-    """Router for `thoth skills <subcommand>` — called from hermes_cli/main.py."""
+    """Router for `thoth skills <subcommand>` — called from thoth_cli/main.py."""
     action = getattr(args, "skills_action", None)
 
     if action == "browse":

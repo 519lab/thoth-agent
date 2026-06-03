@@ -48,7 +48,7 @@ _PROFILE_DIRS = [
     # Per-profile HOME for subprocesses: isolates system tool configs (git,
     # ssh, gh, npm …) so credentials don't bleed between profiles.  In Docker
     # this also ensures tool configs land inside the persistent volume.
-    # See hermes_constants.get_subprocess_home() and issue #4426.
+    # See thoth_constants.get_subprocess_home() and issue #4426.
     "home",
 ]
 
@@ -231,7 +231,7 @@ def _get_default_hermes_home() -> Path:
     In Docker/custom deployments where HERMES_HOME is outside ``~/.hermes``
     (e.g. ``/opt/data``), returns HERMES_HOME directly.
     """
-    from hermes_constants import get_default_hermes_root
+    from thoth_constants import get_default_hermes_root
     return get_default_hermes_root()
 
 
@@ -692,8 +692,8 @@ def create_profile(
     if clone_from is not None or clone_all or clone_config:
         if clone_from is None:
             # Default: clone from active profile
-            from hermes_constants import get_hermes_home
-            source_dir = get_hermes_home()
+            from thoth_constants import get_thoth_home
+            source_dir = get_thoth_home()
         else:
             clone_from = normalize_profile_name(clone_from)
             validate_profile_name(clone_from)
@@ -1104,8 +1104,8 @@ def get_active_profile_name() -> str:
     Returns the profile name if HERMES_HOME points into ``~/.hermes/profiles/<name>``.
     Returns ``"custom"`` if HERMES_HOME is set to an unrecognized path.
     """
-    from hermes_constants import get_hermes_home
-    hermes_home = get_hermes_home()
+    from thoth_constants import get_thoth_home
+    hermes_home = get_thoth_home()
     resolved = hermes_home.resolve()
 
     default_resolved = _get_default_hermes_home().resolve()

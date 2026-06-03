@@ -25,14 +25,14 @@ from gateway.restart import (
 )
 from thoth_cli.config import (
     get_env_value,
-    get_hermes_home,
+    get_thoth_home,
     is_managed,
     managed_error,
     read_raw_config,
     save_env_value,
 )
 # display_hermes_home is imported lazily at call sites to avoid ImportError
-# when hermes_constants is cached from a pre-update version during `thoth update`.
+# when thoth_constants is cached from a pre-update version during `thoth update`.
 from thoth_cli.setup import (
     print_header, print_info, print_success, print_warning, print_error,
     prompt, prompt_choice, prompt_yes_no,
@@ -305,17 +305,17 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
         "thoth_cli/main.py gateway",
         "thoth_cli/main.py --profile",
         "thoth_cli/main.py -p",
-        "hermes_cli.main gateway",
-        "hermes_cli.main --profile",
-        "hermes_cli.main -p",
-        "hermes_cli/main.py gateway",
-        "hermes_cli/main.py --profile",
-        "hermes_cli/main.py -p",
+        "thoth_cli.main gateway",
+        "thoth_cli.main --profile",
+        "thoth_cli.main -p",
+        "thoth_cli/main.py gateway",
+        "thoth_cli/main.py --profile",
+        "thoth_cli/main.py -p",
         "thoth gateway",
         "hermes gateway",
         "gateway/run.py",
     ]
-    current_home = str(get_hermes_home().resolve())
+    current_home = str(get_thoth_home().resolve())
     current_profile_arg = _profile_arg(current_home)
     current_profile_name = current_profile_arg.split()[-1] if current_profile_arg else ""
 
@@ -714,7 +714,7 @@ def _sync_hermes_home_from_systemd_unit(system: bool) -> None:
     """When acting on a system-scope unit, adopt its ``HERMES_HOME``.
 
     Under ``sudo``, ``HERMES_HOME`` is stripped and ``HOME=/root``, so
-    :func:`get_hermes_home` falls back to ``/root/.hermes`` — the wrong
+    :func:`get_thoth_home` falls back to ``/root/.hermes`` — the wrong
     profile. The unit file pins ``HERMES_HOME`` for the actual gateway
     process, so we mirror that into our own environment to make
     ``read_runtime_status`` / ``get_running_pid`` read the correct files.
@@ -986,7 +986,7 @@ def get_gateway_runtime_snapshot(system: bool = False) -> GatewayRuntimeSnapshot
             gateway_pids=gateway_pids,
         )
 
-    from hermes_constants import is_container
+    from thoth_constants import is_container
 
     if is_linux() and is_container():
         return GatewayRuntimeSnapshot(
@@ -1180,7 +1180,7 @@ def is_linux() -> bool:
     return sys.platform.startswith('linux')
 
 
-from hermes_constants import is_container, is_termux, is_wsl
+from thoth_constants import is_container, is_termux, is_wsl
 
 
 def _wsl_systemd_operational() -> bool:
@@ -1275,8 +1275,8 @@ def _profile_suffix() -> str:
     """
     import hashlib
     import re
-    from hermes_constants import get_default_hermes_root
-    home = get_hermes_home().resolve()
+    from thoth_constants import get_default_hermes_root
+    home = get_thoth_home().resolve()
     default = get_default_hermes_root().resolve()
     if home == default:
         return ""
@@ -1301,12 +1301,12 @@ def _profile_arg(hermes_home: str | None = None) -> str:
 
     Args:
         hermes_home: Optional explicit HERMES_HOME path. Defaults to the current
-            ``get_hermes_home()`` value. Should be passed when generating a
+            ``get_thoth_home()`` value. Should be passed when generating a
             service definition for a different user (e.g. system service).
     """
     import re
-    from hermes_constants import get_default_hermes_root
-    home = Path(hermes_home or str(get_hermes_home())).resolve()
+    from thoth_constants import get_default_hermes_root
+    home = Path(hermes_home or str(get_thoth_home())).resolve()
     default = get_default_hermes_root().resolve()
     if home == default:
         return ""
@@ -1595,8 +1595,8 @@ _LEGACY_SERVICE_NAMES: tuple[str, ...] = ("hermes.service", "hermes-gateway.serv
 _LEGACY_UNIT_EXECSTART_MARKERS: tuple[str, ...] = (
     "thoth_cli.main gateway",
     "thoth_cli/main.py gateway",
-    "hermes_cli.main gateway",
-    "hermes_cli/main.py gateway",
+    "thoth_cli.main gateway",
+    "thoth_cli/main.py gateway",
     "gateway/run.py",
     " hermes gateway ",
     "/hermes gateway ",
@@ -2094,7 +2094,7 @@ def _remap_path_for_user(path: str, target_home_dir: str) -> str:
 def _hermes_home_for_target_user(target_home_dir: str) -> str:
     """Remap the current HERMES_HOME to the equivalent under a target user's home.
 
-    When installing a system service via sudo, get_hermes_home() resolves to
+    When installing a system service via sudo, get_thoth_home() resolves to
     root's home.  This translates it to the target user's equivalent path:
       /root/.thoth                     → /home/alice/.thoth
       /root/.hermes                    → /home/alice/.hermes
@@ -2105,7 +2105,7 @@ def _hermes_home_for_target_user(target_home_dir: str) -> str:
     PermissionError from resolve() (e.g. /root unreachable) falls back to
     the unresolved absolute path for comparison purposes.
     """
-    current_hermes_path = get_hermes_home()
+    current_hermes_path = get_thoth_home()
     try:
         current_hermes = current_hermes_path.resolve()
     except OSError:
@@ -2154,7 +2154,7 @@ def _build_service_path_dirs(project_root: Path | None = None) -> list[str]:
     if _is_dir(node_bin):
         candidates.append(str(node_bin))
 
-    hermes_home = get_hermes_home()
+    hermes_home = get_thoth_home()
     hermes_node = hermes_home / "node" / "bin"
     if _is_dir(hermes_node):
         candidates.append(str(hermes_node))
@@ -2238,7 +2238,7 @@ StandardError=journal
 WantedBy=multi-user.target
 """
 
-    hermes_home = str(get_hermes_home().resolve())
+    hermes_home = str(get_thoth_home().resolve())
     profile_arg = _profile_arg(hermes_home)
     path_entries.extend(_build_user_local_paths(Path.home(), path_entries))
     path_entries.extend(_build_wsl_interop_paths(path_entries))
@@ -2276,13 +2276,13 @@ WantedBy=default.target
 
 def _systemd_unit_content(hermes_home: str) -> str:
     """Return the system-scope unit snippet containing HERMES_HOME and THOTH_HOME."""
-    home = hermes_home or str(get_hermes_home())
+    home = hermes_home or str(get_thoth_home())
     return f'Environment="HERMES_HOME={home}"\nEnvironment="THOTH_HOME={home}"\n'
 
 
 def _user_systemd_unit_content(hermes_home: str) -> str:
     """Return the user-scope unit snippet containing HERMES_HOME and THOTH_HOME."""
-    home = hermes_home or str(get_hermes_home())
+    home = hermes_home or str(get_thoth_home())
     return f'Environment="HERMES_HOME={home}"\nEnvironment="THOTH_HOME={home}"\n'
 
 
@@ -2868,8 +2868,8 @@ def _bootout_legacy_launchd_agent() -> None:
 def generate_launchd_plist() -> str:
     python_path = get_python_path()
     working_dir = str(PROJECT_ROOT)
-    hermes_home = str(get_hermes_home().resolve())
-    log_dir = get_hermes_home() / "logs"
+    hermes_home = str(get_thoth_home().resolve())
+    log_dir = get_thoth_home() / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     label = get_launchd_label()
     profile_arg = _profile_arg(hermes_home)
@@ -3015,7 +3015,7 @@ def launchd_install(force: bool = False):
     print()
     print("Next steps:")
     print(f"  {cli_name()} gateway status             # Check status")
-    from hermes_constants import display_hermes_home as _dhh
+    from thoth_constants import display_hermes_home as _dhh
     print(f"  tail -f {_dhh()}/logs/gateway.log  # View logs")
 
 def launchd_uninstall():
@@ -3187,7 +3187,7 @@ def launchd_status(deep: bool = False):
         print(f"  Run: {cli_name()} gateway start")
     
     if deep:
-        log_file = get_hermes_home() / "logs" / "gateway.log"
+        log_file = get_thoth_home() / "logs" / "gateway.log"
         if log_file.exists():
             print()
             print("Recent logs:")
@@ -3332,7 +3332,7 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False):
         if os.environ.get("HERMES_GATEWAY_EXIT_DIAG", "1") != "1":
             return
         try:
-            from hermes_constants import get_hermes_home as _ghh
+            from thoth_constants import get_thoth_home as _ghh
             log_dir = _ghh() / "logs"
             log_dir.mkdir(parents=True, exist_ok=True)
             ts = _dt.now(_tz.utc).isoformat()
@@ -3872,7 +3872,7 @@ def _platform_status(platform: dict) -> str:
     val = get_env_value(token_var)
     if token_var == "WHATSAPP_ENABLED":
         if val and val.lower() == "true":
-            session_file = get_hermes_home() / "whatsapp" / "session" / "creds.json"
+            session_file = get_thoth_home() / "whatsapp" / "session" / "creds.json"
             if session_file.exists():
                 return "configured + paired"
             return "enabled, not paired"
@@ -4346,7 +4346,7 @@ def _setup_weixin():
 
     import asyncio
     try:
-        credentials = asyncio.run(qr_login(str(get_hermes_home())))
+        credentials = asyncio.run(qr_login(str(get_thoth_home())))
     except KeyboardInterrupt:
         print()
         print_warning("  Weixin setup cancelled.")
@@ -4838,7 +4838,7 @@ def _setup_signal():
 def _builtin_setup_fn(key: str):
     """Resolve the interactive setup function for a built-in platform key.
 
-    Late-bound to avoid a circular import with ``hermes_cli.setup`` (which
+    Late-bound to avoid a circular import with ``thoth_cli.setup`` (which
     imports from this module for the remaining bespoke flows).
     """
     from thoth_cli import setup as _s
@@ -5104,7 +5104,7 @@ def gateway_setup():
                 print_info(f"  For persistence:   tmux new -s thoth '{cli_name()} gateway run'")
                 print_info("  To enable systemd: add systemd=true to /etc/wsl.conf, then 'wsl --shutdown'")
             elif is_termux():
-                from hermes_constants import display_hermes_home as _dhh
+                from thoth_constants import display_hermes_home as _dhh
                 print_info("  Termux does not use systemd/launchd services.")
                 print_info(f"  Run in foreground: {cli_name()} gateway run")
                 print_info(f"  Or start it manually in the background (best effort): nohup {cli_name()} gateway run >{_dhh()}/logs/gateway.log 2>&1 &")

@@ -10,8 +10,8 @@ share the same core pipeline:
 This module ties together the foundation layers:
 
 - ``agent.models_dev``            -- models.dev catalog, ModelInfo, ProviderInfo
-- ``hermes_cli.providers``        -- canonical provider identity + overlays
-- ``hermes_cli.model_normalize``  -- per-provider name formatting
+- ``thoth_cli.providers``        -- canonical provider identity + overlays
+- ``thoth_cli.model_normalize``  -- per-provider name formatting
 
 Provider switching uses the ``--provider`` flag exclusively.
 No colon-based ``provider:model`` syntax — colons are reserved for
@@ -247,7 +247,7 @@ def _ensure_direct_aliases() -> None:
     """Lazy-load direct aliases on first use.
 
     Mutates the existing DIRECT_ALIASES dict in place rather than rebinding
-    the module attribute. This keeps `from hermes_cli.model_switch import
+    the module attribute. This keeps `from thoth_cli.model_switch import
     DIRECT_ALIASES` references valid in callers — rebinding would leave them
     pointing at a stale empty dict.
     """
@@ -996,7 +996,7 @@ def switch_model(
     # Anthropic SDK prepends its own /v1/messages to the base_url.  Strip the
     # trailing /v1 so the SDK constructs the correct path (e.g.
     # https://opencode.ai/zen/go/v1/messages instead of .../v1/v1/messages).
-    # Mirrors the same logic in hermes_cli.runtime_provider.resolve_runtime_provider;
+    # Mirrors the same logic in thoth_cli.runtime_provider.resolve_runtime_provider;
     # without it, /model switches into an anthropic_messages-routed OpenCode
     # model (e.g. `/model minimax-m2.7` on opencode-go, `/model claude-sonnet-4-6`
     # on opencode-zen) hit a double /v1 and returned OpenCode's website 404 page.
@@ -1054,7 +1054,7 @@ def list_authenticated_providers(
 ) -> List[dict]:
     """Detect which providers have credentials and list their curated models.
 
-    Uses the curated model lists from hermes_cli/models.py (OPENROUTER_MODELS,
+    Uses the curated model lists from thoth_cli/models.py (OPENROUTER_MODELS,
     _PROVIDER_MODELS) — NOT the full models.dev catalog.  These are hand-picked
     agentic models that work well as agent backends.
 
@@ -1494,7 +1494,7 @@ def list_authenticated_providers(
                 models_list.append(default_model)
             # Also include the full models list from config.
             # Thoth writes ``models:`` as a dict keyed by model id
-            # (see hermes_cli/main.py::_save_custom_provider); older
+            # (see thoth_cli/main.py::_save_custom_provider); older
             # configs or hand-edited files may still use a list.
             cfg_models = ep_cfg.get("models", [])
             if isinstance(cfg_models, dict):
@@ -1631,7 +1631,7 @@ def list_authenticated_providers(
             # active model. Thoth's own writer (main.py::_save_custom_provider)
             # stores every configured model as a dict under ``models:``;
             # downstream readers (agent/models_dev.py, gateway/run.py,
-            # run_agent.py, hermes_cli/config.py) already consume that dict.
+            # run_agent.py, thoth_cli/config.py) already consume that dict.
             default_model = (entry.get("model") or "").strip()
             if default_model and default_model not in groups[group_key]["models"]:
                 groups[group_key]["models"].append(default_model)
@@ -1754,7 +1754,7 @@ def list_picker_providers(
     current install:
 
     - OpenRouter's model list is replaced with the output of
-      :func:`hermes_cli.models.fetch_openrouter_models`, which filters the
+      :func:`thoth_cli.models.fetch_openrouter_models`, which filters the
       curated ``OPENROUTER_MODELS`` snapshot against the live OpenRouter
       catalog.  IDs the live catalog no longer carries drop out, so the
       picker never offers a model the user can't call.

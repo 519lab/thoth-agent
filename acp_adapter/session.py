@@ -8,7 +8,7 @@ history.
 """
 from __future__ import annotations
 
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 
 import copy
 import hermes_db  # PG pool + sync bridge for async SessionDB calls.
@@ -46,7 +46,7 @@ def _translate_acp_cwd(cwd: str) -> str:
     sessions all agree on the usable workspace. Native Linux/macOS keeps the
     original cwd unchanged.
     """
-    from hermes_constants import is_wsl
+    from thoth_constants import is_wsl
 
     if not is_wsl():
         return cwd
@@ -443,7 +443,7 @@ class SessionManager:
                     "Cannot bootstrap PG pool from inside event loop: %s", exc
                 )
                 return None
-            hermes_home = get_hermes_home()
+            hermes_home = get_thoth_home()
             self._db_instance = SessionDB(db_path=hermes_home / "state.db")
             return self._db_instance
         except Exception:
@@ -621,8 +621,8 @@ class SessionManager:
             return self._agent_factory()
 
         from run_agent import AIAgent
-        from hermes_cli.config import load_config
-        from hermes_cli.runtime_provider import resolve_runtime_provider
+        from thoth_cli.config import load_config
+        from thoth_cli.runtime_provider import resolve_runtime_provider
 
         config = load_config()
         model_cfg = config.get("model")

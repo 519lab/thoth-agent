@@ -6,10 +6,10 @@ Hermetic-test invariants enforced here (see AGENTS.md for rationale):
    (ending in _API_KEY, _TOKEN, _SECRET, _PASSWORD, _CREDENTIALS, etc.)
    are unset before every test. Local developer keys cannot leak in.
 2. **Isolated HERMES_HOME.** HERMES_HOME points to a per-test tempdir so
-   code reading ``~/.hermes/*`` via ``get_hermes_home()`` can't see the
+   code reading ``~/.hermes/*`` via ``get_thoth_home()`` can't see the
    real one. (We do NOT also redirect HOME — that broke subprocesses in
    CI. Code using ``Path.home() / ".hermes"`` instead of the canonical
-   ``get_hermes_home()`` is a bug to fix at the callsite.)
+   ``get_thoth_home()`` is a bug to fix at the callsite.)
 3. **Deterministic runtime.** TZ=UTC, LANG=C.UTF-8, PYTHONHASHSEED=0.
 4. **No HERMES_SESSION_* inheritance** — the agent's current gateway
    session must not leak into tests.
@@ -333,7 +333,7 @@ def _hermetic_environment(tmp_path, monkeypatch):
     for name in _HERMES_BEHAVIORAL_VARS:
         monkeypatch.delenv(name, raising=False)
 
-    # 2b. Clear THOTH_* (rename Phase 3). get_hermes_home() reads THOTH_HOME
+    # 2b. Clear THOTH_* (rename Phase 3). get_thoth_home() reads THOTH_HOME
     #     before HERMES_HOME, and normalize_thoth_home_env() can write THOTH_HOME
     #     into the real os.environ during a test (monkeypatch won't revert it).
     #     Clear (don't pin) so tests that set only HERMES_HOME aren't shadowed;
@@ -343,14 +343,14 @@ def _hermetic_environment(tmp_path, monkeypatch):
             monkeypatch.delenv(name, raising=False)
 
     # 3. Redirect HERMES_HOME to a per-test tempdir. Code that reads
-    #    ``~/.hermes/*`` via ``get_hermes_home()`` now gets the tempdir.
+    #    ``~/.hermes/*`` via ``get_thoth_home()`` now gets the tempdir.
     #
     #    NOTE: We do NOT also redirect HOME. Doing so broke CI because
     #    some tests (and their transitive deps) spawn subprocesses that
     #    inherit HOME and expect it to be stable. If a test genuinely
     #    needs HOME isolated, it should set it explicitly in its own
     #    fixture. Any code in the codebase reading ``~/.hermes/*`` via
-    #    ``Path.home() / ".hermes"`` instead of ``get_hermes_home()``
+    #    ``Path.home() / ".hermes"`` instead of ``get_thoth_home()``
     #    is a bug to fix at the callsite.
     fake_hermes_home = tmp_path / "hermes_test"
     fake_hermes_home.mkdir()
@@ -380,7 +380,7 @@ def _hermetic_environment(tmp_path, monkeypatch):
     #    ~/.hermes/plugins/ (which, per step 3, is now empty — but the
     #    singleton might still be cached from a previous test).
     try:
-        import hermes_cli.plugins as _plugins_mod
+        import thoth_cli.plugins as _plugins_mod
         monkeypatch.setattr(_plugins_mod, "_plugin_manager", None)
     except Exception:
         pass
@@ -499,7 +499,7 @@ def _ensure_current_event_loop(request):
 # environment and finds the developer's live ``hermes-gateway`` process
 # via ``psutil`` — sending it SIGTERM mid-test. The shutdown forensics in
 # PR #23285 caught this happening 5+ times in 3 days, every time
-# correlated with a ``tests/hermes_cli/`` pytest run starting up.
+# correlated with a ``tests/thoth_cli/`` pytest run starting up.
 #
 # This fixture makes the leak impossible by intercepting the two
 # primitives that actually do damage:
@@ -643,8 +643,8 @@ def _live_system_guard(request, monkeypatch):
     _HERMES_TOKENS = (
         "hermes-gateway",
         "hermes.service",
-        "hermes_cli.main gateway",
-        "hermes_cli/main.py gateway",
+        "thoth_cli.main gateway",
+        "thoth_cli/main.py gateway",
         "gateway/run.py",
         "thoth gateway",
     )
@@ -702,7 +702,7 @@ def _live_system_guard(request, monkeypatch):
                 low = cmd_str.lower()
                 # pkill -f pattern: catch hermes-themed patterns + a
                 # plain "python" -f which would catch the live gateway
-                # whose cmdline contains "python -m hermes_cli.main".
+                # whose cmdline contains "python -m thoth_cli.main".
                 if (
                     "hermes" in low
                     or "thoth" in low

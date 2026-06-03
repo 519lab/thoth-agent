@@ -54,7 +54,7 @@ def _clear_web_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def _ensure_plugins_loaded() -> None:
     """Idempotently load plugins so the registry is populated."""
-    from hermes_cli.plugins import _ensure_plugins_discovered
+    from thoth_cli.plugins import _ensure_plugins_discovered
 
     _ensure_plugins_discovered()
 

@@ -196,7 +196,7 @@ class WebSearchProvider(abc.ABC):
     def get_setup_schema(self) -> Dict[str, Any]:
         """Return provider metadata for the ``thoth tools`` picker.
 
-        Used by ``hermes_cli/tools_config.py`` to inject this provider as a
+        Used by ``thoth_cli/tools_config.py`` to inject this provider as a
         row in the Web Search / Web Extract picker. Shape::
 
             {

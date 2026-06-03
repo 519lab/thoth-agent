@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any
 
 import httpx
 
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 from tools.environments.base import (
     BaseEnvironment,
     _ThreadedProcessHandle,
@@ -153,7 +153,7 @@ def _extract_result_returncode(result: Any) -> int:
 
 
 def _snapshot_store_path() -> Path:
-    return get_hermes_home() / _SNAPSHOT_STORE_NAME
+    return get_thoth_home() / _SNAPSHOT_STORE_NAME
 
 
 def _load_snapshots() -> dict:

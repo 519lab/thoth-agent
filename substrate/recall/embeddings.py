@@ -158,7 +158,7 @@ def _resolve_embedding_provider() -> Optional[dict]:
     # 1. Config-driven.
     cfg_block = {}
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         cfg = load_config() or {}
         cfg_block = (cfg.get("auxiliary") or {}).get("embedding") or {}
     except Exception:
@@ -205,7 +205,7 @@ def _resolve_default_model() -> str:
     ``text-embedding-3-small``. Models that don't return 1536-d vectors
     will trip the dim guard at first call — change schema first."""
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         cfg = load_config() or {}
         block = (cfg.get("auxiliary") or {}).get("embedding") or {}
         m = (block.get("model") or "").strip()
@@ -228,7 +228,7 @@ def _resolve_dimensions() -> Optional[int]:
     (Qwen3-Embedding-4B is 2560): set ``dimensions: 1024`` to keep the column
     indexable. The provider must honor the OpenAI ``dimensions`` param."""
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         cfg = load_config() or {}
         block = (cfg.get("auxiliary") or {}).get("embedding") or {}
         raw = block.get("dimensions")

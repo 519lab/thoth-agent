@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-import hermes_constants
+import thoth_constants
 import hermes_env
 
 
@@ -19,7 +19,7 @@ def fake_home(tmp_path, monkeypatch):
     monkeypatch.delenv("HERMES_HOME", raising=False)
     monkeypatch.delenv("THOTH_HOME", raising=False)
     # Ensure no ContextVar override is active.
-    if hermes_constants.get_hermes_home_override():
+    if thoth_constants.get_hermes_home_override():
         pytest.skip("a HERMES_HOME override is active in this process")
     assert Path.home() == tmp_path
     return tmp_path
@@ -28,54 +28,54 @@ def fake_home(tmp_path, monkeypatch):
 # ── _disk_default_home ──────────────────────────────────────────────────────
 
 def test_disk_default_new_install_is_thoth(fake_home):
-    assert hermes_constants._disk_default_home() == fake_home / ".thoth"
+    assert thoth_constants._disk_default_home() == fake_home / ".thoth"
 
 
 def test_disk_default_legacy_only_is_hermes(fake_home):
     (fake_home / ".hermes").mkdir()
-    assert hermes_constants._disk_default_home() == fake_home / ".hermes"
+    assert thoth_constants._disk_default_home() == fake_home / ".hermes"
 
 
 def test_disk_default_prefers_thoth_when_both_exist(fake_home):
     (fake_home / ".hermes").mkdir()
     (fake_home / ".thoth").mkdir()
-    assert hermes_constants._disk_default_home() == fake_home / ".thoth"
+    assert thoth_constants._disk_default_home() == fake_home / ".thoth"
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="symlink perms on Windows")
 def test_disk_default_thoth_symlink_to_hermes(fake_home):
     (fake_home / ".hermes").mkdir()
     os.symlink(fake_home / ".hermes", fake_home / ".thoth", target_is_directory=True)
-    got = hermes_constants._disk_default_home()
+    got = thoth_constants._disk_default_home()
     assert got == fake_home / ".thoth"
     assert got.resolve() == (fake_home / ".hermes").resolve()
 
 
-# ── get_hermes_home resolution order ────────────────────────────────────────
+# ── get_thoth_home resolution order ────────────────────────────────────────
 
 def test_thoth_home_env_wins(fake_home, monkeypatch):
     monkeypatch.setenv("THOTH_HOME", "/tmp/custom_thoth")
-    assert hermes_constants.get_hermes_home() == Path("/tmp/custom_thoth")
+    assert thoth_constants.get_thoth_home() == Path("/tmp/custom_thoth")
 
 
 def test_hermes_home_env_fallback(fake_home, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", "/tmp/custom_hermes")
-    assert hermes_constants.get_hermes_home() == Path("/tmp/custom_hermes")
+    assert thoth_constants.get_thoth_home() == Path("/tmp/custom_hermes")
 
 
 def test_thoth_home_beats_hermes_home(fake_home, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", "/tmp/legacy")
     monkeypatch.setenv("THOTH_HOME", "/tmp/canonical")
-    assert hermes_constants.get_hermes_home() == Path("/tmp/canonical")
+    assert thoth_constants.get_thoth_home() == Path("/tmp/canonical")
 
 
 def test_get_hermes_home_disk_default_new_install(fake_home):
-    assert hermes_constants.get_hermes_home() == fake_home / ".thoth"
+    assert thoth_constants.get_thoth_home() == fake_home / ".thoth"
 
 
 def test_get_hermes_home_legacy_install(fake_home):
     (fake_home / ".hermes").mkdir()
-    assert hermes_constants.get_hermes_home() == fake_home / ".hermes"
+    assert thoth_constants.get_thoth_home() == fake_home / ".hermes"
 
 
 # ── get_default_hermes_root ─────────────────────────────────────────────────
@@ -83,17 +83,17 @@ def test_get_hermes_home_legacy_install(fake_home):
 def test_default_root_profile_mode_thoth(fake_home, monkeypatch):
     (fake_home / ".thoth").mkdir()
     monkeypatch.setenv("THOTH_HOME", str(fake_home / ".thoth" / "profiles" / "coder"))
-    assert hermes_constants.get_default_hermes_root() == fake_home / ".thoth"
+    assert thoth_constants.get_default_hermes_root() == fake_home / ".thoth"
 
 
 def test_default_root_docker_custom(fake_home, monkeypatch):
     monkeypatch.setenv("THOTH_HOME", "/opt/data")
-    assert hermes_constants.get_default_hermes_root() == Path("/opt/data")
+    assert thoth_constants.get_default_hermes_root() == Path("/opt/data")
 
 
 def test_default_root_docker_profile(fake_home, monkeypatch):
     monkeypatch.setenv("THOTH_HOME", "/opt/data/profiles/coder")
-    assert hermes_constants.get_default_hermes_root() == Path("/opt/data")
+    assert thoth_constants.get_default_hermes_root() == Path("/opt/data")
 
 
 # ── get_subprocess_home honors THOTH_HOME ───────────────────────────────────
@@ -102,7 +102,7 @@ def test_subprocess_home_uses_thoth_home(fake_home, monkeypatch):
     th = fake_home / ".thoth"
     (th / "home").mkdir(parents=True)
     monkeypatch.setenv("THOTH_HOME", str(th))
-    assert hermes_constants.get_subprocess_home() == str(th / "home")
+    assert thoth_constants.get_subprocess_home() == str(th / "home")
 
 
 # ── normalize_thoth_home_env + propagate helpers ────────────────────────────
@@ -165,8 +165,8 @@ def test_main_import_user_env_over_shell_with_hermes_home(fake_home, monkeypatch
     monkeypatch.delenv("THOTH_HOME", raising=False)
     monkeypatch.setenv("OPENAI_BASE_URL", "https://old.example/v1")
 
-    sys.modules.pop("hermes_cli.main", None)
-    importlib.import_module("hermes_cli.main")
+    sys.modules.pop("thoth_cli.main", None)
+    importlib.import_module("thoth_cli.main")
 
     assert os.getenv("OPENAI_BASE_URL") == "https://new.example/v1"
 
@@ -175,9 +175,9 @@ def test_load_dotenv_legacy_install_resolves_hermes_env(fake_home):
     """Regression: with NO home env vars and only ~/.hermes on disk (no
     ~/.thoth), load_hermes_dotenv must resolve the .env from ~/.hermes — not
     fall through to a non-existent ~/.thoth. Guards the disk-probe in
-    get_hermes_home() (a direct THOTH_HOME-or-HERMES_HOME-or-~/.thoth shortcut
+    get_thoth_home() (a direct THOTH_HOME-or-HERMES_HOME-or-~/.thoth shortcut
     would skip it and miss the legacy .env)."""
-    from hermes_cli.env_loader import load_hermes_dotenv
+    from thoth_cli.env_loader import load_hermes_dotenv
 
     hermes = fake_home / ".hermes"
     hermes.mkdir()

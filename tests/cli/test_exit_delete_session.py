@@ -10,13 +10,13 @@ from unittest.mock import MagicMock
 
 
 def _make_cli():
-    """Bare HermesCLI suitable for process_command() tests.
+    """Bare ThothCLI suitable for process_command() tests.
 
     Uses ``__new__`` to skip the heavy __init__; only sets the attributes
     the /exit branch touches.
     """
-    from cli import HermesCLI
-    cli = HermesCLI.__new__(HermesCLI)
+    from cli import ThothCLI
+    cli = ThothCLI.__new__(ThothCLI)
     cli.config = {}
     cli.console = MagicMock()
     cli.agent = None
@@ -106,13 +106,13 @@ class TestCommandRegistry:
     def test_quit_command_advertises_delete_flag(self):
         """The CommandDef args_hint should surface `--delete` in /help and
         CLI autocomplete."""
-        from hermes_cli.commands import resolve_command
+        from thoth_cli.commands import resolve_command
         cmd = resolve_command("quit")
         assert cmd is not None
         assert cmd.args_hint == "[--delete]"
 
     def test_exit_alias_resolves_to_quit_with_hint(self):
-        from hermes_cli.commands import resolve_command
+        from thoth_cli.commands import resolve_command
         cmd = resolve_command("exit")
         assert cmd is not None
         assert cmd.name == "quit"

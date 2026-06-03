@@ -13,7 +13,7 @@ Two Phase-0 patches both apply to every test in this subdirectory:
     real coroutines (from production code paths under test) still go
     through the real ``run_sync``.
 
-2.  ``hermes_cli.goals.GoalManager`` persists state via
+2.  ``thoth_cli.goals.GoalManager`` persists state via
     ``SessionDB.set_meta`` / ``get_meta`` — both async, both run
     through ``hermes_db.run_sync``. The ``test_goal_command.py`` tests
     rely on those writes landing for follow-up assertions, but the

@@ -73,17 +73,17 @@ logger = logging.getLogger("gateway.platforms.google_chat_user_oauth")
 # Use the project's HERMES_HOME helper so the token follows the user's
 # profile (e.g. tests can override via HERMES_HOME=/tmp/...).
 try:
-    from hermes_constants import display_hermes_home, get_hermes_home
+    from thoth_constants import display_hermes_home, get_thoth_home
 except (ModuleNotFoundError, ImportError):
-    # Fallback for environments where hermes_constants isn't importable
+    # Fallback for environments where thoth_constants isn't importable
     # (mirrors the same fallback used by the google-workspace skill's
     # _hermes_home.py shim).
-    def get_hermes_home() -> Path:
+    def get_thoth_home() -> Path:
         val = os.environ.get("HERMES_HOME", "").strip()
         return Path(val) if val else Path.home() / ".hermes"
 
     def display_hermes_home() -> str:
-        home = get_hermes_home()
+        home = get_thoth_home()
         try:
             return "~/" + str(home.relative_to(Path.home()))
         except ValueError:
@@ -97,7 +97,7 @@ def _hermes_home() -> Path:
     binding. If we cached the path at import time, switching profiles
     or tweaking env vars in tests would silently keep using the old
     path."""
-    return get_hermes_home()
+    return get_thoth_home()
 
 
 # Filesystem-safe key: lowercase, allow ``[a-z0-9._-@]``, replace anything

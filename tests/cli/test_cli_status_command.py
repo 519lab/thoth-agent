@@ -4,12 +4,12 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from cli import HermesCLI
-from hermes_cli.commands import resolve_command
+from cli import ThothCLI
+from thoth_cli.commands import resolve_command
 
 
 def _make_cli():
-    cli_obj = HermesCLI.__new__(HermesCLI)
+    cli_obj = ThothCLI.__new__(ThothCLI)
     cli_obj.config = {}
     cli_obj.console = MagicMock()
     cli_obj.agent = None

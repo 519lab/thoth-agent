@@ -72,8 +72,8 @@ class TestIsWriteDenied:
     )
     def test_hermes_control_files_and_mcp_tokens_denied(self, path):
         """Thoth control files and mcp-tokens entries must be write-denied."""
-        from hermes_constants import get_hermes_home
-        hermes_home = get_hermes_home()
+        from thoth_constants import get_thoth_home
+        hermes_home = get_thoth_home()
         full_path = str(hermes_home / path)
         assert _is_write_denied(full_path) is True
 
@@ -87,8 +87,8 @@ class TestIsWriteDenied:
     )
     def test_hermes_control_files_traversal_denied(self, path):
         """Path traversal attempts to control files must be blocked by realpath."""
-        from hermes_constants import get_hermes_home
-        hermes_home = get_hermes_home()
+        from thoth_constants import get_thoth_home
+        hermes_home = get_thoth_home()
         full_path = str(hermes_home / path)
         assert _is_write_denied(full_path) is True
 

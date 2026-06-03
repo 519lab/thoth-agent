@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from thoth_cli.cli_name import cli_name
-from hermes_constants import get_hermes_home, display_hermes_home
+from thoth_constants import get_thoth_home, display_hermes_home
 
 # Known log files (name → filename)
 LOG_FILES = {
@@ -170,7 +170,7 @@ def tail_log(
         print(f"Unknown log: {log_name!r}. Available: {', '.join(sorted(LOG_FILES))}")
         sys.exit(1)
 
-    log_path = get_hermes_home() / "logs" / filename
+    log_path = get_thoth_home() / "logs" / filename
     if not log_path.exists():
         print(f"Log file not found: {log_path}")
         print(f"(Logs are created when Thoth runs — try '{cli_name()} chat' first)")
@@ -358,7 +358,7 @@ def _follow_log(
 
 def list_logs() -> None:
     """Print available log files with sizes."""
-    log_dir = get_hermes_home() / "logs"
+    log_dir = get_thoth_home() / "logs"
     if not log_dir.exists():
         print(f"No logs directory at {display_hermes_home()}/logs/")
         return

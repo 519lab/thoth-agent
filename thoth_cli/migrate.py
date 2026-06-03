@@ -110,6 +110,6 @@ def cmd_migrate_xai(args: Any) -> int:
 
 def _resolve_config_path() -> Path:
     """Best-effort: locate the active config.yaml on disk."""
-    from thoth_cli.config import get_hermes_home
+    from thoth_cli.config import get_thoth_home
 
-    return get_hermes_home() / "config.yaml"
+    return get_thoth_home() / "config.yaml"

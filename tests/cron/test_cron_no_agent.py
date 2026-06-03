@@ -28,10 +28,10 @@ def hermes_env(tmp_path, monkeypatch):
 
     monkeypatch.setenv("HERMES_HOME", str(home))
 
-    # Reload modules that cache get_hermes_home() at import time.
+    # Reload modules that cache get_thoth_home() at import time.
     import importlib
-    import hermes_constants
-    importlib.reload(hermes_constants)
+    import thoth_constants
+    importlib.reload(thoth_constants)
     import cron.jobs
     importlib.reload(cron.jobs)
     import cron.scheduler

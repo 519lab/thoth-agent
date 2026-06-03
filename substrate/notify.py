@@ -83,7 +83,7 @@ async def notify_user(text: str) -> list[str]:
         from tools.send_message_tool import _send_to_platform
         # Ensure plugin platforms register their standalone senders (idempotent).
         try:
-            from hermes_cli.plugins import discover_plugins
+            from thoth_cli.plugins import discover_plugins
 
             discover_plugins()
         except Exception:

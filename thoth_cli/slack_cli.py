@@ -106,7 +106,7 @@ def _build_full_manifest(bot_name: str, bot_description: str) -> dict:
 def slack_manifest_command(args) -> int:
     """Print or write a Slack app manifest JSON.
 
-    Flags (all parsed in ``hermes_cli/main.py``):
+    Flags (all parsed in ``thoth_cli/main.py``):
       --write [PATH]  Write to file instead of stdout (default path:
                       ``$HERMES_HOME/slack-manifest.json``)
       --name NAME     Override the bot display name (default: "Thoth")
@@ -131,9 +131,9 @@ def slack_manifest_command(args) -> int:
         if isinstance(write_target, bool) and write_target:
             # --write with no value → default location
             try:
-                from hermes_constants import get_hermes_home
+                from thoth_constants import get_thoth_home
 
-                target = Path(get_hermes_home()) / "slack-manifest.json"
+                target = Path(get_thoth_home()) / "slack-manifest.json"
             except Exception:
                 target = Path(os.environ.get("HERMES_HOME") or str(Path.home() / ".hermes")) / "slack-manifest.json"
         else:

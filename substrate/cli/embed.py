@@ -15,7 +15,7 @@ Future expansion (not in this PR):
     thoth embed test              # 1-call probe of the configured provider
 
 Wired into Thoth's top-level argparse via :func:`register_subparser`
-called from ``hermes_cli/main.py``.
+called from ``thoth_cli/main.py``.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 # ---------------------------------------------------------------------------
-# Subparser registration — called from hermes_cli/main.py.
+# Subparser registration — called from thoth_cli/main.py.
 # ---------------------------------------------------------------------------
 
 

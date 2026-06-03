@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 from typing import Dict
 
-from hermes_constants import display_hermes_home
+from thoth_constants import display_hermes_home
 from utils import atomic_replace
 from thoth_cli.cli_name import cli_name
 from thoth_cli.config import cfg_get
@@ -27,8 +27,8 @@ _SUBSCRIPTIONS_FILENAME = "webhook_subscriptions.json"
 
 
 def _hermes_home() -> Path:
-    from hermes_constants import get_hermes_home
-    return get_hermes_home()
+    from thoth_constants import get_thoth_home
+    return get_thoth_home()
 
 
 def _subscriptions_path() -> Path:

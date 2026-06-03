@@ -17,7 +17,7 @@ tables, and prints a fixed-format report. Safe to run against a Thoth
 deployment that is already booted in another process.
 
 Wired into Thoth's top-level argparse via :func:`register_subparser`
-called from ``hermes_cli/main.py``. Mutating/admin operations on
+called from ``thoth_cli/main.py``. Mutating/admin operations on
 embeddings live under the separate ``thoth embed`` namespace; see
 ``substrate/cli/embed.py``.
 """
@@ -35,7 +35,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 # ---------------------------------------------------------------------------
-# Subparser registration — called from hermes_cli/main.py.
+# Subparser registration — called from thoth_cli/main.py.
 # ---------------------------------------------------------------------------
 
 

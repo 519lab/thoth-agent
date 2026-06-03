@@ -26,7 +26,7 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from hermes_constants import get_bundled_skills_dir, get_hermes_home
+from thoth_constants import get_bundled_skills_dir, get_thoth_home
 from agent.skill_utils import is_excluded_skill_path
 from typing import Dict, List, Tuple
 from utils import atomic_replace
@@ -34,7 +34,7 @@ from utils import atomic_replace
 logger = logging.getLogger(__name__)
 
 
-HERMES_HOME = get_hermes_home()
+HERMES_HOME = get_thoth_home()
 SKILLS_DIR = HERMES_HOME / "skills"
 MANIFEST_FILE = SKILLS_DIR / ".bundled_manifest"
 

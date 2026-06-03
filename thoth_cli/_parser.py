@@ -26,7 +26,7 @@ PRE_ARGPARSE_INHERITED_FLAGS: list[tuple[str, bool]] = [
 
 
 def _inherited_flag(parser, *args, **kwargs):
-    """Register a flag that ``hermes_cli.relaunch`` should carry over when
+    """Register a flag that ``thoth_cli.relaunch`` should carry over when
     the CLI re-execs itself (e.g. after ``sessions browse`` picks a session,
     or after the setup wizard launches chat).
 

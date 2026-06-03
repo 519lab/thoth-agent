@@ -6,7 +6,7 @@ default) and "codex_app_server" (= hand turns to a codex subprocess).
 Both CLI (cli.py) and gateway (gateway/run.py) call into this module so the
 behavior stays identical across surfaces.
 
-The actual runtime resolution happens in hermes_cli.runtime_provider's
+The actual runtime resolution happens in thoth_cli.runtime_provider's
 _maybe_apply_codex_app_server_runtime() helper, which reads the persisted
 config value. This module just persists the value and reports the change.
 """

@@ -3112,7 +3112,7 @@ def main() -> int:
     # Next steps
     if args.execute:
         try:
-            from hermes_cli.cli_name import cli_name
+            from thoth_cli.cli_name import cli_name
             _cli = cli_name()
         except Exception:
             _cli = "hermes"

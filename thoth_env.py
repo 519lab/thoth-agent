@@ -19,11 +19,11 @@ Design (agreed by two independent model reviews):
   ``HERMES_X`` (avoids a stray ``THOTH_X=`` wiping a deployment value).
 * **Idempotent** — safe to call repeatedly (gateway hot-reload re-runs it).
 * **Pure stdlib, import-safe.** Imported from ``hermes_bootstrap`` before
-  anything heavy; must not import ``dotenv``/``yaml``/``hermes_constants``.
+  anything heavy; must not import ``dotenv``/``yaml``/``thoth_constants``.
 
 Scope: the home directory (``HERMES_HOME`` / ``THOTH_HOME``) is deliberately
 EXCLUDED here and owned by Phase 3 (the ``~/.thoth`` home-dir migration),
-which consolidates ``hermes_constants.get_hermes_home()``, adds ``THOTH_HOME``
+which consolidates ``thoth_constants.get_thoth_home()``, adds ``THOTH_HOME``
 with auto-migration, and handles the subprocess-propagation + ``.env``-path
 chicken-and-egg cases that are specific to the home dir. Mirroring ``HOME``
 here would create a stale ``THOTH_HOME`` that THOTH-wins normalization could

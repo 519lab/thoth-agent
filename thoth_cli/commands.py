@@ -446,7 +446,7 @@ def _iter_plugin_command_entries() -> list[tuple[str, str, str]]:
     """Yield (name, description, args_hint) tuples for all plugin slash commands.
 
     Plugin commands are registered via
-    :func:`hermes_cli.plugins.PluginContext.register_command`. They behave
+    :func:`thoth_cli.plugins.PluginContext.register_command`. They behave
     like ``CommandDef`` entries for gateway surfacing: they appear in the
     Telegram command menu, in Slack's ``/thoth`` subcommand mapping, and
     (via :func:`gateway.platforms.discord._register_slash_commands`) in

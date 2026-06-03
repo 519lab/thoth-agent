@@ -29,7 +29,7 @@ _IS_WINDOWS = platform.system() == "Windows"
 from pathlib import Path
 from typing import Dict, Optional, Any
 
-from hermes_constants import get_hermes_dir
+from thoth_constants import get_hermes_dir
 
 logger = logging.getLogger(__name__)
 
@@ -693,7 +693,7 @@ class WhatsAppAdapter(BasePlatformAdapter):
                 else:
                     # Still not connected — warn but proceed (bridge may
                     # auto-reconnect later, e.g. after a code 515 restart).
-                    from hermes_cli.cli_name import cli_name
+                    from thoth_cli.cli_name import cli_name
                     print(f"[{self.name}] ⚠ WhatsApp not connected after 30s")
                     print(f"[{self.name}]   Bridge log: {self._bridge_log}")
                     print(f"[{self.name}]   If session expired, re-pair: {cli_name()} whatsapp")

@@ -529,8 +529,8 @@ class SlackAdapter(BasePlatformAdapter):
         bot_tokens = [t.strip() for t in raw_token.split(",") if t.strip()]
 
         # Also load tokens from OAuth token file
-        from hermes_constants import get_hermes_home
-        tokens_file = get_hermes_home() / "slack_tokens.json"
+        from thoth_constants import get_thoth_home
+        tokens_file = get_thoth_home() / "slack_tokens.json"
         if tokens_file.exists():
             try:
                 saved = json.loads(tokens_file.read_text(encoding="utf-8"))
@@ -643,7 +643,7 @@ class SlackAdapter(BasePlatformAdapter):
             # routes the command event through the socket regardless of the
             # manifest's request URL, but it will not deliver an event for
             # a slash command the manifest doesn't declare.
-            from hermes_cli.commands import slack_native_slashes
+            from thoth_cli.commands import slack_native_slashes
             import re as _re
 
             _slash_names = [name for name, _d, _h in slack_native_slashes()]
@@ -1808,7 +1808,7 @@ class SlackAdapter(BasePlatformAdapter):
         # so casual messages like "!nice work" pass through unchanged.
         if original_text.startswith("!"):
             try:
-                from hermes_cli.commands import is_gateway_known_command
+                from thoth_cli.commands import is_gateway_known_command
                 first_token = original_text[1:].split(maxsplit=1)[0]
                 # Strip "@suffix" the same way get_command() does, so
                 # forms like ``!stop@thoth`` still resolve.
@@ -2782,7 +2782,7 @@ class SlackAdapter(BasePlatformAdapter):
             # Legacy /hermes <subcommand> [args] routing + free-form questions.
             # Empty slash_name falls into this branch for backward compat
             # with any caller that didn't populate command["command"].
-            from hermes_cli.commands import slack_subcommand_map
+            from thoth_cli.commands import slack_subcommand_map
             subcommand_map = slack_subcommand_map()
             subcommand_map["compact"] = "/compress"
             # Guard against whitespace-only text where ``text`` is truthy but

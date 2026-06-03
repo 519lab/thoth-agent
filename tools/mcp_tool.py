@@ -130,8 +130,8 @@ def _get_mcp_stderr_log() -> Any:
         if _mcp_stderr_log_fh is not None:
             return _mcp_stderr_log_fh
         try:
-            from hermes_constants import get_hermes_home
-            log_dir = get_hermes_home() / "logs"
+            from thoth_constants import get_thoth_home
+            log_dir = get_thoth_home() / "logs"
             log_dir.mkdir(parents=True, exist_ok=True)
             log_path = log_dir / "mcp-stderr.log"
             # Line-buffered so server output lands on disk promptly; errors=
@@ -2246,14 +2246,14 @@ def _load_mcp_config() -> Dict[str, dict]:
     ``os.environ`` (which includes ``~/.hermes/.env`` loaded at startup).
     """
     try:
-        from hermes_cli.config import load_config
+        from thoth_cli.config import load_config
         config = load_config()
         servers = config.get("mcp_servers")
         if not servers or not isinstance(servers, dict):
             return {}
         # Ensure .env vars are available for interpolation
         try:
-            from hermes_cli.env_loader import load_hermes_dotenv
+            from thoth_cli.env_loader import load_hermes_dotenv
             load_hermes_dotenv()
         except Exception:
             pass

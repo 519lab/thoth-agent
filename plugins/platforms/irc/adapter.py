@@ -536,10 +536,10 @@ def validate_config(config) -> bool:
 def interactive_setup() -> None:
     """Interactive `thoth gateway setup` flow for the IRC platform.
 
-    Lazy-imports ``hermes_cli.setup`` helpers so the plugin stays importable
+    Lazy-imports ``thoth_cli.setup`` helpers so the plugin stays importable
     in non-CLI contexts (gateway runtime, tests).
     """
-    from hermes_cli.setup import (
+    from thoth_cli.setup import (
         prompt,
         prompt_yes_no,
         save_env_value,
@@ -635,7 +635,7 @@ def interactive_setup() -> None:
             save_env_value("IRC_ALLOWED_USERS", "")
             print_info("No nicks allowed — the bot will ignore all messages until you add nicks.")
 
-    from hermes_cli.cli_name import cli_name
+    from thoth_cli.cli_name import cli_name
     print()
     print_success("IRC configuration saved to ~/.hermes/.env")
     print_info(f"Restart the gateway for changes to take effect: {cli_name()} gateway restart")

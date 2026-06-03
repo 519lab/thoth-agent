@@ -26,10 +26,10 @@ from typing import Any, Callable, Dict, List, Optional
 
 import yaml
 
-from hermes_cli.config import get_hermes_home
+from thoth_cli.config import get_thoth_home
 
 
-HOOKS_DIR = get_hermes_home() / "hooks"
+HOOKS_DIR = get_thoth_home() / "hooks"
 
 
 class HookRegistry:

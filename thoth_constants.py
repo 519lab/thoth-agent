@@ -32,7 +32,7 @@ def reset_hermes_home_override(token: Token) -> None:
     _HERMES_HOME_OVERRIDE.reset(token)
 
 
-def get_hermes_home_override() -> str | None:
+def get_thoth_home_override() -> str | None:
     """Return the active context-local Thoth home override, if any."""
     override = _HERMES_HOME_OVERRIDE.get()
     if override is _UNSET or not override:
@@ -66,7 +66,7 @@ def _disk_default_home() -> Path:
     return thoth
 
 
-def get_hermes_home() -> Path:
+def get_thoth_home() -> Path:
     """Return the Thoth/Thoth home directory.
 
     Resolution (rename Phase 3): context override → ``THOTH_HOME`` env →
@@ -83,10 +83,10 @@ def get_hermes_home() -> Path:
     ``~/.hermes`` — because raising here would brick 30+ module-level
     callers that import this at load time.  Subprocess spawners are
     expected to propagate ``HERMES_HOME`` explicitly (see the systemd
-    template in ``hermes_cli/gateway.py`` and the kanban dispatcher in
-    ``hermes_cli/kanban_db.py``).  See https://github.com/519lab/thoth-agent/issues/18594.
+    template in ``thoth_cli/gateway.py`` and the kanban dispatcher in
+    ``thoth_cli/kanban_db.py``).  See https://github.com/519lab/thoth-agent/issues/18594.
     """
-    override = get_hermes_home_override()
+    override = get_thoth_home_override()
     if override:
         return Path(override)
 
@@ -210,7 +210,7 @@ def get_optional_skills_dir(default: Path | None = None) -> Path:
         return packaged
     if default is not None:
         return default
-    return get_hermes_home() / "optional-skills"
+    return get_thoth_home() / "optional-skills"
 
 
 def get_bundled_skills_dir(default: Path | None = None) -> Path:
@@ -230,7 +230,7 @@ def get_bundled_skills_dir(default: Path | None = None) -> Path:
         return packaged
     if default is not None:
         return default
-    return get_hermes_home() / "skills"
+    return get_thoth_home() / "skills"
 
 
 def get_hermes_dir(new_subpath: str, old_name: str) -> Path:
@@ -247,7 +247,7 @@ def get_hermes_dir(new_subpath: str, old_name: str) -> Path:
     Returns:
         Absolute ``Path`` — old location if it exists on disk, otherwise the new one.
     """
-    home = get_hermes_home()
+    home = get_thoth_home()
     old_path = home / old_name
     if old_path.exists():
         return old_path
@@ -265,9 +265,9 @@ def display_hermes_home() -> str:
 
     Use this in **user-facing** print/log messages instead of hardcoding
     ``~/.hermes``.  For code that needs a real ``Path``, use
-    :func:`get_hermes_home` instead.
+    :func:`get_thoth_home` instead.
     """
-    home = get_hermes_home()
+    home = get_thoth_home()
     try:
         return "~/" + str(home.relative_to(Path.home()))
     except ValueError:
@@ -312,7 +312,7 @@ def get_subprocess_home() -> str | None:
     exist, returns ``None`` and behavior is unchanged.
     """
     hermes_home = (
-        get_hermes_home_override()
+        get_thoth_home_override()
         or os.getenv("THOTH_HOME")
         or os.getenv("HERMES_HOME")
     )
@@ -413,21 +413,21 @@ def is_container() -> bool:
 def get_config_path() -> Path:
     """Return the path to ``config.yaml`` under HERMES_HOME.
 
-    Replaces the ``get_hermes_home() / "config.yaml"`` pattern repeated
+    Replaces the ``get_thoth_home() / "config.yaml"`` pattern repeated
     in 7+ files (skill_utils.py, hermes_logging.py, hermes_time.py, etc.).
     """
-    return get_hermes_home() / "config.yaml"
+    return get_thoth_home() / "config.yaml"
 
 
 def get_skills_dir() -> Path:
     """Return the path to the skills directory under HERMES_HOME."""
-    return get_hermes_home() / "skills"
+    return get_thoth_home() / "skills"
 
 
 
 def get_env_path() -> Path:
     """Return the path to the ``.env`` file under HERMES_HOME."""
-    return get_hermes_home() / ".env"
+    return get_thoth_home() / ".env"
 
 
 # ─── Network Preferences ─────────────────────────────────────────────────────
@@ -479,3 +479,8 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODELS_URL = f"{OPENROUTER_BASE_URL}/models"
 
 AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1"
+
+# --- Back-compat aliases (Hermes→Thoth rename). Kept for the hermes_constants shim
+# and any external importer of the old names. Remove in a later cleanup phase.
+get_hermes_home = get_thoth_home
+get_hermes_home_override = get_thoth_home_override

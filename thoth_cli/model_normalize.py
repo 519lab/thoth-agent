@@ -339,7 +339,7 @@ def normalize_model_for_provider(model_input: str, target_provider: str) -> str:
         target_provider: The canonical Thoth provider id, e.g.
             ``"openrouter"``, ``"anthropic"``, ``"copilot"``,
             ``"deepseek"``, ``"custom"``.  Should already be normalised
-            via ``hermes_cli.models.normalize_provider()``.
+            via ``thoth_cli.models.normalize_provider()``.
 
     Returns:
         The model identifier string that the target provider's API

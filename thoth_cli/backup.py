@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from thoth_cli.cli_name import cli_name
-from hermes_constants import get_default_hermes_root, get_hermes_home, display_hermes_home
+from thoth_constants import get_default_hermes_root, get_thoth_home, display_hermes_home
 
 logger = logging.getLogger(__name__)
 
@@ -444,7 +444,7 @@ def run_import(args) -> None:
                         print('  Add to your shell config (~/.bashrc or ~/.zshrc):')
                         print('    export PATH="$HOME/.local/bin:$PATH"')
             except ImportError:
-                # hermes_cli.profiles might not be available (fresh install)
+                # thoth_cli.profiles might not be available (fresh install)
                 if any(profiles_dir.iterdir()):
                     print(f"\n  Profiles detected but aliases could not be created.")
                     print(f"  Run: {cli_name()} profile list  (after installing {cli_name()})")
@@ -497,7 +497,7 @@ _QUICK_DEFAULT_KEEP = 20
 
 
 def _quick_snapshot_root(hermes_home: Optional[Path] = None) -> Path:
-    home = hermes_home or get_hermes_home()
+    home = hermes_home or get_thoth_home()
     return home / _QUICK_SNAPSHOTS_DIR
 
 
@@ -513,7 +513,7 @@ def create_quick_snapshot(
     Returns:
         Snapshot ID (timestamp-based), or None if no files found.
     """
-    home = hermes_home or get_hermes_home()
+    home = hermes_home or get_thoth_home()
     root = _quick_snapshot_root(home)
 
     ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
@@ -619,7 +619,7 @@ def restore_quick_snapshot(
     Overwrites current state files with the snapshot's copies.
     Returns True if at least one file was restored.
     """
-    home = hermes_home or get_hermes_home()
+    home = hermes_home or get_thoth_home()
     root = _quick_snapshot_root(home)
     snap_dir = root / snapshot_id
 
@@ -784,7 +784,7 @@ _PRE_UPDATE_DEFAULT_KEEP = 5
 
 
 def _pre_update_backup_dir(hermes_home: Optional[Path] = None) -> Path:
-    home = hermes_home or get_hermes_home()
+    home = hermes_home or get_thoth_home()
     return home / _PRE_UPDATE_BACKUPS_DIR
 
 

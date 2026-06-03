@@ -108,7 +108,7 @@ async def test_resolve_provider_openai_env_only(monkeypatch):
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     monkeypatch.setenv(embeddings.API_KEY_ENV_VAR, "sk-test-123")
     monkeypatch.setattr(
-        "hermes_cli.config.load_config",
+        "thoth_cli.config.load_config",
         lambda: {},
     )
     r = embeddings._resolve_embedding_provider()
@@ -123,7 +123,7 @@ async def test_resolve_provider_openrouter_env_fallback(monkeypatch):
     monkeypatch.delenv(embeddings.API_KEY_ENV_VAR, raising=False)
     monkeypatch.setenv("OPENROUTER_API_KEY", "or-test-456")
     monkeypatch.setattr(
-        "hermes_cli.config.load_config",
+        "thoth_cli.config.load_config",
         lambda: {},
     )
     r = embeddings._resolve_embedding_provider()
@@ -138,7 +138,7 @@ async def test_resolve_provider_openrouter_env_fallback(monkeypatch):
 async def test_resolve_provider_custom_config(monkeypatch):
     """Explicit custom config (e.g. Ollama) → custom routing."""
     monkeypatch.setattr(
-        "hermes_cli.config.load_config",
+        "thoth_cli.config.load_config",
         lambda: {
             "auxiliary": {
                 "embedding": {
@@ -206,11 +206,11 @@ def test_schema_dim_cache_resets():
 def test_resolve_dimensions_reads_config(monkeypatch):
     """auxiliary.embedding.dimensions → MRL truncation request; absent → None."""
     monkeypatch.setattr(
-        "hermes_cli.config.load_config",
+        "thoth_cli.config.load_config",
         lambda: {"auxiliary": {"embedding": {"dimensions": 1024}}},
     )
     assert embeddings._resolve_dimensions() == 1024
-    monkeypatch.setattr("hermes_cli.config.load_config", lambda: {})
+    monkeypatch.setattr("thoth_cli.config.load_config", lambda: {})
     assert embeddings._resolve_dimensions() is None
 
 
@@ -246,7 +246,7 @@ async def test_embed_omits_dimensions_when_unconfigured(monkeypatch):
     """No configured/passed dimensions → the param is not sent (so providers
     that don't support MRL truncation aren't broken)."""
     monkeypatch.delenv(embeddings.MOCK_ENV_VAR, raising=False)
-    monkeypatch.setattr("hermes_cli.config.load_config", lambda: {})
+    monkeypatch.setattr("thoth_cli.config.load_config", lambda: {})
     captured: dict = {}
 
     class _Emb:

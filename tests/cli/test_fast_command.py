@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 
 def _import_cli():
-    import hermes_cli.config as config_mod
+    import thoth_cli.config as config_mod
 
     if not hasattr(config_mod, "save_env_value_secure"):
         config_mod.save_env_value_secure = lambda key, value: {
@@ -53,7 +53,7 @@ class TestHandleFastCommand(unittest.TestCase):
             patch.object(cli_mod, "_cprint") as mock_cprint,
             patch.object(cli_mod, "save_config_value") as mock_save,
         ):
-            cli_mod.HermesCLI._handle_fast_command(stub, "/fast")
+            cli_mod.ThothCLI._handle_fast_command(stub, "/fast")
 
         # Bare /fast shows status, does not change config
         mock_save.assert_not_called()
@@ -68,7 +68,7 @@ class TestHandleFastCommand(unittest.TestCase):
             patch.object(cli_mod, "_cprint") as mock_cprint,
             patch.object(cli_mod, "save_config_value") as mock_save,
         ):
-            cli_mod.HermesCLI._handle_fast_command(stub, "/fast")
+            cli_mod.ThothCLI._handle_fast_command(stub, "/fast")
 
         mock_save.assert_not_called()
         printed = " ".join(str(c) for c in mock_cprint.call_args_list)
@@ -81,7 +81,7 @@ class TestHandleFastCommand(unittest.TestCase):
             patch.object(cli_mod, "_cprint"),
             patch.object(cli_mod, "save_config_value", return_value=True) as mock_save,
         ):
-            cli_mod.HermesCLI._handle_fast_command(stub, "/fast normal")
+            cli_mod.ThothCLI._handle_fast_command(stub, "/fast normal")
 
         mock_save.assert_called_once_with("agent.service_tier", "normal")
         self.assertIsNone(stub.service_tier)
@@ -102,7 +102,7 @@ class TestHandleFastCommand(unittest.TestCase):
             patch.object(cli_mod, "_cprint") as mock_cprint,
             patch.object(cli_mod, "save_config_value") as mock_save,
         ):
-            cli_mod.HermesCLI._handle_fast_command(stub, "/fast")
+            cli_mod.ThothCLI._handle_fast_command(stub, "/fast")
 
         mock_save.assert_not_called()
         self.assertTrue(mock_cprint.called)
@@ -112,7 +112,7 @@ class TestPriorityProcessingModels(unittest.TestCase):
     """Verify the expanded Priority Processing model registry."""
 
     def test_all_documented_models_supported(self):
-        from hermes_cli.models import model_supports_fast_mode
+        from thoth_cli.models import model_supports_fast_mode
 
         # All OpenAI flagship models support Priority Processing — including
         # future releases (gpt-5.5, 5.6...) via pattern matching.
@@ -134,7 +134,7 @@ class TestPriorityProcessingModels(unittest.TestCase):
         Pre-fix this test asserted all Claude variants supported fast mode,
         which mirrored the bug rather than the API contract.
         """
-        from hermes_cli.models import model_supports_fast_mode
+        from thoth_cli.models import model_supports_fast_mode
 
         # Supported: Opus 4.6 in any form
         supported = [
@@ -158,20 +158,20 @@ class TestPriorityProcessingModels(unittest.TestCase):
 
     def test_codex_models_excluded(self):
         """Codex models route through Responses API and don't accept service_tier."""
-        from hermes_cli.models import model_supports_fast_mode
+        from thoth_cli.models import model_supports_fast_mode
 
         for model in ["gpt-5-codex", "gpt-5.2-codex", "gpt-5.3-codex", "gpt-5.1-codex-max"]:
             assert not model_supports_fast_mode(model), f"{model} is codex — should not expose /fast"
 
     def test_vendor_prefix_stripped(self):
-        from hermes_cli.models import model_supports_fast_mode
+        from thoth_cli.models import model_supports_fast_mode
 
         assert model_supports_fast_mode("openai/gpt-5.4") is True
         assert model_supports_fast_mode("openai/gpt-4.1") is True
         assert model_supports_fast_mode("openai/o3") is True
 
     def test_non_priority_models_rejected(self):
-        from hermes_cli.models import model_supports_fast_mode
+        from thoth_cli.models import model_supports_fast_mode
 
         # Codex-series models route through the Codex Responses API and
         # don't accept service_tier, so they're excluded.
@@ -186,7 +186,7 @@ class TestPriorityProcessingModels(unittest.TestCase):
         assert model_supports_fast_mode(None) is False
 
     def test_resolve_overrides_returns_service_tier(self):
-        from hermes_cli.models import resolve_fast_mode_overrides
+        from thoth_cli.models import resolve_fast_mode_overrides
 
         result = resolve_fast_mode_overrides("gpt-5.4")
         assert result == {"service_tier": "priority"}
@@ -195,7 +195,7 @@ class TestPriorityProcessingModels(unittest.TestCase):
         assert result == {"service_tier": "priority"}
 
     def test_resolve_overrides_none_for_unsupported(self):
-        from hermes_cli.models import resolve_fast_mode_overrides
+        from thoth_cli.models import resolve_fast_mode_overrides
 
         assert resolve_fast_mode_overrides("gpt-5.3-codex") is None
         assert resolve_fast_mode_overrides("gemini-3-pro-preview") is None
@@ -207,15 +207,15 @@ class TestFastModeRouting(unittest.TestCase):
         cli_mod = _import_cli()
         stub = SimpleNamespace(provider="auto", requested_provider="auto", model="gpt-5.4", agent=None)
 
-        assert cli_mod.HermesCLI._fast_command_available(stub) is True
+        assert cli_mod.ThothCLI._fast_command_available(stub) is True
 
     def test_fast_command_exposed_for_non_codex_models(self):
         cli_mod = _import_cli()
         stub = SimpleNamespace(provider="openai", requested_provider="openai", model="gpt-4.1", agent=None)
-        assert cli_mod.HermesCLI._fast_command_available(stub) is True
+        assert cli_mod.ThothCLI._fast_command_available(stub) is True
 
         stub = SimpleNamespace(provider="openrouter", requested_provider="openrouter", model="o3", agent=None)
-        assert cli_mod.HermesCLI._fast_command_available(stub) is True
+        assert cli_mod.ThothCLI._fast_command_available(stub) is True
 
     def test_turn_route_injects_overrides_without_provider_switch(self):
         """Fast mode should add request_overrides but NOT change the provider/runtime."""
@@ -232,7 +232,7 @@ class TestFastModeRouting(unittest.TestCase):
             service_tier="priority",
         )
 
-        route = cli_mod.HermesCLI._resolve_turn_agent_config(stub, "hi")
+        route = cli_mod.ThothCLI._resolve_turn_agent_config(stub, "hi")
 
         # Provider should NOT have changed
         assert route["runtime"]["provider"] == "openrouter"
@@ -254,7 +254,7 @@ class TestFastModeRouting(unittest.TestCase):
             service_tier="priority",
         )
 
-        route = cli_mod.HermesCLI._resolve_turn_agent_config(stub, "hi")
+        route = cli_mod.ThothCLI._resolve_turn_agent_config(stub, "hi")
 
         assert route["runtime"]["provider"] == "openrouter"
         assert route.get("request_overrides") is None
@@ -264,7 +264,7 @@ class TestAnthropicFastMode(unittest.TestCase):
     """Verify Anthropic Fast Mode model support and override resolution."""
 
     def test_anthropic_opus_supported(self):
-        from hermes_cli.models import model_supports_fast_mode
+        from thoth_cli.models import model_supports_fast_mode
 
         # Native Anthropic format (hyphens)
         assert model_supports_fast_mode("claude-opus-4-6") is True
@@ -280,7 +280,7 @@ class TestAnthropicFastMode(unittest.TestCase):
         Per https://platform.claude.com/docs/en/build-with-claude/fast-mode,
         sending speed=fast to Opus 4.7, Sonnet, or Haiku returns HTTP 400.
         """
-        from hermes_cli.models import model_supports_fast_mode
+        from thoth_cli.models import model_supports_fast_mode
 
         assert model_supports_fast_mode("claude-sonnet-4-6") is False
         assert model_supports_fast_mode("claude-sonnet-4.6") is False
@@ -291,21 +291,21 @@ class TestAnthropicFastMode(unittest.TestCase):
 
     def test_non_claude_models_not_anthropic_fast(self):
         """Non-Claude models should not be treated as Anthropic fast-mode."""
-        from hermes_cli.models import _is_anthropic_fast_model
+        from thoth_cli.models import _is_anthropic_fast_model
 
         assert _is_anthropic_fast_model("gpt-5.4") is False
         assert _is_anthropic_fast_model("gemini-3-pro") is False
         assert _is_anthropic_fast_model("kimi-k2-thinking") is False
 
     def test_anthropic_variant_tags_stripped(self):
-        from hermes_cli.models import model_supports_fast_mode
+        from thoth_cli.models import model_supports_fast_mode
 
         # OpenRouter variant tags after colon should be stripped
         assert model_supports_fast_mode("claude-opus-4.6:fast") is True
         assert model_supports_fast_mode("claude-opus-4.6:beta") is True
 
     def test_resolve_overrides_returns_speed_for_anthropic(self):
-        from hermes_cli.models import resolve_fast_mode_overrides
+        from thoth_cli.models import resolve_fast_mode_overrides
 
         result = resolve_fast_mode_overrides("claude-opus-4-6")
         assert result == {"speed": "fast"}
@@ -318,7 +318,7 @@ class TestAnthropicFastMode(unittest.TestCase):
 
         Per Anthropic docs, fast mode is currently Opus 4.6 only.
         """
-        from hermes_cli.models import resolve_fast_mode_overrides
+        from thoth_cli.models import resolve_fast_mode_overrides
 
         assert resolve_fast_mode_overrides("claude-opus-4-7") is None
         assert resolve_fast_mode_overrides("claude-sonnet-4-6") is None
@@ -326,14 +326,14 @@ class TestAnthropicFastMode(unittest.TestCase):
 
     def test_resolve_overrides_returns_service_tier_for_openai(self):
         """OpenAI models should still get service_tier, not speed."""
-        from hermes_cli.models import resolve_fast_mode_overrides
+        from thoth_cli.models import resolve_fast_mode_overrides
 
         result = resolve_fast_mode_overrides("gpt-5.4")
         assert result == {"service_tier": "priority"}
 
     def test_is_anthropic_fast_model(self):
         """Fast mode is currently Opus 4.6 only — other Claude variants must be excluded."""
-        from hermes_cli.models import _is_anthropic_fast_model
+        from thoth_cli.models import _is_anthropic_fast_model
 
         # Supported: Opus 4.6 in any form
         assert _is_anthropic_fast_model("claude-opus-4-6") is True
@@ -356,7 +356,7 @@ class TestAnthropicFastMode(unittest.TestCase):
             provider="anthropic", requested_provider="anthropic",
             model="claude-opus-4-6", agent=None,
         )
-        assert cli_mod.HermesCLI._fast_command_available(stub) is True
+        assert cli_mod.ThothCLI._fast_command_available(stub) is True
 
     def test_fast_command_hidden_for_anthropic_sonnet(self):
         """Sonnet doesn't support fast mode (Opus 4.6 only) — /fast must be hidden."""
@@ -365,7 +365,7 @@ class TestAnthropicFastMode(unittest.TestCase):
             provider="anthropic", requested_provider="anthropic",
             model="claude-sonnet-4-6", agent=None,
         )
-        assert cli_mod.HermesCLI._fast_command_available(stub) is False
+        assert cli_mod.ThothCLI._fast_command_available(stub) is False
 
     def test_fast_command_hidden_for_anthropic_opus_47(self):
         """Opus 4.7 doesn't support fast mode — /fast must be hidden."""
@@ -374,7 +374,7 @@ class TestAnthropicFastMode(unittest.TestCase):
             provider="anthropic", requested_provider="anthropic",
             model="claude-opus-4-7", agent=None,
         )
-        assert cli_mod.HermesCLI._fast_command_available(stub) is False
+        assert cli_mod.ThothCLI._fast_command_available(stub) is False
 
     def test_fast_command_hidden_for_non_claude_non_openai(self):
         """Non-Claude, non-OpenAI models should not expose /fast."""
@@ -383,7 +383,7 @@ class TestAnthropicFastMode(unittest.TestCase):
             provider="gemini", requested_provider="gemini",
             model="gemini-3-pro-preview", agent=None,
         )
-        assert cli_mod.HermesCLI._fast_command_available(stub) is False
+        assert cli_mod.ThothCLI._fast_command_available(stub) is False
 
     def test_turn_route_injects_speed_for_anthropic(self):
         """Anthropic models should get speed:'fast' override, not service_tier."""
@@ -400,7 +400,7 @@ class TestAnthropicFastMode(unittest.TestCase):
             service_tier="priority",
         )
 
-        route = cli_mod.HermesCLI._resolve_turn_agent_config(stub, "hi")
+        route = cli_mod.ThothCLI._resolve_turn_agent_config(stub, "hi")
 
         assert route["runtime"]["provider"] == "anthropic"
         assert route["request_overrides"] == {"speed": "fast"}
@@ -474,7 +474,7 @@ class TestAnthropicFastModeAdapter(unittest.TestCase):
 
 class TestConfigDefault(unittest.TestCase):
     def test_default_config_has_service_tier(self):
-        from hermes_cli.config import DEFAULT_CONFIG
+        from thoth_cli.config import DEFAULT_CONFIG
 
         agent = DEFAULT_CONFIG.get("agent", {})
         self.assertIn("service_tier", agent)

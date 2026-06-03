@@ -29,7 +29,7 @@ from agent.credential_pool import (
 )
 import thoth_cli.auth as auth_mod
 from thoth_cli.auth import PROVIDER_REGISTRY
-from hermes_constants import OPENROUTER_BASE_URL
+from thoth_constants import OPENROUTER_BASE_URL
 
 
 # Providers that support OAuth login in addition to API keys.

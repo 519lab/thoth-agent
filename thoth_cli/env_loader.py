@@ -194,7 +194,7 @@ def _sanitize_env_file_if_needed(path: Path) -> None:
     This produces mangled values — e.g. a bot token duplicated 8×
     (see #8908).
 
-    We delegate to ``hermes_cli.config._sanitize_env_lines`` which
+    We delegate to ``thoth_cli.config._sanitize_env_lines`` which
     already knows all valid Thoth env-var names and can split
     concatenated lines correctly.
     """
@@ -247,16 +247,16 @@ def load_hermes_dotenv(
     loaded: list[Path] = []
 
     # Resolve the home dir for the .env path. Phase 3: THOTH_HOME is canonical,
-    # HERMES_HOME is the legacy fallback. get_hermes_home() already checks
+    # HERMES_HOME is the legacy fallback. get_thoth_home() already checks
     # THOTH_HOME → HERMES_HOME → disk default, so no explicit normalization call
     # is needed here (and calling normalize_thoth_home_env() would write THOTH_HOME
     # to os.environ as a side-effect that pollutes test env isolation).
     if hermes_home is not None:
         home_path = Path(hermes_home)
     else:
-        from hermes_constants import get_hermes_home
+        from thoth_constants import get_thoth_home
 
-        home_path = get_hermes_home()
+        home_path = get_thoth_home()
     user_env = home_path / ".env"
     project_env_path = Path(project_env) if project_env else None
 

@@ -15,7 +15,7 @@ Python's stdout is a real TTY; code-page flipping lets subprocesses and
 child Python ``print()`` calls agree on encoding.
 
 This module is a no-op on every non-Windows platform, and idempotent.
-Entry points (``cli.py`` ``main``, ``hermes_cli/main.py`` CLI dispatch,
+Entry points (``cli.py`` ``main``, ``thoth_cli/main.py`` CLI dispatch,
 ``gateway/run.py`` startup) call :func:`configure_windows_stdio` exactly
 once early in startup.
 

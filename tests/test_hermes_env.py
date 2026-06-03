@@ -116,7 +116,7 @@ def test_sync_aliases_ignores_unknown_and_home():
 # ── loader integration: a .env using THOTH_ resolves for HERMES_ readers ──
 
 def test_load_dotenv_mirrors_thoth_to_hermes(tmp_path, monkeypatch):
-    from hermes_cli import env_loader
+    from thoth_cli import env_loader
 
     monkeypatch.delenv("HERMES_PHASE2_DOTENV", raising=False)
     monkeypatch.delenv("THOTH_PHASE2_DOTENV", raising=False)
@@ -133,7 +133,7 @@ def test_load_dotenv_mirrors_thoth_to_hermes(tmp_path, monkeypatch):
 def test_dotenv_hot_reload_does_not_revert_rotated_value(tmp_path, monkeypatch):
     """Gateway hot-reload regression (codex-found): a rotated legacy value in
     .env must take effect, not be reverted to the stale mirrored alias."""
-    from hermes_cli import env_loader
+    from thoth_cli import env_loader
 
     monkeypatch.delenv("HERMES_PHASE2_ROT", raising=False)
     monkeypatch.delenv("THOTH_PHASE2_ROT", raising=False)

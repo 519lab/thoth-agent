@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
-from hermes_constants import get_hermes_home
+from thoth_constants import get_thoth_home
 from thoth_cli.cli_name import cli_name
 from thoth_cli.config import cfg_get
 
@@ -72,7 +72,7 @@ _SUPPORTED_MANIFEST_VERSION = 1
 
 def _plugins_dir() -> Path:
     """Return the user plugins directory, creating it if needed."""
-    plugins = get_hermes_home() / "plugins"
+    plugins = get_thoth_home() / "plugins"
     plugins.mkdir(parents=True, exist_ok=True)
     return plugins
 
@@ -235,7 +235,7 @@ def _prompt_plugin_env_vars(manifest: dict, console) -> None:
         return
 
     from thoth_cli.config import get_env_value, save_env_value  # noqa: F811
-    from hermes_constants import display_hermes_home
+    from thoth_constants import display_hermes_home
 
     # Normalise to list-of-dicts
     env_specs: list[dict] = []

@@ -87,7 +87,7 @@ for name in list(sys.modules):
     if (name.startswith("tools.")
             or name.startswith("agent.")
             or name.startswith("plugins.")
-            or name.startswith("hermes_cli.")):
+            or name.startswith("thoth_cli.")):
         sys.modules.pop(name, None)
 
 import tools.image_generation_tool as image_tool

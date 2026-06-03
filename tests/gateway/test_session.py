@@ -322,7 +322,7 @@ class TestBuildSessionContextPrompt:
         )
         ctx = build_session_context(source, config)
 
-        with patch("hermes_constants.display_hermes_home", return_value="~/.hermes/profiles/coder"):
+        with patch("thoth_constants.display_hermes_home", return_value="~/.hermes/profiles/coder"):
             prompt = build_session_context_prompt(ctx)
 
         assert "~/.hermes/profiles/coder/cron/output/" in prompt

@@ -795,7 +795,7 @@ def kanban_home() -> Path:
     override = os.environ.get("HERMES_KANBAN_HOME", "").strip()
     if override:
         return Path(override).expanduser()
-    from hermes_constants import get_default_hermes_root
+    from thoth_constants import get_default_hermes_root
     return get_default_hermes_root()
 
 
@@ -5731,7 +5731,7 @@ def _rotate_worker_log(
 
 def _module_hermes_argv() -> list[str]:
     """Return the interpreter-bound Thoth CLI invocation."""
-    # ``hermes_cli.main`` is the console-script target declared in
+    # ``thoth_cli.main`` is the console-script target declared in
     # pyproject.toml, NOT a top-level ``thoth`` package — there is no
     # ``thoth`` package to import.
     return [sys.executable, "-m", "thoth_cli.main"]
@@ -5818,14 +5818,14 @@ def _resolve_hermes_argv() -> list[str]:
        launching batch shims is also unsafe with task-derived argv. The
        dispatcher therefore falls back to the interpreter-bound module form
        for implicit ``.cmd`` / ``.bat`` shims.
-    3. ``sys.executable -m hermes_cli.main`` — fallback for setups where
+    3. ``sys.executable -m thoth_cli.main`` — fallback for setups where
        Thoth is launched from a venv and the ``thoth`` shim is not on
        the dispatcher's ``$PATH`` (cron, systemd ``User=`` services,
        launchd jobs, detached processes, etc.). Goes through the running
        interpreter so the result is independent of ``$PATH``.
 
     Mirrors ``gateway.run._resolve_hermes_bin`` for the same reason. Kept
-    local (not imported from gateway) because ``hermes_cli`` sits below
+    local (not imported from gateway) because ``thoth_cli`` sits below
     ``gateway`` in the dependency order.
     """
     import shutil
@@ -5943,8 +5943,8 @@ def _default_spawn(
     # (fallback_providers, toolsets, agent settings, etc.) instead of the root
     # config.  Without this, `env = dict(os.environ)` copies only the parent's
     # env, and when the child process starts `thoth -p <name>` the
-    # _apply_profile_override() runs *before* hermes_constants is imported.
-    # If HERMES_HOME is absent from the child's env, get_hermes_home() falls
+    # _apply_profile_override() runs *before* thoth_constants is imported.
+    # If HERMES_HOME is absent from the child's env, get_thoth_home() falls
     # back to Path.home() / ".hermes" (the DEFAULT profile root), ignoring the
     # profile-specific config entirely.  Fixes profile-scoped fallback_providers
     # being invisible to kanban workers.
@@ -6752,11 +6752,11 @@ def list_profiles_on_disk() -> list[str]:
     - the implicit ``default`` profile when the default Thoth root exists
 
     Reads profile paths directly so this module has no import dependency on
-    ``hermes_cli.profiles`` (which pulls in a large chunk of the CLI startup
+    ``thoth_cli.profiles`` (which pulls in a large chunk of the CLI startup
     path).
     """
     try:
-        from hermes_constants import get_default_hermes_root
+        from thoth_constants import get_default_hermes_root
         default_root = get_default_hermes_root()
         profiles_dir = default_root / "profiles"
     except Exception:

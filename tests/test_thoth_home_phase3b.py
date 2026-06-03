@@ -6,7 +6,7 @@ import pytest
 
 
 def test_systemd_units_emit_both_home_vars():
-    import hermes_cli.gateway as g
+    import thoth_cli.gateway as g
     for render in (g._systemd_unit_content, g._user_systemd_unit_content):
         unit = render("")
         assert 'Environment="HERMES_HOME=' in unit
@@ -35,7 +35,7 @@ def test_windows_wrapper_and_task_set_both():
 
 
 def test_profile_env_context_sets_and_restores_both(tmp_path, monkeypatch):
-    from hermes_cli.profiles import profile_env_context
+    from thoth_cli.profiles import profile_env_context
 
     monkeypatch.delenv("HERMES_HOME", raising=False)
     monkeypatch.delenv("THOTH_HOME", raising=False)
@@ -51,7 +51,7 @@ def test_profile_env_context_sets_and_restores_both(tmp_path, monkeypatch):
 
 
 def test_profile_env_context_restores_unset(tmp_path, monkeypatch):
-    from hermes_cli.profiles import profile_env_context
+    from thoth_cli.profiles import profile_env_context
 
     monkeypatch.delenv("HERMES_HOME", raising=False)
     monkeypatch.delenv("THOTH_HOME", raising=False)

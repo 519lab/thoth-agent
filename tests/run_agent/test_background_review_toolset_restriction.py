@@ -95,7 +95,7 @@ def test_background_review_installs_thread_local_whitelist():
     whitelist is set with exactly the memory+skills tool names.
     """
     import run_agent
-    from hermes_cli import plugins as _plugins
+    from thoth_cli import plugins as _plugins
 
     captured = {}
 

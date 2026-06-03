@@ -113,9 +113,9 @@ class FetchResult:
 
 def _hermes_bin_dir() -> Path:
     """Where Thoth stores its managed binaries.  Profile-aware."""
-    from hermes_constants import get_hermes_home
+    from thoth_constants import get_thoth_home
 
-    return get_hermes_home() / "bin"
+    return get_thoth_home() / "bin"
 
 
 def find_bws(*, install_if_missing: bool = False) -> Optional[Path]:
@@ -425,7 +425,7 @@ def _is_valid_env_name(name: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Public entry point — called from hermes_cli.env_loader
+# Public entry point — called from thoth_cli.env_loader
 # ---------------------------------------------------------------------------
 
 

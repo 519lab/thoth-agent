@@ -100,7 +100,7 @@ class TestHandleUpdateCommand:
 
     @pytest.mark.asyncio
     async def test_no_hermes_binary(self, tmp_path):
-        """Returns error when thoth is not on PATH and hermes_cli is not importable."""
+        """Returns error when thoth is not on PATH and thoth_cli is not importable."""
         runner = _make_runner()
         event = _make_event()
 
@@ -123,7 +123,7 @@ class TestHandleUpdateCommand:
 
     @pytest.mark.asyncio
     async def test_fallback_to_sys_executable(self, tmp_path):
-        """Falls back to sys.executable -m hermes_cli.main when thoth not on PATH."""
+        """Falls back to sys.executable -m thoth_cli.main when thoth not on PATH."""
         runner = _make_runner()
         event = _make_event()
 
@@ -148,9 +148,9 @@ class TestHandleUpdateCommand:
 
         assert "Starting Thoth update" in result
         call_args = mock_popen.call_args[0][0]
-        # The update_cmd uses sys.executable -m hermes_cli.main
+        # The update_cmd uses sys.executable -m thoth_cli.main
         joined = " ".join(call_args) if isinstance(call_args, list) else call_args
-        assert "hermes_cli.main" in joined or "bash" in call_args[0]
+        assert "thoth_cli.main" in joined or "bash" in call_args[0]
 
     @pytest.mark.asyncio
     async def test_resolve_hermes_bin_prefers_which(self, tmp_path):
@@ -174,7 +174,7 @@ class TestHandleUpdateCommand:
             result = _resolve_hermes_bin()
 
         assert result[:2] == [sys.executable, "-m"]
-        assert result[2] in ("thoth_cli.main", "hermes_cli.main")
+        assert result[2] in ("thoth_cli.main", "thoth_cli.main")
         assert len(result) == 3
 
     @pytest.mark.asyncio

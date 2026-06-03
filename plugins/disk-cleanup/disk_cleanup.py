@@ -29,11 +29,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
-    from hermes_constants import get_hermes_home
+    from thoth_constants import get_thoth_home
 except Exception:  # pragma: no cover — plugin may load before constants resolves
     import os
 
-    def get_hermes_home() -> Path:  # type: ignore[no-redef]
+    def get_thoth_home() -> Path:  # type: ignore[no-redef]
         val = (os.environ.get("HERMES_HOME") or "").strip()
         return Path(val).resolve() if val else (Path.home() / ".hermes").resolve()
 
@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 def get_state_dir() -> Path:
     """State dir — separate from ``$HERMES_HOME/logs/``."""
-    return get_hermes_home() / "disk-cleanup"
+    return get_thoth_home() / "disk-cleanup"
 
 
 def get_tracked_file() -> Path:
@@ -68,7 +68,7 @@ def is_safe_path(path: Path) -> bool:
 
     Rejects Windows mounts (``/mnt/c`` etc.) and any system directory.
     """
-    hermes_home = get_hermes_home()
+    hermes_home = get_thoth_home()
     try:
         path.resolve().relative_to(hermes_home)
         return True
@@ -296,7 +296,7 @@ def quick() -> Dict[str, Any]:
     # Remove empty dirs under HERMES_HOME (but leave HERMES_HOME itself and
     # a short list of well-known top-level state dirs alone — a fresh install
     # has these empty, and deleting them would surprise the user).
-    hermes_home = get_hermes_home()
+    hermes_home = get_thoth_home()
     _PROTECTED_TOP_LEVEL = {
         "logs", "memories", "sessions", "cron", "cronjobs",
         "cache", "skills", "plugins", "disk-cleanup", "optional-skills",
@@ -472,7 +472,7 @@ def guess_category(path: Path) -> Optional[str]:
         return None
 
     # Skip the state dir itself, logs, memory files, sessions, config.
-    hermes_home = get_hermes_home()
+    hermes_home = get_thoth_home()
     try:
         rel = path.resolve().relative_to(hermes_home)
         top = rel.parts[0] if rel.parts else ""

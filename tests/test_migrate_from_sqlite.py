@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 import hermes_db
-from hermes_cli.db_commands import migrate_from_sqlite
+from thoth_cli.db_commands import migrate_from_sqlite
 
 # Path to the upstream schema fixture (relative to the project root).
 _FIXTURE_SQL = Path(__file__).parent / "fixtures" / "upstream_schema.sql"

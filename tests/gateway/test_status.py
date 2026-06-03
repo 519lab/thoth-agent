@@ -63,7 +63,7 @@ class TestGatewayPidState:
         pid_path.write_text(json.dumps({
             "pid": dead_pid,
             "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway", "run"],
+            "argv": ["python", "-m", "thoth_cli.main", "gateway", "run"],
             "start_time": 111,
         }))
 
@@ -81,7 +81,7 @@ class TestGatewayPidState:
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
             "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
 
@@ -101,7 +101,7 @@ class TestGatewayPidState:
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
             "kind": "hermes-gateway",
-            "argv": ["/venv/bin/python", "/repo/hermes_cli/main.py", "gateway", "run", "--replace"],
+            "argv": ["/venv/bin/python", "/repo/thoth_cli/main.py", "gateway", "run", "--replace"],
             "start_time": 123,
         }))
 
@@ -110,7 +110,7 @@ class TestGatewayPidState:
         monkeypatch.setattr(
             status,
             "_read_process_cmdline",
-            lambda pid: "/venv/bin/python /repo/hermes_cli/main.py gateway run --replace",
+            lambda pid: "/venv/bin/python /repo/thoth_cli/main.py gateway run --replace",
         )
 
         assert status.acquire_gateway_runtime_lock() is True
@@ -126,7 +126,7 @@ class TestGatewayPidState:
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
             "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
 
@@ -138,7 +138,7 @@ class TestGatewayPidState:
         lock_path.write_text(json.dumps({
             "pid": os.getpid(),
             "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
         monkeypatch.setattr(status, "is_gateway_runtime_lock_active", lambda lock_path=None: True)
@@ -163,7 +163,7 @@ class TestGatewayPidState:
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
             "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
 
@@ -193,13 +193,13 @@ class TestGatewayPidState:
         pid_path.write_text(json.dumps({
             "pid": dead_foreign_pid,
             "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
         lock_path.write_text(json.dumps({
             "pid": dead_foreign_pid,
             "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
 
@@ -214,7 +214,7 @@ class TestGatewayPidState:
         pid_path.write_text(json.dumps({
             "pid": 99999,
             "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
 
@@ -226,7 +226,7 @@ class TestGatewayPidState:
             lambda: {
                 "pid": os.getpid(),
                 "kind": "hermes-gateway",
-                "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+                "argv": ["python", "-m", "thoth_cli.main", "gateway"],
                 "start_time": 123,
             },
         )
@@ -459,7 +459,7 @@ class TestScopedLocks:
             "pid": 873,
             "start_time": None,
             "kind": "hermes-gateway",
-            "argv": ["/Users/user/.hermes/hermes-agent/hermes_cli/main.py", "gateway", "run", "--replace"],
+            "argv": ["/Users/user/.hermes/hermes-agent/thoth_cli/main.py", "gateway", "run", "--replace"],
         }))
 
         # Post-#21561 the liveness probe routes through
@@ -495,7 +495,7 @@ class TestScopedLocks:
             "pid": 99999,
             "start_time": None,
             "kind": "hermes-gateway",
-            "argv": ["hermes_cli/main.py", "gateway", "run"],
+            "argv": ["thoth_cli/main.py", "gateway", "run"],
         }))
 
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
@@ -519,7 +519,7 @@ class TestScopedLocks:
             "pid": 99999,
             "start_time": None,
             "kind": "hermes-gateway",
-            "argv": ["/Users/user/.hermes/hermes-agent/hermes_cli/main.py", "gateway", "run", "--replace"],
+            "argv": ["/Users/user/.hermes/hermes-agent/thoth_cli/main.py", "gateway", "run", "--replace"],
         }))
 
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
@@ -930,14 +930,14 @@ class TestReadProcessCmdlinePsFallback:
 
         monkeypatch.setattr(status.Path, "read_bytes", fake_read_bytes)
         result = status._read_process_cmdline(12345)
-        assert ("thoth_cli/main.py" in result) or ("hermes_cli/main.py" in result)
+        assert ("thoth_cli/main.py" in result) or ("thoth_cli/main.py" in result)
         assert calls == ["proc"]
 
     def test_ps_fallback_used_when_proc_returns_empty(self, monkeypatch):
         monkeypatch.setattr(status.Path, "read_bytes", lambda self: b"")
         monkeypatch.setattr(
             status.subprocess, "run",
-            lambda args, **kwargs: SimpleNamespace(returncode=0, stdout="python hermes_cli/main.py gateway run\n"),
+            lambda args, **kwargs: SimpleNamespace(returncode=0, stdout="python thoth_cli/main.py gateway run\n"),
         )
         result = status._read_process_cmdline(12345)
-        assert ("thoth_cli/main.py" in result) or ("hermes_cli/main.py" in result)
+        assert ("thoth_cli/main.py" in result) or ("thoth_cli/main.py" in result)

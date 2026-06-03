@@ -227,8 +227,8 @@ class ThreadParticipationTracker:
         }
 
     def _state_path(self) -> Path:
-        from hermes_constants import get_hermes_home
-        return get_hermes_home() / f"{self._platform}_threads.json"
+        from thoth_constants import get_thoth_home
+        return get_thoth_home() / f"{self._platform}_threads.json"
 
     def _load(self) -> list[str]:
         path = self._state_path()
