@@ -21,7 +21,7 @@ Delegate coding to OpenAI Codex CLI (features, PRs).
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `Coding-Agent`, `Codex`, `OpenAI`, `Code-Review`, `Refactoring` |
-| Related skills | [`claude-code`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-claude-code), [`hermes-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-hermes-agent) |
+| Related skills | [`claude-code`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-claude-code), [`thoth-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-thoth-agent) |
 
 ## Reference: full SKILL.md
 
@@ -51,7 +51,7 @@ Requires the codex CLI and a git repository.
 - Use `pty=true` in terminal calls — Codex is an interactive terminal app
 
 For Thoth itself, `model.provider: openai-codex` uses Thoth-managed Codex
-OAuth from `~/.hermes/auth.json` after `thoth auth add openai-codex`. For the
+OAuth from `~/.hermes/auth.json` after `hermes auth add openai-codex`. For the
 standalone Codex CLI, a valid CLI OAuth session may live under
 `~/.codex/auth.json`; do not treat a missing `OPENAI_API_KEY` alone as proof
 that Codex auth is missing.

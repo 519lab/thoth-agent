@@ -247,7 +247,7 @@ def recommended_update_command_for_method(method: str) -> str:
     if method == "nixos":
         return _NIX_UPDATE_MSG
     if method == "homebrew":
-        return "brew upgrade hermes-agent"
+        return "brew upgrade thoth-agent"
     if method == "docker":
         return "Rebuild your image from the latest source (no published Thoth image yet)"
     if method == "pip":

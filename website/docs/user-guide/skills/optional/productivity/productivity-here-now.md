@@ -81,7 +81,7 @@ If the docs fetch fails or times out, continue with the local skill and live API
 
 ```bash
 PUBLISH="${HERMES_SKILL_DIR}/scripts/publish.sh"
-bash "$PUBLISH" {file-or-dir} --client thoth
+bash "$PUBLISH" {file-or-dir} --client hermes
 ```
 
 Outputs the live URL (e.g. `https://bright-canvas-a7k2.here.now/`).
@@ -99,7 +99,7 @@ You can also publish raw files without any HTML. Single files get a rich auto-vi
 
 ```bash
 PUBLISH="${HERMES_SKILL_DIR}/scripts/publish.sh"
-bash "$PUBLISH" {file-or-dir} --slug {slug} --client thoth
+bash "$PUBLISH" {file-or-dir} --slug {slug} --client hermes
 ```
 
 The script auto-loads the `claimToken` from `.herenow/state.json` when updating anonymous sites. Pass `--claim-token {token}` to override.
@@ -215,7 +215,7 @@ For Drives:
 | `--title {text}`       | Viewer title (non-HTML sites)             |
 | `--description {text}` | Viewer description                            |
 | `--ttl {seconds}`      | Set expiry (authenticated only)               |
-| `--client {name}`      | Agent name for attribution (e.g. `thoth`)    |
+| `--client {name}`      | Agent name for attribution (e.g. `hermes`)    |
 | `--base-url {url}`     | API base URL (default: `https://here.now`)    |
 | `--allow-nonherenow-base-url` | Allow sending auth to non-default `--base-url` |
 | `--api-key {key}`      | API key override (prefer credentials file)    |

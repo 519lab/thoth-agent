@@ -8,7 +8,7 @@ description: "Give the agent its own dedicated email inbox via AgentMail"
 
 # Agentmail
 
-Give the agent its own dedicated email inbox via AgentMail. Send, receive, and manage email autonomously using agent-owned email addresses (e.g. hermes-agent@agentmail.to).
+Give the agent its own dedicated email inbox via AgentMail. Send, receive, and manage email autonomously using agent-owned email addresses (e.g. thoth-agent@agentmail.to).
 
 ## Skill metadata
 
@@ -64,7 +64,7 @@ mcp_servers:
 
 ### 3. Restart Thoth
 ```bash
-thoth
+hermes
 ```
 All 11 AgentMail tools are now available automatically.
 
@@ -88,8 +88,8 @@ All 11 AgentMail tools are now available automatically.
 
 ### Create an inbox and send an email
 1. Create a dedicated inbox:
-   - Use `create_inbox` with a username (e.g. `hermes-agent`)
-   - The agent gets address: `hermes-agent@agentmail.to`
+   - Use `create_inbox` with a username (e.g. `thoth-agent`)
+   - The agent gets address: `thoth-agent@agentmail.to`
 2. Send an email:
    - Use `send_message` with `inbox_id`, `to`, `subject`, `text`
 3. Check for replies:
@@ -132,7 +132,7 @@ All 11 AgentMail tools are now available automatically.
 ## Verification
 After setup, test with:
 ```
-thoth --toolsets mcp -q "Create an AgentMail inbox called test-agent and tell me its email address"
+hermes --toolsets mcp -q "Create an AgentMail inbox called test-agent and tell me its email address"
 ```
 You should see the new inbox address returned.
 

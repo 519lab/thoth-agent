@@ -17,7 +17,7 @@ Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.
 | Source | Bundled (installed by default) |
 | Path | `skills/productivity/google-workspace` |
 | Version | `1.1.0` |
-| Author | Nous Research |
+| Author | 519lab |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `Google`, `Gmail`, `Calendar`, `Drive`, `Sheets`, `Docs`, `Contacts`, `Email`, `OAuth` |
@@ -40,7 +40,7 @@ Gmail, Calendar, Drive, Contacts, Sheets, and Docs — through Thoth-managed OAu
 ## Scripts
 
 - `scripts/setup.py` — OAuth2 setup (run once to authorize)
-- `scripts/google_api.py` — compatibility wrapper CLI. It prefers `gws` for operations when available, while preserving Thoth's existing JSON output contract.
+- `scripts/google_api.py` — compatibility wrapper CLI. It prefers `gws` for operations when available, while preserving Thoth' existing JSON output contract.
 
 ## First-Time Setup
 
@@ -123,7 +123,7 @@ $GSETUP --client-secret /path/to/client_secret.json
 
 If they paste the raw client ID / client secret values instead of a file path,
 write a valid Desktop OAuth JSON file for them yourself, save it somewhere
-explicit (for example `~/Downloads/hermes-google-client-secret.json`), then run
+explicit (for example `~/Downloads/thoth-google-client-secret.json`), then run
 `--client-secret` against that file.
 
 ### Step 3: Get authorization URL
