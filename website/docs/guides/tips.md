@@ -80,7 +80,7 @@ Create an `AGENTS.md` in your project root with architecture decisions, coding c
 
 Want Thoth to have a stable default voice? Edit `~/.hermes/SOUL.md` (or `$HERMES_HOME/SOUL.md` if you use a custom Thoth home). Thoth now seeds a starter SOUL automatically and uses that global file as the instance-wide personality source.
 
-For a full walkthrough, see [Use SOUL.md with Thoth](/docs/guides/use-soul-with-hermes).
+For a full walkthrough, see [Use SOUL.md with Thoth](/docs/guides/use-soul-with-thoth).
 
 ```markdown
 # Soul

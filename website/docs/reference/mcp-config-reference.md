@@ -10,7 +10,7 @@ This page is the compact reference companion to the main MCP docs.
 
 For conceptual guidance, see:
 - [MCP (Model Context Protocol)](/docs/user-guide/features/mcp)
-- [Use MCP with Thoth](/docs/guides/use-mcp-with-hermes)
+- [Use MCP with Thoth](/docs/guides/use-mcp-with-thoth)
 
 ## Root config shape
 

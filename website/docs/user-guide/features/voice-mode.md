@@ -8,7 +8,7 @@ description: "Real-time voice conversations with Thoth Agent — CLI, Telegram, 
 
 Thoth Agent supports full voice interaction across CLI and messaging platforms. Talk to the agent using your microphone, hear spoken replies, and have live voice conversations in Discord voice channels.
 
-If you want a practical setup walkthrough with recommended configurations and real usage patterns, see [Use Voice Mode with Thoth](/docs/guides/use-voice-mode-with-hermes).
+If you want a practical setup walkthrough with recommended configurations and real usage patterns, see [Use Voice Mode with Thoth](/docs/guides/use-voice-mode-with-thoth).
 
 ## Prerequisites
 

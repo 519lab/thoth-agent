@@ -55,7 +55,7 @@ Deploy Thoth Agent as a bot on your favorite messaging platform.
 4. [Telegram Setup](/docs/user-guide/messaging/telegram)
 5. [Discord Setup](/docs/user-guide/messaging/discord)
 6. [Voice Mode](/docs/user-guide/features/voice-mode)
-7. [Use Voice Mode with Thoth](/docs/guides/use-voice-mode-with-hermes)
+7. [Use Voice Mode with Thoth](/docs/guides/use-voice-mode-with-thoth)
 8. [Security](/docs/user-guide/security)
 
 For full project examples, see:
@@ -81,7 +81,7 @@ Cron jobs let Thoth Agent run tasks on a schedule — daily summaries, periodic 
 Extend Thoth Agent with your own tools and reusable skill packages.
 
 1. [Plugins](/docs/user-guide/features/plugins)
-2. [Build a Thoth Plugin](/docs/guides/build-a-hermes-plugin)
+2. [Build a Thoth Plugin](/docs/guides/build-a-thoth-plugin)
 3. [Tools Overview](/docs/user-guide/features/tools)
 4. [Skills Overview](/docs/user-guide/features/skills)
 5. [MCP (Model Context Protocol)](/docs/user-guide/features/mcp)

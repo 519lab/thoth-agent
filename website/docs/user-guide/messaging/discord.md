@@ -681,7 +681,7 @@ Thoth Agent supports Discord voice messages:
 
 For the full setup and operational guide, see:
 - [Voice Mode](/docs/user-guide/features/voice-mode)
-- [Use Voice Mode with Thoth](/docs/guides/use-voice-mode-with-hermes)
+- [Use Voice Mode with Thoth](/docs/guides/use-voice-mode-with-thoth)
 
 ## Forum Channels
 

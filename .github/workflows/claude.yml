@@ -17,7 +17,7 @@ name: Claude (@mention handler)
 #   and trigger predicate stay legible.
 #
 # Required repository secret:
-#   ANTHROPIC_API_KEY — shared with ``claude-review.yml``. If missing the
+#   CLAUDE_CODE_OAUTH_TOKEN — shared with ``claude-review.yml``. If missing the
 #   action no-ops with a warning rather than failing the workflow.
 
 on:
@@ -69,8 +69,8 @@ jobs:
       - name: Run Claude
         uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: --model claude-sonnet-4-5
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: --model claude-sonnet-4-6
           # No ``prompt`` here — Claude reads the @mention and the
           # surrounding thread context, then responds in-thread.
           # ``trigger_phrase`` defaults to ``@claude`` which matches our

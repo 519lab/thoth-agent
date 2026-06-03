@@ -20,9 +20,10 @@ when you want to see what the agent is perceiving, why recall returned (or did
 not return) a given slice, whether the background sub-agents are keeping up,
 or what to do when substrate boot fails.
 
-This skill does NOT cover design rationale — that lives in the spec repo at
-`github.com/ggrace519/llm-cognitive-thought/docs/superpowers/specs/`. Here we
-stay procedural: commands, queries, common workflows, troubleshooting.
+This skill does NOT cover design rationale. For the architecture — the L0–L4
+layer stack, the sub-agents, the memory lifecycle, and the recall pipeline — see
+`docs/architecture/substrate.md`. Here we stay procedural: commands, queries,
+common workflows, troubleshooting.
 
 ## When to Use
 

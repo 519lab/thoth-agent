@@ -358,7 +358,7 @@ For that setup, prefer `chrome-devtools-mcp` through Thoth MCP support.
 
 See the MCP guide for the practical setup:
 
-- [Use MCP with Thoth](../../guides/use-mcp-with-hermes.md#wsl2-bridge-hermes-in-wsl-to-windows-chrome)
+- [Use MCP with Thoth](../../guides/use-mcp-with-thoth.md#wsl2-bridge-hermes-in-wsl-to-windows-chrome)
 
 ### Local browser mode
 

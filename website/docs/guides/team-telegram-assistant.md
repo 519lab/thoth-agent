@@ -291,7 +291,7 @@ Users can also change this per-session with the `/verbose` command in chat.
 
 Customize how the bot communicates by editing `~/.hermes/SOUL.md`:
 
-For a full guide, see [Use SOUL.md with Thoth](/docs/guides/use-soul-with-hermes).
+For a full guide, see [Use SOUL.md with Thoth](/docs/guides/use-soul-with-thoth).
 
 ```markdown
 # Soul
