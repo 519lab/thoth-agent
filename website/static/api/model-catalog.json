@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updated_at": "2026-05-11T16:41:16Z",
+  "updated_at": "2026-06-03T02:36:07Z",
   "metadata": {
-    "source": "hermes-agent repo",
+    "source": "thoth-agent repo",
     "docs": "https://thoth.519lab.com/docs/reference/model-catalog"
   },
   "providers": {
