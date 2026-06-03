@@ -1,15 +1,21 @@
 name: Claude Review
 
-# Review triggered by the `claude-review` label, applied automatically by
-# claude-autolabel.yml on PR open/sync. The review step runs the
+# Auto-review every non-draft PR against main. The review step runs the
 # `/code-review --comment` skill, which posts findings as inline PR comments
-# directly (no sticky-comment workaround needed).
+# directly — no label/tag-mode dance needed (that only existed to force the
+# now-removed sticky-comment path).
 #
 # Required repository secret: CLAUDE_CODE_OAUTH_TOKEN.
 
 on:
   pull_request:
-    types: [labeled]
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "website/**"
+      - ".github/ISSUE_TEMPLATE/**"
 
 permissions:
   contents: write
@@ -21,14 +27,14 @@ permissions:
   actions: read
 
 concurrency:
-  # One review per PR at a time. Re-labeling (or autolabel firing on a new
-  # push) cancels the in-flight review so we always comment on the latest diff.
+  # One review per PR at a time. A new push cancels the in-flight review so we
+  # always comment on the latest diff.
   group: claude-review-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   review:
-    if: ${{ github.event.label.name == 'claude-review' && github.event.pull_request.draft == false }}
+    if: ${{ github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
