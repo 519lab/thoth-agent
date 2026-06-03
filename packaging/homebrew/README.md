@@ -1,6 +1,6 @@
 Homebrew packaging notes for Thoth Agent.
 
-Use `packaging/homebrew/hermes-agent.rb` as a tap or `homebrew-core` starting point.
+Use `packaging/homebrew/thoth-agent.rb` as a tap or `homebrew-core` starting point.
 
 Key choices:
 - Stable builds should target the semver-named sdist asset attached to each GitHub release, not the CalVer tag tarball.
