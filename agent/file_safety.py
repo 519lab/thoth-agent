@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 
-def _hermes_home_path() -> Path:
+def _thoth_home_path() -> Path:
     """Resolve the active HERMES_HOME (profile-aware) without circular imports."""
     try:
         from thoth_constants import get_thoth_home  # local import to avoid cycles
@@ -16,19 +16,19 @@ def _hermes_home_path() -> Path:
         return Path(os.path.expanduser("~/.hermes"))
 
 
-def _hermes_root_path() -> Path:
+def _thoth_root_path() -> Path:
     """Resolve the Thoth root dir (always the parent of any profile, never per-profile)."""
     try:
-        from thoth_constants import get_default_hermes_root  # local import to avoid cycles
-        return get_default_hermes_root()
+        from thoth_constants import get_default_thoth_root  # local import to avoid cycles
+        return get_default_thoth_root()
     except Exception:
         return Path(os.path.expanduser("~/.hermes"))
 
 
 def build_write_denied_paths(home: str) -> set[str]:
     """Return exact sensitive paths that must never be written."""
-    hermes_home = _hermes_home_path()
-    hermes_root = _hermes_root_path()
+    thoth_home = _thoth_home_path()
+    hermes_root = _thoth_root_path()
     return {
         os.path.realpath(p)
         for p in [
@@ -37,7 +37,7 @@ def build_write_denied_paths(home: str) -> set[str]:
             os.path.join(home, ".ssh", "id_ed25519"),
             os.path.join(home, ".ssh", "config"),
             # Active profile .env (or top-level .env when not in profile mode).
-            str(hermes_home / ".env"),
+            str(thoth_home / ".env"),
             # Top-level .env, even when running under a profile — overwriting it
             # leaks credentials across every profile that inherits from root (#15981).
             str(hermes_root / ".env"),
@@ -98,7 +98,7 @@ def is_write_denied(path: str) -> bool:
             return True
 
     # Thoth control-plane files: block both the ACTIVE profile's view
-    # (hermes_home) AND the global root view. Without the root pass, a
+    # (thoth_home) AND the global root view. Without the root pass, a
     # profile-mode session leaves <root>/auth.json + <root>/config.yaml
     # writable — letting a prompt-injected write_file overwrite the global
     # files that every profile inherits from (same shape as #15981).
@@ -106,7 +106,7 @@ def is_write_denied(path: str) -> bool:
     mcp_tokens_dir_name = "mcp-tokens"
 
     hermes_dirs = []
-    for base in (_hermes_home_path(), _hermes_root_path()):
+    for base in (_thoth_home_path(), _thoth_root_path()):
         try:
             real = os.path.realpath(base)
             if real not in hermes_dirs:
@@ -138,10 +138,10 @@ def is_write_denied(path: str) -> bool:
 def get_read_block_error(path: str) -> Optional[str]:
     """Return an error message when a read targets internal Thoth cache files."""
     resolved = Path(path).expanduser().resolve()
-    hermes_home = _hermes_home_path().resolve()
+    thoth_home = _thoth_home_path().resolve()
     blocked_dirs = [
-        hermes_home / "skills" / ".hub" / "index-cache",
-        hermes_home / "skills" / ".hub",
+        thoth_home / "skills" / ".hub" / "index-cache",
+        thoth_home / "skills" / ".hub",
     ]
     for blocked in blocked_dirs:
         try:

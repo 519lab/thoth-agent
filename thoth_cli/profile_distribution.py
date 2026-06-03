@@ -296,7 +296,7 @@ def _parse_semver(v: str) -> Tuple[int, int, int]:
         raise DistributionError(f"Unparseable version: {v!r}") from exc
 
 
-def check_hermes_requires(spec: str, current_version: str) -> None:
+def check_thoth_requires(spec: str, current_version: str) -> None:
     """Raise DistributionError if ``current_version`` does not satisfy ``spec``.
 
     ``spec`` accepts a single comparator (``>=0.12.0``, ``==0.12.0``, etc.).
@@ -492,7 +492,7 @@ def plan_install(
         )
 
     # Version check up-front so we fail fast
-    check_hermes_requires(manifest.hermes_requires, hermes_version)
+    check_thoth_requires(manifest.hermes_requires, hermes_version)
 
     # Resolve target profile name
     target_name = override_name or manifest.name
@@ -704,3 +704,6 @@ def describe_distribution(profile_name: str) -> Dict[str, Any]:
     if manifest is None:
         return {}
     return manifest.to_dict()
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+check_hermes_requires = check_thoth_requires

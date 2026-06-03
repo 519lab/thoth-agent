@@ -97,14 +97,14 @@ def _load_env() -> None:
     """Load .env from HERMES_HOME (default ``~/.hermes``)."""
     from thoth_cli.env_loader import load_thoth_dotenv
 
-    hermes_home = get_thoth_home()
-    loaded = load_thoth_dotenv(hermes_home=hermes_home)
+    thoth_home = get_thoth_home()
+    loaded = load_thoth_dotenv(thoth_home=thoth_home)
     if loaded:
         for env_file in loaded:
             logging.getLogger(__name__).info("Loaded env from %s", env_file)
     else:
         logging.getLogger(__name__).info(
-            "No .env found at %s, using system env", hermes_home / ".env"
+            "No .env found at %s, using system env", thoth_home / ".env"
         )
 
 

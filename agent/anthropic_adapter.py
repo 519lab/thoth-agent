@@ -1299,7 +1299,7 @@ def run_thoth_oauth_login_pure() -> Optional[Dict[str, Any]]:
     }
 
 
-def read_hermes_oauth_credentials() -> Optional[Dict[str, Any]]:
+def read_thoth_oauth_credentials() -> Optional[Dict[str, Any]]:
     """Read Thoth-managed OAuth credentials from ~/.hermes/.anthropic_oauth.json."""
     if _THOTH_OAUTH_FILE.exists():
         try:
@@ -2252,3 +2252,6 @@ def build_anthropic_kwargs(
 
 # Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
 run_hermes_oauth_login_pure = run_thoth_oauth_login_pure
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+read_hermes_oauth_credentials = read_thoth_oauth_credentials

@@ -106,7 +106,7 @@ def test_re_running_setup_path_block_preserves_pip_entry_point(tmp_path: Path) -
     script = (
         "set -e\n"
         f"HERMES_BIN={pip_entry!s}\n"
-        f"HERMES_HOME={tmp_path!s}/hermes_home\n"
+        f"HERMES_HOME={tmp_path!s}/thoth_home\n"
         "_run_shim_block() {\n"
         f"  local link_dir={link_dir!s}\n"
         f"  local CLI_NAME={cli_name}\n"

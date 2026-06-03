@@ -101,7 +101,7 @@ class TestSyncBackNoop:
     def test_sync_back_noop_without_download_fn(self, tmp_path):
         mgr = _make_manager(tmp_path, bulk_download_fn=None)
         # Should return immediately without error
-        mgr.sync_back(hermes_home=tmp_path / ".hermes")
+        mgr.sync_back(thoth_home=tmp_path / ".hermes")
         # Nothing to assert beyond "no exception raised"
 
 
@@ -125,7 +125,7 @@ class TestSyncBackNoChanges:
         # Simulate that we already pushed this file with this hash
         mgr._pushed_hashes[remote_path] = _sha256_bytes(host_content)
 
-        mgr.sync_back(hermes_home=tmp_path / ".hermes")
+        mgr.sync_back(thoth_home=tmp_path / ".hermes")
 
         # Host file should be unchanged (same content, same bytes)
         assert host_file.read_bytes() == host_content
@@ -150,7 +150,7 @@ class TestSyncBackAppliesChanged:
         mgr = _make_manager(tmp_path, file_mapping=mapping, bulk_download_fn=download_fn)
         mgr._pushed_hashes[remote_path] = _sha256_bytes(original_content)
 
-        mgr.sync_back(hermes_home=tmp_path / ".hermes")
+        mgr.sync_back(thoth_home=tmp_path / ".hermes")
 
         assert host_file.read_bytes() == remote_content
 
@@ -173,7 +173,7 @@ class TestSyncBackNewRemoteFile:
         mgr = _make_manager(tmp_path, file_mapping=mapping, bulk_download_fn=download_fn)
         # No entry in _pushed_hashes for the new file
 
-        mgr.sync_back(hermes_home=tmp_path / ".hermes")
+        mgr.sync_back(thoth_home=tmp_path / ".hermes")
 
         # The new file should have been inferred and written to the host
         expected_host_path = tmp_path / "host" / "skills" / "new_skill.py"
@@ -205,7 +205,7 @@ class TestSyncBackConflict:
         mgr._pushed_hashes[remote_path] = _sha256_bytes(original_content)
 
         with caplog.at_level(logging.WARNING, logger="tools.environments.file_sync"):
-            mgr.sync_back(hermes_home=tmp_path / ".hermes")
+            mgr.sync_back(thoth_home=tmp_path / ".hermes")
 
         # Conflict warning was logged
         assert any("conflict" in r.message.lower() for r in caplog.records)
@@ -230,7 +230,7 @@ class TestSyncBackRetries:
             _make_tar({}, dest)
 
         mgr = _make_manager(tmp_path, bulk_download_fn=flaky_download)
-        mgr.sync_back(hermes_home=tmp_path / ".hermes")
+        mgr.sync_back(thoth_home=tmp_path / ".hermes")
 
         assert call_count == 3
         # Sleep called twice (between attempt 1->2 and 2->3)
@@ -247,7 +247,7 @@ class TestSyncBackRetries:
 
         with caplog.at_level(logging.WARNING, logger="tools.environments.file_sync"):
             # Should NOT raise -- failures are logged, not propagated
-            mgr.sync_back(hermes_home=tmp_path / ".hermes")
+            mgr.sync_back(thoth_home=tmp_path / ".hermes")
 
         # All retries were attempted
         assert mock_sleep.call_count == _SYNC_BACK_MAX_RETRIES - 1
@@ -313,7 +313,7 @@ class TestSyncBackFileLock:
         download_fn = _make_download_fn({})
         mgr = _make_manager(tmp_path, bulk_download_fn=download_fn)
 
-        mgr.sync_back(hermes_home=tmp_path / ".hermes")
+        mgr.sync_back(thoth_home=tmp_path / ".hermes")
 
         # flock should have been called at least twice: LOCK_EX to acquire, LOCK_UN to release
         assert mock_flock.call_count >= 2
@@ -330,7 +330,7 @@ class TestSyncBackFileLock:
 
         with patch("tools.environments.file_sync.fcntl", None):
             # Should not raise — locking is skipped
-            mgr.sync_back(hermes_home=tmp_path / ".hermes")
+            mgr.sync_back(thoth_home=tmp_path / ".hermes")
 
 
 class TestInferHostPath:
@@ -393,7 +393,7 @@ class TestSyncBackSIGINT:
         with patch("tools.environments.file_sync.signal.getsignal",
                     side_effect=original_getsignal) as mock_get, \
              patch("tools.environments.file_sync.signal.signal") as mock_set:
-            mgr.sync_back(hermes_home=tmp_path / ".hermes")
+            mgr.sync_back(thoth_home=tmp_path / ".hermes")
 
         # signal.getsignal was called to save the original handler
         assert mock_get.called
@@ -417,7 +417,7 @@ class TestSyncBackSIGINT:
             exc = []
             def run():
                 try:
-                    mgr.sync_back(hermes_home=tmp_path / ".hermes")
+                    mgr.sync_back(thoth_home=tmp_path / ".hermes")
                 except Exception as e:
                     exc.append(e)
 
@@ -450,7 +450,7 @@ class TestSyncBackSizeCap:
         # Cap at 1 byte so any non-empty tar exceeds it
         with caplog.at_level(logging.WARNING, logger="tools.environments.file_sync"):
             with patch("tools.environments.file_sync._SYNC_BACK_MAX_BYTES", 1):
-                mgr.sync_back(hermes_home=tmp_path / ".hermes")
+                mgr.sync_back(thoth_home=tmp_path / ".hermes")
 
         # Host file should be untouched because extraction was skipped
         assert Path(skill_host).read_bytes() == b"original"
@@ -470,5 +470,5 @@ class TestSyncBackSizeCap:
         )
 
         # Default cap (2 GiB) is far above our tiny tar; extraction should proceed
-        mgr.sync_back(hermes_home=tmp_path / ".hermes")
+        mgr.sync_back(thoth_home=tmp_path / ".hermes")
         assert Path(host_file).read_bytes() == b"remote_version"

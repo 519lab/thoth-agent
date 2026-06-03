@@ -49,9 +49,9 @@ class TestOfferOpenclawMigration:
         openclaw_dir.mkdir()
 
         # Create a fake thoth home with config
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        config_path = hermes_home / "config.yaml"
+        thoth_home = tmp_path / ".hermes"
+        thoth_home.mkdir()
+        config_path = thoth_home / "config.yaml"
         config_path.write_text("agent:\n  max_turns: 90\n")
 
         # Build a fake migration module
@@ -61,7 +61,7 @@ class TestOfferOpenclawMigration:
         fake_migrator.migrate.return_value = {
             "summary": {"migrated": 3, "skipped": 1, "conflict": 0, "error": 0},
             "items": [{"kind": "config", "status": "migrated", "destination": "/tmp/x"}],
-            "output_dir": str(hermes_home / "migration"),
+            "output_dir": str(thoth_home / "migration"),
         }
         fake_mod.Migrator = MagicMock(return_value=fake_migrator)
 
@@ -87,7 +87,7 @@ class TestOfferOpenclawMigration:
 
             mock_spec.loader.exec_module = exec_module
 
-            result = setup_mod._offer_openclaw_migration(hermes_home)
+            result = setup_mod._offer_openclaw_migration(thoth_home)
 
         assert result is True
         fake_mod.resolve_selected_options.assert_called_once_with(
@@ -118,9 +118,9 @@ class TestOfferOpenclawMigration:
         openclaw_dir = tmp_path / ".openclaw"
         openclaw_dir.mkdir()
 
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        config_path = hermes_home / "config.yaml"
+        thoth_home = tmp_path / ".hermes"
+        thoth_home.mkdir()
+        config_path = thoth_home / "config.yaml"
         config_path.write_text("agent:\n  max_turns: 90\n")
 
         fake_mod = ModuleType("openclaw_to_hermes")
@@ -155,7 +155,7 @@ class TestOfferOpenclawMigration:
 
             mock_spec.loader.exec_module = exec_module
 
-            result = setup_mod._offer_openclaw_migration(hermes_home)
+            result = setup_mod._offer_openclaw_migration(thoth_home)
 
         assert result is False
         # Only dry-run Migrator was created, not the execute one
@@ -167,9 +167,9 @@ class TestOfferOpenclawMigration:
         """Should catch exceptions and return False."""
         openclaw_dir = tmp_path / ".openclaw"
         openclaw_dir.mkdir()
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        config_path = hermes_home / "config.yaml"
+        thoth_home = tmp_path / ".hermes"
+        thoth_home.mkdir()
+        config_path = thoth_home / "config.yaml"
         config_path.write_text("")
 
         script = tmp_path / "openclaw_to_hermes.py"
@@ -185,7 +185,7 @@ class TestOfferOpenclawMigration:
                 side_effect=RuntimeError("boom"),
             ),
         ):
-            result = setup_mod._offer_openclaw_migration(hermes_home)
+            result = setup_mod._offer_openclaw_migration(thoth_home)
 
         assert result is False
 
@@ -193,9 +193,9 @@ class TestOfferOpenclawMigration:
         """Should bootstrap config.yaml before running migration."""
         openclaw_dir = tmp_path / ".openclaw"
         openclaw_dir.mkdir()
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        config_path = hermes_home / "config.yaml"
+        thoth_home = tmp_path / ".hermes"
+        thoth_home.mkdir()
+        config_path = thoth_home / "config.yaml"
         # config does NOT exist yet
 
         script = tmp_path / "openclaw_to_hermes.py"
@@ -213,7 +213,7 @@ class TestOfferOpenclawMigration:
                 side_effect=RuntimeError("stop early"),
             ),
         ):
-            setup_mod._offer_openclaw_migration(hermes_home)
+            setup_mod._offer_openclaw_migration(thoth_home)
 
         # save_config should have been called to bootstrap the file
         mock_save.assert_called_once_with({"agent": {}})
@@ -240,7 +240,7 @@ class TestSetupWizardOpenclawIntegration:
         args = _first_time_args()
 
         with (
-            patch.object(setup_mod, "ensure_hermes_home"),
+            patch.object(setup_mod, "ensure_thoth_home"),
             patch.object(setup_mod, "load_config", return_value={}),
             patch.object(setup_mod, "get_thoth_home", return_value=tmp_path),
             patch.object(setup_mod, "get_env_value", return_value=""),
@@ -277,7 +277,7 @@ class TestSetupWizardOpenclawIntegration:
             return {}
 
         with (
-            patch.object(setup_mod, "ensure_hermes_home"),
+            patch.object(setup_mod, "ensure_thoth_home"),
             patch.object(setup_mod, "load_config", side_effect=tracking_load_config),
             patch.object(setup_mod, "get_thoth_home", return_value=tmp_path),
             patch.object(setup_mod, "get_env_value", return_value=""),
@@ -305,7 +305,7 @@ class TestSetupWizardOpenclawIntegration:
         reloaded_config = {"model": {"provider": "openrouter"}}
 
         with (
-            patch.object(setup_mod, "ensure_hermes_home"),
+            patch.object(setup_mod, "ensure_thoth_home"),
             patch.object(
                 setup_mod,
                 "load_config",
@@ -335,7 +335,7 @@ class TestSetupWizardOpenclawIntegration:
         args = _first_time_args()
 
         with (
-            patch.object(setup_mod, "ensure_hermes_home"),
+            patch.object(setup_mod, "ensure_thoth_home"),
             patch.object(setup_mod, "load_config", return_value={}),
             patch.object(setup_mod, "get_thoth_home", return_value=tmp_path),
             patch.object(
@@ -626,7 +626,7 @@ class TestSetupWizardSkipsConfiguredSections:
                 return "sk-xxx"
             return ""
 
-        def fake_migration(hermes_home):
+        def fake_migration(thoth_home):
             migration_done["value"] = True
             return True
 
@@ -640,7 +640,7 @@ class TestSetupWizardSkipsConfiguredSections:
         import thoth_cli.gateway as gateway_mod
 
         with (
-            patch.object(setup_mod, "ensure_hermes_home"),
+            patch.object(setup_mod, "ensure_thoth_home"),
             patch.object(
                 setup_mod, "load_config",
                 side_effect=[{}, reloaded_config],

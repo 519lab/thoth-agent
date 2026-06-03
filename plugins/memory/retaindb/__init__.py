@@ -496,8 +496,8 @@ class RetainDBMemoryProvider(MemoryProvider):
         if explicit:
             project = explicit
         else:
-            hermes_home = str(kwargs.get("hermes_home", ""))
-            profile_name = os.path.basename(hermes_home) if hermes_home else ""
+            thoth_home = str(kwargs.get("thoth_home", ""))
+            profile_name = os.path.basename(thoth_home) if thoth_home else ""
             project = f"hermes-{profile_name}" if (profile_name and profile_name not in {"", ".hermes"}) else "default"
 
         self._client = _Client(api_key, base_url, project)

@@ -42,7 +42,7 @@ def _clean_env(monkeypatch):
 class TestIgnoreUserConfigEnvGate:
     """``load_cli_config()`` must honour ``HERMES_IGNORE_USER_CONFIG=1``.
 
-    When the env var is set, user config at ``<hermes_home>/config.yaml`` is
+    When the env var is set, user config at ``<thoth_home>/config.yaml`` is
     skipped even if present — the function returns only the built-in defaults
     (merged with the project-level ``cli-config.yaml`` fallback).
     """
@@ -60,9 +60,9 @@ class TestIgnoreUserConfigEnvGate:
         (tmp_path / "config.yaml").write_text(config_yaml)
 
     def _reload_cli(self, monkeypatch, tmp_path):
-        """Point cli._hermes_home at tmp_path and return a fresh load_cli_config."""
+        """Point cli._thoth_home at tmp_path and return a fresh load_cli_config."""
         import cli
-        monkeypatch.setattr(cli, "_hermes_home", tmp_path)
+        monkeypatch.setattr(cli, "_thoth_home", tmp_path)
         return cli.load_cli_config
 
     def test_user_config_loaded_when_flag_unset(self, tmp_path, monkeypatch):

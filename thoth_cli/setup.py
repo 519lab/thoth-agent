@@ -143,7 +143,7 @@ from thoth_cli.config import (
     save_env_value,
     remove_env_value,
     get_env_value,
-    ensure_hermes_home,
+    ensure_thoth_home,
 )
 # display_thoth_home imported lazily at call sites (stale-module safety during thoth update)
 
@@ -357,7 +357,7 @@ def _prompt_api_key(var: dict):
         print_warning(f"  Skipped (configure later with '{cli_name()} setup')")
 
 
-def _print_setup_summary(config: dict, hermes_home):
+def _print_setup_summary(config: dict, thoth_home):
     """Print the setup completion summary."""
     # Tool availability summary
     print()
@@ -603,7 +603,7 @@ def _print_setup_summary(config: dict, hermes_home):
     print(f"   {color('Settings:', Colors.YELLOW)}  {get_config_path()}")
     print(f"   {color('API Keys:', Colors.YELLOW)}  {get_env_path()}")
     print(
-        f"   {color('Data:', Colors.YELLOW)}      {hermes_home}/cron/, sessions/, logs/"
+        f"   {color('Data:', Colors.YELLOW)}      {thoth_home}/cron/, sessions/, logs/"
     )
     print()
 
@@ -2982,7 +2982,7 @@ def _print_migration_preview(report: dict):
         print()
 
 
-def _offer_openclaw_migration(hermes_home: Path) -> bool:
+def _offer_openclaw_migration(thoth_home: Path) -> bool:
     """Detect ~/.openclaw and offer to migrate during first-time setup.
 
     Runs a dry-run first to show the user exactly what would be imported,
@@ -3030,7 +3030,7 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
         selected = mod.resolve_selected_options(None, None, preset="full")
         dry_migrator = mod.Migrator(
             source_root=openclaw_dir.resolve(),
-            target_root=hermes_home.resolve(),
+            target_root=thoth_home.resolve(),
             execute=False,  # dry-run — no files modified
             workspace_target=None,
             overwrite=True,  # show everything including conflicts
@@ -3075,7 +3075,7 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
     try:
         migrator = mod.Migrator(
             source_root=openclaw_dir.resolve(),
-            target_root=hermes_home.resolve(),
+            target_root=thoth_home.resolve(),
             execute=True,
             workspace_target=None,
             overwrite=False,  # preserve existing Thoth config
@@ -3145,7 +3145,7 @@ def run_setup_wizard(args):
     if is_managed():
         managed_error("run setup wizard")
         return
-    ensure_hermes_home()
+    ensure_thoth_home()
 
     reset_requested = bool(getattr(args, "reset", False))
     if reset_requested:
@@ -3156,7 +3156,7 @@ def run_setup_wizard(args):
     quick_requested = bool(getattr(args, "quick", False))
 
     config = load_config()
-    hermes_home = get_thoth_home()
+    thoth_home = get_thoth_home()
 
     # Back up existing config before setup modifies it (#3522)
     config_path = get_config_path()
@@ -3267,7 +3267,7 @@ def run_setup_wizard(args):
         # missing items" flow (useful after a partial OpenClaw migration
         # or when a required API key got cleared).
         if quick_requested:
-            _run_quick_setup(config, hermes_home)
+            _run_quick_setup(config, thoth_home)
             return
 
         print()
@@ -3292,7 +3292,7 @@ def run_setup_wizard(args):
             print()
 
         # Offer OpenClaw migration before configuration begins
-        migration_ran = _offer_openclaw_migration(hermes_home)
+        migration_ran = _offer_openclaw_migration(thoth_home)
         if migration_ran:
             config = load_config()
 
@@ -3302,14 +3302,14 @@ def run_setup_wizard(args):
         ], 0)
 
         if setup_mode == 0:
-            _run_first_time_quick_setup(config, hermes_home, is_existing)
+            _run_first_time_quick_setup(config, thoth_home, is_existing)
             return
 
     # ── Full Setup — run all sections ──
     print_header("Configuration Location")
     print_info(f"Config file:  {get_config_path()}")
     print_info(f"Secrets file: {get_env_path()}")
-    print_info(f"Data folder:  {hermes_home}")
+    print_info(f"Data folder:  {thoth_home}")
     print_info(f"Install dir:  {PROJECT_ROOT}")
     print()
     print_info(f"You can edit these files directly or use '{cli_name()} config edit'")
@@ -3346,10 +3346,10 @@ def run_setup_wizard(args):
         print_info(f"Previous config backed up to: {_backup_path}")
         print_info("If setup changed a value you customized, restore it with:")
         print_info(f"  cp {_backup_path} {config_path}")
-    _print_setup_summary(config, hermes_home)
+    _print_setup_summary(config, thoth_home)
 
 
-def _run_first_time_quick_setup(config: dict, hermes_home, is_existing: bool):
+def _run_first_time_quick_setup(config: dict, thoth_home, is_existing: bool):
     """Streamlined first-time setup: provider, model, terminal & messaging.
 
     Applies sensible defaults for TTS (Edge), agent settings, and tools —
@@ -3389,10 +3389,10 @@ def _run_first_time_quick_setup(config: dict, hermes_home, is_existing: bool):
         print_info(f"  Connect Telegram/Discord:  {cli_name()} setup gateway")
     print()
 
-    _print_setup_summary(config, hermes_home)
+    _print_setup_summary(config, thoth_home)
 
 
-def _run_quick_setup(config: dict, hermes_home):
+def _run_quick_setup(config: dict, thoth_home):
     """Quick setup — only configure items that are missing."""
     from thoth_cli.config import (
         get_missing_env_vars,
@@ -3555,4 +3555,4 @@ def _run_quick_setup(config: dict, hermes_home):
         save_config(config)
 
     # Jump to summary
-    _print_setup_summary(config, hermes_home)
+    _print_setup_summary(config, thoth_home)

@@ -783,7 +783,7 @@ def kanban_home() -> Path:
 
     1. ``HERMES_KANBAN_HOME`` env var when set and non-empty (explicit
        override for tests and unusual deployments).
-    2. ``get_default_hermes_root()``, which already returns ``<root>``
+    2. ``get_default_thoth_root()``, which already returns ``<root>``
        when ``HERMES_HOME`` is ``<root>/profiles/<name>``, and returns
        ``HERMES_HOME`` directly for Docker / custom deployments.
 
@@ -795,8 +795,8 @@ def kanban_home() -> Path:
     override = os.environ.get("HERMES_KANBAN_HOME", "").strip()
     if override:
         return Path(override).expanduser()
-    from thoth_constants import get_default_hermes_root
-    return get_default_hermes_root()
+    from thoth_constants import get_default_thoth_root
+    return get_default_thoth_root()
 
 
 def boards_root() -> Path:
@@ -5737,7 +5737,7 @@ def _module_hermes_argv() -> list[str]:
     return [sys.executable, "-m", "thoth_cli.main"]
 
 
-def _absolute_hermes_path(path: str) -> str:
+def _absolute_thoth_path(path: str) -> str:
     """Return an absolute filesystem path for a resolved Thoth shim."""
     expanded = os.path.expanduser(path)
     return expanded if os.path.isabs(expanded) else os.path.abspath(expanded)
@@ -5801,7 +5801,7 @@ def _hermes_path_argv(path: str) -> list[str]:
     """
     if _IS_WINDOWS and _is_windows_batch_shim(path):
         return _module_hermes_argv()
-    return [_absolute_hermes_path(path)]
+    return [_absolute_thoth_path(path)]
 
 
 def _resolve_hermes_argv() -> list[str]:
@@ -5845,7 +5845,7 @@ def _resolve_hermes_argv() -> list[str]:
     return _module_hermes_argv()
 
 
-def _kanban_worker_skill_available(hermes_home: Optional[str]) -> bool:
+def _kanban_worker_skill_available(thoth_home: Optional[str]) -> bool:
     """True if the bundled ``kanban-worker`` skill resolves for the home the
     spawned worker will run under.
 
@@ -5863,7 +5863,7 @@ def _kanban_worker_skill_available(hermes_home: Optional[str]) -> bool:
 
     # An unset HERMES_HOME means the worker falls back to the default root
     # home (``~/.hermes``), which ships the bundled skill.
-    base = _Path(hermes_home) if hermes_home else (_Path.home() / ".hermes")
+    base = _Path(thoth_home) if thoth_home else (_Path.home() / ".hermes")
     skills_root = base / "skills"
     if not skills_root.is_dir():
         return False
@@ -5982,7 +5982,7 @@ def _default_spawn(
     # Pin the shared board + workspaces root the dispatcher resolved, so
     # that even when the worker activates a profile (`thoth -p <name>`
     # rewrites HERMES_HOME), its kanban paths still match the
-    # dispatcher's. Belt-and-braces with the `get_default_hermes_root()`
+    # dispatcher's. Belt-and-braces with the `get_default_thoth_root()`
     # resolution in `kanban_home()` — symmetric resolution is the norm,
     # but unusual symlink / Docker layouts are caught here too.
     env["HERMES_KANBAN_DB"] = str(kanban_db_path(board=board))
@@ -6756,8 +6756,8 @@ def list_profiles_on_disk() -> list[str]:
     path).
     """
     try:
-        from thoth_constants import get_default_hermes_root
-        default_root = get_default_hermes_root()
+        from thoth_constants import get_default_thoth_root
+        default_root = get_default_thoth_root()
         profiles_dir = default_root / "profiles"
     except Exception:
         return []

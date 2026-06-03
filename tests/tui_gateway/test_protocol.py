@@ -334,12 +334,12 @@ def test_session_resume_returns_hydrated_messages(server, monkeypatch):
 
 
 def test_config_load_missing(server, tmp_path):
-    server._hermes_home = tmp_path
+    server._thoth_home = tmp_path
     assert server._load_cfg() == {}
 
 
 def test_config_roundtrip(server, tmp_path):
-    server._hermes_home = tmp_path
+    server._thoth_home = tmp_path
     server._save_cfg({"model": "test/model"})
     assert server._load_cfg()["model"] == "test/model"
 

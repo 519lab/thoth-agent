@@ -19,7 +19,7 @@ import pytest
 
 
 def _run_apply_profile_override(
-    tmp_path, monkeypatch, *, hermes_home: str | None, active_profile: str | None,
+    tmp_path, monkeypatch, *, thoth_home: str | None, active_profile: str | None,
     argv: list[str] | None = None,
 ):
     """Run _apply_profile_override in isolation.
@@ -38,8 +38,8 @@ def _run_apply_profile_override(
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     monkeypatch.delenv("THOTH_HOME", raising=False)
-    if hermes_home is not None:
-        monkeypatch.setenv("HERMES_HOME", hermes_home)
+    if thoth_home is not None:
+        monkeypatch.setenv("HERMES_HOME", thoth_home)
     else:
         monkeypatch.delenv("HERMES_HOME", raising=False)
 
@@ -75,7 +75,7 @@ class TestApplyProfileOverrideHermesHomeGuard:
         result = _run_apply_profile_override(
             tmp_path,
             monkeypatch,
-            hermes_home=str(hermes_root),
+            thoth_home=str(hermes_root),
             active_profile="coder",
         )
 
@@ -119,7 +119,7 @@ class TestApplyProfileOverrideHermesHomeGuard:
         result = _run_apply_profile_override(
             tmp_path,
             monkeypatch,
-            hermes_home=None,
+            thoth_home=None,
             active_profile="coder",
         )
 

@@ -101,7 +101,7 @@ class TestWebServerEndpoints:
     """Test the FastAPI REST endpoints using Starlette TestClient."""
 
     @pytest.fixture(autouse=True)
-    def _setup_test_client(self, monkeypatch, _isolate_hermes_home):
+    def _setup_test_client(self, monkeypatch, _isolate_thoth_home):
         """Create a TestClient and isolate the state DB under the test HERMES_HOME."""
         try:
             from starlette.testclient import TestClient
@@ -122,7 +122,7 @@ class TestWebServerEndpoints:
         assert resp.status_code == 200
         data = resp.json()
         assert "version" in data
-        assert "hermes_home" in data
+        assert "thoth_home" in data
         assert "active_sessions" in data
 
     def test_get_status_filters_unconfigured_gateway_platforms(self, monkeypatch):
@@ -555,7 +555,7 @@ class TestNewEndpoints:
     """Tests for session detail, logs, cron, skills, tools, raw config, analytics."""
 
     @pytest.fixture(autouse=True)
-    def _setup(self, monkeypatch, _isolate_hermes_home):
+    def _setup(self, monkeypatch, _isolate_thoth_home):
         try:
             from starlette.testclient import TestClient
         except ImportError:
@@ -606,13 +606,13 @@ class TestNewEndpoints:
         from thoth_constants import get_thoth_home
         import thoth_cli.profiles as profiles_mod
 
-        hermes_home = get_thoth_home()
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "config.yaml").write_text(
+        thoth_home = get_thoth_home()
+        thoth_home.mkdir(parents=True, exist_ok=True)
+        (thoth_home / "config.yaml").write_text(
             "model:\n  provider: openrouter\n  name: anthropic/claude-sonnet-4.6\n",
             encoding="utf-8",
         )
-        named = hermes_home / "profiles" / "multi-agent"
+        named = thoth_home / "profiles" / "multi-agent"
         named.mkdir(parents=True)
         (named / ".env").write_text("EXAMPLE=1\n", encoding="utf-8")
         (named / "skills" / "demo").mkdir(parents=True)
@@ -1790,7 +1790,7 @@ class TestPluginAPIAuth:
     """Tests that plugin API routes require the session token (issue #19533)."""
 
     @pytest.fixture(autouse=True)
-    def _setup_test_client(self, monkeypatch, _isolate_hermes_home):
+    def _setup_test_client(self, monkeypatch, _isolate_thoth_home):
         """Create a TestClient without the session token header."""
         try:
             from starlette.testclient import TestClient
@@ -2031,7 +2031,7 @@ skip_on_windows = pytest.mark.skipif(
 @skip_on_windows
 class TestPtyWebSocket:
     @pytest.fixture(autouse=True)
-    def _setup(self, monkeypatch, _isolate_hermes_home):
+    def _setup(self, monkeypatch, _isolate_thoth_home):
         from starlette.testclient import TestClient
 
         import thoth_cli.web_server as ws

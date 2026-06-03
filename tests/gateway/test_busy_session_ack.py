@@ -444,9 +444,9 @@ class TestBusySessionOnboardingHint:
         """First busy-while-running message gets an extra hint about /busy."""
         import gateway.run as _gr
 
-        monkeypatch.setattr(_gr, "_hermes_home", tmp_path)
+        monkeypatch.setattr(_gr, "_thoth_home", tmp_path)
         # mark_seen imports utils.atomic_yaml_write; make sure it resolves
-        # against a writable dir by pointing _hermes_home at tmp_path.
+        # against a writable dir by pointing _thoth_home at tmp_path.
         monkeypatch.setattr(_gr, "_load_gateway_config", lambda: {})
 
         runner, _sentinel = _make_runner()
@@ -488,7 +488,7 @@ class TestBusySessionOnboardingHint:
         import gateway.run as _gr
         import yaml
 
-        monkeypatch.setattr(_gr, "_hermes_home", tmp_path)
+        monkeypatch.setattr(_gr, "_thoth_home", tmp_path)
         # Pre-populate the config so is_seen() returns True from the start.
         (tmp_path / "config.yaml").write_text(yaml.safe_dump({
             "onboarding": {"seen": {"busy_input_prompt": True}},
@@ -529,7 +529,7 @@ class TestBusySessionOnboardingHint:
         """In queue mode the hint should suggest /busy interrupt, not /busy queue."""
         import gateway.run as _gr
 
-        monkeypatch.setattr(_gr, "_hermes_home", tmp_path)
+        monkeypatch.setattr(_gr, "_thoth_home", tmp_path)
         monkeypatch.setattr(_gr, "_load_gateway_config", lambda: {})
 
         runner, _sentinel = _make_runner()

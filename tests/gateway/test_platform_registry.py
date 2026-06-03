@@ -436,10 +436,10 @@ class TestApplyYamlConfigFnDispatch:
     """
 
     def _write_config(self, tmp_path, content: str):
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(content, encoding="utf-8")
-        return hermes_home
+        thoth_home = tmp_path / ".hermes"
+        thoth_home.mkdir()
+        (thoth_home / "config.yaml").write_text(content, encoding="utf-8")
+        return thoth_home
 
     def _register_hook(self, name, hook_fn):
         from gateway.platform_registry import platform_registry as _reg
@@ -668,10 +668,10 @@ class TestPluginPlatformSharedKeyBridge:
     """
 
     def _write_config(self, tmp_path, content: str):
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(content, encoding="utf-8")
-        return hermes_home
+        thoth_home = tmp_path / ".hermes"
+        thoth_home.mkdir()
+        (thoth_home / "config.yaml").write_text(content, encoding="utf-8")
+        return thoth_home
 
     def test_shared_keys_bridged_for_plugin_platform(self, tmp_path, monkeypatch):
         """A plugin platform's ``require_mention``/``dm_policy``/etc. flow into

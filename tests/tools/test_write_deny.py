@@ -62,9 +62,9 @@ class TestWriteDenyExactPaths:
         monkeypatch.setenv("HERMES_HOME", str(profile_home))
 
         # Sanity check: HERMES_HOME does point to the profile dir, not the root.
-        from thoth_constants import get_thoth_home, get_default_hermes_root
+        from thoth_constants import get_thoth_home, get_default_thoth_root
         assert get_thoth_home() == profile_home
-        assert get_default_hermes_root() == root
+        assert get_default_thoth_root() == root
 
         assert _is_write_denied(str(global_env)) is True
 

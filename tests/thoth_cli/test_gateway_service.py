@@ -373,7 +373,7 @@ class TestGeneratedSystemdUnits:
             "_system_service_identity",
             lambda run_as_user=None: ("alice", "alice", "/home/alice"),
         )
-        monkeypatch.setattr(gateway_cli, "_hermes_home_for_target_user", lambda home: "/home/alice/.hermes")
+        monkeypatch.setattr(gateway_cli, "_thoth_home_for_target_user", lambda home: "/home/alice/.hermes")
         monkeypatch.setenv("PATH", "/usr/local/bin:/mnt/c/WINDOWS/system32")
         monkeypatch.setattr(gateway_cli.shutil, "which", lambda cmd: None)
 
@@ -1336,33 +1336,33 @@ class TestSystemUnitHermesHome:
         # User-scope units should still use the calling user's HERMES_HOME
         unit = gateway_cli.generate_systemd_unit(system=False)
 
-        hermes_home = str(gateway_cli.get_thoth_home().resolve())
-        assert f'HERMES_HOME={hermes_home}' in unit
+        thoth_home = str(gateway_cli.get_thoth_home().resolve())
+        assert f'HERMES_HOME={thoth_home}' in unit
 
 
 class TestHermesHomeForTargetUser:
-    """Unit tests for _hermes_home_for_target_user()."""
+    """Unit tests for _thoth_home_for_target_user()."""
 
     def test_remaps_default_home(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
         monkeypatch.delenv("HERMES_HOME", raising=False)
         monkeypatch.delenv("THOTH_HOME", raising=False)
 
-        result = gateway_cli._hermes_home_for_target_user("/home/alice")
+        result = gateway_cli._thoth_home_for_target_user("/home/alice")
         assert result == "/home/alice/.thoth"
 
     def test_remaps_profile_path(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
         monkeypatch.setenv("HERMES_HOME", "/root/.hermes/profiles/coder")
 
-        result = gateway_cli._hermes_home_for_target_user("/home/alice")
+        result = gateway_cli._thoth_home_for_target_user("/home/alice")
         assert result == "/home/alice/.hermes/profiles/coder"
 
     def test_keeps_custom_path(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
         monkeypatch.setenv("HERMES_HOME", "/opt/thoth")
 
-        result = gateway_cli._hermes_home_for_target_user("/home/alice")
+        result = gateway_cli._thoth_home_for_target_user("/home/alice")
         assert result == "/opt/thoth"
 
     def test_noop_when_same_user(self, monkeypatch):
@@ -1370,7 +1370,7 @@ class TestHermesHomeForTargetUser:
         monkeypatch.delenv("HERMES_HOME", raising=False)
         monkeypatch.delenv("THOTH_HOME", raising=False)
 
-        result = gateway_cli._hermes_home_for_target_user("/home/alice")
+        result = gateway_cli._thoth_home_for_target_user("/home/alice")
         assert result == "/home/alice/.thoth"
 
 
@@ -1665,11 +1665,11 @@ class TestProfileArg:
 
     def test_default_hermes_home_returns_empty(self, tmp_path, monkeypatch):
         """Default ~/.hermes should not produce a --profile flag."""
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
+        thoth_home = tmp_path / ".hermes"
+        thoth_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
-        result = gateway_cli._profile_arg(str(hermes_home))
+        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        result = gateway_cli._profile_arg(str(thoth_home))
         assert result == ""
 
     def test_named_profile_returns_flag(self, tmp_path, monkeypatch):

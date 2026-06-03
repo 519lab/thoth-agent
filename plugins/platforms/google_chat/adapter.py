@@ -522,12 +522,12 @@ class GoogleChatAdapter(BasePlatformAdapter):
         # made the in-memory version of this heuristic flaky for
         # multi-restart sessions).
         try:
-            from thoth_constants import get_thoth_home as _get_hermes_home
-            _hermes_home = _get_hermes_home()
+            from thoth_constants import get_thoth_home as _get_thoth_home
+            _thoth_home = _get_thoth_home()
         except (ModuleNotFoundError, ImportError):
-            _hermes_home = _Path.home() / ".hermes"
+            _thoth_home = _Path.home() / ".hermes"
         self._thread_count_store = _ThreadCountStore(
-            _hermes_home / "google_chat_thread_counts.json"
+            _thoth_home / "google_chat_thread_counts.json"
         )
         # In-flight typing-card creates per chat_id. send_typing() reserves
         # an Event here BEFORE starting the API call so concurrent calls

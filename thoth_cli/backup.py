@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from thoth_cli.cli_name import cli_name
-from thoth_constants import get_default_hermes_root, get_thoth_home, display_thoth_home
+from thoth_constants import get_default_thoth_root, get_thoth_home, display_thoth_home
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +128,7 @@ def _format_size(nbytes: int) -> str:
 
 def run_backup(args) -> None:
     """Create a zip backup of the Thoth home directory."""
-    hermes_root = get_default_hermes_root()
+    hermes_root = get_default_thoth_root()
 
     if not hermes_root.is_dir():
         print(f"Error: Thoth home directory not found at {hermes_root}")
@@ -317,7 +317,7 @@ def run_import(args) -> None:
         print(f"Error: Not a valid zip file: {zip_path}")
         sys.exit(1)
 
-    hermes_root = get_default_hermes_root()
+    hermes_root = get_default_thoth_root()
 
     with zipfile.ZipFile(zip_path, "r") as zf:
         # Validate
@@ -496,14 +496,14 @@ _QUICK_SNAPSHOTS_DIR = "state-snapshots"
 _QUICK_DEFAULT_KEEP = 20
 
 
-def _quick_snapshot_root(hermes_home: Optional[Path] = None) -> Path:
-    home = hermes_home or get_thoth_home()
+def _quick_snapshot_root(thoth_home: Optional[Path] = None) -> Path:
+    home = thoth_home or get_thoth_home()
     return home / _QUICK_SNAPSHOTS_DIR
 
 
 def create_quick_snapshot(
     label: Optional[str] = None,
-    hermes_home: Optional[Path] = None,
+    thoth_home: Optional[Path] = None,
 ) -> Optional[str]:
     """Create a quick state snapshot of critical files.
 
@@ -513,7 +513,7 @@ def create_quick_snapshot(
     Returns:
         Snapshot ID (timestamp-based), or None if no files found.
     """
-    home = hermes_home or get_thoth_home()
+    home = thoth_home or get_thoth_home()
     root = _quick_snapshot_root(home)
 
     ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
@@ -586,10 +586,10 @@ def create_quick_snapshot(
 
 def list_quick_snapshots(
     limit: int = 20,
-    hermes_home: Optional[Path] = None,
+    thoth_home: Optional[Path] = None,
 ) -> List[Dict[str, Any]]:
     """List existing quick state snapshots, most recent first."""
-    root = _quick_snapshot_root(hermes_home)
+    root = _quick_snapshot_root(thoth_home)
     if not root.exists():
         return []
 
@@ -612,14 +612,14 @@ def list_quick_snapshots(
 
 def restore_quick_snapshot(
     snapshot_id: str,
-    hermes_home: Optional[Path] = None,
+    thoth_home: Optional[Path] = None,
 ) -> bool:
     """Restore state from a quick snapshot.
 
     Overwrites current state files with the snapshot's copies.
     Returns True if at least one file was restored.
     """
-    home = hermes_home or get_thoth_home()
+    home = thoth_home or get_thoth_home()
     root = _quick_snapshot_root(home)
     snap_dir = root / snapshot_id
 
@@ -683,10 +683,10 @@ def _prune_quick_snapshots(root: Path, keep: int = _QUICK_DEFAULT_KEEP) -> int:
 
 def prune_quick_snapshots(
     keep: int = _QUICK_DEFAULT_KEEP,
-    hermes_home: Optional[Path] = None,
+    thoth_home: Optional[Path] = None,
 ) -> int:
     """Manually prune quick snapshots. Returns count deleted."""
-    return _prune_quick_snapshots(_quick_snapshot_root(hermes_home), keep=keep)
+    return _prune_quick_snapshots(_quick_snapshot_root(thoth_home), keep=keep)
 
 
 def run_quick_backup(args) -> None:
@@ -783,8 +783,8 @@ _PRE_UPDATE_PREFIX = "pre-update-"
 _PRE_UPDATE_DEFAULT_KEEP = 5
 
 
-def _pre_update_backup_dir(hermes_home: Optional[Path] = None) -> Path:
-    home = hermes_home or get_thoth_home()
+def _pre_update_backup_dir(thoth_home: Optional[Path] = None) -> Path:
+    home = thoth_home or get_thoth_home()
     return home / _PRE_UPDATE_BACKUPS_DIR
 
 
@@ -826,7 +826,7 @@ def _prune_pre_update_backups(backup_dir: Path, keep: int) -> int:
 
 
 def create_pre_update_backup(
-    hermes_home: Optional[Path] = None,
+    thoth_home: Optional[Path] = None,
     keep: int = _PRE_UPDATE_DEFAULT_KEEP,
 ) -> Optional[Path]:
     """Create a full zip backup of HERMES_HOME under ``backups/``.
@@ -839,7 +839,7 @@ def create_pre_update_backup(
     found or the backup could not be created.  Never raises — the caller
     (``thoth update``) should continue even if the backup fails.
     """
-    hermes_root = hermes_home or get_default_hermes_root()
+    hermes_root = thoth_home or get_default_thoth_root()
     if not hermes_root.is_dir():
         return None
 
@@ -898,7 +898,7 @@ def _prune_pre_migration_backups(backup_dir: Path, keep: int) -> int:
 
 
 def create_pre_migration_backup(
-    hermes_home: Optional[Path] = None,
+    thoth_home: Optional[Path] = None,
     keep: int = _PRE_MIGRATION_DEFAULT_KEEP,
 ) -> Optional[Path]:
     """Create a full zip backup of HERMES_HOME under ``backups/`` before a
@@ -914,7 +914,7 @@ def create_pre_migration_backup(
     to back up (fresh install) or the write failed.  Never raises — the
     caller decides whether to abort or proceed.
     """
-    hermes_root = hermes_home or get_default_hermes_root()
+    hermes_root = thoth_home or get_default_thoth_root()
     if not hermes_root.is_dir():
         return None
 

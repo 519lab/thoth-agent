@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from thoth_cli.profiles import _get_default_hermes_home
+from thoth_cli.profiles import _get_default_thoth_home
 
 import pytest
 
@@ -342,18 +342,18 @@ class TestResolveSessionName:
 
 class TestResolveConfigPath:
     def test_prefers_hermes_home_when_exists(self, tmp_path):
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir()
-        local_cfg = hermes_home / "honcho.json"
+        thoth_home = tmp_path / "hermes"
+        thoth_home.mkdir()
+        local_cfg = thoth_home / "honcho.json"
         local_cfg.write_text('{"apiKey": "local"}')
 
-        with patch.dict(os.environ, {"HERMES_HOME": str(hermes_home)}):
+        with patch.dict(os.environ, {"HERMES_HOME": str(thoth_home)}):
             result = resolve_config_path()
         assert result == local_cfg
 
     def test_falls_back_to_default_profile_when_no_local(self, tmp_path, monkeypatch):
         # Profile mode: HERMES_HOME points at ~/.hermes/profiles/<name>, so
-        # _get_default_hermes_home() must resolve back to ~/.hermes — that's
+        # _get_default_thoth_home() must resolve back to ~/.hermes — that's
         # the bug the HOME-anchored helper fixes (vs. blindly using Path.home()).
         fake_home = tmp_path / "fakehome"
         fake_home.mkdir()
@@ -368,7 +368,7 @@ class TestResolveConfigPath:
 
         result = resolve_config_path()
 
-        assert _get_default_hermes_home() == default_home
+        assert _get_default_thoth_home() == default_home
         assert result == default_cfg
 
     def test_falls_back_to_global_without_hermes_home_env(self, tmp_path):
@@ -384,10 +384,10 @@ class TestResolveConfigPath:
     def test_global_fallback_uses_home_at_call_time(self, tmp_path):
         fake_home = tmp_path / "fakehome"
         fake_home.mkdir()
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir()
+        thoth_home = tmp_path / "hermes"
+        thoth_home.mkdir()
 
-        with patch.dict(os.environ, {"HERMES_HOME": str(hermes_home)}), \
+        with patch.dict(os.environ, {"HERMES_HOME": str(thoth_home)}), \
              patch.object(Path, "home", return_value=fake_home):
             assert resolve_global_config_path() == fake_home / ".honcho" / "config.json"
             assert resolve_config_path() == fake_home / ".honcho" / "config.json"
@@ -415,15 +415,15 @@ class TestResolveConfigPath:
         assert config.workspace_id == "default-ws"
 
     def test_from_global_config_uses_local_path(self, tmp_path):
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir()
-        local_cfg = hermes_home / "honcho.json"
+        thoth_home = tmp_path / "hermes"
+        thoth_home.mkdir()
+        local_cfg = thoth_home / "honcho.json"
         local_cfg.write_text(json.dumps({
             "apiKey": "***",
             "workspace": "local-ws",
         }))
 
-        with patch.dict(os.environ, {"HERMES_HOME": str(hermes_home)}), \
+        with patch.dict(os.environ, {"HERMES_HOME": str(thoth_home)}), \
              patch.object(Path, "home", return_value=tmp_path):
             config = HonchoClientConfig.from_global_config()
         assert config.api_key == "***"

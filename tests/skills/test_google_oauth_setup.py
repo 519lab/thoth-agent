@@ -259,15 +259,15 @@ class TestExchangeAuthCode:
 
 
 class TestHermesConstantsFallback:
-    """Tests for _hermes_home.py fallback when thoth_constants is unavailable."""
+    """Tests for _thoth_home.py fallback when thoth_constants is unavailable."""
 
     HELPER_PATH = (
         Path(__file__).resolve().parents[2]
-        / "skills/productivity/google-workspace/scripts/_hermes_home.py"
+        / "skills/productivity/google-workspace/scripts/_thoth_home.py"
     )
 
     def _load_helper(self, monkeypatch):
-        """Load _hermes_home.py with thoth_constants blocked."""
+        """Load _thoth_home.py with thoth_constants blocked."""
         monkeypatch.setitem(sys.modules, "thoth_constants", None)
         spec = importlib.util.spec_from_file_location("_hermes_home_test", self.HELPER_PATH)
         module = importlib.util.module_from_spec(spec)
@@ -312,7 +312,7 @@ class TestHermesConstantsFallback:
         assert module.display_thoth_home() == "/opt/hermes-custom"
 
     def test_delegates_to_thoth_constants_when_available(self):
-        """When thoth_constants IS importable, _hermes_home delegates to it."""
+        """When thoth_constants IS importable, _thoth_home delegates to it."""
         spec = importlib.util.spec_from_file_location(
             "_hermes_home_happy", self.HELPER_PATH
         )

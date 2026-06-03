@@ -17,7 +17,7 @@ _THOTH_HOME_OVERRIDE: ContextVar[str | object] = ContextVar(
 )
 
 
-def set_hermes_home_override(path: str | Path | None) -> Token:
+def set_thoth_home_override(path: str | Path | None) -> Token:
     """Set a context-local Thoth home override and return its reset token.
 
     This is for in-process, per-task scoping.  It deliberately does not mutate
@@ -27,7 +27,7 @@ def set_hermes_home_override(path: str | Path | None) -> Token:
     return _THOTH_HOME_OVERRIDE.set(value)
 
 
-def reset_hermes_home_override(token: Token) -> None:
+def reset_thoth_home_override(token: Token) -> None:
     """Restore the previous context-local Thoth home override."""
     _THOTH_HOME_OVERRIDE.reset(token)
 
@@ -103,7 +103,7 @@ def get_thoth_home() -> Path:
     global _profile_fallback_warned
     if not _profile_fallback_warned:
         try:
-            # Inline the default-root resolution from get_default_hermes_root()
+            # Inline the default-root resolution from get_default_thoth_root()
             # to stay import-safe (this function is called from module scope
             # in 30+ files; we cannot afford to trigger logging setup here).
             active_path = _disk_default_home() / "active_profile"
@@ -135,7 +135,7 @@ def get_thoth_home() -> Path:
     return _disk_default_home()
 
 
-def get_default_hermes_root() -> Path:
+def get_default_thoth_root() -> Path:
     """Return the root Thoth directory for profile-level operations.
 
     In standard deployments this is ``~/.hermes``.
@@ -233,7 +233,7 @@ def get_bundled_skills_dir(default: Path | None = None) -> Path:
     return get_thoth_home() / "skills"
 
 
-def get_hermes_dir(new_subpath: str, old_name: str) -> Path:
+def get_thoth_dir(new_subpath: str, old_name: str) -> Path:
     """Resolve a Thoth subdirectory with backward compatibility.
 
     New installs get the consolidated layout (e.g. ``cache/images``).
@@ -311,14 +311,14 @@ def get_subprocess_home() -> str | None:
     Activation is directory-based: if the ``home/`` subdirectory doesn't
     exist, returns ``None`` and behavior is unchanged.
     """
-    hermes_home = (
+    thoth_home = (
         get_thoth_home_override()
         or os.getenv("THOTH_HOME")
         or os.getenv("HERMES_HOME")
     )
-    if not hermes_home:
+    if not thoth_home:
         return None
-    profile_home = os.path.join(hermes_home, "home")
+    profile_home = os.path.join(thoth_home, "home")
     if os.path.isdir(profile_home):
         return profile_home
     return None
@@ -484,3 +484,9 @@ AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1"
 # and any external importer of the old names. Remove in a later cleanup phase.
 get_hermes_home = get_thoth_home
 get_hermes_home_override = get_thoth_home_override
+
+# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
+get_default_hermes_root = get_default_thoth_root
+reset_hermes_home_override = reset_thoth_home_override
+get_hermes_dir = get_thoth_dir
+set_hermes_home_override = set_thoth_home_override

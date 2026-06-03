@@ -234,8 +234,8 @@ def check_for_updates() -> Optional[int]:
     if behind but the count is unknown, ``0`` if up-to-date, or ``None`` if
     the check failed or doesn't apply. Cached for 6 hours.
     """
-    hermes_home = get_thoth_home()
-    cache_file = hermes_home / ".update_check"
+    thoth_home = get_thoth_home()
+    cache_file = thoth_home / ".update_check"
     embedded_rev = os.environ.get("HERMES_REVISION") or None
 
     # Read cache — invalidate if the embedded rev has changed since last check
@@ -259,7 +259,7 @@ def check_for_updates() -> Optional[int]:
         # Path(__file__) always resolves to the actual installed checkout.
         repo_dir = Path(__file__).parent.parent.resolve()
         if not (repo_dir / ".git").exists():
-            repo_dir = hermes_home / "hermes-agent"
+            repo_dir = thoth_home / "hermes-agent"
         if not (repo_dir / ".git").exists():
             behind = check_via_pypi()
         else:
@@ -282,8 +282,8 @@ def _resolve_repo_dir() -> Optional[Path]:
     """
     repo_dir = Path(__file__).parent.parent.resolve()
     if not (repo_dir / ".git").exists():
-        hermes_home = get_thoth_home()
-        repo_dir = hermes_home / "hermes-agent"
+        thoth_home = get_thoth_home()
+        repo_dir = thoth_home / "hermes-agent"
     return repo_dir if (repo_dir / ".git").exists() else None
 
 

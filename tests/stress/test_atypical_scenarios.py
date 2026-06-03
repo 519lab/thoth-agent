@@ -441,7 +441,7 @@ def _(home, kb):
             if not resolved_abs.startswith(home_abs) and resolved_abs.startswith("/tmp"):
                 # This is escaping the home dir. Whether that's actually
                 # a problem depends on the threat model. Flag for attention.
-                print(f"  ⚠ workspace resolved OUTSIDE hermes_home: {resolved}")
+                print(f"  ⚠ workspace resolved OUTSIDE thoth_home: {resolved}")
                 print(f"    (not necessarily a bug — dir: workspaces are intentionally arbitrary, but worth documenting)")
         except Exception as e:
             print(f"  resolve_workspace rejected: {e}")
@@ -686,11 +686,11 @@ def _(home, kb):
 # CONCURRENCY CORNERS
 # =============================================================================
 
-def _idempotency_race_worker(hermes_home: str, key: str, result_file: str,
+def _idempotency_race_worker(thoth_home: str, key: str, result_file: str,
                              barrier_path: str) -> None:
     """Subprocess body for the idempotency race test."""
-    os.environ["HERMES_HOME"] = hermes_home
-    os.environ["HOME"] = hermes_home
+    os.environ["HERMES_HOME"] = thoth_home
+    os.environ["HOME"] = thoth_home
     sys.path.insert(0, str(WT))
     from thoth_cli import kanban_db as kb
 

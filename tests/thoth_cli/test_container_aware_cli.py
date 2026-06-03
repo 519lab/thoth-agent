@@ -24,12 +24,12 @@ from thoth_cli.config import (
 @pytest.fixture
 def container_env(tmp_path, monkeypatch):
     """Set up a fake HERMES_HOME with .container-mode file."""
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    thoth_home = tmp_path / ".hermes"
+    thoth_home.mkdir()
+    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
     monkeypatch.delenv("HERMES_DEV", raising=False)
 
-    container_mode = hermes_home / ".container-mode"
+    container_mode = thoth_home / ".container-mode"
     container_mode.write_text(
         "# Written by NixOS activation script. Do not edit manually.\n"
         "backend=podman\n"
@@ -37,7 +37,7 @@ def container_env(tmp_path, monkeypatch):
         "exec_user=hermes\n"
         "hermes_bin=/data/current-package/bin/thoth\n"
     )
-    return hermes_home
+    return thoth_home
 
 
 def test_get_container_exec_info_returns_metadata(container_env):
@@ -62,9 +62,9 @@ def test_get_container_exec_info_none_inside_container(container_env):
 
 def test_get_container_exec_info_none_without_file(tmp_path, monkeypatch):
     """Returns None when .container-mode doesn't exist (native mode)."""
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    thoth_home = tmp_path / ".hermes"
+    thoth_home.mkdir()
+    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
     monkeypatch.delenv("HERMES_DEV", raising=False)
 
     with patch("thoth_constants.is_container", return_value=False):
@@ -98,14 +98,14 @@ def test_get_container_exec_info_defaults():
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        hermes_home = Path(tmpdir) / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / ".container-mode").write_text(
+        thoth_home = Path(tmpdir) / ".hermes"
+        thoth_home.mkdir()
+        (thoth_home / ".container-mode").write_text(
             "# minimal file with no keys\n"
         )
 
         with patch("thoth_constants.is_container", return_value=False), \
-             patch.dict(get_container_exec_info.__globals__, {"get_thoth_home": lambda: hermes_home}), \
+             patch.dict(get_container_exec_info.__globals__, {"get_thoth_home": lambda: thoth_home}), \
              patch.dict(os.environ, {}, clear=False):
             os.environ.pop("HERMES_DEV", None)
             info = get_container_exec_info()

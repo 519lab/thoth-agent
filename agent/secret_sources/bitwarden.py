@@ -6,7 +6,7 @@ so they don't have to live in plaintext in ``~/.hermes/.env``.
 Design summary
 --------------
 
-* The ``bws`` binary is auto-installed into ``<hermes_home>/bin/bws`` on
+* The ``bws`` binary is auto-installed into ``<thoth_home>/bin/bws`` on
   first use.  Thoth pins one version (``_BWS_VERSION``) and downloads
   the matching asset from the official GitHub Releases page, verifying
   the SHA-256 against the release's published checksum file.
@@ -122,7 +122,7 @@ def find_bws(*, install_if_missing: bool = False) -> Optional[Path]:
     """Return a path to a usable ``bws`` binary, or None.
 
     Resolution order:
-      1. ``<hermes_home>/bin/bws``  (our managed copy — preferred)
+      1. ``<thoth_home>/bin/bws``  (our managed copy — preferred)
       2. ``shutil.which("bws")``    (system PATH)
 
     When ``install_if_missing`` is True and neither resolves, this calls

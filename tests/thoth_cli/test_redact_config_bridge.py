@@ -23,11 +23,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 def test_redact_secrets_false_in_config_yaml_is_honored(tmp_path):
     """Setting `security.redact_secrets: false` in config.yaml must disable
     redaction — even though it's set in YAML, not as an env var."""
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
+    thoth_home = tmp_path / ".hermes"
+    thoth_home.mkdir()
 
     # Write a config.yaml with redact_secrets: false
-    (hermes_home / "config.yaml").write_text(
+    (thoth_home / "config.yaml").write_text(
         textwrap.dedent(
             """\
             security:
@@ -36,7 +36,7 @@ def test_redact_secrets_false_in_config_yaml_is_honored(tmp_path):
         )
     )
     # Empty .env so nothing else sets the env var
-    (hermes_home / ".env").write_text("")
+    (thoth_home / ".env").write_text("")
 
     # Spawn a fresh Python process that imports thoth_cli.main and checks
     # _REDACT_ENABLED. Must be a subprocess — we need a clean module state.
@@ -54,7 +54,7 @@ def test_redact_secrets_false_in_config_yaml_is_honored(tmp_path):
     ) % str(REPO_ROOT)
 
     env = dict(os.environ)
-    env["HERMES_HOME"] = str(hermes_home)
+    env["HERMES_HOME"] = str(thoth_home)
     env.pop("HERMES_REDACT_SECRETS", None)
 
     result = subprocess.run(
@@ -80,10 +80,10 @@ def test_redact_secrets_default_true_when_unset(tmp_path):
     `security.redact_secrets: false` explicitly (or
     `HERMES_REDACT_SECRETS=false`).
     """
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    (hermes_home / "config.yaml").write_text("{}\n")  # empty config
-    (hermes_home / ".env").write_text("")
+    thoth_home = tmp_path / ".hermes"
+    thoth_home.mkdir()
+    (thoth_home / "config.yaml").write_text("{}\n")  # empty config
+    (thoth_home / ".env").write_text("")
 
     probe = textwrap.dedent(
         """\
@@ -97,7 +97,7 @@ def test_redact_secrets_default_true_when_unset(tmp_path):
     ) % str(REPO_ROOT)
 
     env = dict(os.environ)
-    env["HERMES_HOME"] = str(hermes_home)
+    env["HERMES_HOME"] = str(thoth_home)
     env.pop("HERMES_REDACT_SECRETS", None)
 
     result = subprocess.run(
@@ -115,9 +115,9 @@ def test_redact_secrets_default_true_when_unset(tmp_path):
 def test_redact_secrets_true_in_config_yaml_is_honored(tmp_path):
     """Setting `security.redact_secrets: true` in config.yaml must enable
     redaction — even though it's set in YAML, not as an env var."""
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    (hermes_home / "config.yaml").write_text(
+    thoth_home = tmp_path / ".hermes"
+    thoth_home.mkdir()
+    (thoth_home / "config.yaml").write_text(
         textwrap.dedent(
             """\
             security:
@@ -125,7 +125,7 @@ def test_redact_secrets_true_in_config_yaml_is_honored(tmp_path):
             """
         )
     )
-    (hermes_home / ".env").write_text("")
+    (thoth_home / ".env").write_text("")
 
     probe = textwrap.dedent(
         """\
@@ -140,7 +140,7 @@ def test_redact_secrets_true_in_config_yaml_is_honored(tmp_path):
     ) % str(REPO_ROOT)
 
     env = dict(os.environ)
-    env["HERMES_HOME"] = str(hermes_home)
+    env["HERMES_HOME"] = str(thoth_home)
     env.pop("HERMES_REDACT_SECRETS", None)
 
     result = subprocess.run(
@@ -160,9 +160,9 @@ def test_redact_secrets_true_in_config_yaml_is_honored(tmp_path):
 
 def test_dotenv_redact_secrets_beats_config_yaml(tmp_path):
     """.env HERMES_REDACT_SECRETS takes precedence over config.yaml."""
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    (hermes_home / "config.yaml").write_text(
+    thoth_home = tmp_path / ".hermes"
+    thoth_home.mkdir()
+    (thoth_home / "config.yaml").write_text(
         textwrap.dedent(
             """\
             security:
@@ -171,7 +171,7 @@ def test_dotenv_redact_secrets_beats_config_yaml(tmp_path):
         )
     )
     # .env force-enables redaction
-    (hermes_home / ".env").write_text("HERMES_REDACT_SECRETS=true\n")
+    (thoth_home / ".env").write_text("HERMES_REDACT_SECRETS=true\n")
 
     probe = textwrap.dedent(
         """\
@@ -186,7 +186,7 @@ def test_dotenv_redact_secrets_beats_config_yaml(tmp_path):
     ) % str(REPO_ROOT)
 
     env = dict(os.environ)
-    env["HERMES_HOME"] = str(hermes_home)
+    env["HERMES_HOME"] = str(thoth_home)
     env.pop("HERMES_REDACT_SECRETS", None)
 
     result = subprocess.run(

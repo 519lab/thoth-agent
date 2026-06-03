@@ -581,7 +581,7 @@ def _home_thread_env_var(platform_name: str) -> str:
 
 def _restart_notification_pending() -> bool:
     """Return True when a /restart completion marker is waiting to be delivered."""
-    return (_hermes_home / ".restart_notify.json").exists()
+    return (_thoth_home / ".restart_notify.json").exists()
 
 
 # Mark this process as a gateway so cli.py's module-level load_cli_config()
@@ -596,14 +596,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Resolve Thoth home directory (respects HERMES_HOME override)
 from thoth_constants import get_thoth_home
 from utils import atomic_json_write, atomic_yaml_write, base_url_host_matches, is_truthy_value
-_hermes_home = get_thoth_home()
+_thoth_home = get_thoth_home()
 
 # Load environment variables from ~/.hermes/.env first.
 # User-managed env files should override stale shell exports on restart.
 from dotenv import load_dotenv  # backward-compat for tests that monkeypatch this symbol
 from thoth_cli.env_loader import load_thoth_dotenv
-_env_path = _hermes_home / '.env'
-load_thoth_dotenv(hermes_home=_hermes_home, project_env=Path(__file__).resolve().parents[1] / '.env')
+_env_path = _thoth_home / '.env'
+load_thoth_dotenv(thoth_home=_thoth_home, project_env=Path(__file__).resolve().parents[1] / '.env')
 
 
 def _reload_runtime_env_preserving_config_authority() -> None:
@@ -615,11 +615,11 @@ def _reload_runtime_env_preserving_config_authority() -> None:
     .env can replace the startup bridge on later turns.
     """
     load_thoth_dotenv(
-        hermes_home=_hermes_home,
+        thoth_home=_thoth_home,
         project_env=Path(__file__).resolve().parents[1] / '.env',
     )
 
-    config_path = _hermes_home / 'config.yaml'
+    config_path = _thoth_home / 'config.yaml'
     if not config_path.exists():
         return
     try:
@@ -641,7 +641,7 @@ _DOCKER_MEDIA_OUTPUT_CONTAINER_PATHS = {"/output", "/outputs"}
 
 # Bridge config.yaml values into the environment so os.getenv() picks them up.
 # config.yaml is authoritative for terminal settings — overrides .env.
-_config_path = _hermes_home / 'config.yaml'
+_config_path = _thoth_home / 'config.yaml'
 if _config_path.exists():
     try:
         import yaml as _yaml
@@ -933,7 +933,7 @@ def _try_resolve_fallback_provider() -> dict | None:
     from thoth_cli.runtime_provider import resolve_runtime_provider
     try:
         import yaml as _y
-        cfg_path = _hermes_home / "config.yaml"
+        cfg_path = _thoth_home / "config.yaml"
         if not cfg_path.exists():
             return None
         with open(cfg_path, encoding="utf-8") as _f:
@@ -1218,17 +1218,17 @@ def _teams_pipeline_plugin_enabled() -> bool:
 def _load_gateway_config() -> dict:
     """Load and parse ~/.hermes/config.yaml, returning {} on any error.
 
-    Uses the module-level ``_hermes_home`` (so tests that monkeypatch it
+    Uses the module-level ``_thoth_home`` (so tests that monkeypatch it
     still see their fixture) and shares the mtime-keyed raw-yaml cache
     from ``thoth_cli.config.read_raw_config`` when the paths match.
     """
-    config_path = _hermes_home / 'config.yaml'
+    config_path = _thoth_home / 'config.yaml'
     try:
         from thoth_cli.config import get_config_path, read_raw_config
-        # Fast path: if _hermes_home agrees with the canonical config
+        # Fast path: if _thoth_home agrees with the canonical config
         # location, reuse the shared cache. Otherwise fall through to a
         # direct read (keeps test fixtures with a monkeypatched
-        # _hermes_home working).
+        # _thoth_home working).
         if config_path == get_config_path():
             return read_raw_config()
     except Exception:
@@ -1764,7 +1764,7 @@ class GatewayRunner:
 
     # -- Voice mode persistence ------------------------------------------
 
-    _VOICE_MODE_PATH = _hermes_home / "gateway_voice_mode.json"
+    _VOICE_MODE_PATH = _thoth_home / "gateway_voice_mode.json"
 
     def _voice_key(self, platform: Platform, chat_id: str) -> str:
         """Return a platform-namespaced key for voice mode state."""
@@ -2594,7 +2594,7 @@ class GatewayRunner:
         if not file_path:
             try:
                 import yaml as _y
-                cfg_path = _hermes_home / "config.yaml"
+                cfg_path = _thoth_home / "config.yaml"
                 if cfg_path.exists():
                     with open(cfg_path, encoding="utf-8") as _f:
                         cfg = _y.safe_load(_f) or {}
@@ -2605,7 +2605,7 @@ class GatewayRunner:
             return []
         path = Path(file_path).expanduser()
         if not path.is_absolute():
-            path = _hermes_home / path
+            path = _thoth_home / path
         if not path.exists():
             logger.warning("Prefill messages file not found: %s", path)
             return []
@@ -2632,7 +2632,7 @@ class GatewayRunner:
             return prompt
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _thoth_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -2653,7 +2653,7 @@ class GatewayRunner:
         effort = ""
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _thoth_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -2736,7 +2736,7 @@ class GatewayRunner:
         raw = ""
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _thoth_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -2757,7 +2757,7 @@ class GatewayRunner:
         """Load show_reasoning toggle from config.yaml display section."""
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _thoth_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -2776,7 +2776,7 @@ class GatewayRunner:
         if not mode:
             try:
                 import yaml as _y
-                cfg_path = _hermes_home / "config.yaml"
+                cfg_path = _thoth_home / "config.yaml"
                 if cfg_path.exists():
                     with open(cfg_path, encoding="utf-8") as _f:
                         cfg = _y.safe_load(_f) or {}
@@ -2796,7 +2796,7 @@ class GatewayRunner:
         if not raw:
             try:
                 import yaml as _y
-                cfg_path = _hermes_home / "config.yaml"
+                cfg_path = _thoth_home / "config.yaml"
                 if cfg_path.exists():
                     with open(cfg_path, encoding="utf-8") as _f:
                         cfg = _y.safe_load(_f) or {}
@@ -2829,7 +2829,7 @@ class GatewayRunner:
         if not mode:
             try:
                 import yaml as _y
-                cfg_path = _hermes_home / "config.yaml"
+                cfg_path = _thoth_home / "config.yaml"
                 if cfg_path.exists():
                     with open(cfg_path, encoding="utf-8") as _f:
                         cfg = _y.safe_load(_f) or {}
@@ -2855,7 +2855,7 @@ class GatewayRunner:
         """Load OpenRouter provider routing preferences from config.yaml."""
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _thoth_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -2874,7 +2874,7 @@ class GatewayRunner:
         """
         try:
             import yaml as _y
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _thoth_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -3071,7 +3071,7 @@ class GatewayRunner:
                     f"{message}\n\n"
                     f"{busy_input_hint_gateway(_hint_mode)}"
                 )
-                mark_seen(_hermes_home / "config.yaml", BUSY_INPUT_FLAG)
+                mark_seen(_thoth_home / "config.yaml", BUSY_INPUT_FLAG)
         except Exception as _onb_err:
             logger.debug("Failed to apply busy-input onboarding hint: %s", _onb_err)
 
@@ -3348,7 +3348,7 @@ class GatewayRunner:
         """
         import json
 
-        path = _hermes_home / self._STUCK_LOOP_FILE
+        path = _thoth_home / self._STUCK_LOOP_FILE
         try:
             counts = json.loads(path.read_text()) if path.exists() else {}
         except Exception:
@@ -3375,7 +3375,7 @@ class GatewayRunner:
         """
         import json
 
-        path = _hermes_home / self._STUCK_LOOP_FILE
+        path = _thoth_home / self._STUCK_LOOP_FILE
         if not path.exists():
             return 0
 
@@ -3422,7 +3422,7 @@ class GatewayRunner:
         """
         import json
 
-        path = _hermes_home / self._STUCK_LOOP_FILE
+        path = _thoth_home / self._STUCK_LOOP_FILE
         if not path.exists():
             return
         try:
@@ -3854,7 +3854,7 @@ class GatewayRunner:
         # process already drained active agents, so sessions aren't stuck.
         # This prevents unwanted auto-resets after `thoth update`,
         # `thoth gateway restart`, or `/restart`.
-        _clean_marker = _hermes_home / ".clean_shutdown"
+        _clean_marker = _thoth_home / ".clean_shutdown"
         if _clean_marker.exists():
             logger.info("Previous gateway exited cleanly — skipping session suspension")
             try:
@@ -4088,8 +4088,8 @@ class GatewayRunner:
         if not notified and any(
             path.exists()
             for path in (
-                _hermes_home / ".update_pending.json",
-                _hermes_home / ".update_pending.claimed.json",
+                _thoth_home / ".update_pending.json",
+                _thoth_home / ".update_pending.claimed.json",
             )
         ):
             self._schedule_update_notification_watch()
@@ -5898,7 +5898,7 @@ class GatewayRunner:
             # of resuming a half-finished tool loop.
             if not timed_out:
                 try:
-                    (_hermes_home / ".clean_shutdown").touch()
+                    (_thoth_home / ".clean_shutdown").touch()
                 except Exception:
                     pass
             else:
@@ -6622,8 +6622,8 @@ class GatewayRunner:
                 else:
                     response_text = raw
             if response_text:
-                response_path = _hermes_home / ".update_response"
-                prompt_path = _hermes_home / ".update_prompt.json"
+                response_path = _thoth_home / ".update_response"
+                prompt_path = _thoth_home / ".update_prompt.json"
                 try:
                     tmp = response_path.with_suffix(".tmp")
                     tmp.write_text(response_text)
@@ -6642,8 +6642,8 @@ class GatewayRunner:
             # blocking on stdin until the 30-minute watcher timeout.
             # The slash command then falls through to normal dispatch.
             if _recognized_cmd:
-                response_path = _hermes_home / ".update_response"
-                prompt_path = _hermes_home / ".update_prompt.json"
+                response_path = _thoth_home / ".update_response"
+                prompt_path = _thoth_home / ".update_prompt.json"
                 try:
                     tmp = response_path.with_suffix(".tmp")
                     tmp.write_text("")
@@ -9745,7 +9745,7 @@ class GatewayRunner:
             if event.source.thread_id:
                 notify_data["thread_id"] = event.source.thread_id
             atomic_json_write(
-                _hermes_home / ".restart_notify.json",
+                _thoth_home / ".restart_notify.json",
                 notify_data,
                 indent=None,
             )
@@ -9765,7 +9765,7 @@ class GatewayRunner:
             if event.platform_update_id is not None:
                 dedup_data["update_id"] = event.platform_update_id
             atomic_json_write(
-                _hermes_home / ".restart_last_processed.json",
+                _thoth_home / ".restart_last_processed.json",
                 dedup_data,
                 indent=None,
             )
@@ -9817,7 +9817,7 @@ class GatewayRunner:
             return False
 
         try:
-            marker_path = _hermes_home / ".restart_last_processed.json"
+            marker_path = _thoth_home / ".restart_last_processed.json"
             if not marker_path.exists():
                 return False
             data = json.loads(marker_path.read_text())
@@ -9949,7 +9949,7 @@ class GatewayRunner:
         current_api_key = ""
         user_provs = None
         custom_provs = None
-        config_path = _hermes_home / "config.yaml"
+        config_path = _thoth_home / "config.yaml"
         try:
             cfg = _load_gateway_config()
             if cfg:
@@ -10329,7 +10329,7 @@ class GatewayRunner:
         from thoth_constants import display_thoth_home
 
         args = event.get_command_args().strip().lower()
-        config_path = _hermes_home / 'config.yaml'
+        config_path = _thoth_home / 'config.yaml'
 
         try:
             config = _load_gateway_config()
@@ -11322,7 +11322,7 @@ class GatewayRunner:
         cp_cfg = {}
         try:
             import yaml as _y
-            _cfg_path = _hermes_home / "config.yaml"
+            _cfg_path = _thoth_home / "config.yaml"
             if _cfg_path.exists():
                 with open(_cfg_path, encoding="utf-8") as _f:
                     _data = _y.safe_load(_f) or {}
@@ -11597,7 +11597,7 @@ class GatewayRunner:
 
         raw_args = event.get_command_args().strip()
         args, persist_global = self._parse_reasoning_command_args(raw_args)
-        config_path = _hermes_home / "config.yaml"
+        config_path = _thoth_home / "config.yaml"
         session_key = self._session_key_for_source(event.source)
         self._show_reasoning = self._load_show_reasoning()
         self._reasoning_config = self._resolve_session_reasoning_config(
@@ -11703,7 +11703,7 @@ class GatewayRunner:
         from thoth_cli.models import model_supports_fast_mode
 
         args = event.get_command_args().strip().lower()
-        config_path = _hermes_home / "config.yaml"
+        config_path = _thoth_home / "config.yaml"
         self._service_tier = self._load_service_tier()
 
         user_config = _load_gateway_config()
@@ -11777,7 +11777,7 @@ class GatewayRunner:
         have its own verbosity level independently.
         """
 
-        config_path = _hermes_home / "config.yaml"
+        config_path = _thoth_home / "config.yaml"
         platform_key = _platform_config_key(event.source.platform)
 
         # --- check config gate ------------------------------------------------
@@ -11845,7 +11845,7 @@ class GatewayRunner:
         """
         from gateway.runtime_footer import resolve_footer_config
 
-        config_path = _hermes_home / "config.yaml"
+        config_path = _thoth_home / "config.yaml"
         platform_key = _platform_config_key(event.source.platform)
 
         # --- parse argument -------------------------------------------------
@@ -13648,9 +13648,9 @@ class GatewayRunner:
         if not hermes_cmd:
             return t("gateway.update.hermes_cmd_not_found")
 
-        pending_path = _hermes_home / ".update_pending.json"
-        output_path = _hermes_home / ".update_output.txt"
-        exit_code_path = _hermes_home / ".update_exit_code"
+        pending_path = _thoth_home / ".update_pending.json"
+        output_path = _thoth_home / ".update_output.txt"
+        exit_code_path = _thoth_home / ".update_exit_code"
         session_key = self._session_key_for_source(event.source)
         pending = {
             "platform": event.source.platform.value,
@@ -13785,11 +13785,11 @@ class GatewayRunner:
         the messenger.  The user's next message is intercepted by
         ``_handle_message`` and written to ``.update_response``.
         """
-        pending_path = _hermes_home / ".update_pending.json"
-        claimed_path = _hermes_home / ".update_pending.claimed.json"
-        output_path = _hermes_home / ".update_output.txt"
-        exit_code_path = _hermes_home / ".update_exit_code"
-        prompt_path = _hermes_home / ".update_prompt.json"
+        pending_path = _thoth_home / ".update_pending.json"
+        claimed_path = _thoth_home / ".update_pending.claimed.json"
+        output_path = _thoth_home / ".update_output.txt"
+        exit_code_path = _thoth_home / ".update_exit_code"
+        prompt_path = _thoth_home / ".update_prompt.json"
 
         loop = asyncio.get_running_loop()
         deadline = loop.time() + timeout
@@ -13893,7 +13893,7 @@ class GatewayRunner:
                 for p in (pending_path, claimed_path, output_path,
                           exit_code_path, prompt_path):
                     p.unlink(missing_ok=True)
-                (_hermes_home / ".update_response").unlink(missing_ok=True)
+                (_thoth_home / ".update_response").unlink(missing_ok=True)
                 self._update_prompt_pending.pop(session_key, None)
                 return
 
@@ -13978,7 +13978,7 @@ class GatewayRunner:
             for p in (pending_path, claimed_path, output_path,
                       exit_code_path, prompt_path):
                 p.unlink(missing_ok=True)
-            (_hermes_home / ".update_response").unlink(missing_ok=True)
+            (_thoth_home / ".update_response").unlink(missing_ok=True)
             self._update_prompt_pending.pop(session_key, None)
 
     async def _send_update_notification(self) -> bool:
@@ -13991,10 +13991,10 @@ class GatewayRunner:
         cannot resolve the adapter (e.g. after a gateway restart where the
         platform hasn't reconnected yet).
         """
-        pending_path = _hermes_home / ".update_pending.json"
-        claimed_path = _hermes_home / ".update_pending.claimed.json"
-        output_path = _hermes_home / ".update_output.txt"
-        exit_code_path = _hermes_home / ".update_exit_code"
+        pending_path = _thoth_home / ".update_pending.json"
+        claimed_path = _thoth_home / ".update_pending.claimed.json"
+        output_path = _thoth_home / ".update_output.txt"
+        exit_code_path = _thoth_home / ".update_exit_code"
 
         if not pending_path.exists() and not claimed_path.exists():
             return False
@@ -14070,7 +14070,7 @@ class GatewayRunner:
 
     async def _send_restart_notification(self) -> Optional[tuple[str, str, Optional[str]]]:
         """Notify the chat that initiated /restart that the gateway is back."""
-        notify_path = _hermes_home / ".restart_notify.json"
+        notify_path = _thoth_home / ".restart_notify.json"
         if not notify_path.exists():
             return None
 
@@ -15625,7 +15625,7 @@ class GatewayRunner:
                         if gate_on and not is_seen(_cfg, TOOL_PROGRESS_FLAG):
                             long_tool_hint_fired[0] = True
                             progress_queue.put(tool_progress_hint_gateway())
-                            mark_seen(_hermes_home / "config.yaml", TOOL_PROGRESS_FLAG)
+                            mark_seen(_thoth_home / "config.yaml", TOOL_PROGRESS_FLAG)
                 except Exception as _hint_err:
                     logger.debug("tool-progress onboarding hint failed: %s", _hint_err)
                 return
@@ -17959,11 +17959,11 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
             except Exception:
                 pass
         else:
-            hermes_home = str(get_thoth_home())
+            thoth_home = str(get_thoth_home())
             logger.error(
                 "Another gateway instance is already running (PID %d, HERMES_HOME=%s). "
                 "Use 'thoth gateway restart' to replace it, or 'thoth gateway stop' first.",
-                existing_pid, hermes_home,
+                existing_pid, thoth_home,
             )
             print(
                 f"\n❌ Gateway already running (PID {existing_pid}).\n"
@@ -17984,7 +17984,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     # and gateway.log (INFO+, gateway-component records only).
     # Idempotent, so repeated calls from AIAgent.__init__ won't duplicate.
     from thoth_logging import setup_logging
-    setup_logging(hermes_home=_hermes_home, mode="gateway")
+    setup_logging(thoth_home=_thoth_home, mode="gateway")
 
     # Periodic process memory usage logging (gateway only) — emits a
     # grep-friendly "[MEMORY] rss=...MB ..." line every N minutes so
@@ -18119,7 +18119,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
             # if our cgroup is being torn down.  Bounded by an internal
             # timeout; never blocks the event loop here.
             try:
-                _diag_log = _hermes_home / "logs" / "gateway-shutdown-diag.log"
+                _diag_log = _thoth_home / "logs" / "gateway-shutdown-diag.log"
                 spawn_async_diagnostic(
                     _diag_log, _shutdown_ctx["signal"], timeout_seconds=5.0
                 )

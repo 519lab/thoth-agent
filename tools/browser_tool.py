@@ -156,10 +156,10 @@ def _discover_homebrew_node_dirs() -> tuple[str, ...]:
 
 def _browser_candidate_path_dirs() -> list[str]:
     """Return ordered browser CLI PATH candidates shared by discovery and execution."""
-    hermes_home = get_thoth_home()
-    hermes_node_bin = str(hermes_home / "node" / "bin")
-    hermes_node_root = str(hermes_home / "node")
-    hermes_nm_bin = str(hermes_home / "node_modules" / ".bin")
+    thoth_home = get_thoth_home()
+    hermes_node_bin = str(thoth_home / "node" / "bin")
+    hermes_node_root = str(thoth_home / "node")
+    hermes_nm_bin = str(thoth_home / "node_modules" / ".bin")
     return [hermes_node_bin, hermes_node_root, hermes_nm_bin, *list(_discover_homebrew_node_dirs()), *_SANE_PATH_DIRS]
 
 
@@ -2939,14 +2939,14 @@ def _maybe_start_recording(task_id: str):
             return
     try:
         from thoth_cli.config import read_raw_config
-        hermes_home = get_thoth_home()
+        thoth_home = get_thoth_home()
         cfg = read_raw_config()
         record_enabled = cfg_get(cfg, "browser", "record_sessions", default=False)
 
         if not record_enabled:
             return
 
-        recordings_dir = hermes_home / "browser_recordings"
+        recordings_dir = thoth_home / "browser_recordings"
         recordings_dir.mkdir(parents=True, exist_ok=True)
         _cleanup_old_recordings(max_age_hours=72)
 
@@ -3068,8 +3068,8 @@ def browser_vision(question: str, annotate: bool = False, task_id: Optional[str]
 
     import base64
     import uuid as uuid_mod
-    from thoth_constants import get_hermes_dir
-    screenshots_dir = get_hermes_dir("cache/screenshots", "browser_screenshots")
+    from thoth_constants import get_thoth_dir
+    screenshots_dir = get_thoth_dir("cache/screenshots", "browser_screenshots")
     screenshot_path = screenshots_dir / f"browser_screenshot_{uuid_mod.uuid4().hex}.png"
     effective_task_id = _last_session_key(task_id or "default")
 
@@ -3096,8 +3096,8 @@ def browser_vision(question: str, annotate: bool = False, task_id: Optional[str]
             _lp_fallback_warning = fb_result.get("fallback_warning")
             fb_path = fb_result.get("data", {}).get("path", "")
             if fb_path and os.path.exists(fb_path):
-                from thoth_constants import get_hermes_dir
-                screenshots_dir = get_hermes_dir("cache/screenshots", "browser_screenshots")
+                from thoth_constants import get_thoth_dir
+                screenshots_dir = get_thoth_dir("cache/screenshots", "browser_screenshots")
                 screenshots_dir.mkdir(parents=True, exist_ok=True)
                 import shutil as _shutil_vision
                 persistent_path = screenshots_dir / f"browser_screenshot_{uuid_mod.uuid4().hex}.png"
@@ -3312,8 +3312,8 @@ def _cleanup_old_screenshots(screenshots_dir, max_age_hours=24):
 def _cleanup_old_recordings(max_age_hours=72):
     """Remove browser recordings older than max_age_hours to prevent disk bloat."""
     try:
-        hermes_home = get_thoth_home()
-        recordings_dir = hermes_home / "browser_recordings"
+        thoth_home = get_thoth_home()
+        recordings_dir = thoth_home / "browser_recordings"
         if not recordings_dir.exists():
             return
         cutoff = time.time() - (max_age_hours * 3600)

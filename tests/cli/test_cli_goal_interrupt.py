@@ -26,7 +26,7 @@ import pytest
 
 
 @pytest.fixture
-def hermes_home(tmp_path, monkeypatch):
+def thoth_home(tmp_path, monkeypatch):
     """Isolated HERMES_HOME so SessionDB.state_meta writes stay hermetic."""
     home = tmp_path / ".hermes"
     home.mkdir()
@@ -68,7 +68,7 @@ def _make_cli_with_goal(session_id: str, goal_text: str = "build a thing"):
 
 
 class TestInterruptAutoPause:
-    def test_interrupted_turn_pauses_goal_and_skips_continuation(self, hermes_home):
+    def test_interrupted_turn_pauses_goal_and_skips_continuation(self, thoth_home):
         """Ctrl+C mid-turn must auto-pause the goal, not queue another round."""
         sid = f"sid-interrupt-{uuid.uuid4().hex}"
         cli, mgr = _make_cli_with_goal(sid)
@@ -98,7 +98,7 @@ class TestInterruptAutoPause:
         assert state.status == "paused"
         assert "interrupt" in (state.paused_reason or "").lower()
 
-    def test_interrupted_turn_is_resumable(self, hermes_home):
+    def test_interrupted_turn_is_resumable(self, thoth_home):
         """After auto-pause from Ctrl+C, /goal resume puts it back to active."""
         sid = f"sid-resume-{uuid.uuid4().hex}"
         cli, mgr = _make_cli_with_goal(sid)
@@ -115,7 +115,7 @@ class TestInterruptAutoPause:
 
 
 class TestEmptyResponseSkip:
-    def test_empty_response_does_not_invoke_judge(self, hermes_home):
+    def test_empty_response_does_not_invoke_judge(self, thoth_home):
         """Whitespace-only replies skip judging (transient failure guard)."""
         sid = f"sid-empty-{uuid.uuid4().hex}"
         cli, mgr = _make_cli_with_goal(sid)
@@ -135,7 +135,7 @@ class TestEmptyResponseSkip:
         assert cli._pending_input.empty()
         assert mgr.state.status == "active"
 
-    def test_no_assistant_message_skipped(self, hermes_home):
+    def test_no_assistant_message_skipped(self, thoth_home):
         """Conversation with zero assistant replies must not trip the judge."""
         sid = f"sid-noassistant-{uuid.uuid4().hex}"
         cli, mgr = _make_cli_with_goal(sid)
@@ -156,7 +156,7 @@ class TestEmptyResponseSkip:
 
 class TestHealthyTurnStillRuns:
     def test_clean_response_enqueues_continuation_when_judge_says_continue(
-        self, hermes_home,
+        self, thoth_home,
     ):
         """Sanity check: the hook still works in the happy path."""
         sid = f"sid-healthy-{uuid.uuid4().hex}"
@@ -180,7 +180,7 @@ class TestHealthyTurnStillRuns:
         assert "Continuing toward your standing goal" in queued
         assert mgr.state.status == "active"
 
-    def test_clean_response_marks_done_when_judge_says_done(self, hermes_home):
+    def test_clean_response_marks_done_when_judge_says_done(self, thoth_home):
         sid = f"sid-done-{uuid.uuid4().hex}"
         cli, mgr = _make_cli_with_goal(sid)
         cli._last_turn_interrupted = False
@@ -199,7 +199,7 @@ class TestHealthyTurnStillRuns:
 
 
 class TestInterruptFlagLifecycle:
-    def test_chat_resets_flag_at_entry(self, hermes_home):
+    def test_chat_resets_flag_at_entry(self, thoth_home):
         """chat() must reset _last_turn_interrupted at the top of each turn.
 
         This guards against stale flag state: if turn N was interrupted and

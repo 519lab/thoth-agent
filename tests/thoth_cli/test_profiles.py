@@ -30,7 +30,7 @@ from thoth_cli.profiles import (
     export_profile,
     import_profile,
     _get_profiles_root,
-    _get_default_hermes_home,
+    _get_default_thoth_home,
     seed_profile_skills,
     has_bundled_skills_opt_out,
     NO_BUNDLED_SKILLS_MARKER,
@@ -1016,7 +1016,7 @@ class TestProfileIsolation:
 # ===================================================================
 
 class TestInternalHelpers:
-    """Tests for _get_profiles_root() and _get_default_hermes_home()."""
+    """Tests for _get_profiles_root() and _get_default_thoth_home()."""
 
     def test_profiles_root_under_home(self, profile_env):
         tmp_path = profile_env
@@ -1025,7 +1025,7 @@ class TestInternalHelpers:
 
     def test_default_hermes_home(self, profile_env):
         tmp_path = profile_env
-        home = _get_default_hermes_home()
+        home = _get_default_thoth_home()
         assert home == tmp_path / ".hermes"
 
     def test_profiles_root_docker_deployment(self, tmp_path, monkeypatch):
@@ -1038,12 +1038,12 @@ class TestInternalHelpers:
         assert root == docker_home / "profiles"
 
     def test_default_hermes_home_docker(self, tmp_path, monkeypatch):
-        """In Docker, _get_default_hermes_home() returns HERMES_HOME itself."""
+        """In Docker, _get_default_thoth_home() returns HERMES_HOME itself."""
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HERMES_HOME", str(docker_home))
-        home = _get_default_hermes_home()
+        home = _get_default_thoth_home()
         assert home == docker_home
 
     def test_profiles_root_profile_mode(self, tmp_path, monkeypatch):

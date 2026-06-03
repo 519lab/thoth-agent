@@ -90,9 +90,9 @@ from thoth_cli.timeouts import (
     get_provider_stale_timeout,
 )
 
-_hermes_home = get_thoth_home()
+_thoth_home = get_thoth_home()
 _project_env = Path(__file__).parent / '.env'
-_loaded_env_paths = load_thoth_dotenv(hermes_home=_hermes_home, project_env=_project_env)
+_loaded_env_paths = load_thoth_dotenv(thoth_home=_thoth_home, project_env=_project_env)
 if _loaded_env_paths:
     for _env_path in _loaded_env_paths:
         logger.info("Loaded environment variables from %s", _env_path)

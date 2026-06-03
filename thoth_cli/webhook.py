@@ -26,13 +26,13 @@ from thoth_cli.config import cfg_get
 _SUBSCRIPTIONS_FILENAME = "webhook_subscriptions.json"
 
 
-def _hermes_home() -> Path:
+def _thoth_home() -> Path:
     from thoth_constants import get_thoth_home
     return get_thoth_home()
 
 
 def _subscriptions_path() -> Path:
-    return _hermes_home() / _SUBSCRIPTIONS_FILENAME
+    return _thoth_home() / _SUBSCRIPTIONS_FILENAME
 
 
 def _load_subscriptions() -> Dict[str, dict]:

@@ -262,9 +262,9 @@ def uninstall_gateway_service():
 # or open a new terminal anyway).
 
 
-def _hermes_path_markers(hermes_home: Path) -> list[str]:
+def _hermes_path_markers(thoth_home: Path) -> list[str]:
     """Path-entry substrings that identify Thoth-owned User-PATH entries."""
-    root = str(hermes_home).rstrip("\\/")
+    root = str(thoth_home).rstrip("\\/")
     # Match on prefix so sub-entries (git\cmd, git\bin, git\usr\bin, node, etc.)
     # all get swept.  Also match the bare hermes-agent install dir.
     markers = [root + "\\hermes-agent", root + "\\git", root + "\\node", root + "\\venv"]
@@ -275,7 +275,7 @@ def _hermes_path_markers(hermes_home: Path) -> list[str]:
     return markers
 
 
-def remove_path_from_windows_registry(hermes_home: Path) -> list[str]:
+def remove_path_from_windows_registry(thoth_home: Path) -> list[str]:
     """Strip Thoth-owned entries from User-scope PATH in the registry.
 
     Returns the list of removed path entries.  Operates on HKCU\\Environment,
@@ -297,7 +297,7 @@ def remove_path_from_windows_registry(hermes_home: Path) -> list[str]:
                 return []
             # Preserve REG_EXPAND_SZ vs REG_SZ so unexpanded %VARS% survive.
             entries = [e for e in path_value.split(";") if e]
-            markers = _hermes_path_markers(hermes_home)
+            markers = _hermes_path_markers(thoth_home)
             kept: list[str] = []
             for entry in entries:
                 entry_norm = entry.rstrip("\\/")
@@ -340,13 +340,13 @@ def remove_hermes_env_vars_windows() -> list[str]:
     return removed
 
 
-def remove_portable_tooling_windows(hermes_home: Path) -> list[Path]:
+def remove_portable_tooling_windows(thoth_home: Path) -> list[Path]:
     """Delete PortableGit and Node installs the Windows installer created under
     ``%LOCALAPPDATA%\\thoth\\``.  Only called on full uninstall; they're
     isolated from any system Git / Node so they cannot break other tools."""
     removed: list[Path] = []
     for sub in ("git", "node", "gateway-service"):
-        target = hermes_home / sub
+        target = thoth_home / sub
         if target.exists():
             try:
                 shutil.rmtree(target, ignore_errors=False)
@@ -361,11 +361,11 @@ def _is_windows() -> bool:
     return sys.platform == "win32"
 
 
-def _is_default_hermes_home(hermes_home: Path) -> bool:
-    """Return True when ``hermes_home`` points at the default (non-profile) root."""
+def _is_default_thoth_home(thoth_home: Path) -> bool:
+    """Return True when ``thoth_home`` points at the default (non-profile) root."""
     try:
-        from thoth_constants import get_default_hermes_root
-        return hermes_home.resolve() == get_default_hermes_root().resolve()
+        from thoth_constants import get_default_thoth_root
+        return thoth_home.resolve() == get_default_thoth_root().resolve()
     except Exception:
         return False
 
@@ -444,12 +444,12 @@ def run_uninstall(args):
     - Keep data: removes code but keeps ~/.hermes/ for future reinstall
     """
     project_root = get_project_root()
-    hermes_home = get_thoth_home()
+    thoth_home = get_thoth_home()
 
     # Detect named profiles when uninstalling from the default root —
     # offer to clean them up too instead of leaving zombie HERMES_HOMEs
     # and systemd units behind.
-    is_default_profile = _is_default_hermes_home(hermes_home)
+    is_default_profile = _is_default_thoth_home(thoth_home)
     named_profiles = _discover_named_profiles() if is_default_profile else []
 
     print()
@@ -461,9 +461,9 @@ def run_uninstall(args):
     # Show what will be affected
     print(color("Current Installation:", Colors.CYAN, Colors.BOLD))
     print(f"  Code:    {project_root}")
-    print(f"  Config:  {hermes_home / 'config.yaml'}")
-    print(f"  Secrets: {hermes_home / '.env'}")
-    print(f"  Data:    {hermes_home / 'cron/'}, {hermes_home / 'sessions/'}, {hermes_home / 'logs/'}")
+    print(f"  Config:  {thoth_home / 'config.yaml'}")
+    print(f"  Secrets: {thoth_home / '.env'}")
+    print(f"  Data:    {thoth_home / 'cron/'}, {thoth_home / 'sessions/'}, {thoth_home / 'logs/'}")
     print()
 
     if named_profiles:
@@ -570,10 +570,10 @@ def run_uninstall(args):
 
     if _is_windows():
         log_info("Removing PATH entries from Windows User environment...")
-        # Expand %LOCALAPPDATA% etc. in hermes_home so the marker matching is
+        # Expand %LOCALAPPDATA% etc. in thoth_home so the marker matching is
         # against fully resolved paths — installer writes literal strings
         # like C:\Users\<u>\AppData\Local\thoth\git\cmd, not %LOCALAPPDATA%.
-        removed_path_entries = remove_path_from_windows_registry(Path(os.path.expandvars(str(hermes_home))))
+        removed_path_entries = remove_path_from_windows_registry(Path(os.path.expandvars(str(thoth_home))))
         if removed_path_entries:
             for entry in removed_path_entries:
                 log_success(f"Removed from User PATH: {entry}")
@@ -605,7 +605,7 @@ def run_uninstall(args):
     try:
         if project_root.exists():
             # If the install is inside ~/.hermes/, just remove the hermes-agent subdir
-            if hermes_home in project_root.parents or project_root.parent == hermes_home:
+            if thoth_home in project_root.parents or project_root.parent == thoth_home:
                 shutil.rmtree(project_root)
                 log_success(f"Removed {project_root}")
             else:
@@ -620,11 +620,11 @@ def run_uninstall(args):
     #     PortableGit, bundled Node, gateway-service dir.  Installer put them
     #     under HERMES_HOME but they're install tooling, not config — safe to
     #     remove even in "keep data" mode.  If we're doing a full uninstall
-    #     the step-5 rmtree(hermes_home) would sweep them anyway; calling
+    #     the step-5 rmtree(thoth_home) would sweep them anyway; calling
     #     this helper there is a no-op since they'll already be gone.
     if _is_windows():
         log_info("Removing Windows installer artifacts (PortableGit, Node, gateway-service)...")
-        removed_artifacts = remove_portable_tooling_windows(hermes_home)
+        removed_artifacts = remove_portable_tooling_windows(thoth_home)
         if removed_artifacts:
             for path in removed_artifacts:
                 log_success(f"Removed {path}")
@@ -644,14 +644,14 @@ def run_uninstall(args):
 
         log_info("Removing configuration and data...")
         try:
-            if hermes_home.exists():
-                shutil.rmtree(hermes_home)
-                log_success(f"Removed {hermes_home}")
+            if thoth_home.exists():
+                shutil.rmtree(thoth_home)
+                log_success(f"Removed {thoth_home}")
         except Exception as e:
-            log_warn(f"Could not fully remove {hermes_home}: {e}")
+            log_warn(f"Could not fully remove {thoth_home}: {e}")
             log_info("You may need to manually remove it")
     else:
-        log_info(f"Keeping configuration and data in {hermes_home}")
+        log_info(f"Keeping configuration and data in {thoth_home}")
     
     # Done
     print()
@@ -662,7 +662,7 @@ def run_uninstall(args):
     
     if not full_uninstall:
         print(color("Your configuration and data have been preserved:", Colors.CYAN))
-        print(f"  {hermes_home}/")
+        print(f"  {thoth_home}/")
         print()
         print("To reinstall later with your existing settings:")
         if _is_windows():

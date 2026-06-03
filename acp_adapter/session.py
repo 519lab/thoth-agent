@@ -414,7 +414,7 @@ class SessionManager:
         Note: we resolve ``HERMES_HOME`` dynamically rather than relying on
         the module-level ``DEFAULT_DB_PATH`` constant, because that constant
         is evaluated at import time and won't reflect env-var changes made
-        later (e.g. by the test fixture ``_isolate_hermes_home``).
+        later (e.g. by the test fixture ``_isolate_thoth_home``).
         """
         if self._db_instance is not None:
             return self._db_instance
@@ -443,8 +443,8 @@ class SessionManager:
                     "Cannot bootstrap PG pool from inside event loop: %s", exc
                 )
                 return None
-            hermes_home = get_thoth_home()
-            self._db_instance = SessionDB(db_path=hermes_home / "state.db")
+            thoth_home = get_thoth_home()
+            self._db_instance = SessionDB(db_path=thoth_home / "state.db")
             return self._db_instance
         except Exception:
             logger.debug("SessionDB unavailable for ACP persistence", exc_info=True)

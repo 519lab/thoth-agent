@@ -132,18 +132,18 @@ from cron.jobs import get_due_jobs, mark_job_run, save_job_output, advance_next_
 SILENT_MARKER = "[SILENT]"
 
 # Backward-compatible module override used by tests and emergency monkeypatches.
-_hermes_home: Path | None = None
+_thoth_home: Path | None = None
 
 
-def _get_hermes_home() -> Path:
+def _get_thoth_home() -> Path:
     """Resolve Thoth home dynamically while preserving test monkeypatch hooks."""
-    return _hermes_home or get_thoth_home()
+    return _thoth_home or get_thoth_home()
 
 
 def _get_lock_paths() -> tuple[Path, Path]:
     """Resolve cron lock paths at call time so profile/env changes are honored."""
-    hermes_home = _get_hermes_home()
-    lock_dir = hermes_home / "cron"
+    thoth_home = _get_thoth_home()
+    lock_dir = thoth_home / "cron"
     return lock_dir, lock_dir / ".tick.lock"
 
 
@@ -154,7 +154,7 @@ def _job_profile_context(job_id: str, profile: Optional[str]):
     Cron jobs are stored and scheduled by the profile running the scheduler, but
     an individual job can opt into a different runtime profile. While active,
     the scheduler's test/override hook and a context-local Thoth home override
-    both point at the resolved profile directory so _get_hermes_home(),
+    both point at the resolved profile directory so _get_thoth_home(),
     .env/config loading, script resolution, AIAgent construction, and downstream
     get_thoth_home() callers agree on the same home.
 
@@ -168,12 +168,12 @@ def _job_profile_context(job_id: str, profile: Optional[str]):
         yield None
         return
 
-    global _hermes_home
-    prior_override = _hermes_home
+    global _thoth_home
+    prior_override = _thoth_home
     env_snapshot = os.environ.copy()
 
     from thoth_cli.profiles import normalize_profile_name, resolve_profile_env
-    from thoth_constants import reset_hermes_home_override, set_hermes_home_override
+    from thoth_constants import reset_thoth_home_override, set_thoth_home_override
 
     normalized_profile = normalize_profile_name(raw_profile)
     try:
@@ -189,8 +189,8 @@ def _job_profile_context(job_id: str, profile: Optional[str]):
 
     override_token = None
     try:
-        override_token = set_hermes_home_override(profile_home)
-        _hermes_home = profile_home
+        override_token = set_thoth_home_override(profile_home)
+        _thoth_home = profile_home
         logger.info(
             "Job '%s': using Thoth profile '%s' (%s)",
             job_id,
@@ -199,9 +199,9 @@ def _job_profile_context(job_id: str, profile: Optional[str]):
         )
         yield normalized_profile
     finally:
-        _hermes_home = prior_override
+        _thoth_home = prior_override
         if override_token is not None:
-            reset_hermes_home_override(override_token)
+            reset_thoth_home_override(override_token)
         # Delta-based restore: remove added keys, restore changed keys.
         # Avoids a brief window where other threads see an empty env.
         added = set(os.environ.keys()) - set(env_snapshot.keys())
@@ -825,7 +825,7 @@ def _run_job_script(script_path: str) -> tuple[bool, str]:
         (success, output) — on failure *output* contains the error message so the
         LLM can report the problem to the user.
     """
-    scripts_dir = _get_hermes_home() / "scripts"
+    scripts_dir = _get_thoth_home() / "scripts"
     scripts_dir.mkdir(parents=True, exist_ok=True)
     scripts_dir_resolved = scripts_dir.resolve()
 
@@ -877,7 +877,7 @@ def _run_job_script(script_path: str) -> tuple[bool, str]:
         argv = [sys.executable, str(path)]
 
     run_env = os.environ.copy()
-    run_env["HERMES_HOME"] = str(_get_hermes_home())
+    run_env["HERMES_HOME"] = str(_get_thoth_home())
     try:
         from thoth_constants import get_subprocess_home
 
@@ -1410,9 +1410,9 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
         # changes take effect without a gateway restart.
         from dotenv import load_dotenv
         try:
-            load_dotenv(str(_get_hermes_home() / ".env"), override=True, encoding="utf-8")
+            load_dotenv(str(_get_thoth_home() / ".env"), override=True, encoding="utf-8")
         except UnicodeDecodeError:
-            load_dotenv(str(_get_hermes_home() / ".env"), override=True, encoding="latin-1")
+            load_dotenv(str(_get_thoth_home() / ".env"), override=True, encoding="latin-1")
 
         delivery_target = _resolve_delivery_target(job)
         if delivery_target:
@@ -1430,7 +1430,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
         _cfg = {}
         try:
             import yaml
-            _cfg_path = str(_get_hermes_home() / "config.yaml")
+            _cfg_path = str(_get_thoth_home() / "config.yaml")
             if os.path.exists(_cfg_path):
                 with open(_cfg_path, encoding="utf-8") as _f:
                     _cfg = yaml.safe_load(_f) or {}
@@ -1464,7 +1464,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
         if prefill_file:
             pfpath = Path(prefill_file).expanduser()
             if not pfpath.is_absolute():
-                pfpath = _get_hermes_home() / pfpath
+                pfpath = _get_thoth_home() / pfpath
             if pfpath.exists():
                 try:
                     with open(pfpath, "r", encoding="utf-8") as _pf:
@@ -1931,7 +1931,7 @@ def tick(verbose: bool = True, adapters=None, loop=None) -> int:
         # Partition due jobs: jobs with a per-job workdir and/or profile touch
         # process-global runtime state inside run_job. Workdir jobs temporarily
         # set os.environ["TERMINAL_CWD"]; profile jobs use a context-local
-        # Thoth home override, scheduler _hermes_home hook, and temporary
+        # Thoth home override, scheduler _thoth_home hook, and temporary
         # profile .env load into os.environ with snapshot/restore. They MUST run
         # sequentially to avoid corrupting each other. Jobs without either field
         # stay parallel-safe.

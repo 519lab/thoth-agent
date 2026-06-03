@@ -517,7 +517,7 @@ def init_agent(
     # both live under ~/.hermes/logs/.  Idempotent, so gateway mode
     # (which creates a new AIAgent per message) won't duplicate handlers.
     from thoth_logging import setup_logging, setup_verbose_logging
-    setup_logging(hermes_home=_ra()._hermes_home)
+    setup_logging(thoth_home=_ra()._thoth_home)
 
     if agent.verbose_logging:
         setup_verbose_logging()
@@ -964,8 +964,8 @@ def init_agent(
         pass  # CLI/test mode — ContextVar not needed
 
     # Session logs go into ~/.hermes/sessions/ alongside gateway sessions
-    hermes_home = get_thoth_home()
-    agent.logs_dir = hermes_home / "sessions"
+    thoth_home = get_thoth_home()
+    agent.logs_dir = thoth_home / "sessions"
     agent.logs_dir.mkdir(parents=True, exist_ok=True)
     # Per-session JSON snapshot writer (~/.hermes/sessions/session_{sid}.json)
     # is opt-in via sessions.write_json_snapshots (default False).  state.db
@@ -1111,7 +1111,7 @@ def init_agent(
                     _init_kwargs = {
                         "session_id": agent.session_id,
                         "platform": platform or "cli",
-                        "hermes_home": str(get_thoth_home()),
+                        "thoth_home": str(get_thoth_home()),
                         "agent_context": "primary",
                     }
                     # Thread session title for memory provider scoping
@@ -1528,7 +1528,7 @@ def init_agent(
         try:
             agent.context_compressor.on_session_start(
                 agent.session_id,
-                hermes_home=str(get_thoth_home()),
+                thoth_home=str(get_thoth_home()),
                 platform=agent.platform or "cli",
                 model=agent.model,
                 context_length=getattr(agent.context_compressor, "context_length", 0),

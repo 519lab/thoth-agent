@@ -28,19 +28,19 @@ class TestGetSubprocessHome:
         assert get_subprocess_home() is None
 
     def test_returns_none_when_home_dir_missing(self, tmp_path, monkeypatch):
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        thoth_home = tmp_path / ".hermes"
+        thoth_home.mkdir()
+        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
         # No home/ subdirectory created
         from thoth_constants import get_subprocess_home
         assert get_subprocess_home() is None
 
     def test_returns_path_when_home_dir_exists(self, tmp_path, monkeypatch):
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        profile_home = hermes_home / "home"
+        thoth_home = tmp_path / ".hermes"
+        thoth_home.mkdir()
+        profile_home = thoth_home / "home"
         profile_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
         from thoth_constants import get_subprocess_home
         assert get_subprocess_home() == str(profile_home)
 
@@ -84,8 +84,8 @@ class TestGetSubprocessHome:
 
         from thoth_constants import (
             get_thoth_home,
-            reset_hermes_home_override,
-            set_hermes_home_override,
+            reset_thoth_home_override,
+            set_thoth_home_override,
         )
 
         ready = threading.Event()
@@ -101,13 +101,13 @@ class TestGetSubprocessHome:
         thread.start()
         assert ready.wait(timeout=5)
 
-        token = set_hermes_home_override(profile)
+        token = set_thoth_home_override(profile)
         try:
             assert get_thoth_home() == profile
             release.set()
             thread.join(timeout=5)
         finally:
-            reset_hermes_home_override(token)
+            reset_thoth_home_override(token)
             release.set()
 
         assert seen == [str(root)]
@@ -122,23 +122,23 @@ class TestMakeRunEnvHomeInjection:
     """Verify _make_run_env() injects HOME into subprocess envs."""
 
     def test_injects_home_when_profile_home_exists(self, tmp_path, monkeypatch):
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir()
-        (hermes_home / "home").mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        thoth_home = tmp_path / "hermes"
+        thoth_home.mkdir()
+        (thoth_home / "home").mkdir()
+        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
         monkeypatch.setenv("HOME", "/root")
         monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
         from tools.environments.local import _make_run_env
         result = _make_run_env({})
 
-        assert result["HOME"] == str(hermes_home / "home")
+        assert result["HOME"] == str(thoth_home / "home")
 
     def test_no_injection_when_home_dir_missing(self, tmp_path, monkeypatch):
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir()
+        thoth_home = tmp_path / "hermes"
+        thoth_home.mkdir()
         # No home/ subdirectory
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
         monkeypatch.setenv("HOME", "/root")
         monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
@@ -167,14 +167,14 @@ class TestMakeRunEnvHomeInjection:
         monkeypatch.setenv("HOME", "/root")
         monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
-        from thoth_constants import reset_hermes_home_override, set_hermes_home_override
+        from thoth_constants import reset_thoth_home_override, set_thoth_home_override
         from tools.environments.local import _make_run_env
 
-        token = set_hermes_home_override(profile)
+        token = set_thoth_home_override(profile)
         try:
             result = _make_run_env({})
         finally:
-            reset_hermes_home_override(token)
+            reset_thoth_home_override(token)
 
         assert result["HERMES_HOME"] == str(profile)
         assert result["HOME"] == str(profile / "home")
@@ -188,21 +188,21 @@ class TestSanitizeSubprocessEnvHomeInjection:
     """Verify _sanitize_subprocess_env() injects HOME for background procs."""
 
     def test_injects_home_when_profile_home_exists(self, tmp_path, monkeypatch):
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir()
-        (hermes_home / "home").mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        thoth_home = tmp_path / "hermes"
+        thoth_home.mkdir()
+        (thoth_home / "home").mkdir()
+        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
 
         base_env = {"HOME": "/root", "PATH": "/usr/bin", "USER": "root"}
         from tools.environments.local import _sanitize_subprocess_env
         result = _sanitize_subprocess_env(base_env)
 
-        assert result["HOME"] == str(hermes_home / "home")
+        assert result["HOME"] == str(thoth_home / "home")
 
     def test_no_injection_when_home_dir_missing(self, tmp_path, monkeypatch):
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        thoth_home = tmp_path / "hermes"
+        thoth_home.mkdir()
+        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
 
         base_env = {"HOME": "/root", "PATH": "/usr/bin"}
         from tools.environments.local import _sanitize_subprocess_env
@@ -219,14 +219,14 @@ class TestSanitizeSubprocessEnvHomeInjection:
         monkeypatch.setenv("HERMES_HOME", str(root))
 
         base_env = {"HOME": "/root", "PATH": "/usr/bin"}
-        from thoth_constants import reset_hermes_home_override, set_hermes_home_override
+        from thoth_constants import reset_thoth_home_override, set_thoth_home_override
         from tools.environments.local import _sanitize_subprocess_env
 
-        token = set_hermes_home_override(profile)
+        token = set_thoth_home_override(profile)
         try:
             result = _sanitize_subprocess_env(base_env)
         finally:
-            reset_hermes_home_override(token)
+            reset_thoth_home_override(token)
 
         assert result["HERMES_HOME"] == str(profile)
         assert result["HOME"] == str(profile / "home")
@@ -265,10 +265,10 @@ class TestPythonProcessUnchanged:
     def test_path_home_unchanged_after_subprocess_home_resolved(
         self, tmp_path, monkeypatch
     ):
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir()
-        (hermes_home / "home").mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        thoth_home = tmp_path / "hermes"
+        thoth_home.mkdir()
+        (thoth_home / "home").mkdir()
+        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
 
         original_home = os.environ.get("HOME")
         original_path_home = str(Path.home())

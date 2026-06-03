@@ -142,9 +142,9 @@ class TestFirecrawlClientConfig:
         real_home = tmp_path / "real-home"
         (real_home / ".hermes").mkdir(parents=True)
 
-        hermes_home = tmp_path / "hermes-home"
-        hermes_home.mkdir()
-        (hermes_home / "auth.json").write_text(json.dumps({
+        thoth_home = tmp_path / "hermes-home"
+        thoth_home.mkdir()
+        (thoth_home / "auth.json").write_text(json.dumps({
             "providers": {
                 "nous": {
                     "access_token": "nous-token",
@@ -154,7 +154,7 @@ class TestFirecrawlClientConfig:
 
         with patch.dict(os.environ, {
             "HOME": str(real_home),
-            "HERMES_HOME": str(hermes_home),
+            "HERMES_HOME": str(thoth_home),
         }, clear=False):
             import tools.web_tools
             importlib.reload(tools.web_tools)

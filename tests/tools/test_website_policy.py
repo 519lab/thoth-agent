@@ -242,9 +242,9 @@ def test_load_website_blocklist_wraps_shared_file_read_errors(tmp_path, monkeypa
 
 
 def test_check_website_access_uses_dynamic_hermes_home(monkeypatch, tmp_path):
-    hermes_home = tmp_path / "hermes-home"
-    hermes_home.mkdir()
-    (hermes_home / "config.yaml").write_text(
+    thoth_home = tmp_path / "hermes-home"
+    thoth_home.mkdir()
+    (thoth_home / "config.yaml").write_text(
         yaml.safe_dump(
             {
                 "security": {
@@ -259,11 +259,11 @@ def test_check_website_access_uses_dynamic_hermes_home(monkeypatch, tmp_path):
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
 
     # Invalidate the module-level cache so the new HERMES_HOME is picked up.
     # A prior test may have cached a default policy (enabled=False) under the
-    # old HERMES_HOME set by the autouse _isolate_hermes_home fixture.
+    # old HERMES_HOME set by the autouse _isolate_thoth_home fixture.
     from tools.website_policy import invalidate_cache
     invalidate_cache()
 

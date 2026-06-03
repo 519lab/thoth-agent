@@ -9,7 +9,7 @@ import pytest
 import thoth_constants
 from thoth_constants import (
     VALID_REASONING_EFFORTS,
-    get_default_hermes_root,
+    get_default_thoth_root,
     is_container,
     parse_reasoning_effort,
     secure_parent_dir,
@@ -17,7 +17,7 @@ from thoth_constants import (
 
 
 class TestGetDefaultThothRoot:
-    """Tests for get_default_hermes_root() — Docker/custom deployment awareness."""
+    """Tests for get_default_thoth_root() — Docker/custom deployment awareness."""
 
     def test_no_hermes_home_returns_native(self, tmp_path, monkeypatch):
         """When no home env vars are set, returns ~/.thoth (new-install default)."""
@@ -25,7 +25,7 @@ class TestGetDefaultThothRoot:
         monkeypatch.delenv("THOTH_HOME", raising=False)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
-        assert get_default_hermes_root() == tmp_path / ".thoth"
+        assert get_default_thoth_root() == tmp_path / ".thoth"
 
     def test_hermes_home_is_native(self, tmp_path, monkeypatch):
         """When HERMES_HOME = ~/.hermes, returns ~/.hermes."""
@@ -33,7 +33,7 @@ class TestGetDefaultThothRoot:
         native.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HERMES_HOME", str(native))
-        assert get_default_hermes_root() == native
+        assert get_default_thoth_root() == native
 
     def test_hermes_home_is_profile(self, tmp_path, monkeypatch):
         """When HERMES_HOME is a profile under ~/.hermes, returns ~/.hermes."""
@@ -42,7 +42,7 @@ class TestGetDefaultThothRoot:
         profile.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HERMES_HOME", str(profile))
-        assert get_default_hermes_root() == native
+        assert get_default_thoth_root() == native
 
     def test_hermes_home_is_docker(self, tmp_path, monkeypatch):
         """When HERMES_HOME points outside ~/.hermes (Docker), returns HERMES_HOME."""
@@ -50,7 +50,7 @@ class TestGetDefaultThothRoot:
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HERMES_HOME", str(docker_home))
-        assert get_default_hermes_root() == docker_home
+        assert get_default_thoth_root() == docker_home
 
     def test_hermes_home_is_custom_path(self, tmp_path, monkeypatch):
         """Any HERMES_HOME outside ~/.hermes is treated as the root."""
@@ -58,7 +58,7 @@ class TestGetDefaultThothRoot:
         custom.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HERMES_HOME", str(custom))
-        assert get_default_hermes_root() == custom
+        assert get_default_thoth_root() == custom
 
     def test_docker_profile_active(self, tmp_path, monkeypatch):
         """When a Docker profile is active (HERMES_HOME=<root>/profiles/<name>),
@@ -68,7 +68,7 @@ class TestGetDefaultThothRoot:
         profile.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("HERMES_HOME", str(profile))
-        assert get_default_hermes_root() == docker_root
+        assert get_default_thoth_root() == docker_root
 
 
 class TestIsContainer:
