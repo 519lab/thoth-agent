@@ -22,7 +22,7 @@ Key implementation files:
 ## Boot flow
 
 ```text
-thoth acp / hermes-acp / python -m acp_adapter
+thoth acp / thoth-acp / python -m acp_adapter
   -> acp_adapter.entry.main()
   -> parse --version / --check / --setup before server startup
   -> load ~/.hermes/.env
@@ -31,7 +31,7 @@ thoth acp / hermes-acp / python -m acp_adapter
   -> acp.run_agent(agent, use_unstable_protocol=True)
 ```
 
-The Zed ACP Registry path launches the same adapter through `uvx --from 'hermes-agent[acp]==<version>' hermes-acp`, pointed at the `hermes-agent` PyPI release.
+The Zed ACP Registry path launches the same adapter through `uvx --from 'hermes-agent[acp]==<version>' thoth-acp`, pointed at the `hermes-agent` PyPI release.
 
 Stdout is reserved for ACP JSON-RPC transport. Human-readable logs go to stderr.
 
@@ -116,7 +116,7 @@ Examples:
 ```text
 new_session(cwd)
   -> create SessionState
-  -> create AIAgent(platform="acp", enabled_toolsets=["hermes-acp"])
+  -> create AIAgent(platform="acp", enabled_toolsets=["thoth-acp"])
   -> bind task_id/session_id to cwd override
 
 prompt(..., session_id)
@@ -179,6 +179,6 @@ ACP temporarily installs an approval callback on the terminal tool during prompt
 ## Related files
 
 - `tests/acp/` — ACP test suite
-- `toolsets.py` — `hermes-acp` toolset definition
+- `toolsets.py` — `thoth-acp` toolset definition
 - `thoth_cli/main.py` — `thoth acp` CLI subcommand
-- `pyproject.toml` — `[acp]` optional dependency + `hermes-acp` script
+- `pyproject.toml` — `[acp]` optional dependency + `thoth-acp` script

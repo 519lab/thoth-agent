@@ -641,7 +641,7 @@ agent:
 # If a platform isn't listed here, its built-in default is used.
 #
 # You can use EITHER:
-#   - A preset like "hermes-cli" or "hermes-telegram" (curated tool set)
+#   - A preset like "thoth-cli" or "thoth-telegram" (curated tool set)
 #   - A list of individual toolsets to compose your own (see list below)
 #
 # Supported platform keys: cli, telegram, discord, whatsapp, slack, qqbot, teams, google_chat
@@ -650,8 +650,8 @@ agent:
 #
 #   # Use presets (same as defaults):
 #   platform_toolsets:
-#     cli: [hermes-cli]
-#     telegram: [hermes-telegram]
+#     cli: [thoth-cli]
+#     telegram: [thoth-telegram]
 #
 #   # Custom: give Telegram only web + terminal + file + planning:
 #   platform_toolsets:
@@ -666,27 +666,27 @@ agent:
 #     discord: [web, vision, skills, todo]
 #
 # If not set, defaults are:
-#   cli:           hermes-cli            (everything + cronjob management)
-#   telegram:      hermes-telegram       (terminal, file, web, vision, image, tts, browser, skills, todo, cronjob, messaging)
-#   discord:       hermes-discord        (same as telegram)
-#   whatsapp:      hermes-whatsapp       (same as telegram)
-#   slack:         hermes-slack          (same as telegram)
-#   signal:        hermes-signal         (same as telegram)
-#   homeassistant: hermes-homeassistant  (same as telegram)
-#   qqbot:            hermes-qqbot            (same as telegram)
+#   cli:           thoth-cli            (everything + cronjob management)
+#   telegram:      thoth-telegram       (terminal, file, web, vision, image, tts, browser, skills, todo, cronjob, messaging)
+#   discord:       thoth-discord        (same as telegram)
+#   whatsapp:      thoth-whatsapp       (same as telegram)
+#   slack:         thoth-slack          (same as telegram)
+#   signal:        thoth-signal         (same as telegram)
+#   homeassistant: thoth-homeassistant  (same as telegram)
+#   qqbot:            thoth-qqbot            (same as telegram)
 #   teams:            hermes-teams            (same as telegram)
 #   google_chat:      hermes-google_chat      (same as telegram)
 #
 platform_toolsets:
-  cli: [hermes-cli]
-  telegram: [hermes-telegram]
-  discord: [hermes-discord]
-  whatsapp: [hermes-whatsapp]
-  slack: [hermes-slack]
-  signal: [hermes-signal]
-  homeassistant: [hermes-homeassistant]
-  qqbot: [hermes-qqbot]
-  yuanbao: [hermes-yuanbao]
+  cli: [thoth-cli]
+  telegram: [thoth-telegram]
+  discord: [thoth-discord]
+  whatsapp: [thoth-whatsapp]
+  slack: [thoth-slack]
+  signal: [thoth-signal]
+  homeassistant: [thoth-homeassistant]
+  qqbot: [thoth-qqbot]
+  yuanbao: [thoth-yuanbao]
   teams: [hermes-teams]
   google_chat: [hermes-google_chat]
 
@@ -741,12 +741,12 @@ platform_toolsets:
 #   cronjob      - cronjob (create/list/update/pause/resume/run/remove scheduled tasks)
 #
 # PRESETS (curated bundles):
-#   hermes-cli       - All of the above except send_message
-#   hermes-telegram  - terminal, file, web, vision, image_gen, tts, browser,
+#   thoth-cli       - All of the above except send_message
+#   thoth-telegram  - terminal, file, web, vision, image_gen, tts, browser,
 #                      skills, todo, cronjob, send_message
-#   hermes-discord   - Same as hermes-telegram
-#   hermes-whatsapp  - Same as hermes-telegram
-#   hermes-slack     - Same as hermes-telegram
+#   thoth-discord   - Same as thoth-telegram
+#   thoth-whatsapp  - Same as thoth-telegram
+#   thoth-slack     - Same as thoth-telegram
 #
 # COMPOSITE:
 #   debugging    - terminal + web + file

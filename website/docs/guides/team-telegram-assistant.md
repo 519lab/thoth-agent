@@ -155,7 +155,7 @@ thoth gateway stop
 thoth gateway status
 
 # View live logs
-journalctl --user -u hermes-gateway -f
+journalctl --user -u thoth-gateway -f
 
 # Keep running after SSH logout
 sudo loginctl enable-linger $USER
@@ -163,7 +163,7 @@ sudo loginctl enable-linger $USER
 # Linux servers — explicit system-service commands
 sudo thoth gateway start --system
 sudo thoth gateway status --system
-journalctl -u hermes-gateway -f
+journalctl -u thoth-gateway -f
 ```
 
 ```bash
@@ -397,7 +397,7 @@ This way, even if someone asks the bot to run something destructive, your host s
 thoth gateway status
 
 # Watch live logs (Linux)
-journalctl --user -u hermes-gateway -f
+journalctl --user -u thoth-gateway -f
 
 # Watch live logs (macOS)
 tail -f ~/.hermes/logs/gateway.log
@@ -416,7 +416,7 @@ thoth gateway stop && thoth gateway start
 
 | What | Location |
 |------|----------|
-| Gateway logs | `journalctl --user -u hermes-gateway` (Linux) or `~/.hermes/logs/gateway.log` (macOS) |
+| Gateway logs | `journalctl --user -u thoth-gateway` (Linux) or `~/.hermes/logs/gateway.log` (macOS) |
 | Cron job output | `~/.hermes/cron/output/{job_id}/{timestamp}.md` |
 | Cron job definitions | `~/.hermes/cron/jobs.json` |
 | Pairing data | `~/.hermes/pairing/` |

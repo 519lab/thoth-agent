@@ -12,7 +12,7 @@ class FakeAgent:
     def __init__(self):
         self.model = "fake-model"
         self.provider = "fake-provider"
-        self.enabled_toolsets = ["hermes-acp"]
+        self.enabled_toolsets = ["thoth-acp"]
         self.disabled_toolsets = []
         self.tools = []
         self.valid_tool_names = set()

@@ -19,7 +19,7 @@ ACP is a good fit when you want Thoth to behave like an editor-native coding age
 
 ## What Thoth exposes in ACP mode
 
-Thoth runs with a curated `hermes-acp` toolset designed for editor workflows. It includes:
+Thoth runs with a curated `thoth-acp` toolset designed for editor workflows. It includes:
 
 - file tools: `read_file`, `write_file`, `patch`, `search_files`
 - terminal tools: `terminal`, `process`
@@ -42,13 +42,13 @@ pip install -e '.[acp]'
 This installs the `agent-client-protocol` dependency and enables:
 
 - `thoth acp`
-- `hermes-acp`
+- `thoth-acp`
 - `python -m acp_adapter`
 
 For Zed registry installs, Zed launches Thoth through the official ACP Registry entry. That entry uses a `uvx` distribution that runs:
 
 ```bash
-uvx --from 'thoth-agent[acp]==<version>' hermes-acp
+uvx --from 'thoth-agent[acp]==<version>' thoth-acp
 ```
 
 Make sure `uv` is available on `PATH` before using the registry install path.
@@ -62,7 +62,7 @@ thoth acp
 ```
 
 ```bash
-hermes-acp
+thoth-acp
 ```
 
 ```bash
@@ -136,7 +136,7 @@ Zed v0.221.x and newer installs external agents through the official ACP Registr
 Prerequisites:
 
 - Configure Thoth provider credentials first with `thoth model`, or set them in `~/.hermes/.env` / `~/.hermes/config.yaml`.
-- Install `uv` so the registry launcher can run `uvx --from 'thoth-agent[acp]==<version>' hermes-acp`.
+- Install `uv` so the registry launcher can run `uvx --from 'thoth-agent[acp]==<version>' thoth-acp`.
 
 For local development before the registry entry is available, use a custom agent server in Zed settings:
 
@@ -174,7 +174,7 @@ The upstream registry PR copies those files into the top-level `hermes-agent/` d
 The registry entry uses a `uvx` distribution that points directly at the `thoth-agent` PyPI release:
 
 ```text
-uvx --from 'thoth-agent[acp]==<version>' hermes-acp
+uvx --from 'thoth-agent[acp]==<version>' thoth-acp
 ```
 
 The registry CI verifies that the pinned version exists on PyPI, so the manifest's `version` and uvx `package` pin must always match `pyproject.toml`. `scripts/release.py` keeps them in lockstep automatically.

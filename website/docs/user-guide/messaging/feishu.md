@@ -530,4 +530,4 @@ WebSocket and per-group ACL settings are configured via `config.yaml` under `pla
 
 ## Toolset
 
-Feishu / Lark uses the `hermes-feishu` platform preset, which includes the same core tools as Telegram and other gateway-based messaging platforms.
+Feishu / Lark uses the `thoth-feishu` platform preset, which includes the same core tools as Telegram and other gateway-based messaging platforms.

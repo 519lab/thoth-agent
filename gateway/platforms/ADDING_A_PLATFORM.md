@@ -213,10 +213,10 @@ Add a named toolset for your platform:
 },
 ```
 
-And add it to the `hermes-gateway` composite:
+And add it to the `thoth-gateway` composite:
 
 ```python
-"hermes-gateway": {
+"thoth-gateway": {
     "includes": [..., "hermes-your-platform"]
 }
 ```

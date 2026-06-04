@@ -169,7 +169,7 @@ def test_nous_dashboard_poller_preserves_effective_scope_when_token_omits_scope(
         "status": "pending",
         "error_message": None,
         "portal_base_url": "https://portal.nousresearch.com",
-        "client_id": "hermes-cli",
+        "client_id": "thoth-cli",
         "device_code": "device-code",
         "interval": 5,
         "expires_at": time.time() + 600,

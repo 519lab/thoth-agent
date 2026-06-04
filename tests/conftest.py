@@ -641,6 +641,7 @@ def _live_system_guard(request, monkeypatch):
 
     # ── Subprocess command-string inspection (whole-line) ──────────
     _HERMES_TOKENS = (
+        "thoth-gateway",
         "hermes-gateway",
         "hermes.service",
         "thoth_cli.main gateway",
