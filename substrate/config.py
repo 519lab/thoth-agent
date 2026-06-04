@@ -173,6 +173,16 @@ RECALL_EMBEDDING_BACKFILL_INTERVAL_S = _envfloat(
 RECALL_EMBEDDING_BACKFILL_MAX_RETRIES = _envint(
     "HERMES_RECALL_EMBEDDING_BACKFILL_MAX_RETRIES", default=3
 )
+# Auto-heal cadence for slices parked as ``embedding_failed``. The Curator
+# clears a small batch of parked slices this often so a fixed embedding config
+# (dim mismatch resolved, endpoint reachable again) self-heals without an
+# operator running ``thoth embed retry-failed``. Long by default — it only
+# probes when the fresh backlog is empty, so a still-broken provider re-parks
+# the batch and is left alone until the next interval (no hammering). Set to 0
+# to disable auto-heal entirely.
+RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S = _envfloat(
+    "HERMES_RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S", default=1800.0
+)
 
 # ---------------------------------------------------------------------------
 # Recall coherence-pin knobs. THOTH_-only — nothing depends on these yet, so
@@ -247,6 +257,7 @@ __all__ = [
     "RECALL_EMBEDDING_BATCH_SIZE",
     "RECALL_EMBEDDING_BACKFILL_INTERVAL_S",
     "RECALL_EMBEDDING_BACKFILL_MAX_RETRIES",
+    "RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S",
     "RECALL_COHERENCE_PIN",
     "RECALL_COHERENCE_FLOOR_MAX",
     "HERMES_SUBSTRATE_RECALL_ENABLED",

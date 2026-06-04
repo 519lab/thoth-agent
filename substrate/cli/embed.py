@@ -86,16 +86,119 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
     )
     reshape_p.set_defaults(func=_cmd_embed_reshape)
 
+    retry_p = embed_sub.add_parser(
+        "retry-failed",
+        help="Un-park slices marked embedding_failed so they get re-embedded",
+        description=(
+            "Clear the ``embedding_failed`` marker on parked slices so they "
+            "re-enter the Curator's embedding queue. Slices that exhaust their "
+            "retry budget are parked and excluded forever (so a broken provider "
+            "isn't hammered) — but nothing un-parks them once you fix the cause "
+            "(dim mismatch, unreachable endpoint, wrong model name). Run this "
+            "after fixing the config for immediate recovery. The Curator also "
+            "auto-heals a small batch per long interval "
+            "(HERMES_RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S), so this is the "
+            "manual fast-path."
+        ),
+    )
+    retry_p.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max parked slices to un-park (newest-first). Default: all.",
+    )
+    retry_p.set_defaults(func=_cmd_embed_retry_failed)
+
     embed_parser.set_defaults(func=_cmd_embed_help)
 
 
 def _cmd_embed_help(args: argparse.Namespace) -> int:
     """Default for ``thoth embed`` with no subcommand."""
     print(
-        "usage: thoth embed reshape <DIM> [--yes] [--no-reembed] [--batch-size N]",
+        "usage: thoth embed {reshape <DIM> | retry-failed}",
         file=sys.stderr,
     )
     return 2
+
+
+# ---------------------------------------------------------------------------
+# retry-failed command — clear the embedding_failed marker so parked slices
+# get another embedding attempt.
+# ---------------------------------------------------------------------------
+
+
+def _cmd_embed_retry_failed(args: argparse.Namespace) -> int:
+    import thoth_db
+
+    limit = args.limit
+    if limit is not None and limit < 1:
+        print("error: --limit must be >= 1", file=sys.stderr)
+        return 2
+    if not thoth_db.ensure_pool_sync():
+        print(
+            "error: THOTH_PG_DSN not set; cannot connect to substrate PG.",
+            file=sys.stderr,
+        )
+        return 1
+    # Drive via thoth_db.run_sync so the coro runs on the pool's bound loop
+    # (same cross-loop constraint reshape documents).
+    return thoth_db.run_sync(_retry_failed_async(limit=limit))
+
+
+async def _retry_failed_async(*, limit: "int | None") -> int:
+    import thoth_db
+
+    async with thoth_db.connection() as conn:
+        parked = await conn.fetchval(
+            "SELECT count(*) FROM substrate_slices "
+            "WHERE (metadata->>'embedding_failed') = 'true'"
+        ) or 0
+        if parked == 0:
+            print("No slices are parked as embedding_failed — nothing to do.")
+            return 0
+        if limit is None:
+            cleared = await conn.fetchval(
+                """
+                WITH cleared AS (
+                    UPDATE substrate_slices
+                       SET metadata = metadata - 'embedding_failed'
+                     WHERE (metadata->>'embedding_failed') = 'true'
+                    RETURNING 1
+                )
+                SELECT count(*) FROM cleared
+                """
+            )
+        else:
+            cleared = await conn.fetchval(
+                """
+                WITH targets AS (
+                    SELECT slice_id FROM substrate_slices
+                     WHERE (metadata->>'embedding_failed') = 'true'
+                     ORDER BY ingest_time_world DESC
+                     LIMIT $1
+                ), cleared AS (
+                    UPDATE substrate_slices s
+                       SET metadata = s.metadata - 'embedding_failed'
+                      FROM targets t
+                     WHERE s.slice_id = t.slice_id
+                    RETURNING 1
+                )
+                SELECT count(*) FROM cleared
+                """,
+                limit,
+            )
+    cleared = cleared or 0
+    remaining = parked - cleared
+    print(
+        f"Un-parked {cleared:,} of {parked:,} embedding_failed slice(s)."
+        + (f" {remaining:,} still parked (raise --limit)." if remaining else "")
+    )
+    print(
+        "The Curator re-embeds them on its next backfill tick. If they fail "
+        "again, re-check auxiliary.embedding.* (model, base_url, dimensions) "
+        "vs the schema dim — see `thoth embed reshape`."
+    )
+    return 0
 
 
 # ---------------------------------------------------------------------------

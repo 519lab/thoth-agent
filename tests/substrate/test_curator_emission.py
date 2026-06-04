@@ -263,3 +263,140 @@ async def test_curator_embed_omits_model_kwarg_when_config_default(
         "auxiliary.embedding.model from config.yaml and breaks every "
         "non-OpenAI provider (the 2026-05-26 prod incident)."
     )
+
+
+# ---------------------------------------------------------------------------
+# embedding_failed retry path: storage reset/count + Curator auto-heal.
+# Regression guard for the 2026-06 prod incident where a dim mismatch parked
+# every slice as embedding_failed and nothing un-parked them after the fix.
+# ---------------------------------------------------------------------------
+
+
+async def _seed_passed_slice(substrate, name: str) -> UUID:
+    """Commit one slice and promote it to ``passed`` via the Sentinel."""
+    from substrate.agents import StubSentinel
+
+    profile_id = await _register_profile(substrate.pool, name)
+    stream = await substrate.streams.register(
+        name=f"hermes.test.{name}",
+        family=Family.EXTEROCEPTIVE,
+        modality=Modality.TEXT,
+        source="test",
+        organ="pytest",
+        decay_profile_id=profile_id,
+    )
+    await commit_slice(
+        substrate, stream.stream_id, "hello", event_time_world=_now_utc(),
+    )
+    await StubSentinel(substrate).tick()
+    import thoth_db
+
+    async with thoth_db.connection() as conn:
+        return await conn.fetchval(
+            "SELECT slice_id FROM substrate_slices WHERE stream_id = $1 "
+            "ORDER BY ingest_time_world DESC LIMIT 1",
+            stream.stream_id,
+        )
+
+
+@pytest.mark.asyncio
+async def test_reset_embedding_failed_unparks_slice(substrate):
+    sid = await _seed_passed_slice(substrate, "reset_failed")
+    import thoth_db
+
+    async with thoth_db.connection() as conn:
+        # Sanity: it's in the queue, not parked.
+        assert any(r["slice_id"] == sid for r in
+                   await substrate.slices.list_unembedded(conn, limit=50))
+        assert await substrate.slices.count_embedding_failed(conn) == 0
+
+        # Park it (exhausted-retry state).
+        await substrate.slices.mark_embedding_failed(conn, sid)
+        assert await substrate.slices.count_embedding_failed(conn) == 1
+        # Parked → excluded from the queue.
+        assert not any(r["slice_id"] == sid for r in
+                       await substrate.slices.list_unembedded(conn, limit=50))
+
+        # Reset → un-parked and back in the queue.
+        cleared = await substrate.slices.reset_embedding_failed(conn)
+        assert cleared == 1
+        assert await substrate.slices.count_embedding_failed(conn) == 0
+        assert any(r["slice_id"] == sid for r in
+                   await substrate.slices.list_unembedded(conn, limit=50))
+
+
+@pytest.mark.asyncio
+async def test_reset_embedding_failed_respects_limit(substrate):
+    import thoth_db
+
+    sids = [await _seed_passed_slice(substrate, f"reset_limit_{i}") for i in range(3)]
+    async with thoth_db.connection() as conn:
+        for sid in sids:
+            await substrate.slices.mark_embedding_failed(conn, sid)
+        assert await substrate.slices.count_embedding_failed(conn) == 3
+        cleared = await substrate.slices.reset_embedding_failed(conn, limit=2)
+        assert cleared == 2
+        assert await substrate.slices.count_embedding_failed(conn) == 1
+
+
+@pytest.mark.asyncio
+async def test_curator_auto_heal_unparks_when_backlog_drained(substrate, monkeypatch):
+    from substrate import config as _cfg
+
+    sid = await _seed_passed_slice(substrate, "autoheal")
+    import thoth_db
+
+    async with thoth_db.connection() as conn:
+        await substrate.slices.mark_embedding_failed(conn, sid)
+        assert await substrate.slices.count_embedding_failed(conn) == 1
+
+    monkeypatch.setattr(_cfg, "RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S", 1.0)
+    curator = Curator(substrate)
+    curator._last_retry_failed_at = 0.0  # force the interval gate open
+    await curator._maybe_retry_failed_embeddings()
+
+    async with thoth_db.connection() as conn:
+        assert await substrate.slices.count_embedding_failed(conn) == 0
+        assert any(r["slice_id"] == sid for r in
+                   await substrate.slices.list_unembedded(conn, limit=50))
+
+
+@pytest.mark.asyncio
+async def test_curator_auto_heal_skips_while_fresh_backlog_exists(substrate, monkeypatch):
+    from substrate import config as _cfg
+
+    parked = await _seed_passed_slice(substrate, "autoheal_skip_parked")
+    # A fresh (un-parked, unembedded) slice keeps the normal queue non-empty.
+    await _seed_passed_slice(substrate, "autoheal_skip_fresh")
+    import thoth_db
+
+    async with thoth_db.connection() as conn:
+        await substrate.slices.mark_embedding_failed(conn, parked)
+
+    monkeypatch.setattr(_cfg, "RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S", 1.0)
+    curator = Curator(substrate)
+    curator._last_retry_failed_at = 0.0
+    await curator._maybe_retry_failed_embeddings()
+
+    # Still parked — auto-heal only probes once first-time embedding is drained.
+    async with thoth_db.connection() as conn:
+        assert await substrate.slices.count_embedding_failed(conn) == 1
+
+
+@pytest.mark.asyncio
+async def test_curator_auto_heal_disabled_when_interval_zero(substrate, monkeypatch):
+    from substrate import config as _cfg
+
+    sid = await _seed_passed_slice(substrate, "autoheal_disabled")
+    import thoth_db
+
+    async with thoth_db.connection() as conn:
+        await substrate.slices.mark_embedding_failed(conn, sid)
+
+    monkeypatch.setattr(_cfg, "RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S", 0.0)
+    curator = Curator(substrate)
+    curator._last_retry_failed_at = 0.0
+    await curator._maybe_retry_failed_embeddings()
+
+    async with thoth_db.connection() as conn:
+        assert await substrate.slices.count_embedding_failed(conn) == 1
