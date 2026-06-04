@@ -680,6 +680,68 @@ class SliceRepo:
             slice_id,
         )
 
+    async def count_embedding_failed(self, conn: "asyncpg.Connection") -> int:
+        """How many slices are currently parked as ``embedding_failed``."""
+        return await conn.fetchval(
+            """
+            SELECT count(*) FROM substrate_slices
+             WHERE (metadata->>'embedding_failed') = 'true'
+            """
+        ) or 0
+
+    async def reset_embedding_failed(
+        self,
+        conn: "asyncpg.Connection",
+        *,
+        limit: Optional[int] = None,
+    ) -> int:
+        """Clear the ``embedding_failed`` marker so parked slices re-enter the
+        ``list_unembedded`` queue and get another embedding attempt.
+
+        The marker is sticky-by-design (a slice that exhausts its retry budget
+        is excluded forever so the Curator stops hammering a broken provider).
+        But once the operator fixes the cause — a dim mismatch, an unreachable
+        endpoint, a wrong model name — nothing un-parks the backlog. This is
+        that escape hatch: ``thoth embed retry-failed`` clears all of them for
+        immediate recovery; the Curator's auto-heal pass clears a small batch
+        per long interval so a fixed config self-heals without intervention.
+
+        ``limit`` bounds how many are cleared (newest-first); ``None`` clears
+        every parked slice. Returns the number cleared.
+        """
+        if limit is None:
+            row = await conn.fetchval(
+                """
+                WITH cleared AS (
+                    UPDATE substrate_slices
+                       SET metadata = metadata - 'embedding_failed'
+                     WHERE (metadata->>'embedding_failed') = 'true'
+                    RETURNING 1
+                )
+                SELECT count(*) FROM cleared
+                """
+            )
+            return row or 0
+        row = await conn.fetchval(
+            """
+            WITH targets AS (
+                SELECT slice_id FROM substrate_slices
+                 WHERE (metadata->>'embedding_failed') = 'true'
+                 ORDER BY ingest_time_world DESC
+                 LIMIT $1
+            ), cleared AS (
+                UPDATE substrate_slices s
+                   SET metadata = s.metadata - 'embedding_failed'
+                  FROM targets t
+                 WHERE s.slice_id = t.slice_id
+                RETURNING 1
+            )
+            SELECT count(*) FROM cleared
+            """,
+            limit,
+        )
+        return row or 0
+
     async def recall_stats(
         self,
         conn: "asyncpg.Connection",

@@ -138,6 +138,9 @@ class Curator(SubAgent):
         # respect RECALL_EMBEDDING_BACKFILL_INTERVAL_S regardless of
         # how fast the Curator's main tick cadence is.
         self._last_embed_backfill_at: float = 0.0
+        # Last auto-heal pass that un-parks ``embedding_failed`` slices, on
+        # its own (long) interval so a fixed embedding config self-heals.
+        self._last_retry_failed_at: float = 0.0
         # Last L3/L4 curation pass (its own slow interval).
         self._last_curate_upper_at: float = 0.0
         # Merge thresholds are env-tunable (operators dial the merge
@@ -206,6 +209,9 @@ class Curator(SubAgent):
         # the Curator's main tick can run faster without hammering the
         # embedding API.
         await self._maybe_emit_embeddings()
+        # Auto-heal: periodically un-park a batch of ``embedding_failed``
+        # slices so a fixed config recovers without operator intervention.
+        await self._maybe_retry_failed_embeddings()
         # Upper-layer (L3/L4) curation — its own slow interval. Embed →
         # semantic-merge near-dupes → decay → release. The Curator curates
         # all memory layers, not just L0.
@@ -437,7 +443,7 @@ class Curator(SubAgent):
         # from the operator's config.yaml — without that the Curator
         # would silently force the OpenAI model name on Ollama / Voyage /
         # any non-OpenAI provider, and every embed call would 404.
-        embed_kwargs = {"timeout_ms": _cfg.RECALL_EMBEDDING_TIMEOUT_MS}
+        embed_kwargs = {"timeout_ms": _cfg.RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS}
         if _cfg.RECALL_EMBEDDING_MODEL is not None:
             embed_kwargs["model"] = _cfg.RECALL_EMBEDDING_MODEL
         try:
@@ -471,6 +477,50 @@ class Curator(SubAgent):
             # Persist failures outside the embedding transaction so a
             # bad slice can't block the rest of the batch from landing.
             await self._persist_failures_if_maxed(rows)
+
+    async def _maybe_retry_failed_embeddings(self) -> None:
+        """Auto-heal: un-park a small batch of ``embedding_failed`` slices so a
+        fixed embedding config recovers on its own.
+
+        A slice that exhausts its retry budget is parked (``embedding_failed``)
+        and excluded from ``list_unembedded`` forever — that's deliberate, so a
+        broken provider isn't hammered. But nothing un-parks it once the
+        operator fixes the cause, so the whole backlog can sit at 0% coverage
+        indefinitely. This clears a bounded batch on a long interval: the next
+        ``_emit_embeddings_for_unembedded`` re-attempts them. If the config is
+        now healthy they embed and stay embedded; if it's still broken they
+        re-park (one small probe batch per interval — negligible load).
+
+        Only probes when the fresh backlog is empty, so it never competes with
+        normal first-time embedding. Interval of 0 disables it.
+        """
+        from substrate import config as _cfg
+
+        interval = _cfg.RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S
+        if interval <= 0:
+            return
+        now = time.monotonic()
+        if (now - self._last_retry_failed_at) < interval:
+            return
+        self._last_retry_failed_at = now
+
+        import thoth_db
+
+        async with thoth_db.connection() as conn:
+            # Don't compete with first-time embedding — only probe when the
+            # normal queue is drained.
+            fresh = await self._substrate.slices.list_unembedded(conn, limit=1)
+            if fresh:
+                return
+            cleared = await self._substrate.slices.reset_embedding_failed(
+                conn, limit=_cfg.RECALL_EMBEDDING_BATCH_SIZE
+            )
+        if cleared:
+            self._log.info(
+                "curator embedding auto-heal: un-parked %d failed slice(s) "
+                "for re-embedding",
+                cleared,
+            )
 
     # ------------------------------------------------------------------
     # Upper-layer (L3/L4) curation — embed → merge near-dupes → decay →
@@ -511,7 +561,7 @@ class Curator(SubAgent):
         if not rows:
             return
         texts = [(r["statement"] or "") for r in rows]
-        embed_kwargs = {"timeout_ms": _cfg.RECALL_EMBEDDING_TIMEOUT_MS}
+        embed_kwargs = {"timeout_ms": _cfg.RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS}
         if _cfg.RECALL_EMBEDDING_MODEL is not None:
             embed_kwargs["model"] = _cfg.RECALL_EMBEDDING_MODEL
         try:

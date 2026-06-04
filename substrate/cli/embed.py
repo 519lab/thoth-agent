@@ -86,16 +86,119 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
     )
     reshape_p.set_defaults(func=_cmd_embed_reshape)
 
+    retry_p = embed_sub.add_parser(
+        "retry-failed",
+        help="Un-park slices marked embedding_failed so they get re-embedded",
+        description=(
+            "Clear the ``embedding_failed`` marker on parked slices so they "
+            "re-enter the Curator's embedding queue. Slices that exhaust their "
+            "retry budget are parked and excluded forever (so a broken provider "
+            "isn't hammered) — but nothing un-parks them once you fix the cause "
+            "(dim mismatch, unreachable endpoint, wrong model name). Run this "
+            "after fixing the config for immediate recovery. The Curator also "
+            "auto-heals a small batch per long interval "
+            "(HERMES_RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S), so this is the "
+            "manual fast-path."
+        ),
+    )
+    retry_p.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max parked slices to un-park (newest-first). Default: all.",
+    )
+    retry_p.set_defaults(func=_cmd_embed_retry_failed)
+
     embed_parser.set_defaults(func=_cmd_embed_help)
 
 
 def _cmd_embed_help(args: argparse.Namespace) -> int:
     """Default for ``thoth embed`` with no subcommand."""
     print(
-        "usage: thoth embed reshape <DIM> [--yes] [--no-reembed] [--batch-size N]",
+        "usage: thoth embed {reshape <DIM> | retry-failed}",
         file=sys.stderr,
     )
     return 2
+
+
+# ---------------------------------------------------------------------------
+# retry-failed command — clear the embedding_failed marker so parked slices
+# get another embedding attempt.
+# ---------------------------------------------------------------------------
+
+
+def _cmd_embed_retry_failed(args: argparse.Namespace) -> int:
+    import thoth_db
+
+    limit = args.limit
+    if limit is not None and limit < 1:
+        print("error: --limit must be >= 1", file=sys.stderr)
+        return 2
+    if not thoth_db.ensure_pool_sync():
+        print(
+            "error: THOTH_PG_DSN not set; cannot connect to substrate PG.",
+            file=sys.stderr,
+        )
+        return 1
+    # Drive via thoth_db.run_sync so the coro runs on the pool's bound loop
+    # (same cross-loop constraint reshape documents).
+    return thoth_db.run_sync(_retry_failed_async(limit=limit))
+
+
+async def _retry_failed_async(*, limit: "int | None") -> int:
+    import thoth_db
+
+    async with thoth_db.connection() as conn:
+        parked = await conn.fetchval(
+            "SELECT count(*) FROM substrate_slices "
+            "WHERE (metadata->>'embedding_failed') = 'true'"
+        ) or 0
+        if parked == 0:
+            print("No slices are parked as embedding_failed — nothing to do.")
+            return 0
+        if limit is None:
+            cleared = await conn.fetchval(
+                """
+                WITH cleared AS (
+                    UPDATE substrate_slices
+                       SET metadata = metadata - 'embedding_failed'
+                     WHERE (metadata->>'embedding_failed') = 'true'
+                    RETURNING 1
+                )
+                SELECT count(*) FROM cleared
+                """
+            )
+        else:
+            cleared = await conn.fetchval(
+                """
+                WITH targets AS (
+                    SELECT slice_id FROM substrate_slices
+                     WHERE (metadata->>'embedding_failed') = 'true'
+                     ORDER BY ingest_time_world DESC
+                     LIMIT $1
+                ), cleared AS (
+                    UPDATE substrate_slices s
+                       SET metadata = s.metadata - 'embedding_failed'
+                      FROM targets t
+                     WHERE s.slice_id = t.slice_id
+                    RETURNING 1
+                )
+                SELECT count(*) FROM cleared
+                """,
+                limit,
+            )
+    cleared = cleared or 0
+    remaining = parked - cleared
+    print(
+        f"Un-parked {cleared:,} of {parked:,} embedding_failed slice(s)."
+        + (f" {remaining:,} still parked (raise --limit)." if remaining else "")
+    )
+    print(
+        "The Curator re-embeds them on its next backfill tick. If they fail "
+        "again, re-check auxiliary.embedding.* (model, base_url, dimensions) "
+        "vs the schema dim — see `thoth embed reshape`."
+    )
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -316,6 +419,12 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
     # Reuse the same text extractor the Curator uses so re-embedded
     # vectors compare cleanly to fresh Curator-emitted vectors.
     from substrate.agents.curator import _extract_text_for_embedding
+    from substrate import config as _cfg
+
+    # Background backfill uses the generous backfill timeout, NOT the 800ms
+    # interactive recall-query timeout — a slow local model would otherwise
+    # time out on every batch.
+    timeout_ms = _cfg.RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS
 
     if total == 0:
         print("No slices to embed.")
@@ -344,7 +453,7 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
 
         texts = [_extract_text_for_embedding(r["payload"]) for r in rows]
         try:
-            vectors = await embed(texts)
+            vectors = await embed(texts, timeout_ms=timeout_ms)
         except Exception as exc:
             print(
                 f"  embed() raised: {exc}. Aborting; "
@@ -355,6 +464,7 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
 
         # Write back per row. Skip rows where embed() returned None
         # (provider failure for that item only).
+        wrote = 0
         async with thoth_db.transaction() as conn:
             for r, vec in zip(rows, vectors):
                 if vec is None:
@@ -369,13 +479,32 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
                     """,
                     vec, r["slice_id"], r["ingest_time_world"],
                 )
-        done += len(rows)
+                wrote += 1
+        done += wrote
         pct = (done / total * 100.0) if total else 100.0
         print(
             f"  Re-embedded {done:,}/{total:,} ({pct:.1f}%)"
             + (f", {failed} per-item failures" if failed else ""),
             flush=True,
         )
+
+        # No slice in this batch embedded → the same NULL rows will be
+        # re-fetched next iteration forever. Bail with a diagnostic instead
+        # of spinning (the 2026-06 reshape runaway: every call timed out at
+        # 800ms vs a ~15s provider, and the loop sailed past 100%).
+        if wrote == 0:
+            print(
+                f"error: 0 of {len(rows)} slices embedded this batch — the "
+                "provider is failing every call (timeout, dim mismatch, or "
+                "unreachable endpoint). Aborting to avoid an infinite retry "
+                "loop. Check auxiliary.embedding.* (model, base_url, "
+                "dimensions vs schema dim) and raise "
+                "HERMES_RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS for slow models, "
+                "then re-run. The Curator's background backfill resumes the "
+                "rest once the cause is fixed.",
+                file=sys.stderr,
+            )
+            return 1
 
         # Tight provider call — small natural pause keeps us under any
         # provider's per-second rate cap without explicit throttling.
