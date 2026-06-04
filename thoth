@@ -2,7 +2,7 @@
 """
 Thoth Agent CLI launcher.
 
-This wrapper should behave like the installed `hermes` command, including
+This wrapper should behave like the installed `thoth` command, including
 subcommands such as `gateway`, `cron`, and `doctor`.
 """
 

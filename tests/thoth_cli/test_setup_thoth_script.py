@@ -3,7 +3,7 @@ import subprocess
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SETUP_SCRIPT = REPO_ROOT / "setup-hermes.sh"
+SETUP_SCRIPT = REPO_ROOT / "setup-thoth.sh"
 
 
 def test_setup_thoth_script_is_valid_shell():

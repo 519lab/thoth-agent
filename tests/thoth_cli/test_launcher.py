@@ -1,4 +1,4 @@
-"""Tests for the top-level `./hermes` launcher script."""
+"""Tests for the top-level `./thoth` launcher script."""
 
 import runpy
 import sys
@@ -7,8 +7,8 @@ from pathlib import Path
 
 
 def test_launcher_delegates_to_argparse_entrypoint(monkeypatch):
-    """`./hermes` should use `thoth_cli.main`, not the legacy Fire wrapper."""
-    launcher_path = Path(__file__).resolve().parents[2] / "hermes"
+    """`./thoth` should use `thoth_cli.main`, not the legacy Fire wrapper."""
+    launcher_path = Path(__file__).resolve().parents[2] / "thoth"
     called = []
 
     fake_main_module = types.ModuleType("thoth_cli.main")

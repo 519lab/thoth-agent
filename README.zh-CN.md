@@ -212,8 +212,8 @@ thoth claw migrate --overwrite  # 覆盖已有冲突
 ```bash
 git clone https://github.com/519lab/thoth-agent.git
 cd thoth-agent
-./setup-hermes.sh     # 安装 uv、创建 venv、安装 .[all]、创建符号链接 ~/.local/bin/hermes
-./hermes              # 自动检测 venv，无需先 source
+./setup-thoth.sh     # 安装 uv、创建 venv、安装 .[all]、创建符号链接 ~/.local/bin/thoth
+./thoth              # 自动检测 venv，无需先 source
 ```
 
 手动安装（等效于上述命令）：
