@@ -200,22 +200,51 @@ class Curator(SubAgent):
     # ------------------------------------------------------------------
 
     async def tick(self) -> None:
-        await self._apply_natural_decay()
-        released = await self._evaluate_releases()
-        await self._emit_release_audit(released)
-        alarmed = await self._alarm_pathological()
-        await self._emit_alarm_audit(alarmed)
+        # Each stage is ISOLATED: a failure in one (e.g. a transient lock /
+        # connection error on the bulk decay UPDATE while the DB is under
+        # heavy write load) must not skip the stages after it. The sub-tasks
+        # already run in their own transactions for *data* isolation, but
+        # before this they ran as a bare sequence — so a raising decay stage
+        # propagated out of tick() and the base loop swallowed the *whole*
+        # tick, silently starving release / alarm / embedding for that cycle
+        # (observed 2026-06: a ~2min window of decay errors during an
+        # embedding storm also blocked release + embed). Per-stage try/except
+        # keeps the rest of the tick running and logs each failure distinctly.
+        await self._run_stage("decay", self._apply_natural_decay)
+        await self._run_stage("release", self._release_stage)
+        await self._run_stage("alarm", self._alarm_stage)
         # Phase C: embedding backfill — guarded by its own interval so
         # the Curator's main tick can run faster without hammering the
         # embedding API.
-        await self._maybe_emit_embeddings()
+        await self._run_stage("embed", self._maybe_emit_embeddings)
         # Auto-heal: periodically un-park a batch of ``embedding_failed``
         # slices so a fixed config recovers without operator intervention.
-        await self._maybe_retry_failed_embeddings()
+        await self._run_stage("retry_failed", self._maybe_retry_failed_embeddings)
         # Upper-layer (L3/L4) curation — its own slow interval. Embed →
         # semantic-merge near-dupes → decay → release. The Curator curates
         # all memory layers, not just L0.
-        await self._maybe_curate_upper_layers()
+        await self._run_stage("curate_upper", self._maybe_curate_upper_layers)
+
+    async def _run_stage(self, name: str, stage) -> None:
+        """Run one tick stage, isolating its failure from the others.
+
+        The base loop already logs+swallows whole-tick errors and continues;
+        this narrows that to per-stage so one failing stage can't starve the
+        rest of the tick. Distinct ``curator.stage.error stage=<name>`` log
+        lines make it obvious which stage failed.
+        """
+        try:
+            await stage()
+        except Exception:
+            self._log.exception("curator.stage.error stage=%s", name)
+
+    async def _release_stage(self) -> None:
+        released = await self._evaluate_releases()
+        await self._emit_release_audit(released)
+
+    async def _alarm_stage(self) -> None:
+        alarmed = await self._alarm_pathological()
+        await self._emit_alarm_audit(alarmed)
 
     # ------------------------------------------------------------------
     # Decay — Phase B spec §4 + archived plan Task 5.2.
