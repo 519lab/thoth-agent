@@ -211,8 +211,8 @@ Contributions are welcome. Clone and go:
 ```bash
 git clone https://github.com/519lab/thoth-agent.git
 cd thoth-agent
-./setup-hermes.sh     # installs uv, creates venv, installs .[all], symlinks ~/.local/bin/hermes
-./hermes              # auto-detects the venv, no need to `source` first
+./setup-thoth.sh     # installs uv, creates venv, installs .[all], symlinks ~/.local/bin/thoth
+./thoth              # auto-detects the venv, no need to `source` first
 ```
 
 Manual path (equivalent):
