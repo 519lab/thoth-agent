@@ -53,7 +53,7 @@ def test_empty_string_and_dot_removed_from_sys_path():
         sys.path = original
 
 
-def test_hermes_src_root_inserted_at_front():
+def test_thoth_src_root_inserted_at_front():
     original = sys.path[:]
     try:
         fake_root = "/fake/thoth/src"

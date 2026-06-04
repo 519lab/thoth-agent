@@ -35,7 +35,7 @@ from substrate.storage import (
 
 
 @pytest_asyncio.fixture
-async def substrate(hermes_db_initialized):
+async def substrate(thoth_db_initialized):
     """A Substrate constructed from the test's thoth_db pool, no
     sub-agents started (we just need the L0 surface)."""
     import thoth_db
@@ -315,7 +315,7 @@ def test_commit_slice_sync_works_from_sync_context(thoth_db_dsn):
     raising. (Inside an event loop it would raise — covered by the
     next test.)
 
-    We deliberately AVOID the async ``hermes_db_initialized`` fixture
+    We deliberately AVOID the async ``thoth_db_initialized`` fixture
     here: that fixture awaits ``thoth_db.init`` inside pytest-asyncio's
     per-test loop, which binds the asyncpg pool to that loop. The sync
     facade would then drive the pool from the persistent ``_sync_loop``
@@ -369,7 +369,7 @@ async def test_commit_slice_sync_inside_event_loop_does_not_deadlock(substrate):
       pool is bound to a different loop than the offload's
       ``_sync_loop`` — happens in this test because the ``substrate``
       fixture initialises the pool on pytest-asyncio's per-test loop
-      via ``hermes_db_initialized``. The offload routes the call to
+      via ``thoth_db_initialized``. The offload routes the call to
       ``_sync_loop``; asyncpg's loop-bound connection refuses, but
       raises promptly rather than hanging.
     * **Successful commit** when the pool is on ``_sync_loop``

@@ -21,7 +21,7 @@ from substrate.l1.schema import ParsedEntity, ParsedRelationship, ParserResult
 
 
 @pytest_asyncio.fixture
-async def booted(hermes_db_initialized):
+async def booted(thoth_db_initialized):
     sub = await Substrate.boot(
         config=SubstrateConfig(auto_migrate=False, start_subagents=False),
         start_subagents=False,
@@ -55,7 +55,7 @@ async def _commit_passed_slices(substrate, texts):
 
 
 @pytest.mark.asyncio
-async def test_persist_extraction_writes_l1_and_returns_addresses(hermes_db_initialized):
+async def test_persist_extraction_writes_l1_and_returns_addresses(thoth_db_initialized):
     import thoth_db
 
     sid = uuid4()  # citations have no FK; a synthetic slice id is fine here
@@ -145,5 +145,5 @@ async def test_mark_skips_released_slices(booted):
 
 
 @pytest.mark.asyncio
-async def test_mark_empty_slice_list_is_noop(hermes_db_initialized):
+async def test_mark_empty_slice_list_is_noop(thoth_db_initialized):
     assert await store.mark_slices_consolidated([], []) == 0

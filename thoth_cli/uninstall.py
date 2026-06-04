@@ -262,7 +262,7 @@ def uninstall_gateway_service():
 # or open a new terminal anyway).
 
 
-def _hermes_path_markers(thoth_home: Path) -> list[str]:
+def _thoth_path_markers(thoth_home: Path) -> list[str]:
     """Path-entry substrings that identify Thoth-owned User-PATH entries."""
     root = str(thoth_home).rstrip("\\/")
     # Match on prefix so sub-entries (git\cmd, git\bin, git\usr\bin, node, etc.)
@@ -297,7 +297,7 @@ def remove_path_from_windows_registry(thoth_home: Path) -> list[str]:
                 return []
             # Preserve REG_EXPAND_SZ vs REG_SZ so unexpanded %VARS% survive.
             entries = [e for e in path_value.split(";") if e]
-            markers = _hermes_path_markers(thoth_home)
+            markers = _thoth_path_markers(thoth_home)
             kept: list[str] = []
             for entry in entries:
                 entry_norm = entry.rstrip("\\/")
@@ -314,7 +314,7 @@ def remove_path_from_windows_registry(thoth_home: Path) -> list[str]:
     return removed
 
 
-def remove_hermes_env_vars_windows() -> list[str]:
+def remove_thoth_env_vars_windows() -> list[str]:
     """Delete HERMES_HOME and HERMES_GIT_BASH_PATH from User-scope env vars."""
     try:
         import winreg
@@ -402,11 +402,11 @@ def _uninstall_profile(profile) -> None:
     # 1. Stop and remove this profile's gateway service.
     #    Use `python -m thoth_cli.main` so we don't depend on a `thoth`
     #    wrapper that may be half-removed mid-uninstall.
-    hermes_invocation = [_sys.executable, "-m", "thoth_cli.main", "--profile", name]
+    thoth_invocation = [_sys.executable, "-m", "thoth_cli.main", "--profile", name]
     for subcmd in ("stop", "uninstall"):
         try:
             subprocess.run(
-                hermes_invocation + ["gateway", subcmd],
+                thoth_invocation + ["gateway", subcmd],
                 capture_output=True,
                 text=True,
                 timeout=60,
@@ -581,7 +581,7 @@ def run_uninstall(args):
             log_info("No Thoth-owned PATH entries in User environment")
 
         log_info("Removing HERMES_HOME / HERMES_GIT_BASH_PATH User env vars...")
-        removed_env = remove_hermes_env_vars_windows()
+        removed_env = remove_thoth_env_vars_windows()
         if removed_env:
             for name in removed_env:
                 log_success(f"Removed User env var: {name}")

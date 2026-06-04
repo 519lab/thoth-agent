@@ -427,7 +427,7 @@ def _run_review_in_thread(
             # the review fork's outbound HTTP request hits the same
             # Anthropic/OpenRouter prefix cache the parent warmed.
             # Without this, the fork rebuilds the system prompt from
-            # scratch (fresh _hermes_now() timestamp, fresh
+            # scratch (fresh _thoth_now() timestamp, fresh
             # session_id, narrower toolset → different skills_prompt)
             # and the byte-exact prefix-cache key misses. See
             # issue #25322 and PR #17276 for the full analysis +

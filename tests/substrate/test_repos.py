@@ -32,7 +32,7 @@ from substrate.storage import (
 
 class TestDecayProfileRepo:
     @pytest.mark.asyncio
-    async def test_get_seeded_profile_by_id(self, hermes_db_initialized):
+    async def test_get_seeded_profile_by_id(self, thoth_db_initialized):
         import thoth_db
 
         repo = DecayProfileRepo(thoth_db.pool())
@@ -43,7 +43,7 @@ class TestDecayProfileRepo:
         assert profile.applies_to_modality is Modality.TEXT
 
     @pytest.mark.asyncio
-    async def test_get_by_name(self, hermes_db_initialized):
+    async def test_get_by_name(self, thoth_db_initialized):
         import thoth_db
 
         repo = DecayProfileRepo(thoth_db.pool())
@@ -53,7 +53,7 @@ class TestDecayProfileRepo:
         assert profile.consolidation_window == timedelta(minutes=5)
 
     @pytest.mark.asyncio
-    async def test_get_unknown_returns_none(self, hermes_db_initialized):
+    async def test_get_unknown_returns_none(self, thoth_db_initialized):
         import thoth_db
 
         repo = DecayProfileRepo(thoth_db.pool())
@@ -75,7 +75,7 @@ class TestDecayProfileRepo:
 
 class TestStreamRepo:
     @pytest.mark.asyncio
-    async def test_register_returns_new_stream(self, hermes_db_initialized):
+    async def test_register_returns_new_stream(self, thoth_db_initialized):
         import thoth_db
 
         repo = StreamRepo(thoth_db.pool())
@@ -92,7 +92,7 @@ class TestStreamRepo:
         assert stream.family is Family.EXTEROCEPTIVE
 
     @pytest.mark.asyncio
-    async def test_register_is_idempotent_on_name_conflict(self, hermes_db_initialized):
+    async def test_register_is_idempotent_on_name_conflict(self, thoth_db_initialized):
         import thoth_db
 
         repo = StreamRepo(thoth_db.pool())
@@ -118,7 +118,7 @@ class TestStreamRepo:
         assert second.family is Family.SELF_STATE
 
     @pytest.mark.asyncio
-    async def test_get_hits_cache_on_second_read(self, hermes_db_initialized):
+    async def test_get_hits_cache_on_second_read(self, thoth_db_initialized):
         import thoth_db
 
         repo = StreamRepo(thoth_db.pool())
@@ -136,7 +136,7 @@ class TestStreamRepo:
         assert cached is stream
 
     @pytest.mark.asyncio
-    async def test_get_by_name_uses_reverse_index(self, hermes_db_initialized):
+    async def test_get_by_name_uses_reverse_index(self, thoth_db_initialized):
         import thoth_db
 
         repo = StreamRepo(thoth_db.pool())
@@ -152,7 +152,7 @@ class TestStreamRepo:
         assert cached is stream
 
     @pytest.mark.asyncio
-    async def test_invalidate_drops_cache_entry(self, hermes_db_initialized):
+    async def test_invalidate_drops_cache_entry(self, thoth_db_initialized):
         import thoth_db
 
         repo = StreamRepo(thoth_db.pool())
@@ -184,7 +184,7 @@ def _now_utc() -> datetime:
 
 
 @pytest.mark.asyncio
-async def test_slice_repo_commit_inserts_pending(hermes_db_initialized):
+async def test_slice_repo_commit_inserts_pending(thoth_db_initialized):
     import thoth_db
     from substrate.storage import DEFAULT_STRUCTURED_PROFILE
 
@@ -226,7 +226,7 @@ async def test_slice_repo_commit_inserts_pending(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_slice_repo_list_pending_orders_oldest_first(hermes_db_initialized):
+async def test_slice_repo_list_pending_orders_oldest_first(thoth_db_initialized):
     import asyncio
 
     import thoth_db
@@ -270,7 +270,7 @@ async def test_slice_repo_list_pending_orders_oldest_first(hermes_db_initialized
 
 
 @pytest.mark.asyncio
-async def test_slice_repo_decide_transitions_pending_to_passed(hermes_db_initialized):
+async def test_slice_repo_decide_transitions_pending_to_passed(thoth_db_initialized):
     import thoth_db
 
     streams = StreamRepo(thoth_db.pool())
@@ -314,7 +314,7 @@ async def test_slice_repo_decide_transitions_pending_to_passed(hermes_db_initial
 
 
 @pytest.mark.asyncio
-async def test_slice_repo_decide_rejects_pending_outcome(hermes_db_initialized):
+async def test_slice_repo_decide_rejects_pending_outcome(thoth_db_initialized):
     """``decide`` only accepts PASSED or QUARANTINED — PENDING is not a
     legal target (Sentinel only moves *away* from pending)."""
     import thoth_db
@@ -331,7 +331,7 @@ async def test_slice_repo_decide_rejects_pending_outcome(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_slice_repo_decide_many_batch(hermes_db_initialized):
+async def test_slice_repo_decide_many_batch(thoth_db_initialized):
     import thoth_db
 
     streams = StreamRepo(thoth_db.pool())
@@ -377,7 +377,7 @@ async def test_slice_repo_decide_many_batch(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_slice_repo_force_reject_expired_uses_ttl(hermes_db_initialized):
+async def test_slice_repo_force_reject_expired_uses_ttl(thoth_db_initialized):
     """A slice past its stream's ``pending_ttl`` is force-rejected.
 
     The default-structured profile has ``pending_ttl = 15 seconds``. We

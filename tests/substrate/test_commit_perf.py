@@ -66,7 +66,7 @@ _MEASURED_COMMITS = 1000
 
 
 @pytest_asyncio.fixture
-async def warm_substrate(hermes_db_initialized):
+async def warm_substrate(thoth_db_initialized):
     """Substrate with no sub-agent loops (we don't want Sentinel
     ticking and competing for connections during the benchmark)."""
     sub = await Substrate.boot(start_subagents=False)

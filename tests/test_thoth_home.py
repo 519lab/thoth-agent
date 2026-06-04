@@ -19,7 +19,7 @@ def fake_home(tmp_path, monkeypatch):
     monkeypatch.delenv("HERMES_HOME", raising=False)
     monkeypatch.delenv("THOTH_HOME", raising=False)
     # Ensure no ContextVar override is active.
-    if thoth_constants.get_hermes_home_override():
+    if thoth_constants.get_thoth_home_override():
         pytest.skip("a HERMES_HOME override is active in this process")
     assert Path.home() == tmp_path
     return tmp_path
@@ -58,22 +58,22 @@ def test_thoth_home_env_wins(fake_home, monkeypatch):
     assert thoth_constants.get_thoth_home() == Path("/tmp/custom_thoth")
 
 
-def test_hermes_home_env_fallback(fake_home, monkeypatch):
+def test_thoth_home_env_fallback(fake_home, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", "/tmp/custom_hermes")
     assert thoth_constants.get_thoth_home() == Path("/tmp/custom_hermes")
 
 
-def test_thoth_home_beats_hermes_home(fake_home, monkeypatch):
+def test_thoth_home_beats_thoth_home(fake_home, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", "/tmp/legacy")
     monkeypatch.setenv("THOTH_HOME", "/tmp/canonical")
     assert thoth_constants.get_thoth_home() == Path("/tmp/canonical")
 
 
-def test_get_hermes_home_disk_default_new_install(fake_home):
+def test_get_thoth_home_disk_default_new_install(fake_home):
     assert thoth_constants.get_thoth_home() == fake_home / ".thoth"
 
 
-def test_get_hermes_home_legacy_install(fake_home):
+def test_get_thoth_home_legacy_install(fake_home):
     (fake_home / ".hermes").mkdir()
     assert thoth_constants.get_thoth_home() == fake_home / ".hermes"
 
@@ -150,7 +150,7 @@ def test_propagate_home_copy_does_not_mutate_base():
     assert base["HERMES_HOME"] == "/parent"  # base untouched
 
 
-def test_main_import_user_env_over_shell_with_hermes_home(fake_home, monkeypatch):
+def test_main_import_user_env_over_shell_with_thoth_home(fake_home, monkeypatch):
     """User .env must override stale shell values after main import, with the
     new THOTH-aware home resolution (regression for the Phase 3a resolver)."""
     import importlib

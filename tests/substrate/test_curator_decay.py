@@ -27,7 +27,7 @@ from substrate.storage import (
 
 
 @pytest_asyncio.fixture
-async def substrate(hermes_db_initialized):
+async def substrate(thoth_db_initialized):
     """Substrate built via from_pool — no sub-agent loops running.
     Tests drive Curator.tick() directly so the timing is deterministic.
     """

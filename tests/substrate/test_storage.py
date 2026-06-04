@@ -164,7 +164,7 @@ class TestDataclasses:
 
 
 @pytest.mark.asyncio
-async def test_decay_profiles_seeded(hermes_db_initialized):
+async def test_decay_profiles_seeded(thoth_db_initialized):
     """The migration seeded the 4 default-per-modality profiles with
     stable v5 UUIDs and INTERVAL values that round-trip to timedelta.
     """
@@ -202,7 +202,7 @@ async def test_decay_profiles_seeded(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_self_state_stream_seeded(hermes_db_initialized):
+async def test_self_state_stream_seeded(thoth_db_initialized):
     """The migration seeded the ``substrate.self_state`` bootstrap stream
     so internal emissions (Sentinel batch audits, force-reject audits)
     have a target from the first boot.
@@ -230,7 +230,7 @@ async def test_self_state_stream_seeded(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_substrate_slices_is_partitioned(hermes_db_initialized):
+async def test_substrate_slices_is_partitioned(thoth_db_initialized):
     """``substrate_slices`` is a partitioned table (PG ``relkind = 'p'``)
     with at least the default partition + 2 month partitions present
     after migration.

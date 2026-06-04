@@ -341,7 +341,7 @@ class TestResolveSessionName:
 
 
 class TestResolveConfigPath:
-    def test_prefers_hermes_home_when_exists(self, tmp_path):
+    def test_prefers_thoth_home_when_exists(self, tmp_path):
         thoth_home = tmp_path / "hermes"
         thoth_home.mkdir()
         local_cfg = thoth_home / "honcho.json"
@@ -371,7 +371,7 @@ class TestResolveConfigPath:
         assert _get_default_thoth_home() == default_home
         assert result == default_cfg
 
-    def test_falls_back_to_global_without_hermes_home_env(self, tmp_path):
+    def test_falls_back_to_global_without_thoth_home_env(self, tmp_path):
         fake_home = tmp_path / "fakehome"
         fake_home.mkdir()
 
@@ -657,7 +657,7 @@ class TestGetHonchoClient:
         not importlib.util.find_spec("honcho"),
         reason="honcho SDK not installed"
     )
-    def test_hermes_request_timeout_alias_used(self):
+    def test_thoth_request_timeout_alias_used(self):
         fake_honcho = MagicMock(name="Honcho")
         cfg = HonchoClientConfig(
             api_key="test-key",

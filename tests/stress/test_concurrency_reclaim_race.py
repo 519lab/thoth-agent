@@ -121,7 +121,7 @@ def reclaimer_loop(thoth_home: str, result_file: str) -> None:
 
 
 def main():
-    home = tempfile.mkdtemp(prefix="hermes_reclaim_race_")
+    home = tempfile.mkdtemp(prefix="thoth_reclaim_race_")
     os.environ["HERMES_HOME"] = home
     os.environ["HOME"] = home
     sys.path.insert(0, WT)

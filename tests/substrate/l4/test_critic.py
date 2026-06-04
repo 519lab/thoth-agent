@@ -22,7 +22,7 @@ from substrate.cli import inspect as inspect_mod
 
 
 @pytest.mark.asyncio
-async def test_record_and_latest_coherence(hermes_db_initialized):
+async def test_record_and_latest_coherence(thoth_db_initialized):
     await l4.record_observation("coherence", "substrate", "coherence 0.90", score=0.9)
     await l4.record_observation("coherence", "substrate", "coherence 0.70", score=0.7)
     latest = await l4.latest_coherence()
@@ -30,7 +30,7 @@ async def test_record_and_latest_coherence(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_list_observations_filters(hermes_db_initialized):
+async def test_list_observations_filters(thoth_db_initialized):
     await l4.record_observation("calibration", "parser", "ok 90%", score=0.9)
     await l4.record_observation("calibration", "consolidation", "backlog 10%", score=0.9)
     parser_obs = await l4.list_observations(subject="parser")
@@ -65,7 +65,7 @@ def test_coherence_penalises_backlog_and_alarms():
 
 
 @pytest_asyncio.fixture
-async def booted(hermes_db_initialized):
+async def booted(thoth_db_initialized):
     sub = await Substrate.boot(
         config=SubstrateConfig(auto_migrate=False, start_subagents=False),
         start_subagents=False,
@@ -153,7 +153,7 @@ def test_register_subparser_l4():
 
 
 @pytest.mark.asyncio
-async def test_print_l4(hermes_db_initialized):
+async def test_print_l4(thoth_db_initialized):
     import thoth_db
 
     await l4.record_observation("coherence", "substrate", "coherence 0.88", score=0.88)

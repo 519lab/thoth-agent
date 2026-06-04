@@ -130,7 +130,7 @@ class TestValidateProfileName:
 class TestGetProfileDir:
     """Tests for get_profile_dir()."""
 
-    def test_default_returns_hermes_home(self, profile_env):
+    def test_default_returns_thoth_home(self, profile_env):
         tmp_path = profile_env
         result = get_profile_dir("default")
         assert result == tmp_path / ".hermes"
@@ -522,7 +522,7 @@ class TestActiveProfile:
 class TestGetActiveProfileName:
     """Tests for get_active_profile_name()."""
 
-    def test_default_hermes_home_returns_default(self, profile_env):
+    def test_default_thoth_home_returns_default(self, profile_env):
         # HERMES_HOME points to tmp_path/.hermes which is the default
         assert get_active_profile_name() == "default"
 
@@ -1023,7 +1023,7 @@ class TestInternalHelpers:
         root = _get_profiles_root()
         assert root == tmp_path / ".hermes" / "profiles"
 
-    def test_default_hermes_home(self, profile_env):
+    def test_default_thoth_home(self, profile_env):
         tmp_path = profile_env
         home = _get_default_thoth_home()
         assert home == tmp_path / ".hermes"
@@ -1037,7 +1037,7 @@ class TestInternalHelpers:
         root = _get_profiles_root()
         assert root == docker_home / "profiles"
 
-    def test_default_hermes_home_docker(self, tmp_path, monkeypatch):
+    def test_default_thoth_home_docker(self, tmp_path, monkeypatch):
         """In Docker, _get_default_thoth_home() returns HERMES_HOME itself."""
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)

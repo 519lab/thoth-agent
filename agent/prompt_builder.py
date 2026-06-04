@@ -1340,24 +1340,24 @@ def load_soul_md() -> Optional[str]:
 
 def _load_thoth_md(cwd_path: Path) -> str:
     """.hermes.md / HERMES.md — walk to git root."""
-    hermes_md_path = _find_thoth_md(cwd_path)
-    if not hermes_md_path:
+    thoth_md_path = _find_thoth_md(cwd_path)
+    if not thoth_md_path:
         return ""
     try:
-        content = hermes_md_path.read_text(encoding="utf-8").strip()
+        content = thoth_md_path.read_text(encoding="utf-8").strip()
         if not content:
             return ""
         content = _strip_yaml_frontmatter(content)
-        rel = hermes_md_path.name
+        rel = thoth_md_path.name
         try:
-            rel = str(hermes_md_path.relative_to(cwd_path))
+            rel = str(thoth_md_path.relative_to(cwd_path))
         except ValueError:
             pass
         content = _scan_context_content(content, rel)
         result = f"## {rel}\n\n{content}"
         return _truncate_content(result, ".hermes.md")
     except Exception as e:
-        logger.debug("Could not read %s: %s", hermes_md_path, e)
+        logger.debug("Could not read %s: %s", thoth_md_path, e)
         return ""
 
 

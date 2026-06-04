@@ -42,7 +42,7 @@ _SKIP_ON_CI = os.environ.get("CI", "").lower() in {"1", "true", "yes", "on"}
 
 
 @pytest_asyncio.fixture
-async def loaded_substrate(hermes_db_initialized):
+async def loaded_substrate(thoth_db_initialized):
     """Boot substrate (sub-agents off) + bulk-insert 10k slices across
     the 15 auto-registered streams + age them past the 1-second decay
     minimum interval."""

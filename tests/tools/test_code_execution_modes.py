@@ -298,7 +298,7 @@ class TestExecuteCodeModeIntegration(unittest.TestCase):
         """Strict mode: script's os.getcwd() is the staging tmpdir."""
         result = self._run("import os; print(os.getcwd())", mode="strict")
         self.assertEqual(result["status"], "success")
-        self.assertIn("hermes_sandbox_", result["output"])
+        self.assertIn("thoth_sandbox_", result["output"])
 
     def test_project_mode_runs_in_session_cwd(self):
         """Project mode: script's os.getcwd() is the session's working dir."""

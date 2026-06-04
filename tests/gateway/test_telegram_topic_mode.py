@@ -226,7 +226,7 @@ async def test_telegram_topic_prompt_still_runs_agent_when_topic_mode_enabled(mo
 @pytest.mark.skip(reason="Task 23 TODO: gateway/run.py._telegram_topic_mode_enabled calls DB sync; needs Task 24 port")
 @pytest.mark.asyncio
 async def test_managed_topic_binding_reuses_restored_session_over_static_lane_session(
-    hermes_db_initialized, monkeypatch
+    thoth_db_initialized, monkeypatch
 ):
     import gateway.run as gateway_run
 
@@ -271,7 +271,7 @@ async def test_managed_topic_binding_reuses_restored_session_over_static_lane_se
 
 @pytest.mark.asyncio
 async def test_telegram_group_prompt_is_not_topic_lobby_even_when_dm_topic_mode_enabled(
-    hermes_db_initialized, monkeypatch
+    thoth_db_initialized, monkeypatch
 ):
     import gateway.run as gateway_run
 
@@ -293,7 +293,7 @@ async def test_telegram_group_prompt_is_not_topic_lobby_even_when_dm_topic_mode_
 
 @pytest.mark.asyncio
 async def test_topic_command_is_private_dm_only_and_does_not_enable_group_topic_mode(
-    hermes_db_initialized, monkeypatch
+    thoth_db_initialized, monkeypatch
 ):
     import gateway.run as gateway_run
 
@@ -316,7 +316,7 @@ async def test_topic_command_is_private_dm_only_and_does_not_enable_group_topic_
 
 @pytest.mark.asyncio
 async def test_group_new_keeps_existing_reset_semantics_when_dm_topic_mode_enabled(
-    hermes_db_initialized, monkeypatch
+    thoth_db_initialized, monkeypatch
 ):
     import gateway.run as gateway_run
 
@@ -391,7 +391,7 @@ async def test_new_inside_telegram_topic_resets_current_topic_with_parallel_tip(
 
 @pytest.mark.skip(reason="Task 23 TODO: gateway/run.py._record_telegram_topic_binding calls bind_telegram_topic sync")
 @pytest.mark.asyncio
-async def test_new_inside_telegram_topic_rewrites_binding_to_new_session(hermes_db_initialized, monkeypatch):
+async def test_new_inside_telegram_topic_rewrites_binding_to_new_session(thoth_db_initialized, monkeypatch):
     """Regression: /new inside a topic must rewrite the binding table.
 
     Previously /new reset the SessionStore entry but the
@@ -454,7 +454,7 @@ async def test_new_inside_telegram_topic_rewrites_binding_to_new_session(hermes_
 
 @pytest.mark.skip(reason="Task 23 TODO: _telegram_topic_root_status_message calls run_sync from async context")
 @pytest.mark.asyncio
-async def test_topic_root_command_explicitly_migrates_and_enables_topic_mode(hermes_db_initialized, monkeypatch):
+async def test_topic_root_command_explicitly_migrates_and_enables_topic_mode(thoth_db_initialized, monkeypatch):
     import gateway.run as gateway_run
 
     session_db = SessionDB()
@@ -483,7 +483,7 @@ async def test_topic_root_command_explicitly_migrates_and_enables_topic_mode(her
 
 @pytest.mark.skip(reason="Task 23 TODO: _telegram_topic_root_status_message calls run_sync from async context")
 @pytest.mark.asyncio
-async def test_topic_root_command_lists_unlinked_sessions_for_restore(hermes_db_initialized, monkeypatch):
+async def test_topic_root_command_lists_unlinked_sessions_for_restore(thoth_db_initialized, monkeypatch):
     import gateway.run as gateway_run
 
     session_db = SessionDB()
@@ -536,7 +536,7 @@ async def test_topic_root_command_lists_unlinked_sessions_for_restore(hermes_db_
 
 
 @pytest.mark.asyncio
-async def test_topic_root_command_handles_no_unlinked_sessions(hermes_db_initialized, monkeypatch):
+async def test_topic_root_command_handles_no_unlinked_sessions(thoth_db_initialized, monkeypatch):
     import gateway.run as gateway_run
 
     session_db = SessionDB()
@@ -558,7 +558,7 @@ async def test_topic_root_command_handles_no_unlinked_sessions(hermes_db_initial
 
 
 @pytest.mark.asyncio
-async def test_topic_command_inside_bound_topic_shows_current_session(hermes_db_initialized, monkeypatch):
+async def test_topic_command_inside_bound_topic_shows_current_session(thoth_db_initialized, monkeypatch):
     import gateway.run as gateway_run
 
     session_db = SessionDB()
@@ -595,7 +595,7 @@ async def test_topic_command_inside_bound_topic_shows_current_session(hermes_db_
 
 @pytest.mark.asyncio
 async def test_topic_restore_inside_topic_binds_old_session_and_returns_last_assistant_message(
-    hermes_db_initialized, monkeypatch
+    thoth_db_initialized, monkeypatch
 ):
     import gateway.run as gateway_run
 
@@ -632,7 +632,7 @@ async def test_topic_restore_inside_topic_binds_old_session_and_returns_last_ass
 
 
 @pytest.mark.asyncio
-async def test_topic_restore_refuses_session_owned_by_another_telegram_user(hermes_db_initialized, monkeypatch):
+async def test_topic_restore_refuses_session_owned_by_another_telegram_user(thoth_db_initialized, monkeypatch):
     import gateway.run as gateway_run
 
     session_db = SessionDB()
@@ -655,7 +655,7 @@ async def test_topic_restore_refuses_session_owned_by_another_telegram_user(herm
 
 
 @pytest.mark.asyncio
-async def test_topic_restore_refuses_already_linked_session(hermes_db_initialized, monkeypatch):
+async def test_topic_restore_refuses_already_linked_session(thoth_db_initialized, monkeypatch):
     import gateway.run as gateway_run
 
     session_db = SessionDB()
@@ -686,7 +686,7 @@ async def test_topic_restore_refuses_already_linked_session(hermes_db_initialize
 
 @pytest.mark.skip(reason="Task 23 TODO: _record_telegram_topic_binding calls bind_telegram_topic sync")
 @pytest.mark.asyncio
-async def test_first_message_inside_topic_records_topic_binding(hermes_db_initialized, monkeypatch):
+async def test_first_message_inside_topic_records_topic_binding(thoth_db_initialized, monkeypatch):
     import gateway.run as gateway_run
 
     session_db = SessionDB()
@@ -720,7 +720,7 @@ async def test_first_message_inside_topic_records_topic_binding(hermes_db_initia
 
 
 @pytest.mark.asyncio
-async def test_topic_root_command_creates_and_pins_system_topic(hermes_db_initialized, monkeypatch):
+async def test_topic_root_command_creates_and_pins_system_topic(thoth_db_initialized, monkeypatch):
     import gateway.run as gateway_run
 
     session_db = SessionDB()
@@ -757,7 +757,7 @@ async def test_topic_root_command_creates_and_pins_system_topic(hermes_db_initia
 
 @pytest.mark.skip(reason="Task 23 TODO: _rename_telegram_topic_for_session_title calls get_telegram_topic_binding sync")
 @pytest.mark.asyncio
-async def test_auto_generated_title_renames_bound_telegram_topic(hermes_db_initialized):
+async def test_auto_generated_title_renames_bound_telegram_topic(thoth_db_initialized):
     db = SessionDB()
     await db.create_session("sess-topic", source="telegram", user_id="208214988")
     await db.bind_telegram_topic(
@@ -784,7 +784,7 @@ async def test_auto_generated_title_renames_bound_telegram_topic(hermes_db_initi
 
 
 @pytest.mark.asyncio
-async def test_auto_generated_title_does_not_rename_topic_bound_to_other_session(hermes_db_initialized):
+async def test_auto_generated_title_does_not_rename_topic_bound_to_other_session(thoth_db_initialized):
     db = SessionDB()
     await db.create_session("sess-other", source="telegram", user_id="208214988")
     await db.bind_telegram_topic(
@@ -807,7 +807,7 @@ async def test_auto_generated_title_does_not_rename_topic_bound_to_other_session
 
 
 @pytest.mark.asyncio
-async def test_operator_declared_topic_is_not_auto_renamed(hermes_db_initialized):
+async def test_operator_declared_topic_is_not_auto_renamed(thoth_db_initialized):
     """Topics registered in extra.dm_topics keep their operator-chosen name."""
     db = SessionDB()
     await db.enable_telegram_topic_mode(chat_id="208214988", user_id="208214988")
@@ -846,7 +846,7 @@ async def test_operator_declared_topic_is_not_auto_renamed(hermes_db_initialized
 
 
 @pytest.mark.asyncio
-async def test_disable_topic_auto_rename_extra_skips_rename(hermes_db_initialized):
+async def test_disable_topic_auto_rename_extra_skips_rename(thoth_db_initialized):
     """extra.disable_topic_auto_rename=True must short-circuit auto-rename."""
     db = SessionDB()
     await db.create_session("sess-topic", source="telegram", user_id="208214988")
@@ -872,7 +872,7 @@ async def test_disable_topic_auto_rename_extra_skips_rename(hermes_db_initialize
 
 
 @pytest.mark.asyncio
-async def test_schedule_topic_rename_respects_disable_flag(hermes_db_initialized):
+async def test_schedule_topic_rename_respects_disable_flag(thoth_db_initialized):
     """The scheduling entry-point must also honour disable_topic_auto_rename."""
     db = SessionDB()
     runner = _make_runner(session_db=db)
@@ -925,7 +925,7 @@ def test_telegram_topic_auto_rename_disabled_string_truthy():
 
 @pytest.mark.skip(reason="Task 23 TODO: _is_telegram_topic_root_lobby calls _telegram_topic_mode_enabled sync")
 @pytest.mark.asyncio
-async def test_general_topic_is_treated_as_root_lobby(hermes_db_initialized):
+async def test_general_topic_is_treated_as_root_lobby(thoth_db_initialized):
     """Messages in the Telegram General topic (thread_id=1) route to the lobby, not a lane."""
     db = SessionDB()
     await db.enable_telegram_topic_mode(chat_id="208214988", user_id="208214988")
@@ -945,7 +945,7 @@ async def test_general_topic_is_treated_as_root_lobby(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_lobby_reminder_is_debounced_per_chat(hermes_db_initialized):
+async def test_lobby_reminder_is_debounced_per_chat(thoth_db_initialized):
     """Consecutive root-DM prompts should only surface one lobby reminder per cooldown."""
     db = SessionDB()
     await db.enable_telegram_topic_mode(chat_id="208214988", user_id="208214988")
@@ -973,7 +973,7 @@ async def test_lobby_reminder_is_debounced_per_chat(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_topic_help_subcommand_returns_usage(hermes_db_initialized):
+async def test_topic_help_subcommand_returns_usage(thoth_db_initialized):
     """/topic help surfaces usage without activating anything."""
     db = SessionDB()
     runner = _make_runner(session_db=db)
@@ -989,7 +989,7 @@ async def test_topic_help_subcommand_returns_usage(hermes_db_initialized):
 
 @pytest.mark.skip(reason="Task 23 TODO: _disable_telegram_topic_mode_for_chat uses run_sync inside async handler")
 @pytest.mark.asyncio
-async def test_topic_off_disables_mode_and_clears_bindings(hermes_db_initialized, monkeypatch):
+async def test_topic_off_disables_mode_and_clears_bindings(thoth_db_initialized, monkeypatch):
     """/topic off flips the row off AND deletes bindings for this chat."""
     import gateway.run as gateway_run
 
@@ -1022,7 +1022,7 @@ async def test_topic_off_disables_mode_and_clears_bindings(hermes_db_initialized
 
 
 @pytest.mark.asyncio
-async def test_topic_off_is_idempotent_when_never_enabled(hermes_db_initialized):
+async def test_topic_off_is_idempotent_when_never_enabled(thoth_db_initialized):
     """/topic off against a chat that never ran /topic is a no-op message."""
     db = SessionDB()
     runner = _make_runner(session_db=db)
@@ -1033,7 +1033,7 @@ async def test_topic_off_is_idempotent_when_never_enabled(hermes_db_initialized)
 
 
 @pytest.mark.asyncio
-async def test_topic_refuses_unauthorized_user(hermes_db_initialized, monkeypatch):
+async def test_topic_refuses_unauthorized_user(thoth_db_initialized, monkeypatch):
     """Unauthorized DMs cannot flip multi-session mode on."""
     import gateway.run as gateway_run
 
@@ -1091,7 +1091,7 @@ async def _seed_two_topic_bindings(session_db):
 
 
 @pytest.mark.asyncio
-async def test_recover_returns_none_for_known_topic(hermes_db_initialized):
+async def test_recover_returns_none_for_known_topic(thoth_db_initialized):
     db = SessionDB()
     await _seed_two_topic_bindings(db)
     runner = _make_runner(session_db=db)
@@ -1101,7 +1101,7 @@ async def test_recover_returns_none_for_known_topic(hermes_db_initialized):
 
 @pytest.mark.skip(reason="Task 23 TODO: _recover_telegram_topic_thread_id calls list_telegram_topic_bindings_for_chat sync")
 @pytest.mark.asyncio
-async def test_recover_rewrites_unknown_thread_id_to_most_recent(hermes_db_initialized):
+async def test_recover_rewrites_unknown_thread_id_to_most_recent(thoth_db_initialized):
     # Cross-topic Reply leak: inbound thread_id is a Telegram-only id we never bound.
     db = SessionDB()
     await _seed_two_topic_bindings(db)
@@ -1112,7 +1112,7 @@ async def test_recover_rewrites_unknown_thread_id_to_most_recent(hermes_db_initi
 
 @pytest.mark.skip(reason="Task 23 TODO: _recover_telegram_topic_thread_id calls list_telegram_topic_bindings_for_chat sync")
 @pytest.mark.asyncio
-async def test_recover_rewrites_lobby_thread_id_to_most_recent(hermes_db_initialized):
+async def test_recover_rewrites_lobby_thread_id_to_most_recent(thoth_db_initialized):
     # Stripped plain reply: thread_id is None, topic mode is on.
     db = SessionDB()
     await _seed_two_topic_bindings(db)
@@ -1122,7 +1122,7 @@ async def test_recover_rewrites_lobby_thread_id_to_most_recent(hermes_db_initial
 
 
 @pytest.mark.asyncio
-async def test_recover_returns_none_when_topic_mode_disabled(hermes_db_initialized):
+async def test_recover_returns_none_when_topic_mode_disabled(thoth_db_initialized):
     # Non-topic-mode DMs keep the existing strip-to-lobby behavior.
     db = SessionDB()
     runner = _make_runner(session_db=db)
@@ -1131,7 +1131,7 @@ async def test_recover_returns_none_when_topic_mode_disabled(hermes_db_initializ
 
 
 @pytest.mark.asyncio
-async def test_recover_returns_none_when_no_bindings_yet(hermes_db_initialized):
+async def test_recover_returns_none_when_no_bindings_yet(thoth_db_initialized):
     db = SessionDB()
     await db.enable_telegram_topic_mode(chat_id="208214988", user_id="208214988")
     runner = _make_runner(session_db=db)
@@ -1140,7 +1140,7 @@ async def test_recover_returns_none_when_no_bindings_yet(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_list_telegram_topic_bindings_for_chat(hermes_db_initialized):
+async def test_list_telegram_topic_bindings_for_chat(thoth_db_initialized):
     db = SessionDB()
     await _seed_two_topic_bindings(db)
     rows = await db.list_telegram_topic_bindings_for_chat(chat_id="208214988")
@@ -1148,7 +1148,7 @@ async def test_list_telegram_topic_bindings_for_chat(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_list_telegram_topic_bindings_for_chat_no_table(hermes_db_initialized):
+async def test_list_telegram_topic_bindings_for_chat_no_table(thoth_db_initialized):
     # With PG, the topic tables always exist (Alembic). An empty list is returned
     # when no bindings exist for this chat.
     db = SessionDB()
@@ -1161,7 +1161,7 @@ async def test_list_telegram_topic_bindings_for_chat_no_table(hermes_db_initiali
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_get_telegram_topic_binding_by_session_returns_binding(hermes_db_initialized):
+async def test_get_telegram_topic_binding_by_session_returns_binding(thoth_db_initialized):
     """Reverse lookup by session_id returns the binding row."""
     db = SessionDB()
     await db.enable_telegram_topic_mode(chat_id="208214988", user_id="208214988")
@@ -1183,7 +1183,7 @@ async def test_get_telegram_topic_binding_by_session_returns_binding(hermes_db_i
 
 
 @pytest.mark.asyncio
-async def test_get_telegram_topic_binding_by_session_returns_none_for_unknown(hermes_db_initialized):
+async def test_get_telegram_topic_binding_by_session_returns_none_for_unknown(thoth_db_initialized):
     """Returns None when no binding exists for the given session_id."""
     db = SessionDB()
 
@@ -1197,7 +1197,7 @@ async def test_get_telegram_topic_binding_by_session_returns_none_for_unknown(he
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_session_split_restores_source_thread_id_from_binding(hermes_db_initialized):
+async def test_session_split_restores_source_thread_id_from_binding(thoth_db_initialized):
     """After a session split, source.thread_id is restored from the binding.
 
     Simulates the case where context compression creates a new session_id and

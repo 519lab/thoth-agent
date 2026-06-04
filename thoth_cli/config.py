@@ -308,7 +308,7 @@ def managed_error(action: str = "modify configuration"):
 def get_container_exec_info() -> Optional[dict]:
     """Read container mode metadata from HERMES_HOME/.container-mode.
 
-    Returns a dict with keys: backend, container_name, exec_user, hermes_bin
+    Returns a dict with keys: backend, container_name, exec_user, thoth_bin
     or None if container mode is not active, we're already inside the
     container, or HERMES_DEV=1 is set.
 
@@ -340,13 +340,13 @@ def get_container_exec_info() -> Optional[dict]:
     backend = info.get("backend", "docker")
     container_name = info.get("container_name", "hermes-agent")
     exec_user = info.get("exec_user", "hermes")
-    hermes_bin = info.get("hermes_bin", "/data/current-package/bin/thoth")
+    thoth_bin = info.get("thoth_bin", "/data/current-package/bin/thoth")
 
     return {
         "backend": backend,
         "container_name": container_name,
         "exec_user": exec_user,
-        "hermes_bin": hermes_bin,
+        "thoth_bin": thoth_bin,
     }
 
 

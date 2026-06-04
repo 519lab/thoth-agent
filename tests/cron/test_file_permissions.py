@@ -105,7 +105,7 @@ class TestConfigFilePermissions(unittest.TestCase):
             file_mode = stat.S_IMODE(os.stat(env_path).st_mode)
             self.assertEqual(file_mode, 0o600)
 
-    def test_ensure_hermes_home_sets_0700(self):
+    def test_ensure_thoth_home_sets_0700(self):
         home = Path(self.tmpdir) / ".hermes"
         with patch("thoth_cli.config.get_thoth_home", return_value=home):
             from thoth_cli.config import ensure_thoth_home

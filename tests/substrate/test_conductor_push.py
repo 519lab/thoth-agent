@@ -15,7 +15,7 @@ from substrate.agents import Curator, Level, StubConductor
 
 
 @pytest_asyncio.fixture
-async def booted(hermes_db_initialized):
+async def booted(thoth_db_initialized):
     """Full boot — we need the conductor + the running curator."""
     sub = await Substrate.boot(start_subagents=True)
     yield sub
@@ -23,7 +23,7 @@ async def booted(hermes_db_initialized):
 
 
 @pytest_asyncio.fixture
-async def booted_no_subagents(hermes_db_initialized):
+async def booted_no_subagents(thoth_db_initialized):
     """Booted without spawning sub-agent tasks; the StubConductor
     exists but has no running agents to push to."""
     sub = await Substrate.boot(start_subagents=False)

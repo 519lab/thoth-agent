@@ -169,10 +169,10 @@ class TestExecuteCodeRemoteTempDir(unittest.TestCase):
         mkdir_cmd = env.commands[1][0]
         run_cmd = next(cmd for cmd, _, _ in env.commands if "python3 script.py" in cmd)
         cleanup_cmd = env.commands[-1][0]
-        self.assertIn("mkdir -p /data/data/com.termux/files/usr/tmp/hermes_exec_", mkdir_cmd)
-        self.assertIn("HERMES_RPC_DIR=/data/data/com.termux/files/usr/tmp/hermes_exec_", run_cmd)
-        self.assertIn("rm -rf /data/data/com.termux/files/usr/tmp/hermes_exec_", cleanup_cmd)
-        self.assertNotIn("mkdir -p /tmp/hermes_exec_", mkdir_cmd)
+        self.assertIn("mkdir -p /data/data/com.termux/files/usr/tmp/thoth_exec_", mkdir_cmd)
+        self.assertIn("HERMES_RPC_DIR=/data/data/com.termux/files/usr/tmp/thoth_exec_", run_cmd)
+        self.assertIn("rm -rf /data/data/com.termux/files/usr/tmp/thoth_exec_", cleanup_cmd)
+        self.assertNotIn("mkdir -p /tmp/thoth_exec_", mkdir_cmd)
 
 
 @unittest.skipIf(sys.platform == "win32", "UDS not available on Windows")
@@ -737,7 +737,7 @@ class TestEnvVarFiltering(unittest.TestCase):
         child_env = self._get_child_env()
         self.assertIn("HOME", child_env)
 
-    def test_hermes_rpc_socket_injected(self):
+    def test_thoth_rpc_socket_injected(self):
         child_env = self._get_child_env()
         self.assertIn("HERMES_RPC_SOCKET", child_env)
 

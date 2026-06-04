@@ -290,7 +290,7 @@ class TestGmiAuxiliary:
         headers = mock_openai.call_args.kwargs.get("default_headers", {})
         assert headers.get("User-Agent", "").startswith("HermesAgent/")
 
-    def test_gmi_profile_declares_hermes_user_agent(self):
+    def test_gmi_profile_declares_thoth_user_agent(self):
         """The GMI plugin sets a HermesAgent/<ver> User-Agent on its profile."""
         from providers import get_provider_profile
 

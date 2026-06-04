@@ -10,7 +10,7 @@ from substrate.l1 import store
 
 
 @pytest.mark.asyncio
-async def test_concurrent_upsert_same_entity_one_row(hermes_db_initialized):
+async def test_concurrent_upsert_same_entity_one_row(thoth_db_initialized):
     import thoth_db
 
     # Fire several upserts of the same (name, type) concurrently. Each

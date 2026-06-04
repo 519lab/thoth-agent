@@ -32,7 +32,7 @@ def _vec(*lead: float) -> list[float]:
 
 
 @pytest_asyncio.fixture
-async def substrate(hermes_db_initialized):
+async def substrate(thoth_db_initialized):
     import thoth_db
 
     return Substrate.from_pool(thoth_db.pool())

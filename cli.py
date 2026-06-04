@@ -1091,7 +1091,7 @@ def _run_state_db_auto_maintenance(session_db) -> None:
         from thoth_cli.config import load_config as _load_full_config
         from thoth_constants import get_thoth_home as _get_thoth_home
         import thoth_db as _hermes_db
-        _hermes_home_maint = _get_thoth_home()
+        _thoth_home_maint = _get_thoth_home()
 
         # Skip maintenance unless the asyncpg pool is already initialised.
         # This is best-effort one-time cleanup — if no one has primed the
@@ -1122,7 +1122,7 @@ def _run_state_db_auto_maintenance(session_db) -> None:
         try:
             if not _hermes_db.run_sync(session_db.get_meta("ghost_session_prune_v1")):
                 pruned = _hermes_db.run_sync(session_db.prune_empty_ghost_sessions(
-                    sessions_dir=_hermes_home_maint / "sessions"
+                    sessions_dir=_thoth_home_maint / "sessions"
                 ))
                 _hermes_db.run_sync(session_db.set_meta("ghost_session_prune_v1", "1"))
                 if pruned:
@@ -1149,7 +1149,7 @@ def _run_state_db_auto_maintenance(session_db) -> None:
             retention_days=int(cfg.get("retention_days", 90)),
             min_interval_hours=int(cfg.get("min_interval_hours", 24)),
             vacuum=bool(cfg.get("vacuum_after_prune", True)),
-            sessions_dir=_hermes_home_maint / "sessions",
+            sessions_dir=_thoth_home_maint / "sessions",
         ))
     except Exception as exc:
         logger.debug("state.db auto-maintenance skipped: %s", exc)
@@ -1564,7 +1564,7 @@ def _install_skin_light_mode_hook() -> None:
         from thoth_cli.skin_engine import SkinConfig  # type: ignore[import]
     except Exception:
         return
-    if getattr(SkinConfig, "_hermes_light_mode_hook_installed", False):
+    if getattr(SkinConfig, "_thoth_light_mode_hook_installed", False):
         return
     _orig_get_color = SkinConfig.get_color
 
@@ -1576,7 +1576,7 @@ def _install_skin_light_mode_hook() -> None:
             return value
 
     SkinConfig.get_color = _wrapped_get_color  # type: ignore[method-assign]
-    SkinConfig._hermes_light_mode_hook_installed = True  # type: ignore[attr-defined]
+    SkinConfig._thoth_light_mode_hook_installed = True  # type: ignore[attr-defined]
 
 
 _install_skin_light_mode_hook()
@@ -6591,7 +6591,7 @@ class ThothCLI:
         except Exception as e:
             print(f"(x_x) Failed to create save directory {saved_dir}: {e}")
             return
-        path = saved_dir / f"hermes_conversation_{timestamp}.json"
+        path = saved_dir / f"thoth_conversation_{timestamp}.json"
 
         try:
             with open(path, "w", encoding="utf-8") as f:
@@ -10392,9 +10392,9 @@ class ThothCLI:
 
             # Use MP3 output for CLI playback (afplay doesn't handle OGG well).
             # The TTS tool may auto-convert MP3->OGG, but the original MP3 remains.
-            os.makedirs(os.path.join(tempfile.gettempdir(), "hermes_voice"), exist_ok=True)
+            os.makedirs(os.path.join(tempfile.gettempdir(), "thoth_voice"), exist_ok=True)
             mp3_path = os.path.join(
-                tempfile.gettempdir(), "hermes_voice",
+                tempfile.gettempdir(), "thoth_voice",
                 f"tts_{time.strftime('%Y%m%d_%H%M%S')}.mp3",
             )
 
@@ -13748,7 +13748,7 @@ class ThothCLI:
             import prompt_toolkit.renderer as _pt_renderer
             from prompt_toolkit.renderer import _output_screen_diff as _orig_osd
 
-            if not getattr(_pt_renderer, "_hermes_osd_patched", False):
+            if not getattr(_pt_renderer, "_thoth_osd_patched", False):
                 def _patched_output_screen_diff(
                     app, output, screen, current_pos, color_depth,
                     previous_screen, last_style, is_done, full_screen,
@@ -13786,7 +13786,7 @@ class ThothCLI:
                     )
 
                 _pt_renderer._output_screen_diff = _patched_output_screen_diff
-                _pt_renderer._hermes_osd_patched = True
+                _pt_renderer._thoth_osd_patched = True
         except Exception:
             pass
 

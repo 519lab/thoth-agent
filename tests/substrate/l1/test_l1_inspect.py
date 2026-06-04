@@ -23,7 +23,7 @@ def test_register_subparser_l1_and_parser():
 
 
 @pytest.mark.asyncio
-async def test_print_l1_entities_empty(hermes_db_initialized):
+async def test_print_l1_entities_empty(thoth_db_initialized):
     import thoth_db
 
     buf = io.StringIO()
@@ -34,7 +34,7 @@ async def test_print_l1_entities_empty(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_print_l1_entities_lists(hermes_db_initialized):
+async def test_print_l1_entities_lists(thoth_db_initialized):
     import thoth_db
 
     subj, _ = await store.upsert_entity("Greg", "person", summary="maintainer")
@@ -56,7 +56,7 @@ async def test_print_l1_entities_lists(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_print_parser_summary_and_recent(hermes_db_initialized):
+async def test_print_parser_summary_and_recent(thoth_db_initialized):
     import thoth_db
 
     async with thoth_db.connection() as conn:

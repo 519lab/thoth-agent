@@ -16,7 +16,7 @@ from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture
-async def db(hermes_db_initialized):
+async def db(thoth_db_initialized):
     """Return an AsyncSessionDB for test."""
     return _AsyncSessionDB()
 

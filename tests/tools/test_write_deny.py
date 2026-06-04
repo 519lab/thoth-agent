@@ -43,7 +43,7 @@ class TestWriteDenyExactPaths:
         path = str(get_thoth_home() / ".env")
         assert _is_write_denied(path) is True
 
-    def test_hermes_root_env_when_running_under_profile(self, tmp_path, monkeypatch):
+    def test_thoth_root_env_when_running_under_profile(self, tmp_path, monkeypatch):
         """Top-level ``<root>/.env`` stays write-denied even when running under
         a profile (#15981).
 
@@ -53,7 +53,7 @@ class TestWriteDenyExactPaths:
         could be silently overwritten by ``write_file`` while a profile was
         active.
         """
-        root = tmp_path / "hermes_root"
+        root = tmp_path / "thoth_root"
         profile_home = root / "profiles" / "coder"
         profile_home.mkdir(parents=True)
         global_env = root / ".env"
@@ -124,6 +124,6 @@ class TestWriteAllowed:
     def test_project_file(self):
         assert _is_write_denied("/home/user/project/main.py") is False
 
-    def test_hermes_config_not_env(self):
+    def test_thoth_config_not_env(self):
         path = os.path.join(str(Path.home()), ".hermes", "config.yaml")
         assert _is_write_denied(path) is False

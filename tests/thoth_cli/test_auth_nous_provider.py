@@ -61,7 +61,7 @@ class TestResolveVerifyFallback:
         result = _resolve_verify(auth_state={"tls": {}})
         assert result is True
 
-    def test_missing_hermes_ca_bundle_env_falls_back(self, monkeypatch):
+    def test_missing_thoth_ca_bundle_env_falls_back(self, monkeypatch):
         from thoth_cli.auth import _resolve_verify
 
         monkeypatch.setenv("HERMES_CA_BUNDLE", "/nonexistent/hermes-ca.pem")

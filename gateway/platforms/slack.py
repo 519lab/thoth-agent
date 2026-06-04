@@ -655,7 +655,7 @@ class SlackAdapter(BasePlatformAdapter):
                 _slash_pattern = _re.compile(r"^/thoth$")
 
             @self._app.command(_slash_pattern)
-            async def handle_hermes_command(ack, command):
+            async def handle_thoth_command(ack, command):
                 slash = (command.get("command") or "").lstrip("/")
                 await ack(
                     response_type="ephemeral",
@@ -2821,7 +2821,7 @@ class SlackAdapter(BasePlatformAdapter):
 
         # Stash the Slack response_url so the first reply for this
         # channel+user can be routed ephemerally (replaces the initial
-        # "Running /cmd…" ack shown by handle_hermes_command).
+        # "Running /cmd…" ack shown by handle_thoth_command).
         # Only stash for COMMAND events (text starts with "/") — free-form
         # questions via "/hermes <question>" must produce public replies so
         # the whole channel can see the agent's answer.

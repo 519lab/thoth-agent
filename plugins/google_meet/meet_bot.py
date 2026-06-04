@@ -346,7 +346,7 @@ def _start_realtime_speaker(
     if platform_tag == "linux":
         import subprocess as _sp
 
-        sink = (bridge_info or {}).get("write_target") or "hermes_meet_sink"
+        sink = (bridge_info or {}).get("write_target") or "thoth_meet_sink"
         try:
             proc = _sp.Popen(
                 [

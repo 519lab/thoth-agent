@@ -168,9 +168,9 @@ def snapshot_shutdown_context(received_signal: Any = None) -> Dict[str, Any]:
     # _PLANNED_STOP_MARKER_FILENAME); we use string literals here so the
     # signal-handler path stays import-light.
     try:
-        hermes_home_str = os.environ.get("HERMES_HOME")
-        if hermes_home_str:
-            takeover_path = Path(hermes_home_str) / ".gateway-takeover.json"
+        thoth_home_str = os.environ.get("HERMES_HOME")
+        if thoth_home_str:
+            takeover_path = Path(thoth_home_str) / ".gateway-takeover.json"
             if takeover_path.exists():
                 try:
                     raw = takeover_path.read_text(encoding="utf-8")
@@ -181,7 +181,7 @@ def snapshot_shutdown_context(received_signal: Any = None) -> Dict[str, Any]:
                     )
                 except OSError:
                     pass
-            planned_stop_path = Path(hermes_home_str) / ".gateway-planned-stop.json"
+            planned_stop_path = Path(thoth_home_str) / ".gateway-planned-stop.json"
             if planned_stop_path.exists():
                 try:
                     raw = planned_stop_path.read_text(encoding="utf-8")

@@ -38,7 +38,7 @@ def _enable_mock_embeddings(monkeypatch):
 
 
 @pytest_asyncio.fixture
-async def booted_substrate(hermes_db_initialized):
+async def booted_substrate(thoth_db_initialized):
     """Boot the substrate fully (so recall_log writer attaches).
     start_subagents=False keeps the test deterministic — no Sentinel
     tick competing for the pending queue."""

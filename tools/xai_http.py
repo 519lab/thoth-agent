@@ -53,9 +53,9 @@ def get_env_value(name: str, default=None):
     xAI credential resolver.
     """
     try:
-        from thoth_cli.config import get_env_value as _hermes_get_env_value
+        from thoth_cli.config import get_env_value as _thoth_get_env_value
 
-        value = _hermes_get_env_value(name)
+        value = _thoth_get_env_value(name)
         if value is not None:
             return value
     except Exception:

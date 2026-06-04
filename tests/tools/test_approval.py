@@ -366,12 +366,12 @@ class TestTeePattern:
         assert dangerous is True
         assert key is not None
 
-    def test_tee_custom_hermes_home_env(self):
+    def test_tee_custom_thoth_home_env(self):
         dangerous, key, desc = detect_dangerous_command("echo x | tee $HERMES_HOME/.env")
         assert dangerous is True
         assert key is not None
 
-    def test_tee_quoted_custom_hermes_home_env(self):
+    def test_tee_quoted_custom_thoth_home_env(self):
         dangerous, key, desc = detect_dangerous_command('echo x | tee "$HERMES_HOME/.env"')
         assert dangerous is True
         assert key is not None
@@ -414,7 +414,7 @@ class TestFindExecFullPathRm:
 class TestSensitiveRedirectPattern:
     """Detect shell redirection writes to sensitive user-managed paths."""
 
-    def test_redirect_to_custom_hermes_home_env(self):
+    def test_redirect_to_custom_thoth_home_env(self):
         dangerous, key, desc = detect_dangerous_command("echo x > $HERMES_HOME/.env")
         assert dangerous is True
         assert key is not None
@@ -644,14 +644,14 @@ class TestGatewayProtection:
         assert dangerous is True
         assert "stop/restart" in desc
 
-    def test_pkill_hermes_detected(self):
+    def test_pkill_thoth_detected(self):
         """pkill targeting thoth/gateway processes must be caught."""
         cmd = 'pkill -f "cli.py --gateway"'
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
         assert "self-termination" in desc
 
-    def test_killall_hermes_detected(self):
+    def test_killall_thoth_detected(self):
         cmd = "killall thoth"
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
@@ -810,7 +810,7 @@ class TestPgrepKillExpansion:
         dangerous, _, _ = detect_dangerous_command(cmd)
         assert dangerous is True
 
-    def test_pkill_hermes_still_detected(self):
+    def test_pkill_thoth_still_detected(self):
         """Existing pkill pattern must not regress."""
         cmd = "pkill -9 thoth"
         dangerous, _, _ = detect_dangerous_command(cmd)

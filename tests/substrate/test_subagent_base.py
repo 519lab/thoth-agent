@@ -202,7 +202,7 @@ async def test_start_is_idempotent():
 
 
 @pytest_asyncio.fixture
-async def from_pool_substrate(hermes_db_initialized):
+async def from_pool_substrate(thoth_db_initialized):
     """A Substrate over the real test pool, no boot side effects — enough
     for the base class's heartbeat upsert (it only needs ``.pool``)."""
     import thoth_db

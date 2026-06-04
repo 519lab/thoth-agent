@@ -20,15 +20,15 @@ def all_assignees_spawnable(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _suppress_concurrent_hermes_gate(request, monkeypatch):
-    """Default ``_detect_concurrent_hermes_instances`` to ``[]`` for every test.
+def _suppress_concurrent_thoth_gate(request, monkeypatch):
+    """Default ``_detect_concurrent_thoth_instances`` to ``[]`` for every test.
 
     The Windows update path now refuses to proceed when another
     ``hermes.exe`` is detected (issue #26670). On a developer's Windows
     machine running the test suite via ``thoth`` itself, this would
     flag the running agent as a concurrent instance and abort every
     ``cmd_update`` test. Tests that want to exercise the gate explicitly
-    re-patch ``_detect_concurrent_hermes_instances`` with their own
+    re-patch ``_detect_concurrent_thoth_instances`` with their own
     return value — autouse here gives a clean default without touching
     the rest of the suite.
 
@@ -47,5 +47,5 @@ def _suppress_concurrent_hermes_gate(request, monkeypatch):
     # clear. Re-clear so tests that only patch HERMES_HOME are not shadowed by THOTH_HOME.
     monkeypatch.delenv("THOTH_HOME", raising=False)
     monkeypatch.setattr(
-        _cli_main, "_detect_concurrent_hermes_instances", lambda *_a, **_k: []
+        _cli_main, "_detect_concurrent_thoth_instances", lambda *_a, **_k: []
     )

@@ -128,10 +128,10 @@ def _format_size(nbytes: int) -> str:
 
 def run_backup(args) -> None:
     """Create a zip backup of the Thoth home directory."""
-    hermes_root = get_default_thoth_root()
+    thoth_root = get_default_thoth_root()
 
-    if not hermes_root.is_dir():
-        print(f"Error: Thoth home directory not found at {hermes_root}")
+    if not thoth_root.is_dir():
+        print(f"Error: Thoth home directory not found at {thoth_root}")
         sys.exit(1)
 
     # Determine output path
@@ -157,9 +157,9 @@ def run_backup(args) -> None:
     files_to_add: list[tuple[Path, Path]] = []  # (absolute, relative)
     skipped_dirs = set()
 
-    for dirpath, dirnames, filenames in os.walk(hermes_root, followlinks=False):
+    for dirpath, dirnames, filenames in os.walk(thoth_root, followlinks=False):
         dp = Path(dirpath)
-        rel_dir = dp.relative_to(hermes_root)
+        rel_dir = dp.relative_to(thoth_root)
 
         # Prune excluded directories in-place so os.walk doesn't descend
         orig_dirnames = dirnames[:]
@@ -172,7 +172,7 @@ def run_backup(args) -> None:
 
         for fname in filenames:
             fpath = dp / fname
-            rel = fpath.relative_to(hermes_root)
+            rel = fpath.relative_to(thoth_root)
 
             if _should_exclude(rel):
                 continue
@@ -317,7 +317,7 @@ def run_import(args) -> None:
         print(f"Error: Not a valid zip file: {zip_path}")
         sys.exit(1)
 
-    hermes_root = get_default_thoth_root()
+    thoth_root = get_default_thoth_root()
 
     with zipfile.ZipFile(zip_path, "r") as zf:
         # Validate
@@ -337,8 +337,8 @@ def run_import(args) -> None:
             print(f"Detected archive prefix: {prefix!r} (will be stripped)")
 
         # Check for existing installation
-        has_config = (hermes_root / "config.yaml").exists()
-        has_env = (hermes_root / ".env").exists()
+        has_config = (thoth_root / "config.yaml").exists()
+        has_env = (thoth_root / ".env").exists()
 
         if (has_config or has_env) and not args.force:
             print()
@@ -356,7 +356,7 @@ def run_import(args) -> None:
 
         # Extract
         print(f"\nImporting {file_count} files ...")
-        hermes_root.mkdir(parents=True, exist_ok=True)
+        thoth_root.mkdir(parents=True, exist_ok=True)
 
         errors = []
         restored = 0
@@ -372,11 +372,11 @@ def run_import(args) -> None:
             if not rel:
                 continue
 
-            target = hermes_root / rel
+            target = thoth_root / rel
 
             # Security: reject absolute paths and traversals
             try:
-                target.resolve().relative_to(hermes_root.resolve())
+                target.resolve().relative_to(thoth_root.resolve())
             except ValueError:
                 errors.append(f"  {rel}: path traversal blocked")
                 continue
@@ -409,7 +409,7 @@ def run_import(args) -> None:
                 print(f"  ... and {len(errors) - 10} more")
 
         # Post-import: restore profile wrapper scripts
-        profiles_dir = hermes_root / "profiles"
+        profiles_dir = thoth_root / "profiles"
         restored_profiles = []
         if profiles_dir.is_dir():
             try:
@@ -451,7 +451,7 @@ def run_import(args) -> None:
 
         # Guidance
         print()
-        if not (hermes_root / "hermes-agent").is_dir():
+        if not (thoth_root / "hermes-agent").is_dir():
             print("Note: The hermes-agent codebase was not included in the backup.")
             print(f"  If this is a fresh install, run: {cli_name()} update")
 
@@ -706,8 +706,8 @@ def run_quick_backup(args) -> None:
 # Shared full-zip backup helper
 # ---------------------------------------------------------------------------
 
-def _write_full_zip_backup(out_path: Path, hermes_root: Path) -> Optional[Path]:
-    """Write a full zip snapshot of ``hermes_root`` to ``out_path``.
+def _write_full_zip_backup(out_path: Path, thoth_root: Path) -> Optional[Path]:
+    """Write a full zip snapshot of ``thoth_root`` to ``out_path``.
 
     Uses the same exclusion rules and SQLite safe-copy as :func:`run_backup`.
     Returns the output path on success, None on failure (nothing to back up,
@@ -715,7 +715,7 @@ def _write_full_zip_backup(out_path: Path, hermes_root: Path) -> Optional[Path]:
     """
     files_to_add: list[tuple[Path, Path]] = []
     try:
-        for dirpath, dirnames, filenames in os.walk(hermes_root, followlinks=False):
+        for dirpath, dirnames, filenames in os.walk(thoth_root, followlinks=False):
             dp = Path(dirpath)
             # Prune excluded directories in-place so os.walk doesn't descend
             dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS]
@@ -723,7 +723,7 @@ def _write_full_zip_backup(out_path: Path, hermes_root: Path) -> Optional[Path]:
             for fname in filenames:
                 fpath = dp / fname
                 try:
-                    rel = fpath.relative_to(hermes_root)
+                    rel = fpath.relative_to(thoth_root)
                 except ValueError:
                     continue
 
@@ -839,11 +839,11 @@ def create_pre_update_backup(
     found or the backup could not be created.  Never raises — the caller
     (``thoth update``) should continue even if the backup fails.
     """
-    hermes_root = thoth_home or get_default_thoth_root()
-    if not hermes_root.is_dir():
+    thoth_root = thoth_home or get_default_thoth_root()
+    if not thoth_root.is_dir():
         return None
 
-    backup_dir = _pre_update_backup_dir(hermes_root)
+    backup_dir = _pre_update_backup_dir(thoth_root)
     try:
         backup_dir.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
@@ -853,7 +853,7 @@ def create_pre_update_backup(
     stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
     out_path = backup_dir / f"{_PRE_UPDATE_PREFIX}{stamp}.zip"
 
-    result = _write_full_zip_backup(out_path, hermes_root)
+    result = _write_full_zip_backup(out_path, thoth_root)
     if result is None:
         return None
 
@@ -914,13 +914,13 @@ def create_pre_migration_backup(
     to back up (fresh install) or the write failed.  Never raises — the
     caller decides whether to abort or proceed.
     """
-    hermes_root = thoth_home or get_default_thoth_root()
-    if not hermes_root.is_dir():
+    thoth_root = thoth_home or get_default_thoth_root()
+    if not thoth_root.is_dir():
         return None
 
     # Reuses the shared backups/ directory so `thoth import` and the
     # update-backup listing pick up pre-migration archives too.
-    backup_dir = _pre_update_backup_dir(hermes_root)
+    backup_dir = _pre_update_backup_dir(thoth_root)
     try:
         backup_dir.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
@@ -930,7 +930,7 @@ def create_pre_migration_backup(
     stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
     out_path = backup_dir / f"{_PRE_MIGRATION_PREFIX}{stamp}.zip"
 
-    result = _write_full_zip_backup(out_path, hermes_root)
+    result = _write_full_zip_backup(out_path, thoth_root)
     if result is None:
         return None
 

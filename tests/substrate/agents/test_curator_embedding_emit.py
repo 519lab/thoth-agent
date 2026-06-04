@@ -26,7 +26,7 @@ def _enable_mock_embeddings(monkeypatch):
 
 
 @pytest_asyncio.fixture
-async def booted_substrate(hermes_db_initialized):
+async def booted_substrate(thoth_db_initialized):
     """Boot without sub-agents — we drive the Curator manually via tick()."""
     sub = await Substrate.boot(
         config=SubstrateConfig(auto_migrate=False, start_subagents=False),

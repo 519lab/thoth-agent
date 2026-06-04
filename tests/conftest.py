@@ -352,13 +352,13 @@ def _hermetic_environment(tmp_path, monkeypatch):
     #    fixture. Any code in the codebase reading ``~/.hermes/*`` via
     #    ``Path.home() / ".hermes"`` instead of ``get_thoth_home()``
     #    is a bug to fix at the callsite.
-    fake_hermes_home = tmp_path / "hermes_test"
-    fake_hermes_home.mkdir()
-    (fake_hermes_home / "sessions").mkdir()
-    (fake_hermes_home / "cron").mkdir()
-    (fake_hermes_home / "memories").mkdir()
-    (fake_hermes_home / "skills").mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(fake_hermes_home))
+    fake_thoth_home = tmp_path / "hermes_test"
+    fake_thoth_home.mkdir()
+    (fake_thoth_home / "sessions").mkdir()
+    (fake_thoth_home / "cron").mkdir()
+    (fake_thoth_home / "memories").mkdir()
+    (fake_thoth_home / "skills").mkdir()
+    monkeypatch.setenv("HERMES_HOME", str(fake_thoth_home))
 
     # 4. Deterministic locale / timezone / hashseed. CI runs in UTC with
     #    C.UTF-8 locale; local dev often doesn't. Pin everything.
@@ -672,7 +672,7 @@ def _live_system_guard(request, monkeypatch):
                 return ""
         return str(cmd)
 
-    def _matches_hermes_gateway(cmd_str: str) -> bool:
+    def _matches_thoth_gateway(cmd_str: str) -> bool:
         low = cmd_str.lower()
         return any(tok in low for tok in _HERMES_TOKENS)
 
@@ -680,7 +680,7 @@ def _live_system_guard(request, monkeypatch):
         cmd_str = _cmd_to_string(cmd)
         if "systemctl" not in cmd_str:
             return False
-        if not _matches_hermes_gateway(cmd_str):
+        if not _matches_thoth_gateway(cmd_str):
             return False
         try:
             tokens = _shlex.split(cmd_str)
@@ -950,7 +950,7 @@ def thoth_db_dsn(postgresql):
 
 
 @pytest_asyncio.fixture
-async def hermes_db_initialized(thoth_db_dsn):
+async def thoth_db_initialized(thoth_db_dsn):
     """Pool initialised on pytest-asyncio's per-test event loop.
 
     Use this in ``@pytest.mark.asyncio`` tests that ``await`` against
@@ -1002,10 +1002,10 @@ def thoth_db_initialized_sync(thoth_db_dsn):
     calls via ``thoth_db.run_sync(coro)``. The pool's binding loop
     matches the sync loop, so ``run_sync`` round-trips cleanly. Async
     tests in pytest-asyncio scope should NOT use this fixture — they
-    should use :func:`hermes_db_initialized` (above) which binds to the
+    should use :func:`thoth_db_initialized` (above) which binds to the
     per-test asyncio loop.
 
-    Counterpart to ``hermes_db_initialized``: same DSN, same migrated
+    Counterpart to ``thoth_db_initialized``: same DSN, same migrated
     schema, different binding loop. The split exists because asyncpg
     pools are loop-bound and we have two different "current loop"
     notions in the test suite — pytest-asyncio's per-test loop vs.

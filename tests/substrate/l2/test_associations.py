@@ -20,7 +20,7 @@ async def _two_entities():
 
 
 @pytest.mark.asyncio
-async def test_bump_canonicalises_and_accumulates(hermes_db_initialized):
+async def test_bump_canonicalises_and_accumulates(thoth_db_initialized):
     import thoth_db
 
     a, b = await _two_entities()
@@ -42,13 +42,13 @@ async def test_bump_canonicalises_and_accumulates(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_self_edge_is_noop(hermes_db_initialized):
+async def test_self_edge_is_noop(thoth_db_initialized):
     a, _ = await _two_entities()
     assert await l2.bump_edge(a, a, "co_occurrence", delta=1.0, reason="x") is None
 
 
 @pytest.mark.asyncio
-async def test_distinct_edge_types_coexist(hermes_db_initialized):
+async def test_distinct_edge_types_coexist(thoth_db_initialized):
     a, b = await _two_entities()
     await l2.bump_edge(a, b, "co_occurrence", delta=1.0, reason="co_occurrence_bump")
     await l2.bump_edge(a, b, "shared_neighbor", delta=1.0, reason="shared_neighbor_bump")
@@ -58,7 +58,7 @@ async def test_distinct_edge_types_coexist(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_densest_edges_ordered(hermes_db_initialized):
+async def test_densest_edges_ordered(thoth_db_initialized):
     a, b = await _two_entities()
     c, _ = await l1.upsert_entity("Gamma", "concept")
     await l2.bump_edge(a, b, "co_occurrence", delta=1.0, reason="r")
@@ -76,7 +76,7 @@ def test_register_subparser_l2():
 
 
 @pytest.mark.asyncio
-async def test_print_l2_associations(hermes_db_initialized):
+async def test_print_l2_associations(thoth_db_initialized):
     import thoth_db
 
     a, b = await _two_entities()

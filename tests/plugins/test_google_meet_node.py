@@ -212,7 +212,7 @@ def test_registry_resolve_by_name(tmp_path):
     assert r.resolve("ghost") is None
 
 
-def test_registry_defaults_to_hermes_home(tmp_path, monkeypatch):
+def test_registry_defaults_to_thoth_home(tmp_path, monkeypatch):
     from plugins.google_meet.node.registry import NodeRegistry
 
     # _isolate_home already set HERMES_HOME to tmp_path/.hermes; the

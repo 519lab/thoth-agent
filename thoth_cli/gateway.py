@@ -2105,11 +2105,11 @@ def _thoth_home_for_target_user(target_home_dir: str) -> str:
     PermissionError from resolve() (e.g. /root unreachable) falls back to
     the unresolved absolute path for comparison purposes.
     """
-    current_hermes_path = get_thoth_home()
+    current_thoth_path = get_thoth_home()
     try:
-        current_hermes = current_hermes_path.resolve()
+        current_hermes = current_thoth_path.resolve()
     except OSError:
-        current_hermes = current_hermes_path.absolute()
+        current_hermes = current_thoth_path.absolute()
 
     caller_home = Path.home()
     for dirname in (".thoth", ".hermes"):
@@ -2155,12 +2155,12 @@ def _build_service_path_dirs(project_root: Path | None = None) -> list[str]:
         candidates.append(str(node_bin))
 
     thoth_home = get_thoth_home()
-    hermes_node = thoth_home / "node" / "bin"
-    if _is_dir(hermes_node):
-        candidates.append(str(hermes_node))
-    hermes_nm = thoth_home / "node_modules" / ".bin"
-    if _is_dir(hermes_nm):
-        candidates.append(str(hermes_nm))
+    thoth_node = thoth_home / "node" / "bin"
+    if _is_dir(thoth_node):
+        candidates.append(str(thoth_node))
+    thoth_nm = thoth_home / "node_modules" / ".bin"
+    if _is_dir(thoth_nm):
+        candidates.append(str(thoth_nm))
 
     return candidates
 

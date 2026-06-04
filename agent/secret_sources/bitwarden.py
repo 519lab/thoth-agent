@@ -111,7 +111,7 @@ class FetchResult:
 # ---------------------------------------------------------------------------
 
 
-def _hermes_bin_dir() -> Path:
+def _thoth_bin_dir() -> Path:
     """Where Thoth stores its managed binaries.  Profile-aware."""
     from thoth_constants import get_thoth_home
 
@@ -128,7 +128,7 @@ def find_bws(*, install_if_missing: bool = False) -> Optional[Path]:
     When ``install_if_missing`` is True and neither resolves, this calls
     :func:`install_bws` to download and verify the pinned version.
     """
-    managed = _hermes_bin_dir() / _platform_binary_name()
+    managed = _thoth_bin_dir() / _platform_binary_name()
     if managed.exists() and os.access(managed, os.X_OK):
         return managed
 
@@ -199,7 +199,7 @@ def install_bws(*, force: bool = False) -> Path:
     path catch these; the user-facing ``thoth secrets bitwarden setup``
     surface lets them propagate so the wizard can show a clear error.
     """
-    bin_dir = _hermes_bin_dir()
+    bin_dir = _thoth_bin_dir()
     bin_dir.mkdir(parents=True, exist_ok=True)
     target = bin_dir / _platform_binary_name()
 

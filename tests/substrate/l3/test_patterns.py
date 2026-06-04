@@ -24,7 +24,7 @@ from substrate.cli import inspect as inspect_mod
 
 
 @pytest.mark.asyncio
-async def test_upsert_pattern_merges_and_bumps_salience(hermes_db_initialized):
+async def test_upsert_pattern_merges_and_bumps_salience(thoth_db_initialized):
     pid1, c1 = await l3.upsert_pattern("Greg favours infra work", "generalization",
                                        cites=["a"], confidence=0.6)
     pid2, c2 = await l3.upsert_pattern("Greg favours infra work", "generalization",
@@ -38,7 +38,7 @@ async def test_upsert_pattern_merges_and_bumps_salience(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_get_patterns_for_query(hermes_db_initialized):
+async def test_get_patterns_for_query(thoth_db_initialized):
     await l3.upsert_pattern("PostgreSQL is the storage backend", "theme")
     await l3.upsert_pattern("the team prefers async python", "theme")
     hits = await l3.get_patterns_for_query("postgresql storage")
@@ -74,7 +74,7 @@ def test_coerce_rejects_non_object():
 
 
 @pytest_asyncio.fixture
-async def booted(hermes_db_initialized):
+async def booted(thoth_db_initialized):
     sub = await Substrate.boot(
         config=SubstrateConfig(auto_migrate=False, start_subagents=False),
         start_subagents=False,
@@ -155,7 +155,7 @@ def test_register_subparser_l3():
 
 
 @pytest.mark.asyncio
-async def test_print_l3_patterns(hermes_db_initialized):
+async def test_print_l3_patterns(thoth_db_initialized):
     import thoth_db
 
     await l3.upsert_pattern("Async is preferred", "theme", confidence=0.7)

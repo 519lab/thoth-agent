@@ -506,12 +506,12 @@ class RetainDBMemoryProvider(MemoryProvider):
         self._agent_id = kwargs.get("agent_id", "hermes") or "hermes"
 
         from thoth_constants import get_thoth_home
-        hermes_home_path = get_thoth_home()
-        db_path = hermes_home_path / "retaindb_queue.db"
+        thoth_home_path = get_thoth_home()
+        db_path = thoth_home_path / "retaindb_queue.db"
         self._queue = _WriteQueue(self._client, db_path)
 
         # Seed agent identity from SOUL.md in background
-        soul_path = hermes_home_path / "SOUL.md"
+        soul_path = thoth_home_path / "SOUL.md"
         if soul_path.exists():
             soul_content = soul_path.read_text(encoding="utf-8", errors="replace").strip()
             if soul_content:

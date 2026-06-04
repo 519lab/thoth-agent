@@ -252,5 +252,5 @@ class TestDefaultPlatformWebSearchCoverage:
     def test_thoth_whatsapp_toolset_includes_web_search(self):
         assert "web_search" in resolve_toolset("hermes-whatsapp")
 
-    def test_hermes_api_server_toolset_includes_web_search(self):
+    def test_thoth_api_server_toolset_includes_web_search(self):
         assert "web_search" in resolve_toolset("hermes-api-server")

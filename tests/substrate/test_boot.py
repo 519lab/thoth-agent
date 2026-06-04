@@ -22,14 +22,14 @@ from substrate.facade import _autoregister_specs
 
 
 @pytest_asyncio.fixture
-async def booted_no_subagents(hermes_db_initialized):
+async def booted_no_subagents(thoth_db_initialized):
     sub = await Substrate.boot(start_subagents=False)
     yield sub
     await sub.shutdown()
 
 
 @pytest_asyncio.fixture
-async def booted_with_subagents(hermes_db_initialized):
+async def booted_with_subagents(thoth_db_initialized):
     sub = await Substrate.boot(start_subagents=True)
     yield sub
     await sub.shutdown()
@@ -42,14 +42,14 @@ async def booted_with_subagents(hermes_db_initialized):
 
 @pytest.mark.asyncio
 async def test_boot_passes_alembic_head_check(booted_no_subagents):
-    """The Phase-0 ``hermes_db_initialized`` fixture already ran alembic
+    """The Phase-0 ``thoth_db_initialized`` fixture already ran alembic
     upgrade head; boot should accept the revision without raising."""
     # If we got here without raising, the head check passed.
     assert booted_no_subagents is not None
 
 
 @pytest.mark.asyncio
-async def test_boot_refuses_old_alembic_head(hermes_db_initialized, monkeypatch):
+async def test_boot_refuses_old_alembic_head(thoth_db_initialized, monkeypatch):
     """When the DB is on an older revision (mocked), boot raises so the
     caller knows to migrate (or set HERMES_AUTO_MIGRATE=1)."""
     import thoth_db
@@ -150,7 +150,7 @@ async def test_subagents_not_started_when_disabled(booted_no_subagents):
 
 
 @pytest.mark.asyncio
-async def test_shutdown_stops_subagents(hermes_db_initialized):
+async def test_shutdown_stops_subagents(thoth_db_initialized):
     """``shutdown()`` cancels every sub-agent task within the bounded
     shutdown timeout."""
     sub = await Substrate.boot(start_subagents=True)
@@ -181,7 +181,7 @@ async def test_shutdown_unbinds_hooks(booted_with_subagents):
 
 
 @pytest.mark.asyncio
-async def test_does_not_open_own_pool(monkeypatch, hermes_db_initialized):
+async def test_does_not_open_own_pool(monkeypatch, thoth_db_initialized):
     """``Substrate.boot()`` must reuse ``thoth_db.pool()`` — it must
     NOT call ``asyncpg.create_pool`` directly."""
     import asyncpg
@@ -246,7 +246,7 @@ def _boot_ceiling_ms() -> float:
 
 
 @pytest.mark.asyncio
-async def test_boot_completes_under_ceiling(hermes_db_initialized):
+async def test_boot_completes_under_ceiling(thoth_db_initialized):
     """Substrate.boot() finishes well under the wall-clock ceiling
     (spec §12 acceptance #6 — substrate startup adds < 200 ms).
 
@@ -286,7 +286,7 @@ async def test_boot_completes_under_ceiling(hermes_db_initialized):
 
 @pytest.mark.asyncio
 async def test_boot_writer_skips_subagents_keeps_hooks_and_recall(
-    hermes_db_initialized,
+    thoth_db_initialized,
 ):
     """Writer mode: no sub-agent tick tasks; hooks bound; recall_log started."""
     sub = await Substrate.boot_writer()
@@ -314,7 +314,7 @@ async def test_boot_writer_skips_subagents_keeps_hooks_and_recall(
 
 @pytest.mark.asyncio
 async def test_boot_worker_starts_subagents_skips_hooks_and_recall(
-    hermes_db_initialized,
+    thoth_db_initialized,
 ):
     """Worker mode: sub-agent tick tasks running; hooks NOT bound;
     recall_log NOT started.

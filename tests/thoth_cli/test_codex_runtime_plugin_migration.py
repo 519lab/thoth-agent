@@ -525,7 +525,7 @@ class TestMigrate:
         assert "x" in report.migrated
 
     def test_full_migration_round_trip(self, tmp_path):
-        hermes_cfg = {
+        thoth_cfg = {
             "mcp_servers": {
                 "filesystem": {
                     "command": "npx",
@@ -537,7 +537,7 @@ class TestMigrate:
                 },
             }
         }
-        report = migrate(hermes_cfg, codex_home=tmp_path, expose_hermes_tools=False)
+        report = migrate(thoth_cfg, codex_home=tmp_path, expose_hermes_tools=False)
         assert report.written
         text = (tmp_path / "config.toml").read_text()
         assert "[mcp_servers.filesystem]" in text
@@ -817,7 +817,7 @@ class TestHermesHomeLeakGuard:
             "/private/var/folders/zz/T/pytest-of-bob/pytest-1"
         )
 
-    def test_tempdir_detector_accepts_real_hermes_home(self):
+    def test_tempdir_detector_accepts_real_thoth_home(self):
         assert not _looks_like_test_tempdir("/Users/alice/.hermes")
         assert not _looks_like_test_tempdir("/home/bob/.hermes")
         assert not _looks_like_test_tempdir("/opt/thoth")
@@ -837,7 +837,7 @@ class TestHermesHomeLeakGuard:
             f"{env.get('HERMES_HOME')!r}"
         )
 
-    def test_real_hermes_home_propagates(self, monkeypatch, tmp_path):
+    def test_real_thoth_home_propagates(self, monkeypatch, tmp_path):
         """A legitimate HERMES_HOME (not a tempdir path) DOES propagate so the
         MCP subprocess sees the same config as the parent CLI."""
         # Use a path that looks real — under /Users or /home, not /var/folders.
@@ -850,7 +850,7 @@ class TestHermesHomeLeakGuard:
         env = entry.get("env", {})
         assert env.get("HERMES_HOME") == real_path
 
-    def test_unset_hermes_home_omits_env_key(self, monkeypatch):
+    def test_unset_thoth_home_omits_env_key(self, monkeypatch):
         """When HERMES_HOME is unset in the environment, the MCP entry MUST
         NOT bake in a resolved-default path. The codex subprocess should
         inherit whatever HERMES_HOME its launcher (systemd, gateway, shell)

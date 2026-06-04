@@ -62,7 +62,7 @@ async def _seed_streams(conn):
 
 
 @pytest.mark.asyncio
-async def test_migrate_renames_and_slice_follows(hermes_db_initialized):
+async def test_migrate_renames_and_slice_follows(thoth_db_initialized):
     """Rename rewrites hermes.* -> thoth.*; slices follow by stream_id."""
     import thoth_db
 
@@ -102,7 +102,7 @@ async def test_migrate_renames_and_slice_follows(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_migrate_is_idempotent(hermes_db_initialized):
+async def test_migrate_is_idempotent(thoth_db_initialized):
     """A second pass after a clean cutover matches zero rows."""
     import thoth_db
 
@@ -118,7 +118,7 @@ async def test_migrate_is_idempotent(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_dry_run_counts_without_writing(hermes_db_initialized):
+async def test_dry_run_counts_without_writing(thoth_db_initialized):
     """dry_run returns the matching count and leaves names untouched."""
     import thoth_db
 

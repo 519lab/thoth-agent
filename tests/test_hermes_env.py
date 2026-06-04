@@ -10,7 +10,7 @@ import thoth_env
 
 # ── normalize_thoth_env: pure-dict unit tests (no os.environ pollution) ──
 
-def test_only_hermes_mirrors_to_thoth():
+def test_only_thoth_mirrors_to_thoth():
     env = {"HERMES_PG_DSN": "postgres://x"}
     thoth_env.normalize_thoth_env(env)
     assert env["THOTH_PG_DSN"] == "postgres://x"

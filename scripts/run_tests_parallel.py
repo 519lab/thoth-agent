@@ -284,7 +284,7 @@ def _run_one_file(
         cmd = [sys.executable, "-m", "pytest", str(file), *pytest_args]
     # Inject a unique PYTEST_XDIST_WORKER per subprocess so pytest-postgresql
     # routes each one onto its own template / test DB (e.g.
-    # ``hermes_tmplrun_42``) instead of racing on the shared ``hermes_tmpl``.
+    # ``thoth_tmplrun_42``) instead of racing on the shared ``hermes_tmpl``.
     # See the module-level _worker_counter doc for the rationale.
     env = os.environ.copy()
     env["PYTEST_XDIST_WORKER"] = _next_worker_id()
