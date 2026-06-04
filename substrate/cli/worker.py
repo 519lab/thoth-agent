@@ -53,7 +53,7 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
         description="Background process that runs the substrate sub-agent "
         "tick loops (Sentinel, Curator, ForceRejectWorker, "
         "PartitionMaintenanceWorker). Started by the systemd unit "
-        "``hermes-substrate-worker.service`` alongside the gateway. "
+        "``thoth-substrate-worker.service`` alongside the gateway. "
         "Without this process running, slices accumulate pending forever "
         "and embeddings never backfill.",
     )

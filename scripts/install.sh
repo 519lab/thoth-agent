@@ -16,7 +16,7 @@
 # 519lab/thoth-agent install and want to coexist without overwriting
 # it, override the defaults explicitly:
 #
-#   curl ... | bash -s -- --cli-name hermes-substrate --hermes-home ~/.hermes-substrate
+#   curl ... | bash -s -- --cli-name thoth-substrate --hermes-home ~/.thoth-substrate
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | bash
@@ -178,7 +178,7 @@ Options:
   -h, --help          Show this help
 
 Side-by-side install (coexist with an existing upstream Hermes):
-  curl ... | bash -s -- --cli-name hermes-substrate --hermes-home ~/.hermes-substrate
+  curl ... | bash -s -- --cli-name thoth-substrate --hermes-home ~/.thoth-substrate
 
 Custom PostgreSQL (e.g. your own cluster, Neon, Supabase):
   curl ... | bash -s -- --skip-postgres --pg-dsn 'postgresql://user:pw@host:5432/db'

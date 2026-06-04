@@ -17844,7 +17844,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     # hooks emit slices + recall queries work, but sub-agent tick loops
     # are NOT spawned here. The sub-agents live in a separate process
     # (``thoth substrate worker run``, managed by the
-    # ``hermes-substrate-worker.service`` systemd unit) so they get
+    # ``thoth-substrate-worker.service`` systemd unit) so they get
     # their own asyncpg pool + event loop and don't collide with the
     # gateway's ``thoth_db.run_sync`` worker-thread bridge.
     # See ``substrate/cli/worker.py`` for the rationale (2026-05-26

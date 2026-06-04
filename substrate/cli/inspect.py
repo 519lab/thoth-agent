@@ -310,7 +310,7 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
     # ``thoth substrate worker run`` blocks while running Sentinel +
     # Curator + ForceRejectWorker + PartitionMaintenanceWorker in a
     # dedicated process. Managed by the systemd unit
-    # ``hermes-substrate-worker.service``; rare for operators to invoke
+    # ``thoth-substrate-worker.service``; rare for operators to invoke
     # by hand. Lives in its own module because the run loop is meaty.
     from substrate.cli import worker as _worker_mod
 
@@ -603,7 +603,7 @@ async def _print_summary(conn: "asyncpg.Connection") -> None:
         )
         print(
             "     Start it with `thoth substrate worker run` (or the "
-            "hermes-substrate-worker systemd unit)."
+            "thoth-substrate-worker systemd unit)."
         )
 
     print()
@@ -856,7 +856,7 @@ async def _print_agents(conn: "asyncpg.Connection") -> None:
         )
         print(
             "  Start it with `thoth substrate worker run` (or the "
-            "hermes-substrate-worker systemd unit)."
+            "thoth-substrate-worker systemd unit)."
         )
     else:
         print("✓ substrate worker is reporting heartbeats.")

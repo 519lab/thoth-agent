@@ -8559,7 +8559,7 @@ def _cmd_update_pip(args):
 #
 # ``thoth update`` historically restarted only ``hermes-gateway*`` units, so
 # the substrate worker (Sentinel / Curator / embedding sub-agents, run by
-# ``hermes-substrate-worker.service``) kept executing stale code after every
+# ``thoth-substrate-worker.service``) kept executing stale code after every
 # update.  Unlike the gateway, the worker unit ships graceful SIGTERM handling
 # with ``TimeoutStopSec=15`` + ``Restart=always``, so a plain ``systemctl
 # restart`` is correct here — no SIGUSR1 drain / handoff-preservation dance
@@ -8580,7 +8580,10 @@ def _venv_python() -> str:
 
 
 def _restart_substrate_workers() -> list:
-    """Discover and restart all ``hermes-substrate*`` systemd units.
+    """Discover and restart all ``thoth-substrate*`` systemd units.
+
+    Also matches legacy ``hermes-substrate*`` units from installs that predate
+    the worker rename, so an in-place ``thoth update`` restarts either.
 
     Mirrors the gateway path's two-scope discovery (``--user`` then system),
     but uses a blunt ``systemctl restart`` because the worker unit drains
@@ -8615,6 +8618,10 @@ def _restart_substrate_workers() -> list:
                 scope_cmd
                 + [
                     "list-units",
+                    # Match new ``thoth-substrate*`` units and, for installs
+                    # that predate the substrate-worker rename, the legacy
+                    # ``hermes-substrate*`` units — restart whichever exist.
+                    "thoth-substrate*",
                     "hermes-substrate*",
                     "--plain",
                     "--no-legend",
@@ -8631,7 +8638,7 @@ def _restart_substrate_workers() -> list:
             parts = line.split()
             if not parts:
                 continue
-            unit = parts[0]  # e.g. hermes-substrate-worker.service
+            unit = parts[0]  # e.g. thoth-substrate-worker.service
             if not unit.endswith(".service"):
                 continue
             svc_name = unit.removesuffix(".service")
@@ -9891,7 +9898,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         pass
 
                 # --- Substrate worker (Linux) ---
-                # Restart hermes-substrate* units so substrate sub-agents
+                # Restart thoth-substrate* (and legacy hermes-substrate*) units so sub-agents
                 # (Sentinel / Curator / embedding) pick up the new code too.
                 # The worker drains gracefully on SIGTERM, so a plain restart
                 # is correct — no SIGUSR1 handoff dance needed. Best-effort.
