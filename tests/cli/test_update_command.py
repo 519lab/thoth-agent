@@ -156,10 +156,11 @@ def test_unrecognized_or_cancel_input_cancels(answer, capsys):
 # Substrate worker discovery + restart on update
 # ===========================================================================
 #
-# ``thoth update`` must restart hermes-substrate* units (notably
-# hermes-substrate-worker.service) so substrate sub-agents pick up new code.
-# These tests MOCK every ``systemctl`` subprocess call — they never shell out
-# to a real service manager.
+# ``thoth update`` must restart thoth-substrate* units (notably
+# thoth-substrate-worker.service) — and the legacy hermes-substrate* units on
+# installs that predate the worker rename — so substrate sub-agents pick up new
+# code. These tests MOCK every ``systemctl`` subprocess call — they never shell
+# out to a real service manager.
 
 
 def _systemctl_runner(active_units):
@@ -200,9 +201,37 @@ def _systemctl_runner(active_units):
 
 
 class TestRestartSubstrateWorkers:
-    """``_restart_substrate_workers`` discovers + restarts hermes-substrate*."""
+    """``_restart_substrate_workers`` discovers + restarts thoth-substrate*
+    (and legacy hermes-substrate*) units."""
 
     def test_discovers_and_restarts_active_worker(self):
+        runner = _systemctl_runner({"thoth-substrate-worker"})
+        with (
+            patch(
+                "thoth_cli.gateway.supports_systemd_services", return_value=True
+            ),
+            patch("thoth_cli.gateway._ensure_user_systemd_env", lambda: None),
+            patch.object(hmain.subprocess, "run", runner),
+        ):
+            restarted = hmain._restart_substrate_workers()
+
+        assert restarted == ["thoth-substrate-worker"]
+        # The list-units discovery globs the canonical thoth-substrate* AND the
+        # legacy hermes-substrate* pattern.
+        assert any(
+            "list-units" in c
+            and "thoth-substrate*" in c
+            and "hermes-substrate*" in c
+            for c in runner.calls
+        )
+        # An actual restart of the worker was issued.
+        assert any(
+            "restart" in c and "thoth-substrate-worker" in c for c in runner.calls
+        )
+
+    def test_discovers_and_restarts_legacy_hermes_worker(self):
+        """Installs predating the rename still expose hermes-substrate-worker;
+        ``thoth update`` must restart it too."""
         runner = _systemctl_runner({"hermes-substrate-worker"})
         with (
             patch(
@@ -214,11 +243,6 @@ class TestRestartSubstrateWorkers:
             restarted = hmain._restart_substrate_workers()
 
         assert restarted == ["hermes-substrate-worker"]
-        # A list-units glob for hermes-substrate* was issued.
-        assert any(
-            "list-units" in c and "hermes-substrate*" in c for c in runner.calls
-        )
-        # An actual restart of the worker was issued.
         assert any(
             "restart" in c and "hermes-substrate-worker" in c for c in runner.calls
         )

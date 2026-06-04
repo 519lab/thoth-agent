@@ -343,7 +343,7 @@ def check_systemd_timing_alignment(drain_timeout: float) -> Optional[Dict[str, A
     # Try to identify our unit name and ask systemctl for its config.
     unit_name: Optional[str] = None
     try:
-        # /proc/self/cgroup gives us "0::/user.slice/.../hermes-gateway.service"
+        # /proc/self/cgroup gives us "0::/user.slice/.../thoth-gateway.service"
         with open("/proc/self/cgroup", encoding="utf-8") as fh:
             for line in fh:
                 # systemd cgroup line ends with the unit name

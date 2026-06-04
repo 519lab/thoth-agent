@@ -348,7 +348,7 @@ still honored via the env bridge; default
 `postgresql://hermes:hermes@localhost:5432/hermes`) rather than `state.db`.
 The `state.db` SQLite file no longer exists in this fork. The installer's
 defaults still place `HERMES_HOME` at `~/.hermes/` and the launcher at
-`hermes`; pass `--cli-name hermes-substrate --hermes-home ~/.hermes-substrate`
+`hermes`; pass `--cli-name thoth-substrate --hermes-home ~/.thoth-substrate`
 to coexist with an existing upstream install.
 
 Profiles use `~/.hermes/profiles/<name>/` with the same layout.

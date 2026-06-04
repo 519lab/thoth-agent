@@ -85,7 +85,10 @@ def _get_service_pids() -> set:
         for scope_args in [["systemctl", "--user"], ["systemctl"]]:
             try:
                 result = subprocess.run(
-                    scope_args + ["list-units", "hermes-gateway*",
+                    scope_args + ["list-units",
+                                  # Canonical thoth-gateway* + legacy
+                                  # hermes-gateway* (pre-rename installs).
+                                  "thoth-gateway*", "hermes-gateway*",
                                   "--plain", "--no-legend", "--no-pager"],
                     capture_output=True, text=True, timeout=5,
                 )
