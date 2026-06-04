@@ -369,7 +369,7 @@ thoth gateway install               # Install as user service
 thoth gateway start                 # Start the service
 thoth gateway stop                  # Stop the service
 thoth gateway status                # Check status
-journalctl --user -u hermes-gateway -f  # View logs
+journalctl --user -u thoth-gateway -f  # View logs
 
 # Enable lingering (keeps running after logout)
 sudo loginctl enable-linger $USER
@@ -378,7 +378,7 @@ sudo loginctl enable-linger $USER
 sudo thoth gateway install --system
 sudo thoth gateway start --system
 sudo thoth gateway status --system
-journalctl -u hermes-gateway -f
+journalctl -u thoth-gateway -f
 ```
 
 Use the user service on laptops and dev boxes. Use the system service on VPS or headless hosts that should come back at boot without relying on systemd linger.
@@ -386,7 +386,7 @@ Use the user service on laptops and dev boxes. Use the system service on VPS or 
 Avoid keeping both the user and system gateway units installed at once unless you really mean to. Thoth will warn if it detects both because start/stop/status behavior gets ambiguous.
 
 :::info Multiple installations
-If you run multiple Thoth installations on the same machine (with different `HERMES_HOME` directories), each gets its own systemd service name. The default `~/.hermes` uses `hermes-gateway`; other installations use `hermes-gateway-<hash>`. The `thoth gateway` commands automatically target the correct service for your current `HERMES_HOME`.
+If you run multiple Thoth installations on the same machine (with different `HERMES_HOME` directories), each gets its own systemd service name. The default `~/.hermes` uses `thoth-gateway`; other installations use `thoth-gateway-<hash>`. The `thoth gateway` commands automatically target the correct service for your current `HERMES_HOME`.
 :::
 
 ### macOS (launchd)
@@ -419,29 +419,29 @@ Each platform has its own toolset:
 
 | Platform | Toolset | Capabilities |
 |----------|---------|--------------|
-| CLI | `hermes-cli` | Full access |
-| Telegram | `hermes-telegram` | Full tools including terminal |
-| Discord | `hermes-discord` | Full tools including terminal |
-| WhatsApp | `hermes-whatsapp` | Full tools including terminal |
-| Slack | `hermes-slack` | Full tools including terminal |
+| CLI | `thoth-cli` | Full access |
+| Telegram | `thoth-telegram` | Full tools including terminal |
+| Discord | `thoth-discord` | Full tools including terminal |
+| WhatsApp | `thoth-whatsapp` | Full tools including terminal |
+| Slack | `thoth-slack` | Full tools including terminal |
 | Google Chat | `hermes-google_chat` | Full tools including terminal |
-| Signal | `hermes-signal` | Full tools including terminal |
-| SMS | `hermes-sms` | Full tools including terminal |
-| Email | `hermes-email` | Full tools including terminal |
-| Home Assistant | `hermes-homeassistant` | Full tools + HA device control (ha_list_entities, ha_get_state, ha_call_service, ha_list_services) |
-| Mattermost | `hermes-mattermost` | Full tools including terminal |
-| Matrix | `hermes-matrix` | Full tools including terminal |
-| DingTalk | `hermes-dingtalk` | Full tools including terminal |
-| Feishu/Lark | `hermes-feishu` | Full tools including terminal |
-| WeCom | `hermes-wecom` | Full tools including terminal |
-| WeCom Callback | `hermes-wecom-callback` | Full tools including terminal |
-| Weixin | `hermes-weixin` | Full tools including terminal |
-| BlueBubbles | `hermes-bluebubbles` | Full tools including terminal |
-| QQBot | `hermes-qqbot` | Full tools including terminal |
-| Yuanbao | `hermes-yuanbao` | Full tools including terminal |
+| Signal | `thoth-signal` | Full tools including terminal |
+| SMS | `thoth-sms` | Full tools including terminal |
+| Email | `thoth-email` | Full tools including terminal |
+| Home Assistant | `thoth-homeassistant` | Full tools + HA device control (ha_list_entities, ha_get_state, ha_call_service, ha_list_services) |
+| Mattermost | `thoth-mattermost` | Full tools including terminal |
+| Matrix | `thoth-matrix` | Full tools including terminal |
+| DingTalk | `thoth-dingtalk` | Full tools including terminal |
+| Feishu/Lark | `thoth-feishu` | Full tools including terminal |
+| WeCom | `thoth-wecom` | Full tools including terminal |
+| WeCom Callback | `thoth-wecom-callback` | Full tools including terminal |
+| Weixin | `thoth-weixin` | Full tools including terminal |
+| BlueBubbles | `thoth-bluebubbles` | Full tools including terminal |
+| QQBot | `thoth-qqbot` | Full tools including terminal |
+| Yuanbao | `thoth-yuanbao` | Full tools including terminal |
 | Microsoft Teams | `hermes-teams` | Full tools including terminal |
-| API Server | `hermes-api-server` | Full tools (drops `clarify`, `send_message`, `text_to_speech` — programmatic access doesn't have an interactive user) |
-| Webhooks | `hermes-webhook` | Full tools including terminal |
+| API Server | `thoth-api-server` | Full tools (drops `clarify`, `send_message`, `text_to_speech` — programmatic access doesn't have an interactive user) |
+| Webhooks | `thoth-webhook` | Full tools including terminal |
 
 ## Operating a multi-platform gateway
 

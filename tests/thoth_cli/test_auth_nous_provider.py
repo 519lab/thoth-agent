@@ -142,7 +142,7 @@ def _setup_nous_auth(
             "nous": {
                 "portal_base_url": "https://portal.example.com",
                 "inference_base_url": "https://inference.example.com/v1",
-                "client_id": "hermes-cli",
+                "client_id": "thoth-cli",
                 "token_type": "Bearer",
                 "scope": scope,
                 "access_token": access_token,
@@ -254,7 +254,7 @@ def test_resolve_nous_runtime_credentials_invoke_jwt_is_idempotent(
             "nous": {
                 "portal_base_url": "https://portal.example.com",
                 "inference_base_url": "https://inference.example.com/v1",
-                "client_id": "hermes-cli",
+                "client_id": "thoth-cli",
                 "token_type": "Bearer",
                 "scope": auth_mod.DEFAULT_NOUS_SCOPE,
                 "access_token": token,
@@ -1129,7 +1129,7 @@ def _full_state_fixture() -> dict:
     return {
         "portal_base_url": "https://portal.example.com",
         "inference_base_url": "https://inference.example.com/v1",
-        "client_id": "hermes-cli",
+        "client_id": "thoth-cli",
         "scope": "inference:mint_agent_key",
         "token_type": "Bearer",
         "access_token": "access-tok",
@@ -1412,7 +1412,7 @@ def test_refresh_token_reuse_detection_surfaces_actionable_message():
         _refresh_access_token(
             client=_FakeClient(),
             portal_base_url="https://portal.nousresearch.com",
-            client_id="hermes-cli",
+            client_id="thoth-cli",
             refresh_token="rt_consumed_elsewhere",
         )
 
@@ -1447,7 +1447,7 @@ def test_refresh_token_reuse_error_code_is_terminal():
         auth_mod._refresh_access_token(
             client=_FakeClient(),
             portal_base_url="https://portal.nousresearch.com",
-            client_id="hermes-cli",
+            client_id="thoth-cli",
             refresh_token="rt_consumed_elsewhere",
         )
 
@@ -1482,7 +1482,7 @@ def test_refresh_token_exchange_sends_refresh_token_header():
     payload = _refresh_access_token(
         client=client,
         portal_base_url="https://portal.nousresearch.com",
-        client_id="hermes-cli",
+        client_id="thoth-cli",
         refresh_token="refresh-1",
     )
 
@@ -1492,7 +1492,7 @@ def test_refresh_token_exchange_sends_refresh_token_header():
     assert client.kwargs["headers"]["x-nous-refresh-token"] == "refresh-1"
     assert client.kwargs["data"] == {
         "grant_type": "refresh_token",
-        "client_id": "hermes-cli",
+        "client_id": "thoth-cli",
     }
 
 
@@ -1523,7 +1523,7 @@ def test_refresh_non_reuse_error_keeps_original_description():
         _refresh_access_token(
             client=_FakeClient(),
             portal_base_url="https://portal.nousresearch.com",
-            client_id="hermes-cli",
+            client_id="thoth-cli",
             refresh_token="rt_anything",
         )
 
@@ -1790,7 +1790,7 @@ def test_try_import_shared_rehydrates_on_success(shared_store_env, monkeypatch):
     assert result["agent_key"] == "new-agent-key"
     # Preserved from shared state
     assert result["portal_base_url"] == "https://portal.example.com"
-    assert result["client_id"] == "hermes-cli"
+    assert result["client_id"] == "thoth-cli"
 
 
 def test_shared_store_survives_across_profile_switch(

@@ -328,7 +328,7 @@ TOOLSETS = {
     # which is gated on gateway running via its check_fn).
     # ==========================================================================
 
-    "hermes-acp": {
+    "thoth-acp": {
         "description": "Editor integration (VS Code, Zed, JetBrains) — coding-focused tools without messaging, audio, or clarify UI",
         "tools": [
             "web_search", "web_extract",
@@ -347,7 +347,7 @@ TOOLSETS = {
         "includes": []
     },
 
-    "hermes-api-server": {
+    "thoth-api-server": {
         "description": "OpenAI-compatible API server — full agent tools accessible via HTTP (no interactive UI tools like clarify or send_message)",
         "tools": [
             # Web
@@ -380,30 +380,30 @@ TOOLSETS = {
         "includes": []
     },
     
-    "hermes-cli": {
+    "thoth-cli": {
         "description": "Full interactive CLI toolset - all default tools plus cronjob management",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-cron": {
-        # Mirrors hermes-cli so cron's "default" toolset is the same set of
+    "thoth-cron": {
+        # Mirrors thoth-cli so cron's "default" toolset is the same set of
         # core tools users see interactively — then `thoth tools` filters
         # them down per the platform config. _DEFAULT_OFF_TOOLSETS (moa,
         # homeassistant) are excluded by _get_platform_tools() unless
         # the user explicitly enables them.
-        "description": "Default cron toolset - same core tools as hermes-cli; gated by `thoth tools`",
+        "description": "Default cron toolset - same core tools as thoth-cli; gated by `thoth tools`",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-telegram": {
+    "thoth-telegram": {
         "description": "Telegram bot toolset - full access for personal use (terminal has safety checks)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
     
-    "hermes-discord": {
+    "thoth-discord": {
         "description": "Discord bot toolset - full access (terminal has safety checks via dangerous command approval)",
         "tools": _THOTH_CORE_TOOLS + [
             "discord",
@@ -412,61 +412,61 @@ TOOLSETS = {
         "includes": []
     },
     
-    "hermes-whatsapp": {
+    "thoth-whatsapp": {
         "description": "WhatsApp bot toolset - similar to Telegram (personal messaging, more trusted)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
     
-    "hermes-slack": {
+    "thoth-slack": {
         "description": "Slack bot toolset - full access for workspace use (terminal has safety checks)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
     
-    "hermes-signal": {
+    "thoth-signal": {
         "description": "Signal bot toolset - encrypted messaging platform (full access)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-bluebubbles": {
+    "thoth-bluebubbles": {
         "description": "BlueBubbles iMessage bot toolset - Apple iMessage via local BlueBubbles server",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-homeassistant": {
+    "thoth-homeassistant": {
         "description": "Home Assistant bot toolset - smart home event monitoring and control",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-email": {
+    "thoth-email": {
         "description": "Email bot toolset - interact with Thoth via email (IMAP/SMTP)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-mattermost": {
+    "thoth-mattermost": {
         "description": "Mattermost bot toolset - self-hosted team messaging (full access)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-matrix": {
+    "thoth-matrix": {
         "description": "Matrix bot toolset - decentralized encrypted messaging (full access)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-dingtalk": {
+    "thoth-dingtalk": {
         "description": "DingTalk bot toolset - enterprise messaging platform (full access)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-feishu": {
+    "thoth-feishu": {
         "description": "Feishu/Lark bot toolset - enterprise messaging via Feishu/Lark (full access)",
         "tools": _THOTH_CORE_TOOLS + [
             "feishu_doc_read",
@@ -478,31 +478,31 @@ TOOLSETS = {
         "includes": []
     },
 
-    "hermes-weixin": {
+    "thoth-weixin": {
         "description": "Weixin bot toolset - personal WeChat messaging via iLink (full access)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-qqbot": {
+    "thoth-qqbot": {
         "description": "QQBot toolset - QQ messaging via Official Bot API v2 (full access)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-wecom": {
+    "thoth-wecom": {
         "description": "WeCom bot toolset - enterprise WeChat messaging (full access)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-wecom-callback": {
+    "thoth-wecom-callback": {
         "description": "WeCom callback toolset - enterprise self-built app messaging (full access)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-yuanbao": {
+    "thoth-yuanbao": {
         "description": "Yuanbao Bot 元宝消息平台工具集 - 群信息、成员查询、私聊、贴纸表情",
         "tools": _THOTH_CORE_TOOLS + [
             "yb_query_group_info",
@@ -515,22 +515,22 @@ TOOLSETS = {
         "includes": []
     },
 
-    "hermes-sms": {
+    "thoth-sms": {
         "description": "SMS bot toolset - interact with Thoth via SMS (Twilio)",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-webhook": {
+    "thoth-webhook": {
         "description": "Webhook toolset - receive and process external webhook events",
         "tools": _THOTH_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-gateway": {
+    "thoth-gateway": {
         "description": "Gateway toolset - union of all messaging platform tools",
         "tools": [],
-        "includes": ["hermes-telegram", "hermes-discord", "hermes-whatsapp", "hermes-slack", "hermes-signal", "hermes-bluebubbles", "hermes-homeassistant", "hermes-email", "hermes-sms", "hermes-mattermost", "hermes-matrix", "hermes-dingtalk", "hermes-feishu", "hermes-wecom", "hermes-wecom-callback", "hermes-weixin", "hermes-qqbot", "hermes-webhook", "hermes-yuanbao"]
+        "includes": ["thoth-telegram", "thoth-discord", "thoth-whatsapp", "thoth-slack", "thoth-signal", "thoth-bluebubbles", "thoth-homeassistant", "thoth-email", "thoth-sms", "thoth-mattermost", "thoth-matrix", "thoth-dingtalk", "thoth-feishu", "thoth-wecom", "thoth-wecom-callback", "thoth-weixin", "thoth-qqbot", "thoth-webhook", "thoth-yuanbao"]
     }
 }
 

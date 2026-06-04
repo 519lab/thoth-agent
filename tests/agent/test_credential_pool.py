@@ -496,7 +496,7 @@ def test_load_pool_migrates_nous_provider_state(tmp_path, monkeypatch):
                 "nous": {
                     "portal_base_url": "https://portal.example.com",
                     "inference_base_url": "https://inference.example.com/v1",
-                    "client_id": "hermes-cli",
+                    "client_id": "thoth-cli",
                     "token_type": "Bearer",
                     "scope": "inference:mint_agent_key",
                     "access_token": "access-token",
@@ -537,7 +537,7 @@ def test_load_pool_mirrors_nous_invoke_jwt_agent_key_runtime_api_key(tmp_path, m
                 "nous": {
                     "portal_base_url": "https://portal.example.com",
                     "inference_base_url": "https://inference.example.com/v1",
-                    "client_id": "hermes-cli",
+                    "client_id": "thoth-cli",
                     "token_type": "Bearer",
                     "scope": "inference:invoke inference:mint_agent_key",
                     "access_token": token,
@@ -578,7 +578,7 @@ def test_nous_pool_terminal_refresh_removes_device_code_entry(tmp_path, monkeypa
                 "nous": {
                     "portal_base_url": "https://portal.example.com",
                     "inference_base_url": "https://inference.example.com/v1",
-                    "client_id": "hermes-cli",
+                    "client_id": "thoth-cli",
                     "token_type": "Bearer",
                     "scope": "inference:mint_agent_key",
                     "access_token": "access-token",
@@ -654,7 +654,7 @@ def test_load_pool_removes_nous_device_code_when_singleton_quarantined(tmp_path,
                 "nous": {
                     "portal_base_url": "https://portal.example.com",
                     "inference_base_url": "https://inference.example.com/v1",
-                    "client_id": "hermes-cli",
+                    "client_id": "thoth-cli",
                     "last_auth_error": {"code": "invalid_grant"},
                 }
             },
@@ -750,7 +750,7 @@ def test_load_pool_migrates_nous_provider_state_preserves_tls(tmp_path, monkeypa
                 "nous": {
                     "portal_base_url": "https://portal.example.com",
                     "inference_base_url": "https://inference.example.com/v1",
-                    "client_id": "hermes-cli",
+                    "client_id": "thoth-cli",
                     "token_type": "Bearer",
                     "scope": "inference:mint_agent_key",
                     "access_token": "access-token",
@@ -1438,7 +1438,7 @@ def test_nous_seed_from_singletons_preserves_obtained_at_timestamps(tmp_path, mo
                 "nous": {
                     "access_token": "at_XXXXXXXX",
                     "refresh_token": "rt_YYYYYYYY",
-                    "client_id": "hermes-cli",
+                    "client_id": "thoth-cli",
                     "portal_base_url": "https://portal.nousresearch.com",
                     "inference_base_url": "https://inference.nousresearch.com/v1",
                     "token_type": "Bearer",
@@ -1532,7 +1532,7 @@ def test_sync_nous_entry_from_auth_store_adopts_newer_tokens(tmp_path, monkeypat
                 "nous": {
                     "portal_base_url": "https://portal.example.com",
                     "inference_base_url": "https://inference.example.com/v1",
-                    "client_id": "hermes-cli",
+                    "client_id": "thoth-cli",
                     "token_type": "Bearer",
                     "scope": "inference:mint_agent_key",
                     "access_token": "access-OLD",
@@ -1562,7 +1562,7 @@ def test_sync_nous_entry_from_auth_store_adopts_newer_tokens(tmp_path, monkeypat
                 "nous": {
                     "portal_base_url": "https://portal.example.com",
                     "inference_base_url": "https://inference.example.com/v1",
-                    "client_id": "hermes-cli",
+                    "client_id": "thoth-cli",
                     "token_type": "Bearer",
                     "scope": "inference:mint_agent_key",
                     "access_token": "access-NEW",
@@ -1594,7 +1594,7 @@ def test_sync_nous_entry_noop_when_tokens_match(tmp_path, monkeypatch):
                 "nous": {
                     "portal_base_url": "https://portal.example.com",
                     "inference_base_url": "https://inference.example.com/v1",
-                    "client_id": "hermes-cli",
+                    "client_id": "thoth-cli",
                     "token_type": "Bearer",
                     "scope": "inference:mint_agent_key",
                     "access_token": "access-token",
@@ -1631,7 +1631,7 @@ def test_nous_exhausted_entry_recovers_via_auth_store_sync(tmp_path, monkeypatch
                 "nous": {
                     "portal_base_url": "https://portal.example.com",
                     "inference_base_url": "https://inference.example.com/v1",
-                    "client_id": "hermes-cli",
+                    "client_id": "thoth-cli",
                     "token_type": "Bearer",
                     "scope": "inference:mint_agent_key",
                     "access_token": "access-OLD",
@@ -1668,7 +1668,7 @@ def test_nous_exhausted_entry_recovers_via_auth_store_sync(tmp_path, monkeypatch
                 "nous": {
                     "portal_base_url": "https://portal.example.com",
                     "inference_base_url": "https://inference.example.com/v1",
-                    "client_id": "hermes-cli",
+                    "client_id": "thoth-cli",
                     "token_type": "Bearer",
                     "scope": "inference:mint_agent_key",
                     "access_token": "access-FRESH",

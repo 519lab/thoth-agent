@@ -97,9 +97,9 @@ Key behaviors:
 Toolsets are named bundles of tools. Thoth resolves them through:
 
 - explicit enabled/disabled toolset lists
-- platform presets (`hermes-cli`, `hermes-telegram`, etc.)
+- platform presets (`thoth-cli`, `thoth-telegram`, etc.)
 - dynamic MCP toolsets
-- curated special-purpose sets like `hermes-acp`
+- curated special-purpose sets like `thoth-acp`
 
 ### How `get_tool_definitions()` filters tools
 

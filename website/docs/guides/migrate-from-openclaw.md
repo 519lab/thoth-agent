@@ -223,7 +223,7 @@ The migration resolves all three formats. For env templates and SecretRef object
 
 4. **Verify API keys** — run `thoth status` to check provider authentication.
 
-5. **Test messaging** — if you migrated platform tokens, restart the gateway: `systemctl --user restart hermes-gateway`
+5. **Test messaging** — if you migrated platform tokens, restart the gateway: `systemctl --user restart thoth-gateway`
 
 6. **Check session policies** — verify `thoth config get session_reset` matches your expectations.
 

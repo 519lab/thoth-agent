@@ -7,19 +7,19 @@ NOT tied to the CLI - runs independently.
 
 Usage:
     # Run in foreground (for testing)
-    ./scripts/hermes-gateway
+    ./scripts/thoth-gateway
     
     # Install as systemd service
-    ./scripts/hermes-gateway install
+    ./scripts/thoth-gateway install
     
     # Manage the service
-    ./scripts/hermes-gateway start
-    ./scripts/hermes-gateway stop
-    ./scripts/hermes-gateway restart
-    ./scripts/hermes-gateway status
+    ./scripts/thoth-gateway start
+    ./scripts/thoth-gateway stop
+    ./scripts/thoth-gateway restart
+    ./scripts/thoth-gateway status
     
     # Uninstall
-    ./scripts/hermes-gateway uninstall
+    ./scripts/thoth-gateway uninstall
 """
 
 import argparse
@@ -45,7 +45,7 @@ if env_path.exists():
 # Service Configuration
 # =============================================================================
 
-SERVICE_NAME = "hermes-gateway"
+SERVICE_NAME = "thoth-gateway"
 SERVICE_DESCRIPTION = "Thoth Agent Gateway - Messaging Platform Integration"
 
 def get_systemd_unit_path() -> Path:
@@ -312,19 +312,19 @@ def main():
         epilog="""
 Examples:
     # Run in foreground (for testing)
-    ./scripts/hermes-gateway run
+    ./scripts/thoth-gateway run
     
     # Install as system service
-    ./scripts/hermes-gateway install
+    ./scripts/thoth-gateway install
     
     # Manage the service
-    ./scripts/hermes-gateway start
-    ./scripts/hermes-gateway stop
-    ./scripts/hermes-gateway restart
-    ./scripts/hermes-gateway status
+    ./scripts/thoth-gateway start
+    ./scripts/thoth-gateway stop
+    ./scripts/thoth-gateway restart
+    ./scripts/thoth-gateway status
     
     # Uninstall
-    ./scripts/hermes-gateway uninstall
+    ./scripts/thoth-gateway uninstall
 
 Configuration:
     Set environment variables in .env file or system environment:
@@ -363,7 +363,7 @@ Configuration:
             install_launchd()
         else:
             print("Service installation not supported on this platform.")
-            print("Please run manually: ./scripts/hermes-gateway run")
+            print("Please run manually: ./scripts/thoth-gateway run")
             sys.exit(1)
     
     elif args.command == "uninstall":

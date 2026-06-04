@@ -585,7 +585,7 @@ The container needs Matrix credentials and the proxy URL. It does NOT need LLM A
 
 ```yaml
 services:
-  hermes-matrix:
+  thoth-matrix:
     build: .
     environment:
       # Matrix credentials

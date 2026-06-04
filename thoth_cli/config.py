@@ -546,7 +546,7 @@ DEFAULT_CONFIG = {
     "providers": {},
     "fallback_providers": [],
     "credential_pool_strategies": {},
-    "toolsets": ["hermes-cli"],
+    "toolsets": ["thoth-cli"],
     "agent": {
         "max_turns": 90,
         # Inactivity timeout for gateway agent execution (seconds).
@@ -4322,6 +4322,41 @@ def _normalize_max_turns_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return config
 
 
+# Reserved messaging/platform toolset preset identifiers renamed hermes-* ->
+# thoth-* (2026-06). Existing configs are migrated in place on load+save so we
+# don't carry permanent back-compat aliases in the toolset registry.
+_RENAMED_TOOLSET_SUFFIXES = (
+    "api-server", "bluebubbles", "cron", "dingtalk", "discord", "email",
+    "feishu", "gateway", "homeassistant", "matrix", "mattermost", "qqbot",
+    "signal", "slack", "sms", "telegram", "webhook", "wecom", "wecom-callback",
+    "weixin", "whatsapp", "yuanbao", "acp", "cli",
+)
+_TOOLSET_RENAME_MAP = {
+    f"hermes-{s}": f"thoth-{s}" for s in _RENAMED_TOOLSET_SUFFIXES
+}
+
+
+def _normalize_toolset_names(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Rewrite legacy ``hermes-<platform>`` toolset preset names to ``thoth-*``.
+
+    The toolset registry was renamed; rather than keep permanent aliases we
+    migrate the persisted config in place. Walks the whole config and replaces
+    any string that exactly matches a renamed reserved toolset identifier
+    (they only ever appear as toolset references — root ``toolsets``,
+    ``disabled_toolsets``, nested ``platform_toolsets``, etc.).
+    """
+    def _walk(node: Any) -> Any:
+        if isinstance(node, str):
+            return _TOOLSET_RENAME_MAP.get(node, node)
+        if isinstance(node, list):
+            return [_walk(v) for v in node]
+        if isinstance(node, dict):
+            return {k: _walk(v) for k, v in node.items()}
+        return node
+
+    return _walk(config)
+
+
 def cfg_get(cfg: Optional[Dict[str, Any]], *keys: str, default: Any = None) -> Any:
     """Traverse nested dict keys safely, returning ``default`` on any miss.
 
@@ -4481,7 +4516,9 @@ def _load_config_impl(*, want_deepcopy: bool) -> Dict[str, Any]:
             except Exception as e:
                 _warn_config_parse_failure(config_path, e)
 
-        normalized = _normalize_root_model_keys(_normalize_max_turns_config(config))
+        normalized = _normalize_toolset_names(
+            _normalize_root_model_keys(_normalize_max_turns_config(config))
+        )
         expanded = _expand_env_vars(normalized)
         _LAST_EXPANDED_CONFIG_BY_PATH[path_key] = copy.deepcopy(expanded)
         if cache_key is not None:
@@ -4591,9 +4628,13 @@ def save_config(config: Dict[str, Any]):
 
         ensure_thoth_home()
         config_path = get_config_path()
-        current_normalized = _normalize_root_model_keys(_normalize_max_turns_config(config))
+        current_normalized = _normalize_toolset_names(
+            _normalize_root_model_keys(_normalize_max_turns_config(config))
+        )
         normalized = current_normalized
-        raw_existing = _normalize_root_model_keys(_normalize_max_turns_config(read_raw_config()))
+        raw_existing = _normalize_toolset_names(
+            _normalize_root_model_keys(_normalize_max_turns_config(read_raw_config()))
+        )
         if raw_existing:
             normalized = _preserve_env_ref_templates(
                 normalized,

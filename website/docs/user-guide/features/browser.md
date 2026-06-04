@@ -400,7 +400,7 @@ npm install
 ```
 
 :::info
-The `browser` toolset must be included in your config's `toolsets` list or enabled via `thoth config set toolsets '["hermes-cli", "browser"]'`.
+The `browser` toolset must be included in your config's `toolsets` list or enabled via `thoth config set toolsets '["thoth-cli", "browser"]'`.
 :::
 
 ## Available Tools

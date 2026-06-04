@@ -948,7 +948,7 @@ rm -rf ~/.hermes            # Optional — keep if you plan to reinstall
 If you installed the gateway as a system service, stop and disable it first:
 ```bash
 thoth gateway stop
-# Linux: systemctl --user disable hermes-gateway
+# Linux: systemctl --user disable thoth-gateway
 # macOS: launchctl remove ai.hermes.gateway
 ```
 :::
@@ -1240,7 +1240,7 @@ thoth setup
 thoth chat
 ```
 
-After `nix profile install`, `thoth`, `hermes-agent`, and `hermes-acp` are on your PATH. From here, the workflow is identical to the [standard installation](./installation.md) — `thoth setup` walks you through provider selection, `thoth gateway install` sets up a launchd (macOS) or systemd user service, and config lives in `~/.hermes/`.
+After `nix profile install`, `thoth`, `hermes-agent`, and `thoth-acp` are on your PATH. From here, the workflow is identical to the [standard installation](./installation.md) — `thoth setup` walks you through provider selection, `thoth gateway install` sets up a launchd (macOS) or systemd user service, and config lives in `~/.hermes/`.
 
 <details>
 <summary><strong>Building from a local clone</strong></summary>
@@ -7313,7 +7313,7 @@ thoth tools
 
 Common toolsets include `web`, `search`, `terminal`, `file`, `browser`, `vision`, `image_gen`, `moa`, `skills`, `tts`, `todo`, `memory`, `session_search`, `cronjob`, `code_execution`, `delegation`, `clarify`, `homeassistant`, `messaging`, `spotify`, `discord`, `discord_admin`, `debugging`, `safe`, and `rl`.
 
-See [Toolsets Reference](/docs/reference/toolsets-reference) for the full set, including platform presets such as `hermes-cli`, `hermes-telegram`, and dynamic MCP toolsets like `mcp-<server>`.
+See [Toolsets Reference](/docs/reference/toolsets-reference) for the full set, including platform presets such as `thoth-cli`, `thoth-telegram`, and dynamic MCP toolsets like `mcp-<server>`.
 
 ## Terminal Backends
 
@@ -15532,7 +15532,7 @@ npm install
 ```
 
 :::info
-The `browser` toolset must be included in your config's `toolsets` list or enabled via `thoth config set toolsets '["hermes-cli", "browser"]'`.
+The `browser` toolset must be included in your config's `toolsets` list or enabled via `thoth config set toolsets '["thoth-cli", "browser"]'`.
 :::
 
 ## Available Tools
@@ -16884,7 +16884,7 @@ thoth gateway install               # Install as user service
 thoth gateway start                 # Start the service
 thoth gateway stop                  # Stop the service
 thoth gateway status                # Check status
-journalctl --user -u hermes-gateway -f  # View logs
+journalctl --user -u thoth-gateway -f  # View logs
 
 # Enable lingering (keeps running after logout)
 sudo loginctl enable-linger $USER
@@ -16893,7 +16893,7 @@ sudo loginctl enable-linger $USER
 sudo thoth gateway install --system
 sudo thoth gateway start --system
 sudo thoth gateway status --system
-journalctl -u hermes-gateway -f
+journalctl -u thoth-gateway -f
 ```
 
 Use the user service on laptops and dev boxes. Use the system service on VPS or headless hosts that should come back at boot without relying on systemd linger.
@@ -16901,7 +16901,7 @@ Use the user service on laptops and dev boxes. Use the system service on VPS or 
 Avoid keeping both the user and system gateway units installed at once unless you really mean to. Thoth will warn if it detects both because start/stop/status behavior gets ambiguous.
 
 :::info Multiple installations
-If you run multiple Thoth installations on the same machine (with different `HERMES_HOME` directories), each gets its own systemd service name. The default `~/.hermes` uses `hermes-gateway`; other installations use `hermes-gateway-<hash>`. The `thoth gateway` commands automatically target the correct service for your current `HERMES_HOME`.
+If you run multiple Thoth installations on the same machine (with different `HERMES_HOME` directories), each gets its own systemd service name. The default `~/.hermes` uses `thoth-gateway`; other installations use `thoth-gateway-<hash>`. The `thoth gateway` commands automatically target the correct service for your current `HERMES_HOME`.
 :::
 
 ### macOS (launchd)
@@ -16934,29 +16934,29 @@ Each platform has its own toolset:
 
 | Platform | Toolset | Capabilities |
 |----------|---------|--------------|
-| CLI | `hermes-cli` | Full access |
-| Telegram | `hermes-telegram` | Full tools including terminal |
-| Discord | `hermes-discord` | Full tools including terminal |
-| WhatsApp | `hermes-whatsapp` | Full tools including terminal |
-| Slack | `hermes-slack` | Full tools including terminal |
+| CLI | `thoth-cli` | Full access |
+| Telegram | `thoth-telegram` | Full tools including terminal |
+| Discord | `thoth-discord` | Full tools including terminal |
+| WhatsApp | `thoth-whatsapp` | Full tools including terminal |
+| Slack | `thoth-slack` | Full tools including terminal |
 | Google Chat | `hermes-google_chat` | Full tools including terminal |
-| Signal | `hermes-signal` | Full tools including terminal |
-| SMS | `hermes-sms` | Full tools including terminal |
-| Email | `hermes-email` | Full tools including terminal |
-| Home Assistant | `hermes-homeassistant` | Full tools + HA device control (ha_list_entities, ha_get_state, ha_call_service, ha_list_services) |
-| Mattermost | `hermes-mattermost` | Full tools including terminal |
-| Matrix | `hermes-matrix` | Full tools including terminal |
-| DingTalk | `hermes-dingtalk` | Full tools including terminal |
-| Feishu/Lark | `hermes-feishu` | Full tools including terminal |
-| WeCom | `hermes-wecom` | Full tools including terminal |
-| WeCom Callback | `hermes-wecom-callback` | Full tools including terminal |
-| Weixin | `hermes-weixin` | Full tools including terminal |
-| BlueBubbles | `hermes-bluebubbles` | Full tools including terminal |
-| QQBot | `hermes-qqbot` | Full tools including terminal |
-| Yuanbao | `hermes-yuanbao` | Full tools including terminal |
+| Signal | `thoth-signal` | Full tools including terminal |
+| SMS | `thoth-sms` | Full tools including terminal |
+| Email | `thoth-email` | Full tools including terminal |
+| Home Assistant | `thoth-homeassistant` | Full tools + HA device control (ha_list_entities, ha_get_state, ha_call_service, ha_list_services) |
+| Mattermost | `thoth-mattermost` | Full tools including terminal |
+| Matrix | `thoth-matrix` | Full tools including terminal |
+| DingTalk | `thoth-dingtalk` | Full tools including terminal |
+| Feishu/Lark | `thoth-feishu` | Full tools including terminal |
+| WeCom | `thoth-wecom` | Full tools including terminal |
+| WeCom Callback | `thoth-wecom-callback` | Full tools including terminal |
+| Weixin | `thoth-weixin` | Full tools including terminal |
+| BlueBubbles | `thoth-bluebubbles` | Full tools including terminal |
+| QQBot | `thoth-qqbot` | Full tools including terminal |
+| Yuanbao | `thoth-yuanbao` | Full tools including terminal |
 | Microsoft Teams | `hermes-teams` | Full tools including terminal |
-| API Server | `hermes-api-server` | Full tools (drops `clarify`, `send_message`, `text_to_speech` — programmatic access doesn't have an interactive user) |
-| Webhooks | `hermes-webhook` | Full tools including terminal |
+| API Server | `thoth-api-server` | Full tools (drops `clarify`, `send_message`, `text_to_speech` — programmatic access doesn't have an interactive user) |
+| Webhooks | `thoth-webhook` | Full tools including terminal |
 
 ## Operating a multi-platform gateway
 
@@ -21213,7 +21213,7 @@ The container needs Matrix credentials and the proxy URL. It does NOT need LLM A
 
 ```yaml
 services:
-  hermes-matrix:
+  thoth-matrix:
     build: .
     environment:
       # Matrix credentials
@@ -24608,7 +24608,7 @@ ACP is a good fit when you want Thoth to behave like an editor-native coding age
 
 ## What Thoth exposes in ACP mode
 
-Thoth runs with a curated `hermes-acp` toolset designed for editor workflows. It includes:
+Thoth runs with a curated `thoth-acp` toolset designed for editor workflows. It includes:
 
 - file tools: `read_file`, `write_file`, `patch`, `search_files`
 - terminal tools: `terminal`, `process`
@@ -24631,13 +24631,13 @@ pip install -e '.[acp]'
 This installs the `agent-client-protocol` dependency and enables:
 
 - `thoth acp`
-- `hermes-acp`
+- `thoth-acp`
 - `python -m acp_adapter`
 
 For Zed registry installs, Zed launches Thoth through the official ACP Registry entry. That entry uses a `uvx` distribution that runs:
 
 ```bash
-uvx --from 'thoth-agent[acp]==<version>' hermes-acp
+uvx --from 'thoth-agent[acp]==<version>' thoth-acp
 ```
 
 Make sure `uv` is available on `PATH` before using the registry install path.
@@ -24651,7 +24651,7 @@ thoth acp
 ```
 
 ```bash
-hermes-acp
+thoth-acp
 ```
 
 ```bash
@@ -24725,7 +24725,7 @@ Zed v0.221.x and newer installs external agents through the official ACP Registr
 Prerequisites:
 
 - Configure Thoth provider credentials first with `thoth model`, or set them in `~/.hermes/.env` / `~/.hermes/config.yaml`.
-- Install `uv` so the registry launcher can run `uvx --from 'thoth-agent[acp]==<version>' hermes-acp`.
+- Install `uv` so the registry launcher can run `uvx --from 'thoth-agent[acp]==<version>' thoth-acp`.
 
 For local development before the registry entry is available, use a custom agent server in Zed settings:
 
@@ -24763,7 +24763,7 @@ The upstream registry PR copies those files into the top-level `hermes-agent/` d
 The registry entry uses a `uvx` distribution that points directly at the `thoth-agent` PyPI release:
 
 ```text
-uvx --from 'thoth-agent[acp]==<version>' hermes-acp
+uvx --from 'thoth-agent[acp]==<version>' thoth-acp
 ```
 
 The registry CI verifies that the pinned version exists on PyPI, so the manifest's `version` and uvx `package` pin must always match `pyproject.toml`. `scripts/release.py` keeps them in lockstep automatically.
@@ -27281,7 +27281,7 @@ thoth gateway stop
 thoth gateway status
 
 # View live logs
-journalctl --user -u hermes-gateway -f
+journalctl --user -u thoth-gateway -f
 
 # Keep running after SSH logout
 sudo loginctl enable-linger $USER
@@ -27289,7 +27289,7 @@ sudo loginctl enable-linger $USER
 # Linux servers — explicit system-service commands
 sudo thoth gateway start --system
 sudo thoth gateway status --system
-journalctl -u hermes-gateway -f
+journalctl -u thoth-gateway -f
 ```
 
 ```bash
@@ -27523,7 +27523,7 @@ This way, even if someone asks the bot to run something destructive, your host s
 thoth gateway status
 
 # Watch live logs (Linux)
-journalctl --user -u hermes-gateway -f
+journalctl --user -u thoth-gateway -f
 
 # Watch live logs (macOS)
 tail -f ~/.hermes/logs/gateway.log
@@ -27542,7 +27542,7 @@ thoth gateway stop && thoth gateway start
 
 | What | Location |
 |------|----------|
-| Gateway logs | `journalctl --user -u hermes-gateway` (Linux) or `~/.hermes/logs/gateway.log` (macOS) |
+| Gateway logs | `journalctl --user -u thoth-gateway` (Linux) or `~/.hermes/logs/gateway.log` (macOS) |
 | Cron job output | `~/.hermes/cron/output/{job_id}/{timestamp}.md` |
 | Cron job definitions | `~/.hermes/cron/jobs.json` |
 | Pairing data | `~/.hermes/pairing/` |
@@ -34891,8 +34891,8 @@ Five touchpoints:
 
 ### 8. Toolsets
 
-1. **`toolsets.py`** — Add `"hermes-newplat"` toolset definition with `_THOTH_CORE_TOOLS`
-2. **`toolsets.py`** — Add `"hermes-newplat"` to the `"hermes-gateway"` includes list
+1. **`toolsets.py`** — Add `"thoth-newplat"` toolset definition with `_THOTH_CORE_TOOLS`
+2. **`toolsets.py`** — Add `"thoth-newplat"` to the `"thoth-gateway"` includes list
 
 ### 9. Optional: Platform Hints
 
@@ -34926,7 +34926,7 @@ Create `tests/gateway/test_newplat.py` covering:
 | `website/docs/user-guide/messaging/newplat.md` | Full platform setup page |
 | `website/docs/user-guide/messaging/index.md` | Platform comparison table, architecture diagram, toolsets table, security section, next-steps link |
 | `website/docs/reference/environment-variables.md` | All NEWPLAT_* env vars |
-| `website/docs/reference/toolsets-reference.md` | hermes-newplat toolset |
+| `website/docs/reference/toolsets-reference.md` | thoth-newplat toolset |
 | `website/docs/integrations/index.md` | Platform link |
 | `website/sidebars.ts` | Sidebar entry for the docs page |
 | `website/docs/developer-guide/architecture.md` | Adapter count + listing |
@@ -36539,7 +36539,7 @@ Starts Thoth as an ACP (Agent Client Protocol) stdio server for editor integrati
 Related entrypoints:
 
 ```bash
-hermes-acp
+thoth-acp
 python -m acp_adapter
 ```
 
@@ -36824,7 +36824,7 @@ Pulls the latest `hermes-agent` code and reinstalls dependencies in your venv, t
 Additional behavior:
 
 - **Pairing data snapshot.** Even when `--backup` is off, `thoth update` takes a lightweight snapshot of `~/.hermes/pairing/` and the Feishu comment rules before `git pull`. You can roll it back with `thoth backup restore --state pre-update` if a pull rewrites a file you were editing.
-- **Legacy `hermes.service` warning.** If Thoth detects a pre-rename `hermes.service` systemd unit (instead of the current `hermes-gateway.service`), it prints a one-time migration hint so you can avoid flap-loop issues.
+- **Legacy `hermes.service` warning.** If Thoth detects a pre-rename `hermes.service` systemd unit (instead of the current `thoth-gateway.service`), it prints a one-time migration hint so you can avoid flap-loop issues.
 - **Exit codes.** `0` on success, `1` on pull/install/post-install errors, `2` on unexpected working-tree changes that block `git pull`.
 
 ## Maintenance commands
@@ -38308,7 +38308,7 @@ These two tools live in the `browser` toolset but only register when a Chrome De
 
 ## `feishu_doc` toolset
 
-Scoped to the Feishu document-comment intelligent-reply handler (`gateway/platforms/feishu_comment.py`). Not exposed on `hermes-cli` or the regular Feishu chat adapter.
+Scoped to the Feishu document-comment intelligent-reply handler (`gateway/platforms/feishu_comment.py`). Not exposed on `thoth-cli` or the regular Feishu chat adapter.
 
 | Tool | Description | Requires environment |
 |------|-------------|----------------------|
@@ -38429,7 +38429,7 @@ Registered when the agent is either (a) spawned by the kanban dispatcher (`HERME
 
 ## `video` toolset
 
-Opt-in toolset (not loaded in the default `hermes-cli` set). Add via `--toolsets video` or include `video` in your `toolsets:` config.
+Opt-in toolset (not loaded in the default `thoth-cli` set). Add via `--toolsets video` or include `video` in your `toolsets:` config.
 
 | Tool | Description | Requires environment |
 |------|-------------|----------------------|
@@ -38437,7 +38437,7 @@ Opt-in toolset (not loaded in the default `hermes-cli` set). Add via `--toolsets
 
 ## `video_gen` toolset
 
-Opt-in toolset (not loaded in the default `hermes-cli` set). Add via `--toolsets video_gen` or enable it in `thoth tools` → Video Generation, which also walks you through picking a backend.
+Opt-in toolset (not loaded in the default `thoth-cli` set). Add via `--toolsets video_gen` or enable it in `thoth tools` → Video Generation, which also walks you through picking a backend.
 
 Backends ship as plugins under `plugins/video_gen/<name>/`:
 
@@ -38471,7 +38471,7 @@ The single `video_generate` tool covers both modalities — pass `image_url` to 
 
 ## `discord` toolset
 
-Registered on the `hermes-discord` platform toolset (gateway only). Uses the same bot token as the messaging adapter.
+Registered on the `thoth-discord` platform toolset (gateway only). Uses the same bot token as the messaging adapter.
 
 | Tool | Description | Requires environment |
 |------|-------------|----------------------|
@@ -38479,7 +38479,7 @@ Registered on the `hermes-discord` platform toolset (gateway only). Uses the sam
 
 ## `discord_admin` toolset
 
-Registered on the `hermes-discord` platform toolset. Moderation actions require the bot to hold the matching Discord permissions.
+Registered on the `thoth-discord` platform toolset. Moderation actions require the bot to hold the matching Discord permissions.
 
 | Tool | Description | Requires environment |
 |------|-------------|----------------------|
@@ -38499,9 +38499,9 @@ Registered by the bundled `spotify` plugin. Requires an OAuth token — run `tho
 | `spotify_albums` | Fetch Spotify album metadata or album tracks. | Spotify OAuth |
 | `spotify_library` | List, save, or remove the user's saved Spotify tracks or albums. | Spotify OAuth |
 
-## `hermes-yuanbao` toolset
+## `thoth-yuanbao` toolset
 
-Registered only on the `hermes-yuanbao` platform toolset. Yuanbao is Tencent's chat app; these tools drive its DM/group/sticker APIs.
+Registered only on the `thoth-yuanbao` platform toolset. Yuanbao is Tencent's chat app; these tools drive its DM/group/sticker APIs.
 
 | Tool | Description | Requires environment |
 |------|-------------|----------------------|
@@ -38526,7 +38526,7 @@ Every tool belongs to exactly one toolset. When you enable a toolset, all tools 
 
 - **Core** — A single logical group of related tools (e.g., `file` bundles `read_file`, `write_file`, `patch`, `search_files`)
 - **Composite** — Combines multiple core toolsets for a common scenario (e.g., `debugging` bundles file, terminal, and web tools)
-- **Platform** — A complete tool configuration for a specific deployment context (e.g., `hermes-cli` is the default for interactive CLI sessions)
+- **Platform** — A complete tool configuration for a specific deployment context (e.g., `thoth-cli` is the default for interactive CLI sessions)
 
 ## Configuring Toolsets
 
@@ -38542,8 +38542,8 @@ thoth chat --toolsets all              # everything
 
 ```yaml
 toolsets:
-  - hermes-cli          # default for CLI
-  # - hermes-telegram   # override for Telegram gateway
+  - thoth-cli          # default for CLI
+  # - thoth-telegram   # override for Telegram gateway
 ```
 
 ### Interactive management
@@ -38570,10 +38570,10 @@ Or in-session:
 | `cronjob` | `cronjob` | Schedule and manage recurring tasks. |
 | `debugging` | composite (`file` + `terminal` + `web`) | Debug bundle — file, process/terminal, web extract/search. |
 | `delegation` | `delegate_task` | Spawn isolated subagent instances for parallel work. |
-| `discord` | `discord` | Core Discord text/embed/DM actions (gateway-only). Active on the `hermes-discord` toolset. |
-| `discord_admin` | `discord_admin` | Discord moderation (bans, role changes, channel management). Active on the `hermes-discord` toolset; requires the bot to hold the relevant Discord permissions. |
+| `discord` | `discord` | Core Discord text/embed/DM actions (gateway-only). Active on the `thoth-discord` toolset. |
+| `discord_admin` | `discord_admin` | Discord moderation (bans, role changes, channel management). Active on the `thoth-discord` toolset; requires the bot to hold the relevant Discord permissions. |
 | `feishu_doc` | `feishu_doc_read` | Read Feishu/Lark document content. Used by the Feishu document-comment intelligent-reply handler. |
-| `feishu_drive` | `feishu_drive_add_comment`, `feishu_drive_list_comments`, `feishu_drive_list_comment_replies`, `feishu_drive_reply_comment` | Feishu/Lark drive comment operations. Scoped to the comment agent; not exposed on `hermes-cli` or other messaging toolsets. |
+| `feishu_drive` | `feishu_drive_add_comment`, `feishu_drive_list_comments`, `feishu_drive_list_comment_replies`, `feishu_drive_reply_comment` | Feishu/Lark drive comment operations. Scoped to the comment agent; not exposed on `thoth-cli` or other messaging toolsets. |
 | `file` | `patch`, `read_file`, `search_files`, `write_file` | File reading, writing, searching, and editing. |
 | `homeassistant` | `ha_call_service`, `ha_get_state`, `ha_list_entities`, `ha_list_services` | Smart home control via Home Assistant. Only available when `HASS_TOKEN` is set. |
 | `computer_use` | `computer_use` | Background macOS desktop control via cua-driver — does not steal cursor/focus. Works with any tool-capable model. macOS only; requires `cua-driver` on `$PATH`. |
@@ -38595,38 +38595,38 @@ Or in-session:
 | `video` | `video_analyze` | Video analysis and understanding tools (opt-in, not in the default toolset — add explicitly via `--toolsets`). |
 | `web` | `web_extract`, `web_search` | Web search and page content extraction. |
 | `x_search` | `x_search` | Search X (Twitter) posts and threads via xAI's built-in `x_search` Responses tool. Off by default; opt in via `thoth tools`. Schema only registered when xAI credentials (SuperGrok OAuth or `XAI_API_KEY`) are configured. |
-| `yuanbao` | `yb_query_group_info`, `yb_query_group_members`, `yb_search_sticker`, `yb_send_dm`, `yb_send_sticker` | Yuanbao DM/group actions and sticker search. Registered only on `hermes-yuanbao`. |
+| `yuanbao` | `yb_query_group_info`, `yb_query_group_members`, `yb_search_sticker`, `yb_send_dm`, `yb_send_sticker` | Yuanbao DM/group actions and sticker search. Registered only on `thoth-yuanbao`. |
 
 ## Platform Toolsets
 
-Platform toolsets define the complete tool configuration for a deployment target. Most messaging platforms use the same set as `hermes-cli`:
+Platform toolsets define the complete tool configuration for a deployment target. Most messaging platforms use the same set as `thoth-cli`:
 
-| Toolset | Differences from `hermes-cli` |
+| Toolset | Differences from `thoth-cli` |
 |---------|-------------------------------|
-| `hermes-cli` | Full toolset — the default for interactive CLI sessions. Includes file, terminal, web, browser, memory, skills, vision, image_gen, todo, tts, delegation, code_execution, cronjob, session_search, clarify, and `safe` (read-only) bundles plus the standard messaging tools. |
-| `hermes-acp` | Drops `clarify`, `cronjob`, `image_generate`, `send_message`, `text_to_speech`, and all four Home Assistant tools. Focused on coding tasks in IDE context. |
-| `hermes-api-server` | Drops `clarify`, `send_message`, and `text_to_speech`. Keeps everything else — suitable for programmatic access where user interaction isn't possible. |
-| `hermes-cron` | Same as `hermes-cli`. |
-| `hermes-telegram` | Same as `hermes-cli`. |
-| `hermes-discord` | Adds `discord` and `discord_admin` on top of `hermes-cli`. |
-| `hermes-slack` | Same as `hermes-cli`. |
-| `hermes-whatsapp` | Same as `hermes-cli`. |
-| `hermes-signal` | Same as `hermes-cli`. |
-| `hermes-matrix` | Same as `hermes-cli`. |
-| `hermes-mattermost` | Same as `hermes-cli`. |
-| `hermes-email` | Same as `hermes-cli`. |
-| `hermes-sms` | Same as `hermes-cli`. |
-| `hermes-bluebubbles` | Same as `hermes-cli`. |
-| `hermes-dingtalk` | Same as `hermes-cli`. |
-| `hermes-feishu` | Adds the five `feishu_doc_*` / `feishu_drive_*` tools (only used by the document-comment handler, not the regular chat adapter). |
-| `hermes-qqbot` | Same as `hermes-cli`. |
-| `hermes-wecom` | Same as `hermes-cli`. |
-| `hermes-wecom-callback` | Same as `hermes-cli`. |
-| `hermes-weixin` | Same as `hermes-cli`. |
-| `hermes-yuanbao` | Adds the five `yb_*` tools (DM/group/sticker) on top of `hermes-cli`. |
-| `hermes-homeassistant` | Same as `hermes-cli` (the Home Assistant tools are already present by default and activate when `HASS_TOKEN` is set). |
-| `hermes-webhook` | Same as `hermes-cli`. |
-| `hermes-gateway` | Internal gateway orchestrator toolset — union of every `hermes-<platform>` toolset; used when the gateway needs to accept any message source. |
+| `thoth-cli` | Full toolset — the default for interactive CLI sessions. Includes file, terminal, web, browser, memory, skills, vision, image_gen, todo, tts, delegation, code_execution, cronjob, session_search, clarify, and `safe` (read-only) bundles plus the standard messaging tools. |
+| `thoth-acp` | Drops `clarify`, `cronjob`, `image_generate`, `send_message`, `text_to_speech`, and all four Home Assistant tools. Focused on coding tasks in IDE context. |
+| `thoth-api-server` | Drops `clarify`, `send_message`, and `text_to_speech`. Keeps everything else — suitable for programmatic access where user interaction isn't possible. |
+| `thoth-cron` | Same as `thoth-cli`. |
+| `thoth-telegram` | Same as `thoth-cli`. |
+| `thoth-discord` | Adds `discord` and `discord_admin` on top of `thoth-cli`. |
+| `thoth-slack` | Same as `thoth-cli`. |
+| `thoth-whatsapp` | Same as `thoth-cli`. |
+| `thoth-signal` | Same as `thoth-cli`. |
+| `thoth-matrix` | Same as `thoth-cli`. |
+| `thoth-mattermost` | Same as `thoth-cli`. |
+| `thoth-email` | Same as `thoth-cli`. |
+| `thoth-sms` | Same as `thoth-cli`. |
+| `thoth-bluebubbles` | Same as `thoth-cli`. |
+| `thoth-dingtalk` | Same as `thoth-cli`. |
+| `thoth-feishu` | Adds the five `feishu_doc_*` / `feishu_drive_*` tools (only used by the document-comment handler, not the regular chat adapter). |
+| `thoth-qqbot` | Same as `thoth-cli`. |
+| `thoth-wecom` | Same as `thoth-cli`. |
+| `thoth-wecom-callback` | Same as `thoth-cli`. |
+| `thoth-weixin` | Same as `thoth-cli`. |
+| `thoth-yuanbao` | Adds the five `yb_*` tools (DM/group/sticker) on top of `thoth-cli`. |
+| `thoth-homeassistant` | Same as `thoth-cli` (the Home Assistant tools are already present by default and activate when `HASS_TOKEN` is set). |
+| `thoth-webhook` | Same as `thoth-cli`. |
+| `thoth-gateway` | Internal gateway orchestrator toolset — union of every `thoth-<platform>` toolset; used when the gateway needs to accept any message source. |
 
 ## Dynamic Toolsets
 
@@ -38654,7 +38654,7 @@ Define custom toolsets in `config.yaml` to create project-specific bundles:
 
 ```yaml
 toolsets:
-  - hermes-cli
+  - thoth-cli
 custom_toolsets:
   data-science:
     - file
@@ -39055,8 +39055,9 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 |-------|-------------|------|
 | [`claude-code`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-claude-code) | Delegate coding to Claude Code CLI (features, PRs). | `autonomous-ai-agents/claude-code` |
 | [`codex`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-codex) | Delegate coding to OpenAI Codex CLI (features, PRs). | `autonomous-ai-agents/codex` |
-| [`hermes-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-hermes-agent) | Configure, extend, or contribute to Thoth Agent. | `autonomous-ai-agents/hermes-agent` |
+| [`kanban-codex-lane`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-kanban-codex-lane) | Use when a Thoth Kanban worker wants to run Codex CLI as an isolated implementation lane while Thoth keeps ownership of task lifecycle, reconciliation, testing, and handoff. | `autonomous-ai-agents/kanban-codex-lane` |
 | [`opencode`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-opencode) | Delegate coding to OpenCode CLI (features, PR review). | `autonomous-ai-agents/opencode` |
+| [`thoth-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-thoth-agent) | Configure, extend, or contribute to Thoth Agent. | `autonomous-ai-agents/thoth-agent` |
 
 ## creative
 
@@ -39094,7 +39095,7 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 | Skill | Description | Path |
 |-------|-------------|------|
 | [`kanban-orchestrator`](/docs/user-guide/skills/bundled/devops/devops-kanban-orchestrator) | Decomposition playbook + anti-temptation rules for an orchestrator profile routing work through Kanban. The "don't do the work yourself" rule and the basic lifecycle are auto-injected into every kanban worker's system prompt; this skill... | `devops/kanban-orchestrator` |
-| [`kanban-worker`](/docs/user-guide/skills/bundled/devops/devops-kanban-worker) | Pitfalls, examples, and edge cases for Thoth Kanban workers. The lifecycle itself is auto-injected into every worker's system prompt as KANBAN_GUIDANCE (from agent/prompt_builder.py); this skill is what you load when you want deeper det... | `devops/kanban-worker` |
+| [`kanban-worker`](/docs/user-guide/skills/bundled/devops/devops-kanban-worker) | Pitfalls, examples, and edge cases for Thoth Kanban workers. The lifecycle itself is auto-injected into every worker's system prompt as KANBAN_GUIDANCE (from agent/prompt_builder.py); this skill is what you load when you want deeper deta... | `devops/kanban-worker` |
 | [`webhook-subscriptions`](/docs/user-guide/skills/bundled/devops/devops-webhook-subscriptions) | Webhook subscriptions: event-driven agent runs. | `devops/webhook-subscriptions` |
 
 ## dogfood
@@ -39209,8 +39210,7 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 
 | Skill | Description | Path |
 |-------|-------------|------|
-| [`debugging-hermes-tui-commands`](/docs/user-guide/skills/bundled/software-development/software-development-debugging-hermes-tui-commands) | Debug Thoth TUI slash commands: Python, gateway, Ink UI. | `software-development/debugging-hermes-tui-commands` |
-| [`hermes-agent-skill-authoring`](/docs/user-guide/skills/bundled/software-development/software-development-hermes-agent-skill-authoring) | Author in-repo SKILL.md: frontmatter, validator, structure. | `software-development/hermes-agent-skill-authoring` |
+| [`debugging-thoth-tui-commands`](/docs/user-guide/skills/bundled/software-development/software-development-debugging-thoth-tui-commands) | Debug Thoth TUI slash commands: Python, gateway, Ink UI. | `software-development/debugging-thoth-tui-commands` |
 | [`node-inspect-debugger`](/docs/user-guide/skills/bundled/software-development/software-development-node-inspect-debugger) | Debug Node.js via --inspect + Chrome DevTools Protocol CLI. | `software-development/node-inspect-debugger` |
 | [`plan`](/docs/user-guide/skills/bundled/software-development/software-development-plan) | Plan mode: write markdown plan to .hermes/plans/, no exec. | `software-development/plan` |
 | [`python-debugpy`](/docs/user-guide/skills/bundled/software-development/software-development-python-debugpy) | Debug Python: pdb REPL + debugpy remote (DAP). | `software-development/python-debugpy` |
@@ -39219,7 +39219,14 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 | [`subagent-driven-development`](/docs/user-guide/skills/bundled/software-development/software-development-subagent-driven-development) | Execute plans via delegate_task subagents (2-stage review). | `software-development/subagent-driven-development` |
 | [`systematic-debugging`](/docs/user-guide/skills/bundled/software-development/software-development-systematic-debugging) | 4-phase root cause debugging: understand bugs before fixing. | `software-development/systematic-debugging` |
 | [`test-driven-development`](/docs/user-guide/skills/bundled/software-development/software-development-test-driven-development) | TDD: enforce RED-GREEN-REFACTOR, tests before code. | `software-development/test-driven-development` |
+| [`thoth-agent-skill-authoring`](/docs/user-guide/skills/bundled/software-development/software-development-thoth-agent-skill-authoring) | Author in-repo SKILL.md: frontmatter, validator, structure. | `software-development/thoth-agent-skill-authoring` |
 | [`writing-plans`](/docs/user-guide/skills/bundled/software-development/software-development-writing-plans) | Write implementation plans: bite-sized tasks, paths, code. | `software-development/writing-plans` |
+
+## substrate
+
+| Skill | Description | Path |
+|-------|-------------|------|
+| [`substrate`](/docs/user-guide/skills/bundled/substrate/substrate-substrate) | Inspect, tune, and troubleshoot the cognitive substrate. | `substrate` |
 
 ## yuanbao
 
@@ -39260,7 +39267,7 @@ thoth skills uninstall <skill-name>
 | Skill | Description |
 |-------|-------------|
 | [**blackbox**](/docs/user-guide/skills/optional/autonomous-ai-agents/autonomous-ai-agents-blackbox) | Delegate coding tasks to Blackbox AI CLI agent. Multi-model agent with built-in judge that runs tasks through multiple LLMs and picks the best result. Requires the blackbox CLI and a Blackbox AI API key. |
-| [**honcho**](/docs/user-guide/skills/optional/autonomous-ai-agents/autonomous-ai-agents-honcho) | Configure and use Honcho memory with Thoth -- cross-session user modeling, multi-profile peer isolation, observation config, dialectic reasoning, session summaries, and context budget enforcement. Use when setting up Honcho, troubleshoo... |
+| [**honcho**](/docs/user-guide/skills/optional/autonomous-ai-agents/autonomous-ai-agents-honcho) | Configure and use Honcho memory with Thoth -- cross-session user modeling, multi-profile peer isolation, observation config, dialectic reasoning, session summaries, and context budget enforcement. Use when setting up Honcho, troubleshoot... |
 
 ## blockchain
 
@@ -39283,7 +39290,7 @@ thoth skills uninstall <skill-name>
 | [**blender-mcp**](/docs/user-guide/skills/optional/creative/creative-blender-mcp) | Control Blender directly from Thoth via socket connection to the blender-mcp addon. Create 3D objects, materials, animations, and run arbitrary Blender Python (bpy) code. Use when user wants to create or modify anything in Blender. |
 | [**concept-diagrams**](/docs/user-guide/skills/optional/creative/creative-concept-diagrams) | Generate flat, minimal light/dark-aware SVG diagrams as standalone HTML files, using a unified educational visual language with 9 semantic color ramps, sentence-case typography, and automatic dark mode. Best suited for educational and no... |
 | [**hyperframes**](/docs/user-guide/skills/optional/creative/creative-hyperframes) | Create HTML-based video compositions, animated title cards, social overlays, captioned talking-head videos, audio-reactive visuals, and shader transitions using HyperFrames. HTML is the source of truth for video. Use when the user wants... |
-| [**kanban-video-orchestrator**](/docs/user-guide/skills/optional/creative/creative-kanban-video-orchestrator) | Plan, set up, and monitor a multi-agent video production pipeline backed by Thoth Kanban. Use when the user wants to make ANY video — narrative film, product/marketing, music video, explainer, ASCII/terminal art, abstract/generative loo... |
+| [**kanban-video-orchestrator**](/docs/user-guide/skills/optional/creative/creative-kanban-video-orchestrator) | Plan, set up, and monitor a multi-agent video production pipeline backed by Thoth Kanban. Use when the user wants to make ANY video — narrative film, product/marketing, music video, explainer, ASCII/terminal art, abstract/generative loop... |
 | [**meme-generation**](/docs/user-guide/skills/optional/creative/creative-meme-generation) | Generate real meme images by picking a template and overlaying text with Pillow. Produces actual .png meme files. |
 
 ## devops
@@ -39305,7 +39312,7 @@ thoth skills uninstall <skill-name>
 
 | Skill | Description |
 |-------|-------------|
-| [**agentmail**](/docs/user-guide/skills/optional/email/email-agentmail) | Give the agent its own dedicated email inbox via AgentMail. Send, receive, and manage email autonomously using agent-owned email addresses (e.g. hermes-agent@agentmail.to). |
+| [**agentmail**](/docs/user-guide/skills/optional/email/email-agentmail) | Give the agent its own dedicated email inbox via AgentMail. Send, receive, and manage email autonomously using agent-owned email addresses (e.g. thoth-agent@agentmail.to). |
 
 ## finance
 
@@ -40314,7 +40321,7 @@ Key implementation files:
 ## Boot flow
 
 ```text
-thoth acp / hermes-acp / python -m acp_adapter
+thoth acp / thoth-acp / python -m acp_adapter
   -> acp_adapter.entry.main()
   -> parse --version / --check / --setup before server startup
   -> load ~/.hermes/.env
@@ -40323,7 +40330,7 @@ thoth acp / hermes-acp / python -m acp_adapter
   -> acp.run_agent(agent, use_unstable_protocol=True)
 ```
 
-The Zed ACP Registry path launches the same adapter through `uvx --from 'hermes-agent[acp]==<version>' hermes-acp`, pointed at the `hermes-agent` PyPI release.
+The Zed ACP Registry path launches the same adapter through `uvx --from 'hermes-agent[acp]==<version>' thoth-acp`, pointed at the `hermes-agent` PyPI release.
 
 Stdout is reserved for ACP JSON-RPC transport. Human-readable logs go to stderr.
 
@@ -40408,7 +40415,7 @@ Examples:
 ```text
 new_session(cwd)
   -> create SessionState
-  -> create AIAgent(platform="acp", enabled_toolsets=["hermes-acp"])
+  -> create AIAgent(platform="acp", enabled_toolsets=["thoth-acp"])
   -> bind task_id/session_id to cwd override
 
 prompt(..., session_id)
@@ -40471,9 +40478,9 @@ ACP temporarily installs an approval callback on the terminal tool during prompt
 ## Related files
 
 - `tests/acp/` — ACP test suite
-- `toolsets.py` — `hermes-acp` toolset definition
+- `toolsets.py` — `thoth-acp` toolset definition
 - `thoth_cli/main.py` — `thoth acp` CLI subcommand
-- `pyproject.toml` — `[acp]` optional dependency + `hermes-acp` script
+- `pyproject.toml` — `[acp]` optional dependency + `thoth-acp` script
 
 ---
 
@@ -40677,7 +40684,7 @@ Issue planned against `jo-inc/camofox-browser` adding:
 
 ### Modified
 
-- `toolsets.py` — register `browser_dialog` in `browser`, `hermes-acp`, `hermes-api-server`, core toolsets (gated on CDP reachability)
+- `toolsets.py` — register `browser_dialog` in `browser`, `thoth-acp`, `thoth-api-server`, core toolsets (gated on CDP reachability)
 - `tools/browser_tool.py`
   - `browser_navigate` start-hook: if CDP URL resolvable, `SupervisorRegistry.get_or_start(task_id, cdp_url)`
   - `browser_snapshot` (at ~line 1536): merge supervisor state into return payload
@@ -42625,9 +42632,9 @@ Key behaviors:
 Toolsets are named bundles of tools. Thoth resolves them through:
 
 - explicit enabled/disabled toolset lists
-- platform presets (`hermes-cli`, `hermes-telegram`, etc.)
+- platform presets (`thoth-cli`, `thoth-telegram`, etc.)
 - dynamic MCP toolsets
-- curated special-purpose sets like `hermes-acp`
+- curated special-purpose sets like `thoth-acp`
 
 ### How `get_tool_definitions()` filters tools
 
@@ -46067,7 +46074,7 @@ The migration resolves all three formats. For env templates and SecretRef object
 
 4. **Verify API keys** — run `thoth status` to check provider authentication.
 
-5. **Test messaging** — if you migrated platform tokens, restart the gateway: `systemctl --user restart hermes-gateway`
+5. **Test messaging** — if you migrated platform tokens, restart the gateway: `systemctl --user restart thoth-gateway`
 
 6. **Check session policies** — verify `thoth config get session_reset` matches your expectations.
 
@@ -47101,7 +47108,7 @@ platforms:
 | `deliver_extra.pr_number` | Resolves to the PR number from the payload. |
 
 :::note The payload does not contain code
-The GitHub webhook payload includes PR metadata (title, description, branch names, URLs) but **not the diff**. The prompt above instructs the agent to run `gh pr diff` to fetch the actual changes. The `terminal` tool is included in the default `hermes-webhook` toolset, so no extra configuration is needed.
+The GitHub webhook payload includes PR metadata (title, description, branch names, URLs) but **not the diff**. The prompt above instructs the agent to run `gh pr diff` to fetch the actual changes. The `terminal` tool is included in the default `thoth-webhook` toolset, so no extra configuration is needed.
 :::
 
 ---
@@ -52581,7 +52588,7 @@ WebSocket and per-group ACL settings are configured via `config.yaml` under `pla
 
 ## Toolset
 
-Feishu / Lark uses the `hermes-feishu` platform preset, which includes the same core tools as Telegram and other gateway-based messaging platforms.
+Feishu / Lark uses the `thoth-feishu` platform preset, which includes the same core tools as Telegram and other gateway-based messaging platforms.
 
 ---
 

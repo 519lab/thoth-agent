@@ -64,7 +64,7 @@ These two tools live in the `browser` toolset but only register when a Chrome De
 
 ## `feishu_doc` toolset
 
-Scoped to the Feishu document-comment intelligent-reply handler (`gateway/platforms/feishu_comment.py`). Not exposed on `hermes-cli` or the regular Feishu chat adapter.
+Scoped to the Feishu document-comment intelligent-reply handler (`gateway/platforms/feishu_comment.py`). Not exposed on `thoth-cli` or the regular Feishu chat adapter.
 
 | Tool | Description | Requires environment |
 |------|-------------|----------------------|
@@ -185,7 +185,7 @@ Registered when the agent is either (a) spawned by the kanban dispatcher (`HERME
 
 ## `video` toolset
 
-Opt-in toolset (not loaded in the default `hermes-cli` set). Add via `--toolsets video` or include `video` in your `toolsets:` config.
+Opt-in toolset (not loaded in the default `thoth-cli` set). Add via `--toolsets video` or include `video` in your `toolsets:` config.
 
 | Tool | Description | Requires environment |
 |------|-------------|----------------------|
@@ -193,7 +193,7 @@ Opt-in toolset (not loaded in the default `hermes-cli` set). Add via `--toolsets
 
 ## `video_gen` toolset
 
-Opt-in toolset (not loaded in the default `hermes-cli` set). Add via `--toolsets video_gen` or enable it in `thoth tools` → Video Generation, which also walks you through picking a backend.
+Opt-in toolset (not loaded in the default `thoth-cli` set). Add via `--toolsets video_gen` or enable it in `thoth tools` → Video Generation, which also walks you through picking a backend.
 
 Backends ship as plugins under `plugins/video_gen/<name>/`:
 
@@ -227,7 +227,7 @@ The single `video_generate` tool covers both modalities — pass `image_url` to 
 
 ## `discord` toolset
 
-Registered on the `hermes-discord` platform toolset (gateway only). Uses the same bot token as the messaging adapter.
+Registered on the `thoth-discord` platform toolset (gateway only). Uses the same bot token as the messaging adapter.
 
 | Tool | Description | Requires environment |
 |------|-------------|----------------------|
@@ -235,7 +235,7 @@ Registered on the `hermes-discord` platform toolset (gateway only). Uses the sam
 
 ## `discord_admin` toolset
 
-Registered on the `hermes-discord` platform toolset. Moderation actions require the bot to hold the matching Discord permissions.
+Registered on the `thoth-discord` platform toolset. Moderation actions require the bot to hold the matching Discord permissions.
 
 | Tool | Description | Requires environment |
 |------|-------------|----------------------|
@@ -255,9 +255,9 @@ Registered by the bundled `spotify` plugin. Requires an OAuth token — run `tho
 | `spotify_albums` | Fetch Spotify album metadata or album tracks. | Spotify OAuth |
 | `spotify_library` | List, save, or remove the user's saved Spotify tracks or albums. | Spotify OAuth |
 
-## `hermes-yuanbao` toolset
+## `thoth-yuanbao` toolset
 
-Registered only on the `hermes-yuanbao` platform toolset. Yuanbao is Tencent's chat app; these tools drive its DM/group/sticker APIs.
+Registered only on the `thoth-yuanbao` platform toolset. Yuanbao is Tencent's chat app; these tools drive its DM/group/sticker APIs.
 
 | Tool | Description | Requires environment |
 |------|-------------|----------------------|
