@@ -443,7 +443,7 @@ class Curator(SubAgent):
         # from the operator's config.yaml — without that the Curator
         # would silently force the OpenAI model name on Ollama / Voyage /
         # any non-OpenAI provider, and every embed call would 404.
-        embed_kwargs = {"timeout_ms": _cfg.RECALL_EMBEDDING_TIMEOUT_MS}
+        embed_kwargs = {"timeout_ms": _cfg.RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS}
         if _cfg.RECALL_EMBEDDING_MODEL is not None:
             embed_kwargs["model"] = _cfg.RECALL_EMBEDDING_MODEL
         try:
@@ -561,7 +561,7 @@ class Curator(SubAgent):
         if not rows:
             return
         texts = [(r["statement"] or "") for r in rows]
-        embed_kwargs = {"timeout_ms": _cfg.RECALL_EMBEDDING_TIMEOUT_MS}
+        embed_kwargs = {"timeout_ms": _cfg.RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS}
         if _cfg.RECALL_EMBEDDING_MODEL is not None:
             embed_kwargs["model"] = _cfg.RECALL_EMBEDDING_MODEL
         try:

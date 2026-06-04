@@ -203,3 +203,45 @@ def test_reshape_parser_accepts_dim():
     assert args.yes is True
     assert args.no_reembed is True
     assert args.batch_size == 100
+
+
+@pytest.mark.asyncio
+async def test_backfill_aborts_on_all_failed_batch(seeded_substrate, monkeypatch):
+    """Regression for the 2026-06 reshape runaway: when every embed() returns
+    None (provider failing — e.g. an 800ms timeout vs a ~15s model), the
+    backfill must ABORT, not re-fetch the same NULL rows forever (the loop
+    sailed past 100% / 280% in prod)."""
+    from substrate.recall import embeddings as _embed
+
+    async def _all_none(texts, **kw):
+        return [None] * len(texts)
+
+    monkeypatch.setattr(_embed, "embed", _all_none)
+
+    rc = await embed_cli._backfill_inline(total=5, batch_size=10)
+    # Aborted (non-zero) and — crucially — returned at all (no infinite loop).
+    assert rc == 1
+
+
+@pytest.mark.asyncio
+async def test_backfill_uses_backfill_timeout_not_query_timeout(
+    seeded_substrate, monkeypatch
+):
+    """Backfill must use the generous RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS, not
+    the 800ms interactive recall-query timeout — otherwise slow local models
+    time out on every batch."""
+    from substrate.recall import embeddings as _embed
+    from substrate import config as _cfg
+
+    seen: list = []
+
+    async def _spy(texts, **kw):
+        seen.append(kw.get("timeout_ms"))
+        return [[0.1] * 1536 for _ in texts]
+
+    monkeypatch.setattr(_embed, "embed", _spy)
+    await embed_cli._backfill_inline(total=5, batch_size=10)
+
+    assert seen, "embed() was never called"
+    assert all(t == _cfg.RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS for t in seen), seen
+    assert _cfg.RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS >= 30_000

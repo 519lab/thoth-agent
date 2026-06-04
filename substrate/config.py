@@ -161,6 +161,17 @@ RECALL_EMBEDDING_DIM = _envint("HERMES_RECALL_EMBEDDING_DIM", default=1536)
 RECALL_EMBEDDING_TIMEOUT_MS = _envint(
     "HERMES_RECALL_EMBEDDING_TIMEOUT_MS", default=800
 )
+# Separate, much larger budget for BACKGROUND embedding (Curator backfill +
+# ``thoth embed reshape``) than for interactive recall-query embedding. The
+# 800ms query timeout keeps recall responsive, but it's far too short for a
+# batch backfill against a slow local model (a CPU-hosted Qwen3-Embedding can
+# take >10s/call) — every batch would time out, get marked failed, and stall
+# coverage at 0%. Defaults to ``max(query_timeout, 30s)``; override directly
+# for very slow providers.
+RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS = _envint(
+    "HERMES_RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS",
+    default=max(RECALL_EMBEDDING_TIMEOUT_MS, 30_000),
+)
 RECALL_EMBEDDING_QUEUE_DEPTH = _envint(
     "HERMES_RECALL_EMBEDDING_QUEUE_DEPTH", default=4096
 )
@@ -253,6 +264,7 @@ __all__ = [
     "RECALL_EMBEDDING_MODEL",
     "RECALL_EMBEDDING_DIM",
     "RECALL_EMBEDDING_TIMEOUT_MS",
+    "RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS",
     "RECALL_EMBEDDING_QUEUE_DEPTH",
     "RECALL_EMBEDDING_BATCH_SIZE",
     "RECALL_EMBEDDING_BACKFILL_INTERVAL_S",

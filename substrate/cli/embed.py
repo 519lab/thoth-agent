@@ -419,6 +419,12 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
     # Reuse the same text extractor the Curator uses so re-embedded
     # vectors compare cleanly to fresh Curator-emitted vectors.
     from substrate.agents.curator import _extract_text_for_embedding
+    from substrate import config as _cfg
+
+    # Background backfill uses the generous backfill timeout, NOT the 800ms
+    # interactive recall-query timeout — a slow local model would otherwise
+    # time out on every batch.
+    timeout_ms = _cfg.RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS
 
     if total == 0:
         print("No slices to embed.")
@@ -447,7 +453,7 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
 
         texts = [_extract_text_for_embedding(r["payload"]) for r in rows]
         try:
-            vectors = await embed(texts)
+            vectors = await embed(texts, timeout_ms=timeout_ms)
         except Exception as exc:
             print(
                 f"  embed() raised: {exc}. Aborting; "
@@ -458,6 +464,7 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
 
         # Write back per row. Skip rows where embed() returned None
         # (provider failure for that item only).
+        wrote = 0
         async with thoth_db.transaction() as conn:
             for r, vec in zip(rows, vectors):
                 if vec is None:
@@ -472,13 +479,32 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
                     """,
                     vec, r["slice_id"], r["ingest_time_world"],
                 )
-        done += len(rows)
+                wrote += 1
+        done += wrote
         pct = (done / total * 100.0) if total else 100.0
         print(
             f"  Re-embedded {done:,}/{total:,} ({pct:.1f}%)"
             + (f", {failed} per-item failures" if failed else ""),
             flush=True,
         )
+
+        # No slice in this batch embedded → the same NULL rows will be
+        # re-fetched next iteration forever. Bail with a diagnostic instead
+        # of spinning (the 2026-06 reshape runaway: every call timed out at
+        # 800ms vs a ~15s provider, and the loop sailed past 100%).
+        if wrote == 0:
+            print(
+                f"error: 0 of {len(rows)} slices embedded this batch — the "
+                "provider is failing every call (timeout, dim mismatch, or "
+                "unreachable endpoint). Aborting to avoid an infinite retry "
+                "loop. Check auxiliary.embedding.* (model, base_url, "
+                "dimensions vs schema dim) and raise "
+                "HERMES_RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS for slow models, "
+                "then re-run. The Curator's background backfill resumes the "
+                "rest once the cause is fixed.",
+                file=sys.stderr,
+            )
+            return 1
 
         # Tight provider call — small natural pause keeps us under any
         # provider's per-second rate cap without explicit throttling.
