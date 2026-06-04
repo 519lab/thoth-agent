@@ -9672,6 +9672,11 @@ def _cmd_update_impl(args, gateway_mode: bool):
                             scope_cmd
                             + [
                                 "list-units",
+                                # Canonical thoth-gateway* units plus legacy
+                                # hermes-gateway* (installs predating the
+                                # gateway-service rename) — restart whichever
+                                # exist, including profile units (-coder, etc.).
+                                "thoth-gateway*",
                                 "hermes-gateway*",
                                 "--plain",
                                 "--no-legend",
@@ -9687,7 +9692,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                                 continue
                             unit = parts[
                                 0
-                            ]  # e.g. hermes-gateway.service or hermes-gateway-coder.service
+                            ]  # e.g. thoth-gateway.service or thoth-gateway-coder.service
                             if not unit.endswith(".service"):
                                 continue
                             svc_name = unit.removesuffix(".service")
