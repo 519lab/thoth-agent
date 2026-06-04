@@ -23,7 +23,7 @@ from substrate.events import hermes_hooks
 
 
 @pytest_asyncio.fixture
-async def booted_substrate(hermes_db_initialized):
+async def booted_substrate(thoth_db_initialized):
     """A fully booted substrate (sub-agents disabled — tests don't want
     the Sentinel loop racing against assertions). Hook module is bound
     in ``Substrate.boot()``.
@@ -331,7 +331,7 @@ async def test_hook_swallows_errors(booted_substrate, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_hook_skips_when_stream_missing(hermes_db_initialized):
+async def test_hook_skips_when_stream_missing(thoth_db_initialized):
     """If the substrate is booted but the expected stream isn't
     registered (a corrupt-deploy edge case), the hook logs a warning
     and returns None rather than raising. The unknown-stream branch is

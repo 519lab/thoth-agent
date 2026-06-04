@@ -1314,7 +1314,7 @@ class TestSystemUnitHermesHome:
         assert 'HERMES_HOME=/home/alice/.hermes/profiles/coder' in unit
         assert '/root/' not in unit
 
-    def test_system_unit_preserves_custom_hermes_home(self, monkeypatch):
+    def test_system_unit_preserves_custom_thoth_home(self, monkeypatch):
         # Custom HERMES_HOME not under any user's home — keep as-is
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
         monkeypatch.delenv("THOTH_HOME", raising=False)
@@ -1663,7 +1663,7 @@ class TestPreflightUserSystemd:
 class TestProfileArg:
     """Tests for _profile_arg — returns '--profile <name>' for named profiles."""
 
-    def test_default_hermes_home_returns_empty(self, tmp_path, monkeypatch):
+    def test_default_thoth_home_returns_empty(self, tmp_path, monkeypatch):
         """Default ~/.hermes should not produce a --profile flag."""
         thoth_home = tmp_path / ".hermes"
         thoth_home.mkdir()
@@ -1944,7 +1944,7 @@ class TestLegacyHermesUnitDetection:
         assert is_system is False
         assert gateway_cli.has_legacy_hermes_units() is True
 
-    def test_detects_legacy_hermes_service_in_system_scope(self, tmp_path, monkeypatch):
+    def test_detects_legacy_thoth_service_in_system_scope(self, tmp_path, monkeypatch):
         _, system_dir = self._setup_search_paths(tmp_path, monkeypatch)
         legacy = system_dir / "hermes.service"
         legacy.write_text(self._OUR_UNIT_TEXT, encoding="utf-8")

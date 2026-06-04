@@ -46,7 +46,7 @@ def scenario(name):
     """
     def wrap(fn):
         def run():
-            home = tempfile.mkdtemp(prefix=f"hermes_atyp_{name}_")
+            home = tempfile.mkdtemp(prefix=f"thoth_atyp_{name}_")
             os.environ["HERMES_HOME"] = home
             os.environ["HOME"] = home
             for m in list(sys.modules.keys()):
@@ -528,7 +528,7 @@ def _(home, kb):
 # FILESYSTEM WEIRDNESS
 # =============================================================================
 
-@scenario("hermes_home_with_spaces")
+@scenario("thoth_home_with_spaces")
 def _(home, kb):
     """HERMES_HOME at a path with spaces — should work but catches
     anyone doing string interpolation without quoting."""
@@ -555,7 +555,7 @@ def _(home, kb):
         shutil.rmtree(weird, ignore_errors=True)
 
 
-@scenario("hermes_home_with_unicode")
+@scenario("thoth_home_with_unicode")
 def _(home, kb):
     """HERMES_HOME with non-ASCII chars."""
     # Pre-create directly since tempfile doesn't love unicode prefixes
@@ -577,12 +577,12 @@ def _(home, kb):
         shutil.rmtree(weird, ignore_errors=True)
 
 
-@scenario("hermes_home_via_symlink")
+@scenario("thoth_home_via_symlink")
 def _(home, kb):
     """HERMES_HOME is a symlink to the real dir. _INITIALIZED_PATHS
     uses Path.resolve() — two different symlink names pointing at the
     same dir should NOT double-init."""
-    real = tempfile.mkdtemp(prefix="hermes_real_")
+    real = tempfile.mkdtemp(prefix="thoth_real_")
     link1 = real + "_link1"
     link2 = real + "_link2"
     os.symlink(real, link1)

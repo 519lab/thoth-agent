@@ -22,7 +22,7 @@ import pytest
 class TestGetSubprocessHome:
     """Unit tests for thoth_constants.get_subprocess_home()."""
 
-    def test_returns_none_when_hermes_home_unset(self, monkeypatch):
+    def test_returns_none_when_thoth_home_unset(self, monkeypatch):
         monkeypatch.delenv("HERMES_HOME", raising=False)
         from thoth_constants import get_subprocess_home
         assert get_subprocess_home() is None
@@ -147,7 +147,7 @@ class TestMakeRunEnvHomeInjection:
 
         assert result["HOME"] == "/root"
 
-    def test_no_injection_when_hermes_home_unset(self, monkeypatch):
+    def test_no_injection_when_thoth_home_unset(self, monkeypatch):
         monkeypatch.delenv("HERMES_HOME", raising=False)
         monkeypatch.setenv("HOME", "/home/user")
         monkeypatch.setenv("PATH", "/usr/bin:/bin")

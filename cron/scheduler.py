@@ -39,7 +39,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from thoth_constants import get_thoth_home
 from thoth_cli._subprocess_compat import windows_hide_flags
 from thoth_cli.config import load_config, _expand_env_vars
-from thoth_time import now as _hermes_now
+from thoth_time import now as _thoth_now
 
 logger = logging.getLogger(__name__)
 
@@ -1194,7 +1194,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
                 except OSError:
                     pass
 
-        now_iso = _hermes_now().strftime("%Y-%m-%d %H:%M:%S")
+        now_iso = _thoth_now().strftime("%Y-%m-%d %H:%M:%S")
 
         if not ok:
             # Script crashed / timed out / exited non-zero.  Deliver the
@@ -1285,7 +1285,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
             silent_doc = (
                 f"# Cron Job: {job_name}\n\n"
                 f"**Job ID:** {job_id}\n"
-                f"**Run Time:** {_hermes_now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+                f"**Run Time:** {_thoth_now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
                 "Script gate returned `wakeAgent=false` — agent skipped.\n"
             )
             return True, silent_doc, SILENT_MARKER, None
@@ -1315,7 +1315,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
         blocked_doc = (
             f"# Cron Job: {job_name}\n\n"
             f"**Job ID:** {job_id}\n"
-            f"**Run Time:** {_hermes_now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"**Run Time:** {_thoth_now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"**Status:** BLOCKED\n\n"
             "The assembled prompt (user prompt + loaded skill content) tripped "
             "the cron injection scanner and the agent was NOT run.\n\n"
@@ -1330,7 +1330,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
         logger.info("Job '%s': script produced no output, skipping AI call.", job_name)
         return True, "", SILENT_MARKER, None
     origin = _resolve_origin(job)
-    _cron_session_id = f"cron_{job_id}_{_hermes_now().strftime('%Y%m%d_%H%M%S')}"
+    _cron_session_id = f"cron_{job_id}_{_thoth_now().strftime('%Y%m%d_%H%M%S')}"
 
     logger.info("Running job '%s' (ID: %s)", job_name, job_id)
     logger.info("Prompt: %s", prompt[:100])
@@ -1716,7 +1716,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
         output = f"""# Cron Job: {job_name}
 
 **Job ID:** {job_id}
-**Run Time:** {_hermes_now().strftime('%Y-%m-%d %H:%M:%S')}
+**Run Time:** {_thoth_now().strftime('%Y-%m-%d %H:%M:%S')}
 **Schedule:** {job.get('schedule_display', 'N/A')}
 
 ## Prompt
@@ -1738,7 +1738,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
         output = f"""# Cron Job: {job_name} (FAILED)
 
 **Job ID:** {job_id}
-**Run Time:** {_hermes_now().strftime('%Y-%m-%d %H:%M:%S')}
+**Run Time:** {_thoth_now().strftime('%Y-%m-%d %H:%M:%S')}
 **Schedule:** {job.get('schedule_display', 'N/A')}
 
 ## Prompt
@@ -1846,11 +1846,11 @@ def tick(verbose: bool = True, adapters=None, loop=None) -> int:
         due_jobs = get_due_jobs()
 
         if verbose and not due_jobs:
-            logger.info("%s - No jobs due", _hermes_now().strftime('%H:%M:%S'))
+            logger.info("%s - No jobs due", _thoth_now().strftime('%H:%M:%S'))
             return 0
 
         if verbose:
-            logger.info("%s - %s job(s) due", _hermes_now().strftime('%H:%M:%S'), len(due_jobs))
+            logger.info("%s - %s job(s) due", _thoth_now().strftime('%H:%M:%S'), len(due_jobs))
 
         # Advance next_run_at for all recurring jobs FIRST, under the file lock,
         # before any execution begins.  This preserves at-most-once semantics.

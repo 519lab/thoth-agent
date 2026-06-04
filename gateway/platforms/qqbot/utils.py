@@ -27,7 +27,7 @@ def build_user_agent() -> str:
 
     Format::
 
-        QQBotAdapter/<qqbot_version> (Python/<py_version>; <os>; Thoth/<hermes_version>)
+        QQBotAdapter/<qqbot_version> (Python/<py_version>; <os>; Thoth/<thoth_version>)
 
     Example::
 
@@ -35,8 +35,8 @@ def build_user_agent() -> str:
     """
     py_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     os_name = platform.system().lower()
-    hermes_version = _get_thoth_version()
-    return f"QQBotAdapter/{QQBOT_VERSION} (Python/{py_version}; {os_name}; Thoth/{hermes_version})"
+    thoth_version = _get_thoth_version()
+    return f"QQBotAdapter/{QQBOT_VERSION} (Python/{py_version}; {os_name}; Thoth/{thoth_version})"
 
 
 def get_api_headers() -> Dict[str, str]:

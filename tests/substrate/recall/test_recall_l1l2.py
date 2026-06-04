@@ -24,7 +24,7 @@ def _enable_mock_embeddings(monkeypatch):
 
 
 @pytest_asyncio.fixture
-async def booted(hermes_db_initialized):
+async def booted(thoth_db_initialized):
     sub = await Substrate.boot(
         config=SubstrateConfig(auto_migrate=False, start_subagents=False),
         start_subagents=False,

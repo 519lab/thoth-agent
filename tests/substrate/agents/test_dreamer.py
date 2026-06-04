@@ -18,7 +18,7 @@ from substrate.cli import inspect as inspect_mod
 
 
 @pytest_asyncio.fixture
-async def booted(hermes_db_initialized):
+async def booted(thoth_db_initialized):
     sub = await Substrate.boot(
         config=SubstrateConfig(auto_migrate=False, start_subagents=False),
         start_subagents=False,
@@ -36,7 +36,7 @@ def _dreamer_on(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_append_and_list_dreams(hermes_db_initialized):
+async def test_append_and_list_dreams(thoth_db_initialized):
     await dreamer_mod.append_dream("seed A", "exploration A")
     await dreamer_mod.append_dream("seed B", "exploration B")
     dreams = await dreamer_mod.list_dreams(limit=10)
@@ -90,7 +90,7 @@ async def test_dreamer_disabled_is_noop(booted, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_inspect_dreamer(hermes_db_initialized):
+async def test_inspect_dreamer(thoth_db_initialized):
     import thoth_db
 
     await dreamer_mod.append_dream("a seed", "a vivid exploration")

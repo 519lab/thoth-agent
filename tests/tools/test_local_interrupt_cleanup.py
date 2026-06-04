@@ -68,7 +68,7 @@ def test_kill_process_uses_cached_pgid_if_wrapper_already_exited(monkeypatch):
     env = object.__new__(LocalEnvironment)
     proc = SimpleNamespace(
         pid=12345,
-        _hermes_pgid=67890,
+        _thoth_pgid=67890,
         poll=lambda: 0,
         kill=lambda: None,
     )

@@ -102,7 +102,7 @@ def _mock_embeddings(monkeypatch):
 
 
 @pytest_asyncio.fixture
-async def booted(hermes_db_initialized):
+async def booted(thoth_db_initialized):
     from substrate import Substrate
     from substrate.config import SubstrateConfig
 

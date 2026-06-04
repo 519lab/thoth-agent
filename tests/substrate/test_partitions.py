@@ -58,7 +58,7 @@ class TestMonthRanges:
 
 
 @pytest.mark.asyncio
-async def test_ensure_partitions_creates_three_months(hermes_db_initialized):
+async def test_ensure_partitions_creates_three_months(thoth_db_initialized):
     """A fresh call with the default ``ahead_months=2`` creates the
     current month + 2 ahead. The migration already created current + 1;
     one extra month should land here."""
@@ -79,7 +79,7 @@ async def test_ensure_partitions_creates_three_months(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_ensure_partitions_idempotent(hermes_db_initialized):
+async def test_ensure_partitions_idempotent(thoth_db_initialized):
     """Calling ``ensure_partitions`` twice with the same reference date
     is a no-op on the second call — no DDL errors, no duplicates.
     """
@@ -93,7 +93,7 @@ async def test_ensure_partitions_idempotent(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_write_routes_to_correct_month_partition(hermes_db_initialized):
+async def test_write_routes_to_correct_month_partition(thoth_db_initialized):
     """A row inserted with ``ingest_time_world`` in month M lands in
     ``substrate_slices_YYYYMM``. We verify via ``tableoid::regclass``
     which PG fills in with the actual partition relation name.
@@ -135,7 +135,7 @@ async def test_write_routes_to_correct_month_partition(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_write_outside_range_lands_in_default(hermes_db_initialized):
+async def test_write_outside_range_lands_in_default(thoth_db_initialized):
     """A row with an ``ingest_time_world`` in a far-past month (no carved
     partition) lands in ``substrate_slices_default`` rather than failing
     the INSERT — the default partition is the safety net.
@@ -171,7 +171,7 @@ async def test_write_outside_range_lands_in_default(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_partition_indexes_inherited_from_parent(hermes_db_initialized):
+async def test_partition_indexes_inherited_from_parent(thoth_db_initialized):
     """PG 17 propagates parent-table indexes to all partitions. Verify by
     checking that ``substrate_slices_default`` has indexes named after the
     parent's index pattern (PG mangles them — e.g.

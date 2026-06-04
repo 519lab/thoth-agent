@@ -23,7 +23,7 @@ from substrate.events.hermes_hooks import on_user_message_async
 
 
 @pytest_asyncio.fixture
-async def booted_substrate(hermes_db_initialized):
+async def booted_substrate(thoth_db_initialized):
     """Boot substrate with sub-agents off — the inspect tests are
     deterministic about queue depth, so we don't want Sentinel passing
     slices mid-test.

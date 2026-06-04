@@ -62,7 +62,7 @@ def fresh_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     # Also reset thoth_constants cache so get_default_thoth_root() re-reads.
     try:
         import thoth_constants
-        thoth_constants._cached_default_hermes_root = None  # type: ignore[attr-defined]
+        thoth_constants._cached_default_thoth_root = None  # type: ignore[attr-defined]
     except Exception:
         pass
     # Kanban module-level init cache must not leak between tests.

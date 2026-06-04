@@ -570,7 +570,7 @@ def try_shrink_image_parts_in_messages(api_messages: list) -> bool:
                 "image/jpeg": ".jpg", "image/jpg": ".jpg", "image/bmp": ".bmp",
             }.get(mime, ".jpg")
             tmp = tempfile.NamedTemporaryFile(
-                prefix="hermes_shrink_", suffix=suffix, delete=False,
+                prefix="thoth_shrink_", suffix=suffix, delete=False,
             )
             try:
                 tmp.write(raw)

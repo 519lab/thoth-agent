@@ -174,9 +174,9 @@ _THOTH_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
 def _inject_context_thoth_home(env: dict) -> None:
     """Bridge the context-local Thoth home override into subprocess env."""
     try:
-        from thoth_constants import get_hermes_home_override
+        from thoth_constants import get_thoth_home_override
 
-        value = get_hermes_home_override()
+        value = get_thoth_home_override()
         if value:
             env["HERMES_HOME"] = value
     except Exception:
@@ -241,11 +241,11 @@ def _find_bash() -> str:
     #   PortableGit: %LOCALAPPDATA%\hermes\git\bin\bash.exe   (primary)
     #   MinGit:      %LOCALAPPDATA%\hermes\git\usr\bin\bash.exe (legacy/32-bit fallback)
     _local_appdata = os.environ.get("LOCALAPPDATA", "")
-    _hermes_portable_git = os.path.join(_local_appdata, "hermes", "git") if _local_appdata else ""
-    if _hermes_portable_git:
+    _thoth_portable_git = os.path.join(_local_appdata, "hermes", "git") if _local_appdata else ""
+    if _thoth_portable_git:
         for candidate in (
-            os.path.join(_hermes_portable_git, "bin", "bash.exe"),        # PortableGit (primary)
-            os.path.join(_hermes_portable_git, "usr", "bin", "bash.exe"), # MinGit fallback
+            os.path.join(_thoth_portable_git, "bin", "bash.exe"),        # PortableGit (primary)
+            os.path.join(_thoth_portable_git, "usr", "bin", "bash.exe"), # MinGit fallback
         ):
             if os.path.isfile(candidate):
                 return candidate
@@ -457,7 +457,7 @@ class LocalEnvironment(BaseEnvironment):
                 from thoth_constants import get_thoth_home
                 cache_dir = get_thoth_home() / "cache" / "terminal"
             except Exception:
-                cache_dir = Path(tempfile.gettempdir()) / "hermes_terminal"
+                cache_dir = Path(tempfile.gettempdir()) / "thoth_terminal"
             cache_dir.mkdir(parents=True, exist_ok=True)
             # Force forward slashes so the same string serves both contexts.
             return str(cache_dir).replace("\\", "/")
@@ -537,7 +537,7 @@ class LocalEnvironment(BaseEnvironment):
         )
         if not _IS_WINDOWS:
             try:
-                proc._hermes_pgid = os.getpgid(proc.pid)
+                proc._thoth_pgid = os.getpgid(proc.pid)
             except ProcessLookupError:
                 pass
 
@@ -585,7 +585,7 @@ class LocalEnvironment(BaseEnvironment):
                 try:
                     pgid = os.getpgid(proc.pid)
                 except ProcessLookupError:
-                    pgid = getattr(proc, "_hermes_pgid", None)
+                    pgid = getattr(proc, "_thoth_pgid", None)
                     if pgid is None:
                         raise
 

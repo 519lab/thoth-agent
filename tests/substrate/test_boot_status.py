@@ -51,7 +51,7 @@ async def _clear_boot_rows(conn) -> None:
 
 
 @pytest.mark.asyncio
-async def test_record_boot_status_writes_state_meta(hermes_db_initialized):
+async def test_record_boot_status_writes_state_meta(thoth_db_initialized):
     import thoth_db
 
     await thoth_bootstrap._record_boot_status("writer", ok=True)
@@ -98,7 +98,7 @@ async def test_record_boot_status_never_raises_without_db(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_bootstrap_records_success(hermes_db_initialized, monkeypatch):
+async def test_bootstrap_records_success(thoth_db_initialized, monkeypatch):
     import thoth_db
 
     sentinel = object()
@@ -123,7 +123,7 @@ async def test_bootstrap_records_success(hermes_db_initialized, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_bootstrap_records_failure(hermes_db_initialized, monkeypatch):
+async def test_bootstrap_records_failure(thoth_db_initialized, monkeypatch):
     import thoth_db
 
     async def _boom(*args, **kwargs):
@@ -182,7 +182,7 @@ def test_age_str_formats():
 
 
 @pytest.mark.asyncio
-async def test_print_boot_status_empty(hermes_db_initialized):
+async def test_print_boot_status_empty(thoth_db_initialized):
     import thoth_db
 
     async with thoth_db.connection() as conn:
@@ -195,7 +195,7 @@ async def test_print_boot_status_empty(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_print_boot_status_failed(hermes_db_initialized):
+async def test_print_boot_status_failed(thoth_db_initialized):
     import thoth_db
     import json
 
@@ -227,7 +227,7 @@ async def test_print_boot_status_failed(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_summary_includes_last_boot_section(hermes_db_initialized):
+async def test_summary_includes_last_boot_section(thoth_db_initialized):
     import thoth_db
     import json
 

@@ -720,8 +720,8 @@ def get_honcho_client(config: HonchoClientConfig | None = None) -> Honcho:
     if not resolved_base_url or resolved_timeout is None:
         try:
             from thoth_cli.config import load_config
-            hermes_cfg = load_config()
-            honcho_cfg = hermes_cfg.get("honcho", {})
+            thoth_cfg = load_config()
+            honcho_cfg = thoth_cfg.get("honcho", {})
             if isinstance(honcho_cfg, dict):
                 if not resolved_base_url:
                     resolved_base_url = honcho_cfg.get("base_url", "").strip() or None

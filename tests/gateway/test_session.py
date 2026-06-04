@@ -314,7 +314,7 @@ class TestBuildSessionContextPrompt:
         assert "Local" in prompt
         assert "machine running this agent" in prompt
 
-    def test_local_delivery_path_uses_display_hermes_home(self):
+    def test_local_delivery_path_uses_display_thoth_home(self):
         config = GatewayConfig()
         source = SessionSource(
             platform=Platform.LOCAL, chat_id="cli",

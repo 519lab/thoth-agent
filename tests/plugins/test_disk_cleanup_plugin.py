@@ -75,18 +75,18 @@ def _load_plugin_init():
 # ---------------------------------------------------------------------------
 
 class TestIsSafePath:
-    def test_accepts_path_under_hermes_home(self, _isolate_env):
+    def test_accepts_path_under_thoth_home(self, _isolate_env):
         dg = _load_lib()
         p = _isolate_env / "subdir" / "file.txt"
         p.parent.mkdir()
         p.write_text("x")
         assert dg.is_safe_path(p) is True
 
-    def test_rejects_outside_hermes_home(self, _isolate_env):
+    def test_rejects_outside_thoth_home(self, _isolate_env):
         dg = _load_lib()
         assert dg.is_safe_path(Path("/etc/passwd")) is False
 
-    def test_accepts_tmp_hermes_prefix(self, _isolate_env, tmp_path):
+    def test_accepts_tmp_thoth_prefix(self, _isolate_env, tmp_path):
         dg = _load_lib()
         assert dg.is_safe_path(Path("/tmp/hermes-abc/x.log")) is True
 

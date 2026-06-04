@@ -368,7 +368,7 @@ class TestHeadlessDetection:
         monkeypatch.setenv("SSH_CONNECTION", "1.2.3.4 22 5.6.7.8 9876")
         assert _is_headless() is True
 
-    def test_detects_hermes_headless(self, monkeypatch):
+    def test_detects_thoth_headless(self, monkeypatch):
         from agent.google_oauth import _is_headless
 
         monkeypatch.setenv("HERMES_HEADLESS", "1")

@@ -99,7 +99,7 @@ class TestHandleUpdateCommand:
         assert "Not a git repository" in result
 
     @pytest.mark.asyncio
-    async def test_no_hermes_binary(self, tmp_path):
+    async def test_no_thoth_binary(self, tmp_path):
         """Returns error when thoth is not on PATH and thoth_cli is not importable."""
         runner = _make_runner()
         event = _make_event()
@@ -153,38 +153,38 @@ class TestHandleUpdateCommand:
         assert "thoth_cli.main" in joined or "bash" in call_args[0]
 
     @pytest.mark.asyncio
-    async def test_resolve_hermes_bin_prefers_which(self, tmp_path):
-        """_resolve_hermes_bin returns argv parts from shutil.which when available."""
-        from gateway.run import _resolve_hermes_bin
+    async def test_resolve_thoth_bin_prefers_which(self, tmp_path):
+        """_resolve_thoth_bin returns argv parts from shutil.which when available."""
+        from gateway.run import _resolve_thoth_bin
 
         with patch("shutil.which", return_value="/custom/path/thoth"):
-            result = _resolve_hermes_bin()
+            result = _resolve_thoth_bin()
 
         assert result == ["/custom/path/thoth"]
 
     @pytest.mark.asyncio
-    async def test_resolve_hermes_bin_fallback(self):
-        """_resolve_hermes_bin falls back to sys.executable argv when which fails."""
+    async def test_resolve_thoth_bin_fallback(self):
+        """_resolve_thoth_bin falls back to sys.executable argv when which fails."""
         import sys
-        from gateway.run import _resolve_hermes_bin
+        from gateway.run import _resolve_thoth_bin
 
         fake_spec = MagicMock()
         with patch("shutil.which", return_value=None), \
              patch("importlib.util.find_spec", return_value=fake_spec):
-            result = _resolve_hermes_bin()
+            result = _resolve_thoth_bin()
 
         assert result[:2] == [sys.executable, "-m"]
         assert result[2] in ("thoth_cli.main", "thoth_cli.main")
         assert len(result) == 3
 
     @pytest.mark.asyncio
-    async def test_resolve_hermes_bin_returns_none_when_both_fail(self):
-        """_resolve_hermes_bin returns None when both strategies fail."""
-        from gateway.run import _resolve_hermes_bin
+    async def test_resolve_thoth_bin_returns_none_when_both_fail(self):
+        """_resolve_thoth_bin returns None when both strategies fail."""
+        from gateway.run import _resolve_thoth_bin
 
         with patch("shutil.which", return_value=None), \
              patch("importlib.util.find_spec", return_value=None):
-            result = _resolve_hermes_bin()
+            result = _resolve_thoth_bin()
 
         assert result is None
 

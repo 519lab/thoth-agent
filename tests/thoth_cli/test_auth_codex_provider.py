@@ -184,7 +184,7 @@ def test_codex_tokens_not_written_to_shared_file(tmp_path, monkeypatch):
     assert data["tokens"]["access_token"] == "hermes-at"
 
 
-def test_resolve_returns_hermes_auth_store_source(tmp_path, monkeypatch):
+def test_resolve_returns_thoth_auth_store_source(tmp_path, monkeypatch):
     thoth_home = tmp_path / "hermes"
     _setup_thoth_auth(thoth_home)
     monkeypatch.setenv("HERMES_HOME", str(thoth_home))

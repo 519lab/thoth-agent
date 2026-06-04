@@ -145,7 +145,7 @@ def test_hook_exception_does_not_replace_response(tmp_path, monkeypatch):
 
 def test_no_plugins_returns_empty_results(tmp_path, monkeypatch):
     """With no plugins loaded, invoke_hook returns [] and the response is unchanged."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes_empty"))
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "thoth_empty"))
     plugins_mod._plugin_manager = PluginManager()
 
     mgr = plugins_mod._plugin_manager

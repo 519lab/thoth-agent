@@ -116,7 +116,7 @@ def _import_plugin_dir(plugin_dir: Path, source: str) -> None:
     if source == "bundled":
         module_name = f"plugins.model_providers.{safe_name}"
     else:
-        module_name = f"_hermes_user_provider_{safe_name}"
+        module_name = f"_thoth_user_provider_{safe_name}"
 
     if module_name in sys.modules:
         return  # already imported

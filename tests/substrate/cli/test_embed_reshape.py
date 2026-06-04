@@ -25,7 +25,7 @@ from substrate.cli import embed as embed_cli
 
 
 @pytest_asyncio.fixture
-async def seeded_substrate(hermes_db_initialized):
+async def seeded_substrate(thoth_db_initialized):
     """Seed a stream + a handful of slices with NULL embeddings."""
     import thoth_db
     from substrate import Substrate

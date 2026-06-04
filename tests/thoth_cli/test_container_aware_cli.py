@@ -35,7 +35,7 @@ def container_env(tmp_path, monkeypatch):
         "backend=podman\n"
         "container_name=hermes-agent\n"
         "exec_user=hermes\n"
-        "hermes_bin=/data/current-package/bin/thoth\n"
+        "thoth_bin=/data/current-package/bin/thoth\n"
     )
     return thoth_home
 
@@ -49,7 +49,7 @@ def test_get_container_exec_info_returns_metadata(container_env):
     assert info["backend"] == "podman"
     assert info["container_name"] == "hermes-agent"
     assert info["exec_user"] == "hermes"
-    assert info["hermes_bin"] == "/data/current-package/bin/thoth"
+    assert info["thoth_bin"] == "/data/current-package/bin/thoth"
 
 
 def test_get_container_exec_info_none_inside_container(container_env):
@@ -73,7 +73,7 @@ def test_get_container_exec_info_none_without_file(tmp_path, monkeypatch):
     assert info is None
 
 
-def test_get_container_exec_info_skipped_when_hermes_dev(container_env, monkeypatch):
+def test_get_container_exec_info_skipped_when_thoth_dev(container_env, monkeypatch):
     """Returns None when HERMES_DEV=1 is set (dev mode bypass)."""
     monkeypatch.setenv("HERMES_DEV", "1")
 
@@ -83,7 +83,7 @@ def test_get_container_exec_info_skipped_when_hermes_dev(container_env, monkeypa
     assert info is None
 
 
-def test_get_container_exec_info_not_skipped_when_hermes_dev_zero(container_env, monkeypatch):
+def test_get_container_exec_info_not_skipped_when_thoth_dev_zero(container_env, monkeypatch):
     """HERMES_DEV=0 does NOT trigger bypass — only '1' does."""
     monkeypatch.setenv("HERMES_DEV", "0")
 
@@ -114,7 +114,7 @@ def test_get_container_exec_info_defaults():
         assert info["backend"] == "docker"
         assert info["container_name"] == "hermes-agent"
         assert info["exec_user"] == "hermes"
-        assert info["hermes_bin"] == "/data/current-package/bin/thoth"
+        assert info["thoth_bin"] == "/data/current-package/bin/thoth"
 
 
 def test_get_container_exec_info_docker_backend(container_env):
@@ -123,7 +123,7 @@ def test_get_container_exec_info_docker_backend(container_env):
         "backend=docker\n"
         "container_name=hermes-custom\n"
         "exec_user=myuser\n"
-        "hermes_bin=/opt/thoth/bin/thoth\n"
+        "thoth_bin=/opt/thoth/bin/thoth\n"
     )
 
     with patch("thoth_constants.is_container", return_value=False):
@@ -132,7 +132,7 @@ def test_get_container_exec_info_docker_backend(container_env):
     assert info["backend"] == "docker"
     assert info["container_name"] == "hermes-custom"
     assert info["exec_user"] == "myuser"
-    assert info["hermes_bin"] == "/opt/thoth/bin/thoth"
+    assert info["thoth_bin"] == "/opt/thoth/bin/thoth"
 
 
 def test_get_container_exec_info_crashes_on_permission_error(container_env):
@@ -154,7 +154,7 @@ def docker_container_info():
         "backend": "docker",
         "container_name": "hermes-agent",
         "exec_user": "hermes",
-        "hermes_bin": "/data/current-package/bin/thoth",
+        "thoth_bin": "/data/current-package/bin/thoth",
     }
 
 
@@ -164,7 +164,7 @@ def podman_container_info():
         "backend": "podman",
         "container_name": "hermes-agent",
         "exec_user": "hermes",
-        "hermes_bin": "/data/current-package/bin/thoth",
+        "thoth_bin": "/data/current-package/bin/thoth",
     }
 
 

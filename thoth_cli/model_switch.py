@@ -1018,9 +1018,9 @@ def switch_model(
     warnings: list[str] = []
     if validation.get("message"):
         warnings.append(validation["message"])
-    hermes_warn = _check_hermes_model_warning(new_model)
-    if hermes_warn:
-        warnings.append(hermes_warn)
+    thoth_warn = _check_hermes_model_warning(new_model)
+    if thoth_warn:
+        warnings.append(thoth_warn)
 
     # --- Build result ---
     return ModelSwitchResult(
@@ -1201,7 +1201,7 @@ def list_authenticated_providers(
         curated["lmstudio"] = live
 
     # --- 1. Check Thoth-mapped providers ---
-    for hermes_id, mdev_id in PROVIDER_TO_MODELS_DEV.items():
+    for thoth_id, mdev_id in PROVIDER_TO_MODELS_DEV.items():
         # Skip aliases that map to the same models.dev provider (e.g.
         # kimi-coding and kimi-coding-cn both → kimi-for-coding).
         # The first one with valid credentials wins (#10526).
@@ -1214,7 +1214,7 @@ def list_authenticated_providers(
         # Prefer auth.py PROVIDER_REGISTRY for env var names — it's our
         # source of truth.  models.dev can have wrong mappings (e.g.
         # minimax-cn → MINIMAX_API_KEY instead of MINIMAX_CN_API_KEY).
-        pconfig = PROVIDER_REGISTRY.get(hermes_id)
+        pconfig = PROVIDER_REGISTRY.get(thoth_id)
         # Skip non-API-key auth providers here — they are handled in
         # section 2 (THOTH_OVERLAYS) with proper auth store checking.
         if pconfig and pconfig.auth_type != "api_key":
@@ -1232,7 +1232,7 @@ def list_authenticated_providers(
             try:
                 from thoth_cli.auth import _load_auth_store
                 store = _load_auth_store()
-                if store and store.get("credential_pool", {}).get(hermes_id):
+                if store and store.get("credential_pool", {}).get(thoth_id):
                     has_creds = True
             except Exception:
                 pass
@@ -1243,13 +1243,13 @@ def list_authenticated_providers(
         # For preferred providers, merge models.dev entries into the curated
         # catalog so newly released models (e.g. mimo-v2.5-pro on opencode-go)
         # show up in the picker without requiring a Thoth release.
-        model_ids = curated.get(hermes_id, [])
-        if hermes_id in _MODELS_DEV_PREFERRED:
-            model_ids = _merge_with_models_dev(hermes_id, model_ids)
+        model_ids = curated.get(thoth_id, [])
+        if thoth_id in _MODELS_DEV_PREFERRED:
+            model_ids = _merge_with_models_dev(thoth_id, model_ids)
         total = len(model_ids)
         top = model_ids[:max_models]
 
-        slug = hermes_id
+        slug = thoth_id
         pinfo = _mdev_pinfo(mdev_id)
         display_name = pinfo.name if pinfo else mdev_id
 
@@ -1280,19 +1280,19 @@ def list_authenticated_providers(
             continue
 
         # Resolve Thoth slug — e.g. "github-copilot" → "copilot"
-        hermes_slug = _mdev_to_hermes.get(pid, pid)
-        if hermes_slug.lower() in seen_slugs:
+        thoth_slug = _mdev_to_hermes.get(pid, pid)
+        if thoth_slug.lower() in seen_slugs:
             continue
 
         # Check if credentials exist
         has_creds = False
         if overlay.auth_type == "aws_sdk":
-            has_creds = _has_aws_sdk_creds_for_listing(hermes_slug)
+            has_creds = _has_aws_sdk_creds_for_listing(thoth_slug)
         elif overlay.extra_env_vars:
             has_creds = any(os.environ.get(ev) for ev in overlay.extra_env_vars)
         # Also check api_key_env_vars from PROVIDER_REGISTRY for api_key auth_type
         if not has_creds and overlay.auth_type == "api_key":
-            for _key in (pid, hermes_slug):
+            for _key in (pid, thoth_slug):
                 pcfg = _auth_registry.get(_key)
                 if pcfg and pcfg.api_key_env_vars:
                     if any(os.environ.get(ev) for ev in pcfg.api_key_env_vars):
@@ -1307,7 +1307,7 @@ def list_authenticated_providers(
                 from thoth_cli.auth import _load_auth_store
                 store = _load_auth_store()
                 providers_store = store.get("providers", {})
-                if store and (pid in providers_store or hermes_slug in providers_store):
+                if store and (pid in providers_store or thoth_slug in providers_store):
                     has_creds = True
             except Exception as exc:
                 logger.debug("Auth store check failed for %s: %s", pid, exc)
@@ -1318,11 +1318,11 @@ def list_authenticated_providers(
         if not has_creds:
             try:
                 from agent.credential_pool import load_pool
-                pool = load_pool(hermes_slug)
+                pool = load_pool(thoth_slug)
                 if pool.has_credentials():
                     has_creds = True
             except Exception as exc:
-                logger.debug("Credential pool check failed for %s: %s", hermes_slug, exc)
+                logger.debug("Credential pool check failed for %s: %s", thoth_slug, exc)
         # Fallback: check external credential files directly.
         # The credential pool gates anthropic behind
         # is_provider_explicitly_configured() to prevent auxiliary tasks
@@ -1330,15 +1330,15 @@ def list_authenticated_providers(
         # But the /model picker is discovery-oriented — we WANT to show
         # providers the user can switch to, even if they aren't currently
         # configured.
-        if not has_creds and hermes_slug == "anthropic":
+        if not has_creds and thoth_slug == "anthropic":
             try:
                 from agent.anthropic_adapter import (
                     read_claude_code_credentials,
                     read_thoth_oauth_credentials,
                 )
-                hermes_creds = read_thoth_oauth_credentials()
+                thoth_creds = read_thoth_oauth_credentials()
                 cc_creds = read_claude_code_credentials()
-                if (hermes_creds and hermes_creds.get("accessToken")) or \
+                if (thoth_creds and thoth_creds.get("accessToken")) or \
                    (cc_creds and cc_creds.get("accessToken")):
                     has_creds = True
             except Exception as exc:
@@ -1346,7 +1346,7 @@ def list_authenticated_providers(
         if not has_creds:
             continue
 
-        if hermes_slug in {"openai-codex", "copilot", "copilot-acp"}:
+        if thoth_slug in {"openai-codex", "copilot", "copilot-acp"}:
             # Use live OAuth-backed discovery so the gateway /model picker
             # matches what the user's authenticated Codex/Copilot backend
             # actually serves — including ChatGPT-Pro-only Codex slugs
@@ -1354,37 +1354,37 @@ def list_authenticated_providers(
             # catalog. ``provider_model_ids()`` falls back to the curated
             # list when the live endpoint is unreachable, so this is safe
             # for unauthenticated and offline cases too.
-            model_ids = provider_model_ids(hermes_slug)
+            model_ids = provider_model_ids(thoth_slug)
         # For aws_sdk providers (bedrock), use live discovery so the list
         # reflects the active region (eu.*, ap.*) not the static us.* list.
         elif overlay.auth_type == "aws_sdk":
             try:
                 from agent.bedrock_adapter import bedrock_model_ids_or_none
                 _ids = bedrock_model_ids_or_none()
-                model_ids = _ids if _ids is not None else (curated.get(hermes_slug, []) or curated.get(pid, []))
+                model_ids = _ids if _ids is not None else (curated.get(thoth_slug, []) or curated.get(pid, []))
             except Exception:
-                model_ids = curated.get(hermes_slug, []) or curated.get(pid, [])
+                model_ids = curated.get(thoth_slug, []) or curated.get(pid, [])
         else:
             # Use curated list — look up by Thoth slug, fall back to overlay key
-            model_ids = curated.get(hermes_slug, []) or curated.get(pid, [])
+            model_ids = curated.get(thoth_slug, []) or curated.get(pid, [])
             # Merge with models.dev for preferred providers (same rationale as above).
-            if hermes_slug in _MODELS_DEV_PREFERRED:
-                model_ids = _merge_with_models_dev(hermes_slug, model_ids)
+            if thoth_slug in _MODELS_DEV_PREFERRED:
+                model_ids = _merge_with_models_dev(thoth_slug, model_ids)
         total = len(model_ids)
         top = model_ids[:max_models]
 
         results.append({
-            "slug": hermes_slug,
-            "name": get_label(hermes_slug),
-            "is_current": hermes_slug == current_provider or pid == current_provider,
+            "slug": thoth_slug,
+            "name": get_label(thoth_slug),
+            "is_current": thoth_slug == current_provider or pid == current_provider,
             "is_user_defined": False,
             "models": top,
             "total_models": total,
             "source": "hermes",
         })
         seen_slugs.add(pid.lower())
-        seen_slugs.add(hermes_slug.lower())
-        _record_builtin_endpoint(hermes_slug)
+        seen_slugs.add(thoth_slug.lower())
+        _record_builtin_endpoint(thoth_slug)
 
     # --- 2b. Cross-check canonical provider list ---
     # Catches providers that are in CANONICAL_PROVIDERS but weren't found

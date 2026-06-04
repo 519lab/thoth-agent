@@ -11,7 +11,7 @@ async def initialized_db(thoth_db_dsn):
     For Task 5's red phase the fixture does not exist yet; this test will
     fail at fixture collection. That's expected — Task 6 makes it pass.
 
-    Defensive loop-binding check mirrors ``hermes_db_initialized`` in
+    Defensive loop-binding check mirrors ``thoth_db_initialized`` in
     conftest: a prior sync test (or a ``run_sync`` call that lazy-
     bootstrapped the pool on ``thoth_db._sync_loop``) may have left
     ``thoth_db._pool`` bound to a different loop. ``init()`` is

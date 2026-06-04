@@ -23,7 +23,7 @@ def server():
         "sys.modules",
         {
             "thoth_constants": MagicMock(
-                get_thoth_home=MagicMock(return_value="/tmp/hermes_test_review_summary")
+                get_thoth_home=MagicMock(return_value="/tmp/thoth_test_review_summary")
             ),
             "thoth_cli.env_loader": MagicMock(),
             "thoth_cli.banner": MagicMock(),

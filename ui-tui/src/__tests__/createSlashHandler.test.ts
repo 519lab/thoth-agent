@@ -645,7 +645,7 @@ describe('createSlashHandler', () => {
   it('/save forwards to session.save RPC and reports the returned file', async () => {
     patchUiState({ sid: 'sid-abc' })
 
-    const rpc = vi.fn(() => Promise.resolve({ file: '/tmp/hermes_conversation_test.json' }))
+    const rpc = vi.fn(() => Promise.resolve({ file: '/tmp/thoth_conversation_test.json' }))
 
     const ctx = buildCtx({
       gateway: { ...buildGateway(), rpc },
@@ -665,7 +665,7 @@ describe('createSlashHandler', () => {
     expect(rpc).toHaveBeenCalledWith('session.save', { session_id: 'sid-abc' })
 
     await vi.waitFor(() => {
-      expect(ctx.transcript.sys).toHaveBeenCalledWith('conversation saved to: /tmp/hermes_conversation_test.json')
+      expect(ctx.transcript.sys).toHaveBeenCalledWith('conversation saved to: /tmp/thoth_conversation_test.json')
     })
   })
 

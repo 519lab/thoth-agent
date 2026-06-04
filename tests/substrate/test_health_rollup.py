@@ -17,7 +17,7 @@ from substrate.l4 import store as l4
 
 
 @pytest_asyncio.fixture
-async def booted(hermes_db_initialized):
+async def booted(thoth_db_initialized):
     sub = await Substrate.boot(start_subagents=False)
     yield sub
     await sub.shutdown()

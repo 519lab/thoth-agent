@@ -28,7 +28,7 @@ from substrate.cli import inspect as inspect_mod
 
 
 @pytest_asyncio.fixture
-async def booted(hermes_db_initialized):
+async def booted(thoth_db_initialized):
     """Booted substrate with sub-agents off — the assertions look at
     pending-state shape, so we don't want Sentinel passing slices mid-test.
     """

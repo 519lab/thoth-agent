@@ -332,7 +332,7 @@ def test_register_send_subparser_is_reusable():
 # ---------------------------------------------------------------------------
 
 
-def test_load_hermes_env_bridges_config_yaml_scalars(tmp_path, monkeypatch):
+def test_load_thoth_env_bridges_config_yaml_scalars(tmp_path, monkeypatch):
     """Top-level config.yaml scalars should be bridged into os.environ.
 
     This mirrors the gateway/run.py bootstrap behavior: without this, running

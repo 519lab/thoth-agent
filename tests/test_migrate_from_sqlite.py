@@ -30,7 +30,7 @@ def _make_sqlite(path: Path) -> sqlite3.Connection:
 
 @pytest.mark.asyncio
 async def test_migrate_from_sqlite_copies_sessions_and_messages(
-    hermes_db_initialized, tmp_path
+    thoth_db_initialized, tmp_path
 ):
     src = tmp_path / "state.db"
     conn = _make_sqlite(src)
@@ -82,7 +82,7 @@ async def test_migrate_from_sqlite_copies_sessions_and_messages(
 
 @pytest.mark.asyncio
 async def test_migrate_from_sqlite_dry_run_does_not_write(
-    hermes_db_initialized, tmp_path
+    thoth_db_initialized, tmp_path
 ):
     src = tmp_path / "state.db"
     conn = _make_sqlite(src)
@@ -112,7 +112,7 @@ async def test_migrate_from_sqlite_dry_run_does_not_write(
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_migrate_from_sqlite_idempotent(hermes_db_initialized, tmp_path):
+async def test_migrate_from_sqlite_idempotent(thoth_db_initialized, tmp_path):
     src = tmp_path / "state.db"
     conn = _make_sqlite(src)
     conn.execute(
@@ -145,7 +145,7 @@ async def test_migrate_from_sqlite_idempotent(hermes_db_initialized, tmp_path):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_migrate_from_sqlite_jsonb_columns(hermes_db_initialized, tmp_path):
+async def test_migrate_from_sqlite_jsonb_columns(thoth_db_initialized, tmp_path):
     src = tmp_path / "state.db"
     conn = _make_sqlite(src)
     conn.execute(
@@ -178,7 +178,7 @@ async def test_migrate_from_sqlite_jsonb_columns(hermes_db_initialized, tmp_path
 
 @pytest.mark.asyncio
 async def test_migrate_from_sqlite_requires_alembic_head(
-    hermes_db_initialized, tmp_path, monkeypatch
+    thoth_db_initialized, tmp_path, monkeypatch
 ):
     """If alembic_version is empty, the migrator raises RuntimeError."""
     src = tmp_path / "state.db"

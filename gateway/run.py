@@ -1260,7 +1260,7 @@ def _resolve_gateway_model(config: dict | None = None) -> str:
     return ""
 
 
-def _resolve_hermes_bin() -> Optional[list[str]]:
+def _resolve_thoth_bin() -> Optional[list[str]]:
     """Resolve the Thoth update command as argv parts.
 
     Tries in order:
@@ -1272,9 +1272,9 @@ def _resolve_hermes_bin() -> Optional[list[str]]:
     """
     import shutil
 
-    hermes_bin = shutil.which("hermes")
-    if hermes_bin:
-        return [hermes_bin]
+    thoth_bin = shutil.which("hermes")
+    if thoth_bin:
+        return [thoth_bin]
 
     try:
         import importlib.util
@@ -1626,8 +1626,8 @@ class GatewayRunner:
                 from thoth_cli.config import load_config as _load_full_config
                 _sess_cfg = (_load_full_config().get("sessions") or {})
                 if _sess_cfg.get("auto_prune", False):
-                    import thoth_db as _hermes_db_maint
-                    _hermes_db_maint.run_sync(self._session_db.maybe_auto_prune_and_vacuum(
+                    import thoth_db as _thoth_db_maint
+                    _thoth_db_maint.run_sync(self._session_db.maybe_auto_prune_and_vacuum(
                         retention_days=int(_sess_cfg.get("retention_days", 90)),
                         min_interval_hours=int(_sess_cfg.get("min_interval_hours", 24)),
                         vacuum=bool(_sess_cfg.get("vacuum_after_prune", True)),
@@ -3440,8 +3440,8 @@ class GatewayRunner:
         import shutil
         import subprocess
 
-        hermes_cmd = _resolve_hermes_bin()
-        if not hermes_cmd:
+        thoth_cmd = _resolve_thoth_bin()
+        if not thoth_cmd:
             logger.error("Could not locate thoth binary for detached /restart")
             return
 
@@ -3456,7 +3456,7 @@ class GatewayRunner:
             import textwrap
             from thoth_cli._subprocess_compat import windows_detach_popen_kwargs
 
-            cmd_argv = [*hermes_cmd, "gateway", "restart"]
+            cmd_argv = [*thoth_cmd, "gateway", "restart"]
             watcher = textwrap.dedent(
                 """
                 import os, subprocess, sys, time
@@ -3514,7 +3514,7 @@ class GatewayRunner:
             )
             return
 
-        cmd = " ".join(shlex.quote(part) for part in hermes_cmd)
+        cmd = " ".join(shlex.quote(part) for part in thoth_cmd)
         shell_cmd = (
             f"while kill -0 {current_pid} 2>/dev/null; do sleep 0.2; done; "
             f"{cmd} gateway restart"
@@ -10653,7 +10653,7 @@ class GatewayRunner:
                 generation = None
                 active = getattr(adapter, "_active_sessions", {}).get(session_key)
                 if active is not None:
-                    generation = getattr(active, "_hermes_run_generation", None)
+                    generation = getattr(active, "_thoth_run_generation", None)
                 adapter.register_post_delivery_callback(
                     session_key,
                     _deliver,
@@ -11142,7 +11142,7 @@ class GatewayRunner:
             # Use .mp3 extension so edge-tts conversion to opus works correctly.
             # The TTS tool may convert to .ogg — use file_path from result.
             audio_path = os.path.join(
-                tempfile.gettempdir(), "hermes_voice",
+                tempfile.gettempdir(), "thoth_voice",
                 f"tts_reply_{_uuid.uuid4().hex[:12]}.mp3",
             )
             os.makedirs(os.path.dirname(audio_path), exist_ok=True)
@@ -13644,8 +13644,8 @@ class GatewayRunner:
         if not git_dir.exists():
             return t("gateway.update.not_git_repo")
 
-        hermes_cmd = _resolve_hermes_bin()
-        if not hermes_cmd:
+        thoth_cmd = _resolve_thoth_bin()
+        if not thoth_cmd:
             return t("gateway.update.hermes_cmd_not_found")
 
         pending_path = _thoth_home / ".update_pending.json"
@@ -13695,7 +13695,7 @@ class GatewayRunner:
                 import textwrap
                 from thoth_cli._subprocess_compat import windows_detach_popen_kwargs
 
-                # hermes_cmd is a list of argv parts we can pass directly
+                # thoth_cmd is a list of argv parts we can pass directly
                 # (no shell-quoting needed).
                 helper = textwrap.dedent(
                     """
@@ -13716,16 +13716,16 @@ class GatewayRunner:
                     [
                         sys.executable, "-c", helper,
                         str(output_path), str(exit_code_path),
-                        *hermes_cmd, "update", "--gateway",
+                        *thoth_cmd, "update", "--gateway",
                     ],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     **windows_detach_popen_kwargs(),
                 )
             else:
-                hermes_cmd_str = " ".join(shlex.quote(part) for part in hermes_cmd)
+                thoth_cmd_str = " ".join(shlex.quote(part) for part in thoth_cmd)
                 update_cmd = (
-                    f"PYTHONUNBUFFERED=1 {hermes_cmd_str} update --gateway"
+                    f"PYTHONUNBUFFERED=1 {thoth_cmd_str} update --gateway"
                     f" > {shlex.quote(str(output_path))} 2>&1; "
                     # Avoid `status=$?`: `status` is a read-only special parameter
                     # in zsh, and this command string is copied/reused in macOS/zsh
@@ -14952,7 +14952,7 @@ class GatewayRunner:
         try:
             interrupt_event = getattr(adapter, "_active_sessions", {}).get(session_key)
             if interrupt_event is not None:
-                setattr(interrupt_event, "_hermes_run_generation", int(generation))
+                setattr(interrupt_event, "_thoth_run_generation", int(generation))
         except Exception:
             pass
 
@@ -18272,9 +18272,9 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
 
     # Phase 0: close PG pool at gateway shutdown.
     try:
-        import thoth_db as _hermes_db_shutdown
-        if _hermes_db_shutdown._pool:
-            await _hermes_db_shutdown.close()
+        import thoth_db as _thoth_db_shutdown
+        if _thoth_db_shutdown._pool:
+            await _thoth_db_shutdown.close()
     except Exception:
         pass
 

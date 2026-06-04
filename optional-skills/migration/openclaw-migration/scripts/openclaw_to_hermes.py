@@ -1593,10 +1593,10 @@ class Migrator:
             "ZAI_API_KEY": "ZAI_API_KEY",
             "MINIMAX_API_KEY": "MINIMAX_API_KEY",
         }
-        for oc_key, hermes_key in env_key_mapping.items():
+        for oc_key, thoth_key in env_key_mapping.items():
             val = openclaw_env.get(oc_key, "").strip()
-            if val and hermes_key not in secret_additions:
-                secret_additions[hermes_key] = val
+            if val and thoth_key not in secret_additions:
+                secret_additions[thoth_key] = val
 
         # Check the openclaw.json "env" sub-object — some OpenClaw setups
         # store API keys here instead of in a separate .env file.
@@ -1608,10 +1608,10 @@ class Migrator:
             if isinstance(env_vars, dict):
                 sources.append(env_vars)
             for src in sources:
-                for oc_key, hermes_key in env_key_mapping.items():
+                for oc_key, thoth_key in env_key_mapping.items():
                     val = src.get(oc_key)
-                    if isinstance(val, str) and val.strip() and hermes_key not in secret_additions:
-                        secret_additions[hermes_key] = val.strip()
+                    if isinstance(val, str) and val.strip() and thoth_key not in secret_additions:
+                        secret_additions[thoth_key] = val.strip()
 
         # Check per-agent auth-profiles.json for additional credentials
         auth_profiles_path = self.source_root / "agents" / "main" / "agent" / "auth-profiles.json"
@@ -1698,8 +1698,8 @@ class Migrator:
             self.record("model-config", source_path, destination, "error", "PyYAML is not available")
             return
 
-        hermes_config = load_yaml_file(destination)
-        current_model = hermes_config.get("model")
+        thoth_config = load_yaml_file(destination)
+        current_model = thoth_config.get("model")
         if current_model == model_str:
             self.record("model-config", source_path, destination, "skipped", "Model already set to the same value")
             return
@@ -1709,12 +1709,12 @@ class Migrator:
 
         if self.execute:
             backup_path = self.maybe_backup(destination)
-            existing_model = hermes_config.get("model")
+            existing_model = thoth_config.get("model")
             if isinstance(existing_model, dict):
                 existing_model["default"] = model_str
             else:
-                hermes_config["model"] = {"default": model_str}
-            dump_yaml_file(destination, hermes_config)
+                thoth_config["model"] = {"default": model_str}
+            dump_yaml_file(destination, thoth_config)
             self.record("model-config", source_path, destination, "migrated", backup=str(backup_path) if backup_path else "", model=model_str)
         else:
             self.record("model-config", source_path, destination, "migrated", "Would set model", model=model_str)
@@ -1800,8 +1800,8 @@ class Migrator:
             self.record("tts-config", source_path, destination, "skipped", "No compatible TTS settings found")
             return
 
-        hermes_config = load_yaml_file(destination)
-        existing_tts = hermes_config.get("tts", {})
+        thoth_config = load_yaml_file(destination)
+        existing_tts = thoth_config.get("tts", {})
         if not isinstance(existing_tts, dict):
             existing_tts = {}
 
@@ -1813,8 +1813,8 @@ class Migrator:
                     merged_tts[key] = {**merged_tts[key], **value}
                 else:
                     merged_tts[key] = value
-            hermes_config["tts"] = merged_tts
-            dump_yaml_file(destination, hermes_config)
+            thoth_config["tts"] = merged_tts
+            dump_yaml_file(destination, thoth_config)
             self.record("tts-config", source_path, destination, "migrated", backup=str(backup_path) if backup_path else "", settings=list(tts_data.keys()))
         else:
             self.record("tts-config", source_path, destination, "migrated", "Would set TTS config", settings=list(tts_data.keys()))
@@ -2107,9 +2107,9 @@ class Migrator:
             self.record("mcp-servers", None, None, "skipped", "No MCP servers found in OpenClaw config")
             return
 
-        hermes_cfg_path = self.target_root / "config.yaml"
-        hermes_cfg = load_yaml_file(hermes_cfg_path)
-        existing_mcp = hermes_cfg.get("mcp_servers") or {}
+        thoth_cfg_path = self.target_root / "config.yaml"
+        thoth_cfg = load_yaml_file(thoth_cfg_path)
+        existing_mcp = thoth_cfg.get("mcp_servers") or {}
         added = 0
 
         for name, srv in mcp_raw.items():
@@ -2171,9 +2171,9 @@ class Migrator:
                         "migrated", servers_added=added)
 
         if added > 0 and self.execute:
-            self.maybe_backup(hermes_cfg_path)
-            hermes_cfg["mcp_servers"] = existing_mcp
-            dump_yaml_file(hermes_cfg_path, hermes_cfg)
+            self.maybe_backup(thoth_cfg_path)
+            thoth_cfg["mcp_servers"] = existing_mcp
+            dump_yaml_file(thoth_cfg_path, thoth_cfg)
 
     # ── Plugins ───────────────────────────────────────────────
     def migrate_plugins_config(self, config: Optional[Dict[str, Any]] = None) -> None:
@@ -2286,12 +2286,12 @@ class Migrator:
             self.record("agent-config", None, None, "skipped", "No agent configuration found")
             return
 
-        hermes_cfg_path = self.target_root / "config.yaml"
-        hermes_cfg = load_yaml_file(hermes_cfg_path)
+        thoth_cfg_path = self.target_root / "config.yaml"
+        thoth_cfg = load_yaml_file(thoth_cfg_path)
         changes = False
 
         # Map agent defaults
-        agent_cfg = hermes_cfg.get("agent") or {}
+        agent_cfg = thoth_cfg.get("agent") or {}
         if defaults.get("contextTokens"):
             # No direct mapping but useful context
             pass
@@ -2315,7 +2315,7 @@ class Migrator:
         # Map compaction -> compression
         compaction = defaults.get("compaction") or {}
         if compaction:
-            compression = hermes_cfg.get("compression") or {}
+            compression = thoth_cfg.get("compression") or {}
             if compaction.get("mode") == "off":
                 compression["enabled"] = False
             else:
@@ -2323,16 +2323,16 @@ class Migrator:
             if compaction.get("timeout"):
                 pass  # No direct mapping
             if compaction.get("model"):
-                aux = hermes_cfg.setdefault("auxiliary", {})
+                aux = thoth_cfg.setdefault("auxiliary", {})
                 aux_comp = aux.setdefault("compression", {})
                 aux_comp["model"] = compaction["model"]
-            hermes_cfg["compression"] = compression
+            thoth_cfg["compression"] = compression
             changes = True
 
         # Map humanDelay
         human_delay = defaults.get("humanDelay") or {}
         if human_delay:
-            hd = hermes_cfg.get("human_delay") or {}
+            hd = thoth_cfg.get("human_delay") or {}
             hd_mode = human_delay.get("mode") or ("natural" if human_delay.get("enabled") else None)
             if hd_mode and hd_mode != "off":
                 hd["mode"] = hd_mode
@@ -2340,38 +2340,38 @@ class Migrator:
                 hd["min_ms"] = human_delay["minMs"]
             if human_delay.get("maxMs"):
                 hd["max_ms"] = human_delay["maxMs"]
-            hermes_cfg["human_delay"] = hd
+            thoth_cfg["human_delay"] = hd
             changes = True
 
         # Map userTimezone
         if defaults.get("userTimezone"):
-            hermes_cfg["timezone"] = defaults["userTimezone"]
+            thoth_cfg["timezone"] = defaults["userTimezone"]
             changes = True
 
         # Map terminal/exec settings
         exec_cfg = (config.get("tools") or {}).get("exec") or {}
         if exec_cfg:
-            terminal_cfg = hermes_cfg.get("terminal") or {}
+            terminal_cfg = thoth_cfg.get("terminal") or {}
             if exec_cfg.get("timeoutSec") or exec_cfg.get("timeout"):
                 terminal_cfg["timeout"] = exec_cfg.get("timeoutSec") or exec_cfg.get("timeout")
                 changes = True
-            hermes_cfg["terminal"] = terminal_cfg
+            thoth_cfg["terminal"] = terminal_cfg
 
         # Map sandbox -> terminal docker settings
         sandbox = defaults.get("sandbox") or {}
         if sandbox and sandbox.get("backend") == "docker":
-            terminal_cfg = hermes_cfg.get("terminal") or {}
+            terminal_cfg = thoth_cfg.get("terminal") or {}
             terminal_cfg["backend"] = "docker"
             if sandbox.get("docker", {}).get("image"):
                 terminal_cfg["docker_image"] = sandbox["docker"]["image"]
-            hermes_cfg["terminal"] = terminal_cfg
+            thoth_cfg["terminal"] = terminal_cfg
             changes = True
 
         if changes:
-            hermes_cfg["agent"] = agent_cfg
+            thoth_cfg["agent"] = agent_cfg
             if self.execute:
-                self.maybe_backup(hermes_cfg_path)
-                dump_yaml_file(hermes_cfg_path, hermes_cfg)
+                self.maybe_backup(thoth_cfg_path)
+                dump_yaml_file(thoth_cfg_path, thoth_cfg)
             self.record("agent-config", "openclaw.json agents.defaults", "config.yaml agent/compression/terminal",
                         "migrated", "Agent defaults mapped to Hermes config")
 
@@ -2423,9 +2423,9 @@ class Migrator:
             self.record("session-config", None, None, "skipped", "No session configuration found")
             return
 
-        hermes_cfg_path = self.target_root / "config.yaml"
-        hermes_cfg = load_yaml_file(hermes_cfg_path)
-        sr = hermes_cfg.get("session_reset") or {}
+        thoth_cfg_path = self.target_root / "config.yaml"
+        thoth_cfg = load_yaml_file(thoth_cfg_path)
+        sr = thoth_cfg.get("session_reset") or {}
         changes = False
 
         # OpenClaw uses session.reset (structured) and session.resetTriggers (string array)
@@ -2459,10 +2459,10 @@ class Migrator:
             changes = True
 
         if changes:
-            hermes_cfg["session_reset"] = sr
+            thoth_cfg["session_reset"] = sr
             if self.execute:
-                self.maybe_backup(hermes_cfg_path)
-                dump_yaml_file(hermes_cfg_path, hermes_cfg)
+                self.maybe_backup(thoth_cfg_path)
+                dump_yaml_file(thoth_cfg_path, thoth_cfg)
             self.record("session-config", "openclaw.json session.resetTriggers",
                         "config.yaml session_reset", "migrated")
 
@@ -2487,9 +2487,9 @@ class Migrator:
             self.record("full-providers", None, None, "skipped", "No model providers found")
             return
 
-        hermes_cfg_path = self.target_root / "config.yaml"
-        hermes_cfg = load_yaml_file(hermes_cfg_path)
-        custom_providers = hermes_cfg.get("custom_providers") or []
+        thoth_cfg_path = self.target_root / "config.yaml"
+        thoth_cfg = load_yaml_file(thoth_cfg_path)
+        custom_providers = thoth_cfg.get("custom_providers") or []
         added = 0
 
         # Well-known providers: just extract API keys
@@ -2537,9 +2537,9 @@ class Migrator:
                             f"config.yaml custom_providers[{prov_name}]", "migrated")
 
         if added > 0 and self.execute:
-            self.maybe_backup(hermes_cfg_path)
-            hermes_cfg["custom_providers"] = custom_providers
-            dump_yaml_file(hermes_cfg_path, hermes_cfg)
+            self.maybe_backup(thoth_cfg_path)
+            thoth_cfg["custom_providers"] = custom_providers
+            dump_yaml_file(thoth_cfg_path, thoth_cfg)
 
         # Archive model aliases/catalog
         agent_defaults = (config.get("agents") or {}).get("defaults") or {}
@@ -2606,9 +2606,9 @@ class Migrator:
         # Map Discord-specific settings to Hermes config
         discord_cfg = channels.get("discord") or {}
         if discord_cfg:
-            hermes_cfg_path = self.target_root / "config.yaml"
-            hermes_cfg = load_yaml_file(hermes_cfg_path)
-            discord_hermes = hermes_cfg.get("discord") or {}
+            thoth_cfg_path = self.target_root / "config.yaml"
+            thoth_cfg = load_yaml_file(thoth_cfg_path)
+            discord_hermes = thoth_cfg.get("discord") or {}
             changed = False
             if "requireMention" in discord_cfg:
                 discord_hermes["require_mention"] = discord_cfg["requireMention"]
@@ -2617,8 +2617,8 @@ class Migrator:
                 discord_hermes["auto_thread"] = discord_cfg["autoThread"]
                 changed = True
             if changed and self.execute:
-                hermes_cfg["discord"] = discord_hermes
-                dump_yaml_file(hermes_cfg_path, hermes_cfg)
+                thoth_cfg["discord"] = discord_hermes
+                dump_yaml_file(thoth_cfg_path, thoth_cfg)
 
         # Archive complex channel configs (group settings, thread bindings, etc.)
         complex_archive = {}
@@ -2648,9 +2648,9 @@ class Migrator:
             self.record("browser-config", None, None, "skipped", "No browser configuration found")
             return
 
-        hermes_cfg_path = self.target_root / "config.yaml"
-        hermes_cfg = load_yaml_file(hermes_cfg_path)
-        browser_hermes = hermes_cfg.get("browser") or {}
+        thoth_cfg_path = self.target_root / "config.yaml"
+        thoth_cfg = load_yaml_file(thoth_cfg_path)
+        browser_hermes = thoth_cfg.get("browser") or {}
         changed = False
 
         # Map fields that have Hermes equivalents
@@ -2662,10 +2662,10 @@ class Migrator:
             changed = True
 
         if changed:
-            hermes_cfg["browser"] = browser_hermes
+            thoth_cfg["browser"] = browser_hermes
             if self.execute:
-                self.maybe_backup(hermes_cfg_path)
-                dump_yaml_file(hermes_cfg_path, hermes_cfg)
+                self.maybe_backup(thoth_cfg_path)
+                dump_yaml_file(thoth_cfg_path, thoth_cfg)
             self.record("browser-config", "openclaw.json browser.*", "config.yaml browser",
                         "migrated")
 
@@ -2688,17 +2688,17 @@ class Migrator:
             self.record("tools-config", None, None, "skipped", "No tools configuration found")
             return
 
-        hermes_cfg_path = self.target_root / "config.yaml"
-        hermes_cfg = load_yaml_file(hermes_cfg_path)
+        thoth_cfg_path = self.target_root / "config.yaml"
+        thoth_cfg = load_yaml_file(thoth_cfg_path)
         changed = False
 
         # Map exec timeout -> terminal timeout (field is timeoutSec in OpenClaw)
         exec_cfg = tools.get("exec") or {}
         timeout_val = exec_cfg.get("timeoutSec") or exec_cfg.get("timeout")
         if timeout_val:
-            terminal_cfg = hermes_cfg.get("terminal") or {}
+            terminal_cfg = thoth_cfg.get("terminal") or {}
             terminal_cfg["timeout"] = timeout_val
-            hermes_cfg["terminal"] = terminal_cfg
+            thoth_cfg["terminal"] = terminal_cfg
             changed = True
 
         # Map web search API key (path: tools.web.search.brave.apiKey in OpenClaw)
@@ -2710,8 +2710,8 @@ class Migrator:
             self._set_env_var("BRAVE_API_KEY", brave_key, "tools.web.search.brave.apiKey")
 
         if changed and self.execute:
-            self.maybe_backup(hermes_cfg_path)
-            dump_yaml_file(hermes_cfg_path, hermes_cfg)
+            self.maybe_backup(thoth_cfg_path)
+            dump_yaml_file(thoth_cfg_path, thoth_cfg)
             self.record("tools-config", "openclaw.json tools.*", "config.yaml terminal",
                         "migrated")
 
@@ -2732,21 +2732,21 @@ class Migrator:
             self.record("approvals-config", None, None, "skipped", "No approvals configuration found")
             return
 
-        hermes_cfg_path = self.target_root / "config.yaml"
-        hermes_cfg = load_yaml_file(hermes_cfg_path)
+        thoth_cfg_path = self.target_root / "config.yaml"
+        thoth_cfg = load_yaml_file(thoth_cfg_path)
 
         # Map approval mode (nested under approvals.exec.mode in OpenClaw)
         exec_approvals = approvals.get("exec") or {}
         mode = (exec_approvals.get("mode") if isinstance(exec_approvals, dict) else None) or approvals.get("mode") or approvals.get("defaultMode")
         if mode:
             mode_map = {"auto": "off", "always": "manual", "smart": "smart", "manual": "manual"}
-            hermes_mode = mode_map.get(mode, "manual")
-            hermes_cfg.setdefault("approvals", {})["mode"] = hermes_mode
+            thoth_mode = mode_map.get(mode, "manual")
+            thoth_cfg.setdefault("approvals", {})["mode"] = thoth_mode
             if self.execute:
-                self.maybe_backup(hermes_cfg_path)
-                dump_yaml_file(hermes_cfg_path, hermes_cfg)
+                self.maybe_backup(thoth_cfg_path)
+                dump_yaml_file(thoth_cfg_path, thoth_cfg)
             self.record("approvals-config", "openclaw.json approvals.mode",
-                        "config.yaml approvals.mode", "migrated", f"Mapped '{mode}' -> '{hermes_mode}'")
+                        "config.yaml approvals.mode", "migrated", f"Mapped '{mode}' -> '{thoth_mode}'")
 
         # Archive full approvals config
         if len(approvals) > 1 and self.archive_dir:

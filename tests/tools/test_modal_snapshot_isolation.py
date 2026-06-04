@@ -29,7 +29,7 @@ def _reset_modules(prefixes: tuple[str, ...]):
 
 @pytest.fixture(autouse=True)
 def _restore_tool_modules():
-    original_hermes_home = os.environ.get("HERMES_HOME")
+    original_thoth_home = os.environ.get("HERMES_HOME")
     original_modules = {
         name: module
         for name, module in sys.modules.items()
@@ -43,10 +43,10 @@ def _restore_tool_modules():
     try:
         yield
     finally:
-        if original_hermes_home is None:
+        if original_thoth_home is None:
             os.environ.pop("HERMES_HOME", None)
         else:
-            os.environ["HERMES_HOME"] = original_hermes_home
+            os.environ["HERMES_HOME"] = original_thoth_home
         _reset_modules(("tools", "thoth_cli", "modal"))
         sys.modules.update(original_modules)
 

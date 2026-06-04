@@ -1,7 +1,7 @@
 """TDD tests for _AsyncSessionDB title methods (Phase 0 Task 9).
 
 All tests run against the docker-compose postgres cluster via the
-hermes_db_initialized fixture. Docker must be running:
+thoth_db_initialized fixture. Docker must be running:
     docker compose up -d postgres
 
 Upstream behavior (matched from thoth_state.py:992-1148):
@@ -17,7 +17,7 @@ from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture
-async def db(hermes_db_initialized):
+async def db(thoth_db_initialized):
     d = _AsyncSessionDB()
     await d.create_session(
         session_id="t1", source="cli", model="m", model_config={}, system_prompt=""

@@ -335,7 +335,7 @@ class TestImport:
         assert (thoth_home / "skills" / "my-skill" / "SKILL.md").read_text() == "# My Skill\n"
         assert (thoth_home / "profiles" / "coder" / "config.yaml").exists()
 
-    def test_strips_hermes_prefix(self, tmp_path, monkeypatch):
+    def test_strips_thoth_prefix(self, tmp_path, monkeypatch):
         """Import strips .hermes/ prefix if all entries share it."""
         thoth_home = tmp_path / ".hermes"
         thoth_home.mkdir()
@@ -656,7 +656,7 @@ class TestValidation:
 # ---------------------------------------------------------------------------
 
 class TestBackupEdgeCases:
-    def test_nonexistent_hermes_home(self, tmp_path, monkeypatch):
+    def test_nonexistent_thoth_home(self, tmp_path, monkeypatch):
         """Backup exits when thoth home doesn't exist."""
         fake_home = tmp_path / "nonexistent" / ".hermes"
         monkeypatch.setenv("HERMES_HOME", str(fake_home))
@@ -706,7 +706,7 @@ class TestBackupEdgeCases:
         # Should have .tar.zip suffix
         assert (tmp_path / "mybackup.tar.zip").exists()
 
-    def test_empty_hermes_home(self, tmp_path, monkeypatch):
+    def test_empty_thoth_home(self, tmp_path, monkeypatch):
         """Backup handles empty thoth home (no files to back up)."""
         thoth_home = tmp_path / ".hermes"
         thoth_home.mkdir()
@@ -1580,7 +1580,7 @@ class TestPreMigrationBackup:
         assert not any("__pycache__" in n for n in names)
         assert "gateway.pid" not in names
 
-    def test_restorable_with_hermes_import(self, thoth_home, tmp_path):
+    def test_restorable_with_thoth_import(self, thoth_home, tmp_path):
         """The zip produced by pre-migration backup must be a valid Thoth
         backup — `thoth import` should accept it."""
         from thoth_cli.backup import create_pre_migration_backup, _validate_backup_zip
@@ -1614,7 +1614,7 @@ class TestPreMigrationBackup:
         remaining = sorted((thoth_home / "backups").glob("pre-migration-*.zip"))
         assert len(remaining) <= 3, f"expected <=3 backups retained, got {len(remaining)}"
 
-    def test_missing_hermes_home_returns_none(self, tmp_path):
+    def test_missing_thoth_home_returns_none(self, tmp_path):
         """Fresh install with no ~/.hermes yet — nothing to back up."""
         from thoth_cli.backup import create_pre_migration_backup
         missing = tmp_path / "does-not-exist"

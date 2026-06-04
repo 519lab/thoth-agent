@@ -175,7 +175,7 @@ class TestRunJobProfileContext:
                 observed["profile_env_shared_during_init"] = os.environ.get(
                     "HERMES_PROFILE_TEST_SHARED"
                 )
-                observed["hermes_home_during_init"] = str(get_thoth_home())
+                observed["thoth_home_during_init"] = str(get_thoth_home())
                 observed["scheduler_home_during_init"] = str(sched._get_thoth_home())
                 observed["skip_context_files"] = kwargs.get("skip_context_files")
 
@@ -189,7 +189,7 @@ class TestRunJobProfileContext:
                 observed["profile_env_shared_during_run"] = os.environ.get(
                     "HERMES_PROFILE_TEST_SHARED"
                 )
-                observed["hermes_home_during_run"] = str(get_thoth_home())
+                observed["thoth_home_during_run"] = str(get_thoth_home())
                 observed["scheduler_home_during_run"] = str(sched._get_thoth_home())
                 return {"final_response": "done", "messages": []}
 
@@ -253,8 +253,8 @@ class TestRunJobProfileContext:
         assert observed["dotenv_paths"] == [str(profile_home / ".env")]
         assert observed["env_home_during_init"] == str(root)
         assert observed["env_home_during_run"] == str(root)
-        assert observed["hermes_home_during_init"] == str(profile_home.resolve())
-        assert observed["hermes_home_during_run"] == str(profile_home.resolve())
+        assert observed["thoth_home_during_init"] == str(profile_home.resolve())
+        assert observed["thoth_home_during_run"] == str(profile_home.resolve())
         assert observed["scheduler_home_during_init"] == str(profile_home.resolve())
         assert observed["scheduler_home_during_run"] == str(profile_home.resolve())
         assert observed["skip_context_files"] is True
@@ -332,7 +332,7 @@ class TestRunJobProfileContext:
         assert os.environ["HERMES_HOME"] == str(root)
         assert sched._get_thoth_home() == root
 
-    def test_run_job_without_profile_leaves_hermes_home_untouched(
+    def test_run_job_without_profile_leaves_thoth_home_untouched(
         self, isolated_cron_profile_home, monkeypatch
     ):
         import cron.scheduler as sched
@@ -351,7 +351,7 @@ class TestRunJobProfileContext:
         success, *_ = sched.run_job(job)
 
         assert success is True
-        assert observed["hermes_home_during_init"] == str(root)
+        assert observed["thoth_home_during_init"] == str(root)
         assert os.environ["HERMES_HOME"] == str(root)
 
     def test_run_job_falls_back_on_missing_runtime_profile(
@@ -375,7 +375,7 @@ class TestRunJobProfileContext:
 
         assert success is True, f"run_job should fallback, not fail: error={error!r}"
         # Verify it used the default home, not the missing profile
-        assert observed["hermes_home_during_init"] == str(root)
+        assert observed["thoth_home_during_init"] == str(root)
         assert os.environ["HERMES_HOME"] == str(root)
 
 
@@ -401,7 +401,7 @@ class TestTickProfilePartition:
         success, _output, _response, error = sched.run_job(job)
 
         assert success is True, error
-        assert observed["hermes_home_during_init"] == str(profile_home.resolve())
+        assert observed["thoth_home_during_init"] == str(profile_home.resolve())
         assert os.environ.get("TERMINAL_CWD", "") != fake_workdir, \
             "TERMINAL_CWD should be restored after job"
         assert os.environ["HERMES_HOME"] == str(root)

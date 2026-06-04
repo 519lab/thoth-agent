@@ -218,7 +218,7 @@ class TestTerminalIntegration:
         finally:
             os.environ.pop(blocked_var, None)
 
-    def test_non_hermes_api_key_still_registerable(self):
+    def test_non_thoth_api_key_still_registerable(self):
         """Third-party API keys (TENOR_API_KEY, NOTION_TOKEN, etc.) are NOT
         Thoth provider credentials and must still pass through — skills
         that legitimately wrap third-party APIs must keep working."""

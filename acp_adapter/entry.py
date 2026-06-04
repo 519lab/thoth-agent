@@ -142,9 +142,9 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def _print_version() -> None:
-    from thoth_cli import __version__ as hermes_version
+    from thoth_cli import __version__ as thoth_version
 
-    print(hermes_version)
+    print(thoth_version)
 
 
 def _run_check() -> None:
@@ -155,12 +155,12 @@ def _run_check() -> None:
 
 
 def _run_setup() -> None:
-    from thoth_cli.main import main as hermes_main
+    from thoth_cli.main import main as thoth_main
 
     old_argv = sys.argv[:]
     try:
         sys.argv = [old_argv[0] if old_argv else "thoth", "model"]
-        hermes_main()
+        thoth_main()
     finally:
         sys.argv = old_argv
 

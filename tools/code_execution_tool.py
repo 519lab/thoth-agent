@@ -864,7 +864,7 @@ def _execute_remote(
 
     sandbox_id = uuid.uuid4().hex[:12]
     temp_dir = _env_temp_dir(env)
-    sandbox_dir = f"{temp_dir}/hermes_exec_{sandbox_id}"
+    sandbox_dir = f"{temp_dir}/thoth_exec_{sandbox_id}"
     quoted_sandbox_dir = shlex.quote(sandbox_dir)
     quoted_rpc_dir = shlex.quote(f"{sandbox_dir}/rpc")
 
@@ -1087,7 +1087,7 @@ def execute_code(
         sandbox_tools = SANDBOX_ALLOWED_TOOLS
 
     # --- Set up temp directory with hermes_tools.py and script.py ---
-    tmpdir = tempfile.mkdtemp(prefix="hermes_sandbox_")
+    tmpdir = tempfile.mkdtemp(prefix="thoth_sandbox_")
     # Use /tmp on macOS to avoid the long /var/folders/... path that pushes
     # Unix domain socket paths past the 104-byte macOS AF_UNIX limit.
     # On Linux, tempfile.gettempdir() already returns /tmp.
@@ -1105,7 +1105,7 @@ def execute_code(
         sock_path = None  # not used on Windows; TCP endpoint stored below
         rpc_endpoint = None  # set after bind()
     else:
-        sock_path = os.path.join(_sock_tmpdir, f"hermes_rpc_{uuid.uuid4().hex}.sock")
+        sock_path = os.path.join(_sock_tmpdir, f"thoth_rpc_{uuid.uuid4().hex}.sock")
         rpc_endpoint = sock_path
 
     tool_call_log: list = []
@@ -1198,9 +1198,9 @@ def execute_code(
         # repo-root modules are available to child scripts.  We also prepend
         # the staging tmpdir so ``from hermes_tools import ...`` resolves even
         # when the subprocess CWD is not tmpdir (project mode).
-        _hermes_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        _thoth_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         _existing_pp = child_env.get("PYTHONPATH", "")
-        _pp_parts = [tmpdir, _hermes_root]
+        _pp_parts = [tmpdir, _thoth_root]
         if _existing_pp:
             _pp_parts.append(_existing_pp)
         child_env["PYTHONPATH"] = os.pathsep.join(_pp_parts)

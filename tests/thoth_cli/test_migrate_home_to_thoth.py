@@ -10,7 +10,7 @@ from thoth_cli.config import migrate_home_to_thoth
 
 
 class TestMigrateHomeToThoth:
-    def test_creates_symlink_when_hermes_exists_thoth_absent(self, tmp_path):
+    def test_creates_symlink_when_thoth_exists_thoth_absent(self, tmp_path):
         """~/.hermes exists, ~/.thoth absent → symlink created."""
         hermes = tmp_path / ".hermes"
         hermes.mkdir()
@@ -47,7 +47,7 @@ class TestMigrateHomeToThoth:
 
         assert result is False
 
-    def test_noop_when_hermes_absent(self, tmp_path):
+    def test_noop_when_thoth_absent(self, tmp_path):
         """Neither directory exists (fresh install) → no-op; ensure_thoth_home handles it."""
         with patch("thoth_cli.config.Path.home", return_value=tmp_path):
             result = migrate_home_to_thoth(quiet=True)
@@ -55,7 +55,7 @@ class TestMigrateHomeToThoth:
         assert result is False
         assert not (tmp_path / ".thoth").exists()
 
-    def test_noop_when_hermes_is_file_not_dir(self, tmp_path):
+    def test_noop_when_thoth_is_file_not_dir(self, tmp_path):
         """~/.hermes exists but is a file, not a directory → no-op."""
         (tmp_path / ".hermes").write_text("oops")
 
@@ -85,10 +85,10 @@ class TestMigrateHomeToThoth:
 
         link = tmp_path / ".thoth"
         assert link.is_symlink()
-        # symlink_to(hermes_dir) where hermes_dir is absolute → target is absolute
+        # symlink_to(thoth_dir) where thoth_dir is absolute → target is absolute
         assert Path(link.readlink()).is_absolute()
 
-    def test_ensure_hermes_home_triggers_migration_silently(self, tmp_path, monkeypatch):
+    def test_ensure_thoth_home_triggers_migration_silently(self, tmp_path, monkeypatch):
         """ensure_thoth_home() auto-creates the symlink without printing."""
         from thoth_cli.config import ensure_thoth_home
 

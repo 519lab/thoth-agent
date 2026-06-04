@@ -193,7 +193,7 @@ def _load_provider_from_dir(provider_dir: Path) -> Optional["MemoryProvider"]:
     # Use a separate namespace for user-installed plugins so they don't
     # collide with bundled providers in sys.modules.
     _is_bundled = _MEMORY_PLUGINS_DIR in provider_dir.parents or provider_dir.parent == _MEMORY_PLUGINS_DIR
-    module_name = f"plugins.memory.{name}" if _is_bundled else f"_hermes_user_memory.{name}"
+    module_name = f"plugins.memory.{name}" if _is_bundled else f"_thoth_user_memory.{name}"
     init_file = provider_dir / "__init__.py"
 
     if not init_file.exists():
@@ -355,7 +355,7 @@ def discover_plugin_cli_commands() -> List[dict]:
         return results
 
     _is_bundled = _MEMORY_PLUGINS_DIR in plugin_dir.parents or plugin_dir.parent == _MEMORY_PLUGINS_DIR
-    module_name = f"plugins.memory.{active_provider}.cli" if _is_bundled else f"_hermes_user_memory.{active_provider}.cli"
+    module_name = f"plugins.memory.{active_provider}.cli" if _is_bundled else f"_thoth_user_memory.{active_provider}.cli"
     try:
         # Import the CLI module (lightweight — no SDK needed)
         if module_name in sys.modules:

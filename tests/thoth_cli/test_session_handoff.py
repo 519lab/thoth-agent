@@ -24,7 +24,7 @@ class TestHandoffStateDB:
     """Test the handoff schema + helper methods on SessionDB (PG-backed)."""
 
     @pytest_asyncio.fixture
-    async def db(self, hermes_db_initialized):
+    async def db(self, thoth_db_initialized):
         return SessionDB()
 
     async def _make_session(self, db, session_id, source="cli", title=None):

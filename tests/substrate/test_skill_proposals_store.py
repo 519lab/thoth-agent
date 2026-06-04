@@ -13,7 +13,7 @@ from substrate.skill_proposals import store
 
 
 @pytest_asyncio.fixture
-async def _db(hermes_db_initialized):
+async def _db(thoth_db_initialized):
     # Migrated per-test DB; the fixture's value isn't needed directly — the
     # store opens its own connections via thoth_db.
     return None

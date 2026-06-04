@@ -6,7 +6,7 @@ authorization URL (browser history, Referer headers, auth-server logs) and
 removing CSRF protection on the callback path.
 
 History:
-  - PR #1775 first fixed this on ``run_hermes_oauth_login()``.
+  - PR #1775 first fixed this on ``run_thoth_oauth_login()``.
   - PR #2647 (b17e5c10) added ``run_thoth_oauth_login_pure()`` and silently
     copy-pasted the pre-#1775 vulnerable pattern.
   - PR #3107 removed the old function, leaving only the regressed copy.

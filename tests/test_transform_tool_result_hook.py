@@ -51,7 +51,7 @@ def _run_handle_function_call(
 
 def test_result_unchanged_when_no_hook_registered(monkeypatch):
     # Real invoke_hook with no plugins loaded returns [].
-    monkeypatch.setenv("HERMES_HOME", "/tmp/hermes_no_plugins")
+    monkeypatch.setenv("HERMES_HOME", "/tmp/thoth_no_plugins")
     # Force a fresh plugin manager so no stale plugins pollute state.
     plugins_mod._plugin_manager = plugins_mod.PluginManager()
 

@@ -26,7 +26,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 
-def hermes_available() -> bool:
+def thoth_available() -> bool:
     return shutil.which("hermes") is not None
 
 
@@ -171,7 +171,7 @@ def main():
                     help="Print one snapshot and exit (no polling loop)")
     args = ap.parse_args()
 
-    if not hermes_available():
+    if not thoth_available():
         print("ERROR: 'hermes' CLI not found in PATH", file=sys.stderr)
         sys.exit(1)
 

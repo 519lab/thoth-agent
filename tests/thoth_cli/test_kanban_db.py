@@ -1494,7 +1494,7 @@ def test_dispatch_respawn_guard_emits_event_for_skipped_task(
 # Workspace resolution
 # ---------------------------------------------------------------------------
 
-def test_scratch_workspace_created_under_hermes_home(kanban_home):
+def test_scratch_workspace_created_under_thoth_home(kanban_home):
     with kb.connect() as conn:
         t = kb.create_task(conn, title="x")
         task = kb.get_task(conn, t)
@@ -1761,7 +1761,7 @@ class TestSharedBoardPaths:
         assert dispatcher_ws == worker_ws
         assert dispatcher_log == worker_log
 
-    def test_docker_custom_hermes_home_uses_env_path_directly(
+    def test_docker_custom_thoth_home_uses_env_path_directly(
         self, tmp_path, monkeypatch
     ):
         # Docker / custom deployment: HERMES_HOME points outside ~/.hermes.
@@ -1789,7 +1789,7 @@ class TestSharedBoardPaths:
         assert kb.kanban_home() == custom_root
         assert kb.kanban_db_path() == custom_root / "kanban.db"
 
-    def test_explicit_override_via_hermes_kanban_home(
+    def test_explicit_override_via_thoth_kanban_home(
         self, tmp_path, monkeypatch
     ):
         # Explicit override: HERMES_KANBAN_HOME beats every other
@@ -1857,7 +1857,7 @@ class TestSharedBoardPaths:
         assert task is not None
         assert task.title == "cross-profile"
 
-    def test_hermes_kanban_db_pin_beats_kanban_home(
+    def test_thoth_kanban_db_pin_beats_kanban_home(
         self, tmp_path, monkeypatch
     ):
         # HERMES_KANBAN_DB pins the file path directly and beats both
@@ -1880,7 +1880,7 @@ class TestSharedBoardPaths:
         # are independent.
         assert kb.workspaces_root() == umbrella / "kanban" / "workspaces"
 
-    def test_hermes_kanban_workspaces_root_pin_beats_kanban_home(
+    def test_thoth_kanban_workspaces_root_pin_beats_kanban_home(
         self, tmp_path, monkeypatch
     ):
         # HERMES_KANBAN_WORKSPACES_ROOT pins the workspaces root directly.
@@ -2261,7 +2261,7 @@ def test_migrate_add_optional_columns_tolerates_concurrent_migration(kanban_home
 
 
 # ---------------------------------------------------------------------------
-# Dispatcher spawn invocation — _resolve_hermes_argv()
+# Dispatcher spawn invocation — _resolve_thoth_argv()
 #
 # Workers spawned by the dispatcher must use a `thoth` invocation that does
 # not depend on PATH being set up correctly. cron jobs, systemd User= services,
@@ -2273,18 +2273,18 @@ def test_migrate_add_optional_columns_tolerates_concurrent_migration(kanban_home
 # ---------------------------------------------------------------------------
 
 
-def test_resolve_hermes_argv_prefers_path_shim(monkeypatch):
+def test_resolve_thoth_argv_prefers_path_shim(monkeypatch):
     """When `thoth` is on PATH, use the shim — preserves familiar ps output."""
     import shutil
     import thoth_cli.kanban_db as kb
 
     monkeypatch.delenv("HERMES_BIN", raising=False)
     monkeypatch.setattr(shutil, "which", lambda name: "/usr/local/bin/thoth")
-    argv = kb._resolve_hermes_argv()
+    argv = kb._resolve_thoth_argv()
     assert argv == ["/usr/local/bin/thoth"]
 
 
-def test_resolve_hermes_argv_absolutizes_relative_exe_shim(monkeypatch, tmp_path):
+def test_resolve_thoth_argv_absolutizes_relative_exe_shim(monkeypatch, tmp_path):
     """A relative executable override must not remain workspace-cwd-dependent."""
     import thoth_cli.kanban_db as kb
 
@@ -2292,10 +2292,10 @@ def test_resolve_hermes_argv_absolutizes_relative_exe_shim(monkeypatch, tmp_path
     monkeypatch.setenv("HERMES_BIN", ".\\hermes.exe")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
-    assert kb._resolve_hermes_argv() == [os.path.abspath(".\\hermes.exe")]
+    assert kb._resolve_thoth_argv() == [os.path.abspath(".\\hermes.exe")]
 
 
-def test_resolve_hermes_argv_avoids_implicit_windows_batch_shim(monkeypatch, tmp_path):
+def test_resolve_thoth_argv_avoids_implicit_windows_batch_shim(monkeypatch, tmp_path):
     """Implicit .cmd/.bat shims use the module fallback, not batch argv[0]."""
     import sys
     import thoth_cli.kanban_db as kb
@@ -2308,13 +2308,13 @@ def test_resolve_hermes_argv_avoids_implicit_windows_batch_shim(monkeypatch, tmp
     monkeypatch.setenv("PATHEXT", ".CMD")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
-    argv = kb._resolve_hermes_argv()
+    argv = kb._resolve_thoth_argv()
     assert argv[:2] == [sys.executable, "-m"]
     assert argv[2] in ("thoth_cli.main", "thoth_cli.main")
     assert len(argv) == 3
 
 
-def test_resolve_hermes_argv_honors_hermes_bin_path_override(monkeypatch, tmp_path):
+def test_resolve_thoth_argv_honors_hermes_bin_path_override(monkeypatch, tmp_path):
     """An explicit path-like HERMES_BIN lets service managers pin the executable."""
     import shutil
     import thoth_cli.kanban_db as kb
@@ -2325,10 +2325,10 @@ def test_resolve_hermes_argv_honors_hermes_bin_path_override(monkeypatch, tmp_pa
     monkeypatch.setenv("HERMES_BIN", str(shim))
     monkeypatch.setattr(shutil, "which", lambda name: None)
 
-    assert kb._resolve_hermes_argv() == [str(shim)]
+    assert kb._resolve_thoth_argv() == [str(shim)]
 
 
-def test_resolve_hermes_argv_hermes_bin_bare_name_uses_path(monkeypatch, tmp_path):
+def test_resolve_thoth_argv_hermes_bin_bare_name_uses_path(monkeypatch, tmp_path):
     """Bare HERMES_BIN values keep PATH semantics instead of cwd shadowing."""
     import stat
     import thoth_cli.kanban_db as kb
@@ -2344,10 +2344,10 @@ def test_resolve_hermes_argv_hermes_bin_bare_name_uses_path(monkeypatch, tmp_pat
     monkeypatch.setenv("PATH", str(path_hermes.parent))
     monkeypatch.setenv("HERMES_BIN", "hermes")
 
-    assert kb._resolve_hermes_argv() == [str(path_hermes)]
+    assert kb._resolve_thoth_argv() == [str(path_hermes)]
 
 
-def test_resolve_hermes_argv_hermes_bin_bare_name_ignores_cwd(monkeypatch, tmp_path):
+def test_resolve_thoth_argv_hermes_bin_bare_name_ignores_cwd(monkeypatch, tmp_path):
     """Bare HERMES_BIN does not accept current-directory shadow executables."""
     import sys
     import thoth_cli.kanban_db as kb
@@ -2358,13 +2358,13 @@ def test_resolve_hermes_argv_hermes_bin_bare_name_ignores_cwd(monkeypatch, tmp_p
     monkeypatch.setenv("HERMES_BIN", "hermes")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
-    argv = kb._resolve_hermes_argv()
+    argv = kb._resolve_thoth_argv()
     assert argv[:2] == [sys.executable, "-m"]
     assert argv[2] in ("thoth_cli.main", "thoth_cli.main")
     assert len(argv) == 3
 
 
-def test_resolve_hermes_argv_hermes_bin_bare_cmd_uses_module_fallback(monkeypatch, tmp_path):
+def test_resolve_thoth_argv_hermes_bin_bare_cmd_uses_module_fallback(monkeypatch, tmp_path):
     """A PATH-resolved HERMES_BIN batch shim is not used as worker argv[0]."""
     import sys
     import thoth_cli.kanban_db as kb
@@ -2377,13 +2377,13 @@ def test_resolve_hermes_argv_hermes_bin_bare_cmd_uses_module_fallback(monkeypatc
     monkeypatch.setenv("HERMES_BIN", "hermes")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
-    argv = kb._resolve_hermes_argv()
+    argv = kb._resolve_thoth_argv()
     assert argv[:2] == [sys.executable, "-m"]
     assert argv[2] in ("thoth_cli.main", "thoth_cli.main")
     assert len(argv) == 3
 
 
-def test_resolve_hermes_argv_hermes_bin_unresolved_bare_name_falls_back(monkeypatch):
+def test_resolve_thoth_argv_hermes_bin_unresolved_bare_name_falls_back(monkeypatch):
     """Unresolved HERMES_BIN command names do not delegate cwd search to Popen."""
     import sys
     import thoth_cli.kanban_db as kb
@@ -2391,13 +2391,13 @@ def test_resolve_hermes_argv_hermes_bin_unresolved_bare_name_falls_back(monkeypa
     monkeypatch.setenv("PATH", "")
     monkeypatch.setenv("HERMES_BIN", "hermes")
 
-    argv = kb._resolve_hermes_argv()
+    argv = kb._resolve_thoth_argv()
     assert argv[:2] == [sys.executable, "-m"]
     assert argv[2] in ("thoth_cli.main", "thoth_cli.main")
     assert len(argv) == 3
 
 
-def test_resolve_hermes_argv_falls_back_to_module_form_when_no_path_shim(monkeypatch):
+def test_resolve_thoth_argv_falls_back_to_module_form_when_no_path_shim(monkeypatch):
     """When the shim is not on PATH, fall back to `python -m thoth_cli.main`.
 
     Pins the correct module name (NOT `hermes` — there is no top-level
@@ -2411,13 +2411,13 @@ def test_resolve_hermes_argv_falls_back_to_module_form_when_no_path_shim(monkeyp
 
     monkeypatch.delenv("HERMES_BIN", raising=False)
     monkeypatch.setattr(shutil, "which", lambda name: None)
-    argv = kb._resolve_hermes_argv()
+    argv = kb._resolve_thoth_argv()
     assert argv[:2] == [sys.executable, "-m"]
     assert argv[2] in ("thoth_cli.main", "thoth_cli.main")
     assert len(argv) == 3
 
 
-def test_resolve_hermes_argv_module_actually_runs():
+def test_resolve_thoth_argv_module_actually_runs():
     """The fallback module name must be importable + runnable.
 
     A unit test that pins the literal string is necessary but not
@@ -2435,7 +2435,7 @@ def test_resolve_hermes_argv_module_actually_runs():
     with mock.patch.dict(os.environ, {}, clear=False):
         os.environ.pop("HERMES_BIN", None)
         with mock.patch.object(shutil, "which", return_value=None):
-            argv = kb._resolve_hermes_argv()
+            argv = kb._resolve_thoth_argv()
     r = subprocess.run(argv + ["--version"], capture_output=True, text=True, timeout=30)
     assert r.returncode == 0, (
         f"`{' '.join(argv)} --version` failed (rc={r.returncode}); "

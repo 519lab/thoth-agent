@@ -1,7 +1,7 @@
 """TDD tests for _AsyncSessionDB session-lifecycle methods (Phase 0 Task 8).
 
 All tests run against the docker-compose postgres cluster via the
-hermes_db_initialized fixture. Docker must be running:
+thoth_db_initialized fixture. Docker must be running:
     docker compose up -d postgres
 """
 import pytest
@@ -10,7 +10,7 @@ from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture
-async def db(hermes_db_initialized):
+async def db(thoth_db_initialized):
     return _AsyncSessionDB()
 
 

@@ -31,12 +31,12 @@ def curator_env(tmp_path, monkeypatch, capsys):
     importlib.reload(thoth_constants)
     from agent import curator
     importlib.reload(curator)
-    from thoth_cli import main as hermes_main
-    importlib.reload(hermes_main)
+    from thoth_cli import main as thoth_main
+    importlib.reload(thoth_main)
 
     yield {
         "curator": curator,
-        "main": hermes_main,
+        "main": thoth_main,
         "capsys": capsys,
     }
 

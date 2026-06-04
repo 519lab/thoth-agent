@@ -75,7 +75,7 @@ class TestHandleResumeCommand:
         assert "not available" in result.lower()
 
     @pytest.mark.asyncio
-    async def test_list_named_sessions_when_no_arg(self, hermes_db_initialized):
+    async def test_list_named_sessions_when_no_arg(self, thoth_db_initialized):
         """With no argument, lists recently titled sessions."""
         from thoth_state import SessionDB
         db = SessionDB()
@@ -92,7 +92,7 @@ class TestHandleResumeCommand:
         assert "Named Sessions" in result
 
     @pytest.mark.asyncio
-    async def test_list_shows_usage_when_no_titled(self, hermes_db_initialized):
+    async def test_list_shows_usage_when_no_titled(self, thoth_db_initialized):
         """With no arg and no titled sessions, shows instructions."""
         from thoth_state import SessionDB
         db = SessionDB()
@@ -105,7 +105,7 @@ class TestHandleResumeCommand:
         assert "/title" in result
 
     @pytest.mark.asyncio
-    async def test_resume_by_name(self, hermes_db_initialized):
+    async def test_resume_by_name(self, thoth_db_initialized):
         """Resolves a title and switches to that session."""
         from thoth_state import SessionDB
         db = SessionDB()
@@ -126,7 +126,7 @@ class TestHandleResumeCommand:
         assert call_args[0][1] == "old_session_abc"
 
     @pytest.mark.asyncio
-    async def test_resume_nonexistent_name(self, hermes_db_initialized):
+    async def test_resume_nonexistent_name(self, thoth_db_initialized):
         """Returns error for unknown session name."""
         from thoth_state import SessionDB
         db = SessionDB()
@@ -138,7 +138,7 @@ class TestHandleResumeCommand:
         assert "No session found" in result
 
     @pytest.mark.asyncio
-    async def test_resume_already_on_session(self, hermes_db_initialized):
+    async def test_resume_already_on_session(self, thoth_db_initialized):
         """Returns friendly message when already on the requested session."""
         from thoth_state import SessionDB
         db = SessionDB()
@@ -152,7 +152,7 @@ class TestHandleResumeCommand:
         assert "Already on session" in result
 
     @pytest.mark.asyncio
-    async def test_resume_auto_lineage(self, hermes_db_initialized):
+    async def test_resume_auto_lineage(self, thoth_db_initialized):
         """Asking for 'My Project' when 'My Project #2' exists gets the latest."""
         from thoth_state import SessionDB
         db = SessionDB()
@@ -173,7 +173,7 @@ class TestHandleResumeCommand:
         assert call_args[0][1] == "sess_v2"
 
     @pytest.mark.asyncio
-    async def test_resume_follows_compression_continuation(self, hermes_db_initialized):
+    async def test_resume_follows_compression_continuation(self, thoth_db_initialized):
         """Gateway /resume should reopen the live descendant after compression."""
         from thoth_state import SessionDB
 
@@ -206,7 +206,7 @@ class TestHandleResumeCommand:
         runner.session_store.load_transcript.assert_called_with("compressed_child")
 
     @pytest.mark.asyncio
-    async def test_resume_clears_running_agent(self, hermes_db_initialized):
+    async def test_resume_clears_running_agent(self, thoth_db_initialized):
         """Switching sessions clears any cached running agent."""
         from thoth_state import SessionDB
         db = SessionDB()
@@ -226,7 +226,7 @@ class TestHandleResumeCommand:
         assert real_key not in runner._running_agents
 
     @pytest.mark.asyncio
-    async def test_resume_evicts_cached_agent(self, hermes_db_initialized):
+    async def test_resume_evicts_cached_agent(self, thoth_db_initialized):
         """Gateway /resume evicts the cached AIAgent so the next message
         rebuilds with the correct session_id end-to-end — mirrors /branch
         and /reset. Without this, the cached agent's memory provider keeps

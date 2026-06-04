@@ -4,7 +4,7 @@ from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture
-async def db(hermes_db_initialized):
+async def db(thoth_db_initialized):
     d = _AsyncSessionDB()
     await d.create_session(
         session_id="h1",

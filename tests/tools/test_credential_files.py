@@ -274,7 +274,7 @@ class TestPathTraversalSecurity:
         assert len(mounts) == 1
         assert "token.json" in mounts[0]["container_path"]
 
-    def test_nested_subdir_inside_hermes_home_allowed(self, tmp_path, monkeypatch):
+    def test_nested_subdir_inside_thoth_home_allowed(self, tmp_path, monkeypatch):
         """Files in subdirectories of HERMES_HOME must be allowed."""
         thoth_home = tmp_path / ".hermes"
         thoth_home.mkdir()
@@ -415,7 +415,7 @@ class TestCacheDirectoryMounts:
         assert "/root/.hermes/cache/documents" in container_paths
         assert "/root/.hermes/cache/images" in container_paths
 
-    def test_empty_hermes_home(self, tmp_path, monkeypatch):
+    def test_empty_thoth_home(self, tmp_path, monkeypatch):
         """No cache dirs → empty list."""
         thoth_home = tmp_path / ".hermes"
         thoth_home.mkdir()

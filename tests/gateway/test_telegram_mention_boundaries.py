@@ -116,7 +116,7 @@ class TestSubstringFalsePositivesAreRejected:
 
     def test_underscore_suffix_substring(self):
         adapter = _make_adapter()
-        msg = _message(text="see @hermes_bot_admin for help")
+        msg = _message(text="see @thoth_bot_admin for help")
         assert adapter._message_mentions_bot(msg) is False
 
     def test_substring_inside_url_without_entity(self):

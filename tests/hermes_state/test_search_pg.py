@@ -11,7 +11,7 @@ from thoth_state import _AsyncSessionDB
 
 
 @pytest_asyncio.fixture
-async def db_with_messages(hermes_db_initialized):
+async def db_with_messages(thoth_db_initialized):
     db = _AsyncSessionDB()
     await db.create_session(
         session_id="s",
@@ -27,7 +27,7 @@ async def db_with_messages(hermes_db_initialized):
 
 
 @pytest_asyncio.fixture
-async def db_multi_session(hermes_db_initialized):
+async def db_multi_session(thoth_db_initialized):
     """Two sessions — one from 'cli', one from 'tool' — for filter tests."""
     db = _AsyncSessionDB()
     await db.create_session("sa", source="cli", model="m", model_config={}, system_prompt="")
@@ -191,7 +191,7 @@ async def test_search_invalid_mode(db_with_messages):
 # ---------------------------------------------------------------------------
 
 @pytest_asyncio.fixture
-async def db_sessions(hermes_db_initialized):
+async def db_sessions(thoth_db_initialized):
     db = _AsyncSessionDB()
     await db.create_session("x1", source="cli", model="m", model_config={}, system_prompt="")
     await db.create_session("x2", source="telegram", model="m", model_config={}, system_prompt="")

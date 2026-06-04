@@ -9,7 +9,7 @@ def test_tui_finds_bundled_entry_js(tmp_path):
     entry.write_text("// bundled TUI", encoding="utf-8")
 
     from thoth_cli.main import _find_bundled_tui
-    result = _find_bundled_tui(hermes_cli_dir=tmp_path / "thoth_cli")
+    result = _find_bundled_tui(thoth_cli_dir=tmp_path / "thoth_cli")
     assert result is not None
     assert result.name == "entry.js"
 
@@ -17,5 +17,5 @@ def test_tui_finds_bundled_entry_js(tmp_path):
 def test_tui_returns_none_when_no_bundle(tmp_path):
     """_find_bundled_tui returns None when no bundle exists."""
     from thoth_cli.main import _find_bundled_tui
-    result = _find_bundled_tui(hermes_cli_dir=tmp_path / "thoth_cli")
+    result = _find_bundled_tui(thoth_cli_dir=tmp_path / "thoth_cli")
     assert result is None

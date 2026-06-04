@@ -19,7 +19,7 @@ if not _MCP_AVAILABLE:
         _mcp_mod.ClientSession = MagicMock
 
 
-def test_resolve_stdio_command_falls_back_to_hermes_node_bin(tmp_path):
+def test_resolve_stdio_command_falls_back_to_thoth_node_bin(tmp_path):
     node_bin = tmp_path / "node" / "bin"
     node_bin.mkdir(parents=True)
     npx_path = node_bin / "npx"

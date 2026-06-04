@@ -3100,7 +3100,7 @@ class TestSlashEphemeralAck:
         assert ("C_H", "U_H") in adapter._slash_command_contexts
 
     @pytest.mark.asyncio
-    async def test_freeform_hermes_question_does_not_stash_context(self, adapter):
+    async def test_freeform_thoth_question_does_not_stash_context(self, adapter):
         """Free-form /hermes <question> must NOT route agent reply ephemeral."""
         command = {
             "command": "/hermes",

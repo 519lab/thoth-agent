@@ -28,7 +28,7 @@ def _thoth_root_path() -> Path:
 def build_write_denied_paths(home: str) -> set[str]:
     """Return exact sensitive paths that must never be written."""
     thoth_home = _thoth_home_path()
-    hermes_root = _thoth_root_path()
+    thoth_root = _thoth_root_path()
     return {
         os.path.realpath(p)
         for p in [
@@ -40,7 +40,7 @@ def build_write_denied_paths(home: str) -> set[str]:
             str(thoth_home / ".env"),
             # Top-level .env, even when running under a profile — overwriting it
             # leaks credentials across every profile that inherits from root (#15981).
-            str(hermes_root / ".env"),
+            str(thoth_root / ".env"),
             os.path.join(home, ".bashrc"),
             os.path.join(home, ".zshrc"),
             os.path.join(home, ".profile"),
@@ -105,16 +105,16 @@ def is_write_denied(path: str) -> bool:
     control_file_names = ("auth.json", "config.yaml", "webhook_subscriptions.json")
     mcp_tokens_dir_name = "mcp-tokens"
 
-    hermes_dirs = []
+    thoth_dirs = []
     for base in (_thoth_home_path(), _thoth_root_path()):
         try:
             real = os.path.realpath(base)
-            if real not in hermes_dirs:
-                hermes_dirs.append(real)
+            if real not in thoth_dirs:
+                thoth_dirs.append(real)
         except Exception:
             continue
 
-    for base_real in hermes_dirs:
+    for base_real in thoth_dirs:
         for name in control_file_names:
             try:
                 if resolved == os.path.realpath(os.path.join(base_real, name)):

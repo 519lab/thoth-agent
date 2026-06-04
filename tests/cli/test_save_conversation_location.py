@@ -1,6 +1,6 @@
 """Tests for /save — the conversation snapshot slash command.
 
-Regression: the old implementation wrote ``hermes_conversation_<ts>.json``
+Regression: the old implementation wrote ``thoth_conversation_<ts>.json``
 to the current working directory (CWD). Users who ran /save expected the
 file to be discoverable via ``thoth sessions browse``, but CWD-resident
 snapshots are not indexed in the state DB and are generally invisible.
@@ -28,8 +28,8 @@ def thoth_home(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(home))
     # Clear any cached thoth_home computation
     import thoth_constants
-    if hasattr(thoth_constants, "_hermes_home_cache"):
-        thoth_constants._hermes_home_cache = None
+    if hasattr(thoth_constants, "_thoth_home_cache"):
+        thoth_constants._thoth_home_cache = None
     return home
 
 
@@ -43,7 +43,7 @@ def _make_stub_cli(history):
     )
 
 
-def test_save_conversation_writes_under_hermes_home(thoth_home, tmp_path, monkeypatch, capsys):
+def test_save_conversation_writes_under_thoth_home(thoth_home, tmp_path, monkeypatch, capsys):
     """Snapshot must land under ~/.hermes/sessions/saved/, not CWD."""
     # Change CWD to a different directory to prove the file does NOT go there.
     work = tmp_path / "somewhere-else"
@@ -65,13 +65,13 @@ def test_save_conversation_writes_under_hermes_home(thoth_home, tmp_path, monkey
     cli.ThothCLI.save_conversation(stub)
 
     # File must NOT be in CWD
-    cwd_leak = list(work.glob("hermes_conversation_*.json"))
+    cwd_leak = list(work.glob("thoth_conversation_*.json"))
     assert not cwd_leak, f"snapshot leaked to CWD: {cwd_leak}"
 
     # File MUST be under ~/.hermes/sessions/saved/
     saved_dir = thoth_home / "sessions" / "saved"
     assert saved_dir.is_dir(), "expected saved/ subdirectory to be created"
-    files = list(saved_dir.glob("hermes_conversation_*.json"))
+    files = list(saved_dir.glob("thoth_conversation_*.json"))
     assert len(files) == 1, files
 
     payload = json.loads(files[0].read_text())

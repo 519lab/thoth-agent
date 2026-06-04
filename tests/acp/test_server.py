@@ -1120,7 +1120,7 @@ class TestPrompt:
         assert any(update.session_update == "agent_message_chunk" for update in updates)
 
     @pytest.mark.asyncio
-    async def test_prompt_propagates_hermes_session_id_env(self, agent, monkeypatch):
+    async def test_prompt_propagates_thoth_session_id_env(self, agent, monkeypatch):
         """ACP must propagate the originating session id to the agent loop
         via ``HERMES_SESSION_ID`` so tools that want to stamp side-effects
         with it (e.g. ``kanban_create``) can read the env var inside
@@ -1165,7 +1165,7 @@ class TestPrompt:
         )
 
     @pytest.mark.asyncio
-    async def test_prompt_restores_prior_hermes_session_id(self, agent, monkeypatch):
+    async def test_prompt_restores_prior_thoth_session_id(self, agent, monkeypatch):
         """If the env already had HERMES_SESSION_ID set (e.g. nested
         agent loops), the prior value must be restored after the inner
         prompt completes — not popped, not left at the inner id."""

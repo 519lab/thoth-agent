@@ -36,7 +36,7 @@ from thoth_cli.model_switch import (
         "hermes-3.1",
     ],
 )
-def test_matches_real_nous_hermes_chat_models(model_name: str) -> None:
+def test_matches_real_nous_thoth_chat_models(model_name: str) -> None:
     assert is_nous_hermes_non_agentic(model_name), (
         f"expected {model_name!r} to be flagged as Nous Hermes 3/4"
     )

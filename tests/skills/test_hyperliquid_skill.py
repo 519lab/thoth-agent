@@ -240,7 +240,7 @@ def test_main_state_json_uses_env_fallback(monkeypatch, capsys):
     assert mock_post.call_args[0][0]["user"] == "0xenv999"
 
 
-def test_env_lookup_reads_hermes_dotenv(tmp_path, monkeypatch):
+def test_env_lookup_reads_thoth_dotenv(tmp_path, monkeypatch):
     mod = load_module()
     thoth_home = tmp_path / ".hermes"
     thoth_home.mkdir(parents=True)

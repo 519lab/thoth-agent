@@ -19,7 +19,7 @@ from thoth_constants import (
 class TestGetDefaultThothRoot:
     """Tests for get_default_thoth_root() — Docker/custom deployment awareness."""
 
-    def test_no_hermes_home_returns_native(self, tmp_path, monkeypatch):
+    def test_no_thoth_home_returns_native(self, tmp_path, monkeypatch):
         """When no home env vars are set, returns ~/.thoth (new-install default)."""
         monkeypatch.delenv("HERMES_HOME", raising=False)
         monkeypatch.delenv("THOTH_HOME", raising=False)
@@ -27,7 +27,7 @@ class TestGetDefaultThothRoot:
 
         assert get_default_thoth_root() == tmp_path / ".thoth"
 
-    def test_hermes_home_is_native(self, tmp_path, monkeypatch):
+    def test_thoth_home_is_native(self, tmp_path, monkeypatch):
         """When HERMES_HOME = ~/.hermes, returns ~/.hermes."""
         native = tmp_path / ".hermes"
         native.mkdir()
@@ -35,7 +35,7 @@ class TestGetDefaultThothRoot:
         monkeypatch.setenv("HERMES_HOME", str(native))
         assert get_default_thoth_root() == native
 
-    def test_hermes_home_is_profile(self, tmp_path, monkeypatch):
+    def test_thoth_home_is_profile(self, tmp_path, monkeypatch):
         """When HERMES_HOME is a profile under ~/.hermes, returns ~/.hermes."""
         native = tmp_path / ".hermes"
         profile = native / "profiles" / "coder"
@@ -44,7 +44,7 @@ class TestGetDefaultThothRoot:
         monkeypatch.setenv("HERMES_HOME", str(profile))
         assert get_default_thoth_root() == native
 
-    def test_hermes_home_is_docker(self, tmp_path, monkeypatch):
+    def test_thoth_home_is_docker(self, tmp_path, monkeypatch):
         """When HERMES_HOME points outside ~/.hermes (Docker), returns HERMES_HOME."""
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
@@ -52,7 +52,7 @@ class TestGetDefaultThothRoot:
         monkeypatch.setenv("HERMES_HOME", str(docker_home))
         assert get_default_thoth_root() == docker_home
 
-    def test_hermes_home_is_custom_path(self, tmp_path, monkeypatch):
+    def test_thoth_home_is_custom_path(self, tmp_path, monkeypatch):
         """Any HERMES_HOME outside ~/.hermes is treated as the root."""
         custom = tmp_path / "my-hermes-data"
         custom.mkdir()

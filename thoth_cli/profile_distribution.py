@@ -481,7 +481,7 @@ def plan_install(
         normalize_profile_name,
         validate_profile_name,
     )
-    from thoth_cli import __version__ as hermes_version
+    from thoth_cli import __version__ as thoth_version
 
     staged, provenance = _stage_source(source, workdir)
     manifest = read_manifest(staged)
@@ -492,7 +492,7 @@ def plan_install(
         )
 
     # Version check up-front so we fail fast
-    check_thoth_requires(manifest.hermes_requires, hermes_version)
+    check_thoth_requires(manifest.hermes_requires, thoth_version)
 
     # Resolve target profile name
     target_name = override_name or manifest.name
@@ -599,7 +599,7 @@ def install_distribution(
         create_wrapper_script,
     )
 
-    with tempfile.TemporaryDirectory(prefix="hermes_dist_install_") as tmp:
+    with tempfile.TemporaryDirectory(prefix="thoth_dist_install_") as tmp:
         plan = plan_install(source, Path(tmp), override_name=name)
 
         if plan.existing and not force:
@@ -661,7 +661,7 @@ def update_distribution(
             "`thoth profile install <source> --name {canon} --force`."
         )
 
-    with tempfile.TemporaryDirectory(prefix="hermes_dist_update_") as tmp:
+    with tempfile.TemporaryDirectory(prefix="thoth_dist_update_") as tmp:
         plan = plan_install(
             existing_manifest.source,
             Path(tmp),

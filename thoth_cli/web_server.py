@@ -1329,20 +1329,20 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
         read_thoth_oauth_credentials = None  # type: ignore
         _THOTH_OAUTH_FILE = None  # type: ignore
 
-    hermes_creds = None
+    thoth_creds = None
     if read_thoth_oauth_credentials:
         try:
-            hermes_creds = read_thoth_oauth_credentials()
+            thoth_creds = read_thoth_oauth_credentials()
         except Exception:
-            hermes_creds = None
-    if hermes_creds and hermes_creds.get("accessToken"):
+            thoth_creds = None
+    if thoth_creds and thoth_creds.get("accessToken"):
         return {
             "logged_in": True,
             "source": "hermes_pkce",
             "source_label": f"Thoth PKCE ({_THOTH_OAUTH_FILE})",
-            "token_preview": _truncate_token(hermes_creds.get("accessToken")),
-            "expires_at": hermes_creds.get("expiresAt"),
-            "has_refresh_token": bool(hermes_creds.get("refreshToken")),
+            "token_preview": _truncate_token(thoth_creds.get("accessToken")),
+            "expires_at": thoth_creds.get("expiresAt"),
+            "has_refresh_token": bool(thoth_creds.get("refreshToken")),
         }
 
     cc_creds = None
@@ -4494,7 +4494,7 @@ def _mount_plugin_api_routes():
             _log.warning("Plugin %s declares api=%s but file not found", plugin["name"], api_file_name)
             continue
         try:
-            module_name = f"hermes_dashboard_plugin_{plugin['name']}"
+            module_name = f"thoth_dashboard_plugin_{plugin['name']}"
             spec = importlib.util.spec_from_file_location(module_name, api_path)
             if spec is None or spec.loader is None:
                 continue

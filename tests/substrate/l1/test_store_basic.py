@@ -10,7 +10,7 @@ from substrate.l1 import store
 
 
 @pytest.mark.asyncio
-async def test_upsert_entity_creates_then_merges(hermes_db_initialized):
+async def test_upsert_entity_creates_then_merges(thoth_db_initialized):
     eid1, created1 = await store.upsert_entity("Greg", "person", summary="A maintainer")
     assert created1 is True
 
@@ -27,14 +27,14 @@ async def test_upsert_entity_creates_then_merges(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_upsert_entity_normalises_type(hermes_db_initialized):
+async def test_upsert_entity_normalises_type(thoth_db_initialized):
     eid, _ = await store.upsert_entity("Widget", "Gadget")  # unknown kind
     ent = await store.get_entity_by_id(eid)
     assert ent.entity_type == "other"
 
 
 @pytest.mark.asyncio
-async def test_upsert_relationship_dedup(hermes_db_initialized):
+async def test_upsert_relationship_dedup(thoth_db_initialized):
     subj, _ = await store.upsert_entity("Greg", "person")
     obj, _ = await store.upsert_entity("Thoth", "project")
     rid1, c1 = await store.upsert_relationship(subj, "works_on", obj, confidence=0.6)
@@ -48,7 +48,7 @@ async def test_upsert_relationship_dedup(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_add_citation_requires_exactly_one_target(hermes_db_initialized):
+async def test_add_citation_requires_exactly_one_target(thoth_db_initialized):
     sid = uuid4()
     with pytest.raises(ValueError):
         await store.add_citation(slice_id=sid)  # neither
@@ -59,7 +59,7 @@ async def test_add_citation_requires_exactly_one_target(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_get_entities_for_query_ranks_matches(hermes_db_initialized):
+async def test_get_entities_for_query_ranks_matches(thoth_db_initialized):
     await store.upsert_entity("PostgreSQL migration", "concept", summary="moving to PG")
     await store.upsert_entity("Banana bread", "concept", summary="a recipe")
     hits = await store.get_entities_for_query("postgres migration", limit=5)
@@ -69,7 +69,7 @@ async def test_get_entities_for_query_ranks_matches(hermes_db_initialized):
 
 
 @pytest.mark.asyncio
-async def test_find_entities_by_name_fuzzy(hermes_db_initialized):
+async def test_find_entities_by_name_fuzzy(thoth_db_initialized):
     await store.upsert_entity("Teknium", "person")
     hits = await store.find_entities_by_name("teknius", fuzzy=True)
     assert any(e.name == "Teknium" for e in hits)

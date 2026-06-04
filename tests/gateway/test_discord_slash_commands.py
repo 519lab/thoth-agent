@@ -537,7 +537,7 @@ async def test_auto_create_thread_strips_mention_syntax_from_name(adapter):
 
 
 @pytest.mark.asyncio
-async def test_auto_create_thread_falls_back_to_hermes_when_only_mentions(adapter):
+async def test_auto_create_thread_falls_back_to_thoth_when_only_mentions(adapter):
     """If a message contains only mention syntax, the stripped content is
     empty — fall back to the 'Thoth' default rather than ''."""
     thread = SimpleNamespace(id=999, name="Thoth")
@@ -761,15 +761,15 @@ def test_discord_auto_thread_config_bridge(monkeypatch, tmp_path):
     from pathlib import Path
 
     # Write a config.yaml the loader will find
-    hermes_dir = tmp_path / ".hermes"
-    hermes_dir.mkdir()
-    config_path = hermes_dir / "config.yaml"
+    thoth_dir = tmp_path / ".hermes"
+    thoth_dir.mkdir()
+    config_path = thoth_dir / "config.yaml"
     config_path.write_text(yaml.dump({
         "discord": {"auto_thread": True},
     }))
 
     monkeypatch.delenv("DISCORD_AUTO_THREAD", raising=False)
-    monkeypatch.setenv("HERMES_HOME", str(hermes_dir))
+    monkeypatch.setenv("HERMES_HOME", str(thoth_dir))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     from gateway.config import load_gateway_config
