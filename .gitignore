@@ -91,3 +91,5 @@ docs/superpowers/*
 coverage.xml
 coverage-run.log
 htmlcov/
+# local pip/tooling cache
+.cache/
