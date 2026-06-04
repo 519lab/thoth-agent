@@ -251,12 +251,31 @@ async def init(
         max_inactive = float(os.environ.get("HERMES_PG_POOL_MAX_INACTIVE_S", "120"))
     except ValueError:
         max_inactive = 120.0
+    # Disable asyncpg's prepared-statement cache by default. The substrate
+    # performs occasional runtime DDL — ``thoth embed reshape`` ALTERs the
+    # embedding ``vector(N)`` columns + rebuilds their indexes, and alembic
+    # migrations run on boot — which invalidates the cached statement plans
+    # held by every long-lived pooled connection. The next query on a stale
+    # connection then crashes with::
+    #
+    #   asyncpg.exceptions.InvalidCachedStatementError: cached statement plan
+    #   is invalid due to a database schema or configuration change
+    #
+    # observed crashing Sentinel/Curator ticks repeatedly after a reshape
+    # (2026-06). Caching simple parameterized INSERT/SELECTs buys little at
+    # this scale, and pgbouncer transaction-mode pooling requires size 0
+    # anyway. Env-tunable for operators who never run DDL and want it back.
+    try:
+        stmt_cache = int(os.environ.get("HERMES_PG_STATEMENT_CACHE_SIZE", "0"))
+    except ValueError:
+        stmt_cache = 0
     pool = await asyncpg.create_pool(
         dsn,
         min_size=ms,
         max_size=Ms,
         command_timeout=command_timeout,
         max_inactive_connection_lifetime=max_inactive,
+        statement_cache_size=stmt_cache,
         init=_setup_jsonb_codec,
         **_ssl_kwarg_for_dsn(dsn),
     )
