@@ -101,6 +101,51 @@ async def test_commit_creates_pending_slice(substrate):
     assert row["pending_committed_at_set"] is True
     assert row["salience_score"] == pytest.approx(1.0)
     assert row["metadata"] == {"test": True}
+    # Default consolidation state is 'unconsolidated' (Parser's to claim).
+    async with thoth_db.connection() as conn:
+        cs = await conn.fetchval(
+            "SELECT consolidation_state FROM substrate_slices WHERE stream_id = $1",
+            stream.stream_id,
+        )
+    assert cs == "unconsolidated"
+
+
+@pytest.mark.asyncio
+async def test_commit_born_consolidated_skips_parse_backlog(substrate):
+    """``born_consolidated=True`` lands the slice at
+    ``consolidation_state='consolidated'`` so a session-less perceptual
+    event (e.g. cron dispatch) never sits in the parse backlog. It is
+    still a normal passed/pending perceptual slice otherwise."""
+    stream = await substrate.streams.register(
+        name="hermes.test.commit_born_consolidated",
+        family=Family.SELF_STATE,
+        modality=Modality.STRUCTURED_EVENT,
+        source="test",
+        organ="pytest",
+        decay_profile_id=DEFAULT_STRUCTURED_PROFILE,
+    )
+    await commit_slice(
+        substrate,
+        stream.stream_id,
+        {"job_id": "abc"},
+        event_time_world=_now_utc(),
+        metadata={"job_id": "abc"},
+        born_consolidated=True,
+    )
+    import thoth_db
+
+    async with thoth_db.connection() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT consolidation_state, sentinel_state
+              FROM substrate_slices WHERE stream_id = $1
+            """,
+            stream.stream_id,
+        )
+    assert row["consolidation_state"] == "consolidated"
+    # born_consolidated is orthogonal to the Sentinel queue — still pending
+    # unless born_passed is also set.
+    assert row["sentinel_state"] == "pending"
 
 
 @pytest.mark.asyncio

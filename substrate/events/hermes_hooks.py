@@ -442,12 +442,20 @@ async def on_subagent_return_async(
             NAME_SUBAGENT_RETURN,
         )
         return
+    # A subagent return carries a real NL summary worth consolidating into
+    # L1. The Parser selects by ``metadata->>'session_id'``, so set it to
+    # the parent's session id — the summary then folds into the parent
+    # session's parse batch (with coherent surrounding context) instead of
+    # stranding forever under a ``parent_session_id``-only key.
     await commit_slice(
         _substrate,
         stream_id=stream.stream_id,
         payload={"child_id": child_id, "summary": _summarize(summary)},
         event_time_world=t_event,
-        metadata={"parent_session_id": parent_session_id},
+        metadata={
+            "session_id": parent_session_id,
+            "parent_session_id": parent_session_id,
+        },
     )
 
 
@@ -643,12 +651,19 @@ async def on_cron_fire_async(job_id: str, t_event: datetime) -> None:
             NAME_CRON_DISPATCH,
         )
         return
+    # Cron fires outside any conversational session, so this slice has no
+    # ``session_id``. The Parser groups by ``session_id`` and could never
+    # select it; the payload is an opaque ``{"job_id": ...}`` blob with
+    # nothing to extract into L1 anyway. Born ``consolidated`` so it stays
+    # perceptual (recall + decay) without piling up an undrainable parse
+    # backlog. See ``substrate/agents/parser.py`` + ``l0.commit_slice``.
     await commit_slice(
         _substrate,
         stream_id=stream.stream_id,
         payload={"job_id": job_id},
         event_time_world=t_event,
         metadata={"job_id": job_id},
+        born_consolidated=True,
     )
 
 

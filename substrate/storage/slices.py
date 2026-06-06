@@ -79,10 +79,22 @@ class SliceRepo:
         metadata: dict,
         summary_of: Optional[list[dict]] = None,
         born_passed: bool = False,
+        born_consolidated: bool = False,
     ) -> tuple[UUID, datetime]:
         """Insert a fresh slice. Default ``sentinel_state='pending'``;
         set ``born_passed=True`` for self-emitted audit slices that
         must NOT re-enter the Sentinel queue.
+
+        Set ``born_consolidated=True`` for perceptual slices that carry
+        no conversational context to consolidate — e.g. session-less
+        self_state events like ``thoth.self_state.cron_dispatch`` whose
+        payload is an opaque ``{"job_id": ...}`` blob. The Parser groups
+        by ``metadata->>'session_id'`` (see ``substrate/agents/parser.py``),
+        so a session-less slice can NEVER be selected; left at the default
+        ``'unconsolidated'`` it sits in the parse backlog forever and
+        inflates the conductor/critic consolidation-pressure signal.
+        Born ``'consolidated'`` it stays a normal perceptual slice (recall
+        + Curator decay still apply) but never enters that backlog.
 
         Always called from within a caller-supplied transaction; the
         L0 :func:`commit_slice` API acquires/opens that transaction as
@@ -144,6 +156,11 @@ class SliceRepo:
         # exclude this row. When pending, set to now() so the indexes
         # can sort by oldest pending.
         pending_committed_clause = "NULL" if born_passed else "now()"
+        # Session-less perceptual events the Parser can never select are
+        # born 'consolidated' so they don't accrue an undrainable backlog.
+        consolidation_value = (
+            "consolidated" if born_consolidated else "unconsolidated"
+        )
         row = await conn.fetchrow(
             f"""
             INSERT INTO substrate_slices
@@ -151,14 +168,15 @@ class SliceRepo:
                  time_start_world, time_end_world,
                  event_time_world, perception_time_world,
                  payload, payload_blob_ref, payload_modality,
-                 sentinel_state, pending_committed_at,
+                 sentinel_state, pending_committed_at, consolidation_state,
                  salience_score, metadata, summary_of)
             VALUES
                 ($1, $2, $3, $4,
                  LEAST($5, now()),
                  LEAST(GREATEST($6, $5), now()),
                  $7, $8, $9,
-                 '{state_value}', {pending_committed_clause}, 1.0, $10, $11)
+                 '{state_value}', {pending_committed_clause}, '{consolidation_value}',
+                 1.0, $10, $11)
             RETURNING slice_id, ingest_time_world
             """,
             slice_id,
