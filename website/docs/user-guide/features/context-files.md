@@ -6,7 +6,7 @@ description: "Project context files — .hermes.md, AGENTS.md, CLAUDE.md, global
 
 # Context Files
 
-Thoth Agent automatically discovers and loads context files that shape how it behaves. Some are project-local and discovered from your working directory. `SOUL.md` is now global to the Thoth instance and is loaded from `HERMES_HOME` only.
+Thoth Agent automatically discovers and loads context files that shape how it behaves. Some are project-local and discovered from your working directory. `SOUL.md` is now global to the Thoth instance and is loaded from `THOTH_HOME` only.
 
 ## Supported Context Files
 
@@ -15,7 +15,7 @@ Thoth Agent automatically discovers and loads context files that shape how it be
 | **.hermes.md** / **HERMES.md** | Project instructions (highest priority) | Walks to git root |
 | **AGENTS.md** | Project instructions, conventions, architecture | CWD at startup + subdirectories progressively |
 | **CLAUDE.md** | Claude Code context files (also detected) | CWD at startup + subdirectories progressively |
-| **SOUL.md** | Global personality and tone customization for this Thoth instance | `HERMES_HOME/SOUL.md` only |
+| **SOUL.md** | Global personality and tone customization for this Thoth instance | `THOTH_HOME/SOUL.md` only |
 | **.cursorrules** | Cursor IDE coding conventions | CWD only |
 | **.cursor/rules/*.mdc** | Cursor IDE rule modules | CWD only |
 
@@ -84,12 +84,12 @@ This is a Next.js 14 web application with a Python FastAPI backend.
 **Location:**
 
 - `~/.hermes/SOUL.md`
-- or `$HERMES_HOME/SOUL.md` if you run Thoth with a custom home directory
+- or `$THOTH_HOME/SOUL.md` if you run Thoth with a custom home directory
 
 Important details:
 
 - Thoth seeds a default `SOUL.md` automatically if one does not exist yet
-- Thoth loads `SOUL.md` only from `HERMES_HOME`
+- Thoth loads `SOUL.md` only from `THOTH_HOME`
 - Thoth does not probe the working directory for `SOUL.md`
 - If the file is empty, nothing from `SOUL.md` is added to the prompt
 - If the file has content, the content is injected verbatim after scanning and truncation

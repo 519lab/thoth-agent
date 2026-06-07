@@ -301,7 +301,7 @@ Auto-discovery: any `tools/*.py` file with a top-level `registry.register()` cal
 
 The registry handles schema collection, dispatch, availability checking, and error wrapping. All handlers MUST return a JSON string.
 
-**Path references in tool schemas**: If the schema description mentions file paths (e.g. default output directories), use `display_thoth_home()` to make them profile-aware. The schema is generated at import time, which is after `_apply_profile_override()` sets `HERMES_HOME`.
+**Path references in tool schemas**: If the schema description mentions file paths (e.g. default output directories), use `display_thoth_home()` to make them profile-aware. The schema is generated at import time, which is after `_apply_profile_override()` sets `THOTH_HOME`.
 
 **State files**: If a tool stores persistent state (caches, logs, checkpoints), use `get_thoth_home()` for the base directory — never `Path.home() / ".hermes"`. This ensures each profile gets its own state.
 
@@ -558,7 +558,7 @@ discovery system** — scanned on first `get_provider_profile()` or
 
 Scan order:
 1. Bundled: `<repo>/plugins/model-providers/<name>/`
-2. User: `$HERMES_HOME/plugins/model-providers/<name>/`
+2. User: `$THOTH_HOME/plugins/model-providers/<name>/`
 3. Legacy: `<repo>/providers/<name>.py` (back-compat)
 
 User plugins of the same name override bundled ones — `register_provider()`
@@ -951,15 +951,15 @@ in config.yaml (or `HERMES_BACKGROUND_NOTIFICATIONS` env var):
 ## Profiles: Multi-Instance Support
 
 Thoth supports **profiles** — multiple fully isolated instances, each with its own
-`HERMES_HOME` directory (config, API keys, memory, sessions, skills, gateway, etc.).
+`THOTH_HOME` directory (config, API keys, memory, sessions, skills, gateway, etc.).
 
 The core mechanism: `_apply_profile_override()` in `thoth_cli/main.py` sets
-`HERMES_HOME` before any module imports. All `get_thoth_home()` references
+`THOTH_HOME` before any module imports. All `get_thoth_home()` references
 automatically scope to the active profile.
 
 ### Rules for profile-safe code
 
-1. **Use `get_thoth_home()` for all HERMES_HOME paths.** Import from `thoth_constants`.
+1. **Use `get_thoth_home()` for all THOTH_HOME paths.** Import from `thoth_constants`.
    NEVER hardcode `~/.hermes` or `Path.home() / ".hermes"` in code that reads/writes state.
    ```python
    # GOOD
@@ -985,11 +985,11 @@ automatically scope to the active profile.
    which is AFTER `_apply_profile_override()` sets the env var. Just use `get_thoth_home()`,
    not `Path.home() / ".hermes"`.
 
-4. **Tests that mock `Path.home()` must also set `HERMES_HOME`** — since code now uses
+4. **Tests that mock `Path.home()` must also set `THOTH_HOME`** — since code now uses
    `get_thoth_home()` (reads env var), not `Path.home() / ".hermes"`:
    ```python
    with patch.object(Path, "home", return_value=tmp_path), \
-        patch.dict(os.environ, {"HERMES_HOME": str(tmp_path / ".hermes")}):
+        patch.dict(os.environ, {"THOTH_HOME": str(tmp_path / ".hermes")}):
        ...
    ```
 
@@ -999,7 +999,7 @@ automatically scope to the active profile.
    `disconnect()`/`stop()`. This prevents two profiles from using the same credential.
    See `gateway/platforms/telegram.py` for the canonical pattern.
 
-6. **Profile operations are HOME-anchored, not HERMES_HOME-anchored** — `_get_profiles_root()`
+6. **Profile operations are HOME-anchored, not THOTH_HOME-anchored** — `_get_profiles_root()`
    returns `Path.home() / ".hermes" / "profiles"`, NOT `get_thoth_home() / "profiles"`.
    This is intentional — it lets `thoth -p coder profile list` see all profiles regardless
    of which one is active.
@@ -1009,7 +1009,7 @@ automatically scope to the active profile.
 ### DO NOT hardcode `~/.hermes` paths
 Use `get_thoth_home()` from `thoth_constants` for code paths. Use `display_thoth_home()`
 for user-facing print/log messages. Hardcoding `~/.hermes` breaks profiles — each profile
-has its own `HERMES_HOME` directory. This was the source of 5 bugs fixed in PR #3575.
+has its own `THOTH_HOME` directory. This was the source of 5 bugs fixed in PR #3575.
 
 ### DO NOT introduce new `simple_term_menu` usage
 Existing call sites in `thoth_cli/main.py` remain for legacy fallback only;
@@ -1049,10 +1049,10 @@ red flag.
 ### Don't wire in dead code without E2E validation
 Unused code that was never shipped was dead for a reason. Before wiring an
 unused module into a live code path, E2E test the real resolution chain
-with actual imports (not mocks) against a temp `HERMES_HOME`.
+with actual imports (not mocks) against a temp `THOTH_HOME`.
 
 ### Tests must not write to `~/.hermes/`
-The `_isolate_hermes_home` autouse fixture in `tests/conftest.py` redirects `HERMES_HOME` to a temp dir. Never hardcode `~/.hermes/` paths in tests.
+The `_isolate_hermes_home` autouse fixture in `tests/conftest.py` redirects `THOTH_HOME` to a temp dir. Never hardcode `~/.hermes/` paths in tests.
 
 **Profile tests**: When testing profile features, also mock `Path.home()` so that
 `_get_profiles_root()` and `_get_default_hermes_home()` resolve within the temp dir.
@@ -1063,7 +1063,7 @@ def profile_env(tmp_path, monkeypatch):
     home = tmp_path / ".hermes"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     return home
 ```
 

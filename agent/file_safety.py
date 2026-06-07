@@ -8,12 +8,12 @@ from typing import Optional
 
 
 def _thoth_home_path() -> Path:
-    """Resolve the active HERMES_HOME (profile-aware) without circular imports."""
+    """Resolve the active THOTH_HOME (profile-aware) without circular imports."""
     try:
         from thoth_constants import get_thoth_home  # local import to avoid cycles
         return get_thoth_home()
     except Exception:
-        return Path(os.path.expanduser("~/.hermes"))
+        return Path(os.path.expanduser("~/.thoth"))
 
 
 def _thoth_root_path() -> Path:
@@ -22,7 +22,7 @@ def _thoth_root_path() -> Path:
         from thoth_constants import get_default_thoth_root  # local import to avoid cycles
         return get_default_thoth_root()
     except Exception:
-        return Path(os.path.expanduser("~/.hermes"))
+        return Path(os.path.expanduser("~/.thoth"))
 
 
 def build_write_denied_paths(home: str) -> set[str]:

@@ -565,7 +565,7 @@ def create_job(
                 script's cwd so relative paths inside the script behave
                 predictably.
         profile: Optional Thoth profile name. When set, the job runs with
-                that profile's HERMES_HOME so profile-specific config,
+                that profile's THOTH_HOME so profile-specific config,
                 credentials, scripts, skills, and memory paths resolve
                 consistently. ``default`` selects the root profile; empty /
                 None preserves the scheduler's existing behaviour.

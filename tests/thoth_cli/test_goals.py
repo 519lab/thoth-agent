@@ -15,7 +15,7 @@ import pytest
 
 @pytest.fixture
 def thoth_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
-    """Isolated HERMES_HOME so SessionDB.state_meta writes don't clobber the real one.
+    """Isolated THOTH_HOME so SessionDB.state_meta writes don't clobber the real one.
 
     Phase 0: depends on ``thoth_db_initialized_sync`` so the per-test
     PG database is migrated and the asyncpg pool is bound to the
@@ -29,9 +29,9 @@ def thoth_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     home = tmp_path / ".hermes"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
 
-    # Bust the goal-module's DB cache for each test so it re-resolves HERMES_HOME.
+    # Bust the goal-module's DB cache for each test so it re-resolves THOTH_HOME.
     from thoth_cli import goals
 
     goals._DB_CACHE.clear()

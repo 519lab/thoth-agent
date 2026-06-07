@@ -35,9 +35,9 @@ class TestWriteDenyExactPaths:
         assert _is_write_denied(path) is True
 
     def test_thoth_env(self):
-        # ``.env`` under the active HERMES_HOME (profile-aware, not just
+        # ``.env`` under the active THOTH_HOME (profile-aware, not just
         # ``~/.hermes``) must be write-denied. The hermetic test conftest
-        # points HERMES_HOME at a tempdir — resolve via get_thoth_home()
+        # points THOTH_HOME at a tempdir — resolve via get_thoth_home()
         # to match the denylist.
         from thoth_constants import get_thoth_home
         path = str(get_thoth_home() / ".env")
@@ -59,9 +59,9 @@ class TestWriteDenyExactPaths:
         global_env = root / ".env"
         global_env.write_text("OPENAI_API_KEY=sk-real\n")
 
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("THOTH_HOME", str(profile_home))
 
-        # Sanity check: HERMES_HOME does point to the profile dir, not the root.
+        # Sanity check: THOTH_HOME does point to the profile dir, not the root.
         from thoth_constants import get_thoth_home, get_default_thoth_root
         assert get_thoth_home() == profile_home
         assert get_default_thoth_root() == root

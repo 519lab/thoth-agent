@@ -247,8 +247,8 @@ def load_thoth_dotenv(
     loaded: list[Path] = []
 
     # Resolve the home dir for the .env path. Phase 3: THOTH_HOME is canonical,
-    # HERMES_HOME is the legacy fallback. get_thoth_home() already checks
-    # THOTH_HOME → HERMES_HOME → disk default, so no explicit normalization call
+    # THOTH_HOME is the legacy fallback. get_thoth_home() already checks
+    # THOTH_HOME → THOTH_HOME → disk default, so no explicit normalization call
     # is needed here (and calling normalize_thoth_home_env() would write THOTH_HOME
     # to os.environ as a side-effect that pollutes test env isolation).
     if thoth_home is not None:

@@ -304,7 +304,7 @@ def get_external_skills_dirs() -> List[Path]:
         # Expand ~ and environment variables
         expanded = os.path.expanduser(os.path.expandvars(entry))
         p = Path(expanded)
-        # Resolve relative paths against HERMES_HOME, not cwd
+        # Resolve relative paths against THOTH_HOME, not cwd
         if not p.is_absolute():
             p = (thoth_home / p).resolve()
         else:

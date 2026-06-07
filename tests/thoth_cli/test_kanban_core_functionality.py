@@ -46,7 +46,7 @@ def _decode_payload(p):
 
 @pytest.fixture
 def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
-    """Isolated HERMES_HOME with the kanban schema migrated.
+    """Isolated THOTH_HOME with the kanban schema migrated.
 
     Depends on ``thoth_db_initialized_sync`` so the PG pool is bound
     to the persistent sync loop AND the schema is migrated before
@@ -56,7 +56,7 @@ def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     kb.init_db()
     return home
@@ -1252,7 +1252,7 @@ def test_migration_renames_legacy_event_kinds(tmp_path, monkeypatch, thoth_db_in
     in place on init_db()."""
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     # Init fresh.
     kb.init_db()
@@ -1292,7 +1292,7 @@ def test_list_profiles_on_disk(tmp_path, monkeypatch):
     """list_profiles_on_disk returns the implicit default profile plus
     named profiles under ~/.hermes/profiles/ that contain a config.yaml."""
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.delenv("HERMES_HOME", raising=False)
+    monkeypatch.delenv("THOTH_HOME", raising=False)
     profiles = tmp_path / ".hermes" / "profiles"
     profiles.mkdir(parents=True)
     for name in ("researcher", "writer"):
@@ -1308,8 +1308,8 @@ def test_list_profiles_on_disk(tmp_path, monkeypatch):
 
 
 def test_list_profiles_on_disk_custom_root(tmp_path, monkeypatch):
-    """list_profiles_on_disk respects a custom HERMES_HOME root."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    """list_profiles_on_disk respects a custom THOTH_HOME root."""
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     profiles = tmp_path / "profiles"
     profiles.mkdir(parents=True)
     for name in ("researcher", "writer"):
@@ -1327,7 +1327,7 @@ def test_known_assignees_merges_disk_and_board(tmp_path, monkeypatch, thoth_db_i
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     profiles = tmp_path / ".hermes" / "profiles"
     profiles.mkdir(parents=True)
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path / ".hermes"))
 
     for name in ("researcher", "writer"):
         d = profiles / name
@@ -2216,7 +2216,7 @@ def test_claim_task_recovers_from_invariant_leak(kanban_home):
 # -------------------------------------------------------------------------
 
 def test_cli_create_on_fresh_home_auto_inits(tmp_path, monkeypatch, thoth_db_initialized_sync):
-    """First CLI action on a fresh HERMES_HOME must succeed end-to-end —
+    """First CLI action on a fresh THOTH_HOME must succeed end-to-end —
     auto-init runs on the kanban schema and the task is created.
 
     Phase 0 moved the kanban store from a sqlite ``kanban.db`` file to
@@ -2226,14 +2226,14 @@ def test_cli_create_on_fresh_home_auto_inits(tmp_path, monkeypatch, thoth_db_ini
     """
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     import subprocess as _sp
     import sys as _sys
     worktree_root = Path(__file__).resolve().parents[2]
     # Propagate HERMES_PG_DSN (set by thoth_db_initialized_sync) so the
     # subprocess connects to the per-test database, not the real one.
-    env = {**os.environ, "HERMES_HOME": str(home),
+    env = {**os.environ, "THOTH_HOME": str(home),
            "PYTHONPATH": str(worktree_root)}
     r = _sp.run(
         [_sys.executable, "-m", "thoth_cli.main", "kanban",
@@ -2247,11 +2247,11 @@ def test_cli_create_on_fresh_home_auto_inits(tmp_path, monkeypatch, thoth_db_ini
 
 
 def test_connect_auto_inits_fresh_db(tmp_path, monkeypatch, thoth_db_initialized_sync):
-    """Calling connect() on a fresh HERMES_HOME must create the
+    """Calling connect() on a fresh THOTH_HOME must create the
     schema. Previously callers had to remember kb.init_db() first."""
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     # Flush the module-level cache so this path looks fresh.
     kb._INITIALIZED_PATHS.clear()
@@ -2367,7 +2367,7 @@ def test_migration_backfill_idempotent_under_re_run(tmp_path, monkeypatch, thoth
     dispatcher is simultaneously claiming."""
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     # Fresh DB, one task left in 'running' with a claim but no run row.
@@ -2746,7 +2746,7 @@ def test_default_spawn_auto_loads_kanban_worker_skill(kanban_home, monkeypatch):
     thoth subprocess (which would hang trying to call an LLM).
     """
     # Pretend the bundled kanban-worker skill resolves for this isolated
-    # HERMES_HOME — the fixture creates an empty tmpdir without the
+    # THOTH_HOME — the fixture creates an empty tmpdir without the
     # devops/kanban-worker tree, and _default_spawn gates the --skills
     # flag on actual resolvability.
     monkeypatch.setattr(kb, "_kanban_worker_skill_available", lambda _h: True)

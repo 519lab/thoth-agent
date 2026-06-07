@@ -247,7 +247,7 @@ def _config_path() -> Path:
 def _local_config_path() -> Path:
     """Return the instance-local Honcho config path for writing.
 
-    Always returns $HERMES_HOME/honcho.json so each profile/instance gets
+    Always returns $THOTH_HOME/honcho.json so each profile/instance gets
     its own config file.  The global ~/.honcho/config.json is only used as
     a read fallback (via resolve_config_path) for cross-app interop.
     """

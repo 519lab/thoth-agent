@@ -21,7 +21,7 @@ import pytest
 def _isolate_home(tmp_path, monkeypatch):
     thoth_home = tmp_path / ".hermes"
     thoth_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     yield thoth_home
 
 
@@ -215,7 +215,7 @@ def test_registry_resolve_by_name(tmp_path):
 def test_registry_defaults_to_thoth_home(tmp_path, monkeypatch):
     from plugins.google_meet.node.registry import NodeRegistry
 
-    # _isolate_home already set HERMES_HOME to tmp_path/.hermes; the
+    # _isolate_home already set THOTH_HOME to tmp_path/.hermes; the
     # registry default path must live inside that tree.
     r = NodeRegistry()
     r.add("x", "ws://x", "t")

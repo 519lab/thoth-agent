@@ -16,7 +16,7 @@
 #   systemctl --user enable --now thoth-substrate-worker
 #
 # Path placeholders below assume the standard install layout:
-#   HERMES_HOME = ~/.hermes
+#   THOTH_HOME = ~/.hermes
 #   INSTALL_DIR = ~/.hermes/hermes-agent
 #   .env at     = ~/.hermes/.env
 #

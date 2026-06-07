@@ -41,11 +41,10 @@ def _suppress_concurrent_thoth_gate(request, monkeypatch):
         from thoth_cli import main as _cli_main
     except Exception:
         return
-    # thoth_bootstrap (imported via thoth_cli.main) calls normalize_thoth_home_env()
-    # at module-load time, which sets THOTH_HOME = HERMES_HOME. On the first import
-    # inside a test this runs AFTER the root conftest cleared THOTH_HOME, undoing the
-    # clear. Re-clear so tests that only patch HERMES_HOME are not shadowed by THOTH_HOME.
-    monkeypatch.delenv("THOTH_HOME", raising=False)
+    # (Removed a pre-Phase-2 workaround that delenv'd the legacy HERMES_HOME
+    # mirror here. THOTH_HOME is now canonical and the root conftest's
+    # _hermetic_environment sets it to the per-test home — deleting it broke
+    # tests that read os.environ["THOTH_HOME"] directly.)
     monkeypatch.setattr(
         _cli_main, "_detect_concurrent_thoth_instances", lambda *_a, **_k: []
     )

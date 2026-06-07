@@ -1888,7 +1888,7 @@ def _check_send_message():
 
     Also passes for kanban workers — the dispatcher sets ``HERMES_KANBAN_TASK``
     on every spawned worker, but those workers run with the assignee profile's
-    ``HERMES_HOME`` which has no ``gateway.pid``, so the gateway-running check
+    ``THOTH_HOME`` which has no ``gateway.pid``, so the gateway-running check
     would fail even though the parent gateway is alive. Honoring the env var
     lets workers call ``send_message`` to deliver rich content directly to the
     originating chat (paired with ``kanban_complete`` for the short notifier

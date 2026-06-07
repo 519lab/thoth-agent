@@ -73,7 +73,7 @@ class TestDoctorEnvFileEncoding:
             encoding="utf-8",
         )
 
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", thoth_home)
+        monkeypatch.setattr(doctor_mod, "THOTH_HOME", thoth_home)
 
         orig_read_text = pathlib.Path.read_text
 
@@ -198,7 +198,7 @@ def test_run_doctor_sets_interactive_env_for_tool_checks(monkeypatch, tmp_path):
     thoth_home.mkdir()
 
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project_root)
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", thoth_home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", thoth_home)
     monkeypatch.delenv("HERMES_INTERACTIVE", raising=False)
 
     seen = {}
@@ -292,7 +292,7 @@ class TestDoctorMemoryProviderSection:
     """The ◆ Memory Provider section should respect memory.provider config."""
 
     def _make_thoth_home(self, tmp_path, provider=""):
-        """Create a minimal HERMES_HOME with config.yaml."""
+        """Create a minimal THOTH_HOME with config.yaml."""
         home = tmp_path / ".hermes"
         home.mkdir(parents=True, exist_ok=True)
         import yaml
@@ -303,7 +303,7 @@ class TestDoctorMemoryProviderSection:
     def _run_doctor_and_capture(self, monkeypatch, tmp_path, provider=""):
         """Run doctor and capture stdout."""
         home = self._make_thoth_home(tmp_path, provider)
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+        monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
         monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", tmp_path / "project")
         monkeypatch.setattr(doctor_mod, "_DHH", str(home))
         (tmp_path / "project").mkdir(exist_ok=True)
@@ -412,7 +412,7 @@ def test_run_doctor_accepts_named_provider_from_providers_section(monkeypatch, t
         )
     )
 
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", tmp_path / "project")
     monkeypatch.setattr(doctor_mod, "_DHH", str(home))
     (tmp_path / "project").mkdir(exist_ok=True)
@@ -450,7 +450,7 @@ def test_run_doctor_accepts_bare_custom_provider(monkeypatch, tmp_path):
         encoding="utf-8",
     )
 
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", tmp_path / "project")
     monkeypatch.setattr(doctor_mod, "_DHH", str(home))
     (tmp_path / "project").mkdir(exist_ok=True)
@@ -487,7 +487,7 @@ def test_run_doctor_flags_missing_credentials_for_active_openrouter_provider(mon
         encoding="utf-8",
     )
 
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", tmp_path / "project")
     monkeypatch.setattr(doctor_mod, "_DHH", str(home))
     (tmp_path / "project").mkdir(exist_ok=True)
@@ -540,7 +540,7 @@ def test_run_doctor_accepts_thoth_provider_ids_that_catalog_aliases(
         encoding="utf-8",
     )
 
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", tmp_path / "project")
     monkeypatch.setattr(doctor_mod, "_DHH", str(home))
     (tmp_path / "project").mkdir(exist_ok=True)
@@ -586,7 +586,7 @@ def test_run_doctor_accepts_kimi_coding_cn_provider(monkeypatch, tmp_path):
         encoding="utf-8",
     )
 
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", tmp_path / "project")
     monkeypatch.setattr(doctor_mod, "_DHH", str(home))
     (tmp_path / "project").mkdir(exist_ok=True)
@@ -623,7 +623,7 @@ def test_run_doctor_termux_does_not_mark_browser_available_without_agent_browser
 
     monkeypatch.setenv("TERMUX_VERSION", "0.118.3")
     monkeypatch.setenv("PREFIX", "/data/data/com.termux/files/usr")
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
     monkeypatch.setattr(doctor_mod, "_DHH", str(home))
     monkeypatch.setattr(doctor_mod.shutil, "which", lambda cmd: "/data/data/com.termux/files/usr/bin/node" if cmd in {"node", "npm"} else None)
@@ -666,7 +666,7 @@ def test_run_doctor_kimi_cn_env_is_detected_and_probe_is_null_safe(monkeypatch, 
     project = tmp_path / "project"
     project.mkdir(exist_ok=True)
 
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
     monkeypatch.setattr(doctor_mod, "_DHH", str(home))
     monkeypatch.setenv("KIMI_CN_API_KEY", "sk-test")
@@ -714,7 +714,7 @@ def test_run_doctor_dashscope_retries_china_endpoint_after_intl_unauthorized(mon
     project = tmp_path / "project"
     project.mkdir(exist_ok=True)
 
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
     monkeypatch.setattr(doctor_mod, "_DHH", str(home))
     monkeypatch.setenv("DASHSCOPE_API_KEY", "sk-test")
@@ -770,7 +770,7 @@ def test_run_doctor_opencode_go_skips_invalid_models_probe(monkeypatch, tmp_path
     project = tmp_path / "project"
     project.mkdir(exist_ok=True)
 
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
     monkeypatch.setattr(doctor_mod, "_DHH", str(home))
     monkeypatch.setenv("OPENCODE_GO_API_KEY", "sk-test")
@@ -822,7 +822,7 @@ class TestGitHubTokenCheck:
     def test_no_token_and_not_gh_authenticated_shows_warn(self, monkeypatch, tmp_path):
         home = tmp_path / ".hermes"
         home.mkdir(parents=True, exist_ok=True)
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("THOTH_HOME", str(home))
         monkeypatch.setenv("PATH", "/nonexistent")  # gh not found
 
         from thoth_cli.doctor import run_doctor, _DHH
@@ -839,7 +839,7 @@ class TestGitHubTokenCheck:
     def test_token_env_present_shows_ok(self, monkeypatch, tmp_path):
         home = tmp_path / ".hermes"
         home.mkdir(parents=True, exist_ok=True)
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("THOTH_HOME", str(home))
         monkeypatch.setenv("GITHUB_TOKEN", "ghp_test123")
         monkeypatch.setenv("PATH", "/nonexistent")  # gh not found
 
@@ -856,7 +856,7 @@ class TestGitHubTokenCheck:
     def test_gh_authenticated_without_env_token_shows_ok(self, monkeypatch, tmp_path):
         home = tmp_path / ".hermes"
         home.mkdir(parents=True, exist_ok=True)
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("THOTH_HOME", str(home))
         # No GITHUB_TOKEN or GH_TOKEN
         monkeypatch.delenv("GITHUB_TOKEN", raising=False)
         monkeypatch.delenv("GH_TOKEN", raising=False)
@@ -914,7 +914,7 @@ def _run_doctor_with_healthy_oauth_fallback(
     project = tmp_path / "project"
     project.mkdir(exist_ok=True)
 
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
     monkeypatch.setattr(doctor_mod, "_DHH", str(home))
     monkeypatch.setenv(env_key, bad_key)
@@ -1078,7 +1078,7 @@ class TestDoctorXaiOAuthStatus:
         project = tmp_path / "project"
         project.mkdir(exist_ok=True)
 
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+        monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
         monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
         monkeypatch.setattr(doctor_mod, "_DHH", str(home))
 
@@ -1153,7 +1153,7 @@ class TestDoctorXaiOAuthStatus:
         project = tmp_path / "project"
         project.mkdir(exist_ok=True)
 
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+        monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
         monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
         monkeypatch.setattr(doctor_mod, "_DHH", str(home))
 
@@ -1185,7 +1185,7 @@ class TestDoctorXaiOAuthStatus:
         project = tmp_path / "project"
         project.mkdir(exist_ok=True)
 
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+        monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
         monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
         monkeypatch.setattr(doctor_mod, "_DHH", str(home))
 
@@ -1246,7 +1246,7 @@ class TestDoctorCodexCliHintPlacement:
         project = tmp_path / "project"
         project.mkdir(exist_ok=True)
 
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+        monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
         monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
         monkeypatch.setattr(doctor_mod, "_DHH", str(home))
 

@@ -40,7 +40,7 @@ pytestmark = pytest.mark.skipif(
 
 def test_save_auth_store_writes_0o600_with_0o700_parent(tmp_path, monkeypatch):
     """``_save_auth_store`` must land ``auth.json`` at 0o600 and parent at 0o700."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     old_umask = os.umask(0o022)  # make the race observable if it regresses
     try:
         from thoth_cli import auth as auth_mod
@@ -76,7 +76,7 @@ def test_save_auth_store_writes_0o600_with_0o700_parent(tmp_path, monkeypatch):
 
 def test_save_qwen_cli_tokens_writes_0o600_with_0o700_parent(tmp_path, monkeypatch):
     """``_save_qwen_cli_tokens`` must land the token file at 0o600 and parent at 0o700."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     # The Qwen CLI auth path lives under $HOME/.qwen by default — isolate it.
     monkeypatch.setenv("HOME", str(tmp_path))
     old_umask = os.umask(0o022)
@@ -114,11 +114,11 @@ def test_save_qwen_cli_tokens_writes_0o600_with_0o700_parent(tmp_path, monkeypat
 
 def test_shared_nous_store_writes_0o600_with_0o700_parent(tmp_path, monkeypatch):
     """The Nous shared-credential store must land at 0o600 / parent 0o700."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     # _nous_shared_store_path() refuses to touch the real shared store during
     # pytest runs; redirect it into tmp_path explicitly. Use a distinct
     # subdirectory name (``shared_override``) so the guard's "real user
-    # home" reference — which currently tracks HERMES_HOME via
+    # home" reference — which currently tracks THOTH_HOME via
     # get_default_thoth_root() — can't collide with our override and
     # falsely claim we're writing to the real user's shared store.
     monkeypatch.setenv("HERMES_SHARED_AUTH_DIR", str(tmp_path / "shared_override"))
@@ -165,7 +165,7 @@ def test_save_auth_store_uses_os_open_with_0o600_mode(tmp_path, monkeypatch):
     mode so the file is created at 0o600 atomically — closing the TOCTOU
     window the previous ``Path.open('w')`` left open (fd inherited process
     umask and was briefly 0o644 before post-write chmod)."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
 
     observed_opens: list[tuple[str, int, int]] = []
     real_os_open = os.open

@@ -276,38 +276,38 @@ class TestHermesConstantsFallback:
         return module
 
     def test_fallback_uses_thoth_home_env_var(self, monkeypatch, tmp_path):
-        """When thoth_constants is missing, HERMES_HOME comes from env var."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "custom-thoth"))
+        """When thoth_constants is missing, THOTH_HOME comes from env var."""
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path / "custom-thoth"))
         module = self._load_helper(monkeypatch)
         assert module.get_thoth_home() == tmp_path / "custom-thoth"
 
-    def test_fallback_defaults_to_dot_hermes(self, monkeypatch):
-        """When thoth_constants is missing and HERMES_HOME unset, default to ~/.hermes."""
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+    def test_fallback_defaults_to_dot_thoth(self, monkeypatch):
+        """When thoth_constants is missing and THOTH_HOME unset, default to ~/.thoth."""
+        monkeypatch.delenv("THOTH_HOME", raising=False)
         module = self._load_helper(monkeypatch)
-        assert module.get_thoth_home() == Path.home() / ".hermes"
+        assert module.get_thoth_home() == Path.home() / ".thoth"
 
     def test_fallback_ignores_empty_thoth_home(self, monkeypatch):
-        """Empty/whitespace HERMES_HOME is treated as unset."""
-        monkeypatch.setenv("HERMES_HOME", "  ")
+        """Empty/whitespace THOTH_HOME is treated as unset."""
+        monkeypatch.setenv("THOTH_HOME", "  ")
         module = self._load_helper(monkeypatch)
-        assert module.get_thoth_home() == Path.home() / ".hermes"
+        assert module.get_thoth_home() == Path.home() / ".thoth"
 
     def test_fallback_display_thoth_home_shortens_path(self, monkeypatch):
         """Fallback display_thoth_home() uses ~/ shorthand like the real one."""
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("THOTH_HOME", raising=False)
         module = self._load_helper(monkeypatch)
-        assert module.display_thoth_home() == "~/.hermes"
+        assert module.display_thoth_home() == "~/.thoth"
 
     def test_fallback_display_thoth_home_profile_path(self, monkeypatch):
         """Fallback display_thoth_home() handles profile paths under ~/."""
-        monkeypatch.setenv("HERMES_HOME", str(Path.home() / ".hermes/profiles/coder"))
+        monkeypatch.setenv("THOTH_HOME", str(Path.home() / ".hermes/profiles/coder"))
         module = self._load_helper(monkeypatch)
         assert module.display_thoth_home() == "~/.hermes/profiles/coder"
 
     def test_fallback_display_thoth_home_custom_path(self, monkeypatch):
         """Fallback display_thoth_home() returns full path for non-home locations."""
-        monkeypatch.setenv("HERMES_HOME", "/opt/hermes-custom")
+        monkeypatch.setenv("THOTH_HOME", "/opt/hermes-custom")
         module = self._load_helper(monkeypatch)
         assert module.display_thoth_home() == "/opt/hermes-custom"
 

@@ -207,7 +207,7 @@ _DB_CACHE: Dict[str, Any] = {}
 
 
 def _get_session_db() -> Optional[Any]:
-    """Return a SessionDB instance for the current HERMES_HOME.
+    """Return a SessionDB instance for the current THOTH_HOME.
 
     SessionDB has no built-in singleton, but opening a new connection per
     /goal call would thrash the file. We cache one instance per

@@ -163,7 +163,7 @@ def resolve_aspect_ratio(value: Optional[str]) -> str:
 
 
 def _images_cache_dir() -> Path:
-    """Return ``$HERMES_HOME/cache/images/``, creating parents as needed."""
+    """Return ``$THOTH_HOME/cache/images/``, creating parents as needed."""
     from thoth_constants import get_thoth_home
 
     path = get_thoth_home() / "cache" / "images"
@@ -177,7 +177,7 @@ def save_b64_image(
     prefix: str = "image",
     extension: str = "png",
 ) -> Path:
-    """Decode base64 image data and write it under ``$HERMES_HOME/cache/images/``.
+    """Decode base64 image data and write it under ``$THOTH_HOME/cache/images/``.
 
     Returns the absolute :class:`Path` to the saved file.
 

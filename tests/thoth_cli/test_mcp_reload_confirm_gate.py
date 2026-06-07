@@ -52,8 +52,8 @@ class TestUserConfigMerge:
         }
         cfg_path.write_text(yaml.safe_dump(legacy))
 
-        monkeypatch.setenv("HERMES_HOME", str(home))
-        # Force a fresh reimport of config.py so the HERMES_HOME is honored.
+        monkeypatch.setenv("THOTH_HOME", str(home))
+        # Force a fresh reimport of config.py so the THOTH_HOME is honored.
         import importlib
         import thoth_cli.config as cfg_mod
         importlib.reload(cfg_mod)
@@ -82,7 +82,7 @@ class TestUserConfigMerge:
         }
         cfg_path.write_text(yaml.safe_dump(user_cfg))
 
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("THOTH_HOME", str(home))
         import importlib
         import thoth_cli.config as cfg_mod
         importlib.reload(cfg_mod)

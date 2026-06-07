@@ -802,7 +802,7 @@ class TestHasAnyProviderConfigured:
         }))
         monkeypatch.setattr(config_module, "get_env_path", lambda: thoth_home / ".env")
         monkeypatch.setattr(config_module, "get_thoth_home", lambda: thoth_home)
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         # Clear all provider env vars
         for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
                      "ANTHROPIC_TOKEN", "OPENAI_BASE_URL"):
@@ -822,7 +822,7 @@ class TestHasAnyProviderConfigured:
         }))
         monkeypatch.setattr(config_module, "get_env_path", lambda: thoth_home / ".env")
         monkeypatch.setattr(config_module, "get_thoth_home", lambda: thoth_home)
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
                      "ANTHROPIC_TOKEN", "OPENAI_BASE_URL"):
             monkeypatch.delenv(var, raising=False)
@@ -841,7 +841,7 @@ class TestHasAnyProviderConfigured:
         }))
         monkeypatch.setattr(config_module, "get_env_path", lambda: thoth_home / ".env")
         monkeypatch.setattr(config_module, "get_thoth_home", lambda: thoth_home)
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
                      "ANTHROPIC_TOKEN", "OPENAI_BASE_URL"):
             monkeypatch.delenv(var, raising=False)
@@ -861,7 +861,7 @@ class TestHasAnyProviderConfigured:
         }))
         monkeypatch.setattr(config_module, "get_env_path", lambda: thoth_home / ".env")
         monkeypatch.setattr(config_module, "get_thoth_home", lambda: thoth_home)
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr("thoth_cli.copilot_auth.resolve_copilot_token", lambda: ("", ""))
         _all_vars = {"OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
                       "ANTHROPIC_TOKEN", "OPENAI_BASE_URL"}
@@ -886,7 +886,7 @@ class TestHasAnyProviderConfigured:
         config_file.write_text(yaml.dump({"model": {"default": "my-local-model"}}))
         monkeypatch.setattr(config_module, "get_env_path", lambda: thoth_home / ".env")
         monkeypatch.setattr(config_module, "get_thoth_home", lambda: thoth_home)
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         # Clear all provider env vars
         for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
                      "ANTHROPIC_TOKEN", "OPENAI_BASE_URL"):

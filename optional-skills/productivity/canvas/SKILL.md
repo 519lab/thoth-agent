@@ -38,7 +38,7 @@ The base URL is whatever appears in your browser when you're logged into Canvas 
 ## Usage
 
 ```bash
-CANVAS="python $HERMES_HOME/skills/productivity/canvas/scripts/canvas_api.py"
+CANVAS="python $THOTH_HOME/skills/productivity/canvas/scripts/canvas_api.py"
 
 # List all active courses
 $CANVAS list_courses --enrollment-state active

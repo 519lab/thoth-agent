@@ -46,8 +46,8 @@ logger = logging.getLogger(__name__)
 # Paths
 # ---------------------------------------------------------------------------
 
-HERMES_HOME = get_thoth_home()
-SKILLS_DIR = HERMES_HOME / "skills"
+THOTH_HOME = get_thoth_home()
+SKILLS_DIR = THOTH_HOME / "skills"
 HUB_DIR = SKILLS_DIR / ".hub"
 LOCK_FILE = HUB_DIR / "lock.json"
 QUARANTINE_DIR = HUB_DIR / "quarantine"

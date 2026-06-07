@@ -38,7 +38,7 @@ from thoth_cli.profiles import (
 
 
 # ---------------------------------------------------------------------------
-# Shared fixture: redirect Path.home() and HERMES_HOME for profile tests
+# Shared fixture: redirect Path.home() and THOTH_HOME for profile tests
 # ---------------------------------------------------------------------------
 
 @pytest.fixture()
@@ -46,13 +46,13 @@ def profile_env(tmp_path, monkeypatch):
     """Set up an isolated environment for profile tests.
 
     * Path.home() -> tmp_path  (so _get_profiles_root() = tmp_path/.hermes/profiles)
-    * HERMES_HOME  -> tmp_path/.hermes  (so get_thoth_home() agrees)
+    * THOTH_HOME  -> tmp_path/.hermes  (so get_thoth_home() agrees)
     * Creates the bare-minimum ~/.hermes directory.
     """
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     default_home = tmp_path / ".hermes"
     default_home.mkdir(exist_ok=True)
-    monkeypatch.setenv("HERMES_HOME", str(default_home))
+    monkeypatch.setenv("THOTH_HOME", str(default_home))
     return tmp_path
 
 
@@ -523,23 +523,23 @@ class TestGetActiveProfileName:
     """Tests for get_active_profile_name()."""
 
     def test_default_thoth_home_returns_default(self, profile_env):
-        # HERMES_HOME points to tmp_path/.hermes which is the default
+        # THOTH_HOME points to tmp_path/.hermes which is the default
         assert get_active_profile_name() == "default"
 
     def test_profile_path_returns_profile_name(self, profile_env, monkeypatch):
         tmp_path = profile_env
         create_profile("coder", no_alias=True)
         profile_dir = tmp_path / ".hermes" / "profiles" / "coder"
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("THOTH_HOME", str(profile_dir))
         assert get_active_profile_name() == "coder"
 
     def test_custom_path_returns_default(self, profile_env, monkeypatch):
-        """A custom HERMES_HOME (Docker, etc.) IS the default root."""
+        """A custom THOTH_HOME (Docker, etc.) IS the default root."""
         tmp_path = profile_env
         custom = tmp_path / "some" / "other" / "path"
         custom.mkdir(parents=True)
-        monkeypatch.setenv("HERMES_HOME", str(custom))
-        # With Docker-aware roots, a custom HERMES_HOME is the default —
+        monkeypatch.setenv("THOTH_HOME", str(custom))
+        # With Docker-aware roots, a custom THOTH_HOME is the default —
         # not "custom".  The user is on the default profile of their
         # custom deployment.
         assert get_active_profile_name() == "default"
@@ -1029,49 +1029,49 @@ class TestInternalHelpers:
         assert home == tmp_path / ".hermes"
 
     def test_profiles_root_docker_deployment(self, tmp_path, monkeypatch):
-        """In Docker (HERMES_HOME outside ~/.hermes), profiles go under HERMES_HOME."""
+        """In Docker (THOTH_HOME outside ~/.hermes), profiles go under THOTH_HOME."""
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(docker_home))
+        monkeypatch.setenv("THOTH_HOME", str(docker_home))
         root = _get_profiles_root()
         assert root == docker_home / "profiles"
 
     def test_default_thoth_home_docker(self, tmp_path, monkeypatch):
-        """In Docker, _get_default_thoth_home() returns HERMES_HOME itself."""
+        """In Docker, _get_default_thoth_home() returns THOTH_HOME itself."""
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(docker_home))
+        monkeypatch.setenv("THOTH_HOME", str(docker_home))
         home = _get_default_thoth_home()
         assert home == docker_home
 
     def test_profiles_root_profile_mode(self, tmp_path, monkeypatch):
-        """In profile mode (HERMES_HOME under ~/.hermes), profiles root is still ~/.hermes/profiles."""
+        """In profile mode (THOTH_HOME under ~/.hermes), profiles root is still ~/.hermes/profiles."""
         native = tmp_path / ".hermes"
         profile_dir = native / "profiles" / "coder"
         profile_dir.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("THOTH_HOME", str(profile_dir))
         root = _get_profiles_root()
         assert root == native / "profiles"
 
     def test_active_profile_path_docker(self, tmp_path, monkeypatch):
-        """In Docker, active_profile file lives under HERMES_HOME."""
+        """In Docker, active_profile file lives under THOTH_HOME."""
         from thoth_cli.profiles import _get_active_profile_path
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(docker_home))
+        monkeypatch.setenv("THOTH_HOME", str(docker_home))
         path = _get_active_profile_path()
         assert path == docker_home / "active_profile"
 
     def test_create_profile_docker(self, tmp_path, monkeypatch):
-        """Profile created in Docker lands under HERMES_HOME/profiles/."""
+        """Profile created in Docker lands under THOTH_HOME/profiles/."""
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(docker_home))
+        monkeypatch.setenv("THOTH_HOME", str(docker_home))
         result = create_profile("orchestrator", no_alias=True)
         expected = docker_home / "profiles" / "orchestrator"
         assert result == expected
@@ -1082,7 +1082,7 @@ class TestInternalHelpers:
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(docker_home))
+        monkeypatch.setenv("THOTH_HOME", str(docker_home))
         assert get_active_profile_name() == "default"
 
     def test_active_profile_name_docker_profile(self, tmp_path, monkeypatch):
@@ -1091,7 +1091,7 @@ class TestInternalHelpers:
         profile = docker_home / "profiles" / "orchestrator"
         profile.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile))
+        monkeypatch.setenv("THOTH_HOME", str(profile))
         assert get_active_profile_name() == "orchestrator"
 
 

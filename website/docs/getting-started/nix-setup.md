@@ -119,7 +119,7 @@ services.hermes-agent.environmentFiles = [ "/var/lib/thoth/env" ];
 :::
 
 :::tip addToSystemPackages
-Setting `addToSystemPackages = true` does two things: puts the `thoth` CLI on your system PATH **and** sets `HERMES_HOME` system-wide so the interactive CLI shares state (sessions, skills, cron) with the gateway service. Without it, running `thoth` in your shell creates a separate `~/.hermes/` directory.
+Setting `addToSystemPackages = true` does two things: puts the `thoth` CLI on your system PATH **and** sets `THOTH_HOME` system-wide so the interactive CLI shares state (sessions, skills, cron) with the gateway service. Without it, running `thoth` in your shell creates a separate `~/.hermes/` directory.
 :::
 
 ### Container-aware CLI
@@ -306,7 +306,7 @@ If you'd rather manage `config.yaml` entirely outside Nix, use `configFile`:
 services.hermes-agent.configFile = /etc/thoth/config.yaml;
 ```
 
-This bypasses `settings` entirely — no merge, no generation. The file is copied as-is to `$HERMES_HOME/config.yaml` on each activation.
+This bypasses `settings` entirely — no merge, no generation. The file is copied as-is to `$THOTH_HOME/config.yaml` on each activation.
 
 ### Customization Cheatsheet
 
@@ -337,7 +337,7 @@ Quick reference for the most common things Nix users want to customize:
 Values in Nix expressions end up in `/nix/store`, which is world-readable. Always use `environmentFiles` with a secrets manager.
 :::
 
-Both `environment` (non-secret vars) and `environmentFiles` (secret files) are merged into `$HERMES_HOME/.env` at activation time (`nixos-rebuild switch`). Thoth reads this file on every startup, so changes take effect with a `systemctl restart hermes-agent` — no container recreation needed.
+Both `environment` (non-secret vars) and `environmentFiles` (secret files) are merged into `$THOTH_HOME/.env` at activation time (`nixos-rebuild switch`). Thoth reads this file on every startup, so changes take effect with a `systemctl restart hermes-agent` — no container recreation needed.
 
 ### sops-nix
 
@@ -401,7 +401,7 @@ The `documents` option installs files into the agent's working directory (the `w
 - **`USER.md`** — context about the user the agent is interacting with.
 - Any other files you place here are visible to the agent as workspace files.
 
-The agent identity file is separate: Thoth loads its primary `SOUL.md` from `$HERMES_HOME/SOUL.md`, which in the NixOS module is `${services.hermes-agent.stateDir}/.hermes/SOUL.md`. Putting `SOUL.md` in `documents` only creates a workspace file and will not replace the main persona file.
+The agent identity file is separate: Thoth loads its primary `SOUL.md` from `$THOTH_HOME/SOUL.md`, which in the NixOS module is `${services.hermes-agent.stateDir}/.hermes/SOUL.md`. Putting `SOUL.md` in `documents` only creates a workspace file and will not replace the main persona file.
 
 ```nix
 {
@@ -438,7 +438,7 @@ The `mcpServers` option declaratively configures [MCP (Model Context Protocol)](
 ```
 
 :::tip
-Environment variables in `env` values are resolved from `$HERMES_HOME/.env` at runtime. Use `environmentFiles` to inject secrets — never put tokens directly in Nix config.
+Environment variables in `env` values are resolved from `$THOTH_HOME/.env` at runtime. Use `environmentFiles` to inject secrets — never put tokens directly in Nix config.
 :::
 
 ### HTTP Transport (Remote Servers)
@@ -466,7 +466,7 @@ Set `auth = "oauth"` for servers using OAuth 2.1. Thoth implements the full PKCE
 }
 ```
 
-Tokens are stored in `$HERMES_HOME/mcp-tokens/<server-name>.json` and persist across restarts and rebuilds.
+Tokens are stored in `$THOTH_HOME/mcp-tokens/<server-name>.json` and persist across restarts and rebuilds.
 
 <details>
 <summary><strong>Initial OAuth authorization on headless servers</strong></summary>
@@ -481,7 +481,7 @@ docker exec -it hermes-agent \
   thoth mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
 
 # Native mode
-sudo -u thoth HERMES_HOME=/var/lib/hermes/.hermes \
+sudo -u thoth THOTH_HOME=/var/lib/hermes/.hermes \
   thoth mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
 ```
 
@@ -535,7 +535,7 @@ When thoth runs via the NixOS module, the following CLI commands are **blocked**
 This prevents drift between what Nix declares and what's on disk. Detection uses two signals:
 
 1. **`HERMES_MANAGED=true`** environment variable — set by the systemd service, visible to the gateway process
-2. **`.managed` marker file** in `HERMES_HOME` — set by the activation script, visible to interactive shells (e.g., `docker exec -it hermes-agent thoth config set ...` is also blocked)
+2. **`.managed` marker file** in `THOTH_HOME` — set by the activation script, visible to interactive shells (e.g., `docker exec -it hermes-agent thoth config set ...` is also blocked)
 
 To change configuration, edit your Nix config and run `sudo nixos-rebuild switch`.
 
@@ -558,7 +558,7 @@ Host                                    Container
   ├── current-package -> /nix/store/...    (symlink, updated each rebuild)
   ├── .gc-root -> /nix/store/...           (prevents nix-collect-garbage)
   ├── .container-identity                  (sha256 hash, triggers recreation)
-  ├── .hermes/                             (HERMES_HOME)
+  ├── .hermes/                             (THOTH_HOME)
   │   ├── .env                             (merged from environment + environmentFiles)
   │   ├── config.yaml                      (Nix-generated, deep-merged by activation)
   │   ├── .managed                         (marker file)
@@ -620,7 +620,7 @@ services.hermes-agent.extraPlugins = [
 ];
 ```
 
-Plugins are symlinked into `$HERMES_HOME/plugins/` at activation time. Thoth discovers them via its normal directory scan. Removing a plugin from the list and running `nixos-rebuild switch` removes the symlink.
+Plugins are symlinked into `$THOTH_HOME/plugins/` at activation time. Thoth discovers them via its normal directory scan. Removing a plugin from the list and running `nixos-rebuild switch` removes the symlink.
 
 ### Entry-Point Plugins (`extraPythonPackages`)
 
@@ -785,9 +785,9 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 | `user` | `str` | `"hermes"` | System user |
 | `group` | `str` | `"hermes"` | System group |
 | `createUser` | `bool` | `true` | Auto-create user/group |
-| `stateDir` | `str` | `"/var/lib/thoth"` | State directory (`HERMES_HOME` parent) |
+| `stateDir` | `str` | `"/var/lib/thoth"` | State directory (`THOTH_HOME` parent) |
 | `workingDirectory` | `str` | `"${stateDir}/workspace"` | Agent working directory (`MESSAGING_CWD`) |
-| `addToSystemPackages` | `bool` | `false` | Add `thoth` CLI to system PATH and set `HERMES_HOME` system-wide |
+| `addToSystemPackages` | `bool` | `false` | Add `thoth` CLI to system PATH and set `THOTH_HOME` system-wide |
 
 ### Configuration
 
@@ -800,7 +800,7 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `environmentFiles` | `listOf str` | `[]` | Paths to env files with secrets. Merged into `$HERMES_HOME/.env` at activation time |
+| `environmentFiles` | `listOf str` | `[]` | Paths to env files with secrets. Merged into `$THOTH_HOME/.env` at activation time |
 | `environment` | `attrsOf str` | `{}` | Non-secret env vars. **Visible in Nix store** — do not put secrets here |
 | `authFile` | `null` or `path` | `null` | OAuth credentials seed. Only copied on first deploy |
 | `authFileForceOverwrite` | `bool` | `false` | Always overwrite `auth.json` from `authFile` on activation |
@@ -834,7 +834,7 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 |---|---|---|---|
 | `extraArgs` | `listOf str` | `[]` | Extra args for `thoth gateway` |
 | `extraPackages` | `listOf package` | `[]` | Extra packages available to the agent. Added to the thoth user's per-user profile so terminal commands, skills, and cron jobs all see them |
-| `extraPlugins` | `listOf package` | `[]` | Directory plugin packages to symlink into `$HERMES_HOME/plugins/`. Each must contain `plugin.yaml` |
+| `extraPlugins` | `listOf package` | `[]` | Directory plugin packages to symlink into `$THOTH_HOME/plugins/`. Each must contain `plugin.yaml` |
 | `extraPythonPackages` | `listOf package` | `[]` | Python packages added to PYTHONPATH for entry-point plugin discovery. Build with `python312Packages` |
 | `extraDependencyGroups` | `listOf str` | `[]` | pyproject.toml optional extras to include in the sealed venv (e.g. `["hindsight"]`). Resolved by uv — no collisions |
 | `restart` | `str` | `"always"` | systemd `Restart=` policy |
@@ -859,7 +859,7 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 
 ```
 /var/lib/thoth/                     # stateDir (owned by hermes:thoth, 0750)
-├── .hermes/                         # HERMES_HOME
+├── .hermes/                         # THOTH_HOME
 │   ├── config.yaml                  # Nix-generated (deep-merged each rebuild)
 │   ├── .managed                     # Marker: CLI config mutation blocked
 │   ├── .env                         # Merged from environment + environmentFiles

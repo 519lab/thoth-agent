@@ -1679,7 +1679,7 @@ Thoth uses two different context scopes:
 
 | File | Purpose | Scope |
 |------|---------|-------|
-| `SOUL.md` | **Primary agent identity** — defines who the agent is (slot #1 in the system prompt) | `~/.hermes/SOUL.md` or `$HERMES_HOME/SOUL.md` |
+| `SOUL.md` | **Primary agent identity** — defines who the agent is (slot #1 in the system prompt) | `~/.hermes/SOUL.md` or `$THOTH_HOME/SOUL.md` |
 | `.hermes.md` / `HERMES.md` | Project-specific instructions (highest priority) | Walks to git root |
 | `AGENTS.md` | Project-specific instructions, coding conventions | Recursive directory walk |
 | `CLAUDE.md` | Claude Code context files (also detected) | Working directory only |

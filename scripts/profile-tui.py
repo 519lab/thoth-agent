@@ -41,8 +41,8 @@ try:
     from thoth_constants import get_thoth_home
 except ImportError:
     def get_thoth_home() -> Path:  # type: ignore[misc]
-        val = (os.environ.get("HERMES_HOME") or "").strip()
-        return Path(val) if val else Path.home() / ".hermes"
+        val = (os.environ.get("THOTH_HOME") or "").strip()
+        return Path(val) if val else Path.home() / ".thoth"
 
 DEFAULT_TUI_DIR = Path(
     os.environ.get("HERMES_TUI_DIR")

@@ -313,7 +313,7 @@ async def test_blocks_sensitive_home_and_thoth_paths(tmp_path: Path, monkeypatch
     from agent.context_references import preprocess_context_references_async
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path / ".hermes"))
 
     thoth_env = tmp_path / ".hermes" / ".env"
     thoth_env.parent.mkdir(parents=True)

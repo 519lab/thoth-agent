@@ -7,8 +7,8 @@
 #
 # Defaults:
 #
-#   - INSTALL_DIR:  ~/.hermes/hermes-agent
-#   - HERMES_HOME:  ~/.hermes
+#   - INSTALL_DIR:  ~/.thoth/hermes-agent
+#   - THOTH_HOME:  ~/.thoth
 #   - CLI command:  thoth
 #   - PostgreSQL:   docker compose service on port 5432, db `hermes`
 #
@@ -58,10 +58,10 @@ BOLD='\033[1m'
 REPO_URL_SSH="git@github.com:519lab/thoth-agent.git"
 REPO_URL_HTTPS="https://github.com/519lab/thoth-agent.git"
 
-HERMES_HOME_DEFAULT="$HOME/.hermes"
+THOTH_HOME_DEFAULT="$HOME/.thoth"
 CLI_NAME_DEFAULT="thoth"
 
-HERMES_HOME="${HERMES_HOME:-$HERMES_HOME_DEFAULT}"
+THOTH_HOME="${THOTH_HOME:-$THOTH_HOME_DEFAULT}"
 CLI_NAME="${THOTH_CLI_NAME:-${HERMES_CLI_NAME:-$CLI_NAME_DEFAULT}}"
 
 # INSTALL_DIR resolved after arg parsing + OS detection.
@@ -90,7 +90,7 @@ DETECTED_BROWSER_EXECUTABLE=""
 
 # ── Update vs. fresh install (set by detect_install_mode after arg parsing) ─
 # IS_UPDATE=true when the installer is re-running against an existing install
-# (detected by ``$HERMES_HOME/.install_log`` or an existing git checkout at
+# (detected by ``$THOTH_HOME/.install_log`` or an existing git checkout at
 # $INSTALL_DIR). On updates we preserve user-customized config, skip the
 # setup wizard when API keys are already configured, and back up .env
 # before any in-place mutation.
@@ -105,7 +105,7 @@ RESET_DB=false             # NEW: drop the postgres data volume before compose-u
 SKIP_NODE=false            # NEW: skip ui-tui/web npm installs
 # Force-rewrite preserves nothing: HERMES_PG_DSN, browser env, etc. get
 # rewritten even if the user customized them. Existing values are backed
-# up to ``$HERMES_HOME/.install-backup/`` first. Off by default — the
+# up to ``$THOTH_HOME/.install-backup/`` first. Off by default — the
 # installer auto-detects updates and keeps user config intact.
 FORCE_REWRITE_CONFIG=false
 BRANCH="main"
@@ -128,7 +128,7 @@ while [[ $# -gt 0 ]]; do
         --reset-db)        RESET_DB=true; shift ;;
         --branch)          BRANCH="$2"; shift 2 ;;
         --dir)             INSTALL_DIR="$2"; INSTALL_DIR_EXPLICIT=true; shift 2 ;;
-        --hermes-home)     HERMES_HOME="$2"; shift 2 ;;
+        --hermes-home)     THOTH_HOME="$2"; shift 2 ;;
         --cli-name)        CLI_NAME="$2"; shift 2 ;;
         --pg-dsn)          PG_DSN_OVERRIDE="$2"; shift 2 ;;
         --force-rewrite-config) FORCE_REWRITE_CONFIG=true; shift ;;
@@ -156,11 +156,11 @@ Options:
                         DESTRUCTIVE: all substrate state in that volume is lost.
   --branch NAME       Git branch to install (default: main)
   --dir PATH          Installation directory
-                        default (non-root): ~/.hermes/hermes-agent
+                        default (non-root): ~/.thoth/hermes-agent
                         default (root, Linux): /usr/local/lib/hermes-agent
   --hermes-home PATH  Data directory
-                        default: ~/.hermes
-                        (Override env: HERMES_HOME)
+                        default: ~/.thoth
+                        (Override env: THOTH_HOME)
   --cli-name NAME     Name for the CLI shim
                         default: thoth
                         Pass a different name (e.g. thoth-substrate) to
@@ -173,7 +173,7 @@ Options:
                       On updates, rewrite HERMES_PG_DSN and other installer-
                       managed entries in .env even when they have been
                       customized (a timestamped backup is written to
-                      $HERMES_HOME/.install-backup/ first). Default: preserve
+                      $THOTH_HOME/.install-backup/ first). Default: preserve
                       user-customized values.
   -h, --help          Show this help
 
@@ -260,16 +260,16 @@ is_termux() {
 # decision tree as upstream but with new defaults.
 detect_install_mode() {
     # An "update" is when ANY of these markers exist from a prior install
-    # against this $HERMES_HOME / $INSTALL_DIR pair:
-    #   - $HERMES_HOME/.install_log    — written at the end of every install
-    #   - $HERMES_HOME/.hermes_install — written by copy_config_templates
-    #   - $HERMES_HOME/.substrate_install — legacy marker (pre-2026-05-26)
+    # against this $THOTH_HOME / $INSTALL_DIR pair:
+    #   - $THOTH_HOME/.install_log    — written at the end of every install
+    #   - $THOTH_HOME/.hermes_install — written by copy_config_templates
+    #   - $THOTH_HOME/.substrate_install — legacy marker (pre-2026-05-26)
     #   - $INSTALL_DIR/.git            — repo is already cloned
     # Any one of these indicates the user has run the installer before, so
     # we preserve their config/state and skip first-run wizards.
-    if [ -f "$HERMES_HOME/.install_log" ] \
-       || [ -f "$HERMES_HOME/.hermes_install" ] \
-       || [ -f "$HERMES_HOME/.substrate_install" ] \
+    if [ -f "$THOTH_HOME/.install_log" ] \
+       || [ -f "$THOTH_HOME/.hermes_install" ] \
+       || [ -f "$THOTH_HOME/.substrate_install" ] \
        || [ -d "$INSTALL_DIR/.git" ]; then
         IS_UPDATE=true
         log_info "Existing installation detected — running in UPDATE mode."
@@ -286,14 +286,14 @@ resolve_install_layout() {
     fi
 
     if is_termux; then
-        INSTALL_DIR="$HERMES_HOME/hermes-agent"
+        INSTALL_DIR="$THOTH_HOME/hermes-agent"
         return 0
     fi
 
-    # Root on Linux: FHS layout, unless a legacy install exists at HERMES_HOME.
+    # Root on Linux: FHS layout, unless a legacy install exists at THOTH_HOME.
     if [ "$OS" = "linux" ] && [ "$(id -u)" -eq 0 ]; then
-        if [ -d "$HERMES_HOME/hermes-agent/.git" ]; then
-            INSTALL_DIR="$HERMES_HOME/hermes-agent"
+        if [ -d "$THOTH_HOME/hermes-agent/.git" ]; then
+            INSTALL_DIR="$THOTH_HOME/hermes-agent"
             log_info "Existing install detected at $INSTALL_DIR — keeping layout"
             return 0
         fi
@@ -302,11 +302,11 @@ resolve_install_layout() {
         log_info "Root install on Linux — using FHS layout"
         log_info "  Code:    $INSTALL_DIR"
         log_info "  Command: /usr/local/bin/$CLI_NAME"
-        log_info "  Data:    $HERMES_HOME (unchanged)"
+        log_info "  Data:    $THOTH_HOME (unchanged)"
         return 0
     fi
 
-    INSTALL_DIR="$HERMES_HOME/hermes-agent"
+    INSTALL_DIR="$THOTH_HOME/hermes-agent"
 }
 
 get_command_link_dir() {
@@ -342,7 +342,7 @@ get_hermes_command_path() {
 # Warn ONLY when we'd actually overwrite a foreign install, not on a
 # normal re-install of our own launcher. Two checks:
 #
-#   1. ``$HERMES_HOME`` already contains a directory that's NOT one of
+#   1. ``$THOTH_HOME`` already contains a directory that's NOT one of
 #      ours (no ``.hermes_install`` marker file).
 #   2. An existing ``thoth`` on PATH resolves to a different real file
 #      than the one we're about to write. ``command -v`` plus
@@ -356,7 +356,7 @@ warn_upstream_collision() {
     local hermes_home_dir="$HOME/.hermes"
     local saw_collision=false
 
-    if [ "$HERMES_HOME" = "$hermes_home_dir" ] && [ -d "$hermes_home_dir" ] && [ ! -f "$hermes_home_dir/.hermes_install" ] && [ ! -f "$hermes_home_dir/.substrate_install" ]; then
+    if [ "$THOTH_HOME" = "$hermes_home_dir" ] && [ -d "$hermes_home_dir" ] && [ ! -f "$hermes_home_dir/.hermes_install" ] && [ ! -f "$hermes_home_dir/.substrate_install" ]; then
         log_warn "$hermes_home_dir already exists and wasn't created by this installer."
         log_warn "  skills/config/SOUL.md in that directory will be SHARED with the existing install."
         saw_collision=true
@@ -573,9 +573,9 @@ check_node() {
         HAS_NODE=true
         return 0
     fi
-    if [ -x "$HERMES_HOME/node/bin/node" ]; then
-        export PATH="$HERMES_HOME/node/bin:$PATH"
-        log_success "Node.js $("$HERMES_HOME/node/bin/node" --version) found (Thoth-managed)"
+    if [ -x "$THOTH_HOME/node/bin/node" ]; then
+        export PATH="$THOTH_HOME/node/bin:$PATH"
+        log_success "Node.js $("$THOTH_HOME/node/bin/node" --version) found (Thoth-managed)"
         HAS_NODE=true
         return 0
     fi
@@ -617,7 +617,7 @@ install_node() {
     if ! curl -fsSL "${index_url}${tarball_name}" -o "$tmp_dir/$tarball_name"; then
         log_warn "Download failed"; rm -rf "$tmp_dir"; HAS_NODE=false; return 0
     fi
-    log_info "Extracting to $HERMES_HOME/node/..."
+    log_info "Extracting to $THOTH_HOME/node/..."
     if [[ "$tarball_name" == *.tar.xz ]]; then
         tar xf "$tmp_dir/$tarball_name" -C "$tmp_dir"
     else
@@ -625,16 +625,16 @@ install_node() {
     fi
     local extracted_dir=$(ls -d "$tmp_dir"/node-v* 2>/dev/null | head -1)
     [ ! -d "$extracted_dir" ] && { log_warn "Extraction failed"; rm -rf "$tmp_dir"; HAS_NODE=false; return 0; }
-    rm -rf "$HERMES_HOME/node"
-    mkdir -p "$HERMES_HOME"
-    mv "$extracted_dir" "$HERMES_HOME/node"
+    rm -rf "$THOTH_HOME/node"
+    mkdir -p "$THOTH_HOME"
+    mv "$extracted_dir" "$THOTH_HOME/node"
     rm -rf "$tmp_dir"
     mkdir -p "$HOME/.local/bin"
-    ln -sf "$HERMES_HOME/node/bin/node" "$HOME/.local/bin/node"
-    ln -sf "$HERMES_HOME/node/bin/npm"  "$HOME/.local/bin/npm"
-    ln -sf "$HERMES_HOME/node/bin/npx"  "$HOME/.local/bin/npx"
-    export PATH="$HERMES_HOME/node/bin:$PATH"
-    log_success "Node.js $("$HERMES_HOME/node/bin/node" --version) installed to $HERMES_HOME/node/"
+    ln -sf "$THOTH_HOME/node/bin/node" "$HOME/.local/bin/node"
+    ln -sf "$THOTH_HOME/node/bin/npm"  "$HOME/.local/bin/npm"
+    ln -sf "$THOTH_HOME/node/bin/npx"  "$HOME/.local/bin/npx"
+    export PATH="$THOTH_HOME/node/bin:$PATH"
+    log_success "Node.js $("$THOTH_HOME/node/bin/node" --version) installed to $THOTH_HOME/node/"
     HAS_NODE=true
 }
 
@@ -1161,14 +1161,14 @@ setup_path() {
     log_info "Setting up $CLI_NAME command..."
 
     if [ "$USE_VENV" = true ]; then
-        HERMES_BIN="$INSTALL_DIR/venv/bin/hermes"
+        THOTH_BIN="$INSTALL_DIR/venv/bin/thoth"
     else
-        HERMES_BIN="$(which hermes 2>/dev/null || echo "")"
-        [ -z "$HERMES_BIN" ] && { log_warn "hermes not on PATH"; return 0; }
+        THOTH_BIN="$(which thoth 2>/dev/null || echo "")"
+        [ -z "$THOTH_BIN" ] && { log_warn "thoth not on PATH"; return 0; }
     fi
 
-    if [ ! -x "$HERMES_BIN" ]; then
-        log_warn "hermes entry point not found at $HERMES_BIN"
+    if [ ! -x "$THOTH_BIN" ]; then
+        log_warn "thoth entry point not found at $THOTH_BIN"
         log_info "Re-run: cd $INSTALL_DIR && $UV_CMD pip install -e '.[all]'"
         return 0
     fi
@@ -1195,14 +1195,14 @@ setup_path() {
 # Do not edit by hand — re-run install.sh to regenerate.
 unset PYTHONPATH
 unset PYTHONHOME
-export HERMES_HOME="\${HERMES_HOME:-$HERMES_HOME}"
+export THOTH_HOME="\${THOTH_HOME:-$THOTH_HOME}"
 export HERMES_PG_DSN="\${HERMES_PG_DSN:-$pg_dsn}"
 # Echo the user-facing launcher name into resume/setup hints. The venv
 # console script is itself named "thoth" so argv[0] can't carry this.
 export THOTH_CLI_NAME="\${THOTH_CLI_NAME:-$CLI_NAME}"
 export HERMES_CLI_NAME="\${HERMES_CLI_NAME:-$CLI_NAME}"
 $embed_dim_export
-exec "$HERMES_BIN" "\$@"
+exec "$THOTH_BIN" "\$@"
 EOF
     chmod +x "$link_dir/$CLI_NAME"
     log_success "Launcher installed → $link_disp/$CLI_NAME"
@@ -1265,14 +1265,14 @@ EOF
     export PATH="$link_dir:$PATH"
 }
 
-# Back up $HERMES_HOME/.env before any in-place mutation. Backup name
+# Back up $THOTH_HOME/.env before any in-place mutation. Backup name
 # embeds an ISO timestamp + a short reason tag so users can tell which
 # rewrite produced each file. No-op if .env doesn't exist yet.
 _backup_env_file() {
     local reason="${1:-rewrite}"
-    local env_file="$HERMES_HOME/.env"
+    local env_file="$THOTH_HOME/.env"
     [ -f "$env_file" ] || return 0
-    local backup_dir="$HERMES_HOME/.install-backup"
+    local backup_dir="$THOTH_HOME/.install-backup"
     mkdir -p "$backup_dir"
     local ts
     ts=$(date -u +%Y%m%dT%H%M%SZ)
@@ -1286,26 +1286,26 @@ _backup_env_file() {
 # clearly already finished setup. Conservative — only checks the most
 # common provider keys; if none match we still run the wizard.
 _env_has_provider_api_key() {
-    local env_file="$HERMES_HOME/.env"
+    local env_file="$THOTH_HOME/.env"
     [ -f "$env_file" ] || return 1
     grep -qE '^(OPENAI_API_KEY|ANTHROPIC_API_KEY|OPENROUTER_API_KEY|NOUS_API_KEY|GEMINI_API_KEY|GROQ_API_KEY|XAI_API_KEY|MISTRAL_API_KEY|DEEPSEEK_API_KEY|OLLAMA_BASE_URL|CUSTOM_API_KEY)=..*' "$env_file"
 }
 
 copy_config_templates() {
-    log_info "Setting up configuration files in $HERMES_HOME..."
-    mkdir -p "$HERMES_HOME"/{cron,sessions,logs,pairing,hooks,image_cache,audio_cache,memories,skills}
+    log_info "Setting up configuration files in $THOTH_HOME..."
+    mkdir -p "$THOTH_HOME"/{cron,sessions,logs,pairing,hooks,image_cache,audio_cache,memories,skills}
 
-    if [ ! -f "$HERMES_HOME/.env" ]; then
+    if [ ! -f "$THOTH_HOME/.env" ]; then
         if [ -f "$INSTALL_DIR/.env.example" ]; then
-            cp "$INSTALL_DIR/.env.example" "$HERMES_HOME/.env"
+            cp "$INSTALL_DIR/.env.example" "$THOTH_HOME/.env"
         else
-            touch "$HERMES_HOME/.env"
+            touch "$THOTH_HOME/.env"
         fi
-        log_success "Created $HERMES_HOME/.env"
+        log_success "Created $THOTH_HOME/.env"
     else
-        log_info "$HERMES_HOME/.env exists, keeping it"
+        log_info "$THOTH_HOME/.env exists, keeping it"
     fi
-    chmod 600 "$HERMES_HOME/.env"
+    chmod 600 "$THOTH_HOME/.env"
 
     # Ensure HERMES_PG_DSN in .env matches THIS install's PG so non-launcher
     # entry points (gateway, cron jobs spawned outside the shim) can find
@@ -1315,9 +1315,9 @@ copy_config_templates() {
     # drifted. Custom DSNs — remote PG, custom creds, hosted Postgres
     # (Neon/Supabase/RDS) — are left untouched.
     local pg_dsn="${PG_DSN_OVERRIDE:-postgresql://${PG_USER_DEFAULT}:${PG_PASSWORD_DEFAULT}@${PG_HOST_DEFAULT}:${PG_PORT_DEFAULT}/${PG_DATABASE_DEFAULT}}"
-    if grep -q '^HERMES_PG_DSN=' "$HERMES_HOME/.env" 2>/dev/null; then
+    if grep -q '^HERMES_PG_DSN=' "$THOTH_HOME/.env" 2>/dev/null; then
         local cur
-        cur=$(grep '^HERMES_PG_DSN=' "$HERMES_HOME/.env" | head -1 | cut -d= -f2-)
+        cur=$(grep '^HERMES_PG_DSN=' "$THOTH_HOME/.env" | head -1 | cut -d= -f2-)
         if [ "$cur" != "$pg_dsn" ]; then
             # Detect "looks installer-managed" via host segment matching one
             # of the docker-compose-friendly localhost aliases.
@@ -1328,35 +1328,35 @@ copy_config_templates() {
 
             if [ "$FORCE_REWRITE_CONFIG" = true ]; then
                 _backup_env_file "force-rewrite-config"
-                sed -i "s|^HERMES_PG_DSN=.*|HERMES_PG_DSN=$pg_dsn|" "$HERMES_HOME/.env"
-                log_success "Updated HERMES_PG_DSN in $HERMES_HOME/.env ($cur → $pg_dsn) [--force-rewrite-config]"
+                sed -i "s|^HERMES_PG_DSN=.*|HERMES_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
+                log_success "Updated HERMES_PG_DSN in $THOTH_HOME/.env ($cur → $pg_dsn) [--force-rewrite-config]"
             elif [ "$_looks_local" = true ]; then
                 # Local DSN whose port drifted (typical after a port-bump
                 # on an upgrade). Safe to rewrite — but back up first.
                 _backup_env_file "pg-dsn-port-drift"
-                sed -i "s|^HERMES_PG_DSN=.*|HERMES_PG_DSN=$pg_dsn|" "$HERMES_HOME/.env"
-                log_success "Updated HERMES_PG_DSN in $HERMES_HOME/.env ($cur → $pg_dsn)"
+                sed -i "s|^HERMES_PG_DSN=.*|HERMES_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
+                log_success "Updated HERMES_PG_DSN in $THOTH_HOME/.env ($cur → $pg_dsn)"
             else
                 # Non-local DSN — almost certainly user-customized
                 # (remote PG, hosted service, custom creds). Leave it.
-                log_warn "HERMES_PG_DSN in $HERMES_HOME/.env points at a non-local cluster:"
+                log_warn "HERMES_PG_DSN in $THOTH_HOME/.env points at a non-local cluster:"
                 log_warn "  $cur"
                 log_warn "  This install's local PG is at $pg_dsn — NOT rewriting."
                 log_warn "  Pass --force-rewrite-config to overwrite (backs up .env first)."
             fi
         fi
     else
-        printf '\n# Substrate PostgreSQL DSN (added by installer)\nHERMES_PG_DSN=%s\n' "$pg_dsn" >> "$HERMES_HOME/.env"
-        log_success "Wrote HERMES_PG_DSN to $HERMES_HOME/.env"
+        printf '\n# Substrate PostgreSQL DSN (added by installer)\nHERMES_PG_DSN=%s\n' "$pg_dsn" >> "$THOTH_HOME/.env"
+        log_success "Wrote HERMES_PG_DSN to $THOTH_HOME/.env"
     fi
 
-    if [ ! -f "$HERMES_HOME/config.yaml" ] && [ -f "$INSTALL_DIR/cli-config.yaml.example" ]; then
-        cp "$INSTALL_DIR/cli-config.yaml.example" "$HERMES_HOME/config.yaml"
-        log_success "Created $HERMES_HOME/config.yaml"
+    if [ ! -f "$THOTH_HOME/config.yaml" ] && [ -f "$INSTALL_DIR/cli-config.yaml.example" ]; then
+        cp "$INSTALL_DIR/cli-config.yaml.example" "$THOTH_HOME/config.yaml"
+        log_success "Created $THOTH_HOME/config.yaml"
     fi
 
-    if [ ! -f "$HERMES_HOME/SOUL.md" ]; then
-        cat > "$HERMES_HOME/SOUL.md" <<'SOUL_EOF'
+    if [ ! -f "$THOTH_HOME/SOUL.md" ]; then
+        cat > "$THOTH_HOME/SOUL.md" <<'SOUL_EOF'
 # Thoth Agent Persona
 
 <!--
@@ -1365,14 +1365,14 @@ Edit to customize how Thoth communicates with you.
 Loaded fresh each message — no restart needed.
 -->
 SOUL_EOF
-        log_success "Created $HERMES_HOME/SOUL.md"
+        log_success "Created $THOTH_HOME/SOUL.md"
     fi
 
-    # Marker so warn_upstream_collision can tell if HERMES_HOME has previously
+    # Marker so warn_upstream_collision can tell if THOTH_HOME has previously
     # been used by this installer (avoid the warning on re-installs). The
     # legacy filename ``.substrate_install`` is also still accepted on read so
     # earlier installs aren't surprised by the warning.
-    touch "$HERMES_HOME/.hermes_install"
+    touch "$THOTH_HOME/.hermes_install"
 
     log_info "Syncing bundled skills..."
     if [ -x "$INSTALL_DIR/venv/bin/python" ] && [ -f "$INSTALL_DIR/tools/skills_sync.py" ]; then
@@ -1405,7 +1405,7 @@ find_system_browser() {
 }
 
 configure_browser_env_from_system_browser() {
-    local env_file="$HERMES_HOME/.env"
+    local env_file="$THOTH_HOME/.env"
     local browser_path="${DETECTED_BROWSER_EXECUTABLE:-$(find_system_browser 2>/dev/null || true)}"
     [ -z "$browser_path" ] && return 0
     [ -f "$env_file" ] || touch "$env_file"
@@ -1597,7 +1597,7 @@ setup_substrate_worker_service() {
     # baked in. Template the values here so the unit is correct for
     # the install we just performed.
     local python_path="$INSTALL_DIR/venv/bin/python"
-    local env_file="$HERMES_HOME/.env"
+    local env_file="$THOTH_HOME/.env"
 
     # Pick ExecStart wrapper — system-mode FHS runs as the operator's
     # primary user if set; user-mode runs as the invoking user implicitly.
@@ -1641,7 +1641,7 @@ MemoryMax=512M
 CPUWeight=50
 PrivateTmp=true
 ProtectSystem=strict
-ReadWritePaths=$HERMES_HOME
+ReadWritePaths=$THOTH_HOME
 
 [Install]
 WantedBy=$([ "$ROOT_FHS_LAYOUT" = true ] && echo "multi-user.target" || echo "default.target")
@@ -1698,7 +1698,7 @@ run_setup_wizard() {
     log_info "Starting setup wizard..."
     cd "$INSTALL_DIR"
     local pg_dsn="${PG_DSN_OVERRIDE:-postgresql://${PG_USER_DEFAULT}:${PG_PASSWORD_DEFAULT}@${PG_HOST_DEFAULT}:${PG_PORT_DEFAULT}/${PG_DATABASE_DEFAULT}}"
-    HERMES_HOME="$HERMES_HOME" HERMES_PG_DSN="$pg_dsn" \
+    THOTH_HOME="$THOTH_HOME" HERMES_PG_DSN="$pg_dsn" \
         "$INSTALL_DIR/venv/bin/python" -m thoth_cli.main setup < /dev/tty
 }
 
@@ -1713,9 +1713,9 @@ print_success() {
     echo ""
     echo -e "${CYAN}${BOLD}📁 Your files:${NC}"
     echo -e "   ${YELLOW}Code:${NC}      $INSTALL_DIR"
-    echo -e "   ${YELLOW}Data:${NC}      $HERMES_HOME"
-    echo -e "   ${YELLOW}Config:${NC}    $HERMES_HOME/config.yaml"
-    echo -e "   ${YELLOW}API keys:${NC}  $HERMES_HOME/.env"
+    echo -e "   ${YELLOW}Data:${NC}      $THOTH_HOME"
+    echo -e "   ${YELLOW}Config:${NC}    $THOTH_HOME/config.yaml"
+    echo -e "   ${YELLOW}API keys:${NC}  $THOTH_HOME/.env"
     echo ""
 
     if [ "$SKIP_POSTGRES" = false ]; then
@@ -1801,8 +1801,8 @@ main() {
 
     print_success
 
-    echo "git" > "$HERMES_HOME/.install_method"
-    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) cli_name=$CLI_NAME install_dir=$INSTALL_DIR" >> "$HERMES_HOME/.install_log"
+    echo "git" > "$THOTH_HOME/.install_method"
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) cli_name=$CLI_NAME install_dir=$INSTALL_DIR" >> "$THOTH_HOME/.install_log"
 }
 
 main

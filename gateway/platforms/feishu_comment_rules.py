@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Paths
 # ---------------------------------------------------------------------------
 #
-# Uses the canonical ``get_thoth_home()`` helper (HERMES_HOME-aware and
+# Uses the canonical ``get_thoth_home()`` helper (THOTH_HOME-aware and
 # profile-safe). Resolved at import time; this module is lazy-imported by
 # the Feishu comment event handler, which runs long after profile overrides
 # have been applied, so freezing paths here is safe.

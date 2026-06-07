@@ -2,7 +2,7 @@
 
 Verifies that:
  1. All bundled providers at plugins/model-providers/<name>/ are discovered
- 2. User plugins at $HERMES_HOME/plugins/model-providers/<name>/ override bundled
+ 2. User plugins at $THOTH_HOME/plugins/model-providers/<name>/ override bundled
  3. plugin.yaml manifests with kind=model-provider are correctly categorized
 """
 
@@ -65,10 +65,10 @@ def test_all_34_profiles_register():
 
 def test_user_plugin_overrides_bundled(tmp_path, monkeypatch):
     """A user plugin with the same name must override the bundled profile."""
-    # Point HERMES_HOME at a fresh temp dir
+    # Point THOTH_HOME at a fresh temp dir
     thoth_home = tmp_path / ".hermes"
     thoth_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     # get_thoth_home() may be module-cached depending on codebase; ensure the
     # env var is the source of truth. Most code paths re-read it each call.
 
@@ -116,7 +116,7 @@ def test_general_plugin_manager_skips_model_provider_kind(tmp_path, monkeypatch)
 
     thoth_home = tmp_path / ".hermes"
     thoth_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     # Create a user-installed plugin with an explicit kind: model-provider.
     user_plugin = thoth_home / "plugins" / "test-model-provider"

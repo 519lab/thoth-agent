@@ -335,7 +335,7 @@ The registry of record is `thoth_cli/commands.py` — every consumer
 ```
 ~/.hermes/config.yaml       Main configuration
 ~/.hermes/.env              API keys and secrets
-$HERMES_HOME/skills/        Installed skills
+$THOTH_HOME/skills/        Installed skills
 ~/.hermes/sessions/         Gateway routing index, request dumps, *.jsonl transcripts (and optional per-session JSON snapshots when sessions.write_json_snapshots: true)
 ~/.hermes/logs/             Gateway and error logs
 ~/.hermes/auth.json         OAuth tokens and credential pools
@@ -347,7 +347,7 @@ state all live in **PostgreSQL** (DSN `THOTH_PG_DSN`; legacy `HERMES_PG_DSN`
 still honored via the env bridge; default
 `postgresql://hermes:hermes@localhost:5432/hermes`) rather than `state.db`.
 The `state.db` SQLite file no longer exists in this fork. The installer's
-defaults still place `HERMES_HOME` at `~/.hermes/` and the launcher at
+defaults still place `THOTH_HOME` at `~/.hermes/` and the launcher at
 `hermes`; pass `--cli-name thoth-substrate --hermes-home ~/.thoth-substrate`
 to coexist with an existing upstream install.
 
@@ -1021,7 +1021,7 @@ python -m pytest tests/ -o 'addopts=' -q   # Full suite
 python -m pytest tests/tools/ -q            # Specific area
 ```
 
-- Tests auto-redirect `HERMES_HOME` to temp dirs — never touch real `~/.hermes/`
+- Tests auto-redirect `THOTH_HOME` to temp dirs — never touch real `~/.hermes/`
 - Run full suite before pushing any change
 - Use `-o 'addopts='` to clear any baked-in pytest flags
 

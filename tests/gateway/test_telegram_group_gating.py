@@ -536,7 +536,7 @@ def test_config_bridges_telegram_group_settings(monkeypatch, tmp_path):
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.delenv("TELEGRAM_REQUIRE_MENTION", raising=False)
     monkeypatch.delenv("TELEGRAM_MENTION_PATTERNS", raising=False)
     monkeypatch.delenv("TELEGRAM_EXCLUSIVE_BOT_MENTIONS", raising=False)
@@ -584,7 +584,7 @@ def test_config_bridges_telegram_user_allowlists(monkeypatch, tmp_path):
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.delenv("TELEGRAM_ALLOWED_USERS", raising=False)
     monkeypatch.delenv("TELEGRAM_GROUP_ALLOWED_USERS", raising=False)
     monkeypatch.delenv("TELEGRAM_GROUP_ALLOWED_CHATS", raising=False)
@@ -607,7 +607,7 @@ def test_config_env_overrides_telegram_user_allowlists(monkeypatch, tmp_path):
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.setenv("TELEGRAM_ALLOWED_USERS", "999")
     monkeypatch.setenv("TELEGRAM_GROUP_ALLOWED_USERS", "888")
 
@@ -644,7 +644,7 @@ def test_top_level_require_mention_bridges_to_telegram(monkeypatch, tmp_path):
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.delenv("TELEGRAM_REQUIRE_MENTION", raising=False)
 
     config = load_gateway_config()
@@ -672,7 +672,7 @@ def test_top_level_require_mention_does_not_override_telegram_section(monkeypatc
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.delenv("TELEGRAM_REQUIRE_MENTION", raising=False)
 
     config = load_gateway_config()
@@ -693,7 +693,7 @@ def test_config_bridges_telegram_ignored_threads(monkeypatch, tmp_path):
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.delenv("TELEGRAM_IGNORED_THREADS", raising=False)
 
     config = load_gateway_config()

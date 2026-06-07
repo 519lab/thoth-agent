@@ -1,9 +1,9 @@
 """Regression for install.sh update-safety: re-running the installer against
-an existing $HERMES_HOME must not clobber user-customized config.
+an existing $THOTH_HOME must not clobber user-customized config.
 
 Concretely, the installer can be re-run for two distinct purposes:
 
-  1. **Fresh install** — first time on this machine. No $HERMES_HOME state
+  1. **Fresh install** — first time on this machine. No $THOTH_HOME state
      exists; the installer creates ``.env``, ``config.yaml``, ``SOUL.md``,
      writes ``HERMES_PG_DSN`` based on the docker-compose port it picked,
      and runs the interactive setup wizard so the user can configure a
@@ -105,7 +105,7 @@ def test_pg_dsn_rewrite_preserves_user_customized_dsns() -> None:
 
 
 def test_env_mutation_is_backed_up_first() -> None:
-    """Any in-place sed against $HERMES_HOME/.env must be preceded by a
+    """Any in-place sed against $THOTH_HOME/.env must be preceded by a
     backup. The grep is intentionally loose — we just want the backup
     helper to be called from copy_config_templates so a regression
     can't silently re-introduce blind rewrites."""
@@ -113,7 +113,7 @@ def test_env_mutation_is_backed_up_first() -> None:
     # The single sed -i call against .env in this function rewrites
     # HERMES_PG_DSN. It must be preceded by a backup invocation.
     assert "_backup_env_file" in body, (
-        "copy_config_templates uses ``sed -i`` against $HERMES_HOME/.env. "
+        "copy_config_templates uses ``sed -i`` against $THOTH_HOME/.env. "
         "It must call _backup_env_file first so users can recover from a "
         "bad rewrite. Without this, an installer bug silently destroys "
         "the user's .env."
@@ -170,7 +170,7 @@ def test_setup_substrate_worker_service_called_from_main() -> None:
 
 def test_substrate_worker_unit_uses_install_paths() -> None:
     """The rendered unit must reference the install's actual paths
-    (INSTALL_DIR for ExecStart, HERMES_HOME for EnvironmentFile) so
+    (INSTALL_DIR for ExecStart, THOTH_HOME for EnvironmentFile) so
     operators with custom --hermes-home / --cli-name don't get a broken
     unit pointing at someone else's home directory."""
     body = _extract_function_body("setup_substrate_worker_service")
@@ -180,10 +180,10 @@ def test_substrate_worker_unit_uses_install_paths() -> None:
         "Unit's ExecStart must use $INSTALL_DIR-derived python path; "
         "hardcoding ~/.hermes/hermes-agent breaks custom-dir installs."
     )
-    # EnvironmentFile points at $HERMES_HOME/.env, not %h/.hermes/.env.
+    # EnvironmentFile points at $THOTH_HOME/.env, not %h/.hermes/.env.
     assert "EnvironmentFile=$env_file" in body or \
-           "EnvironmentFile=$HERMES_HOME" in body, (
-        "Unit's EnvironmentFile must use $HERMES_HOME-derived path so "
+           "EnvironmentFile=$THOTH_HOME" in body, (
+        "Unit's EnvironmentFile must use $THOTH_HOME-derived path so "
         "operators with custom --hermes-home get a working unit."
     )
 

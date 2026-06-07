@@ -94,7 +94,7 @@ class TestMigrateHomeToThoth:
 
         hermes = tmp_path / ".hermes"
         hermes.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(hermes))
+        monkeypatch.setenv("THOTH_HOME", str(hermes))
         monkeypatch.setenv("THOTH_HOME", str(hermes))
 
         with patch("thoth_cli.config.Path.home", return_value=tmp_path):

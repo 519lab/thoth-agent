@@ -183,7 +183,7 @@ def is_managed() -> bool:
     """Check if Thoth is running in package-manager-managed mode.
 
     Two signals: the HERMES_MANAGED env var (set by the systemd service),
-    or a .managed marker file in HERMES_HOME (set by the NixOS activation
+    or a .managed marker file in THOTH_HOME (set by the NixOS activation
     script, so interactive shells also see it).
     """
     return get_managed_system() is not None
@@ -306,7 +306,7 @@ def managed_error(action: str = "modify configuration"):
 # =============================================================================
 
 def get_container_exec_info() -> Optional[dict]:
-    """Read container mode metadata from HERMES_HOME/.container-mode.
+    """Read container mode metadata from THOTH_HOME/.container-mode.
 
     Returns a dict with keys: backend, container_name, exec_user, thoth_bin
     or None if container mode is not active, we're already inside the
@@ -379,7 +379,7 @@ def _secure_dir(path):
 
     The mode can be overridden via the HERMES_HOME_MODE environment variable
     (e.g. HERMES_HOME_MODE=0701) for deployments where a web server (nginx,
-    caddy, etc.) needs to traverse HERMES_HOME to reach a served subdirectory.
+    caddy, etc.) needs to traverse THOTH_HOME to reach a served subdirectory.
     The execute-only bit on a directory permits cd-through without exposing
     directory listings.
     """
@@ -440,7 +440,7 @@ def _secure_file(path):
 
 
 def _ensure_default_soul_md(home: Path) -> None:
-    """Seed a default SOUL.md into HERMES_HOME if the user doesn't have one yet."""
+    """Seed a default SOUL.md into THOTH_HOME if the user doesn't have one yet."""
     soul_path = home / "SOUL.md"
     if soul_path.exists():
         return
@@ -456,7 +456,7 @@ def migrate_home_to_thoth(quiet: bool = False) -> bool:
     on-disk layout stays at ~/.hermes until a future phase does the full rename.
 
     Windows is skipped: symlinks require elevation or Developer Mode, and
-    Windows installs are env-driven (the installer sets HERMES_HOME/THOTH_HOME
+    Windows installs are env-driven (the installer sets THOTH_HOME/THOTH_HOME
     explicitly) so _disk_default_home() is never the authoritative source there.
 
     Returns True if the symlink was created, False if nothing was done.
@@ -519,7 +519,7 @@ def _ensure_thoth_home_managed(home: Path):
     """Managed-mode variant: verify dirs exist (activation creates them), seed SOUL.md."""
     if not home.is_dir():
         raise RuntimeError(
-            f"HERMES_HOME {home} does not exist. "
+            f"THOTH_HOME {home} does not exist. "
             "Run 'sudo nixos-rebuild switch' first."
         )
     for subdir in ("cron", "sessions", "logs", "memories"):
@@ -1709,10 +1709,10 @@ DEFAULT_CONFIG = {
 
     # ``thoth update`` behaviour.
     "updates": {
-        # Run a full ``thoth backup``-style zip of HERMES_HOME before every
-        # ``thoth update``.  Backups land in ``<HERMES_HOME>/backups/`` and
+        # Run a full ``thoth backup``-style zip of THOTH_HOME before every
+        # ``thoth update``.  Backups land in ``<THOTH_HOME>/backups/`` and
         # can be restored with ``thoth import <path>``.  Off by default —
-        # on large HERMES_HOME directories the zip can add minutes to every
+        # on large THOTH_HOME directories the zip can add minutes to every
         # update.  Set to true to re-enable, or pass ``--backup`` to opt in
         # for a single update run.
         "pre_update_backup": False,
@@ -1750,7 +1750,7 @@ DEFAULT_CONFIG = {
 
         # How to handle missing server binaries.
         # ``"auto"`` — try to install via npm/go/pip into
-        #              ``<HERMES_HOME>/lsp/bin/`` on first use.
+        #              ``<THOTH_HOME>/lsp/bin/`` on first use.
         # ``"manual"`` — only use binaries already on PATH.
         # ``"off"`` — alias for ``manual``.
         "install_strategy": "auto",
@@ -3566,7 +3566,7 @@ def warn_deprecated_cwd_env_vars(config: Optional[Dict[str, Any]] = None) -> Non
             f"this is deprecated."
         )
     if lines:
-        hint_path = os.environ.get("HERMES_HOME", "~/.hermes")
+        hint_path = os.environ.get("THOTH_HOME", "~/.thoth")
         lines.insert(0, "\033[33m⚠ Deprecated .env settings detected:\033[0m")
         lines.append(
             f"  \033[2mMove to config.yaml instead:  "
@@ -3878,7 +3878,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
                 disabled = []
             disabled_set = set(disabled)
 
-            # Scan ``$HERMES_HOME/plugins/`` for currently installed user plugins.
+            # Scan ``$THOTH_HOME/plugins/`` for currently installed user plugins.
             grandfathered: List[str] = []
             try:
                 user_plugins_dir = get_thoth_home() / "plugins"
@@ -4449,7 +4449,7 @@ def load_config() -> Dict[str, Any]:
     the cached value when unchanged, since most call sites mutate the
     result (e.g. ``cfg["model"]["default"] = ...`` before ``save_config``).
     The cache is keyed on ``str(config_path)`` so profile switches
-    (which change ``HERMES_HOME`` and therefore ``get_config_path()``)
+    (which change ``THOTH_HOME`` and therefore ``get_config_path()``)
     don't collide.
 
     Read-only callers should use ``load_config_readonly()`` to skip the

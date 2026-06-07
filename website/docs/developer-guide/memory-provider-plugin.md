@@ -43,7 +43,7 @@ class MyMemoryProvider(MemoryProvider):
         """Called once at agent startup.
 
         kwargs always includes:
-          hermes_home (str): Active HERMES_HOME path. Use for storage.
+          hermes_home (str): Active THOTH_HOME path. Use for storage.
         """
         self._api_key = os.environ.get("MY_API_KEY", "")
         self._session_id = session_id
@@ -115,7 +115,7 @@ def get_config_schema(self):
 Fields with `secret: True` and `env_var` go to `.env`. Non-secret fields are passed to `save_config()`.
 
 :::tip Minimal vs Full Schema
-Every field in `get_config_schema()` is prompted during `thoth memory setup`. Providers with many options should keep the schema minimal — only include fields the user **must** configure (API key, required credentials). Document optional settings in a config file reference (e.g. `$HERMES_HOME/myprovider.json`) rather than prompting for them all during setup. This keeps the setup wizard fast while still supporting advanced configuration. See the Supermemory provider for an example — it only prompts for the API key; all other options live in `supermemory.json`.
+Every field in `get_config_schema()` is prompted during `thoth memory setup`. Providers with many options should keep the schema minimal — only include fields the user **must** configure (API key, required credentials). Document optional settings in a config file reference (e.g. `$THOTH_HOME/myprovider.json`) rather than prompting for them all during setup. This keeps the setup wizard fast while still supporting advanced configuration. See the Supermemory provider for an example — it only prompts for the API key; all other options live in `supermemory.json`.
 :::
 
 ## Save Config

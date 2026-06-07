@@ -254,7 +254,7 @@ def get_task_script_path() -> Path:
     """The generated ``gateway.cmd`` wrapper that the schtasks entry invokes.
 
     Lives under ``%LOCALAPPDATA%\\thoth\\gateway-service\\<task_name>.cmd``
-    (or ``<HERMES_HOME>/gateway-service/<task_name>.cmd`` so per-profile
+    (or ``<THOTH_HOME>/gateway-service/<task_name>.cmd`` so per-profile
     Thoth installs stay self-contained).
     """
     _assert_windows()
@@ -303,7 +303,7 @@ def _build_gateway_cmd_script(
 
     The script:
       - cd's into the project directory
-      - exports HERMES_HOME, PYTHONIOENCODING, VIRTUAL_ENV
+      - exports THOTH_HOME, PYTHONIOENCODING, VIRTUAL_ENV
       - invokes ``pythonw -m thoth_cli.main [--profile X] gateway run``
         directly so the wrapper cmd.exe exits without a visible gateway console
 
@@ -313,7 +313,7 @@ def _build_gateway_cmd_script(
     """
     lines = ["@echo off", f"rem {_TASK_DESCRIPTION}"]
     lines.append(f"cd /d {_quote_cmd_script_arg(working_dir)}")
-    lines.append(f'set "HERMES_HOME={thoth_home}"')
+    lines.append(f'set "THOTH_HOME={thoth_home}"')
     lines.append(f'set "THOTH_HOME={thoth_home}"')
     lines.append('set "PYTHONIOENCODING=utf-8"')
     lines.append('set "HERMES_GATEWAY_DETACHED=1"')
@@ -535,7 +535,7 @@ def _build_gateway_argv() -> tuple[list[str], str, dict[str, str]]:
     argv.extend(["gateway", "run"])
 
     env_overlay = {
-        "HERMES_HOME": thoth_home,
+        "THOTH_HOME": thoth_home,
         "THOTH_HOME": thoth_home,
         "PYTHONIOENCODING": "utf-8",
         "HERMES_GATEWAY_DETACHED": "1",

@@ -82,7 +82,7 @@ def get_sandbox_dir() -> Path:
     """Return the host-side root for all sandbox storage (Docker workspaces,
     Singularity overlays/SIF cache, etc.).
 
-    Configurable via TERMINAL_SANDBOX_DIR. Defaults to {HERMES_HOME}/sandboxes/.
+    Configurable via TERMINAL_SANDBOX_DIR. Defaults to {THOTH_HOME}/sandboxes/.
     """
     custom = os.getenv("TERMINAL_SANDBOX_DIR")
     if custom:

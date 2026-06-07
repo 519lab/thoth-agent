@@ -339,7 +339,7 @@ class TestFileSync:
         self, make_env, vercel_module, vercel_sdk, monkeypatch, tmp_path
     ):
         thoth_home = tmp_path / ".hermes"
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         src = tmp_path / "token.txt"
         src.write_text("host-token")
         monkeypatch.setattr(
@@ -507,7 +507,7 @@ class TestSnapshotPersistence:
         self, make_env, vercel_module, vercel_sdk, monkeypatch, tmp_path
     ):
         thoth_home = tmp_path / ".hermes"
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         vercel_module._store_snapshot("task-123", "snap_saved")
         restored = _FakeSandbox(cwd="/restored")
         vercel_sdk.create_side_effects.append(restored)
@@ -525,7 +525,7 @@ class TestSnapshotPersistence:
         self, make_env, vercel_module, vercel_sdk, monkeypatch, tmp_path
     ):
         thoth_home = tmp_path / ".hermes"
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         vercel_module._store_snapshot("task-123", "snap_stale")
         fresh = _FakeSandbox(cwd="/fresh")
         vercel_sdk.create_side_effects.extend(
@@ -546,7 +546,7 @@ class TestSnapshotPersistence:
         self, make_env, vercel_module, vercel_sdk, monkeypatch, tmp_path
     ):
         thoth_home = tmp_path / ".hermes"
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         env = make_env()
         sandbox = vercel_sdk.current
         sandbox.snapshot_side_effects.append(RuntimeError("snapshot failed"))
@@ -562,7 +562,7 @@ class TestSnapshotPersistence:
         self, make_env, vercel_module, vercel_sdk, monkeypatch, tmp_path
     ):
         thoth_home = tmp_path / ".hermes"
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         env = make_env(persistent_filesystem=False)
         sandbox = vercel_sdk.current
 
@@ -577,7 +577,7 @@ class TestSnapshotPersistence:
         self, make_env, vercel_module, vercel_sdk, monkeypatch, tmp_path
     ):
         thoth_home = tmp_path / ".hermes"
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         env = make_env(task_id="")
         sandbox = vercel_sdk.current
 

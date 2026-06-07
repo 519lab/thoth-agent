@@ -2934,7 +2934,7 @@ def _(rid, params: dict) -> dict:
 # from the event stream).  On turn-complete it posts the final tree here;
 # /replay and /replay-diff fetch past snapshots by session_id + filename.
 #
-# Layout:  $HERMES_HOME/spawn-trees/<session_id>/<timestamp>.json
+# Layout:  $THOTH_HOME/spawn-trees/<session_id>/<timestamp>.json
 # Each file contains { session_id, started_at, finished_at, subagents: [...] }.
 
 

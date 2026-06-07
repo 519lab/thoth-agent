@@ -102,7 +102,7 @@ class TestWebServerEndpoints:
 
     @pytest.fixture(autouse=True)
     def _setup_test_client(self, monkeypatch, _isolate_thoth_home):
-        """Create a TestClient and isolate the state DB under the test HERMES_HOME."""
+        """Create a TestClient and isolate the state DB under the test THOTH_HOME."""
         try:
             from starlette.testclient import TestClient
         except ImportError:
@@ -1614,12 +1614,12 @@ class TestDiscoverUserThemes:
     """Tests for _discover_user_themes() — scans ~/.hermes/dashboard-themes/."""
 
     def test_returns_empty_when_dir_missing(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         from thoth_cli import web_server
         assert web_server._discover_user_themes() == []
 
     def test_loads_and_normalises_yaml(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         themes_dir = tmp_path / "dashboard-themes"
         themes_dir.mkdir()
         (themes_dir / "ocean.yaml").write_text(
@@ -1643,7 +1643,7 @@ class TestDiscoverUserThemes:
         assert "fontSans" in results[0]["typography"]
 
     def test_malformed_yaml_skipped(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         themes_dir = tmp_path / "dashboard-themes"
         themes_dir.mkdir()
         (themes_dir / "bad.yaml").write_text("::: not valid yaml :::\n\tindent wrong")
@@ -1909,7 +1909,7 @@ class TestDashboardPluginManifestExtensions:
         return plug_dir
 
     def test_override_and_hidden_carried_through(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "skin-home", {
             "name": "skin-home",
             "label": "Skin Home",
@@ -1927,7 +1927,7 @@ class TestDashboardPluginManifestExtensions:
         assert entry["slots"] == ["sidebar", "header-left"]
 
     def test_override_requires_leading_slash(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "bad-override", {
             "name": "bad-override",
             "label": "Bad",
@@ -1941,7 +1941,7 @@ class TestDashboardPluginManifestExtensions:
         assert "override" not in entry["tab"]
 
     def test_slots_default_empty(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "no-slots", {
             "name": "no-slots",
             "label": "No Slots",
@@ -1957,7 +1957,7 @@ class TestDashboardPluginManifestExtensions:
         assert "override" not in entry["tab"]
 
     def test_slots_filters_non_string_entries(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "mixed-slots", {
             "name": "mixed-slots",
             "label": "Mixed",
@@ -1976,7 +1976,7 @@ class TestDashboardPluginManifestExtensions:
         the manifest loader untouched.  The backend has no allowlist — the
         frontend ``<PluginSlot name="...">`` placements decide what actually
         renders — but the loader must not mangle colons in slot names."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "page-slots", {
             "name": "page-slots",
             "label": "Page Slots",

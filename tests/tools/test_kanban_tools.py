@@ -24,7 +24,7 @@ def test_kanban_tools_hidden_without_env_var(monkeypatch, tmp_path):
     monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
 
     import tools.kanban_tools  # ensure registered
     from tools.registry import invalidate_check_fn_cache, registry
@@ -44,7 +44,7 @@ def test_kanban_tools_visible_with_env_var(monkeypatch, tmp_path):
     monkeypatch.setenv("HERMES_KANBAN_TASK", "t_fake")
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
 
     import tools.kanban_tools  # ensure registered
     from tools.registry import invalidate_check_fn_cache, registry
@@ -68,7 +68,7 @@ def test_kanban_worker_env_overrides_profile_toolset_filter(monkeypatch, tmp_pat
     monkeypatch.setenv("HERMES_KANBAN_TASK", "t_fake")
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
 
     import tools.kanban_tools  # ensure registered
     from model_tools import _clear_tool_defs_cache, get_tool_definitions
@@ -98,7 +98,7 @@ def test_worker_with_kanban_toolset_still_hides_board_routing(monkeypatch, tmp_p
     home = tmp_path / ".hermes"
     home.mkdir()
     (home / "config.yaml").write_text("toolsets:\n  - kanban\n")
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
 
     import tools.kanban_tools  # ensure registered
     from tools.registry import invalidate_check_fn_cache, registry
@@ -123,7 +123,7 @@ def test_kanban_tools_visible_with_toolset_config(monkeypatch, tmp_path):
     home = tmp_path / ".hermes"
     home.mkdir()
     (home / "config.yaml").write_text("toolsets:\n  - kanban\n")
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
 
     import tools.kanban_tools  # ensure registered
     from tools.registry import invalidate_check_fn_cache, registry
@@ -148,7 +148,7 @@ def test_kanban_tools_visible_with_toolset_config(monkeypatch, tmp_path):
 
 @pytest.fixture
 def worker_env(monkeypatch, tmp_path, thoth_db_initialized_sync):
-    """Simulate being a worker: HERMES_HOME isolated, HERMES_KANBAN_TASK set
+    """Simulate being a worker: THOTH_HOME isolated, HERMES_KANBAN_TASK set
     after we've created the task.
 
     Phase 0: depends on ``thoth_db_initialized_sync`` so the per-test
@@ -158,7 +158,7 @@ def worker_env(monkeypatch, tmp_path, thoth_db_initialized_sync):
     """
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setenv("HERMES_PROFILE", "test-worker")
     monkeypatch.delenv("HERMES_SESSION_ID", raising=False)
     from pathlib import Path as _Path
@@ -1095,7 +1095,7 @@ def test_kanban_guidance_not_in_normal_prompt(monkeypatch, tmp_path):
     monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     from pathlib import Path as _P
     monkeypatch.setattr(_P, "home", lambda: tmp_path)
 
@@ -1123,7 +1123,7 @@ def test_kanban_guidance_in_worker_prompt(monkeypatch, tmp_path):
     monkeypatch.setenv("HERMES_KANBAN_TASK", "t_fake")
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     from pathlib import Path as _P
     monkeypatch.setattr(_P, "home", lambda: tmp_path)
 
@@ -1158,7 +1158,7 @@ def test_kanban_guidance_prompt_size_bounded(monkeypatch, tmp_path):
     monkeypatch.setenv("HERMES_KANBAN_TASK", "t_fake")
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     from pathlib import Path as _P
     monkeypatch.setattr(_P, "home", lambda: tmp_path)
 
@@ -1371,7 +1371,7 @@ def test_orchestrator_complete_any_task_allowed(monkeypatch, tmp_path, thoth_db_
     monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     from pathlib import Path as _P
     monkeypatch.setattr(_P, "home", lambda: tmp_path)
 
@@ -1419,7 +1419,7 @@ def multi_board_env(monkeypatch, tmp_path, thoth_db_initialized_sync):
     """
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     # Make sure neither HERMES_KANBAN_DB nor HERMES_KANBAN_BOARD pin a
     # board — the test is specifically about the per-call override.
     monkeypatch.delenv("HERMES_KANBAN_DB", raising=False)
@@ -1635,7 +1635,7 @@ def test_board_param_routes_heartbeat_to_alt_board(monkeypatch, tmp_path, thoth_
     to a task that exists in the alt board)."""
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setenv("HERMES_PROFILE", "alt-worker")
     monkeypatch.delenv("HERMES_KANBAN_DB", raising=False)
     monkeypatch.delenv("HERMES_KANBAN_BOARD", raising=False)

@@ -1,7 +1,7 @@
 """
 Profile management for multiple isolated Thoth instances.
 
-Each profile is a fully independent HERMES_HOME directory with its own
+Each profile is a fully independent THOTH_HOME directory with its own
 config.yaml, .env, memory, sessions, skills, gateway, cron, and logs.
 Profiles live under ``~/.hermes/profiles/<name>/`` by default.
 
@@ -213,23 +213,23 @@ _THOTH_SUBCOMMANDS = frozenset({
 def _get_profiles_root() -> Path:
     """Return the directory where named profiles are stored.
 
-    Anchored to the thoth root, NOT to the current HERMES_HOME
+    Anchored to the thoth root, NOT to the current THOTH_HOME
     (which may itself be a profile).  This ensures ``coder profile list``
     can see all profiles.
 
-    In Docker/custom deployments where HERMES_HOME points outside
-    ``~/.hermes``, profiles live under ``HERMES_HOME/profiles/`` so
+    In Docker/custom deployments where THOTH_HOME points outside
+    ``~/.hermes``, profiles live under ``THOTH_HOME/profiles/`` so
     they persist on the mounted volume.
     """
     return _get_default_thoth_home() / "profiles"
 
 
 def _get_default_thoth_home() -> Path:
-    """Return the default (pre-profile) HERMES_HOME path.
+    """Return the default (pre-profile) THOTH_HOME path.
 
     In standard deployments this is ``~/.hermes``.
-    In Docker/custom deployments where HERMES_HOME is outside ``~/.hermes``
-    (e.g. ``/opt/data``), returns HERMES_HOME directly.
+    In Docker/custom deployments where THOTH_HOME is outside ``~/.hermes``
+    (e.g. ``/opt/data``), returns THOTH_HOME directly.
     """
     from thoth_constants import get_default_thoth_root
     return get_default_thoth_root()
@@ -298,7 +298,7 @@ def validate_profile_name(name: str) -> None:
 
 
 def get_profile_dir(name: str) -> Path:
-    """Resolve a profile name to its HERMES_HOME directory."""
+    """Resolve a profile name to its THOTH_HOME directory."""
     canon = normalize_profile_name(name)
     if canon == "default":
         return _get_default_thoth_home()
@@ -784,7 +784,7 @@ def create_profile(
 def seed_profile_skills(profile_dir: Path, quiet: bool = False) -> Optional[dict]:
     """Seed bundled skills into a profile via subprocess.
 
-    Uses subprocess because sync_skills() caches HERMES_HOME at module level.
+    Uses subprocess because sync_skills() caches THOTH_HOME at module level.
     Returns the sync result dict, or None on failure.
 
     Profiles that opted out of bundled skills (via ``thoth profile create
@@ -805,7 +805,7 @@ def seed_profile_skills(profile_dir: Path, quiet: bool = False) -> Optional[dict
             [sys.executable, "-c",
              "import json; from tools.skills_sync import sync_skills; "
              "r = sync_skills(quiet=True); print(json.dumps(r))"],
-            env={**os.environ, "HERMES_HOME": str(profile_dir)},
+            env={**os.environ, "THOTH_HOME": str(profile_dir)},
             cwd=str(project_root),
             capture_output=True, text=True, timeout=60,
         )
@@ -971,10 +971,10 @@ def _cleanup_gateway_service(name: str, profile_dir: Path) -> None:
     import platform as _platform
 
     # Derive service name for this profile
-    # Temporarily set HERMES_HOME so _profile_suffix resolves correctly
-    old_home = os.environ.get("HERMES_HOME")
+    # Temporarily set THOTH_HOME so _profile_suffix resolves correctly
+    old_home = os.environ.get("THOTH_HOME")
     try:
-        os.environ["HERMES_HOME"] = str(profile_dir)
+        os.environ["THOTH_HOME"] = str(profile_dir)
         from thoth_cli.gateway import get_service_name, get_launchd_plist_path
 
         if _platform.system() == "Linux":
@@ -1009,9 +1009,9 @@ def _cleanup_gateway_service(name: str, profile_dir: Path) -> None:
         print(f"⚠ Service cleanup: {e}")
     finally:
         if old_home is not None:
-            os.environ["HERMES_HOME"] = old_home
-        elif "HERMES_HOME" in os.environ:
-            del os.environ["HERMES_HOME"]
+            os.environ["THOTH_HOME"] = old_home
+        elif "THOTH_HOME" in os.environ:
+            del os.environ["THOTH_HOME"]
 
 
 def _stop_gateway_process(profile_dir: Path) -> None:
@@ -1098,11 +1098,11 @@ def set_active_profile(name: str) -> None:
 
 
 def get_active_profile_name() -> str:
-    """Infer the current profile name from HERMES_HOME.
+    """Infer the current profile name from THOTH_HOME.
 
-    Returns ``"default"`` if HERMES_HOME is not set or points to ``~/.hermes``.
-    Returns the profile name if HERMES_HOME points into ``~/.hermes/profiles/<name>``.
-    Returns ``"custom"`` if HERMES_HOME is set to an unrecognized path.
+    Returns ``"default"`` if THOTH_HOME is not set or points to ``~/.hermes``.
+    Returns the profile name if THOTH_HOME points into ``~/.hermes/profiles/<name>``.
+    Returns ``"custom"`` if THOTH_HOME is set to an unrecognized path.
     """
     from thoth_constants import get_thoth_home
     thoth_home = get_thoth_home()
@@ -1453,10 +1453,10 @@ def rename_profile(old_name: str, new_name: str) -> Path:
 # ---------------------------------------------------------------------------
 
 def resolve_profile_env(profile_name: str) -> str:
-    """Resolve a profile name to a HERMES_HOME path string.
+    """Resolve a profile name to a THOTH_HOME path string.
 
     Called early in the CLI entry point, before any thoth modules
-    are imported, to set the HERMES_HOME environment variable.
+    are imported, to set the THOTH_HOME environment variable.
     """
     canon = normalize_profile_name(profile_name)
     validate_profile_name(canon)
@@ -1473,19 +1473,19 @@ def resolve_profile_env(profile_name: str) -> str:
 
 @contextlib.contextmanager
 def profile_env_context(profile_dir):
-    """Context manager: set HERMES_HOME and THOTH_HOME to profile_dir, restore on exit."""
+    """Context manager: set THOTH_HOME and THOTH_HOME to profile_dir, restore on exit."""
     profile_str = str(profile_dir)
-    old_hermes = os.environ.get("HERMES_HOME")
+    old_hermes = os.environ.get("THOTH_HOME")
     old_thoth = os.environ.get("THOTH_HOME")
     try:
-        os.environ["HERMES_HOME"] = profile_str
+        os.environ["THOTH_HOME"] = profile_str
         os.environ["THOTH_HOME"] = profile_str
         yield
     finally:
         if old_hermes is None:
-            os.environ.pop("HERMES_HOME", None)
+            os.environ.pop("THOTH_HOME", None)
         else:
-            os.environ["HERMES_HOME"] = old_hermes
+            os.environ["THOTH_HOME"] = old_hermes
         if old_thoth is None:
             os.environ.pop("THOTH_HOME", None)
         else:

@@ -4,7 +4,7 @@
 # Usage:
 #   HERMES_UID=$(id -u) HERMES_GID=$(id -g) docker compose up -d
 #
-# Set HERMES_UID / HERMES_GID to the host user that owns ~/.hermes so
+# Set HERMES_UID / HERMES_GID to the host user that owns ~/.thoth so
 # files created inside the container stay readable/writable on the host.
 # The entrypoint remaps the internal `hermes` user to these values via
 # usermod/groupmod + gosu.
@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
     network_mode: host
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.thoth:/opt/data
     environment:
       - HERMES_UID=${HERMES_UID:-10000}
       - HERMES_GID=${HERMES_GID:-10000}
@@ -47,7 +47,7 @@ services:
       # Google Chat — uncomment and fill in to enable the Google Chat gateway.
       # See website/docs/user-guide/messaging/google_chat.md for the full setup.
       # The SA JSON path must point to a file mounted into the container —
-      # add a volume entry above (e.g. ``- ~/.hermes/google-chat-sa.json:/secrets/google-chat-sa.json:ro``)
+      # add a volume entry above (e.g. ``- ~/.thoth/google-chat-sa.json:/secrets/google-chat-sa.json:ro``)
       # then set GOOGLE_CHAT_SERVICE_ACCOUNT_JSON to that mount path.
       # - GOOGLE_CHAT_PROJECT_ID=${GOOGLE_CHAT_PROJECT_ID}
       # - GOOGLE_CHAT_SUBSCRIPTION_NAME=${GOOGLE_CHAT_SUBSCRIPTION_NAME}
@@ -63,7 +63,7 @@ services:
     depends_on:
       - gateway
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.thoth:/opt/data
     environment:
       - HERMES_UID=${HERMES_UID:-10000}
       - HERMES_GID=${HERMES_GID:-10000}

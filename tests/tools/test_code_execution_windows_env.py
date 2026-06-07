@@ -311,7 +311,7 @@ class TestPosixEquivalence:
         "PYTHONPATH": "/opt/lib",
         "VIRTUAL_ENV": "/home/alice/.venv",
         "CONDA_PREFIX": "/opt/conda",
-        "HERMES_HOME": "/home/alice/.hermes",
+        "THOTH_HOME": "/home/alice/.hermes",
         "HERMES_INTERACTIVE": "1",
         # Secret-substring blocks
         "OPENAI_API_KEY": "sk-xxx",

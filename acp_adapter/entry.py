@@ -94,7 +94,7 @@ def _setup_logging() -> None:
 
 
 def _load_env() -> None:
-    """Load .env from HERMES_HOME (default ``~/.hermes``)."""
+    """Load .env from THOTH_HOME (default ``~/.hermes``)."""
     from thoth_cli.env_loader import load_thoth_dotenv
 
     thoth_home = get_thoth_home()

@@ -27,7 +27,7 @@ API_PATH = (
 def bridge_module(monkeypatch, tmp_path):
     thoth_home = tmp_path / ".hermes"
     thoth_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     spec = importlib.util.spec_from_file_location("gws_bridge_test", BRIDGE_PATH)
     module = importlib.util.module_from_spec(spec)
@@ -40,7 +40,7 @@ def bridge_module(monkeypatch, tmp_path):
 def api_module(monkeypatch, tmp_path):
     thoth_home = tmp_path / ".hermes"
     thoth_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     spec = importlib.util.spec_from_file_location("gws_api_test", API_PATH)
     module = importlib.util.module_from_spec(spec)

@@ -113,7 +113,7 @@ RUN uv pip install --no-cache-dir --no-deps -e "."
 
 # ---------- Runtime ----------
 ENV HERMES_WEB_DIST=/opt/hermes/thoth_cli/web_dist
-ENV HERMES_HOME=/opt/data
+ENV THOTH_HOME=/opt/data
 ENV PATH="/opt/data/.local/bin:${PATH}"
 RUN mkdir -p /opt/data
 VOLUME [ "/opt/data" ]

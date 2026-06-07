@@ -49,12 +49,12 @@ def _reset_logging_state():
 
 @pytest.fixture
 def thoth_home(tmp_path, monkeypatch):
-    """Provide an isolated HERMES_HOME for logging tests.
+    """Provide an isolated THOTH_HOME for logging tests.
 
     Uses the same tmp_path as the autouse _isolate_thoth_home from conftest,
     reading it back from the env var to avoid double-mkdir conflicts.
     """
-    home = Path(os.environ["HERMES_HOME"])
+    home = Path(os.environ["THOTH_HOME"])
     return home
 
 

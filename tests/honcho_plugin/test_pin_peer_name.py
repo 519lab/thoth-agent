@@ -46,7 +46,7 @@ class TestPinPeerNameConfigParsing:
             "peerName": "Igor",
             "pinPeerName": True,
         }))
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path / "isolated"))
 
         config = HonchoClientConfig.from_global_config(config_path=config_file)
         assert config.pin_peer_name is True
@@ -62,7 +62,7 @@ class TestPinPeerNameConfigParsing:
                 "hermes": {"pinPeerName": True},
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path / "isolated"))
 
         config = HonchoClientConfig.from_global_config(config_path=config_file)
         assert config.pin_peer_name is True
@@ -78,7 +78,7 @@ class TestPinPeerNameConfigParsing:
                 "hermes": {"pinPeerName": False},
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path / "isolated"))
 
         config = HonchoClientConfig.from_global_config(config_path=config_file)
         assert config.pin_peer_name is False, (
@@ -93,7 +93,7 @@ class TestPinPeerNameConfigParsing:
             "peerName": "Igor",
             "pinPeerName": False,
         }))
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path / "isolated"))
 
         config = HonchoClientConfig.from_global_config(config_path=config_file)
         assert config.pin_peer_name is False

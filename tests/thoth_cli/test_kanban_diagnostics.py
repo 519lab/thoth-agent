@@ -30,7 +30,7 @@ def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     kb.init_db()
     return home

@@ -75,7 +75,7 @@ class TestCategoryNamespaceRecursion:
         """``<root>/image_gen/openai/plugin.yaml`` is discovered with key
         ``image_gen/openai`` when the ``image_gen`` parent has no manifest."""
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         user_plugins = thoth_home / "plugins"
 
         _write_plugin(user_plugins, ["image_gen", "openai"])
@@ -93,7 +93,7 @@ class TestCategoryNamespaceRecursion:
     def test_flat_plugin_key_matches_name(self, tmp_path, monkeypatch):
         """Flat plugins keep their bare name as the key (back-compat)."""
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         user_plugins = thoth_home / "plugins"
 
         _write_plugin(user_plugins, ["my-plugin"])
@@ -112,7 +112,7 @@ class TestCategoryNamespaceRecursion:
         two segments.
         """
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         user_plugins = thoth_home / "plugins"
 
         _write_plugin(user_plugins, ["a", "b", "c"])
@@ -130,7 +130,7 @@ class TestCategoryNamespaceRecursion:
         """If ``image_gen/plugin.yaml`` exists, ``image_gen`` itself IS the
         plugin and its children are ignored."""
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         user_plugins = thoth_home / "plugins"
 
         # parent has a manifest → stop recursing
@@ -159,7 +159,7 @@ class TestCategoryNamespaceRecursion:
 class TestKindField:
     def test_default_kind_is_standalone(self, tmp_path, monkeypatch):
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         _write_plugin(thoth_home / "plugins", ["p1"])
         _enable(thoth_home, "p1")
 
@@ -171,7 +171,7 @@ class TestKindField:
     @pytest.mark.parametrize("kind", ["backend", "exclusive", "standalone"])
     def test_valid_kinds_parsed(self, kind, tmp_path, monkeypatch):
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         _write_plugin(
             thoth_home / "plugins",
             ["p1"],
@@ -188,7 +188,7 @@ class TestKindField:
 
     def test_unknown_kind_falls_back_to_standalone(self, tmp_path, monkeypatch, caplog):
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         _write_plugin(
             thoth_home / "plugins",
             ["p1"],
@@ -214,7 +214,7 @@ class TestBackendGate:
         """User-installed ``kind: backend`` plugins still require opt-in —
         they're not trusted by default."""
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         user_plugins = thoth_home / "plugins"
 
         _write_plugin(
@@ -233,7 +233,7 @@ class TestBackendGate:
 
     def test_user_backend_loads_when_enabled(self, tmp_path, monkeypatch):
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         user_plugins = thoth_home / "plugins"
 
         _write_plugin(
@@ -252,7 +252,7 @@ class TestBackendGate:
         """``kind: exclusive`` plugins are recorded but not loaded — the
         category's own discovery system handles them (memory today)."""
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         _write_plugin(
             thoth_home / "plugins",
             ["some-backend"],
@@ -276,7 +276,7 @@ class TestBundledBackendAutoLoad:
         """The bundled ``plugins/image_gen/openai/`` plugin loads without
         any opt-in — it's ``kind: backend`` and shipped in-repo."""
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
 
         mgr = PluginManager()
         mgr.discover_and_load()
@@ -307,7 +307,7 @@ class TestRegisterImageGenProvider:
                 return {"success": True, "image": "test://fake"}
 
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         plugin_dir = _write_plugin(
             thoth_home / "plugins",
             ["my-img-plugin"],
@@ -337,7 +337,7 @@ class TestRegisterImageGenProvider:
         image_gen_registry._reset_for_tests()
 
         import os
-        thoth_home = Path(os.environ["HERMES_HOME"])  # set by hermetic conftest fixture
+        thoth_home = Path(os.environ["THOTH_HOME"])  # set by hermetic conftest fixture
         _write_plugin(
             thoth_home / "plugins",
             ["bad-img-plugin"],

@@ -90,7 +90,7 @@ agent sees a syntax-clean file with semantic problems as
 For "manual" entries, install the server through whatever toolchain
 manager makes sense for that language (rustup, ghcup, opam, brew,
 …). Thoth auto-detects the binary on PATH or in
-`<HERMES_HOME>/lsp/bin/`.
+`<THOTH_HOME>/lsp/bin/`.
 
 A few servers are installed alongside a peer dependency that npm
 won't auto-pull. The current case is `typescript-language-server`,
@@ -131,7 +131,7 @@ lsp:
   wait_timeout: 5.0
 
   # How to handle missing server binaries.
-  #   auto    — install via npm/pip/go install into <HERMES_HOME>/lsp/bin
+  #   auto    — install via npm/pip/go install into <THOTH_HOME>/lsp/bin
   #   manual  — only use binaries already on PATH
   install_strategy: auto
 
@@ -163,8 +163,8 @@ lsp:
 ## Installation locations
 
 When `install_strategy: auto`, Thoth installs binaries into
-`<HERMES_HOME>/lsp/bin/`. NPM packages land in
-`<HERMES_HOME>/lsp/node_modules/` with bin symlinks one level up.
+`<THOTH_HOME>/lsp/bin/`. NPM packages land in
+`<THOTH_HOME>/lsp/node_modules/` with bin symlinks one level up.
 Go binaries come from `go install` with `GOBIN` pointed at the
 staging dir.
 
@@ -210,7 +210,7 @@ lsp:
 
 **`thoth lsp status` shows a server as "missing"**
 
-The binary isn't on PATH and isn't in `<HERMES_HOME>/lsp/bin/`. Run
+The binary isn't on PATH and isn't in `<THOTH_HOME>/lsp/bin/`. Run
 `thoth lsp install <server_id>` to attempt an auto-install, or
 install the binary manually through the language's normal toolchain.
 

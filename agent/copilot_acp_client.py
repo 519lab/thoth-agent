@@ -98,7 +98,7 @@ def _resolve_home_dir() -> str:
         pass
 
     # Last resort: /tmp (writable on any POSIX system). Avoids crashing the
-    # subprocess with no HOME; callers can set HERMES_HOME explicitly if they
+    # subprocess with no HOME; callers can set THOTH_HOME explicitly if they
     # need a different writable dir.
     return "/tmp"
 

@@ -15,7 +15,7 @@ from thoth_cli import kanban_db as kb
 
 @pytest.fixture
 def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
-    """Isolated HERMES_HOME with an empty kanban DB.
+    """Isolated THOTH_HOME with an empty kanban DB.
 
     Depends on ``thoth_db_initialized_sync`` so the PG pool is bound
     to the persistent sync loop AND the schema is migrated before
@@ -25,7 +25,7 @@ def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     kb.init_db()
     return home
@@ -79,7 +79,7 @@ def test_connect_rejects_tls_record_in_sqlite_header(tmp_path, monkeypatch):
     """Kanban should classify TLS-looking page-0 clobbers before WAL setup."""
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.delenv("HERMES_KANBAN_DB", raising=False)
     monkeypatch.delenv("HERMES_KANBAN_HOME", raising=False)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -1679,22 +1679,22 @@ def test_session_id_compose_with_tenant_filter(kanban_home):
 # spawned with `thoth -p <profile>` must read/write the same kanban.db
 # as the dispatcher that claimed the task. These tests exercise the
 # path-resolution layer directly and would have caught the regression
-# where `kanban_db_path()` resolved to the active profile's HERMES_HOME.
+# where `kanban_db_path()` resolved to the active profile's THOTH_HOME.
 # ---------------------------------------------------------------------------
 
 class TestSharedBoardPaths:
     """`kanban_home`/`kanban_db_path`/`workspaces_root`/`worker_log_path`
-    must anchor at the **shared root**, not the active profile's HERMES_HOME."""
+    must anchor at the **shared root**, not the active profile's THOTH_HOME."""
 
     def _set_home(self, monkeypatch, tmp_path, thoth_home):
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.delenv("HERMES_KANBAN_HOME", raising=False)
 
     def test_default_install_anchors_at_home_dot_hermes(
         self, tmp_path, monkeypatch
     ):
-        # Standard install: HERMES_HOME == ~/.hermes, no profile active.
+        # Standard install: THOTH_HOME == ~/.hermes, no profile active.
         default_home = tmp_path / ".hermes"
         default_home.mkdir()
         self._set_home(monkeypatch, tmp_path, default_home)
@@ -1721,7 +1721,7 @@ class TestSharedBoardPaths:
         self._set_home(monkeypatch, tmp_path, profile_home)
 
         # All four resolvers must anchor at the shared root, not the
-        # profile-local HERMES_HOME.
+        # profile-local THOTH_HOME.
         assert kb.kanban_home() == default_home
         assert kb.kanban_db_path() == default_home / "kanban.db"
         assert kb.workspaces_root() == default_home / "kanban" / "workspaces"
@@ -1738,7 +1738,7 @@ class TestSharedBoardPaths:
         self, tmp_path, monkeypatch
     ):
         # End-to-end convergence: resolve the path under each side's
-        # HERMES_HOME and confirm equality. This is the property the
+        # THOTH_HOME and confirm equality. This is the property the
         # dispatcher/worker handoff actually depends on.
         default_home = tmp_path / ".hermes"
         default_home.mkdir()
@@ -1752,7 +1752,7 @@ class TestSharedBoardPaths:
         dispatcher_log = kb.worker_log_path("t_handoff")
 
         # Worker's perspective (profile activated by `thoth -p coder`).
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("THOTH_HOME", str(profile_home))
         worker_db = kb.kanban_db_path()
         worker_ws = kb.workspaces_root()
         worker_log = kb.worker_log_path("t_handoff")
@@ -1764,7 +1764,7 @@ class TestSharedBoardPaths:
     def test_docker_custom_thoth_home_uses_env_path_directly(
         self, tmp_path, monkeypatch
     ):
-        # Docker / custom deployment: HERMES_HOME points outside ~/.hermes.
+        # Docker / custom deployment: THOTH_HOME points outside ~/.hermes.
         # `get_default_thoth_root()` returns env_home directly when it
         # is not a `<root>/profiles/<name>` shape and not under
         # `Path.home() / ".hermes"`.
@@ -1778,7 +1778,7 @@ class TestSharedBoardPaths:
     def test_docker_profile_layout_uses_grandparent(
         self, tmp_path, monkeypatch
     ):
-        # Docker profile shape: HERMES_HOME=/opt/hermes/profiles/coder;
+        # Docker profile shape: THOTH_HOME=/opt/hermes/profiles/coder;
         # `get_default_thoth_root()` walks up to /opt/hermes because
         # the immediate parent dir is named "profiles".
         custom_root = tmp_path / "opt" / "hermes"
@@ -1801,7 +1801,7 @@ class TestSharedBoardPaths:
         override.mkdir()
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("THOTH_HOME", str(profile_home))
         monkeypatch.setenv("HERMES_KANBAN_HOME", str(override))
 
         assert kb.kanban_home() == override
@@ -1813,7 +1813,7 @@ class TestSharedBoardPaths:
         default_home = tmp_path / ".hermes"
         default_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(default_home))
+        monkeypatch.setenv("THOTH_HOME", str(default_home))
         monkeypatch.setenv("HERMES_KANBAN_HOME", "   ")
 
         assert kb.kanban_home() == default_home
@@ -1822,11 +1822,11 @@ class TestSharedBoardPaths:
         self, tmp_path, monkeypatch, thoth_db_initialized_sync
     ):
         # Belt-and-suspenders: round-trip a task across the two
-        # HERMES_HOME perspectives. Under sqlite this proved the two
+        # THOTH_HOME perspectives. Under sqlite this proved the two
         # processes opened the same on-disk file; under PG the two
         # ``kb.connect()`` calls dispatch through the same shared
         # ``thoth_db`` pool, so the property under test becomes "the
-        # dispatcher's row is visible to the worker after a HERMES_HOME
+        # dispatcher's row is visible to the worker after a THOTH_HOME
         # swap" — still the regression that originally motivated the
         # test.
         #
@@ -1850,8 +1850,8 @@ class TestSharedBoardPaths:
         with kb.connect() as conn:
             task_id = kb.create_task(conn, title="cross-profile")
 
-        # Worker switches to the profile HERMES_HOME and reads.
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        # Worker switches to the profile THOTH_HOME and reads.
+        monkeypatch.setenv("THOTH_HOME", str(profile_home))
         with kb.connect() as conn:
             task = kb.get_task(conn, task_id)
         assert task is not None
@@ -1871,7 +1871,7 @@ class TestSharedBoardPaths:
         pinned_db.parent.mkdir()
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(default_home))
+        monkeypatch.setenv("THOTH_HOME", str(default_home))
         monkeypatch.setenv("HERMES_KANBAN_HOME", str(umbrella))
         monkeypatch.setenv("HERMES_KANBAN_DB", str(pinned_db))
 
@@ -1892,7 +1892,7 @@ class TestSharedBoardPaths:
         pinned_ws.mkdir()
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(default_home))
+        monkeypatch.setenv("THOTH_HOME", str(default_home))
         monkeypatch.setenv("HERMES_KANBAN_HOME", str(umbrella))
         monkeypatch.setenv("HERMES_KANBAN_WORKSPACES_ROOT", str(pinned_ws))
 
@@ -1908,7 +1908,7 @@ class TestSharedBoardPaths:
         default_home = tmp_path / ".hermes"
         default_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(default_home))
+        monkeypatch.setenv("THOTH_HOME", str(default_home))
         monkeypatch.setenv("HERMES_KANBAN_DB", "   ")
         monkeypatch.setenv("HERMES_KANBAN_WORKSPACES_ROOT", "")
 
@@ -1921,7 +1921,7 @@ class TestSharedBoardPaths:
         # The dispatcher's `_default_spawn` must inject HERMES_KANBAN_DB
         # and HERMES_KANBAN_WORKSPACES_ROOT into the worker env so the
         # worker converges on the dispatcher's paths even when the
-        # `-p <profile>` flag rewrites HERMES_HOME.
+        # `-p <profile>` flag rewrites THOTH_HOME.
         default_home = tmp_path / ".hermes"
         default_home.mkdir()
         self._set_home(monkeypatch, tmp_path, default_home)
@@ -2278,7 +2278,7 @@ def test_resolve_thoth_argv_prefers_path_shim(monkeypatch):
     import shutil
     import thoth_cli.kanban_db as kb
 
-    monkeypatch.delenv("HERMES_BIN", raising=False)
+    monkeypatch.delenv("THOTH_BIN", raising=False)
     monkeypatch.setattr(shutil, "which", lambda name: "/usr/local/bin/thoth")
     argv = kb._resolve_thoth_argv()
     assert argv == ["/usr/local/bin/thoth"]
@@ -2289,7 +2289,7 @@ def test_resolve_thoth_argv_absolutizes_relative_exe_shim(monkeypatch, tmp_path)
     import thoth_cli.kanban_db as kb
 
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("HERMES_BIN", ".\\hermes.exe")
+    monkeypatch.setenv("THOTH_BIN", ".\\hermes.exe")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
     assert kb._resolve_thoth_argv() == [os.path.abspath(".\\hermes.exe")]
@@ -2303,7 +2303,7 @@ def test_resolve_thoth_argv_avoids_implicit_windows_batch_shim(monkeypatch, tmp_
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     (bin_dir / "hermes.CMD").write_text("@echo off\n", encoding="utf-8")
-    monkeypatch.delenv("HERMES_BIN", raising=False)
+    monkeypatch.delenv("THOTH_BIN", raising=False)
     monkeypatch.setenv("PATH", str(bin_dir))
     monkeypatch.setenv("PATHEXT", ".CMD")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
@@ -2315,21 +2315,21 @@ def test_resolve_thoth_argv_avoids_implicit_windows_batch_shim(monkeypatch, tmp_
 
 
 def test_resolve_thoth_argv_honors_hermes_bin_path_override(monkeypatch, tmp_path):
-    """An explicit path-like HERMES_BIN lets service managers pin the executable."""
+    """An explicit path-like THOTH_BIN lets service managers pin the executable."""
     import shutil
     import thoth_cli.kanban_db as kb
 
     shim = tmp_path / "bin" / "hermes"
     shim.parent.mkdir()
     shim.write_text("#!/bin/sh\n", encoding="utf-8")
-    monkeypatch.setenv("HERMES_BIN", str(shim))
+    monkeypatch.setenv("THOTH_BIN", str(shim))
     monkeypatch.setattr(shutil, "which", lambda name: None)
 
     assert kb._resolve_thoth_argv() == [str(shim)]
 
 
 def test_resolve_thoth_argv_hermes_bin_bare_name_uses_path(monkeypatch, tmp_path):
-    """Bare HERMES_BIN values keep PATH semantics instead of cwd shadowing."""
+    """Bare THOTH_BIN values keep PATH semantics instead of cwd shadowing."""
     import stat
     import thoth_cli.kanban_db as kb
 
@@ -2342,20 +2342,20 @@ def test_resolve_thoth_argv_hermes_bin_bare_name_uses_path(monkeypatch, tmp_path
     path_hermes.chmod(path_hermes.stat().st_mode | stat.S_IXUSR)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("PATH", str(path_hermes.parent))
-    monkeypatch.setenv("HERMES_BIN", "hermes")
+    monkeypatch.setenv("THOTH_BIN", "hermes")
 
     assert kb._resolve_thoth_argv() == [str(path_hermes)]
 
 
 def test_resolve_thoth_argv_hermes_bin_bare_name_ignores_cwd(monkeypatch, tmp_path):
-    """Bare HERMES_BIN does not accept current-directory shadow executables."""
+    """Bare THOTH_BIN does not accept current-directory shadow executables."""
     import sys
     import thoth_cli.kanban_db as kb
 
     (tmp_path / "hermes.exe").write_text("wrong\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("PATH", "")
-    monkeypatch.setenv("HERMES_BIN", "hermes")
+    monkeypatch.setenv("THOTH_BIN", "hermes")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
     argv = kb._resolve_thoth_argv()
@@ -2365,7 +2365,7 @@ def test_resolve_thoth_argv_hermes_bin_bare_name_ignores_cwd(monkeypatch, tmp_pa
 
 
 def test_resolve_thoth_argv_hermes_bin_bare_cmd_uses_module_fallback(monkeypatch, tmp_path):
-    """A PATH-resolved HERMES_BIN batch shim is not used as worker argv[0]."""
+    """A PATH-resolved THOTH_BIN batch shim is not used as worker argv[0]."""
     import sys
     import thoth_cli.kanban_db as kb
 
@@ -2374,7 +2374,7 @@ def test_resolve_thoth_argv_hermes_bin_bare_cmd_uses_module_fallback(monkeypatch
     (bin_dir / "hermes.CMD").write_text("@echo off\n", encoding="utf-8")
     monkeypatch.setenv("PATH", str(bin_dir))
     monkeypatch.setenv("PATHEXT", ".CMD")
-    monkeypatch.setenv("HERMES_BIN", "hermes")
+    monkeypatch.setenv("THOTH_BIN", "hermes")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
     argv = kb._resolve_thoth_argv()
@@ -2384,12 +2384,12 @@ def test_resolve_thoth_argv_hermes_bin_bare_cmd_uses_module_fallback(monkeypatch
 
 
 def test_resolve_thoth_argv_hermes_bin_unresolved_bare_name_falls_back(monkeypatch):
-    """Unresolved HERMES_BIN command names do not delegate cwd search to Popen."""
+    """Unresolved THOTH_BIN command names do not delegate cwd search to Popen."""
     import sys
     import thoth_cli.kanban_db as kb
 
     monkeypatch.setenv("PATH", "")
-    monkeypatch.setenv("HERMES_BIN", "hermes")
+    monkeypatch.setenv("THOTH_BIN", "hermes")
 
     argv = kb._resolve_thoth_argv()
     assert argv[:2] == [sys.executable, "-m"]
@@ -2409,7 +2409,7 @@ def test_resolve_thoth_argv_falls_back_to_module_form_when_no_path_shim(monkeypa
     import sys
     import thoth_cli.kanban_db as kb
 
-    monkeypatch.delenv("HERMES_BIN", raising=False)
+    monkeypatch.delenv("THOTH_BIN", raising=False)
     monkeypatch.setattr(shutil, "which", lambda name: None)
     argv = kb._resolve_thoth_argv()
     assert argv[:2] == [sys.executable, "-m"]
@@ -2433,7 +2433,7 @@ def test_resolve_thoth_argv_module_actually_runs():
     import unittest.mock as mock
 
     with mock.patch.dict(os.environ, {}, clear=False):
-        os.environ.pop("HERMES_BIN", None)
+        os.environ.pop("THOTH_BIN", None)
         with mock.patch.object(shutil, "which", return_value=None):
             argv = kb._resolve_thoth_argv()
     r = subprocess.run(argv + ["--version"], capture_output=True, text=True, timeout=30)
@@ -2563,7 +2563,7 @@ def test_task_dict_survives_corrupt_created_at(tmp_path, monkeypatch):
     # Set up an isolated kanban home so we can write a corrupt created_at.
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
     kb._INITIALIZED_PATHS.clear()
     kb.init_db()

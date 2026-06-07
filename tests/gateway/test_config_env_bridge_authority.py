@@ -53,7 +53,7 @@ def _run_gateway_import(thoth_home: Path, initial_env: dict[str, str]) -> dict[s
         """
     )
     env = dict(initial_env)
-    env["HERMES_HOME"] = str(thoth_home)
+    env["THOTH_HOME"] = str(thoth_home)
     # Keep PATH / PYTHONPATH so venv imports resolve.
     for k in ("PATH", "PYTHONPATH", "VIRTUAL_ENV", "HOME"):
         if k in os.environ and k not in env:

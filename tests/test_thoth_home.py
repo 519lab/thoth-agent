@@ -58,12 +58,14 @@ def test_thoth_home_env_wins(fake_home, monkeypatch):
     assert thoth_constants.get_thoth_home() == Path("/tmp/custom_thoth")
 
 
-def test_thoth_home_env_fallback(fake_home, monkeypatch):
+def test_legacy_hermes_home_env_is_ignored(fake_home, monkeypatch):
+    # Phase 2 dropped the HERMES_HOME fallback: the accessor reads THOTH_HOME
+    # only and falls through to the disk default when it is unset.
     monkeypatch.setenv("HERMES_HOME", "/tmp/custom_hermes")
-    assert thoth_constants.get_thoth_home() == Path("/tmp/custom_hermes")
+    assert thoth_constants.get_thoth_home() == fake_home / ".thoth"
 
 
-def test_thoth_home_beats_thoth_home(fake_home, monkeypatch):
+def test_thoth_home_env_wins_over_legacy(fake_home, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", "/tmp/legacy")
     monkeypatch.setenv("THOTH_HOME", "/tmp/canonical")
     assert thoth_constants.get_thoth_home() == Path("/tmp/canonical")

@@ -20,13 +20,13 @@ import pytest
 
 @pytest.fixture
 def thoth_env(tmp_path, monkeypatch):
-    """Isolate HERMES_HOME for each test so jobs/scripts don't leak."""
+    """Isolate THOTH_HOME for each test so jobs/scripts don't leak."""
     home = tmp_path / ".hermes"
     home.mkdir()
     (home / "scripts").mkdir()
     (home / "cron").mkdir()
 
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
 
     # Reload modules that cache get_thoth_home() at import time.
     import importlib

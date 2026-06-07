@@ -7,7 +7,7 @@
 # Container mode: hermes runs from /nix/store bind-mounted read-only into a
 # plain Ubuntu container. The writable layer (apt/pip/npm installs) persists
 # across restarts and agent updates. Only image/volume/options changes trigger
-# container recreation. Environment variables are written to $HERMES_HOME/.env
+# container recreation. Environment variables are written to $THOTH_HOME/.env
 # and read by hermes at startup — no container recreation needed for env changes.
 #
 # Tool resolution: the hermes wrapper uses --suffix PATH for nix store tools,
@@ -117,13 +117,13 @@
       chown "$HERMES_UID:$HERMES_GID" "$TARGET_HOME"
       chmod 0750 "$TARGET_HOME"
 
-      # Ensure HERMES_HOME is owned by the target user.
+      # Ensure THOTH_HOME is owned by the target user.
       # Use find instead of chown -R: chown strips the setgid bit (kernel
       # behavior), destroying the 2770 permissions the NixOS activation
       # script sets for group access by hostUsers.  Only touch files with
       # wrong ownership so correctly-owned dirs keep their permission bits.
-      if [ -n "''${HERMES_HOME:-}" ] && [ -d "$HERMES_HOME" ]; then
-        find "$HERMES_HOME" \! -user "$HERMES_UID" -exec chown "$HERMES_UID:$HERMES_GID" {} +
+      if [ -n "''${THOTH_HOME:-}" ] && [ -d "$THOTH_HOME" ]; then
+        find "$THOTH_HOME" \! -user "$HERMES_UID" -exec chown "$HERMES_UID:$HERMES_GID" {} +
       fi
 
       # ── Provision apt packages (first boot only, cached in writable layer) ──
@@ -184,7 +184,7 @@
 
     # Identity hash — only recreate container when structural config changes.
     # Package and entrypoint use stable symlinks (current-package, current-entrypoint)
-    # so they can update without recreation. Env vars go through $HERMES_HOME/.env.
+    # so they can update without recreation. Env vars go through $THOTH_HOME/.env.
     containerIdentity = builtins.hashString "sha256" (builtins.toJSON {
       schema = 4; # bump when identity inputs change (4: Node 18→22 via NodeSource)
       image = cfg.container.image;
@@ -235,7 +235,7 @@
       stateDir = mkOption {
         type = types.str;
         default = "/var/lib/hermes";
-        description = "State directory. Contains .hermes/ subdir (HERMES_HOME).";
+        description = "State directory. Contains .hermes/ subdir (THOTH_HOME).";
       };
 
       workingDirectory = mkOption {
@@ -278,7 +278,7 @@
         default = [ ];
         description = ''
           Paths to environment files containing secrets (API keys, tokens).
-          Contents are merged into $HERMES_HOME/.env at activation time.
+          Contents are merged into $THOTH_HOME/.env at activation time.
           Thoth reads this file on every startup via load_thoth_dotenv().
         '';
       };
@@ -287,7 +287,7 @@
         type = types.attrsOf types.str;
         default = { };
         description = ''
-          Non-secret environment variables. Merged into $HERMES_HOME/.env
+          Non-secret environment variables. Merged into $THOTH_HOME/.env
           at activation time. Do NOT put secrets here — use environmentFiles.
         '';
       };
@@ -362,7 +362,7 @@
               default = null;
               description = ''
                 Authentication method. Set to "oauth" for OAuth 2.1 PKCE flow
-                (remote MCP servers). Tokens are stored in $HERMES_HOME/mcp-tokens/.
+                (remote MCP servers). Tokens are stored in $THOTH_HOME/mcp-tokens/.
               '';
             };
 
@@ -550,7 +550,7 @@
         default = false;
         description = ''
           Add the hermes CLI to environment.systemPackages and export
-          HERMES_HOME system-wide (via environment.variables) so interactive
+          THOTH_HOME system-wide (via environment.variables) so interactive
           shells share state with the gateway service.
         '';
       };
@@ -643,12 +643,12 @@
       })
 
       # ── Host CLI ──────────────────────────────────────────────────────
-      # Add the hermes CLI to system PATH and export HERMES_HOME system-wide
+      # Add the hermes CLI to system PATH and export THOTH_HOME system-wide
       # so interactive shells share state (sessions, skills, cron) with the
       # gateway service instead of creating a separate ~/.hermes/.
       (lib.mkIf cfg.addToSystemPackages {
         environment.systemPackages = [ effectivePackage ];
-        environment.variables.HERMES_HOME = "${cfg.stateDir}/.hermes";
+        environment.variables.THOTH_HOME = "${cfg.stateDir}/.hermes";
       })
 
       # ── Host user group membership ─────────────────────────────────────
@@ -765,7 +765,7 @@
     backend=${cfg.container.backend}
     container_name=${containerName}
     exec_user=${cfg.user}
-    hermes_bin=${containerDataDir}/current-package/bin/hermes
+    hermes_bin=${containerDataDir}/current-package/bin/thoth
     HERMES_CONTAINER_MODE_EOF
             chown ${cfg.user}:${cfg.group} ${cfg.stateDir}/.hermes/.container-mode
             chmod 0644 ${cfg.stateDir}/.hermes/.container-mode
@@ -821,7 +821,7 @@
           ''}
 
           # Seed .env from Nix-declared environment + environmentFiles.
-          # Thoth reads $HERMES_HOME/.env at startup via load_thoth_dotenv(),
+          # Thoth reads $THOTH_HOME/.env at startup via load_thoth_dotenv(),
           # so this is the single source of truth for both native and container mode.
           ${lib.optionalString (cfg.environment != {} || cfg.environmentFiles != []) ''
             ENV_FILE="${cfg.stateDir}/.hermes/.env"
@@ -872,7 +872,7 @@
 
           environment = {
             HOME = cfg.stateDir;
-            HERMES_HOME = "${cfg.stateDir}/.hermes";
+            THOTH_HOME = "${cfg.stateDir}/.hermes";
             HERMES_MANAGED = "true";
             MESSAGING_CWD = cfg.workingDirectory;
           };
@@ -883,11 +883,11 @@
             WorkingDirectory = cfg.workingDirectory;
 
             # cfg.environment and cfg.environmentFiles are written to
-            # $HERMES_HOME/.env by the activation script. load_thoth_dotenv()
+            # $THOTH_HOME/.env by the activation script. load_thoth_dotenv()
             # reads them at Python startup — no systemd EnvironmentFile needed.
 
             ExecStart = lib.concatStringsSep " " ([
-              "${effectivePackage}/bin/hermes"
+              "${effectivePackage}/bin/thoth"
               "gateway"
             ] ++ cfg.extraArgs);
 
@@ -968,13 +968,13 @@
                 ${lib.concatStringsSep " " (map (v: "--volume ${v}") cfg.container.extraVolumes)} \
                 --env HERMES_UID="$HERMES_UID" \
                 --env HERMES_GID="$HERMES_GID" \
-                --env HERMES_HOME=${containerDataDir}/.hermes \
+                --env THOTH_HOME=${containerDataDir}/.hermes \
                 --env HERMES_MANAGED=true \
                 --env HOME=${containerHomeDir} \
                 --env MESSAGING_CWD=${containerWorkDir} \
                 ${lib.concatStringsSep " " cfg.container.extraOptions} \
                 ${cfg.container.image} \
-                ${containerDataDir}/current-package/bin/hermes gateway run --replace ${lib.concatStringsSep " " cfg.extraArgs}
+                ${containerDataDir}/current-package/bin/thoth gateway run --replace ${lib.concatStringsSep " " cfg.extraArgs}
 
               echo "${containerIdentity}" > ${identityFile}
             fi

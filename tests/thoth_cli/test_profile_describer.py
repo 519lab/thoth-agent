@@ -16,10 +16,10 @@ from thoth_cli import profile_describer as describer
 
 @pytest.fixture
 def profile_env(tmp_path, monkeypatch):
-    """Set up an isolated HERMES_HOME with a default profile dir."""
+    """Set up an isolated THOTH_HOME with a default profile dir."""
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     return home
 

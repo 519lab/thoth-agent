@@ -233,7 +233,7 @@ If step 5 logs you out, the Camofox server isn't honoring the stable `userId`. D
 
 ##### Where state lives
 
-Thoth derives the stable `userId` from the profile-scoped directory `~/.hermes/browser_auth/camofox/` (or the equivalent under `$HERMES_HOME` for non-default profiles). The actual browser profile data lives on the Camofox server side, keyed by that `userId`. To fully reset a persistent profile, clear it on the Camofox server and remove the corresponding Thoth profile's state directory.
+Thoth derives the stable `userId` from the profile-scoped directory `~/.hermes/browser_auth/camofox/` (or the equivalent under `$THOTH_HOME` for non-default profiles). The actual browser profile data lives on the Camofox server side, keyed by that `userId`. To fully reset a persistent profile, clear it on the Camofox server and remove the corresponding Thoth profile's state directory.
 
 #### Externally managed Camofox sessions
 

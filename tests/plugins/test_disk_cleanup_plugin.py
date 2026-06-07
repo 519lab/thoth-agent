@@ -22,15 +22,15 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate_env(tmp_path, monkeypatch):
-    """Isolate HERMES_HOME for each test.
+    """Isolate THOTH_HOME for each test.
 
-    The global hermetic fixture already redirects HERMES_HOME to a tempdir,
+    The global hermetic fixture already redirects THOTH_HOME to a tempdir,
     but we want the plugin to work with a predictable subpath. We reset
-    HERMES_HOME here for clarity.
+    THOTH_HOME here for clarity.
     """
     thoth_home = tmp_path / ".hermes"
     thoth_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     yield thoth_home
 
 

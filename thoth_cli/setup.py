@@ -2172,7 +2172,7 @@ def _setup_slack():
 
 
 def _write_slack_manifest_and_instruct():
-    """Generate the Slack manifest, write it under HERMES_HOME, and print
+    """Generate the Slack manifest, write it under THOTH_HOME, and print
     paste-into-Slack instructions.
 
     Exposed as its own helper so both the initial setup flow and the

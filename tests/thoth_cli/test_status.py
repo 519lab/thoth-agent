@@ -4,7 +4,7 @@ from thoth_cli.status import show_status
 
 
 def test_show_status_includes_tavily_key(monkeypatch, capsys, tmp_path):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     monkeypatch.setenv("TAVILY_API_KEY", "tvly-1234567890abcdef")
 
     show_status(SimpleNamespace(all=False, deep=False))
@@ -88,7 +88,7 @@ def test_show_status_reports_vercel_backend_contract(monkeypatch, capsys, tmp_pa
     import thoth_cli.auth as auth_mod
     import thoth_cli.gateway as gateway_mod
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     monkeypatch.setenv("TERMINAL_ENV", "vercel_sandbox")
     monkeypatch.setenv("TERMINAL_VERCEL_RUNTIME", "python3.13")
     monkeypatch.setenv("TERMINAL_CONTAINER_PERSISTENT", "true")

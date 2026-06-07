@@ -15,11 +15,11 @@ import pytest
 
 @pytest.fixture
 def backup_env(monkeypatch, tmp_path):
-    """Isolate HERMES_HOME + reload modules so every test starts clean."""
+    """Isolate THOTH_HOME + reload modules so every test starts clean."""
     home = tmp_path / ".hermes"
     home.mkdir()
     (home / "skills").mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     # Reload so get_thoth_home picks up the env var fresh.
@@ -322,7 +322,7 @@ def test_dry_run_skips_snapshot(backup_env, monkeypatch):
 
 
 def _write_cron_jobs(home: Path, jobs: list) -> Path:
-    """Write a synthetic cron/jobs.json under HERMES_HOME. Returns the path.
+    """Write a synthetic cron/jobs.json under THOTH_HOME. Returns the path.
     Mirrors cron.jobs.save_jobs() wrapper shape: `{"jobs": [...], "updated_at": ...}`.
     """
     cron_dir = home / "cron"

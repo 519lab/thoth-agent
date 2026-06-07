@@ -25,7 +25,7 @@ def thoth_home(tmp_path, monkeypatch):
     home = tmp_path / ".hermes"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     # Clear any cached thoth_home computation
     import thoth_constants
     if hasattr(thoth_constants, "_thoth_home_cache"):
@@ -50,7 +50,7 @@ def test_save_conversation_writes_under_thoth_home(thoth_home, tmp_path, monkeyp
     work.mkdir()
     monkeypatch.chdir(work)
 
-    # Import fresh to pick up the HERMES_HOME fixture
+    # Import fresh to pick up the THOTH_HOME fixture
     for mod in [m for m in sys.modules if m.startswith("cli") or m == "thoth_constants"]:
         sys.modules.pop(mod, None)
 

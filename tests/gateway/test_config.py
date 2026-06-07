@@ -264,7 +264,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -276,7 +276,7 @@ class TestLoadGatewayConfig:
         config_path = thoth_home / "config.yaml"
         config_path.write_text("group_sessions_per_user: false\n", encoding="utf-8")
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -288,7 +288,7 @@ class TestLoadGatewayConfig:
         config_path = thoth_home / "config.yaml"
         config_path.write_text("thread_sessions_per_user: true\n", encoding="utf-8")
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -300,7 +300,7 @@ class TestLoadGatewayConfig:
         config_path = thoth_home / "config.yaml"
         config_path.write_text("{}\n", encoding="utf-8")
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -317,7 +317,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.delenv("DISCORD_THREAD_REQUIRE_MENTION", raising=False)
 
         load_gateway_config()
@@ -335,7 +335,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setenv("DISCORD_THREAD_REQUIRE_MENTION", "true")  # user override
 
         load_gateway_config()
@@ -354,7 +354,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -371,7 +371,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -386,7 +386,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -404,7 +404,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -424,7 +424,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.delenv("DISCORD_HISTORY_BACKFILL", raising=False)
         monkeypatch.delenv("DISCORD_HISTORY_BACKFILL_LIMIT", raising=False)
 
@@ -445,7 +445,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -465,7 +465,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -482,7 +482,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.delenv("FEISHU_ALLOW_BOTS", raising=False)
 
         load_gateway_config()
@@ -498,7 +498,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setenv("FEISHU_ALLOW_BOTS", "none")
 
         load_gateway_config()
@@ -511,7 +511,7 @@ class TestLoadGatewayConfig:
         config_path = thoth_home / "config.yaml"
         config_path.write_text("quick_commands: not-a-mapping\n", encoding="utf-8")
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -528,7 +528,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -545,7 +545,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -562,7 +562,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -581,7 +581,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config = load_gateway_config()
 
@@ -597,7 +597,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.delenv("TELEGRAM_PROXY", raising=False)
 
         load_gateway_config()
@@ -615,7 +615,7 @@ class TestLoadGatewayConfig:
             encoding="utf-8",
         )
 
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setenv("TELEGRAM_PROXY", "socks5://from-env:1080")
 
         load_gateway_config()

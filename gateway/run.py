@@ -593,7 +593,7 @@ _ensure_ssl_certs()
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Resolve Thoth home directory (respects HERMES_HOME override)
+# Resolve Thoth home directory (respects THOTH_HOME override)
 from thoth_constants import get_thoth_home
 from utils import atomic_json_write, atomic_yaml_write, base_url_host_matches, is_truthy_value
 _thoth_home = get_thoth_home()
@@ -1609,7 +1609,7 @@ class GatewayRunner:
         except Exception as e:
             # WARNING (not DEBUG) so the failure appears in errors.log — matches
             # cli.py's handling of the same init path.  Users hitting NFS-mounted
-            # HERMES_HOME silently lost /resume, /title, /history, /branch, and
+            # THOTH_HOME silently lost /resume, /title, /history, /branch, and
             # session search without this.  The underlying cause (usually
             # "locking protocol" from NFS) is now also captured by
             # thoth_state.get_last_init_error() for slash-command error strings.
@@ -17865,9 +17865,9 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
         logger.warning("substrate bootstrap failed, continuing: %s", _se)
 
     # ── Duplicate-instance guard ──────────────────────────────────────
-    # Prevent two gateways from running under the same HERMES_HOME.
-    # The PID file is scoped to HERMES_HOME, so future multi-profile
-    # setups (each profile using a distinct HERMES_HOME) will naturally
+    # Prevent two gateways from running under the same THOTH_HOME.
+    # The PID file is scoped to THOTH_HOME, so future multi-profile
+    # setups (each profile using a distinct THOTH_HOME) will naturally
     # allow concurrent instances without tripping this guard.
     from gateway.status import (
         acquire_gateway_runtime_lock,
@@ -17961,7 +17961,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
         else:
             thoth_home = str(get_thoth_home())
             logger.error(
-                "Another gateway instance is already running (PID %d, HERMES_HOME=%s). "
+                "Another gateway instance is already running (PID %d, THOTH_HOME=%s). "
                 "Use 'thoth gateway restart' to replace it, or 'thoth gateway stop' first.",
                 existing_pid, thoth_home,
             )

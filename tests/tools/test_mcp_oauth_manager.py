@@ -27,7 +27,7 @@ def test_manager_is_singleton():
 
 def test_manager_get_or_build_provider_caches(tmp_path, monkeypatch):
     """Calling get_or_build_provider twice with same name returns same provider."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     from tools.mcp_oauth_manager import MCPOAuthManager
 
     mgr = MCPOAuthManager()
@@ -38,7 +38,7 @@ def test_manager_get_or_build_provider_caches(tmp_path, monkeypatch):
 
 def test_manager_get_or_build_rebuilds_on_url_change(tmp_path, monkeypatch):
     """Changing the URL discards the cached provider."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     from tools.mcp_oauth_manager import MCPOAuthManager
 
     mgr = MCPOAuthManager()
@@ -49,7 +49,7 @@ def test_manager_get_or_build_rebuilds_on_url_change(tmp_path, monkeypatch):
 
 def test_manager_remove_evicts_cache(tmp_path, monkeypatch):
     """remove(name) evicts the provider from cache AND deletes disk files."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     from tools.mcp_oauth_manager import MCPOAuthManager
 
     # Pre-seed tokens on disk
@@ -89,7 +89,7 @@ async def test_disk_watch_invalidates_on_mtime_change(tmp_path, monkeypatch):
     invalidateOAuthCacheIfDiskChanged (CC-1096 / GH#24317) and is the core
     fix for Cthulhu's external-cron refresh workflow.
     """
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
 
     reset_manager_for_tests()
@@ -130,7 +130,7 @@ def test_manager_builds_thoth_provider_subclass(tmp_path, monkeypatch):
         MCPOAuthManager, _THOTH_PROVIDER_CLS, reset_manager_for_tests,
     )
     reset_manager_for_tests()
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
 
     mgr = MCPOAuthManager()
     provider = mgr.get_or_build_provider("srv", "https://example.com/mcp", None)

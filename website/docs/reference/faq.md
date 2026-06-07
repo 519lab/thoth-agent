@@ -616,9 +616,9 @@ If an MCP server crashes mid-request, Thoth will report a timeout. Check the ser
 
 ## Profiles
 
-### How do profiles differ from just setting HERMES_HOME?
+### How do profiles differ from just setting THOTH_HOME?
 
-Profiles are a managed layer on top of `HERMES_HOME`. You *could* manually set `HERMES_HOME=/some/path` before every command, but profiles handle all the plumbing for you: creating the directory structure, generating shell aliases (`hermes-work`), tracking the active profile in `~/.hermes/active_profile`, and syncing skill updates across all profiles automatically. They also integrate with tab completion so you don't have to remember paths.
+Profiles are a managed layer on top of `THOTH_HOME`. You *could* manually set `THOTH_HOME=/some/path` before every command, but profiles handle all the plumbing for you: creating the directory structure, generating shell aliases (`hermes-work`), tracking the active profile in `~/.hermes/active_profile`, and syncing skill updates across all profiles automatically. They also integrate with tab completion so you don't have to remember paths.
 
 ### Can two profiles share the same bot token?
 

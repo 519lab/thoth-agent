@@ -28,7 +28,7 @@ def isolated_home(tmp_path, monkeypatch):
     hermes = home / ".hermes"
     hermes.mkdir(parents=True)
     monkeypatch.setattr(Path, "home", lambda: home)
-    monkeypatch.setenv("HERMES_HOME", str(hermes))
+    monkeypatch.setenv("THOTH_HOME", str(hermes))
     # Ensure get_env_value cache doesn't carry stale state.
     for key in list(os.environ):
         if key.startswith("WHATSAPP_"):

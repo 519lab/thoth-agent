@@ -1,11 +1,11 @@
 """Regression for #21454: re-running install.sh on a symlinked prior install.
 
 Older versions of ``install.sh`` created ``$link_dir/$CLI_NAME`` as a symlink
-to the pip-generated entry point at ``$HERMES_BIN`` (i.e. ``venv/bin/hermes``).
+to the pip-generated entry point at ``$THOTH_BIN`` (i.e. ``venv/bin/thoth``).
 When ``setup_path()`` later switched to writing a bash shim with
 ``cat > "$link_dir/$CLI_NAME" <<EOF``, the redirect followed the existing
 symlink and overwrote the pip entry point with the shim. The shim's
-``exec "$HERMES_BIN" "$@"`` then self-recursed and the CLI hung on every
+``exec "$THOTH_BIN" "$@"`` then self-recursed and the CLI hung on every
 invocation.
 
 These tests pin the fix: ``setup_path()`` must remove ``$link_dir/$CLI_NAME``
@@ -72,26 +72,26 @@ def test_re_running_setup_path_block_preserves_pip_entry_point(tmp_path: Path) -
     Layout mirrors a real install:
 
         tmp/
-          venv/bin/hermes        <- pip entry point (the one we must preserve)
-          local_bin/hermes       <- symlink → ../venv/bin/hermes  (old install)
+          venv/bin/thoth        <- pip entry point (the one we must preserve)
+          local_bin/thoth       <- symlink → ../venv/bin/thoth  (old install)
 
     Then we run the exact shim-write block from setup_path() with
-    ``HERMES_BIN``, ``link_dir``, and ``CLI_NAME`` pointed at this fixture.
+    ``THOTH_BIN``, ``link_dir``, and ``CLI_NAME`` pointed at this fixture.
     The fix requires that, after the run:
 
-      * ``venv/bin/hermes`` still contains its original pip-script body
-      * ``local_bin/hermes`` is a regular file (not a symlink) holding the shim
+      * ``venv/bin/thoth`` still contains its original pip-script body
+      * ``local_bin/thoth`` is a regular file (not a symlink) holding the shim
     """
     venv_bin = tmp_path / "venv" / "bin"
     venv_bin.mkdir(parents=True)
-    pip_entry = venv_bin / "hermes"
+    pip_entry = venv_bin / "thoth"
     pip_marker = "#!/usr/bin/env python\n# pip-generated entry point — must not be overwritten\n"
     pip_entry.write_text(pip_marker)
     pip_entry.chmod(pip_entry.stat().st_mode | stat.S_IXUSR)
 
     link_dir = tmp_path / "local_bin"
     link_dir.mkdir()
-    cli_name = "hermes"
+    cli_name = "thoth"
     shim_path = link_dir / cli_name
     # Reproduce the prior-install state: shim path is a symlink to the
     # pip-generated entry point.
@@ -105,8 +105,8 @@ def test_re_running_setup_path_block_preserves_pip_entry_point(tmp_path: Path) -
     # wrap the block in a function — `local` is illegal at script scope.
     script = (
         "set -e\n"
-        f"HERMES_BIN={pip_entry!s}\n"
-        f"HERMES_HOME={tmp_path!s}/thoth_home\n"
+        f"THOTH_BIN={pip_entry!s}\n"
+        f"THOTH_HOME={tmp_path!s}/thoth_home\n"
         "_run_shim_block() {\n"
         f"  local link_dir={link_dir!s}\n"
         f"  local CLI_NAME={cli_name}\n"
@@ -127,7 +127,7 @@ def test_re_running_setup_path_block_preserves_pip_entry_point(tmp_path: Path) -
     # The pip entry point must still be the original pip script — not a
     # re-written self-recursing bash shim.
     assert pip_entry.read_text() == pip_marker, (
-        "venv/bin/hermes was overwritten by setup_path() — symlink-stomp "
+        "venv/bin/thoth was overwritten by setup_path() — symlink-stomp "
         "regression (#21454)."
     )
 

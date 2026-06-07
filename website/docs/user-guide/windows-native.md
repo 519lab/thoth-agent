@@ -210,7 +210,7 @@ Services require admin rights to install and tie the gateway's lifecycle to mach
 
 The split is deliberate: `%LOCALAPPDATA%\thoth` is disposable infrastructure (you can blow it away and the one-liner restores it). `%USERPROFILE%\.hermes` is your data — config, memory, skills, session history — and is identical in shape to a Linux install. Mirror it between machines and your Thoth moves with you.
 
-**Override `HERMES_HOME`:** set the environment variable to point at a different data dir. Works the same as on Linux.
+**Override `THOTH_HOME`:** set the environment variable to point at a different data dir. Works the same as on Linux.
 
 ## Browser tool
 

@@ -801,7 +801,7 @@ def _get_script_timeout() -> int:
 def _run_job_script(script_path: str) -> tuple[bool, str]:
     """Execute a cron job's data-collection script and capture its output.
 
-    Scripts must reside within HERMES_HOME/scripts/.  Both relative and
+    Scripts must reside within THOTH_HOME/scripts/.  Both relative and
     absolute paths are resolved and validated against this directory to
     prevent arbitrary script execution via path traversal or absolute
     path injection.
@@ -818,7 +818,7 @@ def _run_job_script(script_path: str) -> tuple[bool, str]:
 
     Args:
         script_path: Path to the script.  Relative paths are resolved
-            against HERMES_HOME/scripts/.  Absolute and ~-prefixed paths
+            against THOTH_HOME/scripts/.  Absolute and ~-prefixed paths
             are also validated to ensure they stay within the scripts dir.
 
     Returns:
@@ -836,7 +836,7 @@ def _run_job_script(script_path: str) -> tuple[bool, str]:
         path = (scripts_dir / raw).resolve()
 
     # Guard against path traversal, absolute path injection, and symlink
-    # escape — scripts MUST reside within HERMES_HOME/scripts/.
+    # escape — scripts MUST reside within THOTH_HOME/scripts/.
     try:
         path.relative_to(scripts_dir_resolved)
     except ValueError:
@@ -877,7 +877,7 @@ def _run_job_script(script_path: str) -> tuple[bool, str]:
         argv = [sys.executable, str(path)]
 
     run_env = os.environ.copy()
-    run_env["HERMES_HOME"] = str(_get_thoth_home())
+    run_env["THOTH_HOME"] = str(_get_thoth_home())
     try:
         from thoth_constants import get_subprocess_home
 
@@ -1591,7 +1591,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
             disabled_toolsets=["cronjob", "messaging", "clarify"],
             quiet_mode=True,
             # Cron jobs should always inherit the user's SOUL.md identity from
-            # HERMES_HOME. When a workdir is configured, also inject project
+            # THOTH_HOME. When a workdir is configured, also inject project
             # context files (AGENTS.md / CLAUDE.md / .cursorrules) from there.
             # Without a workdir, keep cwd context discovery disabled.
             skip_context_files=not bool(_job_workdir),

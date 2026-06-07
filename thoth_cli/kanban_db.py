@@ -784,12 +784,12 @@ def kanban_home() -> Path:
     1. ``HERMES_KANBAN_HOME`` env var when set and non-empty (explicit
        override for tests and unusual deployments).
     2. ``get_default_thoth_root()``, which already returns ``<root>``
-       when ``HERMES_HOME`` is ``<root>/profiles/<name>``, and returns
-       ``HERMES_HOME`` directly for Docker / custom deployments.
+       when ``THOTH_HOME`` is ``<root>/profiles/<name>``, and returns
+       ``THOTH_HOME`` directly for Docker / custom deployments.
 
     The kanban board is shared across profiles **by design** (see the
     module docstring). Resolving the kanban paths through the active
-    profile's ``HERMES_HOME`` would silently fork the board per profile,
+    profile's ``THOTH_HOME`` would silently fork the board per profile,
     which breaks the dispatcher / worker handoff.
     """
     override = os.environ.get("HERMES_KANBAN_HOME", "").strip()
@@ -5809,7 +5809,7 @@ def _resolve_thoth_argv() -> list[str]:
 
     Tries in order:
 
-    1. ``$HERMES_BIN`` — explicit operator override. Path-like values are
+    1. ``$THOTH_BIN`` — explicit operator override. Path-like values are
        normalized to absolute paths; bare command names keep normal PATH
        semantics and never prefer a same-directory file before ``PATH``.
     2. ``shutil.which("hermes")`` — the console-script shim, normalized to
@@ -5830,7 +5830,7 @@ def _resolve_thoth_argv() -> list[str]:
     """
     import shutil
 
-    env_bin = os.environ.get("HERMES_BIN", "").strip()
+    env_bin = os.environ.get("THOTH_BIN", "").strip()
     if env_bin:
         if _looks_like_path(env_bin):
             return _thoth_path_argv(env_bin)
@@ -5861,9 +5861,9 @@ def _kanban_worker_skill_available(thoth_home: Optional[str]) -> bool:
     """
     from pathlib import Path as _Path
 
-    # An unset HERMES_HOME means the worker falls back to the default root
-    # home (``~/.hermes``), which ships the bundled skill.
-    base = _Path(thoth_home) if thoth_home else (_Path.home() / ".hermes")
+    # An unset THOTH_HOME means the worker falls back to the default root
+    # home (``~/.thoth``), which ships the bundled skill.
+    base = _Path(thoth_home) if thoth_home else (_Path.home() / ".thoth")
     skills_root = base / "skills"
     if not skills_root.is_dir():
         return False
@@ -5939,23 +5939,23 @@ def _default_spawn(
     prompt = f"work kanban task {task.id}"
     env = dict(os.environ)
 
-    # Inject HERMES_HOME so the worker reads the profile-scoped config.yaml
+    # Inject THOTH_HOME so the worker reads the profile-scoped config.yaml
     # (fallback_providers, toolsets, agent settings, etc.) instead of the root
     # config.  Without this, `env = dict(os.environ)` copies only the parent's
     # env, and when the child process starts `thoth -p <name>` the
     # _apply_profile_override() runs *before* thoth_constants is imported.
-    # If HERMES_HOME is absent from the child's env, get_thoth_home() falls
-    # back to Path.home() / ".hermes" (the DEFAULT profile root), ignoring the
+    # If THOTH_HOME is absent from the child's env, get_thoth_home() falls
+    # back to Path.home() / ".thoth" (the DEFAULT profile root), ignoring the
     # profile-specific config entirely.  Fixes profile-scoped fallback_providers
     # being invisible to kanban workers.
     from thoth_cli.profiles import resolve_profile_env
     try:
-        env["HERMES_HOME"] = resolve_profile_env(profile_arg)
+        env["THOTH_HOME"] = resolve_profile_env(profile_arg)
     except FileNotFoundError:
         # Profile dir doesn't exist — defer resolution to the CLI's
         # _apply_profile_override() via HERMES_PROFILE (set below).
         # This only happens in test fixtures where the isolated
-        # HERMES_HOME never had profiles created.
+        # THOTH_HOME never had profiles created.
         pass
     if task.tenant:
         env["HERMES_TENANT"] = task.tenant
@@ -5981,7 +5981,7 @@ def _default_spawn(
         env["TERMINAL_MAX_FOREGROUND_TIMEOUT"] = foreground_timeout
     # Pin the shared board + workspaces root the dispatcher resolved, so
     # that even when the worker activates a profile (`thoth -p <name>`
-    # rewrites HERMES_HOME), its kanban paths still match the
+    # rewrites THOTH_HOME), its kanban paths still match the
     # dispatcher's. Belt-and-braces with the `get_default_thoth_root()`
     # resolution in `kanban_home()` — symmetric resolution is the norm,
     # but unusual symlink / Docker layouts are caught here too.
@@ -6001,7 +6001,7 @@ def _default_spawn(
     cmd = [
         *_resolve_thoth_argv(),
         "-p", profile_arg,
-        # Worker subprocesses switch to a profile-scoped HERMES_HOME above,
+        # Worker subprocesses switch to a profile-scoped THOTH_HOME above,
         # so they see that profile's shell-hook allowlist instead of the
         # dispatcher's root allowlist. Pass --accept-hooks explicitly so
         # profile-local worker sessions still register configured hooks.
@@ -6021,7 +6021,7 @@ def _default_spawn(
     # profile-scoped skills dirs, and preloading a missing skill is
     # fatal at CLI startup. Omitting it is safe — the lifecycle
     # contract still ships via KANBAN_GUIDANCE.
-    if _kanban_worker_skill_available(env.get("HERMES_HOME")):
+    if _kanban_worker_skill_available(env.get("THOTH_HOME")):
         cmd.extend(["--skills", "kanban-worker"])
     # Per-task force-loaded skills. Each name goes in its own
     # `--skills X` pair rather than a single comma-joined arg: the CLI

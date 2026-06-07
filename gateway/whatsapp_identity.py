@@ -71,7 +71,7 @@ def expand_whatsapp_aliases(identifier: str) -> Set[str]:
     """Resolve WhatsApp phone/LID aliases via bridge session mapping files.
 
     Returns the set of all identifiers transitively reachable through the
-    bridge's ``$HERMES_HOME/whatsapp/session/lid-mapping-*.json`` files,
+    bridge's ``$THOTH_HOME/whatsapp/session/lid-mapping-*.json`` files,
     starting from ``identifier``. The result always includes the
     normalized input itself, so callers can safely ``in`` check against
     the return value without a separate fallback branch.

@@ -40,7 +40,7 @@ def thoth_home_with_config(tmp_path, monkeypatch):
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     _external_dirs_cache_clear()
     yield home, external, config
@@ -102,7 +102,7 @@ def test_returns_empty_when_config_missing(tmp_path, monkeypatch):
     """No config file → empty list, cached as empty."""
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     _external_dirs_cache_clear()
 
@@ -119,7 +119,7 @@ def test_returned_list_is_a_copy(thoth_home_with_config):
 
 
 def test_cache_key_is_per_config_path(tmp_path, monkeypatch):
-    """Two different HERMES_HOMEs keep separate cache entries."""
+    """Two different THOTH_HOMEs keep separate cache entries."""
     home_a = tmp_path / "home_a" / ".hermes"
     home_a.mkdir(parents=True)
     ext_a = tmp_path / "ext_a"
@@ -138,14 +138,14 @@ def test_cache_key_is_per_config_path(tmp_path, monkeypatch):
 
     _external_dirs_cache_clear()
 
-    monkeypatch.setenv("HERMES_HOME", str(home_a))
+    monkeypatch.setenv("THOTH_HOME", str(home_a))
     assert get_external_skills_dirs() == [ext_a.resolve()]
 
-    monkeypatch.setenv("HERMES_HOME", str(home_b))
+    monkeypatch.setenv("THOTH_HOME", str(home_b))
     assert get_external_skills_dirs() == [ext_b.resolve()]
 
     # And switching back still works — both entries coexist in the cache.
-    monkeypatch.setenv("HERMES_HOME", str(home_a))
+    monkeypatch.setenv("THOTH_HOME", str(home_a))
     assert get_external_skills_dirs() == [ext_a.resolve()]
 
 # Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.

@@ -48,7 +48,7 @@ from rich.console import Console
 from thoth_constants import OPENROUTER_BASE_URL, get_thoth_home
 from agent.retry_utils import jittered_backoff
 
-# Load .env from HERMES_HOME first, then project root as a dev fallback.
+# Load .env from THOTH_HOME first, then project root as a dev fallback.
 from thoth_cli.env_loader import load_thoth_dotenv
 
 _thoth_home = get_thoth_home()

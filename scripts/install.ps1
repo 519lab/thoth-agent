@@ -1394,15 +1394,15 @@ function Set-PathVariable {
         Write-Info "PATH already configured"
     }
     
-    # Set HERMES_HOME so the Python code finds config/data in the right place.
+    # Set THOTH_HOME so the Python code finds config/data in the right place.
     # Only needed on Windows where we install to %LOCALAPPDATA%\hermes instead
     # of the Unix default ~/.hermes
-    $currentHermesHome = [Environment]::GetEnvironmentVariable("HERMES_HOME", "User")
+    $currentHermesHome = [Environment]::GetEnvironmentVariable("THOTH_HOME", "User")
     if (-not $currentHermesHome -or $currentHermesHome -ne $HermesHome) {
-        [Environment]::SetEnvironmentVariable("HERMES_HOME", $HermesHome, "User")
-        Write-Success "Set HERMES_HOME=$HermesHome"
+        [Environment]::SetEnvironmentVariable("THOTH_HOME", $HermesHome, "User")
+        Write-Success "Set THOTH_HOME=$HermesHome"
     }
-    $env:HERMES_HOME = $HermesHome
+    $env:THOTH_HOME = $HermesHome
     
     # Update current session
     $env:Path = "$hermesBin;$env:Path"

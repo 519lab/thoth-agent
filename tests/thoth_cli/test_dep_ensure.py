@@ -129,7 +129,7 @@ def test_has_thoth_agent_browser_posix_path(tmp_path):
 
 
 def test_has_thoth_agent_browser_legacy_node_modules_path(tmp_path):
-    """Legacy git-clone installs put agent-browser in $HERMES_HOME/node_modules/.bin/."""
+    """Legacy git-clone installs put agent-browser in $THOTH_HOME/node_modules/.bin/."""
     bin_dir = tmp_path / "node_modules" / ".bin"
     bin_dir.mkdir(parents=True)
     (bin_dir / "agent-browser").write_text("#!/bin/sh")

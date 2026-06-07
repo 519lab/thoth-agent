@@ -448,7 +448,7 @@ class TestOnPubsubMessage:
         msg.nack.assert_not_called()
 
     def test_membership_created_caches_bot_user_id(self, adapter, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         adapter._bot_user_id = None
         envelope = {
             "chat": {
@@ -1483,7 +1483,7 @@ class TestSetupFilesSlashCommand:
     async def test_no_arg_status_when_unconfigured(self, adapter, tmp_path, monkeypatch):
         """Without client_secret AND without token, status reply tells the
         user how to provide credentials on the host."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         adapter._create_message = AsyncMock(
             return_value=type("R", (), {"success": True, "message_id": "m",
                                         "error": None})()
@@ -1499,7 +1499,7 @@ class TestSetupFilesSlashCommand:
 
     @pytest.mark.asyncio
     async def test_revoke_clears_in_memory_creds(self, adapter, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         adapter._user_chat_api = MagicMock()
         adapter._user_credentials = MagicMock(valid=True)
         adapter._create_message = AsyncMock(
@@ -1519,12 +1519,12 @@ class TestUserOAuthHelper:
     def test_load_user_credentials_returns_none_when_no_token(self, tmp_path, monkeypatch):
         """Missing token file is the expected no-op case (user hasn't
         run /setup-files yet). Must NOT raise."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         from plugins.platforms.google_chat.oauth import load_user_credentials
         assert load_user_credentials() is None
 
     def test_load_user_credentials_returns_none_on_corrupt_token(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         (tmp_path / "google_chat_user_token.json").write_text("not json")
         from plugins.platforms.google_chat.oauth import load_user_credentials
         assert load_user_credentials() is None
@@ -1551,7 +1551,7 @@ class TestUserOAuthHelper:
     def test_per_user_token_path_isolated_from_legacy(self, tmp_path, monkeypatch):
         """Per-user files live under a dedicated subdirectory so the
         legacy single-user JSON stays addressable on disk."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         from plugins.platforms.google_chat.oauth import (
             _token_path, _legacy_token_path,
         )
@@ -1566,7 +1566,7 @@ class TestUserOAuthHelper:
     ):
         """A user who has not authorized has no token file; load returns
         ``None`` and never throws — same contract as the legacy path."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         from plugins.platforms.google_chat.oauth import load_user_credentials
         assert load_user_credentials("nobody@example.com") is None
 
@@ -1575,7 +1575,7 @@ class TestUserOAuthHelper:
     ):
         """``list_authorized_emails`` enumerates the per-user dir; the
         legacy file is intentionally excluded (its owner is unknown)."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         users_dir = tmp_path / "google_chat_user_tokens"
         users_dir.mkdir(parents=True)
         (users_dir / "alice@example.com.json").write_text("{}")
@@ -1591,7 +1591,7 @@ class TestUserOAuthHelper:
     def test_list_authorized_emails_empty_when_dir_missing(
         self, tmp_path, monkeypatch
     ):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         from plugins.platforms.google_chat.oauth import list_authorized_emails
         assert list_authorized_emails() == []
 
@@ -1601,7 +1601,7 @@ class TestUserOAuthHelper:
         """Two users running /setup-files start in parallel must not
         clobber each other's PKCE verifier — the pending state file
         is namespaced by email."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         from plugins.platforms.google_chat.oauth import _pending_auth_path
         a = _pending_auth_path("alice@example.com")
         b = _pending_auth_path("bob@example.com")
@@ -1636,7 +1636,7 @@ class TestPerUserAttachmentRouting:
     ):
         """sender_email maps to a per-user file → that user's API client
         is built and used for the upload, NOT the legacy fallback."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         users_dir = tmp_path / "google_chat_user_tokens"
         users_dir.mkdir(parents=True)
         (users_dir / "alice@example.com.json").write_text(json.dumps({
@@ -1687,7 +1687,7 @@ class TestPerUserAttachmentRouting:
         """sender known but no per-user token → legacy creds fill in.
         This is the migration window: legacy keeps working until each
         user runs /setup-files."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         adapter._last_sender_by_chat["spaces/S"] = "newuser@example.com"
 
         legacy_api = MagicMock()
@@ -1749,7 +1749,7 @@ class TestPerUserAttachmentRouting:
     ):
         """A 401 from one user's token must NOT clobber another user's
         cache nor the legacy slot. The eviction is scoped."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         adapter._last_sender_by_chat["spaces/S"] = "alice@example.com"
 
         alice_api = MagicMock()
@@ -1790,7 +1790,7 @@ class TestPerUserAttachmentRouting:
     ):
         """``/setup-files <code>`` from sender alice writes to alice's
         token slot; bob's slot stays untouched."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         adapter._create_message = AsyncMock(
             return_value=type("R", (), {"success": True, "message_id": "m",
                                         "error": None})()
@@ -1824,7 +1824,7 @@ class TestPerUserAttachmentRouting:
         """Per-user revoke clears alice's slot; bob and the legacy
         fallback both keep working. Alice's choice to revoke must not
         knock out unrelated users."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         adapter._user_chat_api_by_email["alice@example.com"] = MagicMock()
         adapter._user_creds_by_email["alice@example.com"] = MagicMock()
         adapter._user_chat_api_by_email["bob@example.com"] = MagicMock()

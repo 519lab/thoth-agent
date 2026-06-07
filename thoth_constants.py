@@ -47,7 +47,7 @@ def _disk_default_home() -> Path:
     → ``~/.hermes`` if it exists → ``~/.thoth`` (the new-install canonical
     name). Import-safe: only ``stat()``s, never mutates/creates anything (the
     accessor is called at module scope in 30+ files). On Windows the home is
-    env-driven (the installer sets HERMES_HOME/THOTH_HOME), so the env branch
+    env-driven (the installer sets THOTH_HOME), so the env branch
     in the callers wins before this probe runs.
     """
     home = Path.home()
@@ -69,20 +69,19 @@ def _disk_default_home() -> Path:
 def get_thoth_home() -> Path:
     """Return the Thoth/Thoth home directory.
 
-    Resolution (rename Phase 3): context override → ``THOTH_HOME`` env →
-    ``HERMES_HOME`` env → ``~/.thoth`` if present → ``~/.hermes`` if present →
-    ``~/.thoth`` (new-install default). ``THOTH_HOME`` is canonical; both env
-    spellings are kept in sync by ``thoth_env.normalize_thoth_home_env`` at
-    startup, so reading either here returns the same value.
+    Resolution: context override → ``THOTH_HOME`` env → ``~/.thoth`` if
+    present → ``~/.hermes`` if present → ``~/.thoth`` (new-install default).
+    ``THOTH_HOME`` is the single canonical env spelling; fresh installs rely
+    on the importer to carry any legacy ``~/.hermes`` home over.
     This is the single source of truth — all other copies should import this.
 
-    When ``HERMES_HOME`` is unset but an ``active_profile`` file indicates
+    When ``THOTH_HOME`` is unset but an ``active_profile`` file indicates
     a non-default profile is active, logs a loud one-shot warning to
     ``errors.log`` so cross-profile data corruption is diagnosable instead
     of silent.  Behavior is unchanged otherwise — we still return
     ``~/.hermes`` — because raising here would brick 30+ module-level
     callers that import this at load time.  Subprocess spawners are
-    expected to propagate ``HERMES_HOME`` explicitly (see the systemd
+    expected to propagate ``THOTH_HOME`` explicitly (see the systemd
     template in ``thoth_cli/gateway.py`` and the kanban dispatcher in
     ``thoth_cli/kanban_db.py``).  See https://github.com/519lab/thoth-agent/issues/18594.
     """
@@ -90,11 +89,9 @@ def get_thoth_home() -> Path:
     if override:
         return Path(override)
 
-    # THOTH_HOME is canonical; fall back to the legacy HERMES_HOME spelling.
-    val = (
-        os.environ.get("THOTH_HOME", "").strip()
-        or os.environ.get("HERMES_HOME", "").strip()
-    )
+    # THOTH_HOME is the single canonical spelling (fresh-install: the importer
+    # carries any legacy ~/.hermes home over).
+    val = os.environ.get("THOTH_HOME", "").strip()
     if val:
         return Path(val)
 
@@ -119,11 +116,11 @@ def get_thoth_home() -> Path:
             # on consoles where a StreamHandler is already attached.
             import sys
             msg = (
-                f"[HERMES_HOME fallback] HERMES_HOME is unset but active "
+                f"[THOTH_HOME fallback] THOTH_HOME is unset but active "
                 f"profile is {active!r}. Falling back to ~/.hermes, which "
                 f"is the DEFAULT profile — not {active!r}. Any data this "
                 f"process writes will land in the wrong profile. The "
-                f"subprocess spawner should pass HERMES_HOME explicitly "
+                f"subprocess spawner should pass THOTH_HOME explicitly "
                 f"(see issue #18594)."
             )
             try:
@@ -140,11 +137,11 @@ def get_default_thoth_root() -> Path:
 
     In standard deployments this is ``~/.hermes``.
 
-    In Docker or custom deployments where ``HERMES_HOME`` points outside
-    ``~/.hermes`` (e.g. ``/opt/data``), returns ``HERMES_HOME`` directly
+    In Docker or custom deployments where ``THOTH_HOME`` points outside
+    ``~/.hermes`` (e.g. ``/opt/data``), returns ``THOTH_HOME`` directly
     — that IS the root.
 
-    In profile mode where ``HERMES_HOME`` is ``<root>/profiles/<name>``,
+    In profile mode where ``THOTH_HOME`` is ``<root>/profiles/<name>``,
     returns ``<root>`` so that ``profile list`` can see all profiles.
     Works both for standard (``~/.hermes/profiles/coder``) and Docker
     (``/opt/data/profiles/coder``) layouts.
@@ -152,9 +149,7 @@ def get_default_thoth_root() -> Path:
     Import-safe — no dependencies beyond stdlib.
     """
     native_home = _disk_default_home()
-    env_home = (
-        os.environ.get("THOTH_HOME", "") or os.environ.get("HERMES_HOME", "")
-    )
+    env_home = os.environ.get("THOTH_HOME", "")
     if not env_home:
         return native_home
     env_path = Path(env_home)
@@ -175,7 +170,7 @@ def get_default_thoth_root() -> Path:
     if env_path.parent.name == "profiles":
         return env_path.parent.parent
 
-    # Not a profile path — HERMES_HOME itself is the root
+    # Not a profile path — THOTH_HOME itself is the root
     return env_path
 
 
@@ -220,7 +215,7 @@ def get_bundled_skills_dir(default: Path | None = None) -> Path:
         1. ``HERMES_BUNDLED_SKILLS`` env var (Nix wrapper / explicit override)
         2. Wheel-installed ``<sysconfig data>/skills`` (pip install path)
         3. Caller-supplied ``default`` (typically the source-checkout path)
-        4. ``<HERMES_HOME>/skills`` last-resort
+        4. ``<THOTH_HOME>/skills`` last-resort
     """
     override = os.getenv("HERMES_BUNDLED_SKILLS", "").strip()
     if override:
@@ -241,8 +236,8 @@ def get_thoth_dir(new_subpath: str, old_name: str) -> Path:
     keep using it — no migration required.
 
     Args:
-        new_subpath: Preferred path relative to HERMES_HOME (e.g. ``"cache/images"``).
-        old_name: Legacy path relative to HERMES_HOME (e.g. ``"image_cache"``).
+        new_subpath: Preferred path relative to THOTH_HOME (e.g. ``"cache/images"``).
+        old_name: Legacy path relative to THOTH_HOME (e.g. ``"image_cache"``).
 
     Returns:
         Absolute ``Path`` — old location if it exists on disk, otherwise the new one.
@@ -255,7 +250,7 @@ def get_thoth_dir(new_subpath: str, old_name: str) -> Path:
 
 
 def display_thoth_home() -> str:
-    """Return a user-friendly display string for the current HERMES_HOME.
+    """Return a user-friendly display string for the current THOTH_HOME.
 
     Uses ``~/`` shorthand for readability::
 
@@ -279,7 +274,7 @@ def secure_parent_dir(path: Path) -> None:
 
     Refuses to chmod ``/`` or any top-level directory (resolved parent with
     fewer than 3 parts, i.e. ``/`` or any direct child like ``/usr``) to
-    prevent catastrophic host bricking when ``HERMES_HOME`` or other path
+    prevent catastrophic host bricking when ``THOTH_HOME`` or other path
     env vars resolve to an unexpected location.
 
     See https://github.com/519lab/thoth-agent/issues/25821.
@@ -297,7 +292,7 @@ def secure_parent_dir(path: Path) -> None:
 def get_subprocess_home() -> str | None:
     """Return a per-profile HOME directory for subprocesses, or None.
 
-    When ``{HERMES_HOME}/home/`` exists on disk, subprocesses should use it
+    When ``{THOTH_HOME}/home/`` exists on disk, subprocesses should use it
     as ``HOME`` so system tools (git, ssh, gh, npm …) write their configs
     inside the Thoth data directory instead of the OS-level ``/root`` or
     ``~/``.  This provides:
@@ -314,7 +309,6 @@ def get_subprocess_home() -> str | None:
     thoth_home = (
         get_thoth_home_override()
         or os.getenv("THOTH_HOME")
-        or os.getenv("HERMES_HOME")
     )
     if not thoth_home:
         return None
@@ -411,7 +405,7 @@ def is_container() -> bool:
 
 
 def get_config_path() -> Path:
-    """Return the path to ``config.yaml`` under HERMES_HOME.
+    """Return the path to ``config.yaml`` under THOTH_HOME.
 
     Replaces the ``get_thoth_home() / "config.yaml"`` pattern repeated
     in 7+ files (skill_utils.py, thoth_logging.py, thoth_time.py, etc.).
@@ -420,13 +414,13 @@ def get_config_path() -> Path:
 
 
 def get_skills_dir() -> Path:
-    """Return the path to the skills directory under HERMES_HOME."""
+    """Return the path to the skills directory under THOTH_HOME."""
     return get_thoth_home() / "skills"
 
 
 
 def get_env_path() -> Path:
-    """Return the path to the ``.env`` file under HERMES_HOME."""
+    """Return the path to the ``.env`` file under THOTH_HOME."""
     return get_thoth_home() / ".env"
 
 

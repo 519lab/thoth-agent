@@ -34,8 +34,8 @@ from utils import atomic_replace
 logger = logging.getLogger(__name__)
 
 
-HERMES_HOME = get_thoth_home()
-SKILLS_DIR = HERMES_HOME / "skills"
+THOTH_HOME = get_thoth_home()
+SKILLS_DIR = THOTH_HOME / "skills"
 MANIFEST_FILE = SKILLS_DIR / ".bundled_manifest"
 
 

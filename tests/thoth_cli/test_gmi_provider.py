@@ -162,7 +162,7 @@ class TestGmiDoctor:
         project = tmp_path / "project"
         project.mkdir(exist_ok=True)
 
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+        monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
         monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
         monkeypatch.setattr(doctor_mod, "_DHH", str(home))
         monkeypatch.setenv("GMI_API_KEY", "gmi-test-key")

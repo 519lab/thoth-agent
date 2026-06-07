@@ -24,7 +24,7 @@ def curator_env(tmp_path, monkeypatch, capsys):
     home.mkdir()
     (home / "skills").mkdir()
     (home / "logs").mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     import thoth_constants

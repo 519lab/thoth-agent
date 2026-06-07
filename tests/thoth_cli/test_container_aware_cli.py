@@ -23,10 +23,10 @@ from thoth_cli.config import (
 
 @pytest.fixture
 def container_env(tmp_path, monkeypatch):
-    """Set up a fake HERMES_HOME with .container-mode file."""
+    """Set up a fake THOTH_HOME with .container-mode file."""
     thoth_home = tmp_path / ".hermes"
     thoth_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.delenv("HERMES_DEV", raising=False)
 
     container_mode = thoth_home / ".container-mode"
@@ -64,7 +64,7 @@ def test_get_container_exec_info_none_without_file(tmp_path, monkeypatch):
     """Returns None when .container-mode doesn't exist (native mode)."""
     thoth_home = tmp_path / ".hermes"
     thoth_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.delenv("HERMES_DEV", raising=False)
 
     with patch("thoth_constants.is_container", return_value=False):
