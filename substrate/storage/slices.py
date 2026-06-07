@@ -349,26 +349,40 @@ class SliceRepo:
         slice_id: UUID,
         *,
         bump: Optional[float] = None,
+        scale: float = 1.0,
     ) -> None:
-        """Bump salience by ``bump`` or by the profile's
-        ``reinforcement_bump``. Caps at 1.0.
+        """Bump salience by ``bump`` (or the profile's
+        ``reinforcement_bump``), multiplied by ``scale``. Caps at 1.0.
 
-        Updates ``salience_updated_at`` so subsequent decay starts from
-        now. Does NOT update any other field — reinforcement is
-        salience-only. The bump is applied SQL-side via
-        ``LEAST(1.0, salience + bump)`` so concurrent reinforces don't
-        trample each other.
+        ``scale`` (default 1.0 — full bump) lets the recall path weight
+        reinforcement by topical relevance: a slice that entered the
+        projection on salience alone, with little relevance to the query,
+        is reinforced proportionally less (or not at all). Without this,
+        recall reinforced every surfaced slice equally and reset its
+        decay clock, so a once-surfaced slice ratcheted up its salience
+        and re-surfaced indefinitely (the recall feedback loop).
+
+        ``salience_updated_at`` is reset ONLY when a non-zero bump is
+        actually applied (``scale > 0``). A scale-0 call leaves the decay
+        clock untouched, so an irrelevant slice keeps aging out instead
+        of being frozen alive by being recalled.
+
+        The bump is applied SQL-side via ``LEAST(1.0, salience + bump*scale)``
+        so concurrent reinforces don't trample each other.
 
         Reinforcing a released slice is harmless: salience stays at 0
-        (already capped) and the timestamp updates. ``consolidation_state``
-        is NOT brought back from ``released`` — release is one-way.
+        (already capped). ``consolidation_state`` is NOT brought back
+        from ``released`` — release is one-way.
         """
         await conn.execute(
             """
             UPDATE substrate_slices sl
                SET salience_score = LEAST(1.0,
-                       sl.salience_score + COALESCE($2::real, dp.reinforcement_bump)),
-                   salience_updated_at = now()
+                       sl.salience_score
+                       + COALESCE($2::real, dp.reinforcement_bump) * $3::real),
+                   salience_updated_at =
+                       CASE WHEN $3::real > 0 THEN now()
+                            ELSE sl.salience_updated_at END
               FROM substrate_streams        st
               JOIN substrate_decay_profiles dp ON dp.profile_id = st.decay_profile_id
              WHERE sl.slice_id = $1
@@ -376,6 +390,7 @@ class SliceRepo:
             """,
             slice_id,
             bump,
+            max(0.0, min(1.0, scale)),
         )
 
     # ------------------------------------------------------------------

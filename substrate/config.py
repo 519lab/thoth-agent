@@ -133,6 +133,18 @@ RECALL_REINFORCE_RATE_LIMIT_PER_MIN = _envint(
     "HERMES_RECALL_REINFORCE_RATE_LIMIT_PER_MIN", default=6
 )
 
+# Minimum topical relevance (similarity/keyword match to the query, in
+# [0, 1]) a recalled slice must have before recall reinforces it. Slices
+# that entered the projection on salience/recency alone — with relevance
+# below this floor — get NO reinforcement and their decay clock is left
+# alone, so they age out instead of ratcheting their salience and
+# re-injecting every turn (the recall feedback loop). Above the floor,
+# the bump is scaled by relevance. 0.0 restores the old reinforce-all
+# behaviour.
+RECALL_REINFORCE_MIN_RELEVANCE = _envfloat(
+    "HERMES_RECALL_REINFORCE_MIN_RELEVANCE", default=0.05
+)
+
 # Recall log writer.
 RECALL_LOG_QUEUE_DEPTH = _envint("HERMES_RECALL_LOG_QUEUE_DEPTH", default=1024)
 
@@ -260,6 +272,7 @@ __all__ = [
     "RECALL_RECENCY_WEIGHT",
     "RECALL_RECENCY_HALF_LIFE_HOURS",
     "RECALL_REINFORCE_RATE_LIMIT_PER_MIN",
+    "RECALL_REINFORCE_MIN_RELEVANCE",
     "RECALL_LOG_QUEUE_DEPTH",
     "RECALL_EMBEDDING_MODEL",
     "RECALL_EMBEDDING_DIM",

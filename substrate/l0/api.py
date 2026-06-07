@@ -267,29 +267,35 @@ async def reinforce_slice(
     slice_id: UUID,
     *,
     bump: Optional[float] = None,
+    scale: float = 1.0,
     conn: "Optional[asyncpg.Connection]" = None,
 ) -> None:
     """Reinforce ``slice_id`` — bump salience and update timestamp.
 
     ``bump=None`` uses the slice's decay-profile ``reinforcement_bump``
     value (the default reinforcement contract). An explicit ``bump``
-    overrides — used when a caller has stronger signal than the default
-    (e.g. a recall hit that was directly relevant gets a larger bump
-    than one that was returned but irrelevant).
+    overrides.
 
-    Salience is capped at 1.0 SQL-side. Reinforcing a slice that's
-    already at the cap is a harmless no-op for the score but DOES
-    update ``salience_updated_at`` so subsequent decay starts from now.
+    ``scale`` (default 1.0) multiplies the bump — the recall path passes
+    each hit's topical relevance so a slice surfaced on salience alone
+    isn't reinforced for it (and, at ``scale=0``, its decay clock isn't
+    reset). This is what breaks the recall→reinforce→rank feedback loop
+    where a once-surfaced slice ratchets its salience and re-injects every
+    turn. See :meth:`SliceRepo.reinforce`.
+
+    Salience is capped at 1.0 SQL-side. A ``scale>0`` reinforce always
+    resets ``salience_updated_at`` (decay restarts from now); ``scale=0``
+    leaves it untouched.
 
     If ``conn`` is passed, the UPDATE runs on that connection so the
     caller can wrap reinforcement into a larger transaction (e.g. the
     consolidation acknowledgment in Phase D).
     """
     if conn is not None:
-        await substrate.slices.reinforce(conn, slice_id, bump=bump)
+        await substrate.slices.reinforce(conn, slice_id, bump=bump, scale=scale)
         return
     async with substrate.pool.acquire() as own:
-        await substrate.slices.reinforce(own, slice_id, bump=bump)
+        await substrate.slices.reinforce(own, slice_id, bump=bump, scale=scale)
 
 
 def reinforce_slice_sync(
