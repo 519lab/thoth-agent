@@ -55,10 +55,17 @@ async def commit_slice(
     payload_blob_ref: Optional[str] = None,
     conn: "Optional[asyncpg.Connection]" = None,
     born_passed: bool = False,
+    born_consolidated: bool = False,
 ) -> Address:
     """Commit a slice durably. Default ``sentinel_state='pending'``;
     set ``born_passed=True`` for self-emitted audit slices that must
     bypass the Sentinel queue (Sentinel/Curator self-state events).
+
+    Set ``born_consolidated=True`` for session-less perceptual events
+    the Parser can never select (it groups by ``metadata->>'session_id'``)
+    — e.g. ``thoth.self_state.cron_dispatch``. They stay perceptual but
+    are born ``consolidation_state='consolidated'`` so they don't pile up
+    in an undrainable parse backlog. See :meth:`SliceRepo.commit`.
 
     See module docstring for the full contract.
 
@@ -177,6 +184,7 @@ async def commit_slice(
             metadata=meta,
             summary_of=summary_of_json,
             born_passed=born_passed,
+            born_consolidated=born_consolidated,
         )
     else:
         async with substrate.pool.acquire() as own_conn:
@@ -193,6 +201,7 @@ async def commit_slice(
                 metadata=meta,
                 summary_of=summary_of_json,
                 born_passed=born_passed,
+                born_consolidated=born_consolidated,
             )
 
     return Address(
@@ -213,6 +222,7 @@ def commit_slice_sync(
     trust_hint: Optional[float] = None,
     metadata: Optional[dict] = None,
     payload_blob_ref: Optional[str] = None,
+    born_consolidated: bool = False,
 ) -> Address:
     """Sync facade — bridges to the async ``commit_slice`` via
     :func:`thoth_db.run_sync`.
@@ -240,6 +250,7 @@ def commit_slice_sync(
             trust_hint=trust_hint,
             metadata=metadata,
             payload_blob_ref=payload_blob_ref,
+            born_consolidated=born_consolidated,
         )
     )
 

@@ -197,13 +197,18 @@ async def test_on_subagent_spawn_and_return(booted_substrate):
         )
         ret = await conn.fetchrow(
             """
-            SELECT payload FROM substrate_slices sl
+            SELECT sl.payload, sl.metadata FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
              WHERE st.name = 'thoth.self_state.subagent_return'
             """
         )
     assert spawn["payload"] == {"child_id": "child-A", "goal": "investigate bug 42"}
     assert ret["payload"] == {"child_id": "child-A", "summary": "fixed and verified"}
+    # The return summary carries real NL worth consolidating: it's keyed to
+    # the parent's session_id so the Parser folds it into the parent's
+    # batch (parent_session_id retained for provenance).
+    assert ret["metadata"]["session_id"] == "parent-1"
+    assert ret["metadata"]["parent_session_id"] == "parent-1"
 
 
 @pytest.mark.asyncio
@@ -253,13 +258,39 @@ async def test_on_cron_fire_async_writes_slice(booted_substrate):
     async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             """
-            SELECT payload FROM substrate_slices sl
+            SELECT sl.payload, sl.metadata, sl.consolidation_state
+              FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
              WHERE st.name = 'thoth.self_state.cron_dispatch'
             """
         )
     assert row is not None
     assert row["payload"] == {"job_id": "job-7"}
+    # Cron events are session-less and unparseable, so they're born
+    # 'consolidated' — never entering the (undrainable) parse backlog.
+    assert row["consolidation_state"] == "consolidated"
+    assert "session_id" not in (row["metadata"] or {})
+
+
+@pytest.mark.asyncio
+async def test_on_cron_fire_excluded_from_parse_backlog(booted_substrate):
+    """A born-consolidated cron slice is not counted as awaiting-parse:
+    the Parser's selector keys on unconsolidated + session_id, and this
+    slice is neither."""
+    import thoth_db
+
+    await hermes_hooks.on_cron_fire_async("job-8", _now_utc())
+    async with thoth_db.connection() as conn:
+        backlog = await conn.fetchval(
+            """
+            SELECT COUNT(*) FROM substrate_slices sl
+             JOIN substrate_streams st ON st.stream_id = sl.stream_id
+             WHERE st.name = 'thoth.self_state.cron_dispatch'
+               AND sl.consolidation_state = 'unconsolidated'
+               AND sl.metadata->>'session_id' IS NOT NULL
+            """
+        )
+    assert backlog == 0
 
 
 # ---------------------------------------------------------------------------
