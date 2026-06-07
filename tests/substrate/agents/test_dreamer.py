@@ -61,6 +61,33 @@ async def test_dreamer_explores_from_pattern_seed(booted, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_dreamer_throttles_to_deep_cycle_interval(booted, monkeypatch):
+    """The Dreamer dreams at most once per its interval, not on every tick
+    — even though the run loop ticks every ~10s at LOW. Guards against the
+    ~200-dreams/hour runaway."""
+    await l3.upsert_pattern("deploys cluster on fridays", "theme")
+    calls: list[str] = []
+
+    async def _fake(seed, *, client=None, model=None, substrate=None):
+        calls.append(seed)
+        return "a dream"
+
+    monkeypatch.setattr(dreamer_mod, "_dream", _fake)
+    # Long interval so a second immediate tick is throttled.
+    monkeypatch.setenv("HERMES_SUBSTRATE_DREAM_INTERVAL_S", "9999")
+
+    d = Dreamer(booted)
+    await d.tick()
+    await d.tick()
+    assert len(calls) == 1  # second tick skipped by the interval gate
+
+    # Once the interval has elapsed, it dreams again.
+    d._last_dream_at = float("-inf")
+    await d.tick()
+    assert len(calls) == 2
+
+
+@pytest.mark.asyncio
 async def test_dreamer_seeds_from_entities_when_no_patterns(booted, monkeypatch):
     await l1.upsert_entity("Greg", "person")
     await l1.upsert_entity("Thoth", "project")
