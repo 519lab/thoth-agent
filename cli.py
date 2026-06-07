@@ -11961,6 +11961,28 @@ class ThothCLI:
                     pass  # best-effort — banner will fire again next session
         except Exception:
             pass  # banner is non-critical — never break startup
+        # First-time Hermes-residue banner — fires once if a legacy ~/.hermes/
+        # home exists on a fresh Thoth install, pointing at `thoth hermes migrate`.
+        try:
+            from agent.onboarding import is_seen, mark_seen
+            from thoth_cli.hermes_import import (
+                detect_hermes_residue,
+                hermes_residue_hint_cli,
+            )
+            _HERMES_RESIDUE_FLAG = "hermes_residue_import"
+            if not is_seen(self.config, _HERMES_RESIDUE_FLAG) and detect_hermes_residue():
+                try:
+                    _hres_color = _welcome_skin.get_color("banner_dim", "#B8860B")
+                except Exception:
+                    _hres_color = "#B8860B"
+                self._console_print(f"[{_hres_color}]{hermes_residue_hint_cli()}[/]")
+                try:
+                    from thoth_cli.config import get_config_path as _get_cfg_path_hres
+                    mark_seen(_get_cfg_path_hres(), _HERMES_RESIDUE_FLAG)
+                except Exception:
+                    pass  # best-effort — banner will fire again next session
+        except Exception:
+            pass  # banner is non-critical — never break startup
         # Show a random tip to help users discover features
         try:
             from thoth_cli.tips import get_random_tip
