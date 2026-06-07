@@ -23,23 +23,47 @@ from thoth_constants import OPENROUTER_MODELS_URL
 logger = logging.getLogger(__name__)
 
 
-def _resolve_requests_verify() -> bool | str:
-    """Resolve SSL verify setting for `requests` calls from env vars.
+# OS system CA bundles, by distro. Unlike certifi, these include any
+# internally-installed CAs (e.g. a private "Skynet" CA fronting local model
+# servers), so trusting them lets the agent reach internal-CA HTTPS endpoints
+# out of the box — the same store `curl` uses.
+_SYSTEM_CA_BUNDLES = (
+    "/etc/ssl/certs/ca-certificates.crt",   # Debian / Ubuntu
+    "/etc/pki/tls/certs/ca-bundle.crt",     # RHEL / Fedora / CentOS
+    "/etc/ssl/cert.pem",                    # Alpine / BSD / macOS (brew)
+)
 
-    The `requests` library only honours REQUESTS_CA_BUNDLE / CURL_CA_BUNDLE
-    by default. Thoth also honours HERMES_CA_BUNDLE (its own convention)
-    and SSL_CERT_FILE (used by the stdlib `ssl` module and by httpx), so
-    that a single env var can cover both `requests` and `httpx` callsites
-    inside the same process.
 
-    Returns either a filesystem path to a CA bundle, or True to defer to
-    the requests default (certifi).
+def resolve_ca_bundle() -> str | None:
+    """Resolve a CA bundle path for TLS verification, or ``None`` to defer
+    to the caller's default (certifi).
+
+    Priority:
+      1. Explicit env override — ``HERMES_CA_BUNDLE`` (Thoth's own
+         convention), ``REQUESTS_CA_BUNDLE``, or ``SSL_CERT_FILE``.
+      2. The OS system trust store, if present — a superset of certifi
+         that also carries internally-installed CAs, so internal-CA
+         endpoints (e.g. ``*.skynet.home``) verify with zero config.
+      3. ``None`` — caller falls back to certifi (httpx/requests default).
+
+    A single resolver covers both the `requests` calls here and the main
+    model client's `httpx` transport (run_agent), so HERMES_CA_BUNDLE now
+    works for the model client too — not just metadata discovery.
     """
     for env_var in ("HERMES_CA_BUNDLE", "REQUESTS_CA_BUNDLE", "SSL_CERT_FILE"):
         val = os.getenv(env_var)
         if val and os.path.isfile(val):
             return val
-    return True
+    for path in _SYSTEM_CA_BUNDLES:
+        if os.path.isfile(path):
+            return path
+    return None
+
+
+def _resolve_requests_verify() -> bool | str:
+    """SSL verify setting for `requests` calls — a CA bundle path
+    (:func:`resolve_ca_bundle`) or ``True`` to defer to certifi."""
+    return resolve_ca_bundle() or True
 
 # Provider names that can appear as a "provider:" prefix before a model ID.
 # Only these are stripped — Ollama-style "model:tag" colons (e.g. "qwen3.5:27b")

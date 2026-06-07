@@ -2424,9 +2424,24 @@ class AIAgent:
             # Explicitly read proxy settings while still honoring NO_PROXY for
             # loopback / local endpoints such as a locally hosted sub2api.
             _proxy = _get_proxy_for_base_url(base_url)
+            # Verify TLS against a resolved CA bundle (HERMES_CA_BUNDLE /
+            # SSL_CERT_FILE override → OS system store → certifi). httpx's
+            # default uses certifi only, which omits internally-installed
+            # CAs, so endpoints behind a private CA (e.g. a local model
+            # server on *.skynet.home) fail with what surfaces as an
+            # APIConnectionError. Using the system store fixes that with
+            # zero config and stays a superset of certifi for public CAs.
+            from agent.model_metadata import resolve_ca_bundle
+            _ca = resolve_ca_bundle()
+            if _ca:
+                import ssl as _ssl
+                _verify: Any = _ssl.create_default_context(cafile=_ca)
+            else:
+                _verify = True  # certifi default
             return _httpx.Client(
                 transport=_httpx.HTTPTransport(socket_options=_sock_opts),
                 proxy=_proxy,
+                verify=_verify,
             )
         except Exception:
             return None
