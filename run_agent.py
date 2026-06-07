@@ -2431,6 +2431,16 @@ class AIAgent:
             # server on *.skynet.home) fail with what surfaces as an
             # APIConnectionError. Using the system store fixes that with
             # zero config and stays a superset of certifi for public CAs.
+            #
+            # ``verify`` MUST go on the HTTPTransport, NOT the Client: httpx
+            # only applies a Client-level ``verify`` when it builds the
+            # *default* transport. With an explicit ``transport=`` (needed
+            # for socket keepalives) a Client-level ``verify`` is silently
+            # ignored and the transport keeps certifi — the bug that made the
+            # first cut of this fix a no-op unless SSL_CERT_FILE was also set
+            # (the ssl default context reads that at the env level). ``proxy``
+            # stays on the Client: httpx applies it via proxy mounts, which
+            # do work alongside a custom transport.
             from agent.model_metadata import resolve_ca_bundle
             _ca = resolve_ca_bundle()
             if _ca:
@@ -2439,9 +2449,10 @@ class AIAgent:
             else:
                 _verify = True  # certifi default
             return _httpx.Client(
-                transport=_httpx.HTTPTransport(socket_options=_sock_opts),
+                transport=_httpx.HTTPTransport(
+                    verify=_verify, socket_options=_sock_opts
+                ),
                 proxy=_proxy,
-                verify=_verify,
             )
         except Exception:
             return None
