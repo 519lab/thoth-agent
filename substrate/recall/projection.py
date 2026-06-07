@@ -172,6 +172,12 @@ class ScoredCandidate:
     candidate: RecallCandidate
     score: float
     path: str
+    # Topical relevance to the query in [0, 1] — the similarity/keyword
+    # match ALONE, excluding salience/recency. Recall reinforcement scales
+    # by this so a slice riding salience into the projection (without
+    # topical relevance to the current query) is NOT reinforced, breaking
+    # the recall→reinforce→rank feedback loop. 0.0 by default.
+    relevance: float = 0.0
 
 
 def rank_candidates_scored(
@@ -211,16 +217,25 @@ def rank_candidates_scored(
         age_hours = max(0.0, delta.total_seconds() / 3600.0)
         recency = math.exp(-age_hours / half_life)
         if query_embedding is not None and c.embedding is not None:
-            cos = _cosine(query_embedding, c.embedding)
-            sim_term = sim_w * ((cos + 1.0) / 2.0)
+            # Clamp cosine at 0 (was ``(cos+1)/2``, which floored even
+            # anti-relevant content at 0.5 → similarity could never sink
+            # to 0, so salience dominated ranking). ``max(0, cos)`` makes
+            # topically-irrelevant slices score ~0 on similarity.
+            relevance = max(0.0, _cosine(query_embedding, c.embedding))
+            sim_term = sim_w * relevance
             path = "semantic"
         else:
             payload_tokens = _tokenise(_payload_text(c.payload))
-            sim_term = kw_w * _jaccard(query_tokens, payload_tokens)
+            relevance = _jaccard(query_tokens, payload_tokens)
+            sim_term = kw_w * relevance
             path = "keyword"
         score = sal_w * float(c.salience_score) + rec_w * recency + sim_term
         scored.append(
-            (-score, -c.event_time_world.timestamp(), ScoredCandidate(c, score, path))
+            (
+                -score,
+                -c.event_time_world.timestamp(),
+                ScoredCandidate(c, score, path, relevance),
+            )
         )
     scored.sort(key=lambda t: (t[0], t[1]))
     return [sc for _, _, sc in scored]

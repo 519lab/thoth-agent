@@ -164,23 +164,33 @@ def _summarise_embedding_path(
 async def _reinforce_hits(
     substrate: "Substrate",
     composed: list[RecallCandidate],
+    relevance_by_id: "dict[UUID, float]",
 ) -> int:
-    """Fire reinforcement for each composed slice, subject to the
-    per-slice rate cap. Failures are logged + swallowed (the recall
-    pipeline never raises to its caller).
+    """Fire reinforcement for each composed slice, weighted by its
+    topical relevance to the query and subject to the per-slice rate cap.
+    Failures are logged + swallowed (the recall pipeline never raises).
 
-    Returns the number of reinforcements actually applied (useful for
-    observability)."""
+    A slice whose relevance is below ``RECALL_REINFORCE_MIN_RELEVANCE``
+    (it entered the projection on salience/recency, not topical match) is
+    skipped entirely — no bump AND no decay-clock reset — so it ages out
+    instead of being frozen alive by being recalled. This is what breaks
+    the recall→reinforce→rank feedback loop. Above the floor, the bump is
+    scaled by relevance so the strongest matches are reinforced most.
+
+    Returns the number of reinforcements actually applied (observability)."""
     from substrate.l0.api import reinforce_slice
 
     now = time.time()
     applied = 0
     for c in composed:
         slice_id = c.slice_id
+        relevance = relevance_by_id.get(slice_id, 0.0)
+        if relevance < _cfg.RECALL_REINFORCE_MIN_RELEVANCE:
+            continue
         if not _reinforce_allowed(slice_id, now):
             continue
         try:
-            await reinforce_slice(substrate, slice_id)
+            await reinforce_slice(substrate, slice_id, scale=relevance)
             applied += 1
         except Exception as exc:
             _log.warning(
@@ -344,6 +354,9 @@ async def recall(
         kept = []
     ranked = [sc.candidate for sc in kept]
     provenance = {sc.candidate.slice_id: f"{sc.score:.2f} {sc.path}" for sc in kept}
+    # Topical relevance per kept slice — recall reinforcement is weighted by
+    # this so salience-only survivors aren't pumped further (breaks the loop).
+    relevance_by_id = {sc.candidate.slice_id: sc.relevance for sc in kept}
 
     # 3b. Phase D: fetch a bounded L1 entity header (best-effort — a
     # missing L1 layer / DB hiccup degrades to no header, never an error).
@@ -395,7 +408,7 @@ async def recall(
     # rate-limited so this is short. A future async-only refactor can
     # promote to asyncio.create_task.
     try:
-        await _reinforce_hits(substrate, composed)
+        await _reinforce_hits(substrate, composed, relevance_by_id)
     except Exception as exc:
         _log.warning("reinforce hits batch failed: %s", exc)
 

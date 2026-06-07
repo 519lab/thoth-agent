@@ -27,7 +27,7 @@ from substrate.recall.projection import (
 from substrate.storage.types import Address
 
 
-def _cand(text, *, salience=0.5, age_h=0.0):
+def _cand(text, *, salience=0.5, age_h=0.0, embedding=None):
     t = datetime.now(timezone.utc) - timedelta(hours=age_h)
     sid = uuid4()
     return RecallCandidate(
@@ -39,8 +39,26 @@ def _cand(text, *, salience=0.5, age_h=0.0):
         salience_score=salience,
         trust_score=0.9,
         metadata={},
-        embedding=None,
+        embedding=embedding,
     )
+
+
+def test_relevance_reflects_cosine_not_floor():
+    """Fix C + relevance field: semantic relevance is ``max(0, cos)`` — an
+    irrelevant (orthogonal/opposite) slice scores ~0, NOT the old 0.5 that
+    ``(cos+1)/2`` produced. This is what stops salience dominating ranking
+    and what gates recall reinforcement."""
+    now = datetime.now(timezone.utc)
+    q = [1.0, 0.0]
+    same = _cand("same", salience=0.5, embedding=[1.0, 0.0])      # cos=1
+    ortho = _cand("ortho", salience=0.5, embedding=[0.0, 1.0])    # cos=0
+    opp = _cand("opp", salience=0.5, embedding=[-1.0, 0.0])       # cos=-1
+    scored = rank_candidates_scored([same, ortho, opp], "q", query_embedding=q, t_now=now)
+    by_text = {s.candidate.payload: s for s in scored}
+    assert by_text["same"].path == "semantic"
+    assert by_text["same"].relevance == pytest.approx(1.0, abs=1e-6)
+    assert by_text["ortho"].relevance == pytest.approx(0.0, abs=1e-6)
+    assert by_text["opp"].relevance == pytest.approx(0.0, abs=1e-6)  # clamped, not 0.5
 
 
 # ---------------------------------------------------------------------------

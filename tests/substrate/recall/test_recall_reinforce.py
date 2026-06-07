@@ -9,6 +9,7 @@ import pytest
 import pytest_asyncio
 
 from substrate import Substrate
+from substrate import config as cfg
 from substrate.config import SubstrateConfig
 from substrate.l0 import commit_slice
 from substrate.recall import recall
@@ -145,6 +146,82 @@ async def test_recall_reinforce_failure_does_not_raise(booted_substrate, monkeyp
     # The projection still came back even though reinforcement failed.
     assert proj.text  # non-empty
     assert "survivor" in proj.text
+
+
+@pytest.mark.asyncio
+async def test_reinforce_scale_scales_bump_and_preserves_clock(booted_substrate):
+    """scale multiplies the bump; scale=0 applies no bump AND leaves the
+    decay clock (salience_updated_at) untouched, so an irrelevant slice
+    keeps aging instead of being frozen by recall."""
+    from substrate.l0 import reinforce_slice
+    import thoth_db
+
+    t = datetime.now(timezone.utc)
+    await _seed_passed_slice(booted_substrate, text="scaletest", t_now=t, salience=0.3)
+    async with thoth_db.connection() as conn:
+        row = await conn.fetchrow(
+            "SELECT slice_id, salience_score, salience_updated_at "
+            "FROM substrate_slices WHERE payload->>'text'='scaletest'"
+        )
+    sid, sal0, clk0 = row["slice_id"], float(row["salience_score"]), row["salience_updated_at"]
+
+    # scale=0 → no bump, clock untouched.
+    await reinforce_slice(booted_substrate, sid, bump=0.2, scale=0.0)
+    async with thoth_db.connection() as conn:
+        r = await conn.fetchrow(
+            "SELECT salience_score, salience_updated_at FROM substrate_slices WHERE slice_id=$1",
+            sid,
+        )
+    assert float(r["salience_score"]) == pytest.approx(sal0, abs=1e-6)
+    assert r["salience_updated_at"] == clk0  # decay clock NOT reset
+
+    # scale=0.5 → half of the 0.2 bump = +0.1, clock advances.
+    await reinforce_slice(booted_substrate, sid, bump=0.2, scale=0.5)
+    async with thoth_db.connection() as conn:
+        r = await conn.fetchrow(
+            "SELECT salience_score, salience_updated_at FROM substrate_slices WHERE slice_id=$1",
+            sid,
+        )
+    assert float(r["salience_score"]) == pytest.approx(sal0 + 0.1, abs=1e-3)
+    assert r["salience_updated_at"] > clk0
+
+
+@pytest.mark.asyncio
+async def test_recall_does_not_reinforce_irrelevant_hit(booted_substrate, monkeypatch):
+    """The feedback-loop fix: a slice that gets composed on salience alone
+    — with no topical relevance to the query — must NOT be reinforced, so
+    it ages out instead of ratcheting its salience and re-injecting every
+    turn. (Without the fix, recall reinforced every composed slice.)"""
+    monkeypatch.setattr(cfg, "RECALL_REINFORCE_MIN_RELEVANCE", 0.05)
+
+    t = datetime.now(timezone.utc)
+    # High salience so it survives the relevance floor as the top candidate,
+    # but the query shares no tokens with it → topical relevance 0.
+    await _seed_passed_slice(
+        booted_substrate, text="alpha beta gamma", t_now=t, salience=0.5
+    )
+
+    before = await _get_salience(booted_substrate, text="alpha beta gamma")
+    proj = await recall(booted_substrate, "zzzzz qqqqq")
+    assert proj.composed  # it WAS surfaced (on salience)…
+    after = await _get_salience(booted_substrate, text="alpha beta gamma")
+    assert after == pytest.approx(before, abs=1e-6)  # …but NOT reinforced
+
+
+@pytest.mark.asyncio
+async def test_recall_reinforces_relevant_hit(booted_substrate, monkeypatch):
+    """Control for the above: a topically-relevant hit IS still reinforced
+    (the fix only suppresses salience-only survivors)."""
+    monkeypatch.setattr(cfg, "RECALL_REINFORCE_MIN_RELEVANCE", 0.05)
+
+    t = datetime.now(timezone.utc)
+    await _seed_passed_slice(
+        booted_substrate, text="kubernetes deploy pipeline", t_now=t, salience=0.3
+    )
+    before = await _get_salience(booted_substrate, text="kubernetes deploy pipeline")
+    await recall(booted_substrate, "kubernetes deploy pipeline")
+    after = await _get_salience(booted_substrate, text="kubernetes deploy pipeline")
+    assert after > before
 
 
 @pytest.mark.asyncio
