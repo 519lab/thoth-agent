@@ -65,7 +65,6 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           echo "=== Checking binaries ==="
           test -x ${hermes-agent}/bin/thoth || (echo "FAIL: thoth binary missing"; exit 1)
           test -x ${hermes-agent}/bin/thoth-agent || (echo "FAIL: thoth-agent binary missing"; exit 1)
-          test -x ${hermes-agent}/bin/hermes || (echo "FAIL: hermes (legacy alias) binary missing"; exit 1)
           echo "PASS: All binaries present"
 
           echo "=== Checking version ==="
@@ -81,7 +80,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
         entry-points-sync = pkgs.runCommand "hermes-entry-points-sync" { } ''
           set -e
           echo "=== Checking entry points match pyproject.toml [project.scripts] ==="
-          for bin in thoth thoth-agent thoth-acp hermes hermes-agent hermes-acp; do
+          for bin in thoth thoth-agent thoth-acp; do
             test -x ${hermes-agent}/bin/$bin || (echo "FAIL: $bin binary missing from Nix package"; exit 1)
             echo "PASS: $bin present"
           done
@@ -95,13 +94,13 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           set -e
           export HOME=$(mktemp -d)
 
-          echo "=== Checking hermes --help ==="
+          echo "=== Checking thoth --help ==="
           # Capture output once so a missing subcommand prints the full --help
           # transcript and any traceback for debugging — `grep -q` discarded
           # the evidence that we needed in CI logs.
-          HELP_OUT=$(${hermes-agent}/bin/hermes --help 2>&1) || {
+          HELP_OUT=$(${hermes-agent}/bin/thoth --help 2>&1) || {
             rc=$?
-            echo "--- hermes --help exited $rc ---"
+            echo "--- thoth --help exited $rc ---"
             echo "$HELP_OUT"
             echo "--- end transcript ---"
             exit 1
@@ -138,7 +137,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           test "$SKILL_COUNT" -gt 0 || (echo "FAIL: no SKILL.md files found in skills directory"; exit 1)
           echo "PASS: $SKILL_COUNT bundled skills found"
 
-          grep -q "HERMES_BUNDLED_SKILLS" ${hermes-agent}/bin/hermes || \
+          grep -q "HERMES_BUNDLED_SKILLS" ${hermes-agent}/bin/thoth || \
             (echo "FAIL: HERMES_BUNDLED_SKILLS not in wrapper"; exit 1)
           echo "PASS: HERMES_BUNDLED_SKILLS set in wrapper"
 
@@ -158,7 +157,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
             (echo "FAIL: irc plugin manifest missing"; exit 1)
           echo "PASS: irc plugin manifest present"
 
-          grep -q "HERMES_BUNDLED_PLUGINS" ${hermes-agent}/bin/hermes || \
+          grep -q "HERMES_BUNDLED_PLUGINS" ${hermes-agent}/bin/thoth || \
             (echo "FAIL: HERMES_BUNDLED_PLUGINS not in wrapper"; exit 1)
           echo "PASS: HERMES_BUNDLED_PLUGINS set in wrapper"
 
@@ -179,7 +178,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
 
           # self-contained bundle; no runtime node_modules expected
 
-          grep -q "HERMES_TUI_DIR" ${hermes-agent}/bin/hermes || \
+          grep -q "HERMES_TUI_DIR" ${hermes-agent}/bin/thoth || \
             (echo "FAIL: HERMES_TUI_DIR not in wrapper"; exit 1)
           echo "PASS: HERMES_TUI_DIR set in wrapper"
 
@@ -193,11 +192,11 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
         hermes-node = pkgs.runCommand "hermes-node-version" { } ''
           set -e
           echo "=== Checking HERMES_NODE in wrapper ==="
-          grep -q "HERMES_NODE" ${hermes-agent}/bin/hermes || \
+          grep -q "HERMES_NODE" ${hermes-agent}/bin/thoth || \
             (echo "FAIL: HERMES_NODE not set in wrapper"; exit 1)
           echo "PASS: HERMES_NODE present in wrapper"
 
-          HERMES_NODE=$(sed -n "s/^export HERMES_NODE='\(.*\)'/\1/p" ${hermes-agent}/bin/hermes)
+          HERMES_NODE=$(sed -n "s/^export HERMES_NODE='\(.*\)'/\1/p" ${hermes-agent}/bin/thoth)
           test -x "$HERMES_NODE" || (echo "FAIL: HERMES_NODE=$HERMES_NODE not executable"; exit 1)
           echo "PASS: HERMES_NODE executable at $HERMES_NODE"
 
@@ -225,8 +224,8 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           }
 
           echo "=== Checking HERMES_MANAGED guards ==="
-          check_blocked "config set" ${hermes-agent}/bin/hermes config set model foo
-          check_blocked "config edit" ${hermes-agent}/bin/hermes config edit
+          check_blocked "config set" ${hermes-agent}/bin/thoth config set model foo
+          check_blocked "config edit" ${hermes-agent}/bin/thoth config edit
 
           echo "=== All guard checks passed ==="
           mkdir -p $out
@@ -243,16 +242,16 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           set -e
           echo "=== Checking extraPythonPackages PYTHONPATH injection ==="
 
-          grep -q "PYTHONPATH" ${hermesWithExtra}/bin/hermes || \
+          grep -q "PYTHONPATH" ${hermesWithExtra}/bin/thoth || \
             (echo "FAIL: PYTHONPATH not in wrapper"; exit 1)
           echo "PASS: PYTHONPATH present in wrapper"
 
-          grep -q "${testPkg}" ${hermesWithExtra}/bin/hermes || \
+          grep -q "${testPkg}" ${hermesWithExtra}/bin/thoth || \
             (echo "FAIL: test package path not in PYTHONPATH"; exit 1)
           echo "PASS: test package path found in wrapper"
 
           echo "=== Checking base package has no PYTHONPATH ==="
-          if grep -q "PYTHONPATH" ${hermes-agent}/bin/hermes; then
+          if grep -q "PYTHONPATH" ${hermes-agent}/bin/thoth; then
             echo "FAIL: base package should not have PYTHONPATH"; exit 1
           fi
           echo "PASS: base package clean"

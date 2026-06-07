@@ -169,14 +169,11 @@ stdenv.mkDerivation {
           ${lib.optionalString (extraPythonPackages != [ ]) ''--suffix PYTHONPATH : "${pythonPath}"''}
       '')
       [
-        # Canonical thoth entry points (pyproject [project.scripts]) ...
+        # Canonical thoth entry points (pyproject [project.scripts]).
+        # The legacy hermes* aliases were dropped in the de-Hermes rename.
         "thoth"
         "thoth-agent"
         "thoth-acp"
-        # ... plus the pre-rename hermes aliases, kept for back-compat.
-        "hermes"
-        "hermes-agent"
-        "hermes-acp"
       ]
     }
 
@@ -218,7 +215,7 @@ stdenv.mkDerivation {
   meta = with lib; {
     description = "AI agent with advanced tool-calling capabilities";
     homepage = "https://github.com/519lab/thoth-agent";
-    mainProgram = "hermes";
+    mainProgram = "thoth";
     license = licenses.mit;
     platforms = platforms.unix;
   };
