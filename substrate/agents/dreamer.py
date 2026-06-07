@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
@@ -25,6 +26,15 @@ from substrate.agents.base import Level, SubAgent
 
 if TYPE_CHECKING:  # pragma: no cover
     from substrate.facade import Substrate
+
+
+# Dreaming is deep-cycle work: the Dreamer's run-loop tick fires on the
+# intensity interval (LOW → every 10s), but an LLM exploration should NOT
+# run that often. This guards the actual dream to its own slow interval —
+# the same pattern as the Curator's hourly L3/L4 pass — so the Dreamer
+# checkpoints occasionally instead of burning a model call every 10s.
+# (Without it, fixing the model endpoint unmasked a ~200 dreams/hour runaway.)
+_DREAM_INTERVAL_S = 1800.0  # 30 min default; env-tunable
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -36,6 +46,14 @@ def _env_int(name: str, default: int) -> int:
     raw = (os.environ.get(name) or "").strip()
     try:
         return int(raw) if raw else default
+    except ValueError:
+        return default
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = (os.environ.get(name) or "").strip()
+    try:
+        return float(raw) if raw else default
     except ValueError:
         return default
 
@@ -105,11 +123,23 @@ class Dreamer(SubAgent):
     def __init__(self, substrate: "Substrate") -> None:
         super().__init__(substrate)
         self._level = Level.LOW
+        # Deep-cycle throttle: dream at most once per this interval, even
+        # though the run loop ticks every ~10s at LOW. Read per-tick (not
+        # cached) so an operator can retune live. ``-inf`` so the first
+        # eligible tick dreams immediately.
+        self._last_dream_at: float = float("-inf")
 
     async def tick(self) -> None:
         if not _env_bool("HERMES_SUBSTRATE_DREAMER", default=True):
             return
         if self._level is Level.OFF:
+            return
+        # Deep-cycle interval gate — skip cheaply on the vast majority of
+        # ticks so the Dreamer does occasional exploration, not a model
+        # call every 10s.
+        interval_s = _env_float("HERMES_SUBSTRATE_DREAM_INTERVAL_S", _DREAM_INTERVAL_S)
+        now = time.monotonic()
+        if now - self._last_dream_at < interval_s:
             return
 
         seed = await self._pick_seed()
@@ -118,6 +148,9 @@ class Dreamer(SubAgent):
         client, model = self._resolve_client()
         if client is None:
             return
+        # Stamp now (before the call) so a failing dream waits the full
+        # interval rather than retrying every tick.
+        self._last_dream_at = now
         timeout_s = _env_int("DREAMER_TIMEOUT_S", 25)
         try:
             exploration = await asyncio.wait_for(
