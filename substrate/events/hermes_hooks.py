@@ -639,9 +639,20 @@ def on_session_end(
 
 
 @_guard("on_cron_fire")
-async def on_cron_fire_async(job_id: str, t_event: datetime) -> None:
+async def on_cron_fire_async(
+    job_id: str,
+    t_event: datetime,
+    *,
+    job_name: Optional[str] = None,
+    schedule: Optional[str] = None,
+) -> None:
     """Emit a STRUCTURED_EVENT slice on
-    ``hermes.self_state.cron_dispatch``."""
+    ``hermes.self_state.cron_dispatch``.
+
+    ``job_name`` and ``schedule`` (human-readable, e.g. "every 30 min")
+    make the perception meaningful — the bare ``job_id`` is an opaque hex
+    that tells neither the agent nor a reader which job fired. Both are
+    optional so callers without them still emit a valid slice."""
     from substrate.l0 import commit_slice
 
     stream = await _substrate.streams.get_by_name(NAME_CRON_DISPATCH)
@@ -653,28 +664,42 @@ async def on_cron_fire_async(job_id: str, t_event: datetime) -> None:
         return
     # Cron fires outside any conversational session, so this slice has no
     # ``session_id``. The Parser groups by ``session_id`` and could never
-    # select it; the payload is an opaque ``{"job_id": ...}`` blob with
-    # nothing to extract into L1 anyway. Born ``consolidated`` so it stays
-    # perceptual (recall + decay) without piling up an undrainable parse
-    # backlog. See ``substrate/agents/parser.py`` + ``l0.commit_slice``.
+    # select it. Born ``consolidated`` so it stays perceptual (recall +
+    # decay) without piling up an undrainable parse backlog. See
+    # ``substrate/agents/parser.py`` + ``l0.commit_slice``.
+    payload: dict = {"job_id": job_id}
+    if job_name:
+        payload["name"] = job_name
+    if schedule:
+        payload["schedule"] = schedule
     await commit_slice(
         _substrate,
         stream_id=stream.stream_id,
-        payload={"job_id": job_id},
+        payload=payload,
         event_time_world=t_event,
-        metadata={"job_id": job_id},
+        metadata=dict(payload),
         born_consolidated=True,
     )
 
 
-def on_cron_fire(job_id: str, t_event: datetime) -> None:
+def on_cron_fire(
+    job_id: str,
+    t_event: datetime,
+    *,
+    job_name: Optional[str] = None,
+    schedule: Optional[str] = None,
+) -> None:
     """Cron is sync at the call site — this is the primary entry point."""
     if _substrate is None:
         return None
     import thoth_db
 
     try:
-        thoth_db.run_sync(on_cron_fire_async(job_id, t_event))
+        thoth_db.run_sync(
+            on_cron_fire_async(
+                job_id, t_event, job_name=job_name, schedule=schedule
+            )
+        )
     except Exception:
         _substrate.log.exception("substrate.hook.error hook=on_cron_fire")
 

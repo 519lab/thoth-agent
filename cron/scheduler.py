@@ -1297,7 +1297,13 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
     try:
         from datetime import datetime, timezone
         from substrate.events.hermes_hooks import on_cron_fire as _sub_cron_fire
-        _sub_cron_fire(str(job_id), datetime.now(timezone.utc))
+        from cron.jobs import _schedule_display_for_job
+        _sub_cron_fire(
+            str(job_id),
+            datetime.now(timezone.utc),
+            job_name=job_name,
+            schedule=_schedule_display_for_job(job),
+        )
     except Exception:  # noqa: BLE001 — substrate failures non-fatal
         pass
 

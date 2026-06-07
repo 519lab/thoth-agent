@@ -273,6 +273,32 @@ async def test_on_cron_fire_async_writes_slice(booted_substrate):
 
 
 @pytest.mark.asyncio
+async def test_on_cron_fire_includes_name_and_schedule(booted_substrate):
+    """The bare job_id is an opaque hex; the perception carries the human
+    job name + schedule so it's meaningful in recall/self-model."""
+    import thoth_db
+
+    await hermes_hooks.on_cron_fire_async(
+        "abc123", _now_utc(), job_name="nightly digest", schedule="every day at 06:00"
+    )
+    async with thoth_db.connection() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT sl.payload FROM substrate_slices sl
+             JOIN substrate_streams st ON st.stream_id = sl.stream_id
+             WHERE st.name = 'thoth.self_state.cron_dispatch'
+               AND sl.payload->>'job_id' = 'abc123'
+            """
+        )
+    assert row is not None
+    assert row["payload"] == {
+        "job_id": "abc123",
+        "name": "nightly digest",
+        "schedule": "every day at 06:00",
+    }
+
+
+@pytest.mark.asyncio
 async def test_on_cron_fire_excluded_from_parse_backlog(booted_substrate):
     """A born-consolidated cron slice is not counted as awaiting-parse:
     the Parser's selector keys on unconsolidated + session_id, and this
