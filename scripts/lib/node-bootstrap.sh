@@ -25,7 +25,7 @@
 
 HERMES_NODE_MIN_VERSION="${HERMES_NODE_MIN_VERSION:-20}"
 HERMES_NODE_TARGET_MAJOR="${HERMES_NODE_TARGET_MAJOR:-22}"
-THOTH_HOME="${THOTH_HOME:-$HOME/.thoth"
+THOTH_HOME="${THOTH_HOME:-$HOME/.thoth}"
 HERMES_NODE_AVAILABLE=false
 
 # ---------------------------------------------------------------------------
