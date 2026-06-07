@@ -1,7 +1,7 @@
 """Subprocess lifecycle manager for the google_meet bot.
 
 Single active meeting at a time. Stores the running pid + out_dir in a
-session-scoped state file under ``$HERMES_HOME/workspace/meetings/.active.json``
+session-scoped state file under ``$THOTH_HOME/workspace/meetings/.active.json``
 so tool calls across turns can find the bot, and ``on_session_end`` can clean
 it up.
 
@@ -22,7 +22,7 @@ from typing import Any, Dict, Optional
 
 from thoth_constants import get_thoth_home
 
-# File + directory layout (under $HERMES_HOME):
+# File + directory layout (under $THOTH_HOME):
 #
 #   workspace/meetings/
 #       .active.json                # pointer to current session's bot

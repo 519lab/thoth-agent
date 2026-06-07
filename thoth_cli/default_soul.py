@@ -1,4 +1,4 @@
-"""Default SOUL.md template seeded into HERMES_HOME on first run."""
+"""Default SOUL.md template seeded into THOTH_HOME on first run."""
 
 DEFAULT_SOUL_MD = (
     "You are Thoth Agent, an intelligent AI assistant created by 519lab. "

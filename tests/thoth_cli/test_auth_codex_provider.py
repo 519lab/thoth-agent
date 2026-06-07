@@ -56,7 +56,7 @@ def _jwt_with_exp(exp_epoch: int) -> str:
 def test_read_codex_tokens_success(tmp_path, monkeypatch):
     thoth_home = tmp_path / "hermes"
     _setup_thoth_auth(thoth_home)
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     data = _read_codex_tokens()
     assert data["tokens"]["access_token"] == "access"
@@ -68,7 +68,7 @@ def test_read_codex_tokens_missing(tmp_path, monkeypatch):
     thoth_home.mkdir(parents=True, exist_ok=True)
     # Empty auth store
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     with pytest.raises(AuthError) as exc:
         _read_codex_tokens()
@@ -78,7 +78,7 @@ def test_read_codex_tokens_missing(tmp_path, monkeypatch):
 def test_resolve_codex_runtime_credentials_missing_access_token(tmp_path, monkeypatch):
     thoth_home = tmp_path / "hermes"
     _setup_thoth_auth(thoth_home, access_token="")
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     with pytest.raises(AuthError) as exc:
         resolve_codex_runtime_credentials()
@@ -90,7 +90,7 @@ def test_resolve_codex_runtime_credentials_refreshes_expiring_token(tmp_path, mo
     thoth_home = tmp_path / "hermes"
     expiring_token = _jwt_with_exp(int(time.time()) - 10)
     _setup_thoth_auth(thoth_home, access_token=expiring_token, refresh_token="refresh-old")
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     called = {"count": 0}
 
@@ -109,7 +109,7 @@ def test_resolve_codex_runtime_credentials_refreshes_expiring_token(tmp_path, mo
 def test_resolve_codex_runtime_credentials_force_refresh(tmp_path, monkeypatch):
     thoth_home = tmp_path / "hermes"
     _setup_thoth_auth(thoth_home, access_token="access-current", refresh_token="refresh-old")
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     called = {"count": 0}
 
@@ -135,7 +135,7 @@ def test_save_codex_tokens_roundtrip(tmp_path, monkeypatch):
     thoth_home = tmp_path / "hermes"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     _save_codex_tokens({"access_token": "at123", "refresh_token": "rt456"})
     data = _read_codex_tokens()
@@ -171,7 +171,7 @@ def test_codex_tokens_not_written_to_shared_file(tmp_path, monkeypatch):
     codex_home.mkdir(parents=True, exist_ok=True)
 
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.setenv("CODEX_HOME", str(codex_home))
 
     _save_codex_tokens({"access_token": "hermes-at", "refresh_token": "hermes-rt"})
@@ -187,7 +187,7 @@ def test_codex_tokens_not_written_to_shared_file(tmp_path, monkeypatch):
 def test_resolve_returns_thoth_auth_store_source(tmp_path, monkeypatch):
     thoth_home = tmp_path / "hermes"
     _setup_thoth_auth(thoth_home)
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     creds = resolve_codex_runtime_credentials()
     assert creds["source"] == "hermes-auth-store"

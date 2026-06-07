@@ -416,7 +416,7 @@ def _resolve_stdio_command(command: str, env: dict) -> tuple[str, dict]:
         elif resolved_command in {"npx", "npm", "node"}:
             thoth_home = os.path.expanduser(
                 os.getenv(
-                    "HERMES_HOME", os.path.join(os.path.expanduser("~"), ".hermes")
+                    "THOTH_HOME", os.path.join(os.path.expanduser("~"), ".hermes")
                 )
             )
             candidates = [

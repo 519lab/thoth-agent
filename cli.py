@@ -287,7 +287,7 @@ def load_cli_config() -> Dict[str, Any]:
     Credentials in ``.env`` are still loaded — this flag only suppresses
     behavioral/config settings.
     """
-    # Check user config first ({HERMES_HOME}/config.yaml)
+    # Check user config first ({THOTH_HOME}/config.yaml)
     user_config_path = _thoth_home / 'config.yaml'
     project_config_path = Path(__file__).parent / 'cli-config.yaml'
 
@@ -2918,7 +2918,7 @@ class ThothCLI:
 
         # Opportunistic state.db maintenance — runs at most once per
         # min_interval_hours, tracked via state_meta in state.db itself so
-        # it's shared across all Thoth processes for this HERMES_HOME.
+        # it's shared across all Thoth processes for this THOTH_HOME.
         # Never blocks startup on failure.
         _run_state_db_auto_maintenance(self._session_db)
 

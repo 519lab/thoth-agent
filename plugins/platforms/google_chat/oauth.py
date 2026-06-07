@@ -43,15 +43,15 @@ familiar with that flow can read this without surprises.
 Token storage layout
 --------------------
 - Per-user tokens (keyed by sender email):
-    ``${HERMES_HOME}/google_chat_user_tokens/<sanitized_email>.json``
+    ``${THOTH_HOME}/google_chat_user_tokens/<sanitized_email>.json``
 - Legacy single-user token (fallback, untouched for backward compat):
-    ``${HERMES_HOME}/google_chat_user_token.json``
+    ``${THOTH_HOME}/google_chat_user_token.json``
 - Per-user pending OAuth state during /setup-files start → exchange:
-    ``${HERMES_HOME}/google_chat_user_oauth_pending/<sanitized_email>.json``
+    ``${THOTH_HOME}/google_chat_user_oauth_pending/<sanitized_email>.json``
 - Legacy pending state:
-    ``${HERMES_HOME}/google_chat_user_oauth_pending.json``
+    ``${THOTH_HOME}/google_chat_user_oauth_pending.json``
 - Shared OAuth client (one per host):
-    ``${HERMES_HOME}/google_chat_user_client_secret.json``
+    ``${THOTH_HOME}/google_chat_user_client_secret.json``
 """
 
 from __future__ import annotations
@@ -70,8 +70,8 @@ from typing import Any, List, Optional, Tuple
 # after the in-tree → plugin migration. See adapter.py for context.
 logger = logging.getLogger("gateway.platforms.google_chat_user_oauth")
 
-# Use the project's HERMES_HOME helper so the token follows the user's
-# profile (e.g. tests can override via HERMES_HOME=/tmp/...).
+# Use the project's THOTH_HOME helper so the token follows the user's
+# profile (e.g. tests can override via THOTH_HOME=/tmp/...).
 try:
     from thoth_constants import display_thoth_home, get_thoth_home
 except (ModuleNotFoundError, ImportError):
@@ -79,8 +79,8 @@ except (ModuleNotFoundError, ImportError):
     # (mirrors the same fallback used by the google-workspace skill's
     # _thoth_home.py shim).
     def get_thoth_home() -> Path:
-        val = os.environ.get("HERMES_HOME", "").strip()
-        return Path(val) if val else Path.home() / ".hermes"
+        val = os.environ.get("THOTH_HOME", "").strip()
+        return Path(val) if val else Path.home() / ".thoth"
 
     def display_thoth_home() -> str:
         home = get_thoth_home()
@@ -91,9 +91,9 @@ except (ModuleNotFoundError, ImportError):
 
 
 def _thoth_home() -> Path:
-    """Resolve HERMES_HOME at call time (NOT module import).
+    """Resolve THOTH_HOME at call time (NOT module import).
 
-    Tests and ``HERMES_HOME=...`` env overrides need this to be late-
+    Tests and ``THOTH_HOME=...`` env overrides need this to be late-
     binding. If we cached the path at import time, switching profiles
     or tweaking env vars in tests would silently keep using the old
     path."""
@@ -379,7 +379,7 @@ def check_auth(email: Optional[str] = None) -> bool:
 
 
 def store_client_secret(path: str) -> None:
-    """Validate and copy the user's OAuth client_secret.json into HERMES_HOME."""
+    """Validate and copy the user's OAuth client_secret.json into THOTH_HOME."""
     src = Path(path).expanduser().resolve()
     if not src.exists():
         print(f"ERROR: File not found: {src}")

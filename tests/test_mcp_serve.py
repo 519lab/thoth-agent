@@ -26,8 +26,8 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate_thoth_home(tmp_path, monkeypatch):
-    """Redirect HERMES_HOME to a temp directory."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    """Redirect THOTH_HOME to a temp directory."""
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     try:
         import thoth_constants
         monkeypatch.setattr(thoth_constants, "get_thoth_home", lambda: tmp_path)
@@ -973,7 +973,7 @@ class TestCliIntegration:
         assert args.verbose is True
 
     def test_dispatcher_routes_serve(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("THOTH_HOME", str(tmp_path))
         mock_run = MagicMock()
         monkeypatch.setattr("mcp_serve.run_mcp_server", mock_run)
 

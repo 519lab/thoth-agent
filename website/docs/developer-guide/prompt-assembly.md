@@ -28,7 +28,7 @@ Primary files:
 
 The cached system prompt is assembled in roughly this order:
 
-1. agent identity — `SOUL.md` from `HERMES_HOME` when available, otherwise falls back to `DEFAULT_AGENT_IDENTITY` in `prompt_builder.py`
+1. agent identity — `SOUL.md` from `THOTH_HOME` when available, otherwise falls back to `DEFAULT_AGENT_IDENTITY` in `prompt_builder.py`
 2. tool-aware behavior guidance
 3. Honcho static block (when active)
 4. optional system message
@@ -167,7 +167,7 @@ def build_context_files_prompt(cwd=None, skip_soul=False):
     if project_context:
         sections.append(project_context)
 
-    # SOUL.md from HERMES_HOME (independent of project context)
+    # SOUL.md from THOTH_HOME (independent of project context)
     if not skip_soul:
         soul_content = load_soul_md()
         if soul_content:

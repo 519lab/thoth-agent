@@ -410,7 +410,7 @@ class TestYamlConfigLoading:
     def test_top_level_reply_to_mode_off(self, tmp_path, monkeypatch):
         """YAML 1.1 parses bare 'off' as boolean False — must map back to 'off'."""
         thoth_home = self._write_config(tmp_path, "discord:\n  reply_to_mode: off\n")
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.delenv("DISCORD_REPLY_TO_MODE", raising=False)
 
         load_gateway_config()
@@ -419,7 +419,7 @@ class TestYamlConfigLoading:
 
     def test_top_level_reply_to_mode_all(self, tmp_path, monkeypatch):
         thoth_home = self._write_config(tmp_path, "discord:\n  reply_to_mode: all\n")
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.delenv("DISCORD_REPLY_TO_MODE", raising=False)
 
         load_gateway_config()
@@ -431,7 +431,7 @@ class TestYamlConfigLoading:
         thoth_home = self._write_config(
             tmp_path, "discord:\n  extra:\n    reply_to_mode: \"off\"\n"
         )
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.delenv("DISCORD_REPLY_TO_MODE", raising=False)
 
         load_gateway_config()
@@ -441,7 +441,7 @@ class TestYamlConfigLoading:
     def test_env_var_takes_precedence_over_yaml(self, tmp_path, monkeypatch):
         """Existing DISCORD_REPLY_TO_MODE env var is not overwritten by YAML."""
         thoth_home = self._write_config(tmp_path, "discord:\n  reply_to_mode: all\n")
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setenv("DISCORD_REPLY_TO_MODE", "first")
 
         load_gateway_config()
@@ -454,7 +454,7 @@ class TestYamlConfigLoading:
             tmp_path,
             "discord:\n  reply_to_mode: all\n  extra:\n    reply_to_mode: \"off\"\n",
         )
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.delenv("DISCORD_REPLY_TO_MODE", raising=False)
 
         load_gateway_config()

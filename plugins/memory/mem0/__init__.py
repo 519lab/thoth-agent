@@ -10,7 +10,7 @@ Config via environment variables:
   MEM0_USER_ID       — User identifier (default: hermes-user)
   MEM0_AGENT_ID      — Agent identifier (default: hermes)
 
-Or via $HERMES_HOME/mem0.json.
+Or via $THOTH_HOME/mem0.json.
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ _BREAKER_COOLDOWN_SECS = 120
 # ---------------------------------------------------------------------------
 
 def _load_config() -> dict:
-    """Load config from env vars, with $HERMES_HOME/mem0.json overrides.
+    """Load config from env vars, with $THOTH_HOME/mem0.json overrides.
 
     Environment variables provide defaults; mem0.json (if present) overrides
     individual keys.  This avoids a silent failure when the JSON file exists
@@ -144,7 +144,7 @@ class Mem0MemoryProvider(MemoryProvider):
         return bool(cfg.get("api_key"))
 
     def save_config(self, values, thoth_home):
-        """Write config to $HERMES_HOME/mem0.json."""
+        """Write config to $THOTH_HOME/mem0.json."""
         import json
         from pathlib import Path
         config_path = Path(thoth_home) / "mem0.json"

@@ -176,7 +176,7 @@ class MemoryStore:
     def _init_db(self) -> None:
         """Create tables, indexes, and triggers if they do not exist. Enable WAL mode."""
         # Use the local WAL-fallback helper so memory_store.db degrades
-        # gracefully on NFS/SMB/FUSE-mounted HERMES_HOME. The shared
+        # gracefully on NFS/SMB/FUSE-mounted THOTH_HOME. The shared
         # helper that used to live in thoth_state was removed when the
         # session DB moved to PostgreSQL in Phase 0.
         _apply_wal_with_fallback(self._conn, db_label="memory_store.db (holographic)")

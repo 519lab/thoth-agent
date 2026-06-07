@@ -30,4 +30,4 @@ def test_thoth_launcher_wrapper_clears_python_env_before_exec() -> None:
     assert 'cat > "$link_dir/$CLI_NAME" <<EOF' in text
     assert 'unset PYTHONPATH' in text
     assert 'unset PYTHONHOME' in text
-    assert 'exec "$HERMES_BIN" "\\$@"' in text
+    assert 'exec "$THOTH_BIN" "\\$@"' in text

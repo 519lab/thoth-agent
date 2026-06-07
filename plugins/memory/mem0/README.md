@@ -21,7 +21,7 @@ echo "MEM0_API_KEY=your-key" >> ~/.hermes/.env
 
 ## Config
 
-Config file: `$HERMES_HOME/mem0.json`
+Config file: `$THOTH_HOME/mem0.json`
 
 | Key | Default | Description |
 |-----|---------|-------------|

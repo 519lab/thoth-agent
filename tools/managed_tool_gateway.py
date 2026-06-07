@@ -28,7 +28,7 @@ class ManagedToolGatewayConfig:
 
 
 def auth_json_path():
-    """Return the Thoth auth store path, respecting HERMES_HOME overrides."""
+    """Return the Thoth auth store path, respecting THOTH_HOME overrides."""
     return get_thoth_home() / "auth.json"
 
 

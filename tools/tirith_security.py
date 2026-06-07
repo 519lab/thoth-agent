@@ -11,7 +11,7 @@ Operational failures (spawn error, timeout, unknown exit code) respect
 the fail_open config setting. Programming errors propagate.
 
 Auto-install: if tirith is not found on PATH or at the configured path,
-it is automatically downloaded from GitHub releases to $HERMES_HOME/bin/tirith.
+it is automatically downloaded from GitHub releases to $THOTH_HOME/bin/tirith.
 The download always verifies SHA-256 checksums.  When cosign is available on
 PATH, provenance verification (GitHub Actions workflow signature) is also
 performed.  If cosign is not installed, the download proceeds with SHA-256
@@ -134,7 +134,7 @@ _MARKER_TTL = 86400  # 24 hours
 
 
 def _get_thoth_home() -> str:
-    """Return the Thoth home directory, respecting HERMES_HOME env var."""
+    """Return the Thoth home directory, respecting THOTH_HOME env var."""
     return str(get_thoth_home())
 
 
@@ -207,7 +207,7 @@ def _clear_install_failed():
 
 
 def _thoth_bin_dir() -> str:
-    """Return $HERMES_HOME/bin, creating it if needed."""
+    """Return $THOTH_HOME/bin, creating it if needed."""
     d = os.path.join(_get_thoth_home(), "bin")
     os.makedirs(d, exist_ok=True)
     return d
@@ -327,7 +327,7 @@ def _verify_checksum(archive_path: str, checksums_path: str, archive_name: str) 
 
 
 def _install_tirith(*, log_failures: bool = True) -> tuple[str | None, str]:
-    """Download and install tirith to $HERMES_HOME/bin/tirith.
+    """Download and install tirith to $THOTH_HOME/bin/tirith.
 
     Verifies provenance via cosign and SHA-256 checksum.
     Returns (installed_path, failure_reason).  On success failure_reason is "".
@@ -447,8 +447,8 @@ def _resolve_tirith_path(configured_path: str) -> str:
 
     For the default "tirith":
     1. PATH lookup via shutil.which
-    2. $HERMES_HOME/bin/tirith (previously auto-installed)
-    3. Auto-install from GitHub releases → $HERMES_HOME/bin/tirith
+    2. $THOTH_HOME/bin/tirith (previously auto-installed)
+    3. Auto-install from GitHub releases → $THOTH_HOME/bin/tirith
 
     Failed installs are cached for the process lifetime (and persisted to
     disk for 24h) to avoid repeated network attempts.

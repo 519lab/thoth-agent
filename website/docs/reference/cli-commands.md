@@ -77,7 +77,7 @@ thoth [global-options] <command> [subcommand/options]
 | `thoth profile` | Manage profiles — multiple isolated Thoth instances. |
 | `thoth completion` | Print shell completion scripts (bash/zsh/fish). |
 | `thoth version` | Show version information. |
-| `thoth update` | Pull latest code and reinstall dependencies (git installs), or check PyPI and `pip install --upgrade` (pip installs). `--check` previews without installing; `--backup` takes a pre-pull `HERMES_HOME` snapshot. |
+| `thoth update` | Pull latest code and reinstall dependencies (git installs), or check PyPI and `pip install --upgrade` (pip installs). `--check` previews without installing; `--backup` takes a pre-pull `THOTH_HOME` snapshot. |
 | `thoth uninstall` | Remove Thoth from the system. |
 
 ## `thoth chat`
@@ -221,7 +221,7 @@ Options:
 
 | Option | Description |
 |--------|-------------|
-| `--all` | On `start` / `restart` / `stop`: act on **every profile's** gateway, not just the active `HERMES_HOME`. Useful if you run multiple profiles side-by-side and want to restart them all after `thoth update`. |
+| `--all` | On `start` / `restart` / `stop`: act on **every profile's** gateway, not just the active `THOTH_HOME`. Useful if you run multiple profiles side-by-side and want to restart them all after `thoth update`. |
 
 :::tip WSL users
 Use `thoth gateway run` instead of `thoth gateway start` — WSL's systemd support is unreliable. Wrap it in tmux for persistence: `tmux new -s thoth 'thoth gateway run'`. See [WSL FAQ](/docs/reference/faq#wsl-gateway-keeps-disconnecting-or-thoth-gateway-start-fails) for details.
@@ -309,7 +309,7 @@ reinstall if scopes or slash commands changed.
 
 | Flag | Default | Purpose |
 |------|---------|---------|
-| `--write [PATH]` | stdout | Write to a file instead of stdout. Bare `--write` writes `$HERMES_HOME/slack-manifest.json`. |
+| `--write [PATH]` | stdout | Write to a file instead of stdout. Bare `--write` writes `$THOTH_HOME/slack-manifest.json`. |
 | `--name NAME` | `Thoth` | Bot display name in Slack. |
 | `--description DESC` | default blurb | Bot description shown in the Slack app directory. |
 | `--slashes-only` | off | Emit only `features.slash_commands` for merging into a manually-maintained manifest. |
@@ -501,7 +501,7 @@ Outputs a compact, plain-text summary of your entire Thoth setup. Designed to be
 |---------|---------|
 | **Header** | Thoth version, release date, git commit hash |
 | **Environment** | OS, Python version, OpenAI SDK version |
-| **Identity** | Active profile name, HERMES_HOME path |
+| **Identity** | Active profile name, THOTH_HOME path |
 | **Model** | Configured default model and provider |
 | **Terminal** | Backend type (local, docker, ssh, etc.) |
 | **API keys** | Presence check for all 22 provider/tool API keys |
@@ -1239,7 +1239,7 @@ Pulls the latest `hermes-agent` code and reinstalls dependencies in your venv, t
 | Option | Description |
 |--------|-------------|
 | `--check` | Print the current commit and the latest `origin/main` commit side by side, and exit 0 if in sync or 1 if behind. Does not pull, install, or restart anything. |
-| `--backup` | Create a labeled pre-update snapshot of `HERMES_HOME` (config, auth, sessions, skills, pairing data) before pulling. Default is **off** — the previous always-backup behavior was adding minutes to every update on large homes. Flip it on permanently via `update.backup: true` in `config.yaml`. |
+| `--backup` | Create a labeled pre-update snapshot of `THOTH_HOME` (config, auth, sessions, skills, pairing data) before pulling. Default is **off** — the previous always-backup behavior was adding minutes to every update on large homes. Flip it on permanently via `update.backup: true` in `config.yaml`. |
 | `--restart-gateway` | After a successful update, restart the running gateway service. Implies `--all` semantics if multiple profiles are installed. |
 
 Additional behavior:

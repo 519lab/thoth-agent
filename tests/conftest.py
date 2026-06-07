@@ -5,7 +5,7 @@ Hermetic-test invariants enforced here (see AGENTS.md for rationale):
 1. **No credential env vars.** All provider/credential-shaped env vars
    (ending in _API_KEY, _TOKEN, _SECRET, _PASSWORD, _CREDENTIALS, etc.)
    are unset before every test. Local developer keys cannot leak in.
-2. **Isolated HERMES_HOME.** HERMES_HOME points to a per-test tempdir so
+2. **Isolated THOTH_HOME.** THOTH_HOME points to a per-test tempdir so
    code reading ``~/.hermes/*`` via ``get_thoth_home()`` can't see the
    real one. (We do NOT also redirect HOME — that broke subprocesses in
    CI. Code using ``Path.home() / ".hermes"`` instead of the canonical
@@ -211,7 +211,7 @@ _HERMES_BEHAVIORAL_VARS = frozenset({
     "HERMES_CLI_NAME",
     # Kanban path/board pins must never leak from a developer shell or
     # dispatched worker into tests; otherwise tests can write fake tasks to
-    # the real ~/.hermes/kanban.db instead of the per-test HERMES_HOME.
+    # the real ~/.hermes/kanban.db instead of the per-test THOTH_HOME.
     "HERMES_KANBAN_DB",
     "HERMES_KANBAN_BOARD",
     "HERMES_KANBAN_HOME",
@@ -320,7 +320,7 @@ _HERMES_BEHAVIORAL_VARS = frozenset({
 def _hermetic_environment(tmp_path, monkeypatch):
     """Blank out all credential/behavioral env vars so local and CI match.
 
-    Also redirects HOME and HERMES_HOME to per-test tempdirs so code that
+    Also redirects HOME and THOTH_HOME to per-test tempdirs so code that
     reads ``~/.hermes/*`` can't touch the real one, and pins TZ/LANG so
     datetime/locale-sensitive tests are deterministic.
     """
@@ -334,15 +334,15 @@ def _hermetic_environment(tmp_path, monkeypatch):
         monkeypatch.delenv(name, raising=False)
 
     # 2b. Clear THOTH_* (rename Phase 3). get_thoth_home() reads THOTH_HOME
-    #     before HERMES_HOME, and normalize_thoth_home_env() can write THOTH_HOME
+    #     before THOTH_HOME, and normalize_thoth_home_env() can write THOTH_HOME
     #     into the real os.environ during a test (monkeypatch won't revert it).
-    #     Clear (don't pin) so tests that set only HERMES_HOME aren't shadowed;
-    #     the per-test HERMES_HOME below is then authoritative.
+    #     Clear (don't pin) so tests that set only THOTH_HOME aren't shadowed;
+    #     the per-test THOTH_HOME below is then authoritative.
     for name in list(os.environ.keys()):
         if name.startswith("THOTH_"):
             monkeypatch.delenv(name, raising=False)
 
-    # 3. Redirect HERMES_HOME to a per-test tempdir. Code that reads
+    # 3. Redirect THOTH_HOME to a per-test tempdir. Code that reads
     #    ``~/.hermes/*`` via ``get_thoth_home()`` now gets the tempdir.
     #
     #    NOTE: We do NOT also redirect HOME. Doing so broke CI because
@@ -358,7 +358,7 @@ def _hermetic_environment(tmp_path, monkeypatch):
     (fake_thoth_home / "cron").mkdir()
     (fake_thoth_home / "memories").mkdir()
     (fake_thoth_home / "skills").mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(fake_thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(fake_thoth_home))
 
     # 4. Deterministic locale / timezone / hashseed. CI runs in UTC with
     #    C.UTF-8 locale; local dev often doesn't. Pin everything.

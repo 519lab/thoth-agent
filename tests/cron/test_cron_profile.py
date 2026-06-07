@@ -1,7 +1,7 @@
 """Tests for per-job profile support in cron jobs.
 
 Covers data-layer validation/storage, cronjob tool plumbing, scheduler runtime
-HERMES_HOME scoping, and tick() serialization for profile jobs.
+THOTH_HOME scoping, and tick() serialization for profile jobs.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ def isolated_cron_profile_home(tmp_path, monkeypatch):
     profile_home.mkdir(parents=True)
     (root / "cron").mkdir(parents=True)
 
-    monkeypatch.setenv("HERMES_HOME", str(root))
+    monkeypatch.setenv("THOTH_HOME", str(root))
     monkeypatch.setattr("cron.jobs.CRON_DIR", root / "cron")
     monkeypatch.setattr("cron.jobs.JOBS_FILE", root / "cron" / "jobs.json")
     monkeypatch.setattr("cron.jobs.OUTPUT_DIR", root / "cron" / "output")
@@ -168,7 +168,7 @@ class TestRunJobProfileContext:
             def __init__(self, **kwargs):
                 from thoth_constants import get_thoth_home
 
-                observed["env_home_during_init"] = os.environ.get("HERMES_HOME")
+                observed["env_home_during_init"] = os.environ.get("THOTH_HOME")
                 observed["profile_env_only_during_init"] = os.environ.get(
                     "HERMES_PROFILE_TEST_ONLY"
                 )
@@ -182,7 +182,7 @@ class TestRunJobProfileContext:
             def run_conversation(self, *_a, **_kw):
                 from thoth_constants import get_thoth_home
 
-                observed["env_home_during_run"] = os.environ.get("HERMES_HOME")
+                observed["env_home_during_run"] = os.environ.get("THOTH_HOME")
                 observed["profile_env_only_during_run"] = os.environ.get(
                     "HERMES_PROFILE_TEST_ONLY"
                 )
@@ -258,7 +258,7 @@ class TestRunJobProfileContext:
         assert observed["scheduler_home_during_init"] == str(profile_home.resolve())
         assert observed["scheduler_home_during_run"] == str(profile_home.resolve())
         assert observed["skip_context_files"] is True
-        assert os.environ["HERMES_HOME"] == str(root)
+        assert os.environ["THOTH_HOME"] == str(root)
         assert sched._get_thoth_home() == root
 
     def test_profile_dotenv_environment_is_restored(
@@ -300,7 +300,7 @@ class TestRunJobProfileContext:
         assert os.environ["HERMES_PROFILE_TEST_SHARED"] == "outer"
         assert "HERMES_PROFILE_TEST_ONLY" not in os.environ
         assert os.environ["HERMES_CRON_TIMEOUT"] == "0"
-        assert os.environ["HERMES_HOME"] == str(root)
+        assert os.environ["THOTH_HOME"] == str(root)
         assert sched._get_thoth_home() == root
 
     def test_no_agent_profile_uses_profile_scripts_dir_and_restores_env(
@@ -312,7 +312,7 @@ class TestRunJobProfileContext:
         scripts_dir = profile_home / "scripts"
         scripts_dir.mkdir(parents=True)
         (scripts_dir / "print_home.py").write_text(
-            "import os\nprint(os.environ.get('HERMES_HOME', ''))\n",
+            "import os\nprint(os.environ.get('THOTH_HOME', ''))\n",
             encoding="utf-8",
         )
         monkeypatch.setattr(sched, "_thoth_home", None)
@@ -329,7 +329,7 @@ class TestRunJobProfileContext:
 
         assert success is True, error
         assert response.strip() == str(profile_home.resolve())
-        assert os.environ["HERMES_HOME"] == str(root)
+        assert os.environ["THOTH_HOME"] == str(root)
         assert sched._get_thoth_home() == root
 
     def test_run_job_without_profile_leaves_thoth_home_untouched(
@@ -352,7 +352,7 @@ class TestRunJobProfileContext:
 
         assert success is True
         assert observed["thoth_home_during_init"] == str(root)
-        assert os.environ["HERMES_HOME"] == str(root)
+        assert os.environ["THOTH_HOME"] == str(root)
 
     def test_run_job_falls_back_on_missing_runtime_profile(
         self, isolated_cron_profile_home, monkeypatch
@@ -376,7 +376,7 @@ class TestRunJobProfileContext:
         assert success is True, f"run_job should fallback, not fail: error={error!r}"
         # Verify it used the default home, not the missing profile
         assert observed["thoth_home_during_init"] == str(root)
-        assert os.environ["HERMES_HOME"] == str(root)
+        assert os.environ["THOTH_HOME"] == str(root)
 
 
 class TestTickProfilePartition:
@@ -404,7 +404,7 @@ class TestTickProfilePartition:
         assert observed["thoth_home_during_init"] == str(profile_home.resolve())
         assert os.environ.get("TERMINAL_CWD", "") != fake_workdir, \
             "TERMINAL_CWD should be restored after job"
-        assert os.environ["HERMES_HOME"] == str(root)
+        assert os.environ["THOTH_HOME"] == str(root)
         assert sched._get_thoth_home() == root
 
     def test_profile_jobs_run_sequentially(self, isolated_cron_profile_home, monkeypatch):

@@ -60,7 +60,7 @@ def _has_thoth_agent_browser() -> bool:
     if _IS_WINDOWS:
         # npm -g --prefix puts .cmd shims directly in the prefix dir on Windows
         return (home / "node" / "agent-browser.cmd").is_file()
-    # install.sh installs globally into $HERMES_HOME/node/bin/ via npm -g --prefix
+    # install.sh installs globally into $THOTH_HOME/node/bin/ via npm -g --prefix
     # Also check legacy node_modules/.bin/ path for git-clone installs.
     return (
         (home / "node" / "bin" / "agent-browser").is_file()

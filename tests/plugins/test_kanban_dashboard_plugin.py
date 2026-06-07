@@ -43,7 +43,7 @@ def _load_plugin_router():
 
 @pytest.fixture
 def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
-    """Isolated HERMES_HOME with an empty kanban DB.
+    """Isolated THOTH_HOME with an empty kanban DB.
 
     Depends on ``thoth_db_initialized_sync`` so the PG pool is bound
     to the persistent sync loop AND the kanban schema is migrated.
@@ -52,7 +52,7 @@ def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     kb.init_db()
     return home
@@ -728,7 +728,7 @@ def test_board_auto_initializes_missing_db(tmp_path, monkeypatch, thoth_db_initi
     """
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.delenv("HERMES_KANBAN_BOARD", raising=False)
     monkeypatch.delenv("HERMES_KANBAN_DB", raising=False)
     monkeypatch.delenv("HERMES_KANBAN_HOME", raising=False)
@@ -756,7 +756,7 @@ def test_ws_events_rejects_when_token_required(tmp_path, monkeypatch, thoth_db_i
     wrong ?token= query param must be rejected with policy-violation."""
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     kb.init_db()
 
@@ -801,7 +801,7 @@ def test_ws_events_board_query_param_default_overrides_current_board_pointer(tmp
     """
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     kb.init_db()
 
@@ -857,7 +857,7 @@ def test_ws_events_swallows_cancellation_on_shutdown(tmp_path, monkeypatch, thot
 
     home = tmp_path / ".hermes"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     kb.init_db()
 
@@ -1129,7 +1129,7 @@ def test_config_returns_defaults_when_section_missing(client):
 
 
 def test_config_reads_dashboard_kanban_section(tmp_path, monkeypatch, client):
-    home = Path(os.environ["HERMES_HOME"])
+    home = Path(os.environ["THOTH_HOME"])
     (home / "config.yaml").write_text(
         "dashboard:\n"
         "  kanban:\n"

@@ -103,7 +103,7 @@ def test_format_aux_current_handles_non_dict():
 def test_save_aux_choice_persists_to_config_yaml(tmp_path, monkeypatch):
     """Saving a task writes provider/model/base_url/api_key to auxiliary.<task>."""
     from pathlib import Path
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path / ".hermes"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     (tmp_path / ".hermes").mkdir(exist_ok=True)
 
@@ -121,7 +121,7 @@ def test_save_aux_choice_persists_to_config_yaml(tmp_path, monkeypatch):
 def test_save_aux_choice_preserves_timeout(tmp_path, monkeypatch):
     """Saving must NOT clobber user-tuned timeout values."""
     from pathlib import Path
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path / ".hermes"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     (tmp_path / ".hermes").mkdir(exist_ok=True)
 
@@ -140,7 +140,7 @@ def test_save_aux_choice_preserves_timeout(tmp_path, monkeypatch):
 def test_save_aux_choice_does_not_touch_main_model(tmp_path, monkeypatch):
     """Aux config must never mutate model.default / model.provider / model.base_url."""
     from pathlib import Path
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path / ".hermes"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     (tmp_path / ".hermes").mkdir(exist_ok=True)
 
@@ -174,7 +174,7 @@ def test_save_aux_choice_does_not_touch_main_model(tmp_path, monkeypatch):
 def test_save_aux_choice_creates_missing_task_entry(tmp_path, monkeypatch):
     """Saving a task that was wiped from config.yaml should recreate it."""
     from pathlib import Path
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path / ".hermes"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     (tmp_path / ".hermes").mkdir(exist_ok=True)
 
@@ -196,7 +196,7 @@ def test_save_aux_choice_creates_missing_task_entry(tmp_path, monkeypatch):
 
 def test_reset_aux_to_auto_clears_routing_preserves_timeouts(tmp_path, monkeypatch):
     from pathlib import Path
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path / ".hermes"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     (tmp_path / ".hermes").mkdir(exist_ok=True)
 
@@ -228,7 +228,7 @@ def test_reset_aux_to_auto_clears_routing_preserves_timeouts(tmp_path, monkeypat
 def test_reset_aux_to_auto_idempotent(tmp_path, monkeypatch):
     """Second reset on already-auto config returns 0 without errors."""
     from pathlib import Path
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path / ".hermes"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     (tmp_path / ".hermes").mkdir(exist_ok=True)
 
@@ -244,7 +244,7 @@ def test_reset_aux_to_auto_idempotent(tmp_path, monkeypatch):
 def test_select_provider_and_model_dispatches_to_aux_menu(tmp_path, monkeypatch):
     """Picking 'Configure auxiliary models...' in the provider list calls _aux_config_menu."""
     from pathlib import Path
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path / ".hermes"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     (tmp_path / ".hermes").mkdir(exist_ok=True)
 
@@ -274,7 +274,7 @@ def test_select_provider_and_model_dispatches_to_aux_menu(tmp_path, monkeypatch)
 def test_leave_unchanged_replaces_cancel_label(tmp_path, monkeypatch):
     """The bottom cancel entry now reads 'Leave unchanged' (UX polish)."""
     from pathlib import Path
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path / ".hermes"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     (tmp_path / ".hermes").mkdir(exist_ok=True)
 

@@ -12,10 +12,10 @@ from thoth_cli.config import set_config_value, config_command
 
 @pytest.fixture(autouse=True)
 def _isolated_thoth_home(tmp_path):
-    """Point HERMES_HOME at a temp dir so tests never touch real config."""
+    """Point THOTH_HOME at a temp dir so tests never touch real config."""
     env_file = tmp_path / ".env"
     env_file.touch()
-    with patch.dict(os.environ, {"HERMES_HOME": str(tmp_path)}):
+    with patch.dict(os.environ, {"THOTH_HOME": str(tmp_path)}):
         yield tmp_path
 
 

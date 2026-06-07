@@ -12,7 +12,7 @@ import thoth_cli.doctor as doctor_mod
 
 
 def _setup_doctor_env(monkeypatch, tmp_path, venv_name="venv"):
-    """Create a minimal HERMES_HOME + PROJECT_ROOT for doctor tests."""
+    """Create a minimal THOTH_HOME + PROJECT_ROOT for doctor tests."""
     home = tmp_path / ".hermes"
     home.mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
@@ -27,7 +27,7 @@ def _setup_doctor_env(monkeypatch, tmp_path, venv_name="venv"):
     thoth_bin.write_text("#!/usr/bin/env python\n# entry point\n")
     thoth_bin.chmod(0o755)
 
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+    monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
     monkeypatch.setattr(doctor_mod, "_DHH", str(home))
 
@@ -164,7 +164,7 @@ class TestDoctorCommandInstallation:
         project.mkdir(exist_ok=True)
         # Do NOT create any venv entry point
 
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+        monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
         monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
         monkeypatch.setattr(doctor_mod, "_DHH", str(home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -249,7 +249,7 @@ class TestDoctorCommandInstallation:
         project = tmp_path / "project"
         project.mkdir(exist_ok=True)
 
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
+        monkeypatch.setattr(doctor_mod, "THOTH_HOME", home)
         monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project)
         monkeypatch.setattr(doctor_mod, "_DHH", str(home))
         monkeypatch.setattr(sys, "platform", "win32")

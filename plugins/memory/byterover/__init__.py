@@ -12,7 +12,7 @@ curl -fsSL https://byterover.dev/install.sh | sh).
 Config via environment variables (profile-scoped via each profile's .env):
   BRV_API_KEY   — ByteRover API key (for cloud features, optional for local)
 
-Working directory: $HERMES_HOME/byterover/ (profile-scoped context tree)
+Working directory: $THOTH_HOME/byterover/ (profile-scoped context tree)
 """
 
 from __future__ import annotations

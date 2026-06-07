@@ -2,7 +2,7 @@
 
 Uses the Vercel Python SDK to run commands in cloud sandboxes through Thoth's
 shared ``BaseEnvironment`` shell contract. When persistence is enabled, the
-backend stores task-scoped snapshot metadata under ``HERMES_HOME`` and restores
+backend stores task-scoped snapshot metadata under ``THOTH_HOME`` and restores
 new sandboxes from those snapshots on later task reuse.
 """
 

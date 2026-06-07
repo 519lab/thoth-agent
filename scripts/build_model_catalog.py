@@ -30,8 +30,8 @@ from datetime import datetime, timezone
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO_ROOT)
 
-# Ensure HERMES_HOME is set for imports that touch it at module level.
-os.environ.setdefault("HERMES_HOME", os.path.join(os.path.expanduser("~"), ".hermes"))
+# Ensure THOTH_HOME is set for imports that touch it at module level.
+os.environ.setdefault("THOTH_HOME", os.path.join(os.path.expanduser("~"), ".hermes"))
 
 from thoth_cli.models import OPENROUTER_MODELS, _PROVIDER_MODELS  # noqa: E402
 

@@ -255,7 +255,7 @@ def _normalize_deliver_param(value: Any) -> Optional[str]:
 def _validate_cron_script_path(script: Optional[str]) -> Optional[str]:
     """Validate a cron job script path at the API boundary.
 
-    Scripts must be relative paths that resolve within HERMES_HOME/scripts/.
+    Scripts must be relative paths that resolve within THOTH_HOME/scripts/.
     Absolute paths and ~ expansion are rejected to prevent arbitrary script
     execution via prompt injection.
 
@@ -710,7 +710,7 @@ Important safety rule: cron-run sessions should not recursively schedule more cr
             },
             "profile": {
                 "type": "string",
-                "description": "Optional Thoth profile name to run the job under. When set, the scheduler resolves that profile, applies a context-local Thoth home override, loads that profile's config/.env for the run, and bridges HERMES_HOME into subprocesses. Any temporary process-environment changes from profile .env loading are restored after the job exits. Use 'default' for the root Thoth profile. Named profiles must already exist. When unset (default), preserves the scheduler's existing profile. On update, pass an empty string to clear. Jobs with profile run sequentially (not parallel) to keep profile-scoped runtime state isolated."
+                "description": "Optional Thoth profile name to run the job under. When set, the scheduler resolves that profile, applies a context-local Thoth home override, loads that profile's config/.env for the run, and bridges THOTH_HOME into subprocesses. Any temporary process-environment changes from profile .env loading are restored after the job exits. Use 'default' for the root Thoth profile. Named profiles must already exist. When unset (default), preserves the scheduler's existing profile. On update, pass an empty string to clear. Jobs with profile run sequentially (not parallel) to keep profile-scoped runtime state isolated."
             },
         },
         "required": ["action"]

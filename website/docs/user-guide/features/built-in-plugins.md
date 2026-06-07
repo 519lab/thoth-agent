@@ -75,7 +75,7 @@ Auto-tracks and removes ephemeral files created during sessions — test scripts
 
 | Hook | Behaviour |
 |---|---|
-| `post_tool_call` | When `write_file` / `terminal` / `patch` creates a file matching `test_*`, `tmp_*`, or `*.test.*` inside `HERMES_HOME` or `/tmp/thoth-*`, track it silently as `test` / `temp` / `cron-output`. |
+| `post_tool_call` | When `write_file` / `terminal` / `patch` creates a file matching `test_*`, `tmp_*`, or `*.test.*` inside `THOTH_HOME` or `/tmp/thoth-*`, track it silently as `test` / `temp` / `cron-output`. |
 | `on_session_end` | If any test files were auto-tracked during the turn, run the safe `quick` cleanup and log a one-line summary. Stays silent otherwise. |
 
 **Deletion rules:**
@@ -85,7 +85,7 @@ Auto-tracks and removes ephemeral files created during sessions — test scripts
 | `test` | every session end | Never |
 | `temp` | >7 days since tracked | Never |
 | `cron-output` | >14 days since tracked | Never |
-| empty dirs under HERMES_HOME | always | Never |
+| empty dirs under THOTH_HOME | always | Never |
 | `research` | >30 days, beyond 10 newest | Always (deep only) |
 | `chrome-profile` | >14 days since tracked | Always (deep only) |
 | files >500 MB | never auto | Always (deep only) |
@@ -101,7 +101,7 @@ Auto-tracks and removes ephemeral files created during sessions — test scripts
 /disk-cleanup forget <path>              # stop tracking (does not delete)
 ```
 
-**State** — everything lives at `$HERMES_HOME/disk-cleanup/`:
+**State** — everything lives at `$THOTH_HOME/disk-cleanup/`:
 
 | File | Contents |
 |---|---|
@@ -109,7 +109,7 @@ Auto-tracks and removes ephemeral files created during sessions — test scripts
 | `tracked.json.bak` | Atomic-write backup of the above |
 | `cleanup.log` | Append-only audit trail of every track / skip / reject / delete |
 
-**Safety** — cleanup only ever touches paths under `HERMES_HOME` or `/tmp/thoth-*`. Windows mounts (`/mnt/c/...`) are rejected. Well-known top-level state dirs (`logs/`, `memories/`, `sessions/`, `cron/`, `cache/`, `skills/`, `plugins/`, `disk-cleanup/` itself) are never removed even when empty — a fresh install does not get gutted on first session end.
+**Safety** — cleanup only ever touches paths under `THOTH_HOME` or `/tmp/thoth-*`. Windows mounts (`/mnt/c/...`) are rejected. Well-known top-level state dirs (`logs/`, `memories/`, `sessions/`, `cron/`, `cache/`, `skills/`, `plugins/`, `disk-cleanup/` itself) are never removed even when empty — a fresh install does not get gutted on first session end.
 
 **Enabling:** `thoth plugins enable disk-cleanup` (or check the box in `thoth plugins`).
 
@@ -209,7 +209,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 - Scans your entire `~/.hermes/state.db` session history on the dashboard backend
 - Per-session stats are cached by `(started_at, last_active)` fingerprint, so only new or changed sessions re-analyze on subsequent scans
 - First-ever scan runs in a background thread — the dashboard never blocks waiting for it, even on databases with thousands of sessions
-- Unlock state is persisted to `$HERMES_HOME/plugins/hermes-achievements/state.json`
+- Unlock state is persisted to `$THOTH_HOME/plugins/hermes-achievements/state.json`
 
 **Tier progression:** Copper → Silver → Gold → Diamond → Olympian. Each card exposes a "What counts" section listing the exact metric being tracked.
 
@@ -232,7 +232,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 | `POST /rescan` | Manual synchronous rescan (blocks; use when the user clicks the rescan button) |
 | `POST /reset-state` | Clear unlock history and cached snapshot |
 
-**State files** — live under `$HERMES_HOME/plugins/hermes-achievements/`:
+**State files** — live under `$THOTH_HOME/plugins/hermes-achievements/`:
 
 | File | Contents |
 |---|---|
@@ -249,7 +249,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 
 **Enabling:** Nothing to enable — `hermes-achievements` is a dashboard-only plugin (no lifecycle hooks, no model-visible tools). It auto-registers as a tab in `thoth dashboard` on first launch. The `plugins.enabled` config only gates lifecycle/tool plugins; dashboard plugins are discovered purely via their `dashboard/manifest.json`.
 
-**Opting out:** Delete or rename `plugins/hermes-achievements/dashboard/manifest.json`, or override it with a user plugin of the same name in `~/.hermes/plugins/hermes-achievements/` that ships no dashboard. The plugin's state files under `$HERMES_HOME/plugins/hermes-achievements/` survive — reinstalling preserves your unlock history.
+**Opting out:** Delete or rename `plugins/hermes-achievements/dashboard/manifest.json`, or override it with a user plugin of the same name in `~/.hermes/plugins/hermes-achievements/` that ships no dashboard. The plugin's state files under `$THOTH_HOME/plugins/hermes-achievements/` survive — reinstalling preserves your unlock history.
 
 ## Adding a bundled plugin
 

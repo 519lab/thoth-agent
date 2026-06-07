@@ -22,7 +22,7 @@ Config via environment variables:
   HINDSIGHT_RETAIN_USER_PREFIX     — label used before user turns in retained transcripts
   HINDSIGHT_RETAIN_ASSISTANT_PREFIX — label used before assistant turns in retained transcripts
 
-Or via $HERMES_HOME/hindsight/config.json (profile-scoped), falling back to
+Or via $THOTH_HOME/hindsight/config.json (profile-scoped), falling back to
 ~/.hindsight/config.json (legacy, shared) for backward compatibility.
 """
 
@@ -298,7 +298,7 @@ def _load_config() -> dict:
     """Load config from profile-scoped path, legacy path, or env vars.
 
     Resolution order:
-      1. $HERMES_HOME/hindsight/config.json  (profile-scoped)
+      1. $THOTH_HOME/hindsight/config.json  (profile-scoped)
       2. ~/.hindsight/config.json             (legacy, shared)
       3. Environment variables
     """
@@ -612,7 +612,7 @@ class HindsightMemoryProvider(MemoryProvider):
             return False
 
     def save_config(self, values, thoth_home):
-        """Write config to $HERMES_HOME/hindsight/config.json."""
+        """Write config to $THOTH_HOME/hindsight/config.json."""
         import json
         from pathlib import Path
         config_dir = Path(thoth_home) / "hindsight"

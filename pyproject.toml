@@ -229,17 +229,13 @@ all = [
 ]
 
 [project.scripts]
-# Thoth is the project name; `thoth*` are the canonical commands. The
-# `hermes*` aliases point at the same entry points and are kept for
-# back-compat with existing installs/scripts during the hermes→thoth
-# rename (see docs/architecture / the rename phases). Same targets, so
-# both invocations are identical.
+# Thoth is the project name; `thoth*` are the canonical (and only) commands.
+# The legacy `hermes*` console aliases were dropped in the de-Hermes rename —
+# fresh installs use `thoth` / `thoth-agent` / `thoth-acp`, and the importer
+# (`thoth hermes migrate`) carries any legacy ~/.hermes home over.
 thoth = "thoth_cli.main:main"
 thoth-agent = "run_agent:_cli_main"
 thoth-acp = "acp_adapter.entry:main"
-hermes = "thoth_cli.main:main"
-hermes-agent = "run_agent:_cli_main"
-hermes-acp = "acp_adapter.entry:main"
 
 [tool.setuptools]
 py-modules = ["run_agent", "model_tools", "toolsets", "batch_runner", "trajectory_compressor", "toolset_distributions", "cli", "thoth_bootstrap", "thoth_constants", "thoth_db", "thoth_env", "thoth_state", "thoth_time", "thoth_logging", "utils"]

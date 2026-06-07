@@ -22,7 +22,7 @@ echo 'SUPERMEMORY_API_KEY=***' >> ~/.hermes/.env
 
 ## Config
 
-Config file: `$HERMES_HOME/supermemory.json`
+Config file: `$THOTH_HOME/supermemory.json`
 
 | Key | Default | Description |
 |-----|---------|-------------|

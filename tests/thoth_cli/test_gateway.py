@@ -18,10 +18,10 @@ def _install_fake_gateway_run(monkeypatch, start_gateway):
     # respawns. That helper writes to ``Path.home() / ".config/systemd/user
     # /hermes-gateway.service"`` and runs ``systemctl --user daemon-reload``
     # — both target the *real* user environment because the conftest only
-    # sandboxes ``HERMES_HOME``, not ``HOME``. Tests that drive
+    # sandboxes ``THOTH_HOME``, not ``HOME``. Tests that drive
     # ``run_gateway()`` end-to-end with a fake ``start_gateway`` MUST stub
     # the refresh call too, or every run rewrites the developer's installed
-    # unit (baking in the test's pytest-tmp ``HERMES_HOME`` value, which
+    # unit (baking in the test's pytest-tmp ``THOTH_HOME`` value, which
     # systemd then uses on the next boot — silently breaking the gateway
     # for the developer).
     monkeypatch.setattr(gateway, "supports_systemd_services", lambda: False)

@@ -241,9 +241,9 @@ Add the line to your `~/.bashrc` or `~/.zshrc` for persistent completion. Comple
 
 ## How it works
 
-Profiles use the `HERMES_HOME` environment variable. When you run `coder chat`, the wrapper script sets `HERMES_HOME=~/.hermes/profiles/coder` before launching thoth. Since 119+ files in the codebase resolve paths via `get_thoth_home()`, Thoth state automatically scopes to the profile's directory — config, sessions, memory, skills, state database, gateway PID, logs, and cron jobs.
+Profiles use the `THOTH_HOME` environment variable. When you run `coder chat`, the wrapper script sets `THOTH_HOME=~/.hermes/profiles/coder` before launching thoth. Since 119+ files in the codebase resolve paths via `get_thoth_home()`, Thoth state automatically scopes to the profile's directory — config, sessions, memory, skills, state database, gateway PID, logs, and cron jobs.
 
-This is separate from terminal working directory. Tool execution starts from `terminal.cwd` (or the launch directory when `cwd: "."` on the local backend), not automatically from `HERMES_HOME`.
+This is separate from terminal working directory. Tool execution starts from `terminal.cwd` (or the launch directory when `cwd: "."` on the local backend), not automatically from `THOTH_HOME`.
 
 The default profile is simply `~/.hermes` itself. No migration needed — existing installs work identically.
 

@@ -78,7 +78,7 @@ def test_main_import_applies_user_env_over_shell_values(tmp_path, monkeypatch):
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setenv("OPENAI_BASE_URL", "https://old.example/v1")
     monkeypatch.setenv("HERMES_INFERENCE_PROVIDER", "openrouter")
 

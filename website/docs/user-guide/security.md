@@ -398,7 +398,7 @@ terminal:
 
 ### Credential File Passthrough (OAuth tokens, etc.) {#credential-file-passthrough}
 
-Some skills need **files** (not just env vars) in the sandbox — for example, Google Workspace stores OAuth tokens as `google_token.json` under the active profile's `HERMES_HOME`. Skills declare these in frontmatter:
+Some skills need **files** (not just env vars) in the sandbox — for example, Google Workspace stores OAuth tokens as `google_token.json` under the active profile's `THOTH_HOME`. Skills declare these in frontmatter:
 
 ```yaml
 required_credential_files:
@@ -408,7 +408,7 @@ required_credential_files:
     description: Google OAuth2 client credentials
 ```
 
-When loaded, Thoth checks if these files exist in the active profile's `HERMES_HOME` and registers them for mounting:
+When loaded, Thoth checks if these files exist in the active profile's `THOTH_HOME` and registers them for mounting:
 
 - **Docker**: Read-only bind mounts (`-v host:container:ro`)
 - **Modal**: Mounted at sandbox creation + synced before each command (handles mid-session OAuth setup)

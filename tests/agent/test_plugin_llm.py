@@ -742,7 +742,7 @@ plugins:
 """,
             encoding="utf-8",
         )
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         from thoth_cli import config as _config_mod
         _config_mod._config_cache = None  # type: ignore[attr-defined]
 
@@ -761,7 +761,7 @@ plugins:
         thoth_home = tmp_path / ".hermes"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text("plugins: {}\n", encoding="utf-8")
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         from thoth_cli import config as _config_mod
         _config_mod._config_cache = None  # type: ignore[attr-defined]
 

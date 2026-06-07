@@ -123,7 +123,7 @@ Jobs with a `workdir` run sequentially on the scheduler tick, not in the paralle
 
 ## Running cron jobs in a specific profile
 
-By default a cron job inherits whichever Thoth profile owned the gateway / CLI that created it. Pass `--profile <name>` (CLI) or `profile=` (cronjob tool) to re-target the job at a different profile — the scheduler resolves that profile's `HERMES_HOME`, temporarily switches into it for the duration of the run, loads its `.env` + `config.yaml`, and executes the job there:
+By default a cron job inherits whichever Thoth profile owned the gateway / CLI that created it. Pass `--profile <name>` (CLI) or `profile=` (cronjob tool) to re-target the job at a different profile — the scheduler resolves that profile's `THOTH_HOME`, temporarily switches into it for the duration of the run, loads its `.env` + `config.yaml`, and executes the job there:
 
 ```bash
 # Pin a job to the `night-ops` profile regardless of where it was scheduled
@@ -147,7 +147,7 @@ Use `--profile default` to explicitly pin to the root Thoth profile. The named p
 If the pinned profile is later deleted, the scheduler logs a warning and falls back to running the job in its current profile rather than crashing — so a stale `profile` reference never wedges a job.
 
 :::note Serialization
-Jobs with a `profile` set also run sequentially, for the same reason as `workdir`-pinned jobs: switching `HERMES_HOME` is a process-global mutation, so two profile-pinned jobs running in parallel would race each other. Unpinned jobs still run in the normal parallel pool.
+Jobs with a `profile` set also run sequentially, for the same reason as `workdir`-pinned jobs: switching `THOTH_HOME` is a process-global mutation, so two profile-pinned jobs running in parallel would race each other. Unpinned jobs still run in the normal parallel pool.
 :::
 
 ## Editing jobs

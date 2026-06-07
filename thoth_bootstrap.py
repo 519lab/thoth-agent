@@ -138,7 +138,7 @@ try:
     from thoth_env import normalize_thoth_env as _normalize_thoth_env
     from thoth_env import normalize_thoth_home_env as _normalize_thoth_home_env
 
-    # Home keys first (rename Phase 3) so HERMES_HOME/THOTH_HOME agree before
+    # Home keys first (rename Phase 3) so THOTH_HOME/THOTH_HOME agree before
     # any home read; then the general env mirror (Phase 2). Both are pure env
     # ops (no filesystem) — symlink/migration happens only in install/update.
     _normalize_thoth_home_env()

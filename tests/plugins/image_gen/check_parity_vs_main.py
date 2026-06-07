@@ -62,9 +62,9 @@ SUBPROCESS_SCRIPT = r"""
 import json, os, sys, tempfile
 sys.path.insert(0, sys.argv[1])
 
-# Isolated HERMES_HOME so the config write is hermetic.
+# Isolated THOTH_HOME so the config write is hermetic.
 home = tempfile.mkdtemp()
-os.environ["HERMES_HOME"] = home
+os.environ["THOTH_HOME"] = home
 
 # Clear FAL-related env so dispatch decisions are config-driven.
 for k in (

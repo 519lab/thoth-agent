@@ -37,10 +37,10 @@ from thoth_cli import kanban_db as kb
 
 @pytest.fixture
 def fresh_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
-    """Isolated HERMES_HOME with no prior kanban state.
+    """Isolated THOTH_HOME with no prior kanban state.
 
     The autouse hermetic conftest already nukes credentials + TZ; this
-    fixture layers a per-test HERMES_HOME plus a path-init cache reset
+    fixture layers a per-test THOTH_HOME plus a path-init cache reset
     so each test sees a truly empty board set.
 
     Depends on ``thoth_db_initialized_sync`` so the PG pool is bound
@@ -51,7 +51,7 @@ def fresh_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """
     home = tmp_path / "thoth_home"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     for var in (
         "HERMES_KANBAN_DB",
         "HERMES_KANBAN_WORKSPACES_ROOT",
@@ -497,7 +497,7 @@ class TestCLI:
         yield
 
     def test_boards_list_default_only(self, tmp_path):
-        env = {"HERMES_HOME": str(tmp_path)}
+        env = {"THOTH_HOME": str(tmp_path)}
         res = _cli(["boards", "list", "--json"], env_extra=env)
         assert res.returncode == 0, res.stderr
         data = json.loads(res.stdout)
@@ -506,7 +506,7 @@ class TestCLI:
         assert data[0]["is_current"] is True
 
     def test_boards_create_and_switch(self, tmp_path):
-        env = {"HERMES_HOME": str(tmp_path)}
+        env = {"THOTH_HOME": str(tmp_path)}
         r1 = _cli(
             ["boards", "create", "myproj", "--name", "My Project", "--switch"],
             env_extra=env,
@@ -521,7 +521,7 @@ class TestCLI:
         assert cur["slug"] == "myproj"
 
     def test_per_board_task_isolation_via_cli(self, tmp_path):
-        env = {"HERMES_HOME": str(tmp_path)}
+        env = {"THOTH_HOME": str(tmp_path)}
         assert _cli(["boards", "create", "projA"], env_extra=env).returncode == 0
         assert _cli(["boards", "create", "projB"], env_extra=env).returncode == 0
 
@@ -545,7 +545,7 @@ class TestCLI:
         assert titlesD == []
 
     def test_board_flag_rejects_unknown(self, tmp_path):
-        env = {"HERMES_HOME": str(tmp_path)}
+        env = {"THOTH_HOME": str(tmp_path)}
         r = _cli(["--board", "ghost", "list"], env_extra=env)
         # main.py's dispatcher doesn't propagate return codes today, so we
         # assert the user-visible signal: a stderr error message. Whether
@@ -553,14 +553,14 @@ class TestCLI:
         assert "does not exist" in r.stderr
 
     def test_board_flag_rejects_empty_board_dir(self, tmp_path):
-        env = {"HERMES_HOME": str(tmp_path)}
+        env = {"THOTH_HOME": str(tmp_path)}
         ghost = tmp_path / "kanban" / "boards" / "ghost"
         ghost.mkdir(parents=True)
         r = _cli(["--board", "ghost", "list"], env_extra=env)
         assert "does not exist" in r.stderr
 
     def test_boards_rm_archives(self, tmp_path):
-        env = {"HERMES_HOME": str(tmp_path)}
+        env = {"THOTH_HOME": str(tmp_path)}
         _cli(["boards", "create", "rmme"], env_extra=env)
         r = _cli(["boards", "rm", "rmme"], env_extra=env)
         assert r.returncode == 0, r.stderr

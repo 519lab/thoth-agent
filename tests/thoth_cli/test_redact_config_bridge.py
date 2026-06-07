@@ -54,7 +54,7 @@ def test_redact_secrets_false_in_config_yaml_is_honored(tmp_path):
     ) % str(REPO_ROOT)
 
     env = dict(os.environ)
-    env["HERMES_HOME"] = str(thoth_home)
+    env["THOTH_HOME"] = str(thoth_home)
     env.pop("HERMES_REDACT_SECRETS", None)
 
     result = subprocess.run(
@@ -97,7 +97,7 @@ def test_redact_secrets_default_true_when_unset(tmp_path):
     ) % str(REPO_ROOT)
 
     env = dict(os.environ)
-    env["HERMES_HOME"] = str(thoth_home)
+    env["THOTH_HOME"] = str(thoth_home)
     env.pop("HERMES_REDACT_SECRETS", None)
 
     result = subprocess.run(
@@ -140,7 +140,7 @@ def test_redact_secrets_true_in_config_yaml_is_honored(tmp_path):
     ) % str(REPO_ROOT)
 
     env = dict(os.environ)
-    env["HERMES_HOME"] = str(thoth_home)
+    env["THOTH_HOME"] = str(thoth_home)
     env.pop("HERMES_REDACT_SECRETS", None)
 
     result = subprocess.run(
@@ -186,7 +186,7 @@ def test_dotenv_redact_secrets_beats_config_yaml(tmp_path):
     ) % str(REPO_ROOT)
 
     env = dict(os.environ)
-    env["HERMES_HOME"] = str(thoth_home)
+    env["THOTH_HOME"] = str(thoth_home)
     env.pop("HERMES_REDACT_SECRETS", None)
 
     result = subprocess.run(

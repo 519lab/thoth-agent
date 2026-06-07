@@ -175,7 +175,7 @@ def test_terminal_output_transform_does_not_change_approval_or_exit_code_meaning
 def test_terminal_output_transform_integration_with_real_plugin(monkeypatch, tmp_path):
     import yaml
 
-    thoth_home = Path(os.environ["HERMES_HOME"])
+    thoth_home = Path(os.environ["THOTH_HOME"])
     plugins_dir = thoth_home / "plugins"
     plugin_dir = plugins_dir / "terminal_transform"
     plugin_dir.mkdir(parents=True)

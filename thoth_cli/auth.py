@@ -801,13 +801,13 @@ def _oauth_trace(event: str, *, sequence_id: Optional[str] = None, **fields: Any
 
 def _auth_file_path() -> Path:
     path = get_thoth_home() / "auth.json"
-    # Seat belt: if pytest is running and HERMES_HOME resolves to the real
+    # Seat belt: if pytest is running and THOTH_HOME resolves to the real
     # user's auth store, refuse rather than silently corrupt it. This catches
-    # tests that forgot to monkeypatch HERMES_HOME, tests invoked without the
+    # tests that forgot to monkeypatch THOTH_HOME, tests invoked without the
     # hermetic conftest, or sandbox escapes via threads/subprocesses. In
     # production (no PYTEST_CURRENT_TEST) this is a single dict lookup.
     if os.environ.get("PYTEST_CURRENT_TEST"):
-        real_home_auth = (Path.home() / ".hermes" / "auth.json").resolve(strict=False)
+        real_home_auth = (Path.home() / ".thoth" / "auth.json").resolve(strict=False)
         try:
             resolved = path.resolve(strict=False)
         except Exception:
@@ -815,7 +815,7 @@ def _auth_file_path() -> Path:
         if resolved == real_home_auth:
             raise RuntimeError(
                 f"Refusing to touch real user auth store during test run: {path}. "
-                "Set HERMES_HOME to a tmp_path in your test fixture, or run "
+                "Set THOTH_HOME to a tmp_path in your test fixture, or run "
                 "via scripts/run_tests.sh for hermetic CI-parity env."
             )
     return path
@@ -825,7 +825,7 @@ def _global_auth_file_path() -> Optional[Path]:
     """Return the global-root auth.json when the process is in profile mode.
 
     Returns ``None`` when the profile and global root resolve to the same
-    directory (classic mode, or custom HERMES_HOME that is not a profile).
+    directory (classic mode, or custom THOTH_HOME that is not a profile).
     Used by read-only fallback paths so providers authed at the root are
     visible to profile processes that haven't configured them locally.
 
@@ -859,9 +859,9 @@ def _load_global_auth_store() -> Dict[str, Any]:
     or the global auth.json is absent). Never raises on missing file.
 
     Seat belt: under pytest, refuses to read the real user's
-    ``~/.hermes/auth.json`` even when HERMES_HOME is set to a profile
+    ``~/.hermes/auth.json`` even when THOTH_HOME is set to a profile
     path. The hermetic conftest does not redirect ``HOME``, so
-    ``get_default_thoth_root()`` for a profile-shaped HERMES_HOME can
+    ``get_default_thoth_root()`` for a profile-shaped THOTH_HOME can
     still resolve to the real user's home on a dev machine. That would
     leak real credentials into tests. This guard uses the unmodified
     ``HOME`` env var (what ``os.path.expanduser('~')`` would resolve to),
@@ -874,7 +874,7 @@ def _load_global_auth_store() -> Dict[str, Any]:
     if os.environ.get("PYTEST_CURRENT_TEST"):
         real_home_env = os.environ.get("HOME", "")
         if real_home_env:
-            real_root = Path(real_home_env) / ".hermes" / "auth.json"
+            real_root = Path(real_home_env) / ".thoth" / "auth.json"
             try:
                 if global_path.resolve(strict=False) == real_root.resolve(strict=False):
                     return {}
@@ -4005,9 +4005,9 @@ def _poll_for_token(
 #
 # File lives at ${HERMES_SHARED_AUTH_DIR}/nous_auth.json, defaulting to
 # ``<hermes-root>/shared/nous_auth.json`` where ``<hermes-root>`` is what
-# ``get_default_thoth_root()`` returns — ``~/.hermes`` on Linux/macOS,
+# ``get_default_thoth_root()`` returns — ``~/.thoth`` on Linux/macOS,
 # ``%LOCALAPPDATA%\thoth`` on native Windows, or the Docker/custom root.
-# It is OUTSIDE any named profile's HERMES_HOME so named profiles (which
+# It is OUTSIDE any named profile's THOTH_HOME so named profiles (which
 # typically live under ``<hermes-root>/profiles/<name>/``) all see the
 # same file.
 #
@@ -4030,8 +4030,8 @@ def _nous_shared_auth_dir() -> Path:
     :func:`thoth_constants.get_default_thoth_root` returns — so
     Linux/macOS classic installs land at ``~/.hermes/shared/``, native
     Windows installs at ``%LOCALAPPDATA%\\thoth\\shared\\``, and
-    Docker / custom ``HERMES_HOME`` deployments at
-    ``<HERMES_HOME>/shared/``. Sits outside any named profile so all
+    Docker / custom ``THOTH_HOME`` deployments at
+    ``<THOTH_HOME>/shared/``. Sits outside any named profile so all
     profiles under the same root share the store.
     """
     override = os.getenv("HERMES_SHARED_AUTH_DIR", "").strip()
@@ -4081,7 +4081,7 @@ def _nous_shared_store_lock(timeout_seconds: float = AUTH_LOCK_TIMEOUT_SECONDS):
     try:
         lock_path = _nous_shared_store_path().with_suffix(".lock")
     except RuntimeError:
-        # No HERMES_HOME yet (pre-setup): fall through without locking.
+        # No THOTH_HOME yet (pre-setup): fall through without locking.
         yield
         return
 

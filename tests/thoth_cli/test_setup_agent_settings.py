@@ -10,7 +10,7 @@ def test_setup_agent_settings_uses_displayed_max_iterations_value(tmp_path, monk
     .env `HERMES_MAX_ITERATIONS` fallback was removed because it was
     shadowing the user's current config (see the 60-vs-500 incident).
     """
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
 
     config = {
         "agent": {"max_turns": 60},
@@ -41,7 +41,7 @@ def test_setup_agent_settings_prefers_config_over_stale_env(tmp_path, monkeypatc
     from an old `thoth setup` run shadowed `agent.max_turns: 500` in
     config.yaml. The wizard must now display the config value.
     """
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
 
     config = {
         "agent": {"max_turns": 500},  # user bumped this in config.yaml

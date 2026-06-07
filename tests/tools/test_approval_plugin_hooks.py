@@ -24,7 +24,7 @@ from tools.approval import (
 @pytest.fixture
 def isolated_session(monkeypatch, tmp_path):
     """Give each test a fresh session_key, clean approval-state, and isolated
-    HERMES_HOME so the real user's command_allowlist doesn't leak in."""
+    THOTH_HOME so the real user's command_allowlist doesn't leak in."""
     import tools.approval as _am
 
     session_key = "test:session:approval_hooks"

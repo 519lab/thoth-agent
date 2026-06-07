@@ -87,8 +87,8 @@ logger = logging.getLogger(__name__)
 # All skills live in ~/.hermes/skills/ (seeded from bundled skills/ on install).
 # This is the single source of truth -- agent edits, hub installs, and bundled
 # skills all coexist here without polluting the git repo.
-HERMES_HOME = get_thoth_home()
-SKILLS_DIR = HERMES_HOME / "skills"
+THOTH_HOME = get_thoth_home()
+SKILLS_DIR = THOTH_HOME / "skills"
 
 # Anthropic-recommended limits for progressive disclosure efficiency
 MAX_NAME_LENGTH = 64
@@ -109,7 +109,7 @@ _secret_capture_callback = None
 
 
 def load_env() -> Dict[str, str]:
-    """Load profile-scoped environment variables from HERMES_HOME/.env."""
+    """Load profile-scoped environment variables from THOTH_HOME/.env."""
     env_path = get_thoth_home() / ".env"
     env_vars: Dict[str, str] = {}
     if not env_path.exists():

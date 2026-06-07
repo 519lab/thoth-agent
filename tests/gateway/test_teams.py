@@ -353,7 +353,7 @@ class TestTeamsInteractiveSetup:
         credentials to .env without crashing.
         """
         thoth_home = tmp_path / "hermes"
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         import thoth_cli.cli_output as cli_output_mod
 

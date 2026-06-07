@@ -60,7 +60,7 @@ def test_get_adapter_unknown_provider_raises():
 
 
 def _write_auth_store(thoth_home: Path, nous_state: Dict[str, Any]) -> Path:
-    """Write an auth.json with the given nous state into a hermetic HERMES_HOME."""
+    """Write an auth.json with the given nous state into a hermetic THOTH_HOME."""
     auth_path = thoth_home / "auth.json"
     auth_path.write_text(json.dumps({
         "version": 1,
@@ -80,14 +80,14 @@ def test_nous_adapter_metadata():
 
 
 def test_nous_adapter_not_authenticated_when_no_auth_file(tmp_path, monkeypatch):
-    # HERMES_HOME is already set by conftest, but make doubly sure
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    # THOTH_HOME is already set by conftest, but make doubly sure
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     adapter = NousPortalAdapter()
     assert not adapter.is_authenticated()
 
 
 def test_nous_adapter_not_authenticated_when_provider_missing(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     (tmp_path / "auth.json").write_text(json.dumps({
         "version": 1,
         "providers": {},
@@ -96,7 +96,7 @@ def test_nous_adapter_not_authenticated_when_provider_missing(tmp_path, monkeypa
 
 
 def test_nous_adapter_authenticated_with_agent_key(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_auth_store(tmp_path, {
         "agent_key": "ov-test-key",
         "agent_key_expires_at": "2099-01-01T00:00:00Z",
@@ -107,7 +107,7 @@ def test_nous_adapter_authenticated_with_agent_key(tmp_path, monkeypatch):
 
 def test_nous_adapter_authenticated_with_refresh_token_only(tmp_path, monkeypatch):
     """If access_token+refresh_token exist but no agent_key yet, we can still mint."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_auth_store(tmp_path, {
         "access_token": "access-tok",
         "refresh_token": "refresh-tok",
@@ -116,7 +116,7 @@ def test_nous_adapter_authenticated_with_refresh_token_only(tmp_path, monkeypatc
 
 
 def test_nous_adapter_get_credential_uses_runtime_resolver(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_auth_store(tmp_path, {
         "access_token": "access-tok",
         "refresh_token": "refresh-tok",
@@ -146,7 +146,7 @@ def test_nous_adapter_get_credential_uses_runtime_resolver(tmp_path, monkeypatch
 
 
 def test_nous_adapter_retry_credential_forces_legacy_mint(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_auth_store(tmp_path, {
         "access_token": "jwt-access",
         "refresh_token": "refresh-tok",
@@ -181,7 +181,7 @@ def test_nous_adapter_retry_credential_forces_legacy_mint(tmp_path, monkeypatch)
 
 
 def test_nous_adapter_retry_credential_skips_opaque_bearer(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_auth_store(tmp_path, {
         "access_token": "jwt-access",
         "refresh_token": "refresh-tok",
@@ -205,14 +205,14 @@ def test_nous_adapter_retry_credential_skips_opaque_bearer(tmp_path, monkeypatch
 
 
 def test_nous_adapter_get_credential_raises_when_not_logged_in(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     adapter = NousPortalAdapter()
     with pytest.raises(RuntimeError, match="thoth login nous"):
         adapter.get_credential()
 
 
 def test_nous_adapter_get_credential_raises_on_refresh_failure(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_auth_store(tmp_path, {
         "access_token": "access-tok",
         "refresh_token": "refresh-tok",
@@ -231,7 +231,7 @@ def test_nous_adapter_quarantines_terminal_refresh_failure(tmp_path, monkeypatch
     from thoth_cli.auth import AuthError
     from agent.credential_pool import load_pool
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_auth_store(tmp_path, {
         "access_token": "access-tok",
         "refresh_token": "refresh-tok",
@@ -263,7 +263,7 @@ def test_nous_adapter_quarantines_terminal_refresh_failure(tmp_path, monkeypatch
 
 def test_nous_adapter_get_credential_raises_when_no_agent_key_returned(tmp_path, monkeypatch):
     """If the refresh helper succeeds but produces no agent_key, we surface a clear error."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_auth_store(tmp_path, {
         "access_token": "access-tok",
         "refresh_token": "refresh-tok",
@@ -280,7 +280,7 @@ def test_nous_adapter_get_credential_raises_when_no_agent_key_returned(tmp_path,
 
 def test_nous_adapter_concurrent_refresh_serialized(tmp_path, monkeypatch):
     """Two parallel get_credential() calls must serialize through the lock."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_auth_store(tmp_path, {
         "access_token": "a", "refresh_token": "r",
     })
@@ -352,7 +352,7 @@ def _write_xai_pool_entry(
     base_url: str = "https://api.x.ai/v1",
     source: str = "manual:xai_pkce",
 ) -> Path:
-    """Write an xai-oauth pool entry into a hermetic HERMES_HOME."""
+    """Write an xai-oauth pool entry into a hermetic THOTH_HOME."""
     auth_path = thoth_home / "auth.json"
     auth_path.write_text(json.dumps({
         "version": 1,
@@ -385,7 +385,7 @@ def test_xai_adapter_metadata():
 
 
 def test_xai_adapter_not_authenticated_when_no_pool_entry(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     (tmp_path / "auth.json").write_text(json.dumps({
         "version": 1,
         "providers": {},
@@ -395,13 +395,13 @@ def test_xai_adapter_not_authenticated_when_no_pool_entry(tmp_path, monkeypatch)
 
 
 def test_xai_adapter_authenticated_with_pool_entry(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_xai_pool_entry(tmp_path)
     assert XAIGrokAdapter().is_authenticated()
 
 
 def test_xai_adapter_get_credential_uses_oauth_pool(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_xai_pool_entry(
         tmp_path,
         access_token="pool-access-token",
@@ -416,7 +416,7 @@ def test_xai_adapter_get_credential_uses_oauth_pool(tmp_path, monkeypatch):
 
 
 def test_xai_adapter_get_credential_defaults_base_url(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_xai_pool_entry(tmp_path, base_url="")
 
     cred = XAIGrokAdapter().get_credential()
@@ -425,7 +425,7 @@ def test_xai_adapter_get_credential_defaults_base_url(tmp_path, monkeypatch):
 
 
 def test_xai_adapter_retry_refreshes_current_pool_entry(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     _write_xai_pool_entry(tmp_path, access_token="old-access-token")
 
     def fake_refresh(access_token, refresh_token, **kwargs):
@@ -737,7 +737,7 @@ def test_server_strips_client_auth_header():
 
 
 def test_cmd_proxy_status_runs(capsys, tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     from thoth_cli.proxy.cli import cmd_proxy_status
 
     args = MagicMock()
@@ -774,7 +774,7 @@ def test_cmd_proxy_start_refuses_unknown_provider(capsys):
 
 
 def test_cmd_proxy_start_refuses_when_unauthenticated(capsys, tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     from thoth_cli.proxy.cli import cmd_proxy_start
 
     args = MagicMock()

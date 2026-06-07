@@ -115,13 +115,13 @@ class TestIsWriteDenied:
         global ~/.hermes/{auth.json,config.yaml,webhook_subscriptions.json}
         writable — the same gap PR #15981 fixed for .env.
         """
-        # Simulate a profile-mode HERMES_HOME layout:
+        # Simulate a profile-mode THOTH_HOME layout:
         #   <root>/profiles/coder/{auth.json,config.yaml,...}
         #   <root>/{auth.json,config.yaml,...}        ← must also be denied
         root = tmp_path / "hermes"
         profile = root / "profiles" / "coder"
         profile.mkdir(parents=True)
-        monkeypatch.setenv("HERMES_HOME", str(profile))
+        monkeypatch.setenv("THOTH_HOME", str(profile))
 
         # Profile copy
         assert _is_write_denied(str(profile / name)) is True
@@ -133,7 +133,7 @@ class TestIsWriteDenied:
         root = tmp_path / "hermes"
         profile = root / "profiles" / "coder"
         profile.mkdir(parents=True)
-        monkeypatch.setenv("HERMES_HOME", str(profile))
+        monkeypatch.setenv("THOTH_HOME", str(profile))
 
         assert _is_write_denied(str(profile / "mcp-tokens" / "tok.json")) is True
         assert _is_write_denied(str(root / "mcp-tokens" / "tok.json")) is True

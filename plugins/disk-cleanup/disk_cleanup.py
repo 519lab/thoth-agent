@@ -10,12 +10,12 @@ Rules:
   - test files    → delete immediately at task end (age >= 0)
   - temp files    → delete after 7 days
   - cron-output   → delete after 14 days
-  - empty dirs    → always delete (under HERMES_HOME)
+  - empty dirs    → always delete (under THOTH_HOME)
   - research      → keep 10 newest, prompt for older (deep only)
   - chrome-profile→ prompt after 14 days (deep only)
   - >500 MB files → prompt always (deep only)
 
-Scope: strictly HERMES_HOME and /tmp/hermes-* or /tmp/thoth-*
+Scope: strictly THOTH_HOME and /tmp/hermes-* or /tmp/thoth-*
 Never touches: ~/.hermes/logs/ or any system directory.
 """
 
@@ -34,8 +34,8 @@ except Exception:  # pragma: no cover — plugin may load before constants resol
     import os
 
     def get_thoth_home() -> Path:  # type: ignore[no-redef]
-        val = (os.environ.get("HERMES_HOME") or "").strip()
-        return Path(val).resolve() if val else (Path.home() / ".hermes").resolve()
+        val = (os.environ.get("THOTH_HOME") or "").strip()
+        return Path(val).resolve() if val else (Path.home() / ".thoth").resolve()
 
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def get_state_dir() -> Path:
-    """State dir — separate from ``$HERMES_HOME/logs/``."""
+    """State dir — separate from ``$THOTH_HOME/logs/``."""
     return get_thoth_home() / "disk-cleanup"
 
 
@@ -55,7 +55,7 @@ def get_tracked_file() -> Path:
 
 
 def get_log_file() -> Path:
-    """Audit log — intentionally NOT under ``$HERMES_HOME/logs/``."""
+    """Audit log — intentionally NOT under ``$THOTH_HOME/logs/``."""
     return get_state_dir() / "cleanup.log"
 
 
@@ -64,7 +64,7 @@ def get_log_file() -> Path:
 # ---------------------------------------------------------------------------
 
 def is_safe_path(path: Path) -> bool:
-    """Accept only paths under HERMES_HOME or ``/tmp/hermes-*`` / ``/tmp/thoth-*``.
+    """Accept only paths under THOTH_HOME or ``/tmp/hermes-*`` / ``/tmp/thoth-*``.
 
     Rejects Windows mounts (``/mnt/c`` etc.) and any system directory.
     """
@@ -172,7 +172,7 @@ def track(path_str: str, category: str, silent: bool = False) -> bool:
         return False
 
     if not is_safe_path(path):
-        _log(f"REJECT: {path} (outside HERMES_HOME)")
+        _log(f"REJECT: {path} (outside THOTH_HOME)")
         return False
 
     size = path.stat().st_size if path.is_file() else 0
@@ -293,7 +293,7 @@ def quick() -> Dict[str, Any]:
         else:
             new_tracked.append(item)
 
-    # Remove empty dirs under HERMES_HOME (but leave HERMES_HOME itself and
+    # Remove empty dirs under THOTH_HOME (but leave THOTH_HOME itself and
     # a short list of well-known top-level state dirs alone — a fresh install
     # has these empty, and deleting them would surprise the user).
     thoth_home = get_thoth_home()
@@ -487,7 +487,7 @@ def guess_category(path: Path) -> Optional[str]:
         if top == "cache":
             return "temp"
     except ValueError:
-        # Path isn't under HERMES_HOME (e.g. /tmp/hermes-* or /tmp/thoth-*) — fall through.
+        # Path isn't under THOTH_HOME (e.g. /tmp/hermes-* or /tmp/thoth-*) — fall through.
         pass
 
     name = path.name

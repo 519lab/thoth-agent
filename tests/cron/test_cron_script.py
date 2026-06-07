@@ -4,7 +4,7 @@ Tests cover:
 - Script field in job creation / storage / update
 - Script execution and output injection into prompts
 - Error handling (missing script, timeout, non-zero exit)
-- Path resolution (absolute, relative to HERMES_HOME/scripts/)
+- Path resolution (absolute, relative to THOTH_HOME/scripts/)
 """
 
 import json
@@ -23,13 +23,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 @pytest.fixture
 def cron_env(tmp_path, monkeypatch):
-    """Isolated cron environment with temp HERMES_HOME."""
+    """Isolated cron environment with temp THOTH_HOME."""
     thoth_home = tmp_path / ".hermes"
     thoth_home.mkdir()
     (thoth_home / "cron").mkdir()
     (thoth_home / "cron" / "output").mkdir()
     (thoth_home / "scripts").mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     # Clear cached module-level paths
     import cron.jobs as jobs_mod

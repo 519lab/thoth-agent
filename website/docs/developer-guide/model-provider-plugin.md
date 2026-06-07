@@ -6,7 +6,7 @@ description: "How to build a model provider (inference backend) plugin for Thoth
 
 # Building a Model Provider Plugin
 
-Model provider plugins declare an inference backend — an OpenAI-compatible endpoint, an Anthropic Messages server, a Codex-style Responses API, or a Bedrock-native surface — that Thoth can route `AIAgent` calls through. Every built-in provider (OpenRouter, Anthropic, GMI, DeepSeek, Nvidia, …) ships as one of these plugins. Third parties can add their own by dropping a directory under `$HERMES_HOME/plugins/model-providers/` with zero changes to the repo.
+Model provider plugins declare an inference backend — an OpenAI-compatible endpoint, an Anthropic Messages server, a Codex-style Responses API, or a Bedrock-native surface — that Thoth can route `AIAgent` calls through. Every built-in provider (OpenRouter, Anthropic, GMI, DeepSeek, Nvidia, …) ships as one of these plugins. Third parties can add their own by dropping a directory under `$THOTH_HOME/plugins/model-providers/` with zero changes to the repo.
 
 :::tip
 Model provider plugins are the third kind of **provider plugin**. The others are [Memory Provider Plugins](/docs/developer-guide/memory-provider-plugin) (cross-session knowledge) and [Context Engine Plugins](/docs/developer-guide/context-engine-plugin) (context compression strategies). All three follow the same "drop a directory, declare a profile, no repo edits" pattern.
@@ -17,10 +17,10 @@ Model provider plugins are the third kind of **provider plugin**. The others are
 `providers/__init__.py._discover_providers()` runs lazily the first time any code calls `get_provider_profile()` or `list_providers()`. Discovery order:
 
 1. **Bundled plugins** — `<repo>/plugins/model-providers/<name>/` — ship with Thoth
-2. **User plugins** — `$HERMES_HOME/plugins/model-providers/<name>/` — drop in any directory; no restart required for subsequent sessions
+2. **User plugins** — `$THOTH_HOME/plugins/model-providers/<name>/` — drop in any directory; no restart required for subsequent sessions
 3. **Legacy single-file** — `<repo>/providers/<name>.py` — back-compat for out-of-tree editable installs
 
-**User plugins override bundled plugins of the same name** because `register_provider()` is last-writer-wins. Drop a `$HERMES_HOME/plugins/model-providers/gmi/` directory to replace the built-in GMI profile without touching the repo.
+**User plugins override bundled plugins of the same name** because `register_provider()` is last-writer-wins. Drop a `$THOTH_HOME/plugins/model-providers/gmi/` directory to replace the built-in GMI profile without touching the repo.
 
 ## Directory structure
 
@@ -221,12 +221,12 @@ for p in list_providers():
 
 ## Testing your plugin
 
-Point `HERMES_HOME` at a temp directory so you don't pollute your real config:
+Point `THOTH_HOME` at a temp directory so you don't pollute your real config:
 
 ```bash
-export HERMES_HOME=/tmp/hermes-plugin-test
-mkdir -p $HERMES_HOME/plugins/model-providers/my-provider
-cat > $HERMES_HOME/plugins/model-providers/my-provider/__init__.py <<'EOF'
+export THOTH_HOME=/tmp/hermes-plugin-test
+mkdir -p $THOTH_HOME/plugins/model-providers/my-provider
+cat > $THOTH_HOME/plugins/model-providers/my-provider/__init__.py <<'EOF'
 from providers import register_provider
 from providers.base import ProviderProfile
 register_provider(ProviderProfile(
@@ -243,7 +243,7 @@ thoth -z "hello" --provider my-provider -m some-model
 
 ## General PluginManager integration
 
-The general `PluginManager` (the thing `thoth plugins` operates on) **sees** model-provider plugins but does not import them — `providers/__init__.py` owns their lifecycle. The manager records the manifest for introspection and categorizes by `kind: model-provider`. When you drop an unlabeled user plugin into `$HERMES_HOME/plugins/` that happens to call `register_provider` with a `ProviderProfile`, the manager auto-coerces it to `kind: model-provider` via a source-text heuristic — so the plugin still routes correctly even without `plugin.yaml`.
+The general `PluginManager` (the thing `thoth plugins` operates on) **sees** model-provider plugins but does not import them — `providers/__init__.py` owns their lifecycle. The manager records the manifest for introspection and categorizes by `kind: model-provider`. When you drop an unlabeled user plugin into `$THOTH_HOME/plugins/` that happens to call `register_provider` with a `ProviderProfile`, the manager auto-coerces it to `kind: model-provider` via a source-text heuristic — so the plugin still routes correctly even without `plugin.yaml`.
 
 ## Distribute via pip
 

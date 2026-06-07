@@ -60,7 +60,7 @@ def test_hook_receives_expected_kwargs(tmp_path, monkeypatch):
             '{kw[\'model\']}|{kw[\'platform\']}")'
         ),
     )
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     mgr = PluginManager()
     mgr.discover_and_load()
@@ -121,7 +121,7 @@ def test_hook_exception_does_not_replace_response(tmp_path, monkeypatch):
             '    ctx.register_hook("transform_llm_output", _boom)'
         ),
     )
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     mgr = PluginManager()
     mgr.discover_and_load()
@@ -145,7 +145,7 @@ def test_hook_exception_does_not_replace_response(tmp_path, monkeypatch):
 
 def test_no_plugins_returns_empty_results(tmp_path, monkeypatch):
     """With no plugins loaded, invoke_hook returns [] and the response is unchanged."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "thoth_empty"))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path / "thoth_empty"))
     plugins_mod._plugin_manager = PluginManager()
 
     mgr = plugins_mod._plugin_manager

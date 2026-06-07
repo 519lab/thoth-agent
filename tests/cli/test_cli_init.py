@@ -416,7 +416,7 @@ class TestRootLevelProviderOverride:
 
         thoth_home = tmp_path / ".hermes"
         thoth_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config_path = thoth_home / "config.yaml"
         config_path.write_text(yaml.safe_dump({
@@ -439,7 +439,7 @@ class TestRootLevelProviderOverride:
 
         thoth_home = tmp_path / ".hermes"
         thoth_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config_path = thoth_home / "config.yaml"
         config_path.write_text(yaml.safe_dump({
@@ -463,7 +463,7 @@ class TestRootLevelProviderOverride:
 
         thoth_home = tmp_path / ".hermes"
         thoth_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.delenv("TERMINAL_VERCEL_RUNTIME", raising=False)
 
         config_path = thoth_home / "config.yaml"

@@ -609,7 +609,7 @@ def test_get_named_custom_provider_finds_user_providers_by_key(monkeypatch, tmp_
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config))
     
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     
     result = rp._get_named_custom_provider("local-localhost:11434")
     
@@ -634,7 +634,7 @@ def test_get_named_custom_provider_finds_by_display_name(monkeypatch, tmp_path):
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config))
     
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     
     # Should find by display name (normalized)
     result = rp._get_named_custom_provider("my-production-ollama")
@@ -659,7 +659,7 @@ def test_get_named_custom_provider_falls_back_to_legacy_format(monkeypatch, tmp_
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config))
     
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     
     result = rp._get_named_custom_provider("custom-endpoint")
     
@@ -680,7 +680,7 @@ def test_get_named_custom_provider_returns_none_for_unknown(monkeypatch, tmp_pat
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config))
     
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     
     result = rp._get_named_custom_provider("other-provider")
     
@@ -705,7 +705,7 @@ def test_get_named_custom_provider_skips_empty_base_url(monkeypatch, tmp_path):
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config))
     
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     
     result = rp._get_named_custom_provider("incomplete-provider")
     
@@ -732,7 +732,7 @@ def test_switch_model_resolves_user_provider_credentials(monkeypatch, tmp_path):
     
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config))
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     
     # Mock validation to pass
     monkeypatch.setattr(

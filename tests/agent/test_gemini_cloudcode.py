@@ -33,7 +33,7 @@ def _isolate_env(monkeypatch, tmp_path):
     home = tmp_path / ".hermes"
     home.mkdir(parents=True)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("THOTH_HOME", str(home))
     for key in (
         "HERMES_GEMINI_CLIENT_ID",
         "HERMES_GEMINI_CLIENT_SECRET",

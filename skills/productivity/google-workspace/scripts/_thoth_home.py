@@ -1,4 +1,4 @@
-"""Resolve HERMES_HOME for standalone skill scripts.
+"""Resolve THOTH_HOME for standalone skill scripts.
 
 Skill scripts may run outside the Thoth process (e.g. system Python,
 nix env, CI) where ``thoth_constants`` is not importable.  This module
@@ -11,7 +11,7 @@ picked up automatically.  The fallback path replicates the core logic
 from ``thoth_constants.py`` using only the stdlib.
 
 All scripts under ``google-workspace/scripts/`` should import from here
-instead of duplicating the ``HERMES_HOME = Path(os.getenv(...))`` pattern.
+instead of duplicating the ``THOTH_HOME = Path(os.getenv(...))`` pattern.
 """
 
 from __future__ import annotations
@@ -25,11 +25,11 @@ try:
 except (ModuleNotFoundError, ImportError):
 
     def get_thoth_home() -> Path:
-        """Return the Thoth home directory (default: ~/.hermes).
+        """Return the Thoth home directory (default: ~/.thoth).
 
         Mirrors ``thoth_constants.get_thoth_home()``."""
-        val = os.environ.get("HERMES_HOME", "").strip()
-        return Path(val) if val else Path.home() / ".hermes"
+        val = os.environ.get("THOTH_HOME", "").strip()
+        return Path(val) if val else Path.home() / ".thoth"
 
     def display_thoth_home() -> str:
         """Return a user-friendly ``~/``-shortened display string.

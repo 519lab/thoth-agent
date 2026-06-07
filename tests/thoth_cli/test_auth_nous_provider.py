@@ -207,7 +207,7 @@ def test_resolve_nous_runtime_credentials_prefers_invoke_jwt_and_mirrors(
         expires_at=_future_iso(3600),
         expires_in=3600,
     )
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     def _unexpected_mint(*args, **kwargs):
         raise AssertionError("legacy agent-key mint should not run for invoke JWT")
@@ -276,7 +276,7 @@ def test_resolve_nous_runtime_credentials_invoke_jwt_is_idempotent(
     auth_path.write_text(json.dumps(auth_store, indent=2))
     before_content = auth_path.read_text()
     before_mtime = auth_path.stat().st_mtime_ns
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     def _unexpected_mint(*args, **kwargs):
         raise AssertionError("stable invoke JWT should not mint a legacy key")
@@ -325,7 +325,7 @@ def test_resolve_nous_runtime_credentials_trusts_invoke_jwt_exp_over_stale_metad
         agent_key=token,
         agent_key_expires_at="2000-01-01T00:00:00+00:00",
     )
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     def _unexpected_refresh(*args, **kwargs):
         raise AssertionError("valid invoke JWT should not be refreshed because metadata is stale")
@@ -362,7 +362,7 @@ def test_resolve_nous_runtime_credentials_does_not_apply_legacy_ttl_to_invoke_jw
         expires_at=_future_iso(900),
         expires_in=900,
     )
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     def _unexpected_mint(*args, **kwargs):
         raise AssertionError("1800s legacy min TTL should not force opaque mint for invoke JWT")
@@ -390,7 +390,7 @@ def test_legacy_auth_mode_bypasses_usable_invoke_jwt(tmp_path, monkeypatch):
         expires_at=_future_iso(3600),
         expires_in=3600,
     )
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     mint_calls = []
 
@@ -432,7 +432,7 @@ def test_resolve_nous_runtime_credentials_falls_back_when_invoke_scope_missing(
         expires_at=_future_iso(3600),
         expires_in=3600,
     )
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     calls = []
 
@@ -525,7 +525,7 @@ def test_forced_legacy_env_skips_invoke_scope_and_jwt_storage(tmp_path, monkeypa
         expires_at=_future_iso(3600),
         expires_in=3600,
     )
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.setenv(auth_mod.NOUS_LEGACY_SESSION_KEYS_ENV, "true")
 
     mint_calls = []
@@ -611,7 +611,7 @@ def test_nous_inference_auth_logs_do_not_include_secret_values(
         expires_at=_future_iso(3600),
         expires_in=3600,
     )
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     def _fake_mint_agent_key(*, client, portal_base_url, access_token, min_ttl_seconds):
         del client, portal_base_url, access_token, min_ttl_seconds
@@ -643,7 +643,7 @@ def test_get_nous_auth_status_checks_credential_pool(tmp_path, monkeypatch):
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
     }))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     # Seed the credential pool with a Nous entry
     from agent.credential_pool import PooledCredential, load_pool
@@ -675,7 +675,7 @@ def test_get_nous_auth_status_auth_store_fallback(tmp_path, monkeypatch):
 
     thoth_home = tmp_path / "hermes"
     _setup_nous_auth(thoth_home, access_token="at-123")
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.setattr(
         "thoth_cli.auth.resolve_nous_runtime_credentials",
         lambda min_key_ttl_seconds=60: {
@@ -697,7 +697,7 @@ def test_get_nous_auth_status_prefers_runtime_auth_store_over_stale_pool(tmp_pat
 
     thoth_home = tmp_path / "hermes"
     _setup_nous_auth(thoth_home, access_token="at-fresh")
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     pool = load_pool("nous")
     stale = PooledCredential.from_dict("nous", {
@@ -738,7 +738,7 @@ def test_get_nous_auth_status_reports_revoked_refresh_session(tmp_path, monkeypa
 
     thoth_home = tmp_path / "hermes"
     _setup_nous_auth(thoth_home, access_token="at-123")
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     def _boom(min_key_ttl_seconds=60):
         raise AuthError("Refresh session has been revoked", provider="nous", relogin_required=True)
@@ -763,7 +763,7 @@ def test_get_nous_auth_status_empty_returns_not_logged_in(tmp_path, monkeypatch)
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
     }))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     status = get_nous_auth_status()
     assert status["logged_in"] is False
@@ -772,7 +772,7 @@ def test_get_nous_auth_status_empty_returns_not_logged_in(tmp_path, monkeypatch)
 def test_refresh_token_persisted_when_mint_returns_insufficient_credits(tmp_path, monkeypatch):
     thoth_home = tmp_path / "hermes"
     _setup_nous_auth(thoth_home, refresh_token="refresh-old")
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     refresh_calls = []
     mint_calls = {"count": 0}
@@ -813,7 +813,7 @@ def test_refresh_token_persisted_when_mint_returns_insufficient_credits(tmp_path
 def test_refresh_token_persisted_when_mint_times_out(tmp_path, monkeypatch):
     thoth_home = tmp_path / "hermes"
     _setup_nous_auth(thoth_home, refresh_token="refresh-old")
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     def _fake_refresh_access_token(*, client, portal_base_url, client_id, refresh_token):
         return {
@@ -846,7 +846,7 @@ def test_terminal_refresh_failure_quarantines_tokens(
 
     thoth_home = tmp_path / "hermes"
     _setup_nous_auth(thoth_home, refresh_token="refresh-old")
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     from agent.credential_pool import load_pool
 
     assert load_pool("nous").select() is not None
@@ -896,7 +896,7 @@ def test_managed_access_token_refresh_failure_quarantines_tokens(
 
     thoth_home = tmp_path / "hermes"
     _setup_nous_auth(thoth_home, refresh_token="refresh-old")
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     from agent.credential_pool import load_pool
 
     assert load_pool("nous").select() is not None
@@ -934,7 +934,7 @@ def test_managed_access_token_refresh_failure_quarantines_tokens(
 def test_mint_retry_uses_latest_rotated_refresh_token(tmp_path, monkeypatch):
     thoth_home = tmp_path / "hermes"
     _setup_nous_auth(thoth_home, refresh_token="refresh-old")
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     refresh_calls = []
     mint_calls = {"count": 0}
@@ -982,7 +982,7 @@ class TestLoginNousSkipKeepsCurrent:
         import yaml
         thoth_home = tmp_path / "hermes"
         thoth_home.mkdir(parents=True, exist_ok=True)
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config_path = thoth_home / "config.yaml"
         config_path.write_text(yaml.safe_dump({
@@ -1096,7 +1096,7 @@ class TestLoginNousSkipKeepsCurrent:
 
         thoth_home = tmp_path / "hermes"
         thoth_home.mkdir(parents=True, exist_ok=True)
-        monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         config_path = thoth_home / "config.yaml"
         config_path.write_text(yaml.safe_dump({"model": {}}, sort_keys=False))
@@ -1164,7 +1164,7 @@ def test_persist_nous_credentials_writes_both_pool_and_providers(tmp_path, monke
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
     }))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     entry = persist_nous_credentials(_full_state_fixture())
 
@@ -1209,7 +1209,7 @@ def test_persist_nous_credentials_allows_recovery_from_401(tmp_path, monkeypatch
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
     }))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     persist_nous_credentials(_full_state_fixture())
 
@@ -1254,7 +1254,7 @@ def test_persist_nous_credentials_idempotent_no_duplicate_pool_entries(tmp_path,
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
     }))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     first = _full_state_fixture()
     persist_nous_credentials(first)
@@ -1293,7 +1293,7 @@ def test_persist_nous_credentials_reloads_pool_after_singleton_write(tmp_path, m
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
     }))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     entry = persist_nous_credentials(_full_state_fixture())
     assert entry is not None
@@ -1319,7 +1319,7 @@ def test_persist_nous_credentials_embeds_custom_label(tmp_path, monkeypatch):
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
     }))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     entry = persist_nous_credentials(_full_state_fixture(), label="my-personal")
     assert entry is not None
@@ -1344,7 +1344,7 @@ def test_persist_nous_credentials_custom_label_survives_reseed(tmp_path, monkeyp
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
     }))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     persist_nous_credentials(_full_state_fixture(), label="work-acct")
 
@@ -1367,7 +1367,7 @@ def test_persist_nous_credentials_no_label_uses_auto_derived(tmp_path, monkeypat
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
     }))
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     entry = persist_nous_credentials(_full_state_fixture())
     assert entry is not None
@@ -1665,7 +1665,7 @@ def test_persist_nous_credentials_mirrors_to_shared_store(
     (thoth_home / "auth.json").write_text(
         json.dumps({"version": 1, "providers": {}})
     )
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     persist_nous_credentials(_full_state_fixture())
 
@@ -1797,7 +1797,7 @@ def test_shared_store_survives_across_profile_switch(
     tmp_path, monkeypatch, shared_store_env,
 ):
     """End-to-end: profile A logs in → shared store populated → profile B
-    (different HERMES_HOME) sees the same shared state and can rehydrate
+    (different THOTH_HOME) sees the same shared state and can rehydrate
     without re-running device-code.
     """
     from thoth_cli import auth as auth_mod
@@ -1808,21 +1808,21 @@ def test_shared_store_survives_across_profile_switch(
     (profile_a / "auth.json").write_text(
         json.dumps({"version": 1, "providers": {}})
     )
-    monkeypatch.setenv("HERMES_HOME", str(profile_a))
+    monkeypatch.setenv("THOTH_HOME", str(profile_a))
     auth_mod.persist_nous_credentials(_full_state_fixture())
 
     # Profile A's auth.json has nous
     a_payload = json.loads((profile_a / "auth.json").read_text())
     assert "nous" in a_payload.get("providers", {})
 
-    # Profile B: fresh HERMES_HOME, no auth yet, but the shared store
+    # Profile B: fresh THOTH_HOME, no auth yet, but the shared store
     # persists — _read_shared_nous_state() must still return the tokens.
     profile_b = tmp_path / "profile_b"
     profile_b.mkdir(parents=True, exist_ok=True)
     (profile_b / "auth.json").write_text(
         json.dumps({"version": 1, "providers": {}})
     )
-    monkeypatch.setenv("HERMES_HOME", str(profile_b))
+    monkeypatch.setenv("THOTH_HOME", str(profile_b))
 
     # B's own auth.json has no nous
     b_payload = json.loads((profile_b / "auth.json").read_text())
@@ -1877,7 +1877,7 @@ def test_runtime_refresh_uses_newer_shared_token_before_local_stale_token(
         access_token="local-expired-access",
         refresh_token="local-stale-refresh",
     )
-    monkeypatch.setenv("HERMES_HOME", str(profile_b))
+    monkeypatch.setenv("THOTH_HOME", str(profile_b))
 
     shared_state = _full_state_fixture()
     shared_state["access_token"] = "shared-fresh-access"
@@ -1923,7 +1923,7 @@ def test_managed_gateway_access_token_uses_newer_shared_token(
         access_token="local-expired-access",
         refresh_token="local-stale-refresh",
     )
-    monkeypatch.setenv("HERMES_HOME", str(profile_b))
+    monkeypatch.setenv("THOTH_HOME", str(profile_b))
 
     shared_state = _full_state_fixture()
     shared_state["access_token"] = "shared-fresh-access"

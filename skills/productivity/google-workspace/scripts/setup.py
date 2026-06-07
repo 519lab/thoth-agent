@@ -37,10 +37,10 @@ if _SCRIPTS_DIR not in sys.path:
 
 from _thoth_home import display_thoth_home, get_thoth_home
 
-HERMES_HOME = get_thoth_home()
-TOKEN_PATH = HERMES_HOME / "google_token.json"
-CLIENT_SECRET_PATH = HERMES_HOME / "google_client_secret.json"
-PENDING_AUTH_PATH = HERMES_HOME / "google_oauth_pending.json"
+THOTH_HOME = get_thoth_home()
+TOKEN_PATH = THOTH_HOME / "google_token.json"
+CLIENT_SECRET_PATH = THOTH_HOME / "google_client_secret.json"
+PENDING_AUTH_PATH = THOTH_HOME / "google_oauth_pending.json"
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",

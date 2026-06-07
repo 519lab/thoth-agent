@@ -804,7 +804,7 @@ def _rule_stranded_in_ready(task, events, runs, now, cfg) -> list[Diagnostic]:
     * Profile was deleted, leaving its tasks stranded.
     * External worker pool (Codex CLI, Claude Code lane, custom daemon)
       is down, hung, or wasn't started.
-    * Dispatcher is misconfigured (wrong board, wrong HERMES_HOME).
+    * Dispatcher is misconfigured (wrong board, wrong THOTH_HOME).
 
     Pre-rule, all of these silently rotted in ``skipped_nonspawnable`` —
     the dispatcher correctly skipped them (good — no respawn loop) but

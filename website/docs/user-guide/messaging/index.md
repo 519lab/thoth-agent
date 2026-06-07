@@ -386,7 +386,7 @@ Use the user service on laptops and dev boxes. Use the system service on VPS or 
 Avoid keeping both the user and system gateway units installed at once unless you really mean to. Thoth will warn if it detects both because start/stop/status behavior gets ambiguous.
 
 :::info Multiple installations
-If you run multiple Thoth installations on the same machine (with different `HERMES_HOME` directories), each gets its own systemd service name. The default `~/.hermes` uses `thoth-gateway`; other installations use `thoth-gateway-<hash>`. The `thoth gateway` commands automatically target the correct service for your current `HERMES_HOME`.
+If you run multiple Thoth installations on the same machine (with different `THOTH_HOME` directories), each gets its own systemd service name. The default `~/.hermes` uses `thoth-gateway`; other installations use `thoth-gateway-<hash>`. The `thoth gateway` commands automatically target the correct service for your current `THOTH_HOME`.
 :::
 
 ### macOS (launchd)
@@ -403,14 +403,14 @@ The generated plist lives at `~/Library/LaunchAgents/ai.hermes.gateway.plist`. I
 
 - **PATH** — your full shell PATH at install time, with the venv `bin/` and `node_modules/.bin` prepended. This ensures user-installed tools (Node.js, ffmpeg, etc.) are available to gateway subprocesses like the WhatsApp bridge.
 - **VIRTUAL_ENV** — points to the Python virtualenv so tools can resolve packages correctly.
-- **HERMES_HOME** — scopes the gateway to your Thoth installation.
+- **THOTH_HOME** — scopes the gateway to your Thoth installation.
 
 :::tip PATH changes after install
 launchd plists are static — if you install new tools (e.g. a new Node.js version via nvm, or ffmpeg via Homebrew) after setting up the gateway, run `thoth gateway install` again to capture the updated PATH. The gateway will detect the stale plist and reload automatically.
 :::
 
 :::info Multiple installations
-Like the Linux systemd service, each `HERMES_HOME` directory gets its own launchd label. The default `~/.hermes` uses `ai.hermes.gateway`; other installations use `ai.hermes.gateway-<suffix>`.
+Like the Linux systemd service, each `THOTH_HOME` directory gets its own launchd label. The default `~/.hermes` uses `ai.hermes.gateway`; other installations use `ai.hermes.gateway-<suffix>`.
 :::
 
 ## Platform-Specific Toolsets

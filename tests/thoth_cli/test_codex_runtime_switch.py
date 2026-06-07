@@ -117,7 +117,7 @@ class TestApply:
         # Patch migrate so this test doesn't reach into the user's real
         # ~/.codex/config.toml. See issue #26250 Bug C — without this patch,
         # crs.apply() invokes the real migrate() which writes to
-        # Path.home() / ".codex" using whatever HERMES_HOME the running pytest
+        # Path.home() / ".codex" using whatever THOTH_HOME the running pytest
         # session has set, leaking pytest tempdir paths into the user's
         # codex config.
         with patch.object(crs, "check_codex_binary_ok",

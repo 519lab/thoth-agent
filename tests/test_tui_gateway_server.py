@@ -3568,7 +3568,7 @@ def test_session_delete_success_returns_deleted_id(monkeypatch):
     assert captured["sid"] == "old-1"
     # sessions_dir must be forwarded so transcript files get cleaned up
     # too — not just the SQLite row.  The autouse _isolate_thoth_home
-    # fixture pins HERMES_HOME to a temp dir; the handler should append
+    # fixture pins THOTH_HOME to a temp dir; the handler should append
     # /sessions to it.
     assert captured["sessions_dir"] is not None
     assert str(captured["sessions_dir"]).endswith("sessions")

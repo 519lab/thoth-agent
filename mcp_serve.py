@@ -60,12 +60,12 @@ except ImportError:
 # ---------------------------------------------------------------------------
 
 def _get_sessions_dir() -> Path:
-    """Return the sessions directory using HERMES_HOME."""
+    """Return the sessions directory using THOTH_HOME."""
     try:
         from thoth_constants import get_thoth_home
         return get_thoth_home() / "sessions"
     except ImportError:
-        return Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes")) / "sessions"
+        return Path(os.environ.get("THOTH_HOME", Path.home() / ".thoth")) / "sessions"
 
 
 def _get_session_db():
@@ -102,7 +102,7 @@ def _load_channel_directory() -> dict:
         directory_file = get_thoth_home() / "channel_directory.json"
     except ImportError:
         directory_file = Path(
-            os.environ.get("HERMES_HOME", Path.home() / ".hermes")
+            os.environ.get("THOTH_HOME", Path.home() / ".thoth")
         ) / "channel_directory.json"
 
     if not directory_file.exists():

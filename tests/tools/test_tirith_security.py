@@ -924,7 +924,7 @@ class TestDiskFailureMarker:
         _tirith_mod._resolved_path = None
 
     def test_install_failed_recovers_from_thoth_bin(self):
-        """After _INSTALL_FAILED, manual install in HERMES_HOME/bin is picked up."""
+        """After _INSTALL_FAILED, manual install in THOTH_HOME/bin is picked up."""
         from tools.tirith_security import _resolve_tirith_path, _INSTALL_FAILED
         import tempfile
         tmpdir = tempfile.mkdtemp()
@@ -1066,35 +1066,35 @@ class TestDiskFailureMarker:
 
 
 # ---------------------------------------------------------------------------
-# HERMES_HOME isolation
+# THOTH_HOME isolation
 # ---------------------------------------------------------------------------
 
 class TestThothHomeIsolation:
     def test_thoth_bin_dir_respects_hermes_home(self):
-        """_thoth_bin_dir must use HERMES_HOME, not hardcoded ~/.hermes."""
+        """_thoth_bin_dir must use THOTH_HOME, not hardcoded ~/.hermes."""
         from tools.tirith_security import _thoth_bin_dir
         import tempfile
         tmpdir = tempfile.mkdtemp()
-        with patch.dict(os.environ, {"HERMES_HOME": tmpdir}):
+        with patch.dict(os.environ, {"THOTH_HOME": tmpdir}):
             result = _thoth_bin_dir()
         assert result == os.path.join(tmpdir, "bin")
         assert os.path.isdir(result)
 
     def test_failure_marker_respects_thoth_home(self):
-        """_failure_marker_path must use HERMES_HOME, not hardcoded ~/.hermes."""
+        """_failure_marker_path must use THOTH_HOME, not hardcoded ~/.hermes."""
         from tools.tirith_security import _failure_marker_path
-        with patch.dict(os.environ, {"HERMES_HOME": "/custom/thoth"}):
+        with patch.dict(os.environ, {"THOTH_HOME": "/custom/thoth"}):
             result = _failure_marker_path()
         assert result == "/custom/thoth/.tirith-install-failed"
 
     def test_conftest_isolation_prevents_real_home_writes(self):
-        """The conftest autouse fixture sets HERMES_HOME; verify it's active."""
-        thoth_home = os.getenv("HERMES_HOME")
-        assert thoth_home is not None, "HERMES_HOME should be set by conftest"
+        """The conftest autouse fixture sets THOTH_HOME; verify it's active."""
+        thoth_home = os.getenv("THOTH_HOME")
+        assert thoth_home is not None, "THOTH_HOME should be set by conftest"
         assert "hermes_test" in thoth_home, "Should point to test temp dir"
 
     def test_get_thoth_home_fallback(self):
-        """Without HERMES_HOME/THOTH_HOME set, falls back to ~/.thoth (new default)."""
+        """Without THOTH_HOME/THOTH_HOME set, falls back to ~/.thoth (new default)."""
         from tools.tirith_security import _get_thoth_home
         with patch.dict(os.environ, {}, clear=True):
             # Remove all home env vars. With HOME also absent, expanduser

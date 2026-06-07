@@ -65,7 +65,7 @@ def test_apply_external_secret_sources_records_bitwarden_origin(tmp_path, monkey
     """End-to-end: when ``apply_bitwarden_secrets`` returns applied keys,
     they end up in ``_SECRET_SOURCES`` so the UI can label them."""
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
         "secrets:\n"
@@ -105,7 +105,7 @@ def test_apply_external_secret_sources_records_bitwarden_origin(tmp_path, monkey
 def test_apply_external_secret_sources_noop_when_disabled(tmp_path, monkeypatch):
     """Disabled Bitwarden config must not touch the source map."""
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("THOTH_HOME", str(tmp_path))
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
         "secrets:\n"

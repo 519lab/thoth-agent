@@ -61,7 +61,7 @@ class TestGoogleWorkspaceCredentialFiles:
             fm = _parse_frontmatter(content)
             entries = fm.get("required_credential_files", [])
 
-            with patch.dict(os.environ, {"HERMES_HOME": str(thoth_home)}):
+            with patch.dict(os.environ, {"THOTH_HOME": str(thoth_home)}):
                 missing = register_credential_files(entries)
 
             assert missing == [], f"Unexpected missing files: {missing}"
@@ -90,7 +90,7 @@ class TestGoogleWorkspaceCredentialFiles:
             fm = _parse_frontmatter(content)
             entries = fm.get("required_credential_files", [])
 
-            with patch.dict(os.environ, {"HERMES_HOME": str(thoth_home)}):
+            with patch.dict(os.environ, {"THOTH_HOME": str(thoth_home)}):
                 missing = register_credential_files(entries)
 
             assert "google_token.json" in missing

@@ -110,14 +110,14 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # ---------------------------------------------------------------------------
 # Profile override — MUST happen before any thoth module import.
 #
-# Many modules cache HERMES_HOME at import time (module-level constants).
+# Many modules cache THOTH_HOME at import time (module-level constants).
 # We intercept --profile/-p from sys.argv here and set the env var so that
-# every subsequent ``os.getenv("HERMES_HOME", ...)`` resolves correctly.
+# every subsequent ``os.getenv("THOTH_HOME", ...)`` resolves correctly.
 # The flag is stripped from sys.argv so argparse never sees it.
 # Falls back to ~/.hermes/active_profile for sticky default.
 # ---------------------------------------------------------------------------
 def _apply_profile_override() -> None:
-    """Pre-parse --profile/-p and set HERMES_HOME before module imports."""
+    """Pre-parse --profile/-p and set THOTH_HOME before module imports."""
     argv = sys.argv[1:]
     profile_name = None
     consume = 0
@@ -144,16 +144,16 @@ def _apply_profile_override() -> None:
             profile_name = None
             consume = 0
 
-    # 1.5 If HERMES_HOME is already set and no explicit flag was given, trust it
+    # 1.5 If THOTH_HOME is already set and no explicit flag was given, trust it
     # only when it already points to a specific profile directory.  The
     # distinguishing heuristic: a profile path has "profiles" as its immediate
     # parent directory name (e.g. ~/.hermes/profiles/coder or
-    # /opt/data/profiles/coder).  If HERMES_HOME points to the thoth root
-    # instead (e.g. systemd hardcodes HERMES_HOME=/root/.hermes), we must
+    # /opt/data/profiles/coder).  If THOTH_HOME points to the thoth root
+    # instead (e.g. systemd hardcodes THOTH_HOME=/root/.hermes), we must
     # still read active_profile — the user may have switched profiles via
     # `thoth profile use` and the gateway should honour that choice.
     # See issue #22502.
-    thoth_home_env = os.environ.get("HERMES_HOME", "")
+    thoth_home_env = os.environ.get("THOTH_HOME", "")
     if profile_name is None and thoth_home_env:
         if Path(thoth_home_env).parent.name == "profiles":
             return
@@ -172,7 +172,7 @@ def _apply_profile_override() -> None:
         except (UnicodeDecodeError, OSError):
             pass  # corrupted file, skip
 
-    # 3. If we found a profile, resolve and set HERMES_HOME
+    # 3. If we found a profile, resolve and set THOTH_HOME
     if profile_name is not None:
         try:
             from thoth_cli.profiles import resolve_profile_env
@@ -188,7 +188,7 @@ def _apply_profile_override() -> None:
                 file=sys.stderr,
             )
             return
-        os.environ["HERMES_HOME"] = thoth_home
+        os.environ["THOTH_HOME"] = thoth_home
         # Strip the flag from argv so argparse doesn't choke
         if consume > 0:
             for i, arg in enumerate(argv):
@@ -8407,11 +8407,11 @@ def _ensure_fhs_path_guard() -> None:
 
 
 def _run_pre_update_backup(args) -> None:
-    """Create a full zip backup of HERMES_HOME before running the update.
+    """Create a full zip backup of THOTH_HOME before running the update.
 
     Gated on ``updates.pre_update_backup`` in config (default false).  Off
     by default because the zip can add minutes to every update on large
-    HERMES_HOME directories.  The ``--backup`` flag on ``thoth update``
+    THOTH_HOME directories.  The ``--backup`` flag on ``thoth update``
     opts in for a single run; ``--no-backup`` forces it off when config
     has it enabled.  Never raises — a backup failure should not block the
     update itself.
@@ -9096,7 +9096,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         # Snapshot critical state (state.db, config, pairing JSONs, etc.)
         # before pulling so a user can recover if something goes wrong.
         # Issue #15733 reported missing pairing data after an update; even
-        # though `git pull` can't touch $HERMES_HOME, this is cheap
+        # though `git pull` can't touch $THOTH_HOME, this is cheap
         # belt-and-suspenders insurance and gives the user something to
         # restore from via `/snapshot list` / `/snapshot restore <id>`.
         try:
@@ -9312,10 +9312,10 @@ def _cmd_update_impl(args, gateway_mode: bool):
             logger.debug("Skills sync during update failed: %s", e)
 
         # Sync bundled skills to all profiles (including the active one).
-        # seed_profile_skills() uses subprocess with an explicit HERMES_HOME so
-        # it is not affected by sync_skills()'s module-level HERMES_HOME cache,
+        # seed_profile_skills() uses subprocess with an explicit THOTH_HOME so
+        # it is not affected by sync_skills()'s module-level THOTH_HOME cache,
         # which means the active profile is reliably synced regardless of whether
-        # the caller's HERMES_HOME env var points at the default or a named profile.
+        # the caller's THOTH_HOME env var points at the default or a named profile.
         try:
             from thoth_cli.profiles import (
                 list_profiles,
@@ -11804,7 +11804,7 @@ def main():
         default=None,
         metavar="PATH",
         help="Write manifest to a file instead of stdout. With no PATH "
-        "writes to $HERMES_HOME/slack-manifest.json.",
+        "writes to $THOTH_HOME/slack-manifest.json.",
     )
     slack_manifest.add_argument(
         "--name",

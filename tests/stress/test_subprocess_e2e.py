@@ -6,7 +6,7 @@ This validates the IPC + lifecycle story that mocks can't:
   - the child writes heartbeats via the CLI (real argparse, real init_db)
   - the child completes via the CLI with --summary + --metadata
   - the dispatcher observes all of this through the DB only
-  - worker logs are captured to HERMES_HOME/kanban/logs/<task>.log
+  - worker logs are captured to THOTH_HOME/kanban/logs/<task>.log
   - crash detection works against a real dead PID
 """
 
@@ -31,7 +31,7 @@ def make_spawn_fn(home: str):
         log_path = os.path.join(home, f"worker_{task.id}.log")
         env = {
             **os.environ,
-            "HERMES_HOME": home,
+            "THOTH_HOME": home,
             "HOME": home,
             "PYTHONPATH": WT,
             "HERMES_KANBAN_TASK": task.id,
@@ -54,7 +54,7 @@ def make_spawn_fn(home: str):
 
 def main():
     home = tempfile.mkdtemp(prefix="thoth_e2e_")
-    os.environ["HERMES_HOME"] = home
+    os.environ["THOTH_HOME"] = home
     os.environ["HOME"] = home
     sys.path.insert(0, WT)
     from thoth_cli import kanban_db as kb

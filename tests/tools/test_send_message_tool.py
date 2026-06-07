@@ -2394,11 +2394,11 @@ class TestCheckSendMessage:
 
     1. ``HERMES_KANBAN_TASK`` is set (worker spawned by the kanban dispatcher
        — parent gateway is by definition running, but the worker's
-       ``HERMES_HOME`` may be a profile dir without a ``gateway.pid``).
+       ``THOTH_HOME`` may be a profile dir without a ``gateway.pid``).
     2. ``HERMES_SESSION_PLATFORM`` resolves to a non-empty, non-``local`` value
        (the session is wired to a messaging platform like Telegram).
     3. ``is_gateway_running()`` returns True (CLI / orchestrator profile with
-       a live gateway colocated under the same ``HERMES_HOME``).
+       a live gateway colocated under the same ``THOTH_HOME``).
     4. None of the above → False, tool is hidden.
     """
 
@@ -2416,7 +2416,7 @@ class TestCheckSendMessage:
 
     def test_kanban_task_env_short_circuits_before_gateway_check(self, monkeypatch):
         """Honoring HERMES_KANBAN_TASK must not depend on importing or calling
-        gateway.status — the worker may run with a HERMES_HOME that has no
+        gateway.status — the worker may run with a THOTH_HOME that has no
         gateway.pid, and we don't want that import path to be load-bearing."""
         from tools.send_message_tool import _check_send_message
 

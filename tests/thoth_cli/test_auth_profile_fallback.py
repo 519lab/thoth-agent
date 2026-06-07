@@ -1,6 +1,6 @@
 """Tests for cross-profile auth fallback.
 
-When ``HERMES_HOME`` points to a named profile, ``read_credential_pool()``
+When ``THOTH_HOME`` points to a named profile, ``read_credential_pool()``
 and ``get_provider_auth_state()`` fall back to the global-root
 ``auth.json`` per-provider when the profile has no entries for that
 provider.  Writes still target the profile only.
@@ -32,7 +32,7 @@ def profile_env(tmp_path, monkeypatch):
 
     * Path.home() -> tmp_path
     * Global root -> tmp_path/.hermes            (has its own auth.json fixture)
-    * Profile     -> tmp_path/.hermes/profiles/coder   (active, HERMES_HOME points here)
+    * Profile     -> tmp_path/.hermes/profiles/coder   (active, THOTH_HOME points here)
 
     This mirrors the real "named profile mounted under the default root"
     layout that profile users actually have on disk.
@@ -42,7 +42,7 @@ def profile_env(tmp_path, monkeypatch):
     global_root.mkdir()
     profile_dir = global_root / "profiles" / "coder"
     profile_dir.mkdir(parents=True)
-    monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+    monkeypatch.setenv("THOTH_HOME", str(profile_dir))
     return {"global": global_root, "profile": profile_dir}
 
 
@@ -281,20 +281,20 @@ def test_provider_auth_state_returns_none_when_neither_has_it(profile_env):
 
 
 def test_classic_mode_does_not_double_read_same_file(tmp_path, monkeypatch):
-    """In classic mode (HERMES_HOME == global root), no fallback path runs.
+    """In classic mode (THOTH_HOME == global root), no fallback path runs.
 
     This guards against the merge accidentally duplicating entries when the
     profile and global resolve to the same directory.
     """
     # Put Path.home() under a subdir so the seat belt in _auth_file_path()
     # sees tmp_path/home/.hermes as the "real home" — which is NOT equal
-    # to the HERMES_HOME we set (tmp_path/classic), so the guard passes.
+    # to the THOTH_HOME we set (tmp_path/classic), so the guard passes.
     fake_home = tmp_path / "home"
     fake_home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: fake_home)
     thoth_home = tmp_path / "classic"
     thoth_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(thoth_home))
+    monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     _write(thoth_home / "auth.json", _make_auth_store(pool={
         "openrouter": [{
@@ -309,8 +309,8 @@ def test_classic_mode_does_not_double_read_same_file(tmp_path, monkeypatch):
 
     from thoth_cli.auth import read_credential_pool, _global_auth_file_path
 
-    # Classic mode: HERMES_HOME is set to a custom path that is NOT under
-    # ~/.hermes/profiles/ — get_default_thoth_root() returns HERMES_HOME
+    # Classic mode: THOTH_HOME is set to a custom path that is NOT under
+    # ~/.hermes/profiles/ — get_default_thoth_root() returns THOTH_HOME
     # itself, so the profile root and global root are the same directory,
     # and the helper correctly returns None (no fallback).
     assert _global_auth_file_path() is None

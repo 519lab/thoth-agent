@@ -327,7 +327,7 @@ _WAL_INCOMPAT_MARKERS = (
 )
 
 # Module-level dedup: log the WAL-fallback warning only once per
-# (process, db_label) pair so an NFS-mounted HERMES_HOME doesn't spam
+# (process, db_label) pair so an NFS-mounted THOTH_HOME doesn't spam
 # the gateway log on every restart.
 _wal_fallback_warned = set()
 
@@ -384,7 +384,7 @@ class ResponseStore:
         except Exception:
             self._conn = sqlite3.connect(":memory:", check_same_thread=False)
         # WAL journal mode with graceful fallback so response_store.db
-        # degrades safely on NFS/SMB/FUSE-mounted HERMES_HOME. The shared
+        # degrades safely on NFS/SMB/FUSE-mounted THOTH_HOME. The shared
         # helper that used to live in thoth_state was removed when the
         # session DB moved to PostgreSQL in Phase 0; this is the response-
         # store's own copy of the same logic.

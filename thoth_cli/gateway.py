@@ -327,17 +327,17 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
             return (
                 f"--profile {current_profile_name}" in command
                 or f"-p {current_profile_name}" in command
-                or f"HERMES_HOME={current_home}" in command
+                or f"THOTH_HOME={current_home}" in command
             )
 
         # Default-profile case: no profile flag in argv. Accept as long as
-        # the command doesn't advertise *some other* profile. HERMES_HOME
+        # the command doesn't advertise *some other* profile. THOTH_HOME
         # may be passed via env (not visible in wmic/CIM command line) so
         # its absence is NOT disqualifying — only a non-matching explicit
-        # HERMES_HOME= in argv is.
+        # THOTH_HOME= in argv is.
         if "--profile " in command or " -p " in command:
             return False
-        if "HERMES_HOME=" in command and f"HERMES_HOME={current_home}" not in command:
+        if "THOTH_HOME=" in command and f"THOTH_HOME={current_home}" not in command:
             return False
         return True
 
@@ -714,24 +714,24 @@ def _read_systemd_unit_environment(system: bool = False) -> dict[str, str]:
 
 
 def _sync_thoth_home_from_systemd_unit(system: bool) -> None:
-    """When acting on a system-scope unit, adopt its ``HERMES_HOME``.
+    """When acting on a system-scope unit, adopt its ``THOTH_HOME``.
 
-    Under ``sudo``, ``HERMES_HOME`` is stripped and ``HOME=/root``, so
+    Under ``sudo``, ``THOTH_HOME`` is stripped and ``HOME=/root``, so
     :func:`get_thoth_home` falls back to ``/root/.hermes`` — the wrong
-    profile. The unit file pins ``HERMES_HOME`` for the actual gateway
+    profile. The unit file pins ``THOTH_HOME`` for the actual gateway
     process, so we mirror that into our own environment to make
     ``read_runtime_status`` / ``get_running_pid`` read the correct files.
     """
     if not system:
         return
     env = _read_systemd_unit_environment(system=True)
-    unit_home = env.get("HERMES_HOME", "").strip()
+    unit_home = env.get("THOTH_HOME", "").strip()
     if not unit_home:
         return
-    current = os.environ.get("HERMES_HOME", "").strip()
+    current = os.environ.get("THOTH_HOME", "").strip()
     if current == unit_home:
         return
-    os.environ["HERMES_HOME"] = unit_home
+    os.environ["THOTH_HOME"] = unit_home
 
 
 def _read_systemd_unit_properties(
@@ -1136,7 +1136,7 @@ def kill_gateway_processes(force: bool = False, exclude_pids: set | None = None,
 
 
 def stop_profile_gateway() -> bool:
-    """Stop only the gateway for the current profile (HERMES_HOME-scoped).
+    """Stop only the gateway for the current profile (THOTH_HOME-scoped).
 
     Uses the PID file written by start_gateway(), so it only kills the
     gateway belonging to this profile — not gateways from other profiles.
@@ -1270,11 +1270,11 @@ SERVICE_DESCRIPTION = "Thoth Agent Gateway - Messaging Platform Integration"
 
 
 def _profile_suffix() -> str:
-    """Derive a service-name suffix from the current HERMES_HOME.
+    """Derive a service-name suffix from the current THOTH_HOME.
 
     Returns ``""`` for the default root, the profile name for
     ``<root>/profiles/<name>``, or a short hash for any other path.
-    Works correctly in Docker (HERMES_HOME=/opt/data) and standard deployments.
+    Works correctly in Docker (THOTH_HOME=/opt/data) and standard deployments.
     """
     import hashlib
     import re
@@ -1292,18 +1292,18 @@ def _profile_suffix() -> str:
             return parts[0]
     except ValueError:
         pass
-    # Fallback: short hash for arbitrary HERMES_HOME paths
+    # Fallback: short hash for arbitrary THOTH_HOME paths
     return hashlib.sha256(str(home).encode()).hexdigest()[:8]
 
 
 def _profile_arg(thoth_home: str | None = None) -> str:
-    """Return ``--profile <name>`` only when HERMES_HOME is a named profile.
+    """Return ``--profile <name>`` only when THOTH_HOME is a named profile.
 
     For ``~/.hermes/profiles/<name>``, returns ``"--profile <name>"``.
     For the default profile or hash-based custom paths, returns the empty string.
 
     Args:
-        thoth_home: Optional explicit HERMES_HOME path. Defaults to the current
+        thoth_home: Optional explicit THOTH_HOME path. Defaults to the current
             ``get_thoth_home()`` value. Should be passed when generating a
             service definition for a different user (e.g. system service).
     """
@@ -1325,11 +1325,11 @@ def _profile_arg(thoth_home: str | None = None) -> str:
 
 
 def get_service_name() -> str:
-    """Derive a systemd service name scoped to this HERMES_HOME.
+    """Derive a systemd service name scoped to this THOTH_HOME.
 
     Default ``~/.hermes`` returns ``thoth-gateway`` (backward compatible).
     Profile ``~/.hermes/profiles/coder`` returns ``thoth-gateway-coder``.
-    Any other HERMES_HOME appends a short hash for uniqueness.
+    Any other THOTH_HOME appends a short hash for uniqueness.
     """
     suffix = _profile_suffix()
     if not suffix:
@@ -2095,7 +2095,7 @@ def _remap_path_for_user(path: str, target_home_dir: str) -> str:
 
 
 def _thoth_home_for_target_user(target_home_dir: str) -> str:
-    """Remap the current HERMES_HOME to the equivalent under a target user's home.
+    """Remap the current THOTH_HOME to the equivalent under a target user's home.
 
     When installing a system service via sudo, get_thoth_home() resolves to
     root's home.  This translates it to the target user's equivalent path:
@@ -2104,7 +2104,7 @@ def _thoth_home_for_target_user(target_home_dir: str) -> str:
       /root/.hermes/profiles/coder     → /home/alice/.hermes/profiles/coder
       /opt/custom-thoth               → /opt/custom-thoth  (kept as-is)
     Checks both .thoth (Phase-3 canonical) and .hermes (legacy) so that
-    explicit HERMES_HOME=/root/.hermes paths still remap correctly.
+    explicit THOTH_HOME=/root/.hermes paths still remap correctly.
     PermissionError from resolve() (e.g. /root unreachable) falls back to
     the unresolved absolute path for comparison purposes.
     """
@@ -2223,7 +2223,7 @@ Environment="USER={username}"
 Environment="LOGNAME={username}"
 Environment="PATH={sane_path}"
 Environment="VIRTUAL_ENV={venv_dir}"
-Environment="HERMES_HOME={thoth_home}"
+Environment="THOTH_HOME={thoth_home}"
 Environment="THOTH_HOME={thoth_home}"
 Restart=always
 RestartSec=5
@@ -2259,7 +2259,7 @@ ExecStart={python_path} -m thoth_cli.main{f" {profile_arg}" if profile_arg else 
 WorkingDirectory={working_dir}
 Environment="PATH={sane_path}"
 Environment="VIRTUAL_ENV={venv_dir}"
-Environment="HERMES_HOME={thoth_home}"
+Environment="THOTH_HOME={thoth_home}"
 Environment="THOTH_HOME={thoth_home}"
 Restart=always
 RestartSec=5
@@ -2278,15 +2278,15 @@ WantedBy=default.target
 """
 
 def _systemd_unit_content(thoth_home: str) -> str:
-    """Return the system-scope unit snippet containing HERMES_HOME and THOTH_HOME."""
+    """Return the system-scope unit snippet containing THOTH_HOME and THOTH_HOME."""
     home = thoth_home or str(get_thoth_home())
-    return f'Environment="HERMES_HOME={home}"\nEnvironment="THOTH_HOME={home}"\n'
+    return f'Environment="THOTH_HOME={home}"\nEnvironment="THOTH_HOME={home}"\n'
 
 
 def _user_systemd_unit_content(thoth_home: str) -> str:
-    """Return the user-scope unit snippet containing HERMES_HOME and THOTH_HOME."""
+    """Return the user-scope unit snippet containing THOTH_HOME and THOTH_HOME."""
     home = thoth_home or str(get_thoth_home())
-    return f'Environment="HERMES_HOME={home}"\nEnvironment="THOTH_HOME={home}"\n'
+    return f'Environment="THOTH_HOME={home}"\nEnvironment="THOTH_HOME={home}"\n'
 
 
 def _normalize_service_definition(text: str) -> str:
@@ -2335,10 +2335,10 @@ def refresh_systemd_unit_if_needed(system: bool = False) -> bool:
 
     # ── Test-environment safety belt ─────────────────────────────────────
     # The user-scope unit path resolves under ``Path.home()``, which is NOT
-    # sandboxed by the test conftest (only HERMES_HOME is). If a test
-    # exercises ``run_gateway()`` with a pytest-tmp HERMES_HOME, the freshly
+    # sandboxed by the test conftest (only THOTH_HOME is). If a test
+    # exercises ``run_gateway()`` with a pytest-tmp THOTH_HOME, the freshly
     # generated unit bakes that ``/tmp/pytest-of-.../hermes_test`` path into
-    # ``Environment="HERMES_HOME=..."``. Writing that to the developer's
+    # ``Environment="THOTH_HOME=..."``. Writing that to the developer's
     # real user systemd unit file silently breaks their gateway on the next
     # reboot (systemd loads the polluted env, the gateway looks at an empty
     # tmp dir, and Telegram/Discord/etc. all show as "not configured").
@@ -2932,7 +2932,7 @@ def generate_launchd_plist() -> str:
         <string>{sane_path}</string>
         <key>VIRTUAL_ENV</key>
         <string>{venv_dir}</string>
-        <key>HERMES_HOME</key>
+        <key>THOTH_HOME</key>
         <string>{thoth_home}</string>
         <key>THOTH_HOME</key>
         <string>{thoth_home}</string>
@@ -3089,7 +3089,7 @@ def _wait_for_gateway_exit(timeout: float = 10.0, force_after: float | None = 5.
 
     Uses the PID from the gateway.pid file — not launchd labels — so this
     works correctly when multiple gateway instances run under separate
-    HERMES_HOME directories.
+    THOTH_HOME directories.
 
     Args:
         timeout: Total seconds to wait before giving up.
@@ -3231,7 +3231,7 @@ def _guard_official_docker_root_gateway() -> None:
     )
     print(
         "  Running the gateway as root can leave root-owned files in "
-        "$HERMES_HOME and break later non-root dashboard/gateway runs."
+        "$THOTH_HOME and break later non-root dashboard/gateway runs."
     )
     print("  Set HERMES_ALLOW_ROOT_GATEWAY=1 only if you intentionally accept this risk.")
     sys.exit(1)

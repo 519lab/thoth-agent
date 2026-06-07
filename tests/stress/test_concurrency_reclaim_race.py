@@ -39,7 +39,7 @@ WT = str(Path(__file__).resolve().parents[2])
 
 
 def worker_loop(worker_id: int, thoth_home: str, result_file: str) -> None:
-    os.environ["HERMES_HOME"] = thoth_home
+    os.environ["THOTH_HOME"] = thoth_home
     os.environ["HOME"] = thoth_home
     sys.path.insert(0, WT)
     from thoth_cli import kanban_db as kb
@@ -96,7 +96,7 @@ def worker_loop(worker_id: int, thoth_home: str, result_file: str) -> None:
 
 
 def reclaimer_loop(thoth_home: str, result_file: str) -> None:
-    os.environ["HERMES_HOME"] = thoth_home
+    os.environ["THOTH_HOME"] = thoth_home
     os.environ["HOME"] = thoth_home
     sys.path.insert(0, WT)
     from thoth_cli import kanban_db as kb
@@ -122,7 +122,7 @@ def reclaimer_loop(thoth_home: str, result_file: str) -> None:
 
 def main():
     home = tempfile.mkdtemp(prefix="thoth_reclaim_race_")
-    os.environ["HERMES_HOME"] = home
+    os.environ["THOTH_HOME"] = home
     os.environ["HOME"] = home
     sys.path.insert(0, WT)
     from thoth_cli import kanban_db as kb

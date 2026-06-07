@@ -105,8 +105,8 @@ import yaml
 
 
 # All skills live in ~/.hermes/skills/ (single source of truth)
-HERMES_HOME = get_thoth_home()
-SKILLS_DIR = HERMES_HOME / "skills"
+THOTH_HOME = get_thoth_home()
+SKILLS_DIR = THOTH_HOME / "skills"
 
 MAX_NAME_LENGTH = 64
 MAX_DESCRIPTION_LENGTH = 1024

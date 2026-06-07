@@ -41,7 +41,7 @@ def worker_loop(worker_id: int, thoth_home: str, result_file: str) -> None:
     repeats until the ready pool is empty. Records every claim + complete
     into its own JSON result file for later aggregation.
     """
-    os.environ["HERMES_HOME"] = thoth_home
+    os.environ["THOTH_HOME"] = thoth_home
     os.environ["HOME"] = thoth_home
     sys.path.insert(0, WT)
 
@@ -119,10 +119,10 @@ def worker_loop(worker_id: int, thoth_home: str, result_file: str) -> None:
 
 def main():
     home = tempfile.mkdtemp(prefix="thoth_concurrency_")
-    print(f"HERMES_HOME = {home}")
+    print(f"THOTH_HOME = {home}")
 
     # Seed.
-    os.environ["HERMES_HOME"] = home
+    os.environ["THOTH_HOME"] = home
     os.environ["HOME"] = home
     sys.path.insert(0, WT)
     from thoth_cli import kanban_db as kb

@@ -1494,7 +1494,7 @@ def _get_piper_voices_dir() -> Path:
     """Return the directory where Thoth caches Piper voice models.
 
     Resolves to ``~/.hermes/cache/piper-voices/`` under the active
-    HERMES_HOME so voice downloads follow profile boundaries.
+    THOTH_HOME so voice downloads follow profile boundaries.
     """
     from thoth_constants import get_thoth_dir
     root = Path(get_thoth_dir("cache/piper-voices", "piper_voices_cache"))
