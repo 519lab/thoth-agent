@@ -10985,7 +10985,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "acp", "auth", "backup", "bundles", "checkpoints", "claw", "completion",
         "computer-use",
         "config", "cron", "curator", "dashboard", "db", "debug", "doctor",
-        "dump", "embed", "fallback", "gateway", "hooks", "import", "insights",
+        "dump", "embed", "fallback", "gateway", "hermes", "hooks", "import", "insights",
         "kanban", "login", "logout", "logs", "lsp", "mcp", "memory", "migrate",
         "model", "pairing", "plugins", "postinstall", "profile", "proxy",
         "send", "sessions", "setup",
@@ -13588,6 +13588,63 @@ Examples:
         claw_command(args)
 
     claw_parser.set_defaults(func=cmd_claw)
+
+    # hermes — import from a legacy Hermes Agent install (~/.hermes -> ~/.thoth)
+    hermes_parser = subparsers.add_parser(
+        "hermes",
+        help="Import settings/config from a legacy Hermes Agent install",
+        description="Same-lineage import of config, memories, and skills from "
+        "an existing ~/.hermes home into Thoth. Copies user data only — never "
+        "code, venvs, caches, or runtime state.",
+    )
+    hermes_subparsers = hermes_parser.add_subparsers(dest="hermes_action")
+
+    hermes_migrate = hermes_subparsers.add_parser(
+        "migrate",
+        help="Import settings/config/memories from a legacy ~/.hermes",
+        description="Import config.yaml, .env, memories, skills, and auth/state "
+        "from a Hermes Agent home. Shows a preview before making changes.",
+    )
+    hermes_migrate.add_argument(
+        "--source", help="Path to the Hermes home (default: ~/.hermes)"
+    )
+    hermes_migrate.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview only — show what would be imported, make no changes",
+    )
+    hermes_migrate.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace items that already exist in the Thoth home (default: skip them)",
+    )
+    hermes_migrate.add_argument(
+        "--yes", "-y", action="store_true", help="Skip the confirmation prompt"
+    )
+
+    hermes_cleanup = hermes_subparsers.add_parser(
+        "cleanup",
+        aliases=["clean"],
+        help="Archive the legacy ~/.hermes after importing",
+        description="Rename ~/.hermes to ~/.hermes.pre-migration. Hermes Agent "
+        "will stop working after this.",
+    )
+    hermes_cleanup.add_argument(
+        "--source", help="Path to the Hermes home to archive (default: ~/.hermes)"
+    )
+    hermes_cleanup.add_argument(
+        "--dry-run", action="store_true", help="Preview without making changes"
+    )
+    hermes_cleanup.add_argument(
+        "--yes", "-y", action="store_true", help="Skip the confirmation prompt"
+    )
+
+    def cmd_hermes(args):
+        from thoth_cli.hermes_import import hermes_command
+
+        hermes_command(args)
+
+    hermes_parser.set_defaults(func=cmd_hermes)
 
     # =========================================================================
     # version command
