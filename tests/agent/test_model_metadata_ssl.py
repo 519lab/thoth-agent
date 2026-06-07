@@ -25,9 +25,14 @@ _CA_ENV_VARS = ("HERMES_CA_BUNDLE", "REQUESTS_CA_BUNDLE", "SSL_CERT_FILE")
 
 @pytest.fixture
 def clean_env(monkeypatch):
-    """Clear all three SSL env vars so each test starts from a known state."""
+    """Clear all three SSL env vars AND neutralize the OS system-store
+    fallback so env-precedence assertions are deterministic regardless of
+    the host's installed CA bundles."""
     for var in _CA_ENV_VARS:
         monkeypatch.delenv(var, raising=False)
+    import agent.model_metadata as mm
+
+    monkeypatch.setattr(mm, "_SYSTEM_CA_BUNDLES", ())
     return monkeypatch
 
 
@@ -88,3 +93,37 @@ class TestResolveRequestsVerify:
         clean_env.setenv("HERMES_CA_BUNDLE", "")
         clean_env.setenv("REQUESTS_CA_BUNDLE", bundle_file)
         assert _resolve_requests_verify() == bundle_file
+
+
+class TestResolveCaBundleSystemStore:
+    """The system-store fallback: when no env var points at a bundle,
+    resolve_ca_bundle() returns the OS trust store (a superset of certifi
+    that carries internal CAs) so internal-CA endpoints verify with zero
+    config. resolve_ca_bundle() returns None (not True) when nothing is
+    found — the caller maps that to certifi."""
+
+    def test_system_store_used_when_no_env(self, clean_env, bundle_file):
+        from agent.model_metadata import resolve_ca_bundle
+        import agent.model_metadata as mm
+
+        clean_env.setattr(mm, "_SYSTEM_CA_BUNDLES", (bundle_file,))
+        assert resolve_ca_bundle() == bundle_file
+        # And the requests wrapper surfaces it too.
+        assert _resolve_requests_verify() == bundle_file
+
+    def test_env_override_beats_system_store(self, clean_env, tmp_path, bundle_file):
+        from agent.model_metadata import resolve_ca_bundle
+        import agent.model_metadata as mm
+
+        sys_bundle = tmp_path / "system.pem"
+        sys_bundle.write_text("stub")
+        clean_env.setattr(mm, "_SYSTEM_CA_BUNDLES", (str(sys_bundle),))
+        clean_env.setenv("HERMES_CA_BUNDLE", bundle_file)
+        assert resolve_ca_bundle() == bundle_file  # env wins
+
+    def test_nothing_found_returns_none(self, clean_env):
+        from agent.model_metadata import resolve_ca_bundle
+
+        # clean_env already sets _SYSTEM_CA_BUNDLES = ()
+        assert resolve_ca_bundle() is None
+        assert _resolve_requests_verify() is True  # wrapper maps None → True
