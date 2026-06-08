@@ -333,13 +333,17 @@ def _hermetic_environment(tmp_path, monkeypatch):
     for name in _THOTH_BEHAVIORAL_VARS:
         monkeypatch.delenv(name, raising=False)
 
-    # 2b. Clear THOTH_* (rename Phase 3). get_thoth_home() reads THOTH_HOME
-    #     before THOTH_HOME, and normalize_thoth_home_env() can write THOTH_HOME
-    #     into the real os.environ during a test (monkeypatch won't revert it).
-    #     Clear (don't pin) so tests that set only THOTH_HOME aren't shadowed;
-    #     the per-test THOTH_HOME below is then authoritative.
+    # 2b. Clear THOTH_* that normalize_thoth_home_env() may have written into
+    #     the real os.environ during a test (monkeypatch won't revert that),
+    #     so the per-test THOTH_HOME below is authoritative — EXCEPT the DB
+    #     infra vars the CI/job env legitimately provides. Pre-Phase-3 the DSN
+    #     was HERMES_PG_DSN (this THOTH_ sweep never touched it); after the
+    #     rename it's THOTH_PG_DSN, so a blanket sweep wiped the CI-provided
+    #     DSN and broke any test relying on it. Keep the THOTH_PG_/THOTH_TEST_
+    #     families.
+    _KEEP = ("THOTH_PG_", "THOTH_TEST_")
     for name in list(os.environ.keys()):
-        if name.startswith("THOTH_"):
+        if name.startswith("THOTH_") and not name.startswith(_KEEP):
             monkeypatch.delenv(name, raising=False)
 
     # 3. Redirect THOTH_HOME to a per-test tempdir. Code that reads

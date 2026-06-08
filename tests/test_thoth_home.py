@@ -16,11 +16,11 @@ def fake_home(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
     # Path.home() on POSIX uses $HOME; on Windows it uses USERPROFILE.
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
-    monkeypatch.delenv("THOTH_HOME", raising=False)
+    monkeypatch.delenv("HERMES_HOME", raising=False)
     monkeypatch.delenv("THOTH_HOME", raising=False)
     # Ensure no ContextVar override is active.
     if thoth_constants.get_thoth_home_override():
-        pytest.skip("a THOTH_HOME override is active in this process")
+        pytest.skip("a HERMES_HOME override is active in this process")
     assert Path.home() == tmp_path
     return tmp_path
 
@@ -59,14 +59,14 @@ def test_thoth_home_env_wins(fake_home, monkeypatch):
 
 
 def test_legacy_hermes_home_env_is_ignored(fake_home, monkeypatch):
-    # Phase 2 dropped the THOTH_HOME fallback: the accessor reads THOTH_HOME
+    # Phase 2 dropped the HERMES_HOME fallback: the accessor reads THOTH_HOME
     # only and falls through to the disk default when it is unset.
-    monkeypatch.setenv("THOTH_HOME", "/tmp/custom_hermes")
+    monkeypatch.setenv("HERMES_HOME", "/tmp/custom_hermes")
     assert thoth_constants.get_thoth_home() == fake_home / ".thoth"
 
 
 def test_thoth_home_env_wins_over_legacy(fake_home, monkeypatch):
-    monkeypatch.setenv("THOTH_HOME", "/tmp/legacy")
+    monkeypatch.setenv("HERMES_HOME", "/tmp/legacy")
     monkeypatch.setenv("THOTH_HOME", "/tmp/canonical")
     assert thoth_constants.get_thoth_home() == Path("/tmp/canonical")
 
@@ -110,27 +110,27 @@ def test_subprocess_home_uses_thoth_home(fake_home, monkeypatch):
 # ── normalize_thoth_home_env + propagate helpers ────────────────────────────
 
 def test_normalize_home_only_hermes():
-    env = {"THOTH_HOME": "/h"}
+    env = {"HERMES_HOME": "/h"}
     thoth_env.normalize_thoth_home_env(env)
-    assert env == {"THOTH_HOME": "/h", "THOTH_HOME": "/h"}
+    assert env == {"HERMES_HOME": "/h", "THOTH_HOME": "/h"}
 
 
 def test_normalize_home_only_thoth():
     env = {"THOTH_HOME": "/t"}
     thoth_env.normalize_thoth_home_env(env)
-    assert env == {"THOTH_HOME": "/t", "THOTH_HOME": "/t"}
+    assert env == {"HERMES_HOME": "/t", "THOTH_HOME": "/t"}
 
 
 def test_normalize_home_thoth_wins():
-    env = {"THOTH_HOME": "/old", "THOTH_HOME": "/new"}
+    env = {"HERMES_HOME": "/old", "THOTH_HOME": "/new"}
     thoth_env.normalize_thoth_home_env(env)
-    assert env["THOTH_HOME"] == "/new" and env["THOTH_HOME"] == "/new"
+    assert env["HERMES_HOME"] == "/new" and env["THOTH_HOME"] == "/new"
 
 
 def test_normalize_home_empty_thoth_guard():
-    env = {"THOTH_HOME": "/real", "THOTH_HOME": ""}
+    env = {"HERMES_HOME": "/real", "THOTH_HOME": ""}
     thoth_env.normalize_thoth_home_env(env)
-    assert env["THOTH_HOME"] == "/real" and env["THOTH_HOME"] == "/real"
+    assert env["HERMES_HOME"] == "/real" and env["THOTH_HOME"] == "/real"
 
 
 def test_normalize_home_idempotent():
@@ -142,14 +142,14 @@ def test_normalize_home_idempotent():
 def test_propagate_home_sets_both():
     env = {"PATH": "/x"}
     thoth_env.propagate_thoth_home_into(env, "/profile")
-    assert env["THOTH_HOME"] == "/profile" and env["THOTH_HOME"] == "/profile"
+    assert env["HERMES_HOME"] == "/profile" and env["THOTH_HOME"] == "/profile"
 
 
 def test_propagate_home_copy_does_not_mutate_base():
-    base = {"THOTH_HOME": "/parent", "THOTH_HOME": "/parent"}
+    base = {"HERMES_HOME": "/parent", "THOTH_HOME": "/parent"}
     child = thoth_env.propagate_thoth_home(base, "/child")
-    assert child["THOTH_HOME"] == "/child" and child["THOTH_HOME"] == "/child"
-    assert base["THOTH_HOME"] == "/parent"  # base untouched
+    assert child["HERMES_HOME"] == "/child" and child["THOTH_HOME"] == "/child"
+    assert base["HERMES_HOME"] == "/parent"  # base untouched
 
 
 def test_main_import_user_env_over_shell_with_thoth_home(fake_home, monkeypatch):
@@ -163,7 +163,7 @@ def test_main_import_user_env_over_shell_with_thoth_home(fake_home, monkeypatch)
     (home / ".env").write_text(
         "OPENAI_BASE_URL=https://new.example/v1\n", encoding="utf-8"
     )
-    monkeypatch.setenv("THOTH_HOME", str(home))
+    monkeypatch.setenv("HERMES_HOME", str(home))
     monkeypatch.delenv("THOTH_HOME", raising=False)
     monkeypatch.setenv("OPENAI_BASE_URL", "https://old.example/v1")
 
@@ -177,17 +177,17 @@ def test_load_dotenv_legacy_install_resolves_hermes_env(fake_home):
     """Regression: with NO home env vars and only ~/.hermes on disk (no
     ~/.thoth), load_thoth_dotenv must resolve the .env from ~/.hermes — not
     fall through to a non-existent ~/.thoth. Guards the disk-probe in
-    get_thoth_home() (a direct THOTH_HOME-or-THOTH_HOME-or-~/.thoth shortcut
+    get_thoth_home() (a direct THOTH_HOME-or-HERMES_HOME-or-~/.thoth shortcut
     would skip it and miss the legacy .env)."""
     from thoth_cli.env_loader import load_thoth_dotenv
 
     hermes = fake_home / ".hermes"
     hermes.mkdir()
-    (hermes / ".env").write_text("THOTH_PHASE3_LEGACY=present\n", encoding="utf-8")
+    (hermes / ".env").write_text("HERMES_PHASE3_LEGACY=present\n", encoding="utf-8")
     try:
         loaded = load_thoth_dotenv()
         assert hermes / ".env" in loaded
-        assert os.getenv("THOTH_PHASE3_LEGACY") == "present"
+        assert os.getenv("HERMES_PHASE3_LEGACY") == "present"
     finally:
-        os.environ.pop("THOTH_PHASE3_LEGACY", None)
+        os.environ.pop("HERMES_PHASE3_LEGACY", None)
         os.environ.pop("THOTH_PHASE3_LEGACY", None)
