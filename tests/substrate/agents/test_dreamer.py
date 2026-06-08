@@ -31,7 +31,7 @@ async def booted(thoth_db_initialized):
 
 @pytest.fixture(autouse=True)
 def _dreamer_on(monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_DREAMER", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_DREAMER", "1")
     monkeypatch.setattr(Dreamer, "_resolve_client", staticmethod(lambda: (object(), "mock")))
 
 
@@ -74,7 +74,7 @@ async def test_dreamer_throttles_to_deep_cycle_interval(booted, monkeypatch):
 
     monkeypatch.setattr(dreamer_mod, "_dream", _fake)
     # Long interval so a second immediate tick is throttled.
-    monkeypatch.setenv("HERMES_SUBSTRATE_DREAM_INTERVAL_S", "9999")
+    monkeypatch.setenv("THOTH_SUBSTRATE_DREAM_INTERVAL_S", "9999")
 
     d = Dreamer(booted)
     await d.tick()
@@ -105,7 +105,7 @@ async def test_dreamer_seeds_from_entities_when_no_patterns(booted, monkeypatch)
 
 @pytest.mark.asyncio
 async def test_dreamer_disabled_is_noop(booted, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_DREAMER", "0")
+    monkeypatch.setenv("THOTH_SUBSTRATE_DREAMER", "0")
     await l3.upsert_pattern("x", "theme")
 
     async def _boom(*a, **k):

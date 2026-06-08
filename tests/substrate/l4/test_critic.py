@@ -78,7 +78,7 @@ async def booted(thoth_db_initialized):
 
 @pytest.mark.asyncio
 async def test_critic_disabled_is_noop(booted, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_CRITIC", "0")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CRITIC", "0")
     await Critic(booted).tick()
     assert await l4.list_observations() == []
 
@@ -91,7 +91,7 @@ async def test_critic_calibration_goes_to_telemetry_not_l4(booted, monkeypatch):
     what flooded it."""
     import thoth_db
 
-    monkeypatch.setenv("HERMES_SUBSTRATE_CRITIC", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CRITIC", "1")
     # Seed a parser_log row so reliability has data.
     async with thoth_db.connection() as conn:
         await conn.execute(
@@ -119,7 +119,7 @@ async def test_critic_calibration_goes_to_telemetry_not_l4(booted, monkeypatch):
 @pytest.mark.asyncio
 async def test_critic_coherence_is_single_maintained_row(booted, monkeypatch):
     """Two assessments update ONE coherence row (upsert), not append two."""
-    monkeypatch.setenv("HERMES_SUBSTRATE_CRITIC", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CRITIC", "1")
     monkeypatch.setenv("CRITIC_INTERVAL_S", "0")  # allow back-to-back ticks
     c = Critic(booted)
     await c.tick()
@@ -130,7 +130,7 @@ async def test_critic_coherence_is_single_maintained_row(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_critic_rate_limited(booted, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_CRITIC", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CRITIC", "1")
     monkeypatch.setenv("CRITIC_INTERVAL_S", "3600")
     c = Critic(booted)
     await c.tick()

@@ -17,7 +17,7 @@ only **reduce trust**. Everything else passes at its base (modality) trust.
 
 This is intentionally a first-cut heuristic flagged for security review,
 not a complete defense. It is gated OFF by default
-(``HERMES_SUBSTRATE_SENTINEL_DEFENSE``) so an operator opts in after tuning
+(``THOTH_SUBSTRATE_SENTINEL_DEFENSE``) so an operator opts in after tuning
 the threshold against false positives on their own traffic. Refinements —
 per-stream-family trust (the agent's own self-action output shouldn't be
 scored as external injection), embedding/LLM-based detection, source

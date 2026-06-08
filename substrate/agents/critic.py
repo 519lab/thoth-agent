@@ -11,7 +11,7 @@ measure about itself right now:
 
 …and folds them into a single **coherence** score in [0,1] — the design's
 identity-health vital sign (MVS §3.7), written to L4 so its drift is
-visible over time. Gated by ``HERMES_SUBSTRATE_CRITIC`` (default ON; set to 0 to disable).
+visible over time. Gated by ``THOTH_SUBSTRATE_CRITIC`` (default ON; set to 0 to disable).
 
 Deferred (genuine research per the MVS spec's own deferrals, flagged for
 review): the LLM Reflector's L3/L4 synthesis, the Dreamer, the *learned*
@@ -58,7 +58,7 @@ class Critic(SubAgent):
         self._last_assess_mono: float = 0.0
 
     async def tick(self) -> None:
-        if not _env_bool("HERMES_SUBSTRATE_CRITIC", default=True):
+        if not _env_bool("THOTH_SUBSTRATE_CRITIC", default=True):
             return
         if self._level is Level.OFF:
             return

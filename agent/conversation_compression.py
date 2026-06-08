@@ -400,7 +400,7 @@ def compress_context(
         # Unconditional rotation — must happen even if every DB call above raised.
         old_session_id = agent.session_id
         agent.session_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
-        os.environ["HERMES_SESSION_ID"] = agent.session_id
+        os.environ["THOTH_SESSION_ID"] = agent.session_id
         try:
             from gateway.session_context import _SESSION_ID
             _SESSION_ID.set(agent.session_id)
@@ -414,7 +414,7 @@ def compress_context(
             resolve_maybe_awaitable(
                 agent._session_db.create_session(
                     session_id=agent.session_id,
-                    source=agent.platform or os.environ.get("HERMES_SESSION_SOURCE", "cli"),
+                    source=agent.platform or os.environ.get("THOTH_SESSION_SOURCE", "cli"),
                     model=agent.model,
                     model_config=agent._session_init_model_config,
                     parent_session_id=old_session_id,

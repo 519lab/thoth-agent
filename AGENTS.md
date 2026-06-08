@@ -197,7 +197,7 @@ if canonical == "mycommand":
 
 ## TUI Architecture (ui-tui + tui_gateway)
 
-The TUI is a full replacement for the classic (prompt_toolkit) CLI, activated via `thoth --tui` or `HERMES_TUI=1`.
+The TUI is a full replacement for the classic (prompt_toolkit) CLI, activated via `thoth --tui` or `THOTH_TUI=1`.
 
 ### Process Model
 
@@ -845,7 +845,7 @@ kanban task.
 
 Isolation model:
 - **Board** is the hard boundary — workers are spawned with
-  `HERMES_KANBAN_BOARD` pinned in their env so they can't see other
+  `THOTH_KANBAN_BOARD` pinned in their env so they can't see other
   boards.
 - **Tenant** is a soft namespace *within* a board — one specialist
   fleet can serve multiple businesses with workspace-path + memory-key
@@ -876,7 +876,7 @@ alongside the conversation loop. Phases A–C are shipped:
 - **Phase C** — Recall API (`substrate/recall/api.py`) +
   `SubstrateMemoryProvider` (`agent/memory_providers/substrate.py`) +
   pgvector 1536-d embeddings backfilled by the Curator. Gated by
-  `HERMES_SUBSTRATE_RECALL` (default off). Composite score:
+  `THOTH_SUBSTRATE_RECALL` (default off). Composite score:
   similarity + keyword Jaccard + salience + recency, ranked under a token
   budget.
 
@@ -939,7 +939,7 @@ invalidation. See `/skills install --now` for the canonical pattern.
 When `terminal(background=true, notify_on_complete=true)` is used, the gateway runs a watcher that
 detects process completion and triggers a new agent turn. Control verbosity of background process
 messages with `display.background_process_notifications`
-in config.yaml (or `HERMES_BACKGROUND_NOTIFICATIONS` env var):
+in config.yaml (or `THOTH_BACKGROUND_NOTIFICATIONS` env var):
 
 - `all` — running-output updates + final message (default)
 - `result` — only the final completion message
@@ -1104,7 +1104,7 @@ Implementation notes:
 - Pass `--no-isolate` to disable isolation — useful when debugging a single
   test interactively, or when you specifically want to verify state leakage.
 - The plugin disables itself in child processes (sentinel envvar
-  `HERMES_ISOLATE_CHILD=1`), so there's no fork-bomb risk.
+  `THOTH_ISOLATE_CHILD=1`), so there's no fork-bomb risk.
 
 ### Why the wrapper (and why the old "just call pytest" doesn't work)
 

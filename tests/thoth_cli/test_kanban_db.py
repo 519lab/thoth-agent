@@ -80,8 +80,8 @@ def test_connect_rejects_tls_record_in_sqlite_header(tmp_path, monkeypatch):
     home = tmp_path / ".hermes"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
-    monkeypatch.delenv("HERMES_KANBAN_DB", raising=False)
-    monkeypatch.delenv("HERMES_KANBAN_HOME", raising=False)
+    monkeypatch.delenv("THOTH_KANBAN_DB", raising=False)
+    monkeypatch.delenv("THOTH_KANBAN_HOME", raising=False)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     corrupt = home / "kanban.db"
@@ -356,7 +356,7 @@ def test_claim_once_wins_second_loses(kanban_home):
 
 
 def test_claim_uses_env_default_ttl(kanban_home, monkeypatch):
-    monkeypatch.setenv("HERMES_KANBAN_CLAIM_TTL_SECONDS", "3600")
+    monkeypatch.setenv("THOTH_KANBAN_CLAIM_TTL_SECONDS", "3600")
     with kb.connect() as conn:
         t = kb.create_task(conn, title="x", assignee="a")
         kb.claim_task(conn, t, claimer="host:1")
@@ -479,7 +479,7 @@ def test_stale_claim_with_live_pid_uses_env_ttl_override(
 ):
     import thoth_cli.kanban_db as _kb
 
-    monkeypatch.setenv("HERMES_KANBAN_CLAIM_TTL_SECONDS", "3600")
+    monkeypatch.setenv("THOTH_KANBAN_CLAIM_TTL_SECONDS", "3600")
 
     with kb.connect() as conn:
         t = kb.create_task(conn, title="x", assignee="a")
@@ -667,7 +667,7 @@ def test_heartbeat_extends_claim(kanban_home):
 
 
 def test_heartbeat_uses_env_default_ttl(kanban_home, monkeypatch):
-    monkeypatch.setenv("HERMES_KANBAN_CLAIM_TTL_SECONDS", "3600")
+    monkeypatch.setenv("THOTH_KANBAN_CLAIM_TTL_SECONDS", "3600")
     with kb.connect() as conn:
         t = kb.create_task(conn, title="x", assignee="a")
         claimer = "host:hb"
@@ -1689,7 +1689,7 @@ class TestSharedBoardPaths:
     def _set_home(self, monkeypatch, tmp_path, thoth_home):
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
-        monkeypatch.delenv("HERMES_KANBAN_HOME", raising=False)
+        monkeypatch.delenv("THOTH_KANBAN_HOME", raising=False)
 
     def test_default_install_anchors_at_home_dot_hermes(
         self, tmp_path, monkeypatch
@@ -1792,7 +1792,7 @@ class TestSharedBoardPaths:
     def test_explicit_override_via_thoth_kanban_home(
         self, tmp_path, monkeypatch
     ):
-        # Explicit override: HERMES_KANBAN_HOME beats every other
+        # Explicit override: THOTH_KANBAN_HOME beats every other
         # resolution rule.
         default_home = tmp_path / ".hermes"
         profile_home = default_home / "profiles" / "any"
@@ -1802,7 +1802,7 @@ class TestSharedBoardPaths:
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("THOTH_HOME", str(profile_home))
-        monkeypatch.setenv("HERMES_KANBAN_HOME", str(override))
+        monkeypatch.setenv("THOTH_KANBAN_HOME", str(override))
 
         assert kb.kanban_home() == override
         assert kb.kanban_db_path() == override / "kanban.db"
@@ -1814,7 +1814,7 @@ class TestSharedBoardPaths:
         default_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("THOTH_HOME", str(default_home))
-        monkeypatch.setenv("HERMES_KANBAN_HOME", "   ")
+        monkeypatch.setenv("THOTH_KANBAN_HOME", "   ")
 
         assert kb.kanban_home() == default_home
 
@@ -1860,8 +1860,8 @@ class TestSharedBoardPaths:
     def test_thoth_kanban_db_pin_beats_kanban_home(
         self, tmp_path, monkeypatch
     ):
-        # HERMES_KANBAN_DB pins the file path directly and beats both
-        # HERMES_KANBAN_HOME and the `get_default_thoth_root()` path.
+        # THOTH_KANBAN_DB pins the file path directly and beats both
+        # THOTH_KANBAN_HOME and the `get_default_thoth_root()` path.
         # This is the env the dispatcher injects into workers.
         default_home = tmp_path / ".hermes"
         default_home.mkdir()
@@ -1872,18 +1872,18 @@ class TestSharedBoardPaths:
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("THOTH_HOME", str(default_home))
-        monkeypatch.setenv("HERMES_KANBAN_HOME", str(umbrella))
-        monkeypatch.setenv("HERMES_KANBAN_DB", str(pinned_db))
+        monkeypatch.setenv("THOTH_KANBAN_HOME", str(umbrella))
+        monkeypatch.setenv("THOTH_KANBAN_DB", str(pinned_db))
 
         assert kb.kanban_db_path() == pinned_db
-        # workspaces_root still follows HERMES_KANBAN_HOME -- the pins
+        # workspaces_root still follows THOTH_KANBAN_HOME -- the pins
         # are independent.
         assert kb.workspaces_root() == umbrella / "kanban" / "workspaces"
 
     def test_thoth_kanban_workspaces_root_pin_beats_kanban_home(
         self, tmp_path, monkeypatch
     ):
-        # HERMES_KANBAN_WORKSPACES_ROOT pins the workspaces root directly.
+        # THOTH_KANBAN_WORKSPACES_ROOT pins the workspaces root directly.
         default_home = tmp_path / ".hermes"
         default_home.mkdir()
         umbrella = tmp_path / "umbrella"
@@ -1893,24 +1893,24 @@ class TestSharedBoardPaths:
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("THOTH_HOME", str(default_home))
-        monkeypatch.setenv("HERMES_KANBAN_HOME", str(umbrella))
-        monkeypatch.setenv("HERMES_KANBAN_WORKSPACES_ROOT", str(pinned_ws))
+        monkeypatch.setenv("THOTH_KANBAN_HOME", str(umbrella))
+        monkeypatch.setenv("THOTH_KANBAN_WORKSPACES_ROOT", str(pinned_ws))
 
         assert kb.workspaces_root() == pinned_ws
-        # kanban_db_path still follows HERMES_KANBAN_HOME.
+        # kanban_db_path still follows THOTH_KANBAN_HOME.
         assert kb.kanban_db_path() == umbrella / "kanban.db"
 
     def test_empty_per_path_overrides_fall_through(
         self, tmp_path, monkeypatch
     ):
         # Empty/whitespace pins are treated as unset, same as
-        # HERMES_KANBAN_HOME.
+        # THOTH_KANBAN_HOME.
         default_home = tmp_path / ".hermes"
         default_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("THOTH_HOME", str(default_home))
-        monkeypatch.setenv("HERMES_KANBAN_DB", "   ")
-        monkeypatch.setenv("HERMES_KANBAN_WORKSPACES_ROOT", "")
+        monkeypatch.setenv("THOTH_KANBAN_DB", "   ")
+        monkeypatch.setenv("THOTH_KANBAN_WORKSPACES_ROOT", "")
 
         assert kb.kanban_db_path() == default_home / "kanban.db"
         assert kb.workspaces_root() == default_home / "kanban" / "workspaces"
@@ -1918,8 +1918,8 @@ class TestSharedBoardPaths:
     def test_dispatcher_spawn_injects_kanban_db_and_workspaces_root(
         self, tmp_path, monkeypatch
     ):
-        # The dispatcher's `_default_spawn` must inject HERMES_KANBAN_DB
-        # and HERMES_KANBAN_WORKSPACES_ROOT into the worker env so the
+        # The dispatcher's `_default_spawn` must inject THOTH_KANBAN_DB
+        # and THOTH_KANBAN_WORKSPACES_ROOT into the worker env so the
         # worker converges on the dispatcher's paths even when the
         # `-p <profile>` flag rewrites THOTH_HOME.
         default_home = tmp_path / ".hermes"
@@ -1957,12 +1957,12 @@ class TestSharedBoardPaths:
         kb._default_spawn(task, str(tmp_path / "ws"))
 
         env = captured["env"]
-        assert env["HERMES_KANBAN_DB"] == str(default_home / "kanban.db")
-        assert env["HERMES_KANBAN_WORKSPACES_ROOT"] == str(
+        assert env["THOTH_KANBAN_DB"] == str(default_home / "kanban.db")
+        assert env["THOTH_KANBAN_WORKSPACES_ROOT"] == str(
             default_home / "kanban" / "workspaces"
         )
-        assert env["HERMES_KANBAN_TASK"] == "t_dispatch_env"
-        assert env["HERMES_KANBAN_BRANCH"] == "wt/t_dispatch_env"
+        assert env["THOTH_KANBAN_TASK"] == "t_dispatch_env"
+        assert env["THOTH_KANBAN_BRANCH"] == "wt/t_dispatch_env"
 
 
 # ---------------------------------------------------------------------------

@@ -6,11 +6,11 @@ Covers the pieces added when boards became a first-class concept:
 * Path resolution for ``default`` (legacy ``<root>/kanban.db``) vs
   named boards (``<root>/kanban/boards/<slug>/kanban.db``).
 * Current-board persistence via ``<root>/kanban/current`` and
-  ``HERMES_KANBAN_BOARD`` env var.
+  ``THOTH_KANBAN_BOARD`` env var.
 * ``connect(board=)`` isolation — writes on one board don't leak.
 * ``create_board`` / ``list_boards`` / ``remove_board`` round trip.
 * CLI surface: ``thoth kanban boards list/create/switch/rm``.
-* ``_default_spawn`` injects ``HERMES_KANBAN_BOARD`` into worker env.
+* ``_default_spawn`` injects ``THOTH_KANBAN_BOARD`` into worker env.
 """
 
 from __future__ import annotations
@@ -53,10 +53,10 @@ def fresh_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     for var in (
-        "HERMES_KANBAN_DB",
-        "HERMES_KANBAN_WORKSPACES_ROOT",
-        "HERMES_KANBAN_HOME",
-        "HERMES_KANBAN_BOARD",
+        "THOTH_KANBAN_DB",
+        "THOTH_KANBAN_WORKSPACES_ROOT",
+        "THOTH_KANBAN_HOME",
+        "THOTH_KANBAN_BOARD",
     ):
         monkeypatch.delenv(var, raising=False)
     # Also reset thoth_constants cache so get_default_thoth_root() re-reads.
@@ -133,15 +133,15 @@ class TestPathResolution:
         )
 
     def test_env_var_db_override_still_wins(self, fresh_home, tmp_path, monkeypatch):
-        """``HERMES_KANBAN_DB`` pins the file regardless of board= arg."""
+        """``THOTH_KANBAN_DB`` pins the file regardless of board= arg."""
         forced = tmp_path / "custom.db"
-        monkeypatch.setenv("HERMES_KANBAN_DB", str(forced))
+        monkeypatch.setenv("THOTH_KANBAN_DB", str(forced))
         assert kb.kanban_db_path() == forced
         assert kb.kanban_db_path(board="ignored") == forced
 
     def test_env_var_workspaces_override(self, fresh_home, tmp_path, monkeypatch):
         forced = tmp_path / "ws"
-        monkeypatch.setenv("HERMES_KANBAN_WORKSPACES_ROOT", str(forced))
+        monkeypatch.setenv("THOTH_KANBAN_WORKSPACES_ROOT", str(forced))
         assert kb.workspaces_root(board="any") == forced
 
 
@@ -158,7 +158,7 @@ class TestCurrentBoard:
         # trusts env-var validity, but the resolution chain doesn't require
         # the board to exist; we just test that env trumps).
         kb.create_board("envboard")
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "envboard")
+        monkeypatch.setenv("THOTH_KANBAN_BOARD", "envboard")
         assert kb.get_current_board() == "envboard"
 
     def test_file_pointer_honoured(self, fresh_home):
@@ -186,17 +186,17 @@ class TestCurrentBoard:
         kb.create_board("a")
         kb.create_board("b")
         kb.set_current_board("a")
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "b")
+        monkeypatch.setenv("THOTH_KANBAN_BOARD", "b")
         assert kb.get_current_board() == "b"
 
     def test_stale_env_falls_through_to_file_pointer(self, fresh_home, monkeypatch):
         kb.create_board("persisted")
         kb.set_current_board("persisted")
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "missing-board")
+        monkeypatch.setenv("THOTH_KANBAN_BOARD", "missing-board")
         assert kb.get_current_board() == "persisted"
 
     def test_invalid_env_falls_through(self, fresh_home, monkeypatch):
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "!!bad!!")
+        monkeypatch.setenv("THOTH_KANBAN_BOARD", "!!bad!!")
         # Should not crash — falls through to default.
         assert kb.get_current_board() == "default"
 
@@ -348,7 +348,7 @@ class TestConnectionIsolation:
         kb.create_board("persist")
         kb.create_board("envwin")
         kb.set_current_board("persist")
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "envwin")
+        monkeypatch.setenv("THOTH_KANBAN_BOARD", "envwin")
         with kb.connect() as conn:
             kb.create_task(conn, title="via-env", assignee="x")
         with kb.connect(board="envwin") as conn:
@@ -363,7 +363,7 @@ class TestConnectionIsolation:
         kb.remove_board("ephemeral")
         kb.create_board("persist")
         kb.set_current_board("persist")
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "ephemeral")
+        monkeypatch.setenv("THOTH_KANBAN_BOARD", "ephemeral")
 
         with kb.connect() as conn:
             kb.create_task(conn, title="via-fallback", assignee="x")
@@ -378,7 +378,7 @@ class TestConnectionIsolation:
 # ---------------------------------------------------------------------------
 
 class TestWorkerSpawnEnv:
-    """Ensure the dispatcher pins ``HERMES_KANBAN_BOARD`` / DB / workspaces on spawn.
+    """Ensure the dispatcher pins ``THOTH_KANBAN_BOARD`` / DB / workspaces on spawn.
 
     We monkey-patch ``subprocess.Popen`` to capture the child env without
     actually spawning anything.
@@ -419,13 +419,13 @@ class TestWorkerSpawnEnv:
         kb._default_spawn(task, str(fresh_home / "ws"), board="spawntest")
 
         env = captured["env"]
-        assert env["HERMES_KANBAN_BOARD"] == "spawntest"
-        assert env["HERMES_KANBAN_TASK"] == "t_abc"
+        assert env["THOTH_KANBAN_BOARD"] == "spawntest"
+        assert env["THOTH_KANBAN_TASK"] == "t_abc"
         # DB path should match the per-board DB, not the legacy default.
         expected_db = fresh_home / "kanban" / "boards" / "spawntest" / "kanban.db"
-        assert env["HERMES_KANBAN_DB"] == str(expected_db)
+        assert env["THOTH_KANBAN_DB"] == str(expected_db)
         expected_ws = fresh_home / "kanban" / "boards" / "spawntest" / "workspaces"
-        assert env["HERMES_KANBAN_WORKSPACES_ROOT"] == str(expected_ws)
+        assert env["THOTH_KANBAN_WORKSPACES_ROOT"] == str(expected_ws)
 
     def test_default_board_spawn_keeps_legacy_paths(self, fresh_home, monkeypatch):
         captured = {}
@@ -457,8 +457,8 @@ class TestWorkerSpawnEnv:
         )
         kb._default_spawn(task, str(fresh_home / "ws"), board=None)
         env = captured["env"]
-        assert env["HERMES_KANBAN_BOARD"] == "default"
-        assert env["HERMES_KANBAN_DB"] == str(fresh_home / "kanban.db")
+        assert env["THOTH_KANBAN_BOARD"] == "default"
+        assert env["THOTH_KANBAN_DB"] == str(fresh_home / "kanban.db")
 
 
 # ---------------------------------------------------------------------------
@@ -487,7 +487,7 @@ class TestCLI:
         """Auto-wire the per-test PG init for every TestCLI test.
 
         The CLI subprocesses these tests spawn (``python -m
-        thoth_cli.main kanban …``) inherit ``HERMES_PG_DSN`` from the
+        thoth_cli.main kanban …``) inherit ``THOTH_PG_DSN`` from the
         parent's ``os.environ``. ``thoth_db_initialized_sync`` sets
         that env var via the underlying ``thoth_db_dsn`` fixture, so
         the subprocess can lazy-init the pool against the per-test PG.

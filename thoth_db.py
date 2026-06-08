@@ -6,8 +6,8 @@ goes through `connection()` or `transaction()`. Sync callers use
 
 Initialize once per process at entry-point startup (`init(dsn)`).
 Close at shutdown (`close()`). Pool size is tunable via env vars:
-    HERMES_PG_POOL_MIN (default 4)
-    HERMES_PG_POOL_MAX (default 64)
+    THOTH_PG_POOL_MIN (default 4)
+    THOTH_PG_POOL_MAX (default 64)
 """
 
 from __future__ import annotations
@@ -97,9 +97,9 @@ def _apply_tcp_keepalive(conn) -> None:
         if raw is None:
             return
         raw.setsockopt(_socket.SOL_SOCKET, _socket.SO_KEEPALIVE, 1)
-        keepidle = int(os.environ.get("HERMES_PG_KEEPIDLE_S", "10"))
-        keepintvl = int(os.environ.get("HERMES_PG_KEEPINTVL_S", "5"))
-        keepcnt = int(os.environ.get("HERMES_PG_KEEPCNT", "3"))
+        keepidle = int(os.environ.get("THOTH_PG_KEEPIDLE_S", "10"))
+        keepintvl = int(os.environ.get("THOTH_PG_KEEPINTVL_S", "5"))
+        keepcnt = int(os.environ.get("THOTH_PG_KEEPCNT", "3"))
         # TCP_KEEPIDLE / TCP_KEEPINTVL / TCP_KEEPCNT are Linux-specific;
         # skip gracefully on macOS/Windows where they may not exist.
         if hasattr(_socket, "TCP_KEEPIDLE"):
@@ -238,8 +238,8 @@ async def init(
     with _pool_lock:
         if _pool is not None:
             return
-        ms = min_size if min_size is not None else int(os.environ.get("HERMES_PG_POOL_MIN", "4"))
-        Ms = max_size if max_size is not None else int(os.environ.get("HERMES_PG_POOL_MAX", "64"))
+        ms = min_size if min_size is not None else int(os.environ.get("THOTH_PG_POOL_MIN", "4"))
+        Ms = max_size if max_size is not None else int(os.environ.get("THOTH_PG_POOL_MAX", "64"))
     # Recycle connections that have sat idle in the pool longer than this.
     # Primary dead-connection detection is via TCP keepalives (see
     # ``_apply_tcp_keepalive``) — the OS detects a half-open socket within
@@ -248,7 +248,7 @@ async def init(
     # stale in other ways (e.g. postgres idle-session-timeout, server
     # restart). Env-tunable; 0 disables (asyncpg semantics).
     try:
-        max_inactive = float(os.environ.get("HERMES_PG_POOL_MAX_INACTIVE_S", "120"))
+        max_inactive = float(os.environ.get("THOTH_PG_POOL_MAX_INACTIVE_S", "120"))
     except ValueError:
         max_inactive = 120.0
     # Disable asyncpg's prepared-statement cache by default. The substrate
@@ -266,7 +266,7 @@ async def init(
     # this scale, and pgbouncer transaction-mode pooling requires size 0
     # anyway. Env-tunable for operators who never run DDL and want it back.
     try:
-        stmt_cache = int(os.environ.get("HERMES_PG_STATEMENT_CACHE_SIZE", "0"))
+        stmt_cache = int(os.environ.get("THOTH_PG_STATEMENT_CACHE_SIZE", "0"))
     except ValueError:
         stmt_cache = 0
     pool = await asyncpg.create_pool(
@@ -474,7 +474,7 @@ async def run_on_pool_loop(coro: Awaitable[T]) -> T:
 
 
 def ensure_pool_sync() -> bool:
-    """Initialise the pool from ``HERMES_PG_DSN`` if it hasn't been already.
+    """Initialise the pool from ``THOTH_PG_DSN`` if it hasn't been already.
 
     Returns True if a pool is available after the call, False if no DSN is
     configured and no pool exists. Safe to call from any sync context;

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fake worker process that exercises the real subprocess contract.
 
-Reads HERMES_KANBAN_TASK from env, heartbeats periodically, does short
+Reads THOTH_KANBAN_TASK from env, heartbeats periodically, does short
 work, completes via the CLI. Designed to be spawned by the dispatcher
 exactly the way `thoth chat -q` would be, minus the LLM cost.
 """
@@ -14,8 +14,8 @@ import time
 
 
 def main():
-    tid = os.environ["HERMES_KANBAN_TASK"]
-    workspace = os.environ.get("HERMES_KANBAN_WORKSPACE", "")
+    tid = os.environ["THOTH_KANBAN_TASK"]
+    workspace = os.environ.get("THOTH_KANBAN_WORKSPACE", "")
 
     # Announce via CLI (goes through real argparse + init_db + etc)
     subprocess.run(

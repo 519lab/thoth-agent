@@ -146,7 +146,7 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
 
 
 # Expected Alembic head — the substrate refuses to boot if the DB is on an
-# older revision (unless ``HERMES_AUTO_MIGRATE=1``). When a future revision
+# older revision (unless ``THOTH_AUTO_MIGRATE=1``). When a future revision
 # (Phase B+) lands, add it here AND keep the substrate code able to boot
 # against the prior head until the new schema is required.
 #
@@ -161,7 +161,7 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
 # - ``20260525_0006`` — Phase C substrate_slices.embedding column + ivfflat
 #   index. Adds a NULLable column; pre-Phase-C code paths ignore it.
 # - ``20260526_0009`` — Phase C configurable embedding dim. Reshapes the
-#   ``embedding`` column to ``vector(HERMES_EMBEDDING_DIM)``; default 1536
+#   ``embedding`` column to ``vector(THOTH_EMBEDDING_DIM)``; default 1536
 #   makes this a no-op for installs that don't set the env var.
 # - ``20260527_0010`` — substrate_agent_heartbeat (sub-agent liveness
 #   telemetry). Strictly additive — one new table the run loop upserts and
@@ -202,7 +202,7 @@ _EXPECTED_REVISIONS = frozenset(
         #   merges near-duplicate patterns/observations and decays→releases them.
         "20260527_0020",
         # - ``20260527_0021`` — align l3/l4 embedding dim to substrate_slices
-        #   (fixes the 1536-vs-768 mismatch when HERMES_EMBEDDING_DIM was unset
+        #   (fixes the 1536-vs-768 mismatch when THOTH_EMBEDDING_DIM was unset
         #   at 0020 apply time, which stalled the upper-layer embed backfill).
         "20260527_0021",
         # - ``20260528_0022`` — substrate_skill_proposals (self-improvement Tier 1:
@@ -306,7 +306,7 @@ class Substrate:
         1. Assert ``thoth_db.pool()`` is initialised.
         2. Verify Alembic head is at or beyond
            ``20260523_0003_substrate_skeleton``. If older and
-           ``HERMES_AUTO_MIGRATE=1`` (from ``SubstrateConfig.auto_migrate``)
+           ``THOTH_AUTO_MIGRATE=1`` (from ``SubstrateConfig.auto_migrate``)
            run ``alembic upgrade head``; otherwise raise.
         3. Ensure month partitions exist (current + next 2).
         4. Auto-register the 15 streams from spec §9 (idempotent).
@@ -525,7 +525,7 @@ class Substrate:
         if not auto_migrate:
             raise RuntimeError(
                 f"substrate.boot: alembic head is {current!r}; expected one of "
-                f"{sorted(_EXPECTED_REVISIONS)}. Set HERMES_AUTO_MIGRATE=1 or "
+                f"{sorted(_EXPECTED_REVISIONS)}. Set THOTH_AUTO_MIGRATE=1 or "
                 f"run `alembic upgrade head` against this database."
             )
 
@@ -575,7 +575,7 @@ class Substrate:
           * force-reject second — protects the pending queue.
           * curator third — real decay/release loop (Phase B).
           * parser fourth — L0→L1 consolidation (Phase D); no-op tick
-            unless HERMES_SUBSTRATE_PARSER=1, so registering it is free.
+            unless THOTH_SUBSTRATE_PARSER=1, so registering it is free.
           * sentinel last — the highest-frequency tick.
         Conductor is instantiated but doesn't tick (still a stub —
         Phase B adds the push-on-set_intensity hook so live agents
@@ -603,16 +603,16 @@ class Substrate:
         partition = PartitionMaintenanceWorker(self)
         force_reject = ForceRejectWorker(self)
         curator = Curator(self)
-        parser = Parser(self)            # Phase D  — gated HERMES_SUBSTRATE_PARSER
-        associator = Associator(self)    # Phase E1 — gated HERMES_SUBSTRATE_ASSOCIATOR
-        pattern_finder = PatternFinder(self)  # Phase E2 — gated HERMES_SUBSTRATE_PATTERNFINDER
-        critic = Critic(self)            # Phase F  — gated HERMES_SUBSTRATE_CRITIC
-        reflector = Reflector(self)      # Phase F  — gated HERMES_SUBSTRATE_REFLECTOR
-        dreamer = Dreamer(self)          # Phase F  — gated HERMES_SUBSTRATE_DREAMER
-        summarizer = Summarizer(self)    # gated HERMES_SUBSTRATE_SUMMARIZER
-        skill_scout = SkillScout(self)   # self-improvement Tier 1 — gated HERMES_SUBSTRATE_SKILL_SCOUT
+        parser = Parser(self)            # Phase D  — gated THOTH_SUBSTRATE_PARSER
+        associator = Associator(self)    # Phase E1 — gated THOTH_SUBSTRATE_ASSOCIATOR
+        pattern_finder = PatternFinder(self)  # Phase E2 — gated THOTH_SUBSTRATE_PATTERNFINDER
+        critic = Critic(self)            # Phase F  — gated THOTH_SUBSTRATE_CRITIC
+        reflector = Reflector(self)      # Phase F  — gated THOTH_SUBSTRATE_REFLECTOR
+        dreamer = Dreamer(self)          # Phase F  — gated THOTH_SUBSTRATE_DREAMER
+        summarizer = Summarizer(self)    # gated THOTH_SUBSTRATE_SUMMARIZER
+        skill_scout = SkillScout(self)   # self-improvement Tier 1 — gated THOTH_SUBSTRATE_SKILL_SCOUT
         # Adaptive Conductor policy loop (Phase F). Drives the StubConductor
-        # (self._conductor) when HERMES_SUBSTRATE_CONDUCTOR=1; no-op otherwise.
+        # (self._conductor) when THOTH_SUBSTRATE_CONDUCTOR=1; no-op otherwise.
         conductor_policy = AdaptiveConductor(self)
         sentinel = StubSentinel(self)
         for agent in (

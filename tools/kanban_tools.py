@@ -1,7 +1,7 @@
 """Kanban tools — structured tool-call surface for worker + orchestrator agents.
 
 These tools are registered into the model's schema when the agent is
-running under the dispatcher (env var ``HERMES_KANBAN_TASK`` set) or when
+running under the dispatcher (env var ``THOTH_KANBAN_TASK`` set) or when
 the active profile explicitly enables the ``kanban`` toolset for
 orchestrator work. A normal ``thoth chat`` session still sees **zero**
 kanban tools in its schema unless configured.
@@ -62,7 +62,7 @@ def _profile_has_kanban_toolset() -> bool:
 def _check_kanban_mode() -> bool:
     """Task-lifecycle tools are available when:
 
-    1. ``HERMES_KANBAN_TASK`` is set (dispatcher-spawned worker), OR
+    1. ``THOTH_KANBAN_TASK`` is set (dispatcher-spawned worker), OR
     2. The current profile has ``kanban`` in its toolsets config
        (orchestrator profiles like techlead that route work via Kanban).
 
@@ -71,7 +71,7 @@ def _check_kanban_mode() -> bool:
     embedded by default) and orchestrator profiles with the kanban
     toolset enabled see the Kanban lifecycle tool surface.
     """
-    if os.environ.get("HERMES_KANBAN_TASK"):
+    if os.environ.get("THOTH_KANBAN_TASK"):
         return True
     return _profile_has_kanban_toolset()
 
@@ -85,7 +85,7 @@ def _check_kanban_orchestrator_mode() -> bool:
     board state. Profiles that explicitly opt into the kanban toolset
     and are NOT scoped to a single task are the orchestrator surface.
     """
-    if os.environ.get("HERMES_KANBAN_TASK"):
+    if os.environ.get("THOTH_KANBAN_TASK"):
         return False
     return _profile_has_kanban_toolset()
 
@@ -98,15 +98,15 @@ def _default_task_id(arg: Optional[str]) -> Optional[str]:
     """Resolve ``task_id`` arg or fall back to the env var the dispatcher set."""
     if arg:
         return arg
-    env_tid = os.environ.get("HERMES_KANBAN_TASK")
+    env_tid = os.environ.get("THOTH_KANBAN_TASK")
     return env_tid or None
 
 
 def _worker_run_id(task_id: str) -> Optional[int]:
     """Return this worker's dispatcher run id when it is scoped to task_id."""
-    if os.environ.get("HERMES_KANBAN_TASK") != task_id:
+    if os.environ.get("THOTH_KANBAN_TASK") != task_id:
         return None
-    raw = os.environ.get("HERMES_KANBAN_RUN_ID")
+    raw = os.environ.get("THOTH_KANBAN_RUN_ID")
     if not raw:
         return None
     try:
@@ -119,9 +119,9 @@ def _stamp_worker_session_metadata(
     task_id: str, metadata: Optional[dict]
 ) -> Optional[dict]:
     """Add trusted worker session id metadata for this worker's own task."""
-    if os.environ.get("HERMES_KANBAN_TASK") != task_id:
+    if os.environ.get("THOTH_KANBAN_TASK") != task_id:
         return metadata
-    session_id = os.environ.get("HERMES_SESSION_ID")
+    session_id = os.environ.get("THOTH_SESSION_ID")
     if not session_id:
         return metadata
     stamped = dict(metadata or {})
@@ -132,14 +132,14 @@ def _stamp_worker_session_metadata(
 def _enforce_worker_task_ownership(tid: str) -> Optional[str]:
     """Reject worker-driven destructive calls on foreign task IDs.
 
-    A process spawned by the dispatcher has ``HERMES_KANBAN_TASK`` set
+    A process spawned by the dispatcher has ``THOTH_KANBAN_TASK`` set
     to its own task id. Tools like ``kanban_complete`` / ``kanban_block``
     / ``kanban_heartbeat`` mutate run-lifecycle state, so a buggy or
     prompt-injected worker that passed an explicit ``task_id`` for some
     other task could corrupt sibling or cross-tenant runs (see #19534).
 
     Orchestrator profiles (kanban toolset enabled but **no**
-    ``HERMES_KANBAN_TASK`` in env) aren't subject to this check — their
+    ``THOTH_KANBAN_TASK`` in env) aren't subject to this check — their
     job is routing, and they sometimes legitimately close out child
     tasks or reopen blocked ones. Workers are narrowly scoped to their
     one task.
@@ -148,7 +148,7 @@ def _enforce_worker_task_ownership(tid: str) -> Optional[str]:
     when it must be rejected. Callers should ``return`` the error
     verbatim.
     """
-    env_tid = os.environ.get("HERMES_KANBAN_TASK")
+    env_tid = os.environ.get("THOTH_KANBAN_TASK")
     if not env_tid:
         # Orchestrator or CLI context — no task-scope restriction.
         return None
@@ -168,7 +168,7 @@ def _connect(board: Optional[str] = None):
     When ``board`` is provided it's forwarded to :func:`kb.connect`, which
     routes the connection to that board's sqlite file. ``None`` (the
     default) preserves the legacy resolution chain
-    (``HERMES_KANBAN_DB`` → ``HERMES_KANBAN_BOARD`` env → current symlink
+    (``THOTH_KANBAN_DB`` → ``THOTH_KANBAN_BOARD`` env → current symlink
     → ``default``). Per-tool ``board`` lets a Telegram-side agent override
     the env-pinned active board without restarting Thoth.
     """
@@ -213,7 +213,7 @@ def _require_orchestrator_tool(tool_name: str) -> Optional[str]:
     structured tool_error so the model gets a clear refusal instead of
     silently mutating board state from a worker context.
     """
-    if os.environ.get("HERMES_KANBAN_TASK"):
+    if os.environ.get("THOTH_KANBAN_TASK"):
         return tool_error(
             f"{tool_name} is orchestrator-only; dispatcher-spawned workers "
             "must use kanban_complete, kanban_block, kanban_heartbeat, or "
@@ -258,7 +258,7 @@ def _handle_show(args: dict, **kw) -> str:
     tid = _default_task_id(args.get("task_id"))
     if not tid:
         return tool_error(
-            "task_id is required (or set HERMES_KANBAN_TASK in the env)"
+            "task_id is required (or set THOTH_KANBAN_TASK in the env)"
         )
     board = args.get("board")
     try:
@@ -394,7 +394,7 @@ def _handle_complete(args: dict, **kw) -> str:
     tid = _default_task_id(args.get("task_id"))
     if not tid:
         return tool_error(
-            "task_id is required (or set HERMES_KANBAN_TASK in the env)"
+            "task_id is required (or set THOTH_KANBAN_TASK in the env)"
         )
     ownership_err = _enforce_worker_task_ownership(tid)
     if ownership_err:
@@ -516,7 +516,7 @@ def _handle_block(args: dict, **kw) -> str:
     tid = _default_task_id(args.get("task_id"))
     if not tid:
         return tool_error(
-            "task_id is required (or set HERMES_KANBAN_TASK in the env)"
+            "task_id is required (or set THOTH_KANBAN_TASK in the env)"
         )
     ownership_err = _enforce_worker_task_ownership(tid)
     if ownership_err:
@@ -562,7 +562,7 @@ def _handle_heartbeat(args: dict, **kw) -> str:
     tid = _default_task_id(args.get("task_id"))
     if not tid:
         return tool_error(
-            "task_id is required (or set HERMES_KANBAN_TASK in the env)"
+            "task_id is required (or set THOTH_KANBAN_TASK in the env)"
         )
     ownership_err = _enforce_worker_task_ownership(tid)
     if ownership_err:
@@ -573,11 +573,11 @@ def _handle_heartbeat(args: dict, **kw) -> str:
         kb, conn = _connect(board=board)
         try:
             # Extend the claim TTL first. The dispatcher pins
-            # HERMES_KANBAN_CLAIM_LOCK in the worker env at spawn time
+            # THOTH_KANBAN_CLAIM_LOCK in the worker env at spawn time
             # (see _default_spawn in kanban_db.py); falling back to the
             # default _claimer_id() covers locally-driven workers that
             # never went through the dispatcher path.
-            claim_lock = os.environ.get("HERMES_KANBAN_CLAIM_LOCK")
+            claim_lock = os.environ.get("THOTH_KANBAN_CLAIM_LOCK")
             kb.heartbeat_claim(conn, tid, claimer=claim_lock)
 
             ok = kb.heartbeat_worker(
@@ -620,7 +620,7 @@ def _handle_comment(args: dict, **kw) -> str:
     # the future-worker context with what reads as a system directive.
     # Cross-task commenting itself remains unrestricted (see #19713) —
     # comments are the deliberate handoff channel between tasks.
-    author = os.environ.get("HERMES_PROFILE") or "worker"
+    author = os.environ.get("THOTH_PROFILE") or "worker"
     board = args.get("board")
     try:
         kb, conn = _connect(board=board)
@@ -653,11 +653,11 @@ def _handle_create(args: dict, **kw) -> str:
         )
     body = args.get("body")
     parents = args.get("parents") or []
-    tenant = args.get("tenant") or os.environ.get("HERMES_TENANT")
+    tenant = args.get("tenant") or os.environ.get("THOTH_TENANT")
     # Stamp the originating session id when the agent loop runs under
-    # ACP (which sets HERMES_SESSION_ID before invoking tools). NULL on
+    # ACP (which sets THOTH_SESSION_ID before invoking tools). NULL on
     # CLI / dashboard paths and on legacy hosts that don't set the env.
-    session_id = args.get("session_id") or os.environ.get("HERMES_SESSION_ID")
+    session_id = args.get("session_id") or os.environ.get("THOTH_SESSION_ID")
     priority = args.get("priority")
     workspace_kind = args.get("workspace_kind") or "scratch"
     workspace_path = args.get("workspace_path")
@@ -703,7 +703,7 @@ def _handle_create(args: dict, **kw) -> str:
                 ),
                 skills=skills,
                 initial_status=str(initial_status),
-                created_by=os.environ.get("HERMES_PROFILE") or "worker",
+                created_by=os.environ.get("THOTH_PROFILE") or "worker",
                 session_id=session_id,
             )
             new_task = kb.get_task(conn, new_tid)
@@ -775,14 +775,14 @@ def _handle_link(args: dict, **kw) -> str:
 # ---------------------------------------------------------------------------
 
 _DESC_TASK_ID_DEFAULT = (
-    "Task id. If omitted, defaults to HERMES_KANBAN_TASK from the env "
+    "Task id. If omitted, defaults to THOTH_KANBAN_TASK from the env "
     "(the task the dispatcher spawned you to work on)."
 )
 
 _DESC_BOARD = (
     "Kanban board slug to target. When omitted, the call resolves the "
-    "active board the usual way: HERMES_KANBAN_DB env → "
-    "HERMES_KANBAN_BOARD env → the 'current' symlink under the kanban "
+    "active board the usual way: THOTH_KANBAN_DB env → "
+    "THOTH_KANBAN_BOARD env → the 'current' symlink under the kanban "
     "home → 'default'. Pass an explicit slug only when the caller (e.g. "
     "a Telegram routing layer) needs to override the env-pinned active "
     "board for this one call."
@@ -1093,7 +1093,7 @@ KANBAN_CREATE_SCHEMA = {
                 "type": "string",
                 "description": (
                     "Optional namespace for multi-project isolation. "
-                    "Defaults to HERMES_TENANT env if set."
+                    "Defaults to THOTH_TENANT env if set."
                 ),
             },
             "priority": {

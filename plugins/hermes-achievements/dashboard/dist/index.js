@@ -5,8 +5,8 @@
   // Bundled into hermes-agent. Upstream repo remains the staging ground for new
   // badges and UI iteration; the in-progress scan banner below is a small addition
   // layered on top of the original dist bundle.
-  const SDK = window.__HERMES_PLUGIN_SDK__;
-  if (!SDK || !window.__HERMES_PLUGINS__) return;
+  const SDK = window.__THOTH_PLUGIN_SDK__;
+  if (!SDK || !window.__THOTH_PLUGINS__) return;
 
   const React = SDK.React;
   const hooks = SDK.hooks;
@@ -50,7 +50,7 @@
 
   async function api(path, options) {
     const url = "/api/plugins/hermes-achievements" + path;
-    const token = window.__HERMES_SESSION_TOKEN__ || "";
+    const token = window.__THOTH_SESSION_TOKEN__ || "";
     const headers = { ...((options && options.headers) || {}) };
     if (token) headers["X-Hermes-Session-Token"] = token;
     const res = await fetch(url, { ...(options || {}), headers });
@@ -728,5 +728,5 @@
     );
   }
 
-  window.__HERMES_PLUGINS__.register("hermes-achievements", AchievementsPage);
+  window.__THOTH_PLUGINS__.register("hermes-achievements", AchievementsPage);
 })();

@@ -11,7 +11,7 @@ transport) which is what we invoke.
 
 The private SkyLight SPIs cua-driver uses (SLEventPostToPid, SLPSPostEvent-
 RecordTo, _AXObserverAddNotificationAndCheckRemote) are not Apple-public and
-can break on OS updates. Pin the installed version via `HERMES_CUA_DRIVER_
+can break on OS updates. Pin the installed version via `THOTH_CUA_DRIVER_
 VERSION` if you want reproducibility across an OS bump.
 """
 
@@ -45,9 +45,9 @@ logger = logging.getLogger(__name__)
 # Version pinning
 # ---------------------------------------------------------------------------
 
-PINNED_CUA_DRIVER_VERSION = os.environ.get("HERMES_CUA_DRIVER_VERSION", "0.5.0")
+PINNED_CUA_DRIVER_VERSION = os.environ.get("THOTH_CUA_DRIVER_VERSION", "0.5.0")
 
-_CUA_DRIVER_CMD = os.environ.get("HERMES_CUA_DRIVER_CMD", "cua-driver")
+_CUA_DRIVER_CMD = os.environ.get("THOTH_CUA_DRIVER_CMD", "cua-driver")
 _CUA_DRIVER_ARGS = ["mcp"]  # stdio MCP transport
 
 # Regex to parse list_windows text output lines:
@@ -86,7 +86,7 @@ def _is_arm_mac() -> bool:
 
 
 def cua_driver_binary_available() -> bool:
-    """True if `cua-driver` is on $PATH or HERMES_CUA_DRIVER_CMD resolves."""
+    """True if `cua-driver` is on $PATH or THOTH_CUA_DRIVER_CMD resolves."""
     return bool(shutil.which(_CUA_DRIVER_CMD))
 
 

@@ -49,8 +49,8 @@ def main():
     p.add_argument("--model", default="")
     args = p.parse_args()
 
-    os.environ["HERMES_SESSION_KEY"] = args.session_key
-    os.environ["HERMES_INTERACTIVE"] = "1"
+    os.environ["THOTH_SESSION_KEY"] = args.session_key
+    os.environ["THOTH_INTERACTIVE"] = "1"
 
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
         cli = ThothCLI(model=args.model or None, compact=True, resume=args.session_key, verbose=False)

@@ -40,9 +40,9 @@ def fresh_provider(monkeypatch):
     state already applied via monkeypatch."""
     def _make(*, enabled: bool = False) -> SubstrateMemoryProvider:
         if enabled:
-            monkeypatch.setenv("HERMES_SUBSTRATE_RECALL", "1")
+            monkeypatch.setenv("THOTH_SUBSTRATE_RECALL", "1")
         else:
-            monkeypatch.setenv("HERMES_SUBSTRATE_RECALL", "0")
+            monkeypatch.setenv("THOTH_SUBSTRATE_RECALL", "0")
         p = SubstrateMemoryProvider()
         p.initialize(session_id="test-session")
         return p
@@ -82,7 +82,7 @@ async def test_provider_coexists_with_external(booted_substrate, fresh_provider)
 
 @pytest.mark.asyncio
 async def test_provider_disabled_returns_empty(booted_substrate, fresh_provider):
-    """HERMES_SUBSTRATE_RECALL=0 → prefetch returns '' regardless of substrate state."""
+    """THOTH_SUBSTRATE_RECALL=0 → prefetch returns '' regardless of substrate state."""
     # Seed some content so a wrong implementation would return non-empty.
     stream = await booted_substrate.streams.get_by_name("thoth.world.user_message.cli")
     await commit_slice(
@@ -103,7 +103,7 @@ async def test_provider_disabled_returns_empty(booted_substrate, fresh_provider)
 
 @pytest.mark.asyncio
 async def test_provider_enabled_routes_to_recall(booted_substrate, fresh_provider, monkeypatch):
-    """HERMES_SUBSTRATE_RECALL=1 + substrate booted → prefetch routes
+    """THOTH_SUBSTRATE_RECALL=1 + substrate booted → prefetch routes
     to recall() and returns its text.
 
     We use a stub for recall_sync because the real pipeline's pool

@@ -12,7 +12,7 @@ Every weight change appends a ``substrate_association_edits`` row, so the
 graph carries its own history (MVS §3.2) — the raw material the Critic
 later audits against the salience landscape (MVS §3.7/§5.6, Phase F).
 
-Gated by ``HERMES_SUBSTRATE_ASSOCIATOR`` (default ON; set to 0 to disable): registers +
+Gated by ``THOTH_SUBSTRATE_ASSOCIATOR`` (default ON; set to 0 to disable): registers +
 heartbeats, but its tick is a no-op until an operator opts in — the same
 staged-rollout pattern as the Parser. Per the Phase E1 spec §3.
 """
@@ -61,7 +61,7 @@ class Associator(SubAgent):
         self._last_tick: datetime = _EPOCH
 
     async def tick(self) -> None:
-        if not _env_bool("HERMES_SUBSTRATE_ASSOCIATOR", default=True):
+        if not _env_bool("THOTH_SUBSTRATE_ASSOCIATOR", default=True):
             return
         if self._level is Level.OFF:
             return

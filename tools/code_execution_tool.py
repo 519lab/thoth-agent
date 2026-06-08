@@ -79,7 +79,7 @@ MAX_STDERR_BYTES = 10_000    # 10 KB
 _SAFE_ENV_PREFIXES = ("PATH", "HOME", "USER", "LANG", "LC_", "TERM",
                       "TMPDIR", "TMP", "TEMP", "SHELL", "LOGNAME",
                       "XDG_", "PYTHONPATH", "VIRTUAL_ENV", "CONDA",
-                      "HERMES_")
+                      "THOTH_")
 _SECRET_SUBSTRINGS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL",
                       "PASSWD", "AUTH")
 
@@ -319,7 +319,7 @@ _call_lock = threading.Lock()
 def _connect():
     """Connect to the parent's RPC server via the transport it picked.
 
-    HERMES_RPC_SOCKET can be either:
+    THOTH_RPC_SOCKET can be either:
       - a filesystem path (POSIX Unix domain socket — the default on
         Linux and macOS)
       - a string of the form ``tcp://127.0.0.1:<port>`` (Windows, where
@@ -327,7 +327,7 @@ def _connect():
     """
     global _sock
     if _sock is None:
-        endpoint = os.environ["HERMES_RPC_SOCKET"]
+        endpoint = os.environ["THOTH_RPC_SOCKET"]
         if endpoint.startswith("tcp://"):
             # tcp://host:port  (host is always 127.0.0.1 in practice — we
             # only bind loopback server-side)
@@ -372,7 +372,7 @@ _FILE_TRANSPORT_HEADER = '''\
 """Auto-generated Thoth tools RPC stubs (file-based transport)."""
 import json, os, shlex, tempfile, threading, time
 
-_RPC_DIR = os.environ.get("HERMES_RPC_DIR") or os.path.join(tempfile.gettempdir(), "hermes_rpc")
+_RPC_DIR = os.environ.get("THOTH_RPC_DIR") or os.path.join(tempfile.gettempdir(), "hermes_rpc")
 _seq = 0
 # `_seq += 1` is not atomic (read-modify-write), so concurrent _call()
 # invocations from multiple threads could allocate the same sequence number
@@ -918,10 +918,10 @@ def _execute_remote(
 
         # Build environment variable prefix for the script
         env_prefix = (
-            f"HERMES_RPC_DIR={shlex.quote(f'{sandbox_dir}/rpc')} "
+            f"THOTH_RPC_DIR={shlex.quote(f'{sandbox_dir}/rpc')} "
             f"PYTHONDONTWRITEBYTECODE=1"
         )
-        tz = os.getenv("HERMES_TIMEZONE", "").strip()
+        tz = os.getenv("THOTH_TIMEZONE", "").strip()
         if tz:
             env_prefix += f" TZ={tz}"
 
@@ -1098,7 +1098,7 @@ def execute_code(
     # on the same temp drive as the script).  Fall back to loopback TCP —
     # same ephemeral port, same 1-connection listen queue, same serialized
     # request/response framing.  The generated client reads the transport
-    # selector from HERMES_RPC_SOCKET (path vs. ``tcp://host:port``).
+    # selector from THOTH_RPC_SOCKET (path vs. ``tcp://host:port``).
     _sock_tmpdir = "/tmp" if sys.platform == "darwin" else tempfile.gettempdir()
     _use_tcp_rpc = _IS_WINDOWS
     if _use_tcp_rpc:
@@ -1139,7 +1139,7 @@ def execute_code(
         #   Windows: AF_INET stream socket on 127.0.0.1 with an ephemeral
         #   port.  No filesystem permission story, but loopback-only bind
         #   means only the current user's processes (not remote) can
-        #   connect.  HERMES_RPC_SOCKET is set to ``tcp://127.0.0.1:<port>``
+        #   connect.  THOTH_RPC_SOCKET is set to ``tcp://127.0.0.1:<port>``
         #   which the generated client parses to pick AF_INET.
         if _use_tcp_rpc:
             server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1173,7 +1173,7 @@ def execute_code(
         # passed through — without those, the child can't create a socket
         # or spawn a subprocess.  See ``_scrub_child_env`` for the rules.
         child_env = _scrub_child_env(os.environ)
-        child_env["HERMES_RPC_SOCKET"] = rpc_endpoint
+        child_env["THOTH_RPC_SOCKET"] = rpc_endpoint
         child_env["PYTHONDONTWRITEBYTECODE"] = "1"
         # Force UTF-8 for the child's stdio and default file encoding.
         #
@@ -1206,12 +1206,12 @@ def execute_code(
         child_env["PYTHONPATH"] = os.pathsep.join(_pp_parts)
         # Inject user's configured timezone so datetime.now() in sandboxed
         # code reflects the correct wall-clock time.  Only TZ is set —
-        # HERMES_TIMEZONE is an internal Thoth setting and must not leak
+        # THOTH_TIMEZONE is an internal Thoth setting and must not leak
         # into child processes.
-        _tz_name = os.getenv("HERMES_TIMEZONE", "").strip()
+        _tz_name = os.getenv("THOTH_TIMEZONE", "").strip()
         if _tz_name:
             child_env["TZ"] = _tz_name
-        child_env.pop("HERMES_TIMEZONE", None)
+        child_env.pop("THOTH_TIMEZONE", None)
 
         # Per-profile HOME isolation: redirect system tool configs into
         # {THOTH_HOME}/home/ when that directory exists.

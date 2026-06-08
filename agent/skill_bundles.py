@@ -66,10 +66,10 @@ _bundles_cache_mtime: Optional[float] = None
 def _bundles_dir() -> Path:
     """Return the canonical bundles directory under THOTH_HOME.
 
-    Honors ``HERMES_BUNDLES_DIR`` for tests; falls back to
+    Honors ``THOTH_BUNDLES_DIR`` for tests; falls back to
     ``<THOTH_HOME>/skill-bundles``.
     """
-    override = os.environ.get("HERMES_BUNDLES_DIR")
+    override = os.environ.get("THOTH_BUNDLES_DIR")
     if override:
         return Path(override).expanduser()
     return get_thoth_home() / "skill-bundles"

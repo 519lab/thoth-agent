@@ -35,7 +35,7 @@ Ollama runs on CPU-only servers. A 9B model on a modern 8-core CPU gives ~10 tok
 
 ```bash
 # ~/.hermes/.env
-HERMES_API_TIMEOUT=1800   # 30 minutes — generous for slow local models
+THOTH_API_TIMEOUT=1800   # 30 minutes — generous for slow local models
 ```
 :::
 

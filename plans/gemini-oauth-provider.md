@@ -72,7 +72,7 @@ Add a first-class `gemini` provider that authenticates via Google OAuth, using t
 
 ## Prerequisites
 - Nous Research GCP project with Desktop OAuth client registered
-- OR: accept user-provided client_id via HERMES_GEMINI_CLIENT_ID env var
+- OR: accept user-provided client_id via THOTH_GEMINI_CLIENT_ID env var
 
 ## Reference implementations
 - clawdbot: `extensions/google/oauth.flow.ts` (PKCE + localhost server)

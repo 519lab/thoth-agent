@@ -106,7 +106,7 @@ class TestPluginDiscovery:
         project_dir = tmp_path / "project"
         project_dir.mkdir()
         monkeypatch.chdir(project_dir)
-        monkeypatch.setenv("HERMES_ENABLE_PROJECT_PLUGINS", "true")
+        monkeypatch.setenv("THOTH_ENABLE_PROJECT_PLUGINS", "true")
         plugins_dir = project_dir / ".hermes" / "plugins"
         _make_plugin_dir(plugins_dir, "proj_plugin")
 
@@ -1447,11 +1447,11 @@ class TestPluginDispatchTool:
 
 
 class TestPluginDebugLogging:
-    """HERMES_PLUGINS_DEBUG opt-in stderr handler for plugin developers."""
+    """THOTH_PLUGINS_DEBUG opt-in stderr handler for plugin developers."""
 
     def test_debug_handler_not_installed_when_env_var_absent(self, monkeypatch):
         """Without the env var, no stderr handler is attached."""
-        monkeypatch.delenv("HERMES_PLUGINS_DEBUG", raising=False)
+        monkeypatch.delenv("THOTH_PLUGINS_DEBUG", raising=False)
         from thoth_cli import plugins as plugins_mod
 
         # Snapshot, then force a re-evaluation.
@@ -1471,8 +1471,8 @@ class TestPluginDebugLogging:
             plugins_mod.logger.handlers = original_handlers
 
     def test_debug_handler_installed_when_env_var_set(self, monkeypatch):
-        """With HERMES_PLUGINS_DEBUG=1, a DEBUG-level stderr handler is attached."""
-        monkeypatch.setenv("HERMES_PLUGINS_DEBUG", "1")
+        """With THOTH_PLUGINS_DEBUG=1, a DEBUG-level stderr handler is attached."""
+        monkeypatch.setenv("THOTH_PLUGINS_DEBUG", "1")
         from thoth_cli import plugins as plugins_mod
 
         original_installed = plugins_mod._DEBUG_HANDLER_INSTALLED
@@ -1499,7 +1499,7 @@ class TestPluginDebugLogging:
 
     def test_debug_handler_idempotent(self, monkeypatch):
         """Calling install twice (without force) does not double-attach."""
-        monkeypatch.setenv("HERMES_PLUGINS_DEBUG", "1")
+        monkeypatch.setenv("THOTH_PLUGINS_DEBUG", "1")
         from thoth_cli import plugins as plugins_mod
 
         original_installed = plugins_mod._DEBUG_HANDLER_INSTALLED

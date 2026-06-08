@@ -229,10 +229,10 @@ _QWEN_CODE_VERSION = "0.14.1"
 
 def _routermint_headers() -> dict:
     """Return the User-Agent RouterMint needs to avoid Cloudflare 1010 blocks."""
-    from thoth_cli import __version__ as _HERMES_VERSION
+    from thoth_cli import __version__ as _THOTH_VERSION
 
     return {
-        "User-Agent": f"HermesAgent/{_HERMES_VERSION}",
+        "User-Agent": f"HermesAgent/{_THOTH_VERSION}",
     }
 
 
@@ -510,7 +510,7 @@ class AIAgent:
             import thoth_db as _hermes_db
             _hermes_db.run_sync(self._session_db.create_session(
                 session_id=self.session_id,
-                source=self.platform or os.environ.get("HERMES_SESSION_SOURCE", "cli"),
+                source=self.platform or os.environ.get("THOTH_SESSION_SOURCE", "cli"),
                 model=self.model,
                 model_config=self._session_init_model_config,
                 system_prompt=self._cached_system_prompt,
@@ -864,19 +864,19 @@ class AIAgent:
         Priority:
           1. ``providers.<id>.models.<model>.timeout_seconds`` (per-model override)
           2. ``providers.<id>.request_timeout_seconds`` (provider-wide)
-          3. ``HERMES_API_TIMEOUT`` env var (legacy escape hatch)
+          3. ``THOTH_API_TIMEOUT`` env var (legacy escape hatch)
           4. 1800.0s default
 
         Used by OpenAI-wire chat completions (streaming and non-streaming) so
         the per-provider config knob wins over the 1800s default.  Without this
-        helper, the hardcoded ``HERMES_API_TIMEOUT`` fallback would always be
+        helper, the hardcoded ``THOTH_API_TIMEOUT`` fallback would always be
         passed as a per-call ``timeout=`` kwarg, overriding the client-level
         timeout the AIAgent.__init__ path configured.
         """
         cfg = get_provider_request_timeout(self.provider, self.model)
         if cfg is not None:
             return cfg
-        return float(os.getenv("HERMES_API_TIMEOUT", 1800.0))
+        return float(os.getenv("THOTH_API_TIMEOUT", 1800.0))
 
     def _resolved_api_call_stale_timeout_base(self) -> tuple[float, bool]:
         """Resolve the base non-stream stale timeout and whether it is implicit.
@@ -884,7 +884,7 @@ class AIAgent:
         Priority:
           1. ``providers.<id>.models.<model>.stale_timeout_seconds``
           2. ``providers.<id>.stale_timeout_seconds``
-          3. ``HERMES_API_CALL_STALE_TIMEOUT`` env var
+          3. ``THOTH_API_CALL_STALE_TIMEOUT`` env var
           4. 300.0s default
 
         Returns ``(timeout_seconds, uses_implicit_default)`` so the caller can
@@ -896,7 +896,7 @@ class AIAgent:
         if cfg is not None:
             return cfg, False
 
-        env_timeout = os.getenv("HERMES_API_CALL_STALE_TIMEOUT")
+        env_timeout = os.getenv("THOTH_API_CALL_STALE_TIMEOUT")
         if env_timeout is not None:
             return float(env_timeout), False
 
@@ -1792,13 +1792,13 @@ class AIAgent:
         """Check whether the per-turn file-mutation verifier footer is on.
 
         Config path: ``display.file_mutation_verifier`` (bool, default True).
-        ``HERMES_FILE_MUTATION_VERIFIER`` env var overrides config.  Exposed
+        ``THOTH_FILE_MUTATION_VERIFIER`` env var overrides config.  Exposed
         as a method so tests can patch a single seam without reaching into
         the private ``_turn_failed_file_mutations`` state dict.
         """
         try:
             import os as _os
-            env = _os.environ.get("HERMES_FILE_MUTATION_VERIFIER")
+            env = _os.environ.get("THOTH_FILE_MUTATION_VERIFIER")
             if env is not None:
                 return env.strip().lower() not in {"0", "false", "no", "off"}
             # Read from the persisted config.yaml so gateway and CLI share
@@ -2424,7 +2424,7 @@ class AIAgent:
             # Explicitly read proxy settings while still honoring NO_PROXY for
             # loopback / local endpoints such as a locally hosted sub2api.
             _proxy = _get_proxy_for_base_url(base_url)
-            # Verify TLS against a resolved CA bundle (HERMES_CA_BUNDLE /
+            # Verify TLS against a resolved CA bundle (THOTH_CA_BUNDLE /
             # SSL_CERT_FILE override → OS system store → certifi). httpx's
             # default uses certifi only, which omits internally-installed
             # CAs, so endpoints behind a private CA (e.g. a local model
@@ -2687,8 +2687,8 @@ class AIAgent:
             )
 
             creds = resolve_nous_runtime_credentials(
-                min_key_ttl_seconds=max(60, int(os.getenv("HERMES_NOUS_MIN_KEY_TTL_SECONDS", "1800"))),
-                timeout_seconds=float(os.getenv("HERMES_NOUS_TIMEOUT_SECONDS", "15")),
+                min_key_ttl_seconds=max(60, int(os.getenv("THOTH_NOUS_MIN_KEY_TTL_SECONDS", "1800"))),
+                timeout_seconds=float(os.getenv("THOTH_NOUS_TIMEOUT_SECONDS", "15")),
                 inference_auth_mode=(
                     NOUS_INFERENCE_AUTH_MODE_LEGACY
                     if force
@@ -4091,12 +4091,12 @@ def main(
     Toolset Examples:
         - "research": Web search, extract, crawl + vision tools
     """
-    # Phase 0: initialise PG pool (idempotent; raises if HERMES_PG_DSN unset).
+    # Phase 0: initialise PG pool (idempotent; raises if THOTH_PG_DSN unset).
     try:
         from thoth_bootstrap import init_db_sync
         init_db_sync()
     except RuntimeError:
-        pass  # No HERMES_PG_DSN → legacy path still works during cutover period.
+        pass  # No THOTH_PG_DSN → legacy path still works during cutover period.
 
     # Phase A: bootstrap the substrate so perception hooks emit slices.
     try:

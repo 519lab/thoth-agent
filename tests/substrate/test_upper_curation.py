@@ -21,10 +21,10 @@ from substrate.l3 import store as l3
 
 
 def _vec(*lead: float) -> list[float]:
-    """A HERMES_EMBEDDING_DIM-length vector with the given leading components.
+    """A THOTH_EMBEDDING_DIM-length vector with the given leading components.
     ``_vec(1, 0)`` ≈ ``_vec(1, 0)`` (cosine distance 0); ``_vec(0, 1)`` is
     orthogonal (distance 1)."""
-    dim = int(os.environ.get("HERMES_EMBEDDING_DIM") or 1536)
+    dim = int(os.environ.get("THOTH_EMBEDDING_DIM") or 1536)
     v = [0.0] * dim
     for i, x in enumerate(lead):
         v[i] = float(x)
@@ -155,8 +155,8 @@ async def test_cross_kind_disabled_keeps_separate(substrate):
 
 def test_merge_thresholds_env_tunable(monkeypatch):
     """The merge distances are operator-tunable via env (no redeploy)."""
-    monkeypatch.setenv("HERMES_SUBSTRATE_MERGE_MAX_DISTANCE", "0.25")
-    monkeypatch.setenv("HERMES_SUBSTRATE_MERGE_CROSS_KIND_DISTANCE", "0.09")
+    monkeypatch.setenv("THOTH_SUBSTRATE_MERGE_MAX_DISTANCE", "0.25")
+    monkeypatch.setenv("THOTH_SUBSTRATE_MERGE_CROSS_KIND_DISTANCE", "0.09")
     c = Curator(None)  # these attrs don't touch the DB
     assert c.UPPER_MERGE_MAX_DISTANCE == 0.25
     assert c.UPPER_MERGE_CROSS_KIND_MAX_DISTANCE == 0.09

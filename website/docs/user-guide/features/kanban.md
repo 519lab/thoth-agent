@@ -66,7 +66,7 @@ They coexist: a kanban worker may call `delegate_task` internally during its run
   - `scratch` (default) — fresh tmp dir under `~/.hermes/kanban/workspaces/<id>/` (or `~/.hermes/kanban/boards/<slug>/workspaces/<id>/` on non-default boards).
   - `dir:<path>` — an existing shared directory (Obsidian vault, mail ops dir, per-account folder). **Must be an absolute path.** Relative paths like `dir:../tenants/foo/` are rejected at dispatch because they'd resolve against whatever CWD the dispatcher happens to be in, which is ambiguous and a confused-deputy escape vector. The path is otherwise trusted — it's your box, your filesystem, the worker runs with your uid. This is the trusted-local-user threat model; kanban is single-host by design.
   - `worktree` — a git worktree under `.worktrees/<id>/` for coding tasks. Use `worktree:<path>` to pin the exact target path. Worker-side `git worktree add` creates it, using `--branch` when provided.
-- **Dispatcher** — a long-lived loop that, every N seconds (default 60): reclaims stale claims, reclaims crashed workers (PID gone but TTL not yet expired), promotes ready tasks, atomically claims, spawns assigned profiles. Runs **inside the gateway** by default (`kanban.dispatch_in_gateway: true`). One dispatcher sweeps all boards per tick; workers are spawned with `HERMES_KANBAN_BOARD` pinned so they can't see other boards. After `kanban.failure_limit` consecutive spawn failures on the same task (default: 2) the dispatcher auto-blocks it with the last error as the reason — prevents thrashing on tasks whose profile doesn't exist, workspace can't mount, etc.
+- **Dispatcher** — a long-lived loop that, every N seconds (default 60): reclaims stale claims, reclaims crashed workers (PID gone but TTL not yet expired), promotes ready tasks, atomically claims, spawns assigned profiles. Runs **inside the gateway** by default (`kanban.dispatch_in_gateway: true`). One dispatcher sweeps all boards per tick; workers are spawned with `THOTH_KANBAN_BOARD` pinned so they can't see other boards. After `kanban.failure_limit` consecutive spawn failures on the same task (default: 2) the dispatcher auto-blocks it with the last error as the reason — prevents thrashing on tasks whose profile doesn't exist, workspace can't mount, etc.
 - **Tenant** — optional string namespace *within* a board. One specialist fleet can serve multiple businesses (`--tenant business-a`) with data isolation by workspace path and memory key prefix. Tenants are a soft filter; boards are the hard isolation boundary.
 
 ## Boards (multi-project)
@@ -82,7 +82,7 @@ Per-board isolation is absolute:
 - Separate SQLite DB per board (`~/.hermes/kanban/boards/<slug>/kanban.db`).
 - Separate `workspaces/` and `logs/` directories.
 - Workers spawned for a task see **only** their board's tasks — the
-  dispatcher sets `HERMES_KANBAN_BOARD` in the child env and every
+  dispatcher sets `THOTH_KANBAN_BOARD` in the child env and every
   `kanban_*` tool the worker has access to reads it.
 - Linking tasks across boards is not allowed (keeps the schema simple; if
   you really need cross-project refs, use free-text mentions and look
@@ -123,7 +123,7 @@ thoth kanban boards rm atm10-server --delete
 Board resolution order (highest precedence first):
 
 1. Explicit `--board <slug>` on the CLI call.
-2. `HERMES_KANBAN_BOARD` env var (set by the dispatcher when spawning a
+2. `THOTH_KANBAN_BOARD` env var (set by the dispatcher when spawning a
    worker, so workers can't see other boards).
 3. `~/.hermes/kanban/current` — the slug persisted by `thoth kanban
    boards switch`.
@@ -192,7 +192,7 @@ kanban:
   dispatch_interval_seconds: 60    # default
 ```
 
-Override the config flag at runtime via `HERMES_KANBAN_DISPATCH_IN_GATEWAY=0`
+Override the config flag at runtime via `THOTH_KANBAN_DISPATCH_IN_GATEWAY=0`
 for debugging. Standard gateway supervision applies: run `thoth gateway
 start` directly, or wire the gateway up as a systemd user unit (see the
 gateway docs). Without a running gateway, `ready` tasks stay where they are
@@ -231,7 +231,7 @@ thoth kanban block    t_abc "need input" --ids t_def t_hij
 
 ## How workers interact with the board
 
-**Workers do not shell out to `thoth kanban`.** When the dispatcher spawns a worker it sets `HERMES_KANBAN_TASK=t_abcd` in the child's env, and that env var flips on a dedicated **kanban toolset** in the model's schema. The same toolset is also available to orchestrator profiles that enable `kanban` in their toolsets config. These tools read and mutate the board directly via the Python `kanban_db` layer, same as the CLI does. A running worker calls these like any other tool; it never sees or needs the `thoth kanban` CLI.
+**Workers do not shell out to `thoth kanban`.** When the dispatcher spawns a worker it sets `THOTH_KANBAN_TASK=t_abcd` in the child's env, and that env var flips on a dedicated **kanban toolset** in the model's schema. The same toolset is also available to orchestrator profiles that enable `kanban` in their toolsets config. These tools read and mutate the board directly via the Python `kanban_db` layer, same as the CLI does. A running worker calls these like any other tool; it never sees or needs the `thoth kanban` CLI.
 
 | Tool | Purpose | Required params |
 |---|---|---|
@@ -249,7 +249,7 @@ A typical worker turn looks like:
 
 ```
 # Model's tool calls, in order:
-kanban_show()                                     # no args — uses HERMES_KANBAN_TASK
+kanban_show()                                     # no args — uses THOTH_KANBAN_TASK
 # (model reads the returned worker_context, does the work via terminal/file tools)
 kanban_heartbeat(note="halfway through — 4 of 8 files transformed")
 # (more work)
@@ -290,7 +290,7 @@ Three reasons:
 2. **No shell-quoting fragility.** Passing `--metadata '{"files": [...]}'` through shlex + argparse is a latent footgun. Structured tool args skip it entirely.
 3. **Better errors.** Tool results are structured JSON the model can reason about, not stderr strings it has to parse.
 
-**Zero schema footprint on normal sessions.** A regular `thoth chat` session has zero `kanban_*` tools in its schema unless the active profile explicitly enables the `kanban` toolset for orchestrator work. Dispatcher-spawned task workers get task-scoped tools because `HERMES_KANBAN_TASK` is set; orchestrator profiles get the broader routing surface through config. No tool bloat for users who never touch kanban.
+**Zero schema footprint on normal sessions.** A regular `thoth chat` session has zero `kanban_*` tools in its schema unless the active profile explicitly enables the `kanban` toolset for orchestrator work. Dispatcher-spawned task workers get task-scoped tools because `THOTH_KANBAN_TASK` is set; orchestrator profiles get the broader routing surface through config. No tool bloat for users who never touch kanban.
 
 The `kanban-worker` and `kanban-orchestrator` skills teach the model which tool to call when and in what order.
 
@@ -333,7 +333,7 @@ does exist, such as source URLs, issue ids, or manual review steps.
 Any profile that should be able to work kanban tasks must load the `kanban-worker` skill. It teaches the worker the full lifecycle in **tool calls**, not CLI commands:
 
 1. On spawn, call `kanban_show()` to read title + body + parent handoffs + prior attempts + full comment thread.
-2. `cd $HERMES_KANBAN_WORKSPACE` (via the terminal tool) and do the work there.
+2. `cd $THOTH_KANBAN_WORKSPACE` (via the terminal tool) and do the work there.
 3. Call `kanban_heartbeat(note="...")` every few minutes during long operations. **If your work may run longer than 1 hour, call `kanban_heartbeat` at least once an hour** — the dispatcher reclaims tasks that have been running past `kanban.dispatch_stale_timeout_seconds` (default 4 h) with no heartbeat in the last hour, on the assumption the worker crashed without cleanup. A reclaim is benign (the task goes back to `ready` for re-dispatch without a failure-counter tick) but you lose your current run's progress.
 4. Complete with `kanban_complete(summary="...", metadata={...})`, or `kanban_block(reason="...")` if stuck.
 
@@ -727,7 +727,7 @@ thoth kanban create "monthly report" \
     --workspace dir:~/tenants/business-a/data/
 ```
 
-Workers receive `$HERMES_TENANT` and namespace their memory writes by prefix. The board, the dispatcher, and the profile definitions are all shared; only the data is scoped.
+Workers receive `$THOTH_TENANT` and namespace their memory writes by prefix. The board, the dispatcher, and the profile definitions are all shared; only the data is scoped.
 
 ## Gateway notifications
 

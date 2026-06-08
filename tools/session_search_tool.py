@@ -34,7 +34,7 @@ import logging
 from typing import Any, Dict, List, Optional, Union
 
 # Sources that are excluded from session browsing/searching by default.
-# Third-party integrations tag their sessions with HERMES_SESSION_SOURCE=tool
+# Third-party integrations tag their sessions with THOTH_SESSION_SOURCE=tool
 # so they don't clutter the user's session history.
 _HIDDEN_SESSION_SOURCES = ("tool",)
 
@@ -493,7 +493,7 @@ def check_session_search_requirements() -> bool:
 
     Substrate edition runs the session store on Postgres (via
     ``thoth_db``), so availability means either the pool is already
-    initialised or ``HERMES_PG_DSN`` is set so the pool can be
+    initialised or ``THOTH_PG_DSN`` is set so the pool can be
     bootstrapped on first use. The legacy SQLite ``DEFAULT_DB_PATH``
     check was a holdover from the upstream filesystem-backed store and
     always returned False on this fork (the import raised
@@ -507,7 +507,7 @@ def check_session_search_requirements() -> bool:
         return False
     if thoth_db._pool is not None:
         return True
-    return bool(os.environ.get("HERMES_PG_DSN"))
+    return bool(os.environ.get("THOTH_PG_DSN"))
 
 
 SESSION_SEARCH_SCHEMA = {

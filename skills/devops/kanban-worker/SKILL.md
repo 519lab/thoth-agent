@@ -15,17 +15,17 @@ metadata:
 
 ## Workspace handling
 
-Your workspace kind determines how you should behave inside `$HERMES_KANBAN_WORKSPACE`:
+Your workspace kind determines how you should behave inside `$THOTH_KANBAN_WORKSPACE`:
 
 | Kind | What it is | How to work |
 |---|---|---|
 | `scratch` | Fresh tmp dir, yours alone | Read/write freely; it gets GC'd when the task is archived. |
 | `dir:<path>` | Shared persistent directory | Other runs will read what you write. Treat it like long-lived state. Path is guaranteed absolute (the kernel rejects relative paths). |
-| `worktree` | Git worktree at the resolved path | If `.git` doesn't exist, run `git worktree add <path> ${HERMES_KANBAN_BRANCH:-wt/$HERMES_KANBAN_TASK}` from the main repo first, then cd and work normally. Commit work here. |
+| `worktree` | Git worktree at the resolved path | If `.git` doesn't exist, run `git worktree add <path> ${THOTH_KANBAN_BRANCH:-wt/$THOTH_KANBAN_TASK}` from the main repo first, then cd and work normally. Commit work here. |
 
 ## Tenant isolation
 
-If `$HERMES_TENANT` is set, the task belongs to a tenant namespace. When reading or writing persistent memory, prefix memory entries with the tenant so context doesn't leak across tenants:
+If `$THOTH_TENANT` is set, the task belongs to a tenant namespace. When reading or writing persistent memory, prefix memory entries with the tenant so context doesn't leak across tenants:
 
 - Good: `business-a: Acme is our biggest customer`
 - Bad (leaks): `Acme is our biggest customer`
@@ -133,7 +133,7 @@ Good: one sentence naming the specific decision you need. Leave longer context a
 
 ```python
 kanban_comment(
-    task_id=os.environ["HERMES_KANBAN_TASK"],
+    task_id=os.environ["THOTH_KANBAN_TASK"],
     body="Full context: I have user IPs from Cloudflare headers but some users are behind NATs with thousands of peers. Keying on IP alone causes false positives.",
 )
 kanban_block(reason="Rate limit key choice: IP (simple, NAT-unsafe) or user_id (requires auth, skips anonymous endpoints)?")
@@ -167,7 +167,7 @@ You can configure the gateway to receive cross-profile Kanban task notifications
 ## Do NOT
 
 - Call `delegate_task` as a substitute for `kanban_create`. `delegate_task` is for short reasoning subtasks inside YOUR run; `kanban_create` is for cross-agent handoffs that outlive one API loop.
-- Modify files outside `$HERMES_KANBAN_WORKSPACE` unless the task body says to.
+- Modify files outside `$THOTH_KANBAN_WORKSPACE` unless the task body says to.
 - Create follow-up tasks assigned to yourself — assign to the right specialist.
 - Complete a task you didn't actually finish. Block it instead.
 

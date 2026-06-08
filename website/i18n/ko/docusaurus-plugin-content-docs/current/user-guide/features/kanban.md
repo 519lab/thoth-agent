@@ -82,7 +82,7 @@ board 단위 격리는 다음을 의미합니다.
 
 - board별 별도 SQLite DB (`~/.hermes/kanban/boards/<slug>/kanban.db`)
 - 별도 `workspaces/` 및 `logs/`
-- worker는 자기 board task만 볼 수 있음 (`HERMES_KANBAN_BOARD` 고정)
+- worker는 자기 board task만 볼 수 있음 (`THOTH_KANBAN_BOARD` 고정)
 - board 간 task link는 불가
 
 ### CLI에서 board 관리
@@ -119,7 +119,7 @@ thoth kanban boards rm atm10-server --delete
 board 해석 우선순위는 다음과 같습니다.
 
 1. 명시적 `--board <slug>`
-2. `HERMES_KANBAN_BOARD` 환경변수
+2. `THOTH_KANBAN_BOARD` 환경변수
 3. `~/.hermes/kanban/current`
 4. `default`
 
@@ -169,7 +169,7 @@ kanban:
   dispatch_interval_seconds: 60
 ```
 
-디버깅용으로만 `HERMES_KANBAN_DISPATCH_IN_GATEWAY=0`으로 끌 수 있습니다. `thoth kanban daemon` 단독 실행 방식은 **deprecated**이며, 가능하면 gateway를 쓰는 것이 권장됩니다.
+디버깅용으로만 `THOTH_KANBAN_DISPATCH_IN_GATEWAY=0`으로 끌 수 있습니다. `thoth kanban daemon` 단독 실행 방식은 **deprecated**이며, 가능하면 gateway를 쓰는 것이 권장됩니다.
 
 ### Idempotent create (자동화 / webhook용)
 
@@ -193,7 +193,7 @@ thoth kanban block    t_abc "need input" --ids t_def t_hij
 
 ## 작업자는 보드와 어떻게 상호작용하나 {#how-workers-interact-with-the-board}
 
-**Worker는 `thoth kanban`을 shell로 호출하지 않습니다.** dispatcher는 worker spawn 시 `HERMES_KANBAN_TASK=t_abcd`를 child env에 넣고, 그 환경변수가 모델 스키마에서 전용 **kanban toolset**을 활성화합니다. 이 7개 tool은 CLI와 동일하게 Python `kanban_db` 계층을 직접 호출합니다.
+**Worker는 `thoth kanban`을 shell로 호출하지 않습니다.** dispatcher는 worker spawn 시 `THOTH_KANBAN_TASK=t_abcd`를 child env에 넣고, 그 환경변수가 모델 스키마에서 전용 **kanban toolset**을 활성화합니다. 이 7개 tool은 CLI와 동일하게 Python `kanban_db` 계층을 직접 호출합니다.
 
 | Tool | 목적 | 필수 파라미터 |
 |---|---|---|
@@ -244,7 +244,7 @@ kanban_complete(summary="decomposed into 2 research tasks + 1 writer; linked dep
 2. **shell quoting 취약성 제거** — `--metadata '{"files": [...]}'` 같은 문자열 인자 문제를 피합니다.
 3. **더 좋은 오류 처리** — stderr 파싱이 아니라 structured JSON 결과를 모델이 바로 읽습니다.
 
-**일반 세션에는 schema footprint가 0입니다.** 평범한 `thoth chat` 세션에는 `kanban_*` tool이 나타나지 않습니다. `HERMES_KANBAN_TASK`가 있을 때만 `check_fn`이 True가 되기 때문입니다.
+**일반 세션에는 schema footprint가 0입니다.** 평범한 `thoth chat` 세션에는 `kanban_*` tool이 나타나지 않습니다. `THOTH_KANBAN_TASK`가 있을 때만 `check_fn`이 True가 되기 때문입니다.
 
 ### 추천 handoff evidence
 
@@ -280,7 +280,7 @@ kanban_complete(summary="decomposed into 2 research tasks + 1 writer; linked dep
 kanban task를 처리할 수 있는 profile은 `kanban-worker` skill을 로드해야 합니다. 이 skill은 CLI가 아니라 **tool call 기준 lifecycle**을 가르칩니다.
 
 1. spawn되면 `kanban_show()` 호출
-2. terminal tool로 `cd $HERMES_KANBAN_WORKSPACE`
+2. terminal tool로 `cd $THOTH_KANBAN_WORKSPACE`
 3. 장기 작업 중 `kanban_heartbeat(note="...")`
 4. 끝나면 `kanban_complete(...)`, 막히면 `kanban_block(...)`
 
@@ -602,7 +602,7 @@ thoth kanban create "monthly report" \
     --workspace dir:~/tenants/business-a/data/
 ```
 
-worker는 `$HERMES_TENANT`를 받고 memory write를 prefix namespace로 분리합니다. board, dispatcher, profile 정의는 공유하고 데이터만 scope됩니다.
+worker는 `$THOTH_TENANT`를 받고 memory write를 prefix namespace로 분리합니다. board, dispatcher, profile 정의는 공유하고 데이터만 scope됩니다.
 
 ## Gateway 알림
 

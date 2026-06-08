@@ -250,7 +250,7 @@ class TestResolveXaiOAuthForAux:
             "providers": {},
         }))
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
-        monkeypatch.delenv("HERMES_XAI_BASE_URL", raising=False)
+        monkeypatch.delenv("THOTH_XAI_BASE_URL", raising=False)
         monkeypatch.delenv("XAI_BASE_URL", raising=False)
 
         pool = load_pool("xai-oauth")
@@ -282,7 +282,7 @@ class TestResolveXaiOAuthForAux:
             "providers": {},
         }))
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
-        monkeypatch.setenv("HERMES_XAI_BASE_URL", "https://example.x.ai/v1/")
+        monkeypatch.setenv("THOTH_XAI_BASE_URL", "https://example.x.ai/v1/")
 
         pool = load_pool("xai-oauth")
         pool.add_entry(PooledCredential(

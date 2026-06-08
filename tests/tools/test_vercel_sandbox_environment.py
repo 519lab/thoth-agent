@@ -178,8 +178,8 @@ class _FakeSDK:
 def _cwd_result(body: str = "", *, cwd: str = "/vercel/sandbox", exit_code: int = 0):
     def _result(_cmd: str, args: list[str], _kwargs: dict):
         script = args[1] if len(args) > 1 else ""
-        match = re.search(r"__HERMES_CWD_[A-Za-z0-9]+__", script)
-        marker = match.group(0) if match else "__HERMES_CWD_MISSING__"
+        match = re.search(r"__THOTH_CWD_[A-Za-z0-9]+__", script)
+        marker = match.group(0) if match else "__THOTH_CWD_MISSING__"
         prefix = f"{body}\n\n" if body else "\n"
         return _FakeRunResult(f"{prefix}{marker}{cwd}{marker}\n", exit_code)
 
@@ -322,7 +322,7 @@ class TestFileSync:
 
         env = make_env()
         src.write_text("updated-secret-token")
-        monkeypatch.setenv("HERMES_FORCE_FILE_SYNC", "1")
+        monkeypatch.setenv("THOTH_FORCE_FILE_SYNC", "1")
         vercel_sdk.current.run_command_side_effects.append(_cwd_result("hello"))
 
         result = env.execute("echo hello")

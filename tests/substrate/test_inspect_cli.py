@@ -426,4 +426,4 @@ async def test_print_recall_config(booted_substrate):
     out = buf.getvalue()
     assert "RECALL_TOKEN_BUDGET" in out
     assert "RECALL_EMBEDDING_MODEL" in out
-    assert "HERMES_SUBSTRATE_RECALL" in out
+    assert "THOTH_SUBSTRATE_RECALL" in out

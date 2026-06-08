@@ -191,15 +191,15 @@ def _launch_elevated_install(
     start_on_login: bool | None = None,
 ) -> bool:
     """Launch an elevated gateway install via UAC and return True on handoff."""
-    old_start_now = os.environ.get("HERMES_GATEWAY_INSTALL_START_NOW")
-    old_start_on_login = os.environ.get("HERMES_GATEWAY_INSTALL_START_ON_LOGIN")
-    old_handoff = os.environ.get("HERMES_GATEWAY_ELEVATED_HANDOFF")
+    old_start_now = os.environ.get("THOTH_GATEWAY_INSTALL_START_NOW")
+    old_start_on_login = os.environ.get("THOTH_GATEWAY_INSTALL_START_ON_LOGIN")
+    old_handoff = os.environ.get("THOTH_GATEWAY_ELEVATED_HANDOFF")
     try:
         if start_now is not None:
-            os.environ["HERMES_GATEWAY_INSTALL_START_NOW"] = "1" if start_now else "0"
+            os.environ["THOTH_GATEWAY_INSTALL_START_NOW"] = "1" if start_now else "0"
         if start_on_login is not None:
-            os.environ["HERMES_GATEWAY_INSTALL_START_ON_LOGIN"] = "1" if start_on_login else "0"
-        os.environ["HERMES_GATEWAY_ELEVATED_HANDOFF"] = "1"
+            os.environ["THOTH_GATEWAY_INSTALL_START_ON_LOGIN"] = "1" if start_on_login else "0"
+        os.environ["THOTH_GATEWAY_ELEVATED_HANDOFF"] = "1"
         extra_args = ["--elevated-handoff"]
         if force:
             extra_args.append("--force")
@@ -210,9 +210,9 @@ def _launch_elevated_install(
         return _launch_elevated_gateway_command("install", extra_args)
     finally:
         for key, old in (
-            ("HERMES_GATEWAY_INSTALL_START_NOW", old_start_now),
-            ("HERMES_GATEWAY_INSTALL_START_ON_LOGIN", old_start_on_login),
-            ("HERMES_GATEWAY_ELEVATED_HANDOFF", old_handoff),
+            ("THOTH_GATEWAY_INSTALL_START_NOW", old_start_now),
+            ("THOTH_GATEWAY_INSTALL_START_ON_LOGIN", old_start_on_login),
+            ("THOTH_GATEWAY_ELEVATED_HANDOFF", old_handoff),
         ):
             if old is None:
                 os.environ.pop(key, None)
@@ -316,7 +316,7 @@ def _build_gateway_cmd_script(
     lines.append(f'set "THOTH_HOME={thoth_home}"')
     lines.append(f'set "THOTH_HOME={thoth_home}"')
     lines.append('set "PYTHONIOENCODING=utf-8"')
-    lines.append('set "HERMES_GATEWAY_DETACHED=1"')
+    lines.append('set "THOTH_GATEWAY_DETACHED=1"')
     # VIRTUAL_ENV lets the gateway's own python detection find the venv
     # if someone imports thoth_constants-based logic during startup.
     venv_dir = str(Path(python_path).resolve().parent.parent)
@@ -538,7 +538,7 @@ def _build_gateway_argv() -> tuple[list[str], str, dict[str, str]]:
         "THOTH_HOME": thoth_home,
         "THOTH_HOME": thoth_home,
         "PYTHONIOENCODING": "utf-8",
-        "HERMES_GATEWAY_DETACHED": "1",
+        "THOTH_GATEWAY_DETACHED": "1",
         "VIRTUAL_ENV": str(venv_dir),
     }
     _prepend_pythonpath(env_overlay, [working_dir, *extra_pythonpath] if extra_pythonpath else [])
@@ -638,8 +638,8 @@ def _prompt_install_choices(
     start_on_login: bool | None = None,
 ) -> tuple[bool, bool]:
     """Return (start_now, start_on_login), asking before any UAC escalation."""
-    env_start_now = _install_choice_from_env("HERMES_GATEWAY_INSTALL_START_NOW")
-    env_start_on_login = _install_choice_from_env("HERMES_GATEWAY_INSTALL_START_ON_LOGIN")
+    env_start_now = _install_choice_from_env("THOTH_GATEWAY_INSTALL_START_NOW")
+    env_start_on_login = _install_choice_from_env("THOTH_GATEWAY_INSTALL_START_ON_LOGIN")
     if start_now is None:
         start_now = env_start_now
     if start_on_login is None:

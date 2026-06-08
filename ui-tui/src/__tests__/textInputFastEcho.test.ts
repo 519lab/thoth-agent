@@ -187,7 +187,7 @@ describe('supportsFastEchoTerminal', () => {
   it('allows explicit Termux fast-echo opt-in via env override', () => {
     expect(
       supportsFastEchoTerminal({
-        HERMES_TUI_TERMUX_FAST_ECHO: '1',
+        THOTH_TUI_TERMUX_FAST_ECHO: '1',
         TERMUX_VERSION: '0.118.0'
       } as NodeJS.ProcessEnv)
     ).toBe(true)

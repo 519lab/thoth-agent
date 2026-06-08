@@ -9,7 +9,7 @@ forward; the originals are then faded so the substrate's past compresses
 instead of accumulating (automatic summarization of older context).
 
 LLM-driven (mockable ``_summarize`` seam); gated by
-``HERMES_SUBSTRATE_SUMMARIZER`` (default ON, like the other cognitive
+``THOTH_SUBSTRATE_SUMMARIZER`` (default ON, like the other cognitive
 sub-agents — set to 0 to disable). Conservative: only touches slices
 older than ``SUMMARIZER_MIN_AGE_HOURS`` (recent context is never
 compressed), never deletes originals (it lowers their salience so the
@@ -89,7 +89,7 @@ class Summarizer(SubAgent):
         self._stream_ready = False
 
     async def tick(self) -> None:
-        if not _env_bool("HERMES_SUBSTRATE_SUMMARIZER", default=True):
+        if not _env_bool("THOTH_SUBSTRATE_SUMMARIZER", default=True):
             return
         if self._level is Level.OFF:
             return

@@ -45,7 +45,7 @@ async def salient_need():
 
 
 def _enable(monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_SKILL_SCOUT", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_SKILL_SCOUT", "1")
     monkeypatch.setenv("SKILL_SCOUT_INTERVAL_S", "0")  # isolate the change-gate
     # Default-off the Phase-2 evaluator for the Phase-1 behaviour tests so they
     # stay hermetic (no real evaluator client). Phase-2 tests set the mode +
@@ -206,7 +206,7 @@ async def test_notify_failure_does_not_lose_proposal(substrate, salient_need, mo
 
 @pytest.mark.asyncio
 async def test_disabled_by_default(substrate, salient_need, monkeypatch):
-    monkeypatch.delenv("HERMES_SUBSTRATE_SKILL_SCOUT", raising=False)
+    monkeypatch.delenv("THOTH_SUBSTRATE_SKILL_SCOUT", raising=False)
 
     async def _boom(need_context, **kw):
         raise AssertionError("must not draft when the scout is disabled")
@@ -235,7 +235,7 @@ def _draft(slug):
 async def test_advisory_attaches_verdict_and_notifies(substrate, salient_need, monkeypatch):
     """Default mode is advisory: the verdict is attached + the user is still
     notified, regardless of the verdict (it never blocks)."""
-    monkeypatch.setenv("HERMES_SUBSTRATE_SKILL_SCOUT", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_SKILL_SCOUT", "1")
     monkeypatch.setenv("SKILL_SCOUT_INTERVAL_S", "0")
     monkeypatch.delenv("SKILL_EVALUATOR_MODE", raising=False)  # default = advisory
     _stub_not_covered(monkeypatch)
@@ -255,7 +255,7 @@ async def test_advisory_attaches_verdict_and_notifies(substrate, salient_need, m
 
 @pytest.mark.asyncio
 async def test_gate_reject_auto_rejects_silently(substrate, salient_need, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_SKILL_SCOUT", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_SKILL_SCOUT", "1")
     monkeypatch.setenv("SKILL_SCOUT_INTERVAL_S", "0")
     monkeypatch.setenv("SKILL_EVALUATOR_MODE", "gate")
     _stub_not_covered(monkeypatch)
@@ -275,7 +275,7 @@ async def test_gate_reject_auto_rejects_silently(substrate, salient_need, monkey
 
 @pytest.mark.asyncio
 async def test_gate_pass_notifies(substrate, salient_need, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_SKILL_SCOUT", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_SKILL_SCOUT", "1")
     monkeypatch.setenv("SKILL_SCOUT_INTERVAL_S", "0")
     monkeypatch.setenv("SKILL_EVALUATOR_MODE", "gate")
     _stub_not_covered(monkeypatch)
@@ -294,7 +294,7 @@ async def test_gate_pass_notifies(substrate, salient_need, monkeypatch):
 async def test_evaluator_unavailable_still_proposes(substrate, salient_need, monkeypatch):
     """Evaluator returns None (no model / call failed) → Phase-1 path: proposal
     created with a null verdict and the user is still notified."""
-    monkeypatch.setenv("HERMES_SUBSTRATE_SKILL_SCOUT", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_SKILL_SCOUT", "1")
     monkeypatch.setenv("SKILL_SCOUT_INTERVAL_S", "0")
     monkeypatch.delenv("SKILL_EVALUATOR_MODE", raising=False)  # advisory
     _stub_not_covered(monkeypatch)
@@ -311,7 +311,7 @@ async def test_evaluator_unavailable_still_proposes(substrate, salient_need, mon
 
 @pytest.mark.asyncio
 async def test_off_mode_skips_evaluator(substrate, salient_need, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_SKILL_SCOUT", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_SKILL_SCOUT", "1")
     monkeypatch.setenv("SKILL_SCOUT_INTERVAL_S", "0")
     monkeypatch.setenv("SKILL_EVALUATOR_MODE", "off")
     _stub_not_covered(monkeypatch)

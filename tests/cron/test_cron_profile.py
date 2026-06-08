@@ -170,10 +170,10 @@ class TestRunJobProfileContext:
 
                 observed["env_home_during_init"] = os.environ.get("THOTH_HOME")
                 observed["profile_env_only_during_init"] = os.environ.get(
-                    "HERMES_PROFILE_TEST_ONLY"
+                    "THOTH_PROFILE_TEST_ONLY"
                 )
                 observed["profile_env_shared_during_init"] = os.environ.get(
-                    "HERMES_PROFILE_TEST_SHARED"
+                    "THOTH_PROFILE_TEST_SHARED"
                 )
                 observed["thoth_home_during_init"] = str(get_thoth_home())
                 observed["scheduler_home_during_init"] = str(sched._get_thoth_home())
@@ -184,10 +184,10 @@ class TestRunJobProfileContext:
 
                 observed["env_home_during_run"] = os.environ.get("THOTH_HOME")
                 observed["profile_env_only_during_run"] = os.environ.get(
-                    "HERMES_PROFILE_TEST_ONLY"
+                    "THOTH_PROFILE_TEST_ONLY"
                 )
                 observed["profile_env_shared_during_run"] = os.environ.get(
-                    "HERMES_PROFILE_TEST_SHARED"
+                    "THOTH_PROFILE_TEST_SHARED"
                 )
                 observed["thoth_home_during_run"] = str(get_thoth_home())
                 observed["scheduler_home_during_run"] = str(sched._get_thoth_home())
@@ -221,7 +221,7 @@ class TestRunJobProfileContext:
         monkeypatch.setattr(sched, "_resolve_delivery_target", lambda job: None)
         monkeypatch.setattr(sched, "_resolve_cron_enabled_toolsets", lambda job, cfg: None)
         monkeypatch.setattr(sched, "_thoth_home", None)
-        monkeypatch.setenv("HERMES_CRON_TIMEOUT", "0")
+        monkeypatch.setenv("THOTH_CRON_TIMEOUT", "0")
 
         import dotenv
 
@@ -270,14 +270,14 @@ class TestRunJobProfileContext:
         root, profile_home = isolated_cron_profile_home
         observed: dict = {}
         self._install_agent_stubs(monkeypatch, observed)
-        monkeypatch.setenv("HERMES_PROFILE_TEST_SHARED", "outer")
-        monkeypatch.delenv("HERMES_PROFILE_TEST_ONLY", raising=False)
+        monkeypatch.setenv("THOTH_PROFILE_TEST_SHARED", "outer")
+        monkeypatch.delenv("THOTH_PROFILE_TEST_ONLY", raising=False)
 
         def fake_load_dotenv(path, *_a, **_kw):
             observed.setdefault("dotenv_paths", []).append(str(path))
-            os.environ["HERMES_PROFILE_TEST_SHARED"] = "profile-value"
-            os.environ["HERMES_PROFILE_TEST_ONLY"] = "profile-only"
-            os.environ["HERMES_CRON_TIMEOUT"] = "123"
+            os.environ["THOTH_PROFILE_TEST_SHARED"] = "profile-value"
+            os.environ["THOTH_PROFILE_TEST_ONLY"] = "profile-only"
+            os.environ["THOTH_CRON_TIMEOUT"] = "123"
             return True
 
         monkeypatch.setattr(dotenv, "load_dotenv", fake_load_dotenv)
@@ -297,9 +297,9 @@ class TestRunJobProfileContext:
         assert observed["profile_env_shared_during_init"] == "profile-value"
         assert observed["profile_env_only_during_run"] == "profile-only"
         assert observed["profile_env_shared_during_run"] == "profile-value"
-        assert os.environ["HERMES_PROFILE_TEST_SHARED"] == "outer"
-        assert "HERMES_PROFILE_TEST_ONLY" not in os.environ
-        assert os.environ["HERMES_CRON_TIMEOUT"] == "0"
+        assert os.environ["THOTH_PROFILE_TEST_SHARED"] == "outer"
+        assert "THOTH_PROFILE_TEST_ONLY" not in os.environ
+        assert os.environ["THOTH_CRON_TIMEOUT"] == "0"
         assert os.environ["THOTH_HOME"] == str(root)
         assert sched._get_thoth_home() == root
 

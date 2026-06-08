@@ -1,8 +1,8 @@
 """align l3/l4 embedding dim to substrate_slices
 
 Migration 0020 created ``l3_patterns``/``l4_observations``.embedding at
-``vector(HERMES_EMBEDDING_DIM)`` (default 1536), mirroring how 0009 created
-``substrate_slices.embedding``. But if ``HERMES_EMBEDDING_DIM`` isn't set in
+``vector(THOTH_EMBEDDING_DIM)`` (default 1536), mirroring how 0009 created
+``substrate_slices.embedding``. But if ``THOTH_EMBEDDING_DIM`` isn't set in
 the env at apply time while the install actually embeds at a different dim
 (e.g. nomic-embed's 768, which ``substrate_slices`` uses), the new columns
 mismatch the embedding model. The Curator's L3/L4 embed-backfill then fails

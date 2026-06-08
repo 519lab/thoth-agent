@@ -3448,6 +3448,6 @@ def unified_search(query: str, sources: List[SkillSource],
 HermesIndexSource = ThothIndexSource
 
 # Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-HERMES_INDEX_CACHE_FILE = THOTH_INDEX_CACHE_FILE
-HERMES_INDEX_TTL = THOTH_INDEX_TTL
-HERMES_INDEX_URL = THOTH_INDEX_URL
+THOTH_INDEX_CACHE_FILE = THOTH_INDEX_CACHE_FILE
+THOTH_INDEX_TTL = THOTH_INDEX_TTL
+THOTH_INDEX_URL = THOTH_INDEX_URL

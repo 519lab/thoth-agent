@@ -568,7 +568,7 @@ def test_load_pool_mirrors_nous_invoke_jwt_agent_key_runtime_api_key(tmp_path, m
 
 def test_nous_pool_terminal_refresh_removes_device_code_entry(tmp_path, monkeypatch):
     monkeypatch.setenv("THOTH_HOME", str(tmp_path / "hermes"))
-    monkeypatch.setenv("HERMES_SHARED_AUTH_DIR", str(tmp_path / "shared"))
+    monkeypatch.setenv("THOTH_SHARED_AUTH_DIR", str(tmp_path / "shared"))
     _write_auth_store(
         tmp_path,
         {

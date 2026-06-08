@@ -58,7 +58,7 @@ Useful overrides:
 ```bash
 OPEN_WEBUI_NAME='My Thoth UI' \
 OPEN_WEBUI_ENABLE_SIGNUP=true \
-HERMES_API_MODEL_NAME='My Thoth Agent' \
+THOTH_API_MODEL_NAME='My Thoth Agent' \
 bash scripts/setup_open_webui.sh
 ```
 

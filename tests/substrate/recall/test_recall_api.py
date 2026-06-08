@@ -4,7 +4,7 @@ Async end-to-end tests against a real PG fixture. Each test seeds a
 booted substrate via ``Substrate.boot`` (not from_pool — we need the
 recall_log writer attached) and exercises the full pipeline.
 
-Mock embeddings are used throughout (HERMES_RECALL_EMBEDDING_MOCK=1)
+Mock embeddings are used throughout (THOTH_RECALL_EMBEDDING_MOCK=1)
 so tests run offline and produce deterministic vectors.
 """
 

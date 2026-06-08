@@ -23,7 +23,7 @@ Surface:
 
 Lifecycle:
 
-* Init asyncpg pool from ``HERMES_PG_DSN``.
+* Init asyncpg pool from ``THOTH_PG_DSN``.
 * Boot substrate in worker mode (no hook bind, no recall log — those
   belong to the writer processes).
 * Wait on a stop event until SIGINT/SIGTERM, then clean shutdown.
@@ -91,7 +91,7 @@ async def _run_worker_async() -> int:
 
     # Configure logging to stderr; systemd captures into journal.
     logging.basicConfig(
-        level=os.environ.get("HERMES_LOG_LEVEL", "INFO"),
+        level=os.environ.get("THOTH_LOG_LEVEL", "INFO"),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     log = logging.getLogger("substrate.worker")

@@ -2064,8 +2064,8 @@ class TestPtyWebSocket:
 
         _argv, _cwd, env = self.ws_module._resolve_chat_argv()
 
-        assert env["HERMES_TUI_INLINE"] == "1"
-        assert env["HERMES_TUI_DISABLE_MOUSE"] == "1"
+        assert env["THOTH_TUI_INLINE"] == "1"
+        assert env["THOTH_TUI_DISABLE_MOUSE"] == "1"
 
     def test_rejects_when_embedded_chat_disabled(self, monkeypatch):
         monkeypatch.setattr(self.ws_module, "_DASHBOARD_EMBEDDED_CHAT_ENABLED", False)
@@ -2229,7 +2229,7 @@ class TestPtyWebSocket:
 
     def test_channel_param_propagates_sidecar_url(self, monkeypatch):
         """When /api/pty is opened with ?channel=, the PTY child gets a
-        HERMES_TUI_SIDECAR_URL env var pointing back at /api/pub on the
+        THOTH_TUI_SIDECAR_URL env var pointing back at /api/pub on the
         same channel — which is how tool events reach the dashboard sidebar."""
         captured: dict = {}
 

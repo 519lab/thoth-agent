@@ -195,9 +195,9 @@ def get_optional_skills_dir(default: Path | None = None) -> Path:
     """Return the optional-skills directory, honoring package-manager wrappers.
 
     Packaged installs may ship ``optional-skills`` outside the Python package
-    tree and expose it via ``HERMES_OPTIONAL_SKILLS``.
+    tree and expose it via ``THOTH_OPTIONAL_SKILLS``.
     """
-    override = os.getenv("HERMES_OPTIONAL_SKILLS", "").strip()
+    override = os.getenv("THOTH_OPTIONAL_SKILLS", "").strip()
     if override:
         return Path(override)
     packaged = _get_packaged_data_dir("optional-skills")
@@ -212,12 +212,12 @@ def get_bundled_skills_dir(default: Path | None = None) -> Path:
     """Return the bundled skills directory for source and packaged installs.
 
     Resolution order:
-        1. ``HERMES_BUNDLED_SKILLS`` env var (Nix wrapper / explicit override)
+        1. ``THOTH_BUNDLED_SKILLS`` env var (Nix wrapper / explicit override)
         2. Wheel-installed ``<sysconfig data>/skills`` (pip install path)
         3. Caller-supplied ``default`` (typically the source-checkout path)
         4. ``<THOTH_HOME>/skills`` last-resort
     """
-    override = os.getenv("HERMES_BUNDLED_SKILLS", "").strip()
+    override = os.getenv("THOTH_BUNDLED_SKILLS", "").strip()
     if override:
         return Path(override)
     packaged = _get_packaged_data_dir("skills")

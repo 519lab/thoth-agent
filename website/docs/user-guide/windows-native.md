@@ -78,7 +78,7 @@ Top-to-bottom, in order:
 5. **Clones the repo** to `%LOCALAPPDATA%\thoth\hermes-agent` and creates a virtualenv inside it.
 6. **Tiered `uv pip install`** — tries `.[all]` first, falls back to progressively smaller sets (`[messaging,dashboard,ext]` → `[messaging]` → `.`) if a `git+https` dep flakes on rate-limited GitHub. Prevents "single flake drops you to a bare install" failure mode.
 7. **Auto-installs messaging SDKs** keyed off `.env` — if `TELEGRAM_BOT_TOKEN` / `DISCORD_BOT_TOKEN` / `SLACK_BOT_TOKEN` / `SLACK_APP_TOKEN` / `WHATSAPP_ENABLED` are present, runs `python -m ensurepip --upgrade` and targeted `pip install` calls so each platform's SDK is actually importable.
-8. **Sets `HERMES_GIT_BASH_PATH`** to the resolved `bash.exe` so Thoth finds it deterministically in fresh shells.
+8. **Sets `THOTH_GIT_BASH_PATH`** to the resolved `bash.exe` so Thoth finds it deterministically in fresh shells.
 9. **Adds `%LOCALAPPDATA%\thoth\bin` to User PATH** — exposes the `thoth` command after you open a new terminal.
 10. **Runs `thoth setup`** — the normal first-run wizard (model, provider, toolsets). Skip with `-SkipSetup`.
 
@@ -107,13 +107,13 @@ Thoth's terminal tool runs commands through **Git Bash**, same strategy Claude C
 
 Resolution order for `bash.exe`:
 
-1. `HERMES_GIT_BASH_PATH` environment variable if set.
+1. `THOTH_GIT_BASH_PATH` environment variable if set.
 2. `%LOCALAPPDATA%\thoth\git\usr\bin\bash.exe` (installer-managed PortableGit).
 3. `%LOCALAPPDATA%\thoth\git\bin\bash.exe` (older Git-for-Windows layout).
 4. System Git-for-Windows install (`%ProgramFiles%\Git\bin\bash.exe`, etc.).
 5. MSYS2, Cygwin, or any `bash.exe` on PATH as a last resort.
 
-The installer sets `HERMES_GIT_BASH_PATH` explicitly so fresh PowerShell sessions don't have to re-discover. Override it if you want Thoth to use a specific bash — for example, your system Git Bash or a WSL-hosted bash via a symlink.
+The installer sets `THOTH_GIT_BASH_PATH` explicitly so fresh PowerShell sessions don't have to re-discover. Override it if you want Thoth to use a specific bash — for example, your system Git Bash or a WSL-hosted bash via a symlink.
 
 **Pitfall:** MinGit's layout is different from the full Git-for-Windows installer — bash lives under `usr\bin\bash.exe`, not `bin\bash.exe`. Thoth checks both. If you're manually unpacking a MinGit zip, make sure you pick the **non-busybox** variant (`MinGit-*-64-bit.zip`, not `MinGit-*-busybox*.zip`) — busybox builds ship `ash` instead of `bash` and most coreutils are missing.
 
@@ -130,7 +130,7 @@ The fix is in `thoth_cli/stdio.py::configure_windows_stdio()`, called early in e
 
 Idempotent. No-op on non-Windows.
 
-**Opt out:** `HERMES_DISABLE_WINDOWS_UTF8=1` in the environment falls back to the legacy cp1252 stdio path. Useful for bisecting an encoding bug; unlikely to be the right setting in normal operation.
+**Opt out:** `THOTH_DISABLE_WINDOWS_UTF8=1` in the environment falls back to the legacy cp1252 stdio path. Useful for bisecting an encoding bug; unlikely to be the right setting in normal operation.
 
 ## The editor (`Ctrl-X Ctrl-E`, `/edit`)
 
@@ -250,8 +250,8 @@ These only affect native Windows installs:
 
 | Variable | Effect |
 |---|---|
-| `HERMES_GIT_BASH_PATH` | Override bash.exe discovery. Point at any bash — full Git-for-Windows, WSL bash via symlink, MSYS2, Cygwin. The installer sets this automatically. |
-| `HERMES_DISABLE_WINDOWS_UTF8` | Set to `1` to disable the UTF-8 stdio shim and fall back to the locale code page. Useful for bisecting an encoding bug. |
+| `THOTH_GIT_BASH_PATH` | Override bash.exe discovery. Point at any bash — full Git-for-Windows, WSL bash via symlink, MSYS2, Cygwin. The installer sets this automatically. |
+| `THOTH_DISABLE_WINDOWS_UTF8` | Set to `1` to disable the UTF-8 stdio shim and fall back to the locale code page. Useful for bisecting an encoding bug. |
 | `EDITOR` / `VISUAL` | Your editor for `/edit` and `Ctrl-X Ctrl-E`. Thoth defaults to `notepad` if both are unset. |
 
 ## Uninstall
@@ -296,7 +296,7 @@ You hit a shebang-script invocation that bypassed the `.cmd` shim. Thoth resolve
 Your download of `install.ps1` picked up a UTF-8 BOM. The `irm | iex` form strips BOMs automatically; `[scriptblock]::Create((irm ...))` does not. Re-run with the simple `irm | iex` form, or download the script manually and save it without a BOM via `[IO.File]::WriteAllText($path, $text, (New-Object Text.UTF8Encoding $false))`.
 
 **Gateway won't stay running after restart.**
-Check `thoth gateway status` — it merges the schtasks entry, the Startup-folder shortcut (if used), and the live PID. If schtasks is registered but not running, group policy may be blocking `ONLOGON` triggers. Run `schtasks /Query /TN HermesGateway /V /FO LIST` to see the task's failure reason, or fall back to the Startup-folder path by uninstalling and reinstalling with `HERMES_GATEWAY_FORCE_STARTUP=1`.
+Check `thoth gateway status` — it merges the schtasks entry, the Startup-folder shortcut (if used), and the live PID. If schtasks is registered but not running, group policy may be blocking `ONLOGON` triggers. Run `schtasks /Query /TN HermesGateway /V /FO LIST` to see the task's failure reason, or fall back to the Startup-folder path by uninstalling and reinstalling with `THOTH_GATEWAY_FORCE_STARTUP=1`.
 
 **`/edit` still does nothing after setting `$env:EDITOR`.**
 You set it in the current process only; close and reopen the shell, or set it at User scope in System Properties → Environment Variables. Verify with `echo $env:EDITOR` in a new PowerShell window.
@@ -308,7 +308,7 @@ Chromium is auto-installed on first run. If the install failed (rate-limited Git
 The installer provisions Node 22 at `%LOCALAPPDATA%\thoth\node` but your PATH may have an older system Node 18 first. Either move Thoth's node dir earlier on PATH, or delete the system install if you don't use Node elsewhere.
 
 **Chinese / Japanese / Arabic characters show as `?` in the CLI.**
-The UTF-8 stdio shim didn't activate. Check that `HERMES_DISABLE_WINDOWS_UTF8` is NOT set (`Get-ChildItem env:HERMES_DISABLE_WINDOWS_UTF8`). If it's empty and you still see `?`, the console host (very old `cmd.exe`) may not support UTF-8 at all — switch to Windows Terminal.
+The UTF-8 stdio shim didn't activate. Check that `THOTH_DISABLE_WINDOWS_UTF8` is NOT set (`Get-ChildItem env:THOTH_DISABLE_WINDOWS_UTF8`). If it's empty and you still see `?`, the console host (very old `cmd.exe`) may not support UTF-8 at all — switch to Windows Terminal.
 
 **Gateway can't send Telegram photos — "`BadRequest: payload contains invalid characters`".**
 This is unrelated to Windows but sometimes surfaces first there. Usually it means your file path contains unescaped backslashes in a JSON body. Telegram should be receiving paths Thoth normalizes, not raw Windows paths — if you're seeing this inside a custom plugin, make sure you're passing the Thoth-provided path, not `str(Path(...))` from user input.

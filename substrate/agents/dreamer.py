@@ -8,7 +8,7 @@ intellectual life the foreground doesn't witness; unlike the other
 sub-agents the Dreamer's output is exploratory, not authoritative — it
 seeds curiosity, it doesn't assert facts into L1–L4.
 
-LLM-driven (mockable ``_dream`` seam); gated by ``HERMES_SUBSTRATE_DREAMER``
+LLM-driven (mockable ``_dream`` seam); gated by ``THOTH_SUBSTRATE_DREAMER``
 (default ON; set to 0 to disable). In the design the Dreamer runs at FULL only in
 sleep-dreaming mode and OFF when awake — until the learned Conductor drives
 that, the env gate + LOW floor stand in.
@@ -130,14 +130,14 @@ class Dreamer(SubAgent):
         self._last_dream_at: float = float("-inf")
 
     async def tick(self) -> None:
-        if not _env_bool("HERMES_SUBSTRATE_DREAMER", default=True):
+        if not _env_bool("THOTH_SUBSTRATE_DREAMER", default=True):
             return
         if self._level is Level.OFF:
             return
         # Deep-cycle interval gate — skip cheaply on the vast majority of
         # ticks so the Dreamer does occasional exploration, not a model
         # call every 10s.
-        interval_s = _env_float("HERMES_SUBSTRATE_DREAM_INTERVAL_S", _DREAM_INTERVAL_S)
+        interval_s = _env_float("THOTH_SUBSTRATE_DREAM_INTERVAL_S", _DREAM_INTERVAL_S)
         now = time.monotonic()
         if now - self._last_dream_at < interval_s:
             return

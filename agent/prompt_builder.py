@@ -86,7 +86,7 @@ def _find_git_root(start: Path) -> Optional[Path]:
     return None
 
 
-_HERMES_MD_NAMES = (".hermes.md", "HERMES.md")
+_THOTH_MD_NAMES = (".hermes.md", "HERMES.md")
 
 
 def _find_thoth_md(cwd: Path) -> Optional[Path]:
@@ -100,7 +100,7 @@ def _find_thoth_md(cwd: Path) -> Optional[Path]:
     current = cwd.resolve()
 
     for directory in [current, *current.parents]:
-        for name in _HERMES_MD_NAMES:
+        for name in _THOTH_MD_NAMES:
             candidate = directory / name
             if candidate.is_file():
                 return candidate
@@ -189,7 +189,7 @@ KANBAN_GUIDANCE = (
     "# Kanban task execution protocol\n"
     "You have been assigned ONE task from "
     "the shared board at `~/.hermes/kanban.db`. Your task id is in "
-    "`$HERMES_KANBAN_TASK`; your workspace is `$HERMES_KANBAN_WORKSPACE`. "
+    "`$THOTH_KANBAN_TASK`; your workspace is `$THOTH_KANBAN_WORKSPACE`. "
     "The `kanban_*` tools in your schema are your primary coordination surface — "
     "they write directly to the shared SQLite DB and work regardless of terminal "
     "backend (local/docker/modal/ssh).\n"
@@ -201,7 +201,7 @@ KANBAN_GUIDANCE = (
     "metadata), any prior attempts on this task if you're a retry, the full "
     "comment thread, and a pre-formatted `worker_context` you can treat as "
     "ground truth.\n"
-    "2. **Work inside the workspace.** `cd $HERMES_KANBAN_WORKSPACE` before "
+    "2. **Work inside the workspace.** `cd $THOTH_KANBAN_WORKSPACE` before "
     "any file operations. The workspace is yours for this run. Don't modify "
     "files outside it unless the task explicitly asks.\n"
     "3. **Heartbeat on long operations.** Call `kanban_heartbeat(note=...)` "
@@ -1023,8 +1023,8 @@ def build_skills_system_prompt(
     # produce distinct cache entries (gateway serves multiple platforms).
     from gateway.session_context import get_session_env
     _platform_hint = (
-        os.environ.get("HERMES_PLATFORM")
-        or get_session_env("HERMES_SESSION_PLATFORM")
+        os.environ.get("THOTH_PLATFORM")
+        or get_session_env("THOTH_SESSION_PLATFORM")
         or ""
     )
     disabled = get_disabled_skill_names()
@@ -1465,4 +1465,4 @@ def build_context_files_prompt(cwd: Optional[str] = None, skip_soul: bool = Fals
     return "# Project Context\n\nThe following project context files have been loaded and should be followed:\n\n" + "\n".join(sections)
 
 # Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-HERMES_AGENT_HELP_GUIDANCE = THOTH_AGENT_HELP_GUIDANCE
+THOTH_AGENT_HELP_GUIDANCE = THOTH_AGENT_HELP_GUIDANCE

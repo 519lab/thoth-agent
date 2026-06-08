@@ -93,7 +93,7 @@ t1 = kanban_create(
     title="research: Postgres cost vs current",
     assignee="researcher",
     body="Compare estimated infrastructure costs, migration costs, and ongoing ops costs over a 3-year window. Sources: AWS/GCP pricing, team time estimates, current Postgres bills from peers.",
-    tenant=os.environ.get("HERMES_TENANT"),
+    tenant=os.environ.get("THOTH_TENANT"),
 )["task_id"]
 
 t2 = kanban_create(
@@ -167,4 +167,4 @@ kanban_complete(
 
 **중간 결과에 따라 graph 모양이 달라질 수 있다면 전체 graph를 미리 만들지 마세요.** T3 구조가 T1/T2 findings에 따라 달라진다면, T3를 "synthesize findings" task로만 두고 그 task의 첫 단계에서 부모 handoff를 읽어 후속 계획을 짜게 하면 됩니다. orchestrator는 또 다른 orchestrator를 spawn할 수 있습니다.
 
-**Tenant 상속.** env에 `HERMES_TENANT`가 설정되어 있다면, 모든 `kanban_create` 호출에 `tenant=os.environ.get("HERMES_TENANT")`를 넣어 child task도 같은 namespace에 머물게 하세요.
+**Tenant 상속.** env에 `THOTH_TENANT`가 설정되어 있다면, 모든 `kanban_create` 호출에 `tenant=os.environ.get("THOTH_TENANT")`를 넣어 child task도 같은 namespace에 머물게 하세요.

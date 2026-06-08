@@ -31,7 +31,7 @@ async def test_pool_disables_statement_cache_by_default(monkeypatch):
 
     monkeypatch.setattr(thoth_db, "_pool", None)
     monkeypatch.setattr(thoth_db.asyncpg, "create_pool", _fake_create_pool)
-    monkeypatch.delenv("HERMES_PG_STATEMENT_CACHE_SIZE", raising=False)
+    monkeypatch.delenv("THOTH_PG_STATEMENT_CACHE_SIZE", raising=False)
 
     await thoth_db.init("postgresql://u:p@localhost:5432/db")
 
@@ -48,7 +48,7 @@ async def test_statement_cache_size_env_override(monkeypatch):
 
     monkeypatch.setattr(thoth_db, "_pool", None)
     monkeypatch.setattr(thoth_db.asyncpg, "create_pool", _fake_create_pool)
-    monkeypatch.setenv("HERMES_PG_STATEMENT_CACHE_SIZE", "100")
+    monkeypatch.setenv("THOTH_PG_STATEMENT_CACHE_SIZE", "100")
 
     await thoth_db.init("postgresql://u:p@localhost:5432/db")
 

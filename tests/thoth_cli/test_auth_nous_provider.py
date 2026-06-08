@@ -57,14 +57,14 @@ class TestResolveVerifyFallback:
         from thoth_cli.auth import _resolve_verify
 
         monkeypatch.setenv("SSL_CERT_FILE", "/nonexistent/ssl-cert.pem")
-        monkeypatch.delenv("HERMES_CA_BUNDLE", raising=False)
+        monkeypatch.delenv("THOTH_CA_BUNDLE", raising=False)
         result = _resolve_verify(auth_state={"tls": {}})
         assert result is True
 
     def test_missing_thoth_ca_bundle_env_falls_back(self, monkeypatch):
         from thoth_cli.auth import _resolve_verify
 
-        monkeypatch.setenv("HERMES_CA_BUNDLE", "/nonexistent/hermes-ca.pem")
+        monkeypatch.setenv("THOTH_CA_BUNDLE", "/nonexistent/hermes-ca.pem")
         monkeypatch.delenv("SSL_CERT_FILE", raising=False)
         result = _resolve_verify(auth_state={"tls": {}})
         assert result is True
@@ -95,7 +95,7 @@ class TestResolveVerifyFallback:
     def test_no_ca_bundle_returns_true(self, monkeypatch):
         from thoth_cli.auth import _resolve_verify
 
-        monkeypatch.delenv("HERMES_CA_BUNDLE", raising=False)
+        monkeypatch.delenv("THOTH_CA_BUNDLE", raising=False)
         monkeypatch.delenv("SSL_CERT_FILE", raising=False)
         result = _resolve_verify(auth_state={"tls": {}})
         assert result is True
@@ -1539,7 +1539,7 @@ def test_refresh_non_reuse_error_keeps_original_description():
 
 @pytest.fixture
 def shared_store_env(tmp_path, monkeypatch):
-    """Redirect HERMES_SHARED_AUTH_DIR to a tmp_path.
+    """Redirect THOTH_SHARED_AUTH_DIR to a tmp_path.
 
     Required for every test that exercises the shared Nous store — the
     in-auth.py seat belt refuses to touch the real user's shared store
@@ -1547,12 +1547,12 @@ def shared_store_env(tmp_path, monkeypatch):
     of corrupting real state.
     """
     shared_dir = tmp_path / "shared"
-    monkeypatch.setenv("HERMES_SHARED_AUTH_DIR", str(shared_dir))
+    monkeypatch.setenv("THOTH_SHARED_AUTH_DIR", str(shared_dir))
     return shared_dir
 
 
 def test_shared_store_seat_belt_refuses_real_home_under_pytest(monkeypatch):
-    """Without HERMES_SHARED_AUTH_DIR override, the seat belt must trip.
+    """Without THOTH_SHARED_AUTH_DIR override, the seat belt must trip.
 
     Mirrors the existing ``_auth_file_path`` seat belt: forgetting to
     redirect this store in a test must fail loudly instead of silently
@@ -1560,18 +1560,18 @@ def test_shared_store_seat_belt_refuses_real_home_under_pytest(monkeypatch):
     """
     from thoth_cli.auth import _nous_shared_store_path
 
-    monkeypatch.delenv("HERMES_SHARED_AUTH_DIR", raising=False)
+    monkeypatch.delenv("THOTH_SHARED_AUTH_DIR", raising=False)
 
     with pytest.raises(RuntimeError, match="shared Nous auth store"):
         _nous_shared_store_path()
 
 
 def test_shared_store_honors_env_override(tmp_path, monkeypatch):
-    """HERMES_SHARED_AUTH_DIR must redirect the path."""
+    """THOTH_SHARED_AUTH_DIR must redirect the path."""
     from thoth_cli.auth import _nous_shared_store_path, NOUS_SHARED_STORE_FILENAME
 
     custom_dir = tmp_path / "custom_shared"
-    monkeypatch.setenv("HERMES_SHARED_AUTH_DIR", str(custom_dir))
+    monkeypatch.setenv("THOTH_SHARED_AUTH_DIR", str(custom_dir))
 
     path = _nous_shared_store_path()
     assert path == custom_dir / NOUS_SHARED_STORE_FILENAME

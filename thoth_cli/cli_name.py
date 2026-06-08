@@ -7,7 +7,7 @@ launcher the user actually typed, otherwise the suggestion points at the
 wrong install (or a command that doesn't exist).
 
 Resolution order (see ``cli_name``):
-    1. ``$THOTH_CLI_NAME`` (canonical; ``$HERMES_CLI_NAME`` legacy fallback) —
+    1. ``$THOTH_CLI_NAME`` (canonical; ``$THOTH_CLI_NAME`` legacy fallback) —
        set by the launcher shim to the exact command the user invoked. This is
        authoritative: the shim execs the venv console script (itself named
        ``thoth``), so by the time Python runs, ``sys.argv[0]`` reflects the
@@ -64,7 +64,7 @@ def _sanitize(base: str) -> str | None:
 
 def cli_name() -> str:
     """Best-effort name the user invoked this CLI with (e.g. ``thoth``)."""
-    env_name = os.environ.get("THOTH_CLI_NAME", "").strip() or os.environ.get("HERMES_CLI_NAME", "").strip()
+    env_name = os.environ.get("THOTH_CLI_NAME", "").strip() or os.environ.get("THOTH_CLI_NAME", "").strip()
     if env_name:
         sanitized = _sanitize(os.path.basename(env_name))
         if sanitized:

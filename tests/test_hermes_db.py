@@ -74,11 +74,11 @@ async def test_transaction_rolls_back_on_exception(initialized_db):
 def test_pool_raises_before_init(monkeypatch):
     # Reset module state for this synchronous test.
     thoth_db._pool = None
-    # ``pool()`` now lazy-initialises from ``HERMES_PG_DSN`` when present, so
+    # ``pool()`` now lazy-initialises from ``THOTH_PG_DSN`` when present, so
     # to assert the "init not called" RuntimeError we must also ensure no
     # DSN is in the environment (otherwise lazy init kicks in and returns a
     # real pool).
-    monkeypatch.delenv("HERMES_PG_DSN", raising=False)
+    monkeypatch.delenv("THOTH_PG_DSN", raising=False)
     monkeypatch.delenv("THOTH_PG_DSN", raising=False)
     with pytest.raises(RuntimeError, match="thoth_db.init"):
         thoth_db.pool()
@@ -109,7 +109,7 @@ def test_ensure_pool_sync_returns_false_when_no_dsn(monkeypatch):
     """When no DSN is configured, ``ensure_pool_sync`` is a no-op that
     returns False — sync entry points use this to gracefully degrade.
     """
-    monkeypatch.delenv("HERMES_PG_DSN", raising=False)
+    monkeypatch.delenv("THOTH_PG_DSN", raising=False)
     monkeypatch.delenv("THOTH_PG_DSN", raising=False)
     # Don't close an existing pool (would interfere with later tests
     # that share the module-level singleton); just verify the no-DSN
@@ -379,7 +379,7 @@ def test_run_sync_reentrant_from_db_loop_raises(thoth_db_dsn):
 
 class TestPoolMaxInactiveLifetime:
     """The pool recycles idle connections via ``max_inactive_connection_lifetime``
-    (env-tunable ``HERMES_PG_POOL_MAX_INACTIVE_S``) so connections severed while
+    (env-tunable ``THOTH_PG_POOL_MAX_INACTIVE_S``) so connections severed while
     idle — laptop suspend/resume, NAT idle-kill, a brief DB/network blip — get
     dropped within ~2 min instead of lingering ~5 min and spamming
     ``ConnectionDoesNotExistError`` each time a poller re-grabs a dead one."""
@@ -405,24 +405,24 @@ class TestPoolMaxInactiveLifetime:
 
     @pytest.mark.asyncio
     async def test_default_is_120s(self, monkeypatch):
-        monkeypatch.delenv("HERMES_PG_POOL_MAX_INACTIVE_S", raising=False)
+        monkeypatch.delenv("THOTH_PG_POOL_MAX_INACTIVE_S", raising=False)
         kwargs = await self._capture_create_pool_kwargs()
         assert kwargs["max_inactive_connection_lifetime"] == 120.0
 
     @pytest.mark.asyncio
     async def test_env_override(self, monkeypatch):
-        monkeypatch.setenv("HERMES_PG_POOL_MAX_INACTIVE_S", "30")
+        monkeypatch.setenv("THOTH_PG_POOL_MAX_INACTIVE_S", "30")
         kwargs = await self._capture_create_pool_kwargs()
         assert kwargs["max_inactive_connection_lifetime"] == 30.0
 
     @pytest.mark.asyncio
     async def test_env_zero_disables(self, monkeypatch):
-        monkeypatch.setenv("HERMES_PG_POOL_MAX_INACTIVE_S", "0")
+        monkeypatch.setenv("THOTH_PG_POOL_MAX_INACTIVE_S", "0")
         kwargs = await self._capture_create_pool_kwargs()
         assert kwargs["max_inactive_connection_lifetime"] == 0.0
 
     @pytest.mark.asyncio
     async def test_invalid_env_falls_back_to_default(self, monkeypatch):
-        monkeypatch.setenv("HERMES_PG_POOL_MAX_INACTIVE_S", "not-a-number")
+        monkeypatch.setenv("THOTH_PG_POOL_MAX_INACTIVE_S", "not-a-number")
         kwargs = await self._capture_create_pool_kwargs()
         assert kwargs["max_inactive_connection_lifetime"] == 120.0

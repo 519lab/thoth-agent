@@ -307,7 +307,7 @@ export function supportsFastEchoTerminal(env: NodeJS.ProcessEnv = process.env): 
   // stale paints at soft-wrap boundaries on tall/narrow viewports. Keep this
   // off by default in Termux mode; allow explicit opt-in for local debugging.
   if (isTermuxTuiMode(env)) {
-    const override = String(env.HERMES_TUI_TERMUX_FAST_ECHO ?? '').trim().toLowerCase()
+    const override = String(env.THOTH_TUI_TERMUX_FAST_ECHO ?? '').trim().toLowerCase()
     if (override) {
       return /^(?:1|true|yes|on)$/i.test(override)
     }

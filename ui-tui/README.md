@@ -16,7 +16,7 @@ The client entrypoint is `src/entry.tsx`. It exits early if `stdin` is not a TTY
 python -m tui_gateway.entry
 ```
 
-Interpreter resolution order is: `HERMES_PYTHON` → `PYTHON` → `$VIRTUAL_ENV/bin/python` → `./.venv/bin/python` → `./venv/bin/python` → `python3` (or `python` on Windows).
+Interpreter resolution order is: `THOTH_PYTHON` → `PYTHON` → `$VIRTUAL_ENV/bin/python` → `./.venv/bin/python` → `./venv/bin/python` → `python3` (or `python` on Windows).
 
 The transport is newline-delimited JSON-RPC over stdio:
 

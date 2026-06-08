@@ -51,7 +51,7 @@ async def test_boot_passes_alembic_head_check(booted_no_subagents):
 @pytest.mark.asyncio
 async def test_boot_refuses_old_alembic_head(thoth_db_initialized, monkeypatch):
     """When the DB is on an older revision (mocked), boot raises so the
-    caller knows to migrate (or set HERMES_AUTO_MIGRATE=1)."""
+    caller knows to migrate (or set THOTH_AUTO_MIGRATE=1)."""
     import thoth_db
 
     # Replace the version_num value via SQL — pretend the DB is one
@@ -125,15 +125,15 @@ async def test_subagents_running(booted_with_subagents):
         "force-reject",
         "partition-maintenance",
         "curator",  # Phase B
-        "parser",   # Phase D (tick no-ops unless HERMES_SUBSTRATE_PARSER=1)
-        "associator",  # Phase E1 (tick no-ops unless HERMES_SUBSTRATE_ASSOCIATOR=1)
-        "pattern-finder",  # Phase E2 (tick no-ops unless HERMES_SUBSTRATE_PATTERNFINDER=1)
-        "critic",  # Phase F (tick no-ops unless HERMES_SUBSTRATE_CRITIC=1)
-        "conductor",  # Phase F adaptive policy (tick no-ops unless HERMES_SUBSTRATE_CONDUCTOR=1)
-        "reflector",  # Phase F (tick no-ops unless HERMES_SUBSTRATE_REFLECTOR=1)
-        "dreamer",  # Phase F (tick no-ops unless HERMES_SUBSTRATE_DREAMER=1)
+        "parser",   # Phase D (tick no-ops unless THOTH_SUBSTRATE_PARSER=1)
+        "associator",  # Phase E1 (tick no-ops unless THOTH_SUBSTRATE_ASSOCIATOR=1)
+        "pattern-finder",  # Phase E2 (tick no-ops unless THOTH_SUBSTRATE_PATTERNFINDER=1)
+        "critic",  # Phase F (tick no-ops unless THOTH_SUBSTRATE_CRITIC=1)
+        "conductor",  # Phase F adaptive policy (tick no-ops unless THOTH_SUBSTRATE_CONDUCTOR=1)
+        "reflector",  # Phase F (tick no-ops unless THOTH_SUBSTRATE_REFLECTOR=1)
+        "dreamer",  # Phase F (tick no-ops unless THOTH_SUBSTRATE_DREAMER=1)
         "summarizer",  # polish (retrospective summarization)
-        "skill-scout",  # self-improvement Tier 1 (tick no-ops unless HERMES_SUBSTRATE_SKILL_SCOUT=1)
+        "skill-scout",  # self-improvement Tier 1 (tick no-ops unless THOTH_SUBSTRATE_SKILL_SCOUT=1)
     }
     for name, agent in agents.items():
         task = agent.task

@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from utils import atomic_replace
 
 # hermes→thoth env bridge (rename Phase 2). After a .env load / secret-source
-# injection populates os.environ, mirror HERMES_* <-> THOTH_* so either
+# injection populates os.environ, mirror THOTH_* <-> THOTH_* so either
 # spelling resolves for every reader. ``sync_thoth_aliases`` makes the
 # just-loaded value authoritative for the keys a source set (so a rotated
 # value on reload isn't reverted by a stale mirror); ``normalize_thoth_env``

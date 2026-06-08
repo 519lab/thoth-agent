@@ -34,8 +34,8 @@ def make_spawn_fn(home: str):
             "THOTH_HOME": home,
             "HOME": home,
             "PYTHONPATH": WT,
-            "HERMES_KANBAN_TASK": task.id,
-            "HERMES_KANBAN_WORKSPACE": workspace,
+            "THOTH_KANBAN_TASK": task.id,
+            "THOTH_KANBAN_WORKSPACE": workspace,
             "PATH": f"{os.path.dirname(PY)}:{os.environ.get('PATH','')}",
         }
         log_f = open(log_path, "ab")

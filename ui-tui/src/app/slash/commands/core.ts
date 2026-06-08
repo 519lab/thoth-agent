@@ -369,7 +369,7 @@ export const coreCommands: SlashCommand[] = [
           return sys(`copied ${text.length} characters`)
         } else {
           return sys(
-            'clipboard copy failed — try HERMES_TUI_FORCE_OSC52=1 to force the escape sequence'
+            'clipboard copy failed — try THOTH_TUI_FORCE_OSC52=1 to force the escape sequence'
           )
         }
       }

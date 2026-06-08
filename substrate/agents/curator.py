@@ -147,10 +147,10 @@ class Curator(SubAgent):
         # aggressiveness without a redeploy; the accelerator script picks the
         # same env up). Instance attrs so tests can still override directly.
         self.UPPER_MERGE_MAX_DISTANCE = _env_float(
-            "HERMES_SUBSTRATE_MERGE_MAX_DISTANCE", _UPPER_MERGE_MAX_DISTANCE
+            "THOTH_SUBSTRATE_MERGE_MAX_DISTANCE", _UPPER_MERGE_MAX_DISTANCE
         )
         self.UPPER_MERGE_CROSS_KIND_MAX_DISTANCE = _env_float(
-            "HERMES_SUBSTRATE_MERGE_CROSS_KIND_DISTANCE",
+            "THOTH_SUBSTRATE_MERGE_CROSS_KIND_DISTANCE",
             _UPPER_MERGE_CROSS_KIND_MAX_DISTANCE,
         )
 

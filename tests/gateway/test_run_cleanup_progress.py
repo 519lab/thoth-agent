@@ -156,7 +156,7 @@ def _make_runner(adapter):
 
 def _install_fakes(monkeypatch, agent_cls, *, cleanup_on: bool):
     """Wire up the module stubs every _run_agent test needs."""
-    monkeypatch.setenv("HERMES_TOOL_PROGRESS_MODE", "all")
+    monkeypatch.setenv("THOTH_TOOL_PROGRESS_MODE", "all")
 
     fake_dotenv = types.ModuleType("dotenv")
     fake_dotenv.load_dotenv = lambda *a, **k: None

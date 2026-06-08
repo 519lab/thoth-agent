@@ -9,7 +9,7 @@ a **pending proposal**, and messages the user to review it in chat. It NEVER
 installs a skill — the human approval (via the ``skill_proposal`` tool) is the
 gate. The pending proposal is the Tier-1 quarantine.
 
-Gated by ``HERMES_SUBSTRATE_SKILL_SCOUT`` (default OFF — opt-in like the Parser):
+Gated by ``THOTH_SUBSTRATE_SKILL_SCOUT`` (default OFF — opt-in like the Parser):
 registers + heartbeats, tick no-ops until enabled. Change-gated like the
 PatternFinder so it only works when L3 actually changed, and capped at
 ``SKILL_SCOUT_MAX_PENDING`` open proposals so it never floods the user.
@@ -73,7 +73,7 @@ class SkillScout(SubAgent):
         self._declined: set[str] = set()
 
     async def tick(self) -> None:
-        if not _env_bool("HERMES_SUBSTRATE_SKILL_SCOUT", default=False):
+        if not _env_bool("THOTH_SUBSTRATE_SKILL_SCOUT", default=False):
             return
         if self._level is Level.OFF:
             return

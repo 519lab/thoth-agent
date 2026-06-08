@@ -47,7 +47,7 @@ from typing import List, Dict, Any, Optional
 logger = logging.getLogger(__name__)
 
 # Suppress startup messages for clean CLI experience
-os.environ["HERMES_QUIET"] = "1"  # Our own modules
+os.environ["THOTH_QUIET"] = "1"  # Our own modules
 
 import yaml
 
@@ -281,7 +281,7 @@ def load_cli_config() -> Dict[str, Any]:
     Environment variables take precedence over config file values.
     Returns default values if no config file exists.
 
-    If HERMES_IGNORE_USER_CONFIG=1 is set (via ``thoth chat --ignore-user-config``),
+    If THOTH_IGNORE_USER_CONFIG=1 is set (via ``thoth chat --ignore-user-config``),
     the user config at ``~/.hermes/config.yaml`` is skipped entirely and only the
     built-in defaults plus the project-level ``cli-config.yaml`` (if any) are used.
     Credentials in ``.env`` are still loaded — this flag only suppresses
@@ -293,7 +293,7 @@ def load_cli_config() -> Dict[str, Any]:
 
     # --ignore-user-config: force-skip the user config.yaml (still honor project
     # config as a fallback so defaults stay sensible).
-    ignore_user_config = os.environ.get("HERMES_IGNORE_USER_CONFIG") == "1"
+    ignore_user_config = os.environ.get("THOTH_IGNORE_USER_CONFIG") == "1"
 
     # Use user config if it exists, otherwise project config
     if user_config_path.exists() and not ignore_user_config:
@@ -535,9 +535,9 @@ def load_cli_config() -> Dict[str, Any]:
     }
     
     # Bridge config → env vars for terminal_tool. TERMINAL_CWD is force-exported
-    # UNLESS we're inside a gateway process (detected by _HERMES_GATEWAY marker)
+    # UNLESS we're inside a gateway process (detected by _THOTH_GATEWAY marker)
     # where it was already set correctly by gateway/run.py's config bridge.
-    _is_gateway = os.environ.get("_HERMES_GATEWAY") == "1"
+    _is_gateway = os.environ.get("_THOTH_GATEWAY") == "1"
     for config_key, env_var in env_mappings.items():
         if config_key in terminal_config:
             if env_var == "TERMINAL_CWD":
@@ -614,7 +614,7 @@ def load_cli_config() -> Dict[str, Any]:
     if isinstance(security_config, dict):
         redact = security_config.get("redact_secrets")
         if redact is not None:
-            os.environ["HERMES_REDACT_SECRETS"] = str(redact).lower()
+            os.environ["THOTH_REDACT_SECRETS"] = str(redact).lower()
 
     return defaults
 
@@ -1358,9 +1358,9 @@ def _hex_to_ansi(hex_color: str, *, bold: bool = False) -> str:
 # Terminal.app / iTerm2 background.
 #
 # Detection priority:
-#   1. HERMES_LIGHT / HERMES_TUI_LIGHT env (true/false) — explicit override
-#   2. HERMES_TUI_THEME=light|dark — explicit theme
-#   3. HERMES_TUI_BACKGROUND=#RRGGBB — explicit bg hint
+#   1. THOTH_LIGHT / THOTH_TUI_LIGHT env (true/false) — explicit override
+#   2. THOTH_TUI_THEME=light|dark — explicit theme
+#   3. THOTH_TUI_BACKGROUND=#RRGGBB — explicit bg hint
 #   4. COLORFGBG env (set by xterm/Konsole/urxvt) — bg slot 7/15 = light
 #   5. OSC 11 query (\x1b]11;?\x1b\\) — ask the terminal directly
 #   6. Default: assume dark (matches the legacy Thoth assumption)
@@ -1455,7 +1455,7 @@ def _detect_light_mode() -> bool:
     result = False
     try:
         # 1. Explicit env override
-        for var in ("HERMES_LIGHT", "HERMES_TUI_LIGHT"):
+        for var in ("THOTH_LIGHT", "THOTH_TUI_LIGHT"):
             v = (os.environ.get(var) or "").strip().lower()
             if _TRUE_RE.match(v):
                 result = True
@@ -1465,7 +1465,7 @@ def _detect_light_mode() -> bool:
                 _LIGHT_MODE_CACHE = result
                 return result
         # 2. Theme hint
-        theme = (os.environ.get("HERMES_TUI_THEME") or "").strip().lower()
+        theme = (os.environ.get("THOTH_TUI_THEME") or "").strip().lower()
         if theme == "light":
             result = True
             _LIGHT_MODE_CACHE = result
@@ -1474,7 +1474,7 @@ def _detect_light_mode() -> bool:
             _LIGHT_MODE_CACHE = result
             return result
         # 3. Explicit bg hex
-        bg_hint = os.environ.get("HERMES_TUI_BACKGROUND") or ""
+        bg_hint = os.environ.get("THOTH_TUI_BACKGROUND") or ""
         bg_lum = _luminance_from_hex(bg_hint)
         if bg_lum is not None:
             result = bg_lum >= 0.5
@@ -2777,7 +2777,7 @@ class ThothCLI:
         self.requested_provider = (
             provider
             or CLI_CONFIG["model"].get("provider")
-            or os.getenv("HERMES_INFERENCE_PROVIDER")
+            or os.getenv("THOTH_INFERENCE_PROVIDER")
             or "auto"
         )
         self._provider_source: Optional[str] = None
@@ -2804,9 +2804,9 @@ class ThothCLI:
             self.max_turns = CLI_CONFIG["agent"]["max_turns"]
         elif CLI_CONFIG.get("max_turns"):  # Backwards compat: root-level max_turns
             self.max_turns = CLI_CONFIG["max_turns"]
-        elif os.getenv("HERMES_MAX_ITERATIONS"):
+        elif os.getenv("THOTH_MAX_ITERATIONS"):
             try:
-                self.max_turns = int(os.getenv("HERMES_MAX_ITERATIONS", ""))
+                self.max_turns = int(os.getenv("THOTH_MAX_ITERATIONS", ""))
             except (TypeError, ValueError):
                 self.max_turns = 90
         else:
@@ -2838,11 +2838,11 @@ class ThothCLI:
         # by `thoth chat --ignore-rules` in thoth_cli/main.py. When true we
         # pass skip_context_files=True and skip_memory=True to AIAgent so
         # AGENTS.md/SOUL.md/.cursorrules and persistent memory are not loaded.
-        self.ignore_rules = ignore_rules or os.environ.get("HERMES_IGNORE_RULES") == "1"
+        self.ignore_rules = ignore_rules or os.environ.get("THOTH_IGNORE_RULES") == "1"
         
         # Ephemeral system prompt: env var takes precedence, then config
         self.system_prompt = (
-            os.getenv("HERMES_EPHEMERAL_SYSTEM_PROMPT", "")
+            os.getenv("THOTH_EPHEMERAL_SYSTEM_PROMPT", "")
             or CLI_CONFIG["agent"].get("system_prompt", "")
         )
         self.personalities = CLI_CONFIG["agent"].get("personalities", {})
@@ -3487,7 +3487,7 @@ class ThothCLI:
             percent_label = f"{percent}%" if percent is not None else "--"
             duration_label = snapshot["duration"]
 
-            yolo_active = bool(os.getenv("HERMES_YOLO_MODE"))
+            yolo_active = bool(os.getenv("THOTH_YOLO_MODE"))
             if width < 52:
                 text = f"⚕ {snapshot['model_short']} · {duration_label}"
                 if yolo_active:
@@ -3542,7 +3542,7 @@ class ThothCLI:
             # line and produce duplicated status bar rows over long sessions.
             width = self._get_tui_terminal_width()
             duration_label = snapshot["duration"]
-            yolo_active = bool(os.getenv("HERMES_YOLO_MODE"))
+            yolo_active = bool(os.getenv("THOTH_YOLO_MODE"))
 
             if width < 52:
                 frags = [
@@ -6088,7 +6088,7 @@ class ThothCLI:
                     self.agent._session_db_created = False
                     _hermes_db.run_sync(self._session_db.create_session(
                         session_id=self.session_id,
-                        source=os.environ.get("HERMES_SESSION_SOURCE", "cli"),
+                        source=os.environ.get("THOTH_SESSION_SOURCE", "cli"),
                         model=self.model,
                         model_config={
                             "max_iterations": self.max_turns,
@@ -6493,7 +6493,7 @@ class ThothCLI:
         try:
             _hermes_db.run_sync(self._session_db.create_session(
                 session_id=new_session_id,
-                source=os.environ.get("HERMES_SESSION_SOURCE", "cli"),
+                source=os.environ.get("THOTH_SESSION_SOURCE", "cli"),
                 model=self.model,
                 model_config={
                     "max_iterations": self.max_turns,
@@ -9158,15 +9158,15 @@ class ThothCLI:
         import os
         from thoth_cli.colors import Colors as _Colors
 
-        current = is_truthy_value(os.environ.get("HERMES_YOLO_MODE"))
+        current = is_truthy_value(os.environ.get("THOTH_YOLO_MODE"))
         if current:
-            os.environ.pop("HERMES_YOLO_MODE", None)
+            os.environ.pop("THOTH_YOLO_MODE", None)
             _cprint(
                 f"  ⚠ YOLO mode {_Colors.BOLD}{_Colors.RED}OFF{_Colors.RESET}"
                 " — dangerous commands will require approval."
             )
         else:
-            os.environ["HERMES_YOLO_MODE"] = "1"
+            os.environ["THOTH_YOLO_MODE"] = "1"
             _cprint(
                 f"  ⚡ YOLO mode {_Colors.BOLD}{_Colors.GREEN}ON{_Colors.RESET}"
                 " — all commands auto-approved. Use with caution."
@@ -11925,11 +11925,11 @@ class ThothCLI:
         # won't affect the running process — we just want the operator to
         # see that they're running without the safety net.
         try:
-            _redact_raw = os.getenv("HERMES_REDACT_SECRETS", "true")
+            _redact_raw = os.getenv("THOTH_REDACT_SECRETS", "true")
             if _redact_raw.lower() not in {"1", "true", "yes", "on"}:
                 self._console_print(
                     "[bold red]⚠  Secret redaction is DISABLED[/] "
-                    f"(HERMES_REDACT_SECRETS={_redact_raw}). "
+                    f"(THOTH_REDACT_SECRETS={_redact_raw}). "
                     "API keys and tokens may appear verbatim in chat output, "
                     "session JSONs, and logs. Set "
                     "[cyan]security.redact_secrets: true[/] in config.yaml "
@@ -11969,8 +11969,8 @@ class ThothCLI:
                 detect_hermes_residue,
                 hermes_residue_hint_cli,
             )
-            _HERMES_RESIDUE_FLAG = "hermes_residue_import"
-            if not is_seen(self.config, _HERMES_RESIDUE_FLAG) and detect_hermes_residue():
+            _THOTH_RESIDUE_FLAG = "hermes_residue_import"
+            if not is_seen(self.config, _THOTH_RESIDUE_FLAG) and detect_hermes_residue():
                 try:
                     _hres_color = _welcome_skin.get_color("banner_dim", "#B8860B")
                 except Exception:
@@ -11978,7 +11978,7 @@ class ThothCLI:
                 self._console_print(f"[{_hres_color}]{hermes_residue_hint_cli()}[/]")
                 try:
                     from thoth_cli.config import get_config_path as _get_cfg_path_hres
-                    mark_seen(_get_cfg_path_hres(), _HERMES_RESIDUE_FLAG)
+                    mark_seen(_get_cfg_path_hres(), _THOTH_RESIDUE_FLAG)
                 except Exception:
                     pass  # best-effort — banner will fire again next session
         except Exception:
@@ -13990,7 +13990,7 @@ class ThothCLI:
             spawned with ``os.setsid`` and therefore survives as an orphan
             with PPID=1.
 
-            Grace window (``HERMES_SIGTERM_GRACE``, default 1.5 s) gives
+            Grace window (``THOTH_SIGTERM_GRACE``, default 1.5 s) gives
             the daemon time to: detect the interrupt (next 200 ms poll) →
             call _kill_process (SIGTERM + 1 s wait + SIGKILL if needed) →
             return from _wait_for_process.  ``time.sleep`` releases the
@@ -14015,7 +14015,7 @@ class ThothCLI:
                 if getattr(self, "agent", None) and getattr(self, "_agent_running", False):
                     self.agent.interrupt(f"received signal {signum}")
                     try:
-                        _grace = float(os.getenv("HERMES_SIGTERM_GRACE", "1.5"))
+                        _grace = float(os.getenv("THOTH_SIGTERM_GRACE", "1.5"))
                     except (TypeError, ValueError):
                         _grace = 1.5
                     if _grace > 0:
@@ -14324,12 +14324,12 @@ def main(
     """
     global _active_worktree
 
-    # Phase 0: initialise PG pool (idempotent; raises if HERMES_PG_DSN unset).
+    # Phase 0: initialise PG pool (idempotent; raises if THOTH_PG_DSN unset).
     try:
         from thoth_bootstrap import init_db_sync
         init_db_sync()
     except RuntimeError:
-        pass  # No HERMES_PG_DSN → legacy path still works during cutover period.
+        pass  # No THOTH_PG_DSN → legacy path still works during cutover period.
 
     # Phase A: bootstrap the substrate so perception hooks emit slices.
     # Non-fatal — substrate failure must not crash Thoth (spec §0).
@@ -14350,7 +14350,7 @@ def main(
 
     # Signal to terminal_tool that we're in interactive mode
     # This enables interactive sudo password prompts with timeout
-    os.environ["HERMES_INTERACTIVE"] = "1"
+    os.environ["THOTH_INTERACTIVE"] = "1"
     
     # Handle gateway mode (messaging + cron)
     if gateway:
@@ -14476,7 +14476,7 @@ def main(
     # per-thread interrupt flag the worker's poll loop checks every 200 ms.
     # Give the worker a grace window to call _kill_process (SIGTERM to the
     # process group, then SIGKILL after 1 s), then raise KeyboardInterrupt
-    # so main unwinds normally.  HERMES_SIGTERM_GRACE overrides the 1.5 s
+    # so main unwinds normally.  THOTH_SIGTERM_GRACE overrides the 1.5 s
     # default for debugging.
     def _signal_handler_q(signum, frame):
         logger.debug("Received signal %s in single-query mode", signum)
@@ -14485,7 +14485,7 @@ def main(
             if _agent is not None:
                 _agent.interrupt(f"received signal {signum}")
                 try:
-                    _grace = float(os.getenv("HERMES_SIGTERM_GRACE", "1.5"))
+                    _grace = float(os.getenv("THOTH_SIGTERM_GRACE", "1.5"))
                 except (TypeError, ValueError):
                     _grace = 1.5
                 if _grace > 0:

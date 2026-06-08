@@ -35,15 +35,15 @@ def _isolate_env(monkeypatch, tmp_path):
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     monkeypatch.setenv("THOTH_HOME", str(home))
     for key in (
-        "HERMES_GEMINI_CLIENT_ID",
-        "HERMES_GEMINI_CLIENT_SECRET",
-        "HERMES_GEMINI_PROJECT_ID",
+        "THOTH_GEMINI_CLIENT_ID",
+        "THOTH_GEMINI_CLIENT_SECRET",
+        "THOTH_GEMINI_PROJECT_ID",
         "GOOGLE_CLOUD_PROJECT",
         "GOOGLE_CLOUD_PROJECT_ID",
         "SSH_CONNECTION",
         "SSH_CLIENT",
         "SSH_TTY",
-        "HERMES_HEADLESS",
+        "THOTH_HEADLESS",
     ):
         monkeypatch.delenv(key, raising=False)
     return home
@@ -110,7 +110,7 @@ class TestClientCredResolution:
     def test_env_override(self, monkeypatch):
         from agent.google_oauth import _get_client_id
 
-        monkeypatch.setenv("HERMES_GEMINI_CLIENT_ID", "custom-id.apps.googleusercontent.com")
+        monkeypatch.setenv("THOTH_GEMINI_CLIENT_ID", "custom-id.apps.googleusercontent.com")
         assert _get_client_id() == "custom-id.apps.googleusercontent.com"
 
     def test_shipped_default_used_when_no_env(self):
@@ -338,7 +338,7 @@ class TestGetValidAccessToken:
 
 class TestProjectIdResolution:
     @pytest.mark.parametrize("env_var", [
-        "HERMES_GEMINI_PROJECT_ID",
+        "THOTH_GEMINI_PROJECT_ID",
         "GOOGLE_CLOUD_PROJECT",
         "GOOGLE_CLOUD_PROJECT_ID",
     ])
@@ -352,7 +352,7 @@ class TestProjectIdResolution:
         from agent.google_oauth import resolve_project_id_from_env
 
         monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "lower-priority")
-        monkeypatch.setenv("HERMES_GEMINI_PROJECT_ID", "higher-priority")
+        monkeypatch.setenv("THOTH_GEMINI_PROJECT_ID", "higher-priority")
         assert resolve_project_id_from_env() == "higher-priority"
 
     def test_no_env_returns_empty(self):
@@ -371,7 +371,7 @@ class TestHeadlessDetection:
     def test_detects_thoth_headless(self, monkeypatch):
         from agent.google_oauth import _is_headless
 
-        monkeypatch.setenv("HERMES_HEADLESS", "1")
+        monkeypatch.setenv("THOTH_HEADLESS", "1")
         assert _is_headless() is True
 
     def test_default_not_headless(self):
@@ -1168,9 +1168,9 @@ class TestProviderRegistration:
         from thoth_cli.config import OPTIONAL_ENV_VARS
 
         for key in (
-            "HERMES_GEMINI_CLIENT_ID",
-            "HERMES_GEMINI_CLIENT_SECRET",
-            "HERMES_GEMINI_PROJECT_ID",
+            "THOTH_GEMINI_CLIENT_ID",
+            "THOTH_GEMINI_CLIENT_SECRET",
+            "THOTH_GEMINI_PROJECT_ID",
         ):
             assert key in OPTIONAL_ENV_VARS
 

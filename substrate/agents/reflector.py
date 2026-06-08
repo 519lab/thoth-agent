@@ -8,7 +8,7 @@ about the mind's own shape and biases (→ L4 self-model). MVS §3.3
 (Reflector: L1–L3 → L3, L4).
 
 LLM-driven (mockable seam ``_synthesize``); gated by
-``HERMES_SUBSTRATE_REFLECTOR`` (default ON: registers + heartbeats, tick
+``THOTH_SUBSTRATE_REFLECTOR`` (default ON: registers + heartbeats, tick
 no-op). No new schema — reflections land in the existing ``l3_patterns``
 and ``l4_observations`` tables. Degrades silently on any LLM error.
 """
@@ -171,7 +171,7 @@ class Reflector(SubAgent):
         self._last_l1_max_seen = None
 
     async def tick(self) -> None:
-        if not _env_bool("HERMES_SUBSTRATE_REFLECTOR", default=True):
+        if not _env_bool("THOTH_SUBSTRATE_REFLECTOR", default=True):
             return
         if self._level is Level.OFF:
             return

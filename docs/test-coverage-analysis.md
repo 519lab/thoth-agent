@@ -14,7 +14,7 @@ the end.
 ```bash
 # Whole suite with coverage (prints a report + writes coverage.xml):
 python scripts/run_tests_parallel.py --coverage
-# or: HERMES_TEST_COVERAGE=1 python scripts/run_tests_parallel.py
+# or: THOTH_TEST_COVERAGE=1 python scripts/run_tests_parallel.py
 
 # A subset (fast iteration on one area):
 python scripts/run_tests_parallel.py --coverage tests/tools tests/agent

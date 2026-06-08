@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 from tools.environments.local import (
     LocalEnvironment,
     _THOTH_PROVIDER_ENV_BLOCKLIST,
-    _HERMES_PROVIDER_ENV_FORCE_PREFIX,
+    _THOTH_PROVIDER_ENV_FORCE_PREFIX,
 )
 
 
@@ -164,24 +164,24 @@ class TestProviderEnvBlocklist:
 
 
 class TestForceEnvOptIn:
-    """Callers can opt in to passing a blocked var via _HERMES_FORCE_ prefix."""
+    """Callers can opt in to passing a blocked var via _THOTH_FORCE_ prefix."""
 
     def test_force_prefix_passes_blocked_var(self):
-        """_HERMES_FORCE_OPENAI_API_KEY in self.env should inject OPENAI_API_KEY."""
+        """_THOTH_FORCE_OPENAI_API_KEY in self.env should inject OPENAI_API_KEY."""
         result_env = _run_with_env(self_env={
-            f"{_HERMES_PROVIDER_ENV_FORCE_PREFIX}OPENAI_API_KEY": "sk-explicit",
+            f"{_THOTH_PROVIDER_ENV_FORCE_PREFIX}OPENAI_API_KEY": "sk-explicit",
         })
 
         assert "OPENAI_API_KEY" in result_env
         assert result_env["OPENAI_API_KEY"] == "sk-explicit"
         # The force-prefixed key itself must not appear
-        assert f"{_HERMES_PROVIDER_ENV_FORCE_PREFIX}OPENAI_API_KEY" not in result_env
+        assert f"{_THOTH_PROVIDER_ENV_FORCE_PREFIX}OPENAI_API_KEY" not in result_env
 
     def test_force_prefix_overrides_os_environ_block(self):
         """Force-prefix in self.env wins even when os.environ has the blocked var."""
         result_env = _run_with_env(
             extra_os_env={"OPENAI_BASE_URL": "http://leaked/v1"},
-            self_env={f"{_HERMES_PROVIDER_ENV_FORCE_PREFIX}OPENAI_BASE_URL": "http://intended/v1"},
+            self_env={f"{_THOTH_PROVIDER_ENV_FORCE_PREFIX}OPENAI_BASE_URL": "http://intended/v1"},
         )
 
         assert result_env["OPENAI_BASE_URL"] == "http://intended/v1"

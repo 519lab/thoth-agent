@@ -186,7 +186,7 @@ the evaluator would be judging changes to its own judge.
 - **Evaluator model + cost** — which frontier model; per-proposal cost is fine
   given proposals are infrequent and high-stakes.
 - **Trigger thresholds** — salience/recurrence/stability bar before a proposal
-  fires; tunable like the merge distances (`HERMES_SUBSTRATE_MERGE_*`).
+  fires; tunable like the merge distances (`THOTH_SUBSTRATE_MERGE_*`).
 - **Autonomy ceiling** — does Tier 3 ever auto-merge low-risk changes (e.g. docs),
   or is human merge permanent? Default: permanent.
 - **Prerequisite:** #109 (signal integrity) should land before any tier acts on

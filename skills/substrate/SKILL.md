@@ -41,13 +41,13 @@ infrastructure beneath them.
 
 ## Prerequisites
 
-- `THOTH_PG_DSN` (legacy `HERMES_PG_DSN` still honored via the env bridge)
+- `THOTH_PG_DSN` (legacy `THOTH_PG_DSN` still honored via the env bridge)
   set and pointing at a PG 17+ instance with the `vector`,
   `pg_trgm`, and `pgcrypto` extensions. Verify with `thoth doctor`.
 - Alembic at head (`uv run alembic -c migrations/alembic.ini current` should
   match the latest revision under `migrations/versions/`). If behind, run
   `uv run alembic -c migrations/alembic.ini upgrade head` or set
-  `HERMES_AUTO_MIGRATE=1` so the substrate boot upgrades on first run.
+  `THOTH_AUTO_MIGRATE=1` so the substrate boot upgrades on first run.
 - For embeddings / recall coverage: an OpenAI-compatible API key for
   `text-embedding-3-small` (set via the upstream auxiliary-client config —
   `thoth config set auxiliary.embedding.provider openai`).
@@ -145,7 +145,7 @@ define the canonical schema.
 
 ## Recall: Enabling and Validating
 
-Recall ships **disabled by default** (`HERMES_SUBSTRATE_RECALL=0`). The
+Recall ships **disabled by default** (`THOTH_SUBSTRATE_RECALL=0`). The
 `SubstrateMemoryProvider` still registers — exercising the registration path
 in CI — but its `prefetch()` returns `""` so the foreground's
 `<memory-context>` block continues to come from the upstream built-in path.
@@ -156,7 +156,7 @@ opts in.
 
 ```bash
 # .env or shell
-export HERMES_SUBSTRATE_RECALL=1
+export THOTH_SUBSTRATE_RECALL=1
 # Restart the agent — the env var is read once at provider construction.
 ```
 
@@ -223,8 +223,8 @@ SELECT event_time_world, payload->>'text' AS text
    the most recent recall row for that session. Check `empty_reason`,
    `returned_count`, and the candidate count.
 2. If `empty_reason='no_candidates'`: the time window
-   (`HERMES_RECALL_TIME_WINDOW_HOURS`, default 24) may be too tight, or the
-   salience floor (`HERMES_RECALL_MIN_SALIENCE`, default 0.05) is excluding
+   (`THOTH_RECALL_TIME_WINDOW_HOURS`, default 24) may be too tight, or the
+   salience floor (`THOTH_RECALL_MIN_SALIENCE`, default 0.05) is excluding
    everything.
 3. If candidates existed but X wasn't among them: check whether X's slice has
    an embedding (recall summary "coverage" line) and what its current salience
@@ -247,11 +247,11 @@ If coverage is stuck below 100% and growing slowly, check:
 
 - The auxiliary embedding provider is configured and reachable
   (`thoth config get auxiliary.embedding`)
-- `HERMES_RECALL_EMBEDDING_BACKFILL_INTERVAL_S` (default 30 s) — lower this to
+- `THOTH_RECALL_EMBEDDING_BACKFILL_INTERVAL_S` (default 30 s) — lower this to
   embed more aggressively
-- `HERMES_RECALL_EMBEDDING_BATCH_SIZE` (default 32) — raise if your provider
+- `THOTH_RECALL_EMBEDDING_BATCH_SIZE` (default 32) — raise if your provider
   supports it
-- Slices that failed `HERMES_RECALL_EMBEDDING_BACKFILL_MAX_RETRIES` times
+- Slices that failed `THOTH_RECALL_EMBEDDING_BACKFILL_MAX_RETRIES` times
   (default 3) are persistently marked failed in metadata and dropped from the
   unembedded list — query the table for them:
   ```sql
@@ -267,18 +267,18 @@ Read once at boot — set in `.env` and restart. Full list in
 
 | Env var | Default | What it controls |
 |---------|---------|------------------|
-| `HERMES_SUBSTRATE_RECALL` | `0` | Master toggle for substrate-backed `<memory-context>` |
-| `HERMES_RECALL_TOKEN_BUDGET` | `1500` | Per-turn projection token cap |
-| `HERMES_RECALL_TIME_WINDOW_HOURS` | `24` | Recall lookback window |
-| `HERMES_RECALL_TIMEOUT_MS` | `300` | Per-call SQL timeout |
-| `HERMES_RECALL_MIN_SALIENCE` | `0.05` | Salience floor for candidacy |
-| `HERMES_RECALL_SIMILARITY_WEIGHT` | `0.3` | pgvector cosine weight in composite score |
-| `HERMES_RECALL_KEYWORD_WEIGHT` | `0.3` | Keyword Jaccard weight |
-| `HERMES_RECALL_SALIENCE_WEIGHT` | `0.5` | Current salience weight |
-| `HERMES_RECALL_RECENCY_WEIGHT` | `0.2` | Recency decay weight |
-| `HERMES_RECALL_RECENCY_HALF_LIFE_HOURS` | `12` | Recency exponential half-life |
-| `HERMES_RECALL_REINFORCE_RATE_LIMIT_PER_MIN` | `6` | Per-slice reinforcement cap (anti-thrash) |
-| `HERMES_AUTO_MIGRATE` | `0` | If `1`, substrate boot auto-runs `alembic upgrade head` |
+| `THOTH_SUBSTRATE_RECALL` | `0` | Master toggle for substrate-backed `<memory-context>` |
+| `THOTH_RECALL_TOKEN_BUDGET` | `1500` | Per-turn projection token cap |
+| `THOTH_RECALL_TIME_WINDOW_HOURS` | `24` | Recall lookback window |
+| `THOTH_RECALL_TIMEOUT_MS` | `300` | Per-call SQL timeout |
+| `THOTH_RECALL_MIN_SALIENCE` | `0.05` | Salience floor for candidacy |
+| `THOTH_RECALL_SIMILARITY_WEIGHT` | `0.3` | pgvector cosine weight in composite score |
+| `THOTH_RECALL_KEYWORD_WEIGHT` | `0.3` | Keyword Jaccard weight |
+| `THOTH_RECALL_SALIENCE_WEIGHT` | `0.5` | Current salience weight |
+| `THOTH_RECALL_RECENCY_WEIGHT` | `0.2` | Recency decay weight |
+| `THOTH_RECALL_RECENCY_HALF_LIFE_HOURS` | `12` | Recency exponential half-life |
+| `THOTH_RECALL_REINFORCE_RATE_LIMIT_PER_MIN` | `6` | Per-slice reinforcement cap (anti-thrash) |
+| `THOTH_AUTO_MIGRATE` | `0` | If `1`, substrate boot auto-runs `alembic upgrade head` |
 
 ## Troubleshooting
 
@@ -288,7 +288,7 @@ The DB is on an older Alembic revision than the substrate code expects. Fix:
 
 ```bash
 uv run alembic -c migrations/alembic.ini upgrade head
-# Or set HERMES_AUTO_MIGRATE=1 in .env so first boot upgrades automatically.
+# Or set THOTH_AUTO_MIGRATE=1 in .env so first boot upgrades automatically.
 ```
 
 ### Port collision on 5432
@@ -337,7 +337,7 @@ Confirm the provider is actually active:
 
 ```bash
 # This env var must be 1 at process start
-echo $HERMES_SUBSTRATE_RECALL
+echo $THOTH_SUBSTRATE_RECALL
 ```
 
 If it's `1` but recall is empty, check the provider registration log:
@@ -378,7 +378,7 @@ restart Thoth.
 
 - **Never run pytest against the real `hermes` PG on port 5432.** The test
   suite uses a dedicated `postgres-test` container on port 5433 (or whatever
-  `HERMES_TEST_POSTGRES_PORT` is set to). `PYTEST_XDIST_WORKER` must be set
+  `THOTH_TEST_POSTGRES_PORT` is set to). `PYTEST_XDIST_WORKER` must be set
   when running pytest directly — `pytest-postgresql` uses it to derive
   per-worker DB names so concurrent subprocesses don't race on the shared
   template DB.
@@ -387,9 +387,9 @@ restart Thoth.
   fast, the Curator is the throttle — verify it's ticking
   (`thoth substrate curator recent`) and the
   `consolidation_window` on your decay profiles is reasonable.
-- **`HERMES_SUBSTRATE_RECALL=1` is irreversible mid-process.** The
+- **`THOTH_SUBSTRATE_RECALL=1` is irreversible mid-process.** The
   `SubstrateMemoryProvider` checks the env var at construction time. To
-  disable, set `HERMES_SUBSTRATE_RECALL=0` in `.env` and restart.
+  disable, set `THOTH_SUBSTRATE_RECALL=0` in `.env` and restart.
 - **Phase A's Conductor is a stub.** Setting an intensity level does not yet
   change scheduling — it's stored, not consumed. The plumbing is there so
   Phase F can land the real policy without a sub-agent refactor.
@@ -428,7 +428,7 @@ Start here when asking "is the substrate healthy?":
 - **`thoth substrate l1 forget <name>`** / **`l1 edit <name> --summary …`**
   — delete or correct an entity.
 
-Recall precision is tunable via `HERMES_RECALL_MIN_RELEVANCE` /
+Recall precision is tunable via `THOTH_RECALL_MIN_RELEVANCE` /
 `_RELATIVE_FLOOR` (drop loosely-related context) + `_DEDUP_THRESHOLD`
 (near-duplicate excerpts) + `RECALL_SHOW_PROVENANCE=1` (inline "why
 injected"); see `thoth substrate recall config` / `recall validate`.
@@ -440,27 +440,27 @@ when no auxiliary provider is configured.
 
 | Env var (default `1`) | Sub-agent | Produces |
 |---|---|---|
-| `HERMES_SUBSTRATE_PARSER` | Parser | L1 entities/relationships |
-| `HERMES_SUBSTRATE_ASSOCIATOR` | Associator | L2 associations |
-| `HERMES_SUBSTRATE_PATTERNFINDER` | Pattern-finder | L3 patterns |
-| `HERMES_SUBSTRATE_CRITIC` | Critic | L4 calibration + coherence |
-| `HERMES_SUBSTRATE_REFLECTOR` | Reflector | L3/L4 synthesis |
-| `HERMES_SUBSTRATE_DREAMER` | Dreamer | counterfactual exploration log |
-| `HERMES_SUBSTRATE_CONDUCTOR` | Conductor | adaptive intensity dialing |
-| `HERMES_SUBSTRATE_SUMMARIZER` | Summarizer | compress older context |
+| `THOTH_SUBSTRATE_PARSER` | Parser | L1 entities/relationships |
+| `THOTH_SUBSTRATE_ASSOCIATOR` | Associator | L2 associations |
+| `THOTH_SUBSTRATE_PATTERNFINDER` | Pattern-finder | L3 patterns |
+| `THOTH_SUBSTRATE_CRITIC` | Critic | L4 calibration + coherence |
+| `THOTH_SUBSTRATE_REFLECTOR` | Reflector | L3/L4 synthesis |
+| `THOTH_SUBSTRATE_DREAMER` | Dreamer | counterfactual exploration log |
+| `THOTH_SUBSTRATE_CONDUCTOR` | Conductor | adaptive intensity dialing |
+| `THOTH_SUBSTRATE_SUMMARIZER` | Summarizer | compress older context |
 
 All require the worker subprocess (`thoth substrate worker run`) to be
 running. They depend bottom-up (Parser feeds the rest), so on a fresh
 install L1+ fills only after the Parser has consolidated some L0.
 
-`HERMES_SUBSTRATE_SENTINEL_DEFENSE` (Sentinel content defense — quarantine
+`THOTH_SUBSTRATE_SENTINEL_DEFENSE` (Sentinel content defense — quarantine
 of suspected prompt-injection) is the one feature still **default OFF**: a
 false-positive silently drops a slice from recall, so enable + tune it
 against your own traffic during local testing.
 
 ### SkillScout — self-authored skills (Tier 1, default OFF)
 
-`HERMES_SUBSTRATE_SKILL_SCOUT` (default **OFF**) enables the SkillScout: it
+`THOTH_SUBSTRATE_SKILL_SCOUT` (default **OFF**) enables the SkillScout: it
 mines the upper layers for a recurring, high-salience need, asks the auxiliary
 model to draft a `SKILL.md` for it, stages it as a **pending proposal**
 (`substrate_skill_proposals`), and messages the user to review it in chat. It
@@ -473,7 +473,7 @@ Curator (`agent/curator.py`) maintains it. See
 
 | Knob | Default | Meaning |
 |---|---|---|
-| `HERMES_SUBSTRATE_SKILL_SCOUT` | `0` | Master toggle (opt-in) |
+| `THOTH_SUBSTRATE_SKILL_SCOUT` | `0` | Master toggle (opt-in) |
 | `SKILL_SCOUT_INTERVAL_S` | `3600` | Min seconds between runs (also change-gated on L3) |
 | `SKILL_SCOUT_SALIENCE_FLOOR` | `0.7` | Min L3 salience for a candidate need |
 | `SKILL_SCOUT_MAX_PENDING` | `3` | Cap on open proposals (don't flood the user) |

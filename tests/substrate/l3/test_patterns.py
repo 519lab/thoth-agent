@@ -87,7 +87,7 @@ async def booted(thoth_db_initialized):
 
 @pytest.fixture(autouse=True)
 def _pf_on(monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_PATTERNFINDER", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_PATTERNFINDER", "1")
     monkeypatch.setenv("PATTERNFINDER_MIN_ENTITIES", "2")
     monkeypatch.setattr(extract, "resolve_pattern_client", lambda: (object(), "mock"))
 
@@ -117,7 +117,7 @@ async def test_pattern_finder_writes_patterns(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_pattern_finder_disabled_is_noop(booted, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_PATTERNFINDER", "0")
+    monkeypatch.setenv("THOTH_SUBSTRATE_PATTERNFINDER", "0")
     await l1.upsert_entity("A", "concept")
     await l1.upsert_entity("B", "concept")
 

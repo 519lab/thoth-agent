@@ -31,7 +31,7 @@ thoth --tui --dev
 You can also enable it via env var:
 
 ```bash
-export HERMES_TUI=1
+export THOTH_TUI=1
 thoth          # now uses the TUI
 thoth chat     # same
 ```
@@ -75,7 +75,7 @@ On first launch Thoth installs the TUI's Node dependencies into `ui-tui/node_mod
 Distributions that ship a prebuilt bundle (Nix, system packages) can point Thoth at it:
 
 ```bash
-export HERMES_TUI_DIR=/path/to/prebuilt/ui-tui
+export THOTH_TUI_DIR=/path/to/prebuilt/ui-tui
 thoth --tui
 ```
 
@@ -120,14 +120,14 @@ This is always-on — nothing to configure. Classic CLI keeps the raw TeX.
 
 The TUI auto-detects light terminals and swaps to the light theme accordingly. Detection works in three layers:
 
-1. `HERMES_TUI_THEME` env var — highest priority. Values: `light`, `dark`, or a raw 6-char background hex (e.g. `ffffff`, `1a1a2e`).
+1. `THOTH_TUI_THEME` env var — highest priority. Values: `light`, `dark`, or a raw 6-char background hex (e.g. `ffffff`, `1a1a2e`).
 2. `COLORFGBG` env var — the classic "what's my background color?" hint used by xterm-derived terminals.
 3. Terminal background probe via OSC 11 — works on modern terminals (Ghostty, Warp, iTerm2, WezTerm, Kitty) that don't set `COLORFGBG`.
 
 If you want the light theme permanently regardless of terminal:
 
 ```bash
-export HERMES_TUI_THEME=light
+export THOTH_TUI_THEME=light
 ```
 
 ## Busy indicator styles
@@ -146,9 +146,9 @@ Or in-session: `/indicator emoji` (etc.). Styles ship with matched glyph widths 
 By default, `thoth --tui` starts a fresh session each launch. To re-attach to the most recent TUI session automatically (useful when your terminal or SSH connection drops unexpectedly), opt in:
 
 ```bash
-export HERMES_TUI_RESUME=1          # most-recent TUI session
+export THOTH_TUI_RESUME=1          # most-recent TUI session
 # or:
-export HERMES_TUI_RESUME=<session-id>   # specific session
+export THOTH_TUI_RESUME=<session-id>   # specific session
 ```
 
 Unset the variable or pass `--resume <id>` explicitly to override on a per-launch basis.
@@ -173,7 +173,7 @@ The status line also shows:
 - **Per-prompt elapsed time** — `⏱ 12s/3m 45s` while the turn is running (live), frozen to `⏲ 32s / 3m 45s` after the turn completes. First number is time since last user message; second is total session duration. Resets on every new prompt.
 - **`🗜️ N`** — number of times the running session has been auto-compressed. Appears once the first compression fires.
 - **`▶ N`** — number of `/background` tasks currently running in this session. Appears whenever at least one task is in flight.
-- **`⚠ YOLO`** — visible warning whenever YOLO mode is on (`thoth --yolo`, `/yolo`, or `HERMES_YOLO_MODE=1`). The same badge also appears in the startup banner so you cannot launch an auto-approving session without noticing.
+- **`⚠ YOLO`** — visible warning whenever YOLO mode is on (`thoth --yolo`, `/yolo`, or `THOTH_YOLO_MODE=1`). The same badge also appears in the startup banner so you cannot launch an auto-approving session without noticing.
 
 ## Configuration
 
@@ -244,7 +244,7 @@ By default the TUI spawns its own in-process gateway, so each TUI instance is se
 Set the websocket URL via env before launching:
 
 ```bash
-export HERMES_TUI_GATEWAY_URL="ws://localhost:8765/api/ws?token=<auth-token>"
+export THOTH_TUI_GATEWAY_URL="ws://localhost:8765/api/ws?token=<auth-token>"
 thoth --tui
 ```
 
@@ -258,7 +258,7 @@ This is the same channel the web dashboard's embedded TUI uses (see [Web Dashboa
 
 ## Reverting to the classic CLI
 
-Launching `thoth` (without `--tui`) stays on the classic CLI. To make a machine prefer the TUI, set `HERMES_TUI=1` in your shell profile. To go back, unset it.
+Launching `thoth` (without `--tui`) stays on the classic CLI. To make a machine prefer the TUI, set `THOTH_TUI=1` in your shell profile. To go back, unset it.
 
 If the TUI fails to launch (no Node, missing bundle, TTY issue), Thoth prints a diagnostic and falls back — rather than leaving you stuck.
 

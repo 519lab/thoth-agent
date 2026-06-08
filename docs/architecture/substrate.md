@@ -32,7 +32,7 @@ Three design goals shape every decision below:
    loop and must never break it. Every slice write, every sub-agent, every
    recall call is allowed to fail silently; the conversation continues on the
    upstream code path. This is why recall is env-gated off by default
-   (`HERMES_SUBSTRATE_RECALL=0`) — until an operator opts in, behavior is
+   (`THOTH_SUBSTRATE_RECALL=0`) — until an operator opts in, behavior is
    byte-identical to upstream.
 2. **Single source of truth in PostgreSQL.** There is no SQLite anywhere in
    this fork. Transcripts, kanban state, and substrate perception all live in
@@ -126,7 +126,7 @@ Spawned directly by `Substrate.boot()` inside the Thoth process:
 
 | Sub-agent | Tick | Job |
 |---|---|---|
-| **Sentinel** | 200 ms | Triages `pending` slices → `passed` / `quarantined`. Phase A passes everything; content defense (prompt-injection / poisoning) is staged behind `HERMES_SUBSTRATE_SENTINEL_DEFENSE`, default OFF. |
+| **Sentinel** | 200 ms | Triages `pending` slices → `passed` / `quarantined`. Phase A passes everything; content defense (prompt-injection / poisoning) is staged behind `THOTH_SUBSTRATE_SENTINEL_DEFENSE`, default OFF. |
 | **Curator** | configurable | The decay + release + embedding loop (see §5). |
 | **Force-reject** | 10 s | Drops `pending` slices past their decay-profile TTL — bounds the pending queue even if the Sentinel hangs. |
 | **Partition-maintenance** | 24 h | Keeps a rolling window of monthly partitions ahead of `now()`. Calendar-bound, not load-bound. |
@@ -141,14 +141,14 @@ no auxiliary model is configured.
 
 | Env var (default `1`) | Sub-agent | Produces |
 |---|---|---|
-| `HERMES_SUBSTRATE_PARSER` | Parser | L1 entities/relationships |
-| `HERMES_SUBSTRATE_ASSOCIATOR` | Associator | L2 associations |
-| `HERMES_SUBSTRATE_PATTERNFINDER` | Pattern-finder | L3 patterns |
-| `HERMES_SUBSTRATE_CRITIC` | Critic | L4 calibration + coherence |
-| `HERMES_SUBSTRATE_REFLECTOR` | Reflector | L3/L4 synthesis |
-| `HERMES_SUBSTRATE_DREAMER` | Dreamer | counterfactual exploration log |
-| `HERMES_SUBSTRATE_CONDUCTOR` | Conductor | adaptive intensity dialing |
-| `HERMES_SUBSTRATE_SUMMARIZER` | Summarizer | compress older context |
+| `THOTH_SUBSTRATE_PARSER` | Parser | L1 entities/relationships |
+| `THOTH_SUBSTRATE_ASSOCIATOR` | Associator | L2 associations |
+| `THOTH_SUBSTRATE_PATTERNFINDER` | Pattern-finder | L3 patterns |
+| `THOTH_SUBSTRATE_CRITIC` | Critic | L4 calibration + coherence |
+| `THOTH_SUBSTRATE_REFLECTOR` | Reflector | L3/L4 synthesis |
+| `THOTH_SUBSTRATE_DREAMER` | Dreamer | counterfactual exploration log |
+| `THOTH_SUBSTRATE_CONDUCTOR` | Conductor | adaptive intensity dialing |
+| `THOTH_SUBSTRATE_SUMMARIZER` | Summarizer | compress older context |
 
 The **Conductor** owns the intensity dial (`OFF | LOW | MEDIUM | FULL`) that
 throttles how hard the other agents work. It has two halves:
@@ -166,7 +166,7 @@ throttles how hard the other agents work. It has two halves:
   it re-prioritizes corrective work (raising the Parser/integrity agents),
   holding that posture until coherence recovers past
   `THOTH_CONDUCTOR_COHERENCE_RECOVERY` (hysteresis). Gated by
-  `HERMES_SUBSTRATE_CONDUCTOR` (default on; `0` restores the static
+  `THOTH_SUBSTRATE_CONDUCTOR` (default on; `0` restores the static
   earlier-phase behaviour).
 
 What it does **not** yet do (deferred research, flagged in the Phase F PR): the
@@ -205,7 +205,7 @@ and the Curator — not a hard cap — is what keeps the table bounded.
 ## 6. The recall pipeline
 
 Recall is how the substrate feeds the foreground. When
-`HERMES_SUBSTRATE_RECALL=1`, the `SubstrateMemoryProvider` composes each turn's
+`THOTH_SUBSTRATE_RECALL=1`, the `SubstrateMemoryProvider` composes each turn's
 `<memory-context>` block from substrate slices instead of (on top of) the
 upstream memory path. The per-turn pipeline (`substrate/recall/`,
 timeout-bounded, default 300 ms) is:
@@ -213,7 +213,7 @@ timeout-bounded, default 300 ms) is:
 1. **`embed_query`** — embed the current turn (optional, separate ~800 ms budget).
 2. **`recall_window`** — SQL ranking over a composite score combining **pgvector
    cosine similarity + keyword Jaccard + current salience + recency** (each
-   weighted; see the `HERMES_RECALL_*_WEIGHT` knobs), within a lookback window.
+   weighted; see the `THOTH_RECALL_*_WEIGHT` knobs), within a lookback window.
    When the Critic's coherence is low, recall **pins to coherence** — raising the
    relevance floor so only stronger candidates surface (gated by
    `THOTH_RECALL_COHERENCE_PIN`).
@@ -258,7 +258,7 @@ Canonical DDL lives in the Alembic migrations under `migrations/versions/`
 `…_substrate_slices_embedding.py`). The schema migration is permanent — back up
 the DB before the first run if the data matters. If the DB is behind the
 expected revision at boot, the substrate raises with the upgrade command unless
-`HERMES_AUTO_MIGRATE=1`.
+`THOTH_AUTO_MIGRATE=1`.
 
 ---
 
@@ -278,7 +278,7 @@ finished but aren't":
   *acting* on it — there are no budgets, throttles, or a cost-aware governor; the
   Conductor still steers on consolidation backlog and coherence, not on token
   spend or wall-clock. The controls that exist are blunt: don't run the worker
-  subprocess, set per-agent `HERMES_SUBSTRATE_*=0`, or hold the Conductor/agents
+  subprocess, set per-agent `THOTH_SUBSTRATE_*=0`, or hold the Conductor/agents
   at a lower intensity. Watch the per-agent cost and budget accordingly before
   pointing the crew at a paid endpoint.
 
@@ -302,7 +302,7 @@ finished but aren't":
   (`substrate/agents/critic.py`).
 
 - **Boot-time config is a sharp edge.** Because config is read once at boot
-  (§9), `HERMES_SUBSTRATE_RECALL` and the other `HERMES_*` knobs are effectively
+  (§9), `THOTH_SUBSTRATE_RECALL` and the other `THOTH_*` knobs are effectively
   irreversible mid-process — flipping recall on or off, or retuning weights,
   requires a restart. This is by design (hot-path constants) but routinely
   surprises operators.
@@ -323,13 +323,13 @@ If you touch substrate code, these are the rules that keep it correct:
 - **Obey the single DB loop.** All PG access goes through `thoth_db` per
   [`database-event-loop.md`](./database-event-loop.md). The worker subprocess
   runs its own loop and calls `reset_pool_for_new_loop()`.
-- **Config is read once at boot.** `substrate/config.py` reads `HERMES_*` env
+- **Config is read once at boot.** `substrate/config.py` reads `THOTH_*` env
   vars at import time (module-level constants for the hot paths, a frozen
   `SubstrateConfig` for the rest). Mutating them mid-process is unsupported —
-  set in `.env` and restart. (Consequently `HERMES_SUBSTRATE_RECALL` is
+  set in `.env` and restart. (Consequently `THOTH_SUBSTRATE_RECALL` is
   effectively irreversible mid-process.)
 - **Gate new layers.** Anything beyond the Phase A–C core ships behind its own
-  `HERMES_SUBSTRATE_*` toggle, registers + heartbeats regardless of the gate,
+  `THOTH_SUBSTRATE_*` toggle, registers + heartbeats regardless of the gate,
   and degrades to a no-op when its dependency (auxiliary model, lower layer) is
   absent.
 - **Self-improvement stays behind a human gate.** The SkillScout (Tier 1,

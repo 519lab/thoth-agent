@@ -37,7 +37,7 @@ async def booted(thoth_db_initialized):
 
 @pytest.fixture(autouse=True)
 def _parser_on(monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_PARSER", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_PARSER", "1")
     # Resolve a dummy client so the tick proceeds to call_parser_llm (which
     # tests monkeypatch). Tests that want the gate off override the env var.
     monkeypatch.setattr(extract, "resolve_parser_client", lambda: (object(), "mock-model"))
@@ -68,7 +68,7 @@ async def _parser_log_rows(outcome=None):
 
 @pytest.mark.asyncio
 async def test_parser_disabled_is_noop(booted, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_PARSER", "0")
+    monkeypatch.setenv("THOTH_SUBSTRATE_PARSER", "0")
     called = {"n": 0}
 
     async def _boom(*a, **k):

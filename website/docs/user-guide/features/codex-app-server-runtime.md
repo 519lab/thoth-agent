@@ -91,11 +91,11 @@ What works inside a codex-runtime worker:
 - The Thoth tool callback for browser_*, vision, image_gen, skills, TTS
 
 What also works because the MCP callback exposes them:
-- **`kanban_complete` / `kanban_block` / `kanban_comment` / `kanban_heartbeat`** — the worker handoff tools. These read `HERMES_KANBAN_TASK` from env (set by the dispatcher), gate access correctly, and write to the per-board SQLite DB pinned by `HERMES_KANBAN_DB`. Without these in the callback, a worker on this runtime could do its task but couldn't report back, hanging until the dispatcher's timeout.
+- **`kanban_complete` / `kanban_block` / `kanban_comment` / `kanban_heartbeat`** — the worker handoff tools. These read `THOTH_KANBAN_TASK` from env (set by the dispatcher), gate access correctly, and write to the per-board SQLite DB pinned by `THOTH_KANBAN_DB`. Without these in the callback, a worker on this runtime could do its task but couldn't report back, hanging until the dispatcher's timeout.
 - **`kanban_show` / `kanban_list`** — read-only board queries for the worker to check its own context.
 - **`kanban_create` / `kanban_unblock` / `kanban_link`** — orchestrator-only operations. Available for orchestrator agents running on the codex runtime that need to dispatch new tasks.
 
-The kanban tools are gated by `HERMES_KANBAN_TASK` env var the dispatcher sets — that var is propagated to the codex subprocess (codex inherits env) and from there to the spawned `hermes-tools` MCP server subprocess. So the tools see the right task id and gate correctly. For Codex app-server workers, Thoth also passes narrow app-server sandbox overrides when `HERMES_KANBAN_TASK` is present: keep `workspace-write` sandboxing, add the **board DB directory plus every Kanban path the dispatcher pinned** as extra writable roots (`HERMES_KANBAN_WORKSPACES_ROOT`, `HERMES_KANBAN_WORKSPACE`, legacy `HERMES_KANBAN_ROOT` — deduplicated, DB-dir first), and keep network disabled by default. This avoids the brittle `:danger-no-sandbox` workaround while letting `kanban_complete` / `kanban_block` update the board DB **and** letting workers write reports/artifacts under workspace mounts that live outside the DB directory (e.g. `/media/.../kanban-workspaces/...` on a separate drive — [issue #27941](https://github.com/519lab/thoth-agent/issues/27941)).
+The kanban tools are gated by `THOTH_KANBAN_TASK` env var the dispatcher sets — that var is propagated to the codex subprocess (codex inherits env) and from there to the spawned `hermes-tools` MCP server subprocess. So the tools see the right task id and gate correctly. For Codex app-server workers, Thoth also passes narrow app-server sandbox overrides when `THOTH_KANBAN_TASK` is present: keep `workspace-write` sandboxing, add the **board DB directory plus every Kanban path the dispatcher pinned** as extra writable roots (`THOTH_KANBAN_WORKSPACES_ROOT`, `THOTH_KANBAN_WORKSPACE`, legacy `THOTH_KANBAN_ROOT` — deduplicated, DB-dir first), and keep network disabled by default. This avoids the brittle `:danger-no-sandbox` workaround while letting `kanban_complete` / `kanban_block` update the board DB **and** letting workers write reports/artifacts under workspace mounts that live outside the DB directory (e.g. `/media/.../kanban-workspaces/...` on a separate drive — [issue #27941](https://github.com/519lab/thoth-agent/issues/27941)).
 
 ### Cron jobs
 
@@ -350,7 +350,7 @@ Codex's built-in toolset covers shell/file ops/patches but doesn't have web sear
 [mcp_servers.hermes-tools]
 command = "/path/to/python"
 args = ["-m", "agent.transports.hermes_tools_mcp_server"]
-env = { THOTH_HOME = "/your/.hermes", PYTHONPATH = "...", HERMES_QUIET = "1" }
+env = { THOTH_HOME = "/your/.hermes", PYTHONPATH = "...", THOTH_QUIET = "1" }
 startup_timeout_sec = 30.0
 tool_timeout_sec = 600.0
 ```

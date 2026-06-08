@@ -160,7 +160,7 @@ The `minimax-oauth` provider does **not** use `MINIMAX_API_KEY` or `MINIMAX_BASE
 To force the `minimax-oauth` provider at runtime:
 
 ```bash
-HERMES_INFERENCE_PROVIDER=minimax-oauth thoth
+THOTH_INFERENCE_PROVIDER=minimax-oauth thoth
 ```
 
 ## Models

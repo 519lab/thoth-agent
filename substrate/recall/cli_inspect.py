@@ -71,9 +71,9 @@ async def print_summary(conn: "asyncpg.Connection") -> None:
 
     import os
 
-    enabled = os.environ.get("HERMES_SUBSTRATE_RECALL", "1")
+    enabled = os.environ.get("THOTH_SUBSTRATE_RECALL", "1")
     print("Provider status:")
-    print(f"  HERMES_SUBSTRATE_RECALL = {enabled}")
+    print(f"  THOTH_SUBSTRATE_RECALL = {enabled}")
 
 
 async def print_recent(conn: "asyncpg.Connection", *, limit: int) -> None:
@@ -168,7 +168,7 @@ async def print_config(conn: "asyncpg.Connection") -> None:
     print(f"  RECALL_EMBEDDING_BATCH_SIZE           = {_cfg.RECALL_EMBEDDING_BATCH_SIZE}")
     print(f"  RECALL_EMBEDDING_BACKFILL_INTERVAL_S  = {_cfg.RECALL_EMBEDDING_BACKFILL_INTERVAL_S}")
     print(f"  RECALL_EMBEDDING_BACKFILL_MAX_RETRIES = {_cfg.RECALL_EMBEDDING_BACKFILL_MAX_RETRIES}")
-    print(f"  HERMES_SUBSTRATE_RECALL (enable)      = {_cfg.HERMES_SUBSTRATE_RECALL_ENABLED}")
+    print(f"  THOTH_SUBSTRATE_RECALL (enable)      = {_cfg.THOTH_SUBSTRATE_RECALL_ENABLED}")
 
 
 # ---------------------------------------------------------------------------
@@ -236,7 +236,7 @@ def _validate_verdict(
     notes: list[str] = []
     if enabled == "0":
         notes.append(
-            "HERMES_SUBSTRATE_RECALL=0 — the foreground is NOT using substrate "
+            "THOTH_SUBSTRATE_RECALL=0 — the foreground is NOT using substrate "
             "recall; set it to 1 (the default) to enable."
         )
     if total_slices == 0 or reachable == 0:
@@ -292,10 +292,10 @@ async def validate(
 
     now = datetime.now(timezone.utc)
     print(f"Recall validation @ {now.isoformat()}")
-    enabled = os.environ.get("HERMES_SUBSTRATE_RECALL", "1")
+    enabled = os.environ.get("THOTH_SUBSTRATE_RECALL", "1")
     print(
-        f"  HERMES_SUBSTRATE_RECALL = {enabled}  "
-        f"(default {'ON' if _cfg.HERMES_SUBSTRATE_RECALL_ENABLED else 'OFF'})"
+        f"  THOTH_SUBSTRATE_RECALL = {enabled}  "
+        f"(default {'ON' if _cfg.THOTH_SUBSTRATE_RECALL_ENABLED else 'OFF'})"
     )
     print()
 

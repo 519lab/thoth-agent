@@ -345,14 +345,14 @@ class TestRestartSubstrateWorkers:
 
 class TestRunDbMigrationOnUpdate:
     def test_noop_without_pg_dsn(self, monkeypatch):
-        monkeypatch.delenv("HERMES_PG_DSN", raising=False)
+        monkeypatch.delenv("THOTH_PG_DSN", raising=False)
         run = MagicMock()
         with patch.object(hmain.subprocess, "run", run):
             hmain._run_db_migration_on_update()
         run.assert_not_called()
 
     def test_runs_alembic_upgrade_head(self, monkeypatch, capsys):
-        monkeypatch.setenv("HERMES_PG_DSN", "postgresql://x/y")
+        monkeypatch.setenv("THOTH_PG_DSN", "postgresql://x/y")
         run = MagicMock(
             return_value=SimpleNamespace(
                 returncode=0, stdout="Running upgrade 0022 -> 0023", stderr=""
@@ -381,7 +381,7 @@ class TestRunDbMigrationOnUpdate:
     def test_drift_detected_prints_recovery_and_skips_upgrade(
         self, monkeypatch, capsys
     ):
-        monkeypatch.setenv("HERMES_PG_DSN", "postgresql://x/y")
+        monkeypatch.setenv("THOTH_PG_DSN", "postgresql://x/y")
         run = MagicMock()
         with (
             patch.object(
@@ -409,7 +409,7 @@ class TestRunDbMigrationOnUpdate:
         assert "upgrade head" in out
 
     def test_migration_failure_is_actionable_not_fatal(self, monkeypatch, capsys):
-        monkeypatch.setenv("HERMES_PG_DSN", "postgresql://x/y")
+        monkeypatch.setenv("THOTH_PG_DSN", "postgresql://x/y")
         run = MagicMock(
             return_value=SimpleNamespace(
                 returncode=1, stdout="", stderr="psycopg.OperationalError: boom"

@@ -2,9 +2,9 @@
 # docker-compose.yml for Thoth Agent
 #
 # Usage:
-#   HERMES_UID=$(id -u) HERMES_GID=$(id -g) docker compose up -d
+#   THOTH_UID=$(id -u) THOTH_GID=$(id -g) docker compose up -d
 #
-# Set HERMES_UID / HERMES_GID to the host user that owns ~/.thoth so
+# Set THOTH_UID / THOTH_GID to the host user that owns ~/.thoth so
 # files created inside the container stay readable/writable on the host.
 # The entrypoint remaps the internal `hermes` user to these values via
 # usermod/groupmod + gosu.
@@ -31,8 +31,8 @@ services:
     volumes:
       - ~/.thoth:/opt/data
     environment:
-      - HERMES_UID=${HERMES_UID:-10000}
-      - HERMES_GID=${HERMES_GID:-10000}
+      - THOTH_UID=${THOTH_UID:-10000}
+      - THOTH_GID=${THOTH_GID:-10000}
       # To expose the OpenAI-compatible API server beyond localhost,
       # uncomment BOTH lines (API_SERVER_KEY is mandatory for auth):
       # - API_SERVER_HOST=0.0.0.0
@@ -65,8 +65,8 @@ services:
     volumes:
       - ~/.thoth:/opt/data
     environment:
-      - HERMES_UID=${HERMES_UID:-10000}
-      - HERMES_GID=${HERMES_GID:-10000}
+      - THOTH_UID=${THOTH_UID:-10000}
+      - THOTH_GID=${THOTH_GID:-10000}
     # Localhost-only. For remote access, tunnel via `ssh -L 9119:localhost:9119`.
     command: ["dashboard", "--host", "127.0.0.1", "--no-open"]
 
@@ -90,7 +90,7 @@ services:
   # port (5433 by default) and a different docker volume so pytest can
   # never collide with the real `hermes` DB. The pytest-postgresql
   # fixtures in tests/conftest.py honour POSTGRES_PORT — set it to 5433
-  # (or whatever HERMES_TEST_POSTGRES_PORT resolves to) before running
+  # (or whatever THOTH_TEST_POSTGRES_PORT resolves to) before running
   # tests, e.g.::
   #
   #     docker compose --profile test up -d postgres-test
@@ -107,7 +107,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hermes}
       POSTGRES_DB:       ${POSTGRES_DB:-hermes}
     ports:
-      - "${HERMES_TEST_POSTGRES_PORT:-5433}:5432"
+      - "${THOTH_TEST_POSTGRES_PORT:-5433}:5432"
     volumes:
       - hermes_pg_test_data:/var/lib/postgresql/data
     healthcheck:
@@ -146,9 +146,9 @@ services:
     environment:
       # Inside the compose network, the test PG is reachable by service
       # name on its container-side port 5432 (not the host-mapped 5433).
-      HERMES_PG_DSN: postgresql://hermes:hermes@postgres-test:5432/hermes
-      HERMES_TEST_POSTGRES_HOST: postgres-test
-      HERMES_TEST_POSTGRES_PORT: "5432"
+      THOTH_PG_DSN: postgresql://hermes:hermes@postgres-test:5432/hermes
+      THOTH_TEST_POSTGRES_HOST: postgres-test
+      THOTH_TEST_POSTGRES_PORT: "5432"
       POSTGRES_USER: hermes
       POSTGRES_PASSWORD: hermes
       # CI parity — set so the perf microbenches honour the CI ceilings.
