@@ -70,7 +70,7 @@ THOTH_OVERLAYS: Dict[str, ThothOverlay] = {
         transport="openai_chat",
         auth_type="oauth_external",
         base_url_override="https://portal.qwen.ai/v1",
-        base_url_env_var="HERMES_QWEN_BASE_URL",
+        base_url_env_var="THOTH_QWEN_BASE_URL",
     ),
     "google-gemini-cli": ThothOverlay(
         transport="openai_chat",
@@ -722,4 +722,4 @@ def resolve_provider_full(
 
 # Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
 HermesOverlay = ThothOverlay
-HERMES_OVERLAYS = THOTH_OVERLAYS
+THOTH_OVERLAYS = THOTH_OVERLAYS

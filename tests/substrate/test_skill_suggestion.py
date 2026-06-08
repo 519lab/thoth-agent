@@ -29,7 +29,7 @@ def fake_skills(tmp_path, monkeypatch):
     _skill("devops", "kubernetes-deploy", "Deploy and roll back Kubernetes workloads", ["kubernetes", "deploy"])
     _skill("data", "postgres-tuning", "Tune PostgreSQL query performance and indexes", ["postgres", "sql"])
     _skill("creative", "haiku-writer", "Compose haiku poetry", ["poetry"])
-    monkeypatch.setenv("HERMES_SKILLS_ROOT", str(tmp_path))
+    monkeypatch.setenv("THOTH_SKILLS_ROOT", str(tmp_path))
     skills_match.scan_skills.cache_clear()
     yield str(tmp_path)
     skills_match.scan_skills.cache_clear()

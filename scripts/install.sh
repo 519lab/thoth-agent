@@ -62,11 +62,11 @@ THOTH_HOME_DEFAULT="$HOME/.thoth"
 CLI_NAME_DEFAULT="thoth"
 
 THOTH_HOME="${THOTH_HOME:-$THOTH_HOME_DEFAULT}"
-CLI_NAME="${THOTH_CLI_NAME:-${HERMES_CLI_NAME:-$CLI_NAME_DEFAULT}}"
+CLI_NAME="${THOTH_CLI_NAME:-${THOTH_CLI_NAME:-$CLI_NAME_DEFAULT}}"
 
 # INSTALL_DIR resolved after arg parsing + OS detection.
-if [ -n "${HERMES_INSTALL_DIR:-}" ]; then
-    INSTALL_DIR="$HERMES_INSTALL_DIR"
+if [ -n "${THOTH_INSTALL_DIR:-}" ]; then
+    INSTALL_DIR="$THOTH_INSTALL_DIR"
     INSTALL_DIR_EXPLICIT=true
 else
     INSTALL_DIR=""
@@ -103,7 +103,7 @@ SKIP_BROWSER=false
 SKIP_POSTGRES=false        # NEW: skip docker compose up + alembic upgrade
 RESET_DB=false             # NEW: drop the postgres data volume before compose-up
 SKIP_NODE=false            # NEW: skip ui-tui/web npm installs
-# Force-rewrite preserves nothing: HERMES_PG_DSN, browser env, etc. get
+# Force-rewrite preserves nothing: THOTH_PG_DSN, browser env, etc. get
 # rewritten even if the user customized them. Existing values are backed
 # up to ``$THOTH_HOME/.install-backup/`` first. Off by default — the
 # installer auto-detects updates and keeps user config intact.
@@ -145,7 +145,7 @@ Options:
   --skip-node         Skip ui-tui/web npm installs (no TUI / no dashboard)
   --skip-postgres     Skip docker compose up + Alembic migrations
                         Use this if you have your own PostgreSQL and will
-                        set HERMES_PG_DSN + run 'alembic upgrade head' yourself
+                        set THOTH_PG_DSN + run 'alembic upgrade head' yourself
   --reset-db          Destroy the existing PostgreSQL data volume before
                         starting Postgres, so the install begins from a clean
                         database. WITHOUT this flag the installer NEVER drops
@@ -170,7 +170,7 @@ Options:
                         default: postgresql://hermes:hermes@localhost:5432/hermes
                         (matches the docker-compose service shipped with this repo)
   --force-rewrite-config
-                      On updates, rewrite HERMES_PG_DSN and other installer-
+                      On updates, rewrite THOTH_PG_DSN and other installer-
                       managed entries in .env even when they have been
                       customized (a timestamped backup is written to
                       $THOTH_HOME/.install-backup/ first). Default: preserve
@@ -183,13 +183,13 @@ Side-by-side install (coexist with an existing upstream Hermes):
 Custom PostgreSQL (e.g. your own cluster, Neon, Supabase):
   curl ... | bash -s -- --skip-postgres --pg-dsn 'postgresql://user:pw@host:5432/db'
 
-Configurable embedding dimension (HERMES_EMBEDDING_DIM, default 1536):
+Configurable embedding dimension (THOTH_EMBEDDING_DIM, default 1536):
   The substrate stores text embeddings in a fixed-dim pgvector column.
   1536 matches OpenAI text-embedding-3-small / ada-002 and proxies thereof.
   Local models output different dims (Ollama nomic-embed-text = 768,
-  mxbai-embed-large = 1024). Set HERMES_EMBEDDING_DIM at install time to
+  mxbai-embed-large = 1024). Set THOTH_EMBEDDING_DIM at install time to
   shape the column for your chosen model:
-    HERMES_EMBEDDING_DIM=768 curl ... | bash
+    THOTH_EMBEDDING_DIM=768 curl ... | bash
   See substrate/recall/embeddings.py for the runtime auxiliary.embedding
   config schema (provider/model/base_url/api_key).
 
@@ -517,7 +517,7 @@ check_git() {
 }
 
 # Docker is required for the bundled PostgreSQL service. (Or pass
-# --skip-postgres and set HERMES_PG_DSN to your own cluster.)
+# --skip-postgres and set THOTH_PG_DSN to your own cluster.)
 check_docker() {
     if [ "$SKIP_POSTGRES" = true ]; then
         log_info "Skipping Docker check (--skip-postgres)"
@@ -1103,7 +1103,7 @@ setup_postgres() {
     if [ "$SKIP_POSTGRES" = true ]; then
         log_info "Skipping PostgreSQL setup (--skip-postgres)"
         if [ -z "${PG_DSN_OVERRIDE:-}" ]; then
-            log_warn "You'll need to set HERMES_PG_DSN yourself and run 'alembic upgrade head'"
+            log_warn "You'll need to set THOTH_PG_DSN yourself and run 'alembic upgrade head'"
         fi
         return 0
     fi
@@ -1147,11 +1147,11 @@ run_migrations() {
     log_info "Running Alembic migrations against:"
     log_info "  $dsn"
     cd "$INSTALL_DIR"
-    if HERMES_PG_DSN="$dsn" ./venv/bin/alembic -c migrations/alembic.ini upgrade head; then
+    if THOTH_PG_DSN="$dsn" ./venv/bin/alembic -c migrations/alembic.ini upgrade head; then
         log_success "Substrate schema migrated to head"
     else
         log_error "Alembic upgrade failed"
-        log_info "Check connectivity: HERMES_PG_DSN=\"$dsn\" ./venv/bin/python -c 'import asyncpg, asyncio; asyncio.run(asyncpg.connect(\"$dsn\"))'"
+        log_info "Check connectivity: THOTH_PG_DSN=\"$dsn\" ./venv/bin/python -c 'import asyncpg, asyncio; asyncio.run(asyncpg.connect(\"$dsn\"))'"
         exit 1
     fi
 }
@@ -1178,7 +1178,7 @@ setup_path() {
     mkdir -p "$link_dir"
     rm -f "$link_dir/$CLI_NAME"
 
-    # Launcher injects HERMES_PG_DSN if --skip-postgres wasn't used.
+    # Launcher injects THOTH_PG_DSN if --skip-postgres wasn't used.
     # Clears PYTHONPATH/PYTHONHOME so a parent process can't shadow this venv.
     local pg_dsn="${PG_DSN_OVERRIDE:-postgresql://${PG_USER_DEFAULT}:${PG_PASSWORD_DEFAULT}@${PG_HOST_DEFAULT}:${PG_PORT_DEFAULT}/${PG_DATABASE_DEFAULT}}"
     # Pin the embedding dim choice (if the operator set one at install
@@ -1186,8 +1186,8 @@ setup_path() {
     # upgrade head`` invocations preserve the schema shape. Unset env →
     # nothing exported → migration 0009's default (1536) wins.
     local embed_dim_export=""
-    if [ -n "${HERMES_EMBEDDING_DIM:-}" ]; then
-        embed_dim_export="export HERMES_EMBEDDING_DIM=\"\${HERMES_EMBEDDING_DIM:-$HERMES_EMBEDDING_DIM}\""
+    if [ -n "${THOTH_EMBEDDING_DIM:-}" ]; then
+        embed_dim_export="export THOTH_EMBEDDING_DIM=\"\${THOTH_EMBEDDING_DIM:-$THOTH_EMBEDDING_DIM}\""
     fi
     cat > "$link_dir/$CLI_NAME" <<EOF
 #!/usr/bin/env bash
@@ -1196,11 +1196,11 @@ setup_path() {
 unset PYTHONPATH
 unset PYTHONHOME
 export THOTH_HOME="\${THOTH_HOME:-$THOTH_HOME}"
-export HERMES_PG_DSN="\${HERMES_PG_DSN:-$pg_dsn}"
+export THOTH_PG_DSN="\${THOTH_PG_DSN:-$pg_dsn}"
 # Echo the user-facing launcher name into resume/setup hints. The venv
 # console script is itself named "thoth" so argv[0] can't carry this.
 export THOTH_CLI_NAME="\${THOTH_CLI_NAME:-$CLI_NAME}"
-export HERMES_CLI_NAME="\${HERMES_CLI_NAME:-$CLI_NAME}"
+export THOTH_CLI_NAME="\${THOTH_CLI_NAME:-$CLI_NAME}"
 $embed_dim_export
 exec "$THOTH_BIN" "\$@"
 EOF
@@ -1307,7 +1307,7 @@ copy_config_templates() {
     fi
     chmod 600 "$THOTH_HOME/.env"
 
-    # Ensure HERMES_PG_DSN in .env matches THIS install's PG so non-launcher
+    # Ensure THOTH_PG_DSN in .env matches THIS install's PG so non-launcher
     # entry points (gateway, cron jobs spawned outside the shim) can find
     # the database. On updates we preserve user customizations: only rewrite
     # when the existing DSN looks installer-managed (points at the local
@@ -1315,9 +1315,9 @@ copy_config_templates() {
     # drifted. Custom DSNs — remote PG, custom creds, hosted Postgres
     # (Neon/Supabase/RDS) — are left untouched.
     local pg_dsn="${PG_DSN_OVERRIDE:-postgresql://${PG_USER_DEFAULT}:${PG_PASSWORD_DEFAULT}@${PG_HOST_DEFAULT}:${PG_PORT_DEFAULT}/${PG_DATABASE_DEFAULT}}"
-    if grep -q '^HERMES_PG_DSN=' "$THOTH_HOME/.env" 2>/dev/null; then
+    if grep -q '^THOTH_PG_DSN=' "$THOTH_HOME/.env" 2>/dev/null; then
         local cur
-        cur=$(grep '^HERMES_PG_DSN=' "$THOTH_HOME/.env" | head -1 | cut -d= -f2-)
+        cur=$(grep '^THOTH_PG_DSN=' "$THOTH_HOME/.env" | head -1 | cut -d= -f2-)
         if [ "$cur" != "$pg_dsn" ]; then
             # Detect "looks installer-managed" via host segment matching one
             # of the docker-compose-friendly localhost aliases.
@@ -1328,26 +1328,26 @@ copy_config_templates() {
 
             if [ "$FORCE_REWRITE_CONFIG" = true ]; then
                 _backup_env_file "force-rewrite-config"
-                sed -i "s|^HERMES_PG_DSN=.*|HERMES_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
-                log_success "Updated HERMES_PG_DSN in $THOTH_HOME/.env ($cur → $pg_dsn) [--force-rewrite-config]"
+                sed -i "s|^THOTH_PG_DSN=.*|THOTH_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
+                log_success "Updated THOTH_PG_DSN in $THOTH_HOME/.env ($cur → $pg_dsn) [--force-rewrite-config]"
             elif [ "$_looks_local" = true ]; then
                 # Local DSN whose port drifted (typical after a port-bump
                 # on an upgrade). Safe to rewrite — but back up first.
                 _backup_env_file "pg-dsn-port-drift"
-                sed -i "s|^HERMES_PG_DSN=.*|HERMES_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
-                log_success "Updated HERMES_PG_DSN in $THOTH_HOME/.env ($cur → $pg_dsn)"
+                sed -i "s|^THOTH_PG_DSN=.*|THOTH_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
+                log_success "Updated THOTH_PG_DSN in $THOTH_HOME/.env ($cur → $pg_dsn)"
             else
                 # Non-local DSN — almost certainly user-customized
                 # (remote PG, hosted service, custom creds). Leave it.
-                log_warn "HERMES_PG_DSN in $THOTH_HOME/.env points at a non-local cluster:"
+                log_warn "THOTH_PG_DSN in $THOTH_HOME/.env points at a non-local cluster:"
                 log_warn "  $cur"
                 log_warn "  This install's local PG is at $pg_dsn — NOT rewriting."
                 log_warn "  Pass --force-rewrite-config to overwrite (backs up .env first)."
             fi
         fi
     else
-        printf '\n# Substrate PostgreSQL DSN (added by installer)\nHERMES_PG_DSN=%s\n' "$pg_dsn" >> "$THOTH_HOME/.env"
-        log_success "Wrote HERMES_PG_DSN to $THOTH_HOME/.env"
+        printf '\n# Substrate PostgreSQL DSN (added by installer)\nTHOTH_PG_DSN=%s\n' "$pg_dsn" >> "$THOTH_HOME/.env"
+        log_success "Wrote THOTH_PG_DSN to $THOTH_HOME/.env"
     fi
 
     if [ ! -f "$THOTH_HOME/config.yaml" ] && [ -f "$INSTALL_DIR/cli-config.yaml.example" ]; then
@@ -1494,12 +1494,12 @@ substrate_smoke() {
     log_info "Running substrate boot smoke test..."
     local dsn="${PG_DSN_OVERRIDE:-postgresql://${PG_USER_DEFAULT}:${PG_PASSWORD_DEFAULT}@${PG_HOST_DEFAULT}:${PG_PORT_DEFAULT}/${PG_DATABASE_DEFAULT}}"
     local script_out
-    script_out=$(HERMES_PG_DSN="$dsn" "$INSTALL_DIR/venv/bin/python" - <<'PY' 2>&1
+    script_out=$(THOTH_PG_DSN="$dsn" "$INSTALL_DIR/venv/bin/python" - <<'PY' 2>&1
 import asyncio, os, sys
 async def main():
     import thoth_db
     from thoth_bootstrap import bootstrap_substrate
-    await thoth_db.init(os.environ["HERMES_PG_DSN"])
+    await thoth_db.init(os.environ["THOTH_PG_DSN"])
     sub = await bootstrap_substrate()
     if sub is None:
         print("substrate-boot-FAIL: bootstrap_substrate returned None")
@@ -1698,7 +1698,7 @@ run_setup_wizard() {
     log_info "Starting setup wizard..."
     cd "$INSTALL_DIR"
     local pg_dsn="${PG_DSN_OVERRIDE:-postgresql://${PG_USER_DEFAULT}:${PG_PASSWORD_DEFAULT}@${PG_HOST_DEFAULT}:${PG_PORT_DEFAULT}/${PG_DATABASE_DEFAULT}}"
-    THOTH_HOME="$THOTH_HOME" HERMES_PG_DSN="$pg_dsn" \
+    THOTH_HOME="$THOTH_HOME" THOTH_PG_DSN="$pg_dsn" \
         "$INSTALL_DIR/venv/bin/python" -m thoth_cli.main setup < /dev/tty
 }
 

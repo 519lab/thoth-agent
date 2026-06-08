@@ -343,7 +343,7 @@ $THOTH_HOME/skills/        Installed skills
 ```
 
 **Substrate Edition (this fork) differences:** session + kanban + substrate
-state all live in **PostgreSQL** (DSN `THOTH_PG_DSN`; legacy `HERMES_PG_DSN`
+state all live in **PostgreSQL** (DSN `THOTH_PG_DSN`; legacy `THOTH_PG_DSN`
 still honored via the env bridge; default
 `postgresql://hermes:hermes@localhost:5432/hermes`) rather than `state.db`.
 The `state.db` SQLite file no longer exists in this fork. The installer's
@@ -459,7 +459,7 @@ Secret redaction is **off by default** — tool output (terminal stdout, `read_f
 thoth config set security.redact_secrets true       # enable globally
 ```
 
-**Restart required.** `security.redact_secrets` is snapshotted at import time — toggling it mid-session (e.g. via `export HERMES_REDACT_SECRETS=true` from a tool call) will NOT take effect for the running process. Tell the user to run `thoth config set security.redact_secrets true` in a terminal, then start a new session. This is deliberate — it prevents an LLM from flipping the toggle on itself mid-task.
+**Restart required.** `security.redact_secrets` is snapshotted at import time — toggling it mid-session (e.g. via `export THOTH_REDACT_SECRETS=true` from a tool call) will NOT take effect for the running process. Tell the user to run `thoth config set security.redact_secrets true` in a terminal, then start a new session. This is deliberate — it prevents an LLM from flipping the toggle on itself mid-task.
 
 Disable again with:
 ```bash
@@ -490,7 +490,7 @@ thoth config set approvals.mode off         # bypass everything (not recommended
 
 Per-invocation bypass without changing config:
 - `thoth --yolo …`
-- `export HERMES_YOLO_MODE=1`
+- `export THOTH_YOLO_MODE=1`
 
 Note: YOLO / `approvals.mode: off` does NOT turn off secret redaction. They are independent.
 
@@ -689,7 +689,7 @@ User docs: https://thoth.519lab.com/docs/user-guide/features/curator
 
 Durable SQLite board for multi-profile / multi-worker collaboration.
 Users drive it via `thoth kanban <verb>`; dispatcher-spawned workers
-see a focused `kanban_*` toolset gated by `HERMES_KANBAN_TASK`, and
+see a focused `kanban_*` toolset gated by `THOTH_KANBAN_TASK`, and
 orchestrator profiles can opt into the broader `kanban` toolset. Normal
 sessions still have zero `kanban_*` schema footprint unless configured.
 
@@ -709,7 +709,7 @@ sessions still have zero `kanban_*` schema footprint unless configured.
   (default 2; configurable via `kanban.failure_limit` or per-task
   `max_retries`).
 - **Isolation:** board is the hard boundary (workers get
-  `HERMES_KANBAN_BOARD` pinned in env); tenant is a soft namespace
+  `THOTH_KANBAN_BOARD` pinned in env); tenant is a soft namespace
   within a board for workspace-path + memory-key isolation.
 
 User docs: https://thoth.519lab.com/docs/user-guide/features/kanban
@@ -747,7 +747,7 @@ Slice writes are non-fatal: substrate failures never break the foreground
 conversation.
 
 **Recall API + memory-context (Phase C, env-gated):** when
-`HERMES_SUBSTRATE_RECALL=1` is set, a `SubstrateMemoryProvider` is
+`THOTH_SUBSTRATE_RECALL=1` is set, a `SubstrateMemoryProvider` is
 registered into Thoth's `MemoryManager` and the per-turn
 `<memory-context>` block is composed from substrate slices (composite
 score = pgvector similarity + keyword Jaccard + salience + recency,

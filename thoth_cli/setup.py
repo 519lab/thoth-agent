@@ -1762,10 +1762,10 @@ def _apply_default_agent_settings(config: dict):
     """Apply recommended defaults for all agent settings without prompting."""
     config.setdefault("agent", {})["max_turns"] = 90
     # config.yaml is the authoritative source for max_turns; the gateway
-    # bridges it into HERMES_MAX_ITERATIONS at startup. We no longer write
+    # bridges it into THOTH_MAX_ITERATIONS at startup. We no longer write
     # to .env to avoid the dual-source inconsistency that caused the
     # 60-vs-500 bug (stale .env entry silently shadowing config.yaml).
-    remove_env_value("HERMES_MAX_ITERATIONS")
+    remove_env_value("THOTH_MAX_ITERATIONS")
 
     config.setdefault("display", {})["tool_progress"] = "all"
 
@@ -1812,10 +1812,10 @@ def setup_agent_settings(config: dict):
             # Write to config.yaml (authoritative) only. Also clean up any
             # stale .env entry from earlier setup runs — the gateway's
             # bridge in gateway/run.py now unconditionally derives
-            # HERMES_MAX_ITERATIONS from agent.max_turns at startup.
+            # THOTH_MAX_ITERATIONS from agent.max_turns at startup.
             config.setdefault("agent", {})["max_turns"] = max_iter
             config.pop("max_turns", None)
-            remove_env_value("HERMES_MAX_ITERATIONS")
+            remove_env_value("THOTH_MAX_ITERATIONS")
             print_success(f"Max iterations set to {max_iter}")
     except ValueError:
         print_warning("Invalid number, keeping current value")

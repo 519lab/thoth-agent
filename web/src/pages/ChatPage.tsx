@@ -24,7 +24,7 @@ import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { Button } from "@nous-research/ui/ui/components/button";
 import { Typography } from "@/components/NouiTypography";
-import { HERMES_BASE_PATH } from "@/lib/api";
+import { THOTH_BASE_PATH } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Copy, PanelRight, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -45,7 +45,7 @@ function buildWsUrl(
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
   const qs = new URLSearchParams({ token, channel });
   if (resume) qs.set("resume", resume);
-  return `${proto}//${window.location.host}${HERMES_BASE_PATH}/api/pty?${qs.toString()}`;
+  return `${proto}//${window.location.host}${THOTH_BASE_PATH}/api/pty?${qs.toString()}`;
 }
 
 // Channel id ties this chat tab's PTY child (publisher) to its sidebar
@@ -117,7 +117,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
   // Lazy-init: the missing-token check happens at construction so the effect
   // body doesn't have to setState (React 19's set-state-in-effect rule).
   const [banner, setBanner] = useState<string | null>(() =>
-    typeof window !== "undefined" && !window.__HERMES_SESSION_TOKEN__
+    typeof window !== "undefined" && !window.__THOTH_SESSION_TOKEN__
       ? "Session token unavailable. Open this page through `thoth dashboard`, not directly."
       : null,
   );
@@ -269,7 +269,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
     const host = hostRef.current;
     if (!host) return;
 
-    const token = window.__HERMES_SESSION_TOKEN__;
+    const token = window.__THOTH_SESSION_TOKEN__;
     // Banner already initialised above; just bail before wiring xterm/WS.
     if (!token) {
       return;
@@ -860,6 +860,6 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
 
 declare global {
   interface Window {
-    __HERMES_SESSION_TOKEN__?: string;
+    __THOTH_SESSION_TOKEN__?: string;
   }
 }

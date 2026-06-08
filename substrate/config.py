@@ -2,7 +2,7 @@
 
 Phase A introduced the minimal SubstrateConfig dataclass. Phase C adds
 the recall + embedding knobs (spec §5.6) as module-level constants
-read at import time from ``HERMES_RECALL_*`` env vars (with sane
+read at import time from ``THOTH_RECALL_*`` env vars (with sane
 defaults). Module-level rather than a dataclass because the recall
 pipeline + Curator embedding loop read these in hot paths and a
 per-call dataclass lookup is unnecessary overhead.
@@ -29,7 +29,7 @@ class SubstrateConfig:
     # If true, ``Substrate.boot()`` runs ``alembic upgrade head`` when
     # the database is behind the expected revision. If false (default),
     # boot raises so the operator can decide. Mirrors Thoth's
-    # ``HERMES_AUTO_MIGRATE`` convention from the Phase 0 ADR.
+    # ``THOTH_AUTO_MIGRATE`` convention from the Phase 0 ADR.
     auto_migrate: bool = False
 
     # Sub-agent boot toggles. Used by tests via
@@ -46,7 +46,7 @@ class SubstrateConfig:
         ``thoth_db`` and ``thoth_bootstrap``.
         """
         return cls(
-            auto_migrate=_envbool("HERMES_AUTO_MIGRATE", default=False),
+            auto_migrate=_envbool("THOTH_AUTO_MIGRATE", default=False),
             start_subagents=True,
         )
 
@@ -83,11 +83,11 @@ def _envfloat(name: str, *, default: float) -> float:
 # ---------------------------------------------------------------------------
 
 # Pipeline budgets.
-RECALL_TOKEN_BUDGET = _envint("HERMES_RECALL_TOKEN_BUDGET", default=1500)
-RECALL_TIME_WINDOW_HOURS = _envfloat("HERMES_RECALL_TIME_WINDOW_HOURS", default=24.0)
-RECALL_TIMEOUT_MS = _envint("HERMES_RECALL_TIMEOUT_MS", default=300)
-RECALL_MIN_SALIENCE = _envfloat("HERMES_RECALL_MIN_SALIENCE", default=0.05)
-RECALL_CANDIDATE_LIMIT = _envint("HERMES_RECALL_CANDIDATE_LIMIT", default=50)
+RECALL_TOKEN_BUDGET = _envint("THOTH_RECALL_TOKEN_BUDGET", default=1500)
+RECALL_TIME_WINDOW_HOURS = _envfloat("THOTH_RECALL_TIME_WINDOW_HOURS", default=24.0)
+RECALL_TIMEOUT_MS = _envint("THOTH_RECALL_TIMEOUT_MS", default=300)
+RECALL_MIN_SALIENCE = _envfloat("THOTH_RECALL_MIN_SALIENCE", default=0.05)
+RECALL_CANDIDATE_LIMIT = _envint("THOTH_RECALL_CANDIDATE_LIMIT", default=50)
 
 # Precision controls. After ranking, a
 # candidate is injected only if its composite score clears BOTH floors:
@@ -95,20 +95,20 @@ RECALL_CANDIDATE_LIMIT = _envint("HERMES_RECALL_CANDIDATE_LIMIT", default=50)
 #   * a relative floor = fraction of the top candidate's score (adapts
 #     across the semantic vs keyword score regimes — the strongest hit
 #     always survives, the long weak tail is dropped).
-RECALL_MIN_RELEVANCE = _envfloat("HERMES_RECALL_MIN_RELEVANCE", default=0.05)
-RECALL_RELATIVE_FLOOR = _envfloat("HERMES_RECALL_RELATIVE_FLOOR", default=0.4)
+RECALL_MIN_RELEVANCE = _envfloat("THOTH_RECALL_MIN_RELEVANCE", default=0.05)
+RECALL_RELATIVE_FLOOR = _envfloat("THOTH_RECALL_RELATIVE_FLOOR", default=0.4)
 # MMR-style diversity: skip a candidate whose payload token-overlap
 # (Jaccard) with an already-selected block exceeds this — kills
 # near-duplicate excerpts. 0 disables dedup.
-RECALL_DEDUP_THRESHOLD = _envfloat("HERMES_RECALL_DEDUP_THRESHOLD", default=0.8)
+RECALL_DEDUP_THRESHOLD = _envfloat("THOTH_RECALL_DEDUP_THRESHOLD", default=0.8)
 # Inline a "· why: <score> <path>" provenance tag on each composed block.
 # Default off → clean block; the recall log records provenance regardless.
-RECALL_SHOW_PROVENANCE = _envbool("HERMES_RECALL_SHOW_PROVENANCE", default=False)
+RECALL_SHOW_PROVENANCE = _envbool("THOTH_RECALL_SHOW_PROVENANCE", default=False)
 
 # Phase D: L1 entity header in the recall projection (spec §7). When on,
 # the projection prepends a "## Known entities" block (top entities by
 # query-relevance + salience) ahead of the L0 quotes. Independent of
-# HERMES_SUBSTRATE_RECALL — the header only manifests when recall is also on.
+# THOTH_SUBSTRATE_RECALL — the header only manifests when recall is also on.
 RECALL_INCLUDE_L1 = _envbool("RECALL_INCLUDE_L1", default=True)
 RECALL_L1_LIMIT = _envint("RECALL_L1_LIMIT", default=5)
 
@@ -120,17 +120,17 @@ RECALL_SKILL_LIMIT = _envint("RECALL_SKILL_LIMIT", default=3)
 
 # Composite-score weights (must keep sum of three active terms in a
 # reasonable range; spec defaults sum to 1.0 for the active path).
-RECALL_SIMILARITY_WEIGHT = _envfloat("HERMES_RECALL_SIMILARITY_WEIGHT", default=0.3)
-RECALL_KEYWORD_WEIGHT = _envfloat("HERMES_RECALL_KEYWORD_WEIGHT", default=0.3)
-RECALL_SALIENCE_WEIGHT = _envfloat("HERMES_RECALL_SALIENCE_WEIGHT", default=0.5)
-RECALL_RECENCY_WEIGHT = _envfloat("HERMES_RECALL_RECENCY_WEIGHT", default=0.2)
+RECALL_SIMILARITY_WEIGHT = _envfloat("THOTH_RECALL_SIMILARITY_WEIGHT", default=0.3)
+RECALL_KEYWORD_WEIGHT = _envfloat("THOTH_RECALL_KEYWORD_WEIGHT", default=0.3)
+RECALL_SALIENCE_WEIGHT = _envfloat("THOTH_RECALL_SALIENCE_WEIGHT", default=0.5)
+RECALL_RECENCY_WEIGHT = _envfloat("THOTH_RECALL_RECENCY_WEIGHT", default=0.2)
 RECALL_RECENCY_HALF_LIFE_HOURS = _envfloat(
-    "HERMES_RECALL_RECENCY_HALF_LIFE_HOURS", default=12.0
+    "THOTH_RECALL_RECENCY_HALF_LIFE_HOURS", default=12.0
 )
 
 # Anti-thrashing: per-slice reinforcement cap per minute (spec §5.4).
 RECALL_REINFORCE_RATE_LIMIT_PER_MIN = _envint(
-    "HERMES_RECALL_REINFORCE_RATE_LIMIT_PER_MIN", default=6
+    "THOTH_RECALL_REINFORCE_RATE_LIMIT_PER_MIN", default=6
 )
 
 # Minimum topical relevance (similarity/keyword match to the query, in
@@ -142,11 +142,11 @@ RECALL_REINFORCE_RATE_LIMIT_PER_MIN = _envint(
 # the bump is scaled by relevance. 0.0 restores the old reinforce-all
 # behaviour.
 RECALL_REINFORCE_MIN_RELEVANCE = _envfloat(
-    "HERMES_RECALL_REINFORCE_MIN_RELEVANCE", default=0.05
+    "THOTH_RECALL_REINFORCE_MIN_RELEVANCE", default=0.05
 )
 
 # Recall log writer.
-RECALL_LOG_QUEUE_DEPTH = _envint("HERMES_RECALL_LOG_QUEUE_DEPTH", default=1024)
+RECALL_LOG_QUEUE_DEPTH = _envint("THOTH_RECALL_LOG_QUEUE_DEPTH", default=1024)
 
 # Embedding pipeline.
 #
@@ -165,13 +165,13 @@ RECALL_LOG_QUEUE_DEPTH = _envint("HERMES_RECALL_LOG_QUEUE_DEPTH", default=1024)
 # returned ``[None]*N`` for every batch → 100% of slices marked
 # ``embedding_failed`` after retry exhaustion.
 #
-# Set ``HERMES_RECALL_EMBEDDING_MODEL`` to pin a specific model
+# Set ``THOTH_RECALL_EMBEDDING_MODEL`` to pin a specific model
 # independent of the rest of the auxiliary.embedding config — useful for
 # A/B comparison or running a recall-specific model on a shared cluster.
-RECALL_EMBEDDING_MODEL = os.environ.get("HERMES_RECALL_EMBEDDING_MODEL")
-RECALL_EMBEDDING_DIM = _envint("HERMES_RECALL_EMBEDDING_DIM", default=1536)
+RECALL_EMBEDDING_MODEL = os.environ.get("THOTH_RECALL_EMBEDDING_MODEL")
+RECALL_EMBEDDING_DIM = _envint("THOTH_RECALL_EMBEDDING_DIM", default=1536)
 RECALL_EMBEDDING_TIMEOUT_MS = _envint(
-    "HERMES_RECALL_EMBEDDING_TIMEOUT_MS", default=800
+    "THOTH_RECALL_EMBEDDING_TIMEOUT_MS", default=800
 )
 # Separate, much larger budget for BACKGROUND embedding (Curator backfill +
 # ``thoth embed reshape``) than for interactive recall-query embedding. The
@@ -181,20 +181,20 @@ RECALL_EMBEDDING_TIMEOUT_MS = _envint(
 # coverage at 0%. Defaults to ``max(query_timeout, 30s)``; override directly
 # for very slow providers.
 RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS = _envint(
-    "HERMES_RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS",
+    "THOTH_RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS",
     default=max(RECALL_EMBEDDING_TIMEOUT_MS, 30_000),
 )
 RECALL_EMBEDDING_QUEUE_DEPTH = _envint(
-    "HERMES_RECALL_EMBEDDING_QUEUE_DEPTH", default=4096
+    "THOTH_RECALL_EMBEDDING_QUEUE_DEPTH", default=4096
 )
 RECALL_EMBEDDING_BATCH_SIZE = _envint(
-    "HERMES_RECALL_EMBEDDING_BATCH_SIZE", default=32
+    "THOTH_RECALL_EMBEDDING_BATCH_SIZE", default=32
 )
 RECALL_EMBEDDING_BACKFILL_INTERVAL_S = _envfloat(
-    "HERMES_RECALL_EMBEDDING_BACKFILL_INTERVAL_S", default=30.0
+    "THOTH_RECALL_EMBEDDING_BACKFILL_INTERVAL_S", default=30.0
 )
 RECALL_EMBEDDING_BACKFILL_MAX_RETRIES = _envint(
-    "HERMES_RECALL_EMBEDDING_BACKFILL_MAX_RETRIES", default=3
+    "THOTH_RECALL_EMBEDDING_BACKFILL_MAX_RETRIES", default=3
 )
 # Auto-heal cadence for slices parked as ``embedding_failed``. The Curator
 # clears a small batch of parked slices this often so a fixed embedding config
@@ -204,7 +204,7 @@ RECALL_EMBEDDING_BACKFILL_MAX_RETRIES = _envint(
 # the batch and is left alone until the next interval (no hammering). Set to 0
 # to disable auto-heal entirely.
 RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S = _envfloat(
-    "HERMES_RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S", default=1800.0
+    "THOTH_RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S", default=1800.0
 )
 
 # ---------------------------------------------------------------------------
@@ -226,10 +226,10 @@ RECALL_COHERENCE_FLOOR_MAX = _envfloat(
 # Master toggle for the SubstrateMemoryProvider's prefetch (spec §6.1).
 # Default ON: this fork installs the substrate as the primary memory
 # backend; recall driving the per-turn <memory-context> is the point.
-# Set HERMES_SUBSTRATE_RECALL=0 to fall back to the upstream built-in
+# Set THOTH_SUBSTRATE_RECALL=0 to fall back to the upstream built-in
 # provider exclusively (useful for A/B comparison or debugging).
-HERMES_SUBSTRATE_RECALL_ENABLED = _envbool(
-    "HERMES_SUBSTRATE_RECALL", default=True
+THOTH_SUBSTRATE_RECALL_ENABLED = _envbool(
+    "THOTH_SUBSTRATE_RECALL", default=True
 )
 
 
@@ -285,6 +285,6 @@ __all__ = [
     "RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S",
     "RECALL_COHERENCE_PIN",
     "RECALL_COHERENCE_FLOOR_MAX",
-    "HERMES_SUBSTRATE_RECALL_ENABLED",
+    "THOTH_SUBSTRATE_RECALL_ENABLED",
     "DEFAULT_RECALL_STREAMS",
 ]

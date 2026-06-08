@@ -21,7 +21,7 @@ import pytest
 
 def _truncate_session_tables() -> None:
     """Drop all rows from session-related tables in the configured DB."""
-    if not (os.environ.get("THOTH_PG_DSN") or os.environ.get("HERMES_PG_DSN")):
+    if not (os.environ.get("THOTH_PG_DSN") or os.environ.get("THOTH_PG_DSN")):
         return
 
     import thoth_db
@@ -95,7 +95,7 @@ def _isolate_acp_session_db(thoth_db_initialized_sync):
     is created (Alembic upgrade head) and the asyncpg pool is bound to
     THAT database BEFORE the truncate call runs. Without this dependency
     the autouse fixture initialises the pool with whatever
-    ``HERMES_PG_DSN`` the container started with (the shared compose
+    ``THOTH_PG_DSN`` the container started with (the shared compose
     database), and subsequent calls to ``ensure_pool_sync`` see
     ``_pool is not None`` and skip re-init — so the test ends up querying
     a different database from the one Alembic just migrated, and

@@ -9,7 +9,7 @@ OK="${GREEN}✔${NC}"; FAIL="${RED}✘${NC}"; WARN="${YELLOW}⚠${NC}"
 TWOZERO_URL="https://www.404zero.com/pisang/twozero.tox"
 TOX_PATH="$HOME/Downloads/twozero.tox"
 THOTH_HOME_DIR="${THOTH_HOME:-$HOME/.hermes}"
-HERMES_CFG="${THOTH_HOME_DIR}/config.yaml"
+THOTH_CFG="${THOTH_HOME_DIR}/config.yaml"
 MCP_PORT=40404
 MCP_ENDPOINT="http://localhost:${MCP_PORT}/mcp"
 
@@ -44,17 +44,17 @@ else
 fi
 
 # ── 3. Ensure Thoth config has twozero_td MCP entry ──
-if [[ ! -f "$HERMES_CFG" ]]; then
-    echo -e " ${FAIL} Thoth config not found at ${HERMES_CFG}"
-    manual_steps+=("Create ${HERMES_CFG} with twozero_td MCP server entry")
-elif grep -q 'twozero_td' "$HERMES_CFG" 2>/dev/null; then
+if [[ ! -f "$THOTH_CFG" ]]; then
+    echo -e " ${FAIL} Thoth config not found at ${THOTH_CFG}"
+    manual_steps+=("Create ${THOTH_CFG} with twozero_td MCP server entry")
+elif grep -q 'twozero_td' "$THOTH_CFG" 2>/dev/null; then
     echo -e " ${OK} twozero_td MCP entry exists in Thoth config"
 else
     echo -e " ${WARN} Adding twozero_td MCP entry to Thoth config..."
     python3 -c "
 import yaml, sys, copy
 
-cfg_path = '$HERMES_CFG'
+cfg_path = '$THOTH_CFG'
 with open(cfg_path, 'r') as f:
     cfg = yaml.safe_load(f) or {}
 
@@ -71,7 +71,7 @@ if 'twozero_td' not in cfg['mcp_servers']:
         yaml.dump(cfg, f, default_flow_style=False, sort_keys=False)
 " 2>/dev/null && echo -e " ${OK} twozero_td MCP entry added to config" \
               || { echo -e " ${FAIL} Could not update config (is PyYAML installed?)"; \
-                   manual_steps+=("Add twozero_td MCP entry to ${HERMES_CFG} manually"); }
+                   manual_steps+=("Add twozero_td MCP entry to ${THOTH_CFG} manually"); }
     manual_steps+=("Restart Thoth session to pick up config change")
 fi
 

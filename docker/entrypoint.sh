@@ -10,24 +10,24 @@ INSTALL_DIR="/opt/hermes"
 # optionally remap the hermes user/group to match host-side ownership, fix volume
 # permissions, then re-exec as hermes.
 if [ "$(id -u)" = "0" ]; then
-    if [ -n "$HERMES_UID" ] && [ "$HERMES_UID" != "$(id -u hermes)" ]; then
-        echo "Changing hermes UID to $HERMES_UID"
-        usermod -u "$HERMES_UID" hermes
+    if [ -n "$THOTH_UID" ] && [ "$THOTH_UID" != "$(id -u hermes)" ]; then
+        echo "Changing hermes UID to $THOTH_UID"
+        usermod -u "$THOTH_UID" hermes
     fi
 
-    if [ -n "$HERMES_GID" ] && [ "$HERMES_GID" != "$(id -g hermes)" ]; then
-        echo "Changing hermes GID to $HERMES_GID"
+    if [ -n "$THOTH_GID" ] && [ "$THOTH_GID" != "$(id -g hermes)" ]; then
+        echo "Changing hermes GID to $THOTH_GID"
         # -o allows non-unique GID (e.g. macOS GID 20 "staff" may already exist
         # as "dialout" in the Debian-based container image)
-        groupmod -o -g "$HERMES_GID" hermes 2>/dev/null || true
+        groupmod -o -g "$THOTH_GID" hermes 2>/dev/null || true
     fi
 
-    # Fix ownership of the data volume. When HERMES_UID remaps the hermes user,
+    # Fix ownership of the data volume. When THOTH_UID remaps the hermes user,
     # files created by previous runs (under the old UID) become inaccessible.
     # Always chown -R when UID was remapped; otherwise only if top-level is wrong.
     actual_hermes_uid=$(id -u hermes)
     needs_chown=false
-    if [ -n "$HERMES_UID" ] && [ "$HERMES_UID" != "10000" ]; then
+    if [ -n "$THOTH_UID" ] && [ "$THOTH_UID" != "10000" ]; then
         needs_chown=true
     elif [ "$(stat -c %u "$THOTH_HOME" 2>/dev/null)" != "$actual_hermes_uid" ]; then
         needs_chown=true
@@ -97,8 +97,8 @@ fi
 # boot.  The `[ ! -f ... ]` guard is critical: without it, a container
 # restart would clobber a rotated refresh token with the now-stale value
 # the orchestrator originally seeded.
-if [ ! -f "$THOTH_HOME/auth.json" ] && [ -n "$HERMES_AUTH_JSON_BOOTSTRAP" ]; then
-    printf '%s' "$HERMES_AUTH_JSON_BOOTSTRAP" > "$THOTH_HOME/auth.json"
+if [ ! -f "$THOTH_HOME/auth.json" ] && [ -n "$THOTH_AUTH_JSON_BOOTSTRAP" ]; then
+    printf '%s' "$THOTH_AUTH_JSON_BOOTSTRAP" > "$THOTH_HOME/auth.json"
     chmod 600 "$THOTH_HOME/auth.json"
 fi
 
@@ -109,21 +109,21 @@ fi
 
 # Optionally start `hermes dashboard` as a side-process.
 #
-# Toggled by HERMES_DASHBOARD=1 (also accepts "true"/"yes", case-insensitive).
+# Toggled by THOTH_DASHBOARD=1 (also accepts "true"/"yes", case-insensitive).
 # Host/port/TUI can be overridden via:
-#   HERMES_DASHBOARD_HOST  (default 0.0.0.0 — exposed outside the container)
-#   HERMES_DASHBOARD_PORT  (default 9119, matches `hermes dashboard` default)
-#   HERMES_DASHBOARD_TUI   (already honored by `hermes dashboard` itself)
+#   THOTH_DASHBOARD_HOST  (default 0.0.0.0 — exposed outside the container)
+#   THOTH_DASHBOARD_PORT  (default 9119, matches `hermes dashboard` default)
+#   THOTH_DASHBOARD_TUI   (already honored by `hermes dashboard` itself)
 #
 # The dashboard is a long-lived server.  We background it *before* the final
 # `exec hermes "$@"` so the user's chosen foreground command (chat, gateway,
 # sleep infinity, …) remains PID-of-interest for the container runtime.  When
 # the container stops the whole process tree is torn down, so no explicit
 # cleanup is needed.
-case "${HERMES_DASHBOARD:-}" in
+case "${THOTH_DASHBOARD:-}" in
     1|true|TRUE|True|yes|YES|Yes)
-        dash_host="${HERMES_DASHBOARD_HOST:-0.0.0.0}"
-        dash_port="${HERMES_DASHBOARD_PORT:-9119}"
+        dash_host="${THOTH_DASHBOARD_HOST:-0.0.0.0}"
+        dash_port="${THOTH_DASHBOARD_PORT:-9119}"
         dash_args=(--host "$dash_host" --port "$dash_port" --no-open)
         # Binding to anything other than localhost requires --insecure — the
         # dashboard refuses otherwise because it exposes API keys.  Inside a

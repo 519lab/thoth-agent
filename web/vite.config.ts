@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
-const BACKEND = process.env.HERMES_DASHBOARD_URL ?? "http://127.0.0.1:9119";
+const BACKEND = process.env.THOTH_DASHBOARD_URL ?? "http://127.0.0.1:9119";
 
 /**
  * In production the Python `thoth dashboard` server injects a one-shot
@@ -12,15 +12,15 @@ const BACKEND = process.env.HERMES_DASHBOARD_URL ?? "http://127.0.0.1:9119";
  * token, every protected `/api/*` call 401s.
  *
  * This plugin fetches the running dashboard's `index.html` on each dev page
- * load, scrapes the `window.__HERMES_SESSION_TOKEN__` assignment, and
+ * load, scrapes the `window.__THOTH_SESSION_TOKEN__` assignment, and
  * re-injects it into the dev HTML. No-op in production builds.
  */
 function thothDevToken(): Plugin {
-  const TOKEN_RE = /window\.__HERMES_SESSION_TOKEN__\s*=\s*"([^"]+)"/;
+  const TOKEN_RE = /window\.__THOTH_SESSION_TOKEN__\s*=\s*"([^"]+)"/;
   const EMBEDDED_RE =
-    /window\.__HERMES_DASHBOARD_EMBEDDED_CHAT__\s*=\s*(true|false)/;
+    /window\.__THOTH_DASHBOARD_EMBEDDED_CHAT__\s*=\s*(true|false)/;
   const LEGACY_TUI_RE =
-    /window\.__HERMES_DASHBOARD_TUI__\s*=\s*(true|false)/;
+    /window\.__THOTH_DASHBOARD_TUI__\s*=\s*(true|false)/;
 
   return {
     name: "thoth:dev-session-token",
@@ -49,14 +49,14 @@ function thothDevToken(): Plugin {
             tag: "script",
             injectTo: "head",
             children:
-              `window.__HERMES_SESSION_TOKEN__="${match[1]}";` +
-              `window.__HERMES_DASHBOARD_EMBEDDED_CHAT__=${embeddedJs};`,
+              `window.__THOTH_SESSION_TOKEN__="${match[1]}";` +
+              `window.__THOTH_DASHBOARD_EMBEDDED_CHAT__=${embeddedJs};`,
           },
         ];
       } catch (err) {
         console.warn(
           `[thoth] Dashboard at ${BACKEND} unreachable — ` +
-            `start it with \`thoth dashboard\` or set HERMES_DASHBOARD_URL. ` +
+            `start it with \`thoth dashboard\` or set THOTH_DASHBOARD_URL. ` +
             `(${(err as Error).message})`,
         );
       }

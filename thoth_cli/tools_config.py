@@ -464,7 +464,7 @@ TOOL_CATEGORIES = {
                 ),
                 "env_vars": [
                     # cua-driver reads HOME/TMPDIR from the process env, no
-                    # extra keys required. HERMES_CUA_DRIVER_VERSION is an
+                    # extra keys required. THOTH_CUA_DRIVER_VERSION is an
                     # optional pin for reproducibility across macOS updates.
                 ],
                 "post_setup": "cua_driver",
@@ -486,7 +486,7 @@ TOOLSET_ENV_REQUIREMENTS = {
 
 def _cua_driver_cmd() -> str:
     """Return the cua-driver executable name/path, honoring non-empty overrides."""
-    return os.environ.get("HERMES_CUA_DRIVER_CMD", "").strip() or "cua-driver"
+    return os.environ.get("THOTH_CUA_DRIVER_CMD", "").strip() or "cua-driver"
 
 
 def _pip_install(

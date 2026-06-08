@@ -18,7 +18,7 @@ Plugin HTTP routes go through the dashboard's session-token auth middleware
 ``/api/plugins/...`` request must present the session bearer token (or the
 session cookie set when you load the dashboard HTML). The token is the
 random per-process ``_SESSION_TOKEN`` printed at startup; the dashboard's
-own pages inject it via ``window.__HERMES_SESSION_TOKEN__`` so logged-in
+own pages inject it via ``window.__THOTH_SESSION_TOKEN__`` so logged-in
 browsers don't have to handle it manually.
 
 For the ``/events`` WebSocket we still require the session token as a
@@ -367,7 +367,7 @@ def get_board(
     install doesn't surface a "failed to load" error on the plugin tab.
 
     ``board`` selects which board to read from. Omitting it falls
-    through to the active board (``HERMES_KANBAN_BOARD`` env → on-disk
+    through to the active board (``THOTH_KANBAN_BOARD`` env → on-disk
     ``current`` pointer → ``default``).
     """
     board = _resolve_board(board)
@@ -1378,9 +1378,9 @@ def specify_task_endpoint(
     board = _resolve_board(board)
     # Pin the board for the duration of this call so the specifier module
     # (which calls ``kb.connect()`` with no args) hits the right DB.
-    prev_env = os.environ.get("HERMES_KANBAN_BOARD")
+    prev_env = os.environ.get("THOTH_KANBAN_BOARD")
     try:
-        os.environ["HERMES_KANBAN_BOARD"] = board or kanban_db.DEFAULT_BOARD
+        os.environ["THOTH_KANBAN_BOARD"] = board or kanban_db.DEFAULT_BOARD
         # Import lazily so a missing auxiliary client at import time
         # doesn't break plugin load.
         from thoth_cli import kanban_specify  # noqa: WPS433 (intentional)
@@ -1391,9 +1391,9 @@ def specify_task_endpoint(
         )
     finally:
         if prev_env is None:
-            os.environ.pop("HERMES_KANBAN_BOARD", None)
+            os.environ.pop("THOTH_KANBAN_BOARD", None)
         else:
-            os.environ["HERMES_KANBAN_BOARD"] = prev_env
+            os.environ["THOTH_KANBAN_BOARD"] = prev_env
 
     return {
         "ok": bool(outcome.ok),
@@ -1990,9 +1990,9 @@ def decompose_task_endpoint(
     can take minutes on reasoning models.
     """
     board = _resolve_board(board)
-    prev_env = os.environ.get("HERMES_KANBAN_BOARD")
+    prev_env = os.environ.get("THOTH_KANBAN_BOARD")
     try:
-        os.environ["HERMES_KANBAN_BOARD"] = board or kanban_db.DEFAULT_BOARD
+        os.environ["THOTH_KANBAN_BOARD"] = board or kanban_db.DEFAULT_BOARD
         from thoth_cli import kanban_decompose  # noqa: WPS433 (intentional)
         outcome = kanban_decompose.decompose_task(
             task_id,
@@ -2000,9 +2000,9 @@ def decompose_task_endpoint(
         )
     finally:
         if prev_env is None:
-            os.environ.pop("HERMES_KANBAN_BOARD", None)
+            os.environ.pop("THOTH_KANBAN_BOARD", None)
         else:
-            os.environ["HERMES_KANBAN_BOARD"] = prev_env
+            os.environ["THOTH_KANBAN_BOARD"] = prev_env
 
     return {
         "ok": bool(outcome.ok),

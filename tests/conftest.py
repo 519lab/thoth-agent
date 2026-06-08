@@ -11,7 +11,7 @@ Hermetic-test invariants enforced here (see AGENTS.md for rationale):
    CI. Code using ``Path.home() / ".hermes"`` instead of the canonical
    ``get_thoth_home()`` is a bug to fix at the callsite.)
 3. **Deterministic runtime.** TZ=UTC, LANG=C.UTF-8, PYTHONHASHSEED=0.
-4. **No HERMES_SESSION_* inheritance** — the agent's current gateway
+4. **No THOTH_SESSION_* inheritance** — the agent's current gateway
    session must not leak into tests.
 
 These invariants make the local test run match CI closely. Gaps that
@@ -173,56 +173,56 @@ def _looks_like_credential(name: str) -> bool:
     return any(name.endswith(suf) for suf in _CREDENTIAL_SUFFIXES)
 
 
-# HERMES_* vars that change test behavior by being set. Unset all of these
+# THOTH_* vars that change test behavior by being set. Unset all of these
 # unconditionally — individual tests that need them set do so explicitly.
-_HERMES_BEHAVIORAL_VARS = frozenset({
-    "HERMES_YOLO_MODE",
-    "HERMES_INTERACTIVE",
-    "HERMES_QUIET",
-    "HERMES_TOOL_PROGRESS",
-    "HERMES_TOOL_PROGRESS_MODE",
-    "HERMES_MAX_ITERATIONS",
-    "HERMES_SESSION_PLATFORM",
-    "HERMES_SESSION_CHAT_ID",
-    "HERMES_SESSION_CHAT_NAME",
-    "HERMES_SESSION_THREAD_ID",
-    "HERMES_SESSION_SOURCE",
-    "HERMES_SESSION_KEY",
-    "HERMES_GATEWAY_SESSION",
-    "HERMES_PLATFORM",
-    "HERMES_MODEL",
-    "HERMES_INFERENCE_MODEL",
-    "HERMES_INFERENCE_PROVIDER",
-    "HERMES_TUI_PROVIDER",
-    "HERMES_MANAGED",
-    "HERMES_DEV",
-    "HERMES_CONTAINER",
-    "HERMES_EPHEMERAL_SYSTEM_PROMPT",
-    "HERMES_TIMEZONE",
-    "HERMES_REDACT_SECRETS",
-    "HERMES_BACKGROUND_NOTIFICATIONS",
-    "HERMES_EXEC_ASK",
-    "HERMES_HOME_MODE",
-    "HERMES_AGENT_USE_LEGACY_SESSION_KEYS",
+_THOTH_BEHAVIORAL_VARS = frozenset({
+    "THOTH_YOLO_MODE",
+    "THOTH_INTERACTIVE",
+    "THOTH_QUIET",
+    "THOTH_TOOL_PROGRESS",
+    "THOTH_TOOL_PROGRESS_MODE",
+    "THOTH_MAX_ITERATIONS",
+    "THOTH_SESSION_PLATFORM",
+    "THOTH_SESSION_CHAT_ID",
+    "THOTH_SESSION_CHAT_NAME",
+    "THOTH_SESSION_THREAD_ID",
+    "THOTH_SESSION_SOURCE",
+    "THOTH_SESSION_KEY",
+    "THOTH_GATEWAY_SESSION",
+    "THOTH_PLATFORM",
+    "THOTH_MODEL",
+    "THOTH_INFERENCE_MODEL",
+    "THOTH_INFERENCE_PROVIDER",
+    "THOTH_TUI_PROVIDER",
+    "THOTH_MANAGED",
+    "THOTH_DEV",
+    "THOTH_CONTAINER",
+    "THOTH_EPHEMERAL_SYSTEM_PROMPT",
+    "THOTH_TIMEZONE",
+    "THOTH_REDACT_SECRETS",
+    "THOTH_BACKGROUND_NOTIFICATIONS",
+    "THOTH_EXEC_ASK",
+    "THOTH_HOME_MODE",
+    "THOTH_AGENT_USE_LEGACY_SESSION_KEYS",
     # Set by the launcher shim to the invoked command name (e.g.
     # hermes-substrate). Cleared so cli_name() deterministically returns the
     # "thoth" default and the many tests asserting literal "thoth …" hints
     # don't depend on the ambient launcher name.
-    "HERMES_CLI_NAME",
+    "THOTH_CLI_NAME",
     # Kanban path/board pins must never leak from a developer shell or
     # dispatched worker into tests; otherwise tests can write fake tasks to
     # the real ~/.hermes/kanban.db instead of the per-test THOTH_HOME.
-    "HERMES_KANBAN_DB",
-    "HERMES_KANBAN_BOARD",
-    "HERMES_KANBAN_HOME",
-    "HERMES_KANBAN_WORKSPACES_ROOT",
-    "HERMES_KANBAN_LOGS_ROOT",
-    "HERMES_KANBAN_TASK",
-    "HERMES_KANBAN_WORKSPACE",
-    "HERMES_KANBAN_RUN_ID",
-    "HERMES_KANBAN_CLAIM_LOCK",
-    "HERMES_KANBAN_DISPATCH_IN_GATEWAY",
-    "HERMES_TENANT",
+    "THOTH_KANBAN_DB",
+    "THOTH_KANBAN_BOARD",
+    "THOTH_KANBAN_HOME",
+    "THOTH_KANBAN_WORKSPACES_ROOT",
+    "THOTH_KANBAN_LOGS_ROOT",
+    "THOTH_KANBAN_TASK",
+    "THOTH_KANBAN_WORKSPACE",
+    "THOTH_KANBAN_RUN_ID",
+    "THOTH_KANBAN_CLAIM_LOCK",
+    "THOTH_KANBAN_DISPATCH_IN_GATEWAY",
+    "THOTH_TENANT",
     "TERMINAL_CWD",
     "TERMINAL_ENV",
     "TERMINAL_VERCEL_RUNTIME",
@@ -329,17 +329,21 @@ def _hermetic_environment(tmp_path, monkeypatch):
         if _looks_like_credential(name):
             monkeypatch.delenv(name, raising=False)
 
-    # 2. Blank behavioral HERMES_* vars that could change test semantics.
-    for name in _HERMES_BEHAVIORAL_VARS:
+    # 2. Blank behavioral THOTH_* vars that could change test semantics.
+    for name in _THOTH_BEHAVIORAL_VARS:
         monkeypatch.delenv(name, raising=False)
 
-    # 2b. Clear THOTH_* (rename Phase 3). get_thoth_home() reads THOTH_HOME
-    #     before THOTH_HOME, and normalize_thoth_home_env() can write THOTH_HOME
-    #     into the real os.environ during a test (monkeypatch won't revert it).
-    #     Clear (don't pin) so tests that set only THOTH_HOME aren't shadowed;
-    #     the per-test THOTH_HOME below is then authoritative.
+    # 2b. Clear THOTH_* that normalize_thoth_home_env() may have written into
+    #     the real os.environ during a test (monkeypatch won't revert that),
+    #     so the per-test THOTH_HOME below is authoritative — EXCEPT the DB
+    #     infra vars the CI/job env legitimately provides. Pre-Phase-3 the DSN
+    #     was HERMES_PG_DSN (this THOTH_ sweep never touched it); after the
+    #     rename it's THOTH_PG_DSN, so a blanket sweep wiped the CI-provided
+    #     DSN and broke any test relying on it. Keep the THOTH_PG_/THOTH_TEST_
+    #     families.
+    _KEEP = ("THOTH_PG_", "THOTH_TEST_")
     for name in list(os.environ.keys()):
-        if name.startswith("THOTH_"):
+        if name.startswith("THOTH_") and not name.startswith(_KEEP):
             monkeypatch.delenv(name, raising=False)
 
     # 3. Redirect THOTH_HOME to a per-test tempdir. Code that reads
@@ -640,7 +644,7 @@ def _live_system_guard(request, monkeypatch):
         monkeypatch.setattr(_os, "killpg", _guarded_killpg)
 
     # ── Subprocess command-string inspection (whole-line) ──────────
-    _HERMES_TOKENS = (
+    _THOTH_TOKENS = (
         "thoth-gateway",
         "hermes-gateway",
         "hermes.service",
@@ -675,7 +679,7 @@ def _live_system_guard(request, monkeypatch):
 
     def _matches_thoth_gateway(cmd_str: str) -> bool:
         low = cmd_str.lower()
-        return any(tok in low for tok in _HERMES_TOKENS)
+        return any(tok in low for tok in _THOTH_TOKENS)
 
     def _is_blocked_systemctl(cmd) -> bool:
         cmd_str = _cmd_to_string(cmd)
@@ -882,12 +886,12 @@ from alembic.config import Config
 # (port 5433), NOT the real `postgres` service the developer's Thoth
 # install runs against (port 5432). The override env var honours
 # THOTH_TEST_POSTGRES_PORT first (matches the compose variable name),
-# then the HERMES_TEST_POSTGRES_PORT legacy fallback, then POSTGRES_PORT,
+# then the THOTH_TEST_POSTGRES_PORT legacy fallback, then POSTGRES_PORT,
 # then falls back to 5433. Overriding to 5432 is only safe in CI where
 # there is no real install to collide with.
 _TEST_PG_PORT = int(
     os.environ.get("THOTH_TEST_POSTGRES_PORT")
-    or os.environ.get("HERMES_TEST_POSTGRES_PORT")
+    or os.environ.get("THOTH_TEST_POSTGRES_PORT")
     or os.environ.get("POSTGRES_PORT")
     or "5433"
 )
@@ -897,7 +901,7 @@ _TEST_PG_PORT = int(
 # override env vars route to the ``postgres-test`` compose service.
 _TEST_PG_HOST = (
     os.environ.get("THOTH_TEST_POSTGRES_HOST")
-    or os.environ.get("HERMES_TEST_POSTGRES_HOST")
+    or os.environ.get("THOTH_TEST_POSTGRES_HOST")
     or os.environ.get("POSTGRES_HOST")
     or "localhost"
 )
@@ -933,12 +937,12 @@ def thoth_db_dsn(postgresql):
     dsn = f"postgresql://{info.user}{password_part}{info.host}:{info.port}/{info.dbname}"
     cfg = Config("migrations/alembic.ini")
     # Runtime (thoth_db sync-pool, substrate) + alembic env.py read THOTH_PG_DSN
-    # (canonical, post-cutover) with HERMES_PG_DSN legacy fallback. The P2 env
+    # (canonical, post-cutover) with THOTH_PG_DSN legacy fallback. The P2 env
     # bridge only mirrors at startup, and this fixture sets the DSN at test time
     # (after bootstrap), so set BOTH spellings explicitly.
-    _prev = {k: os.environ.get(k) for k in ("THOTH_PG_DSN", "HERMES_PG_DSN")}
+    _prev = {k: os.environ.get(k) for k in ("THOTH_PG_DSN", "THOTH_PG_DSN")}
     os.environ["THOTH_PG_DSN"] = dsn
-    os.environ["HERMES_PG_DSN"] = dsn
+    os.environ["THOTH_PG_DSN"] = dsn
     try:
         command.upgrade(cfg, "head")
         yield dsn
@@ -1018,7 +1022,7 @@ def thoth_db_initialized_sync(thoth_db_dsn):
     # asyncpg.create_pool coroutine — binding the pool to that loop.
     # Subsequent run_sync(coro) calls reuse the same loop, so the
     # binding matches.
-    assert thoth_db.ensure_pool_sync(), "ensure_pool_sync failed; HERMES_PG_DSN should be set by thoth_db_dsn"
+    assert thoth_db.ensure_pool_sync(), "ensure_pool_sync failed; THOTH_PG_DSN should be set by thoth_db_dsn"
     try:
         yield thoth_db_dsn
     finally:

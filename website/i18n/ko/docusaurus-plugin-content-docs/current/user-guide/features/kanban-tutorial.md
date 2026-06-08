@@ -61,7 +61,7 @@ thoth kanban create "Write auth integration tests" \
 
 `API`는 `SCHEMA`를 부모로 가지며, `tests`는 `API`를 부모로 가집니다. 그래서 처음에 `ready`로 시작하는 것은 `SCHEMA` 하나뿐입니다. 나머지 두 task는 부모가 끝나기 전까지 `todo`에 머뭅니다. 이것이 dependency promotion engine의 역할입니다. 아직 테스트할 API가 없는데 테스트 작성 worker가 먼저 집어가는 일은 생기지 않습니다.
 
-다음 dispatcher tick(기본 60초, 또는 **Nudge dispatcher** 즉시 실행)에서 `backend-dev` profile이 `HERMES_KANBAN_TASK=$SCHEMA`를 가진 worker로 spawn됩니다. agent 내부에서 이 worker의 tool-call 루프는 대략 다음과 같습니다.
+다음 dispatcher tick(기본 60초, 또는 **Nudge dispatcher** 즉시 실행)에서 `backend-dev` profile이 `THOTH_KANBAN_TASK=$SCHEMA`를 가진 worker로 spawn됩니다. agent 내부에서 이 worker의 tool-call 루프는 대략 다음과 같습니다.
 
 ```python
 # worker tool calls — 직접 실행하는 명령 아님
@@ -84,7 +84,7 @@ kanban_complete(
 )
 ```
 
-`kanban_show`는 기본적으로 `task_id`를 `$HERMES_KANBAN_TASK`에서 가져오므로 worker는 자기 id를 몰라도 됩니다. `kanban_complete`는 summary + metadata를 현재 `task_runs` row에 기록하고, run을 닫고, task를 `done`으로 바꾸는 일을 **한 번의 atomic hop**으로 처리합니다.
+`kanban_show`는 기본적으로 `task_id`를 `$THOTH_KANBAN_TASK`에서 가져오므로 worker는 자기 id를 몰라도 됩니다. `kanban_complete`는 summary + metadata를 현재 `task_runs` row에 기록하고, run을 닫고, task를 `done`으로 바꾸는 일을 **한 번의 atomic hop**으로 처리합니다.
 
 `SCHEMA`가 `done`이 되면 dependency engine이 `API`를 자동으로 `ready`로 승격시킵니다. 이후 API worker가 `kanban_show()`를 호출하면, 부모 handoff에 붙은 `SCHEMA`의 summary와 metadata를 바로 보게 됩니다. 긴 설계 문서를 다시 읽지 않아도 스키마 결정을 이해할 수 있습니다.
 

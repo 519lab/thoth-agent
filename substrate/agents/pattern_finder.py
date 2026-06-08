@@ -4,7 +4,7 @@ Reads recent L1 entities + their relationships, asks the auxiliary chat
 model for higher-order patterns (generalizations / themes / recurring
 structures), and upserts them into L3 citing the entities they generalize.
 
-Gated by ``HERMES_SUBSTRATE_PATTERNFINDER`` (default ON; set to 0 to disable): registers +
+Gated by ``THOTH_SUBSTRATE_PATTERNFINDER`` (default ON; set to 0 to disable): registers +
 heartbeats, tick no-op until opted in — same staged rollout as the Parser.
 Per the Phase E2 spec.
 """
@@ -53,7 +53,7 @@ class PatternFinder(SubAgent):
         self._last_l1_max_seen = None
 
     async def tick(self) -> None:
-        if not _env_bool("HERMES_SUBSTRATE_PATTERNFINDER", default=True):
+        if not _env_bool("THOTH_SUBSTRATE_PATTERNFINDER", default=True):
             return
         if self._level is Level.OFF:
             return

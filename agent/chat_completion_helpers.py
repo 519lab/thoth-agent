@@ -1309,23 +1309,23 @@ def interruptible_streaming_api_call(agent, api_kwargs: dict, *, on_first_delta=
         """Stream a chat completions response."""
         import httpx as _httpx
         # Per-provider / per-model request_timeout_seconds (from config.yaml)
-        # wins over the HERMES_API_TIMEOUT env default if the user set it.
+        # wins over the THOTH_API_TIMEOUT env default if the user set it.
         _provider_timeout_cfg = get_provider_request_timeout(agent.provider, agent.model)
         _base_timeout = (
             _provider_timeout_cfg
             if _provider_timeout_cfg is not None
-            else float(os.getenv("HERMES_API_TIMEOUT", 1800.0))
+            else float(os.getenv("THOTH_API_TIMEOUT", 1800.0))
         )
         # Read timeout: config wins here too.  Otherwise use
-        # HERMES_STREAM_READ_TIMEOUT (default 120s) for cloud providers.
+        # THOTH_STREAM_READ_TIMEOUT (default 120s) for cloud providers.
         if _provider_timeout_cfg is not None:
             _stream_read_timeout = _provider_timeout_cfg
         else:
-            _stream_read_timeout = float(os.getenv("HERMES_STREAM_READ_TIMEOUT", 120.0))
+            _stream_read_timeout = float(os.getenv("THOTH_STREAM_READ_TIMEOUT", 120.0))
             # Local providers (Ollama, llama.cpp, vLLM) can take minutes for
             # prefill on large contexts before producing the first token.
             # Auto-increase the httpx read timeout unless the user explicitly
-            # overrode HERMES_STREAM_READ_TIMEOUT.
+            # overrode THOTH_STREAM_READ_TIMEOUT.
             if _stream_read_timeout == 120.0 and agent.base_url and is_local_endpoint(agent.base_url):
                 _stream_read_timeout = _base_timeout
                 logger.debug(
@@ -1677,7 +1677,7 @@ def interruptible_streaming_api_call(agent, api_kwargs: dict, *, on_first_delta=
     def _call():
         import httpx as _httpx
 
-        _max_stream_retries = int(os.getenv("HERMES_STREAM_RETRIES", 2))
+        _max_stream_retries = int(os.getenv("THOTH_STREAM_RETRIES", 2))
 
         try:
             for _stream_attempt in range(_max_stream_retries + 1):
@@ -1926,10 +1926,10 @@ def interruptible_streaming_api_call(agent, api_kwargs: dict, *, on_first_delta=
     if _cfg_stale is not None:
         _stream_stale_timeout_base = _cfg_stale
     else:
-        _stream_stale_timeout_base = float(os.getenv("HERMES_STREAM_STALE_TIMEOUT", 180.0))
+        _stream_stale_timeout_base = float(os.getenv("THOTH_STREAM_STALE_TIMEOUT", 180.0))
     # Local providers (Ollama, oMLX, llama-cpp) can take 300+ seconds
     # for prefill on large contexts.  Disable the stale detector unless
-    # the user explicitly set HERMES_STREAM_STALE_TIMEOUT.
+    # the user explicitly set THOTH_STREAM_STALE_TIMEOUT.
     if _stream_stale_timeout_base == 180.0 and agent.base_url and is_local_endpoint(agent.base_url):
         _stream_stale_timeout = float("inf")
         logger.debug("Local provider detected (%s) — stale stream timeout disabled", agent.base_url)

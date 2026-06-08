@@ -75,7 +75,7 @@ jobs:
           source .venv/bin/activate
           uv run alembic -c migrations/alembic.ini upgrade head
         env:
-          HERMES_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
+          THOTH_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
 
       - name: Run tests
         # Per-file isolation via scripts/run_tests_parallel.py: discovers
@@ -100,14 +100,14 @@ jobs:
           python scripts/run_tests_parallel.py
         env:
           # PostgreSQL service container — matches conftest.py fixture defaults
-          HERMES_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
+          THOTH_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
           POSTGRES_USER: hermes
           POSTGRES_PASSWORD: hermes
           # CI runs against the ephemeral GH Actions PG service on 5432.
           # Local-dev pytest defaults to 5433 (the docker-compose
           # `postgres-test` profile) so the developer's real Thoth DB on
           # 5432 is never touched — see tests/conftest.py:_TEST_PG_PORT.
-          HERMES_TEST_POSTGRES_PORT: "5432"
+          THOTH_TEST_POSTGRES_PORT: "5432"
           # Ensure tests don't accidentally call real APIs
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""

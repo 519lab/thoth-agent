@@ -7,7 +7,7 @@ relationships + citations — then runs the consolidation handshake
 (design §5.7) flipping the source slices to ``consolidated`` so the
 Curator can release the raw text while its meaning lives on in L1.
 
-Gated by ``HERMES_SUBSTRATE_PARSER`` (default ON; set to 0 to disable): the agent registers
+Gated by ``THOTH_SUBSTRATE_PARSER`` (default ON; set to 0 to disable): the agent registers
 regardless, but its tick is a no-op when the env var is off, so no LLM
 calls happen until an operator opts in. Every outcome (ok / empty /
 timeout / parse_error / llm_error) is written to ``substrate_parser_log``
@@ -79,7 +79,7 @@ class Parser(SubAgent):
     async def tick(self) -> None:
         # Master kill-switch + intensity gate. Both checked before any DB
         # work so a disabled Parser costs nothing.
-        if not _env_bool("HERMES_SUBSTRATE_PARSER", default=True):
+        if not _env_bool("THOTH_SUBSTRATE_PARSER", default=True):
             return
         if self._level is Level.OFF:
             return

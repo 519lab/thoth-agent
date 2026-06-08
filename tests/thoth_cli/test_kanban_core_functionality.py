@@ -2231,7 +2231,7 @@ def test_cli_create_on_fresh_home_auto_inits(tmp_path, monkeypatch, thoth_db_ini
     import subprocess as _sp
     import sys as _sys
     worktree_root = Path(__file__).resolve().parents[2]
-    # Propagate HERMES_PG_DSN (set by thoth_db_initialized_sync) so the
+    # Propagate THOTH_PG_DSN (set by thoth_db_initialized_sync) so the
     # subprocess connects to the per-test database, not the real one.
     env = {**os.environ, "THOTH_HOME": str(home),
            "PYTHONPATH": str(worktree_root)}
@@ -2665,7 +2665,7 @@ def test_build_worker_context_caps_prior_attempts(kanban_home):
 
 def test_build_worker_context_renders_author_with_safe_framing(kanban_home):
     """Author rendering wraps the operator-controlled author in code fences
-    + "comment from worker" prefix so a misleading HERMES_PROFILE name
+    + "comment from worker" prefix so a misleading THOTH_PROFILE name
     (e.g. "hermes-system", "operator") can't be misread as a system
     directive above the comment body. Defense-in-depth — see #22452."""
     conn = kb.connect()
@@ -2788,8 +2788,8 @@ def test_default_spawn_auto_loads_kanban_worker_skill(kanban_home, monkeypatch):
     # Assignee + task env are still present
     assert "some-profile" in cmd
     env = captured["env"]
-    assert env.get("HERMES_KANBAN_TASK") == tid
-    assert env.get("HERMES_PROFILE") == "some-profile"
+    assert env.get("THOTH_KANBAN_TASK") == tid
+    assert env.get("THOTH_PROFILE") == "some-profile"
 
 
 def test_default_spawn_raises_terminal_timeout_to_task_runtime(kanban_home, monkeypatch):
@@ -3606,10 +3606,10 @@ def test_gateway_dispatcher_watcher_respects_config_flag_off(monkeypatch):
 
 
 def test_gateway_dispatcher_watcher_respects_env_override(monkeypatch):
-    """HERMES_KANBAN_DISPATCH_IN_GATEWAY=0 disables without touching config."""
+    """THOTH_KANBAN_DISPATCH_IN_GATEWAY=0 disables without touching config."""
     import asyncio
     from gateway.run import GatewayRunner
-    monkeypatch.setenv("HERMES_KANBAN_DISPATCH_IN_GATEWAY", "0")
+    monkeypatch.setenv("THOTH_KANBAN_DISPATCH_IN_GATEWAY", "0")
 
     runner = object.__new__(GatewayRunner)
     runner._running = True
@@ -3629,7 +3629,7 @@ def test_gateway_dispatcher_watcher_env_truthy_uses_config(monkeypatch):
     from gateway.run import GatewayRunner
     import thoth_cli.config as _cfg_mod
 
-    monkeypatch.setenv("HERMES_KANBAN_DISPATCH_IN_GATEWAY", "yes")
+    monkeypatch.setenv("THOTH_KANBAN_DISPATCH_IN_GATEWAY", "yes")
     monkeypatch.setattr(
         _cfg_mod, "load_config",
         lambda: {"kanban": {"dispatch_in_gateway": False}},

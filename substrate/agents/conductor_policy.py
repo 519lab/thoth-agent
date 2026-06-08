@@ -13,7 +13,7 @@ reads observable load, and drives the StubConductor:
 
 It mutates intensities only through ``substrate.conductor.set_intensity``
 (which pushes to running agents + enforces each agent's floor — Sentinel
-stays FULL, Curator stays ≥ LOW). Gated by ``HERMES_SUBSTRATE_CONDUCTOR``
+stays FULL, Curator stays ≥ LOW). Gated by ``THOTH_SUBSTRATE_CONDUCTOR``
 (default ON; set to 0 to disable → the static Phase A/B behaviour is preserved exactly).
 
 This is the *deterministic* Conductor. The **learned** Conductor
@@ -71,7 +71,7 @@ class AdaptiveConductor(SubAgent):
         return self._ema
 
     async def tick(self) -> None:
-        if not _env_bool("HERMES_SUBSTRATE_CONDUCTOR", default=True):
+        if not _env_bool("THOTH_SUBSTRATE_CONDUCTOR", default=True):
             return
         if self._level is Level.OFF:
             return

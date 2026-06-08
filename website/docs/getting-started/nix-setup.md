@@ -130,7 +130,7 @@ When `container.enable = true` and `addToSystemPackages = true`, **every** `thot
 - The routing is transparent: `thoth chat`, `thoth sessions list`, `thoth version`, etc. all exec into the container under the hood
 - All CLI flags are forwarded as-is
 - If the container isn't running, the CLI retries briefly (5s with a spinner for interactive use, 10s silently for scripts) then fails with a clear error — no silent fallback
-- For developers working on the thoth codebase, set `HERMES_DEV=1` to bypass container routing and run the local checkout directly
+- For developers working on the thoth codebase, set `THOTH_DEV=1` to bypass container routing and run the local checkout directly
 
 Set `container.hostUsers` to create a `~/.hermes` symlink to the service state directory, so the host CLI and the container share sessions, config, and memories:
 
@@ -534,7 +534,7 @@ When thoth runs via the NixOS module, the following CLI commands are **blocked**
 
 This prevents drift between what Nix declares and what's on disk. Detection uses two signals:
 
-1. **`HERMES_MANAGED=true`** environment variable — set by the systemd service, visible to the gateway process
+1. **`THOTH_MANAGED=true`** environment variable — set by the systemd service, visible to the gateway process
 2. **`.managed` marker file** in `THOTH_HOME` — set by the activation script, visible to interactive shells (e.g., `docker exec -it hermes-agent thoth config set ...` is also blocked)
 
 To change configuration, edit your Nix config and run `sudo nixos-rebuild switch`.
@@ -753,7 +753,7 @@ nix flake check
 nix build .#checks.x86_64-linux.package-contents   # binaries exist + version
 nix build .#checks.x86_64-linux.entry-points-sync  # pyproject.toml ↔ Nix package sync
 nix build .#checks.x86_64-linux.cli-commands        # gateway/config subcommands
-nix build .#checks.x86_64-linux.managed-guard       # HERMES_MANAGED blocks mutation
+nix build .#checks.x86_64-linux.managed-guard       # THOTH_MANAGED blocks mutation
 nix build .#checks.x86_64-linux.bundled-skills      # skills present in package
 nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves user keys
 ```
@@ -766,8 +766,8 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 | `package-contents` | `thoth` and `hermes-agent` binaries exist and `thoth version` runs |
 | `entry-points-sync` | Every `[project.scripts]` entry in `pyproject.toml` has a wrapped binary in the Nix package |
 | `cli-commands` | `thoth --help` exposes `gateway` and `config` subcommands |
-| `managed-guard` | `HERMES_MANAGED=true thoth config set ...` prints the NixOS error |
-| `bundled-skills` | Skills directory exists, contains SKILL.md files, `HERMES_BUNDLED_SKILLS` is set in wrapper |
+| `managed-guard` | `THOTH_MANAGED=true thoth config set ...` prints the NixOS error |
+| `bundled-skills` | Skills directory exists, contains SKILL.md files, `THOTH_BUNDLED_SKILLS` is set in wrapper |
 | `config-roundtrip` | 7 merge scenarios: fresh install, Nix override, user key preservation, mixed merge, MCP additive merge, nested deep merge, idempotency |
 
 </details>

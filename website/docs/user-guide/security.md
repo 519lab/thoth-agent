@@ -50,7 +50,7 @@ YOLO mode bypasses **all** dangerous command approval prompts for the current se
 
 1. **CLI flag**: Start a session with `thoth --yolo` or `thoth chat --yolo`
 2. **Slash command**: Type `/yolo` during a session to toggle it on/off
-3. **Environment variable**: Set `HERMES_YOLO_MODE=1`
+3. **Environment variable**: Set `THOTH_YOLO_MODE=1`
 
 The `/yolo` command is a **toggle** — each use flips the mode on or off:
 
@@ -62,7 +62,7 @@ The `/yolo` command is a **toggle** — each use flips the mode on or off:
   ⚠ YOLO mode OFF — dangerous commands will require approval.
 ```
 
-YOLO mode is available in both CLI and gateway sessions. Internally, it sets the `HERMES_YOLO_MODE` environment variable which is checked before every command execution.
+YOLO mode is available in both CLI and gateway sessions. Internally, it sets the `THOTH_YOLO_MODE` environment variable which is checked before every command execution.
 
 When YOLO is active, Thoth shows two persistent visual reminders so it's hard to forget that approval prompts are bypassed:
 
@@ -174,7 +174,7 @@ On messaging platforms, the agent sends the dangerous command details to the cha
 - Reply **yes**, **y**, **approve**, **ok**, or **go** to approve
 - Reply **no**, **n**, **deny**, or **cancel** to deny
 
-The `HERMES_EXEC_ASK=1` environment variable is automatically set when running the gateway.
+The `THOTH_EXEC_ASK=1` environment variable is automatically set when running the gateway.
 
 ### Permanent Allowlist
 

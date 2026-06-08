@@ -308,7 +308,7 @@ Voice messages sent on Telegram, Discord, WhatsApp, Slack, or Signal are automat
 | **OpenAI Whisper API** | Good–Best | Paid | `VOICE_TOOLS_OPENAI_KEY` or `OPENAI_API_KEY` |
 
 :::info Zero Config
-Local transcription works out of the box when `faster-whisper` is installed. If that's unavailable, Thoth can also use a local `whisper` CLI from common install locations (like `/opt/homebrew/bin`) or a custom command via `HERMES_LOCAL_STT_COMMAND`.
+Local transcription works out of the box when `faster-whisper` is installed. If that's unavailable, Thoth can also use a local `whisper` CLI from common install locations (like `/opt/homebrew/bin`) or a custom command via `THOTH_LOCAL_STT_COMMAND`.
 :::
 
 ### Configuration
@@ -347,7 +347,7 @@ stt:
 
 **xAI Grok STT** — Requires `XAI_API_KEY`. Posts to `https://api.x.ai/v1/stt` as multipart/form-data. Good choice if you're already using xAI for chat or TTS and want one API key for everything. Auto-detection order puts it after Groq — explicitly set `stt.provider: xai` to force it.
 
-**Custom local CLI fallback** — Set `HERMES_LOCAL_STT_COMMAND` if you want Thoth to call a local transcription command directly. The command template supports `{input_path}`, `{output_dir}`, `{language}`, and `{model}` placeholders. Your command must write a `.txt` transcript somewhere under `{output_dir}`.
+**Custom local CLI fallback** — Set `THOTH_LOCAL_STT_COMMAND` if you want Thoth to call a local transcription command directly. The command template supports `{input_path}`, `{output_dir}`, `{language}`, and `{model}` placeholders. Your command must write a `.txt` transcript somewhere under `{output_dir}`.
 
 #### Example: Doubao / Volcengine ASR
 
@@ -357,7 +357,7 @@ If you use [`doubao-speech`](https://pypi.org/project/doubao-speech/) for Doubao
 pip install doubao-speech
 export VOLCENGINE_APP_ID="your-app-id"
 export VOLCENGINE_ACCESS_TOKEN="your-access-token"
-export HERMES_LOCAL_STT_COMMAND='doubao-speech transcribe {input_path} --out {output_dir}/transcript.txt'
+export THOTH_LOCAL_STT_COMMAND='doubao-speech transcribe {input_path} --out {output_dir}/transcript.txt'
 ```
 
 ```yaml
@@ -370,7 +370,7 @@ Thoth writes the incoming voice message to `{input_path}`, runs the command, and
 ### Fallback Behavior
 
 If your configured provider isn't available, Thoth automatically falls back:
-- **Local faster-whisper unavailable** → Tries a local `whisper` CLI or `HERMES_LOCAL_STT_COMMAND` before cloud providers
+- **Local faster-whisper unavailable** → Tries a local `whisper` CLI or `THOTH_LOCAL_STT_COMMAND` before cloud providers
 - **Groq key not set** → Falls back to local transcription, then OpenAI
 - **OpenAI key not set** → Falls back to local transcription, then Groq
 - **Mistral key/SDK not set** → Skipped in auto-detect; falls through to next available provider

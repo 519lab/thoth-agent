@@ -29,8 +29,8 @@ Usage:
     ``-k 'pattern'``, ``--lf``).
 
 Environment:
-    HERMES_TEST_WORKERS  Override worker count (default: os.cpu_count())
-    HERMES_TEST_PATHS    Override discovery roots (colon-sep, default: 'tests')
+    THOTH_TEST_WORKERS  Override worker count (default: os.cpu_count())
+    THOTH_TEST_PATHS    Override discovery roots (colon-sep, default: 'tests')
 
 Exit code: 0 if every file's pytest exited 0; 1 otherwise.
 """
@@ -81,7 +81,7 @@ _SKIP_PARTS = {"integration", "e2e"}
 # Per-file wall-clock cap. Generous default — pytest-timeout still
 # enforces per-test caps inside each subprocess; this is just an outer
 # safety net so a single hung file can't stall the whole suite. Override
-# via --file-timeout or HERMES_TEST_FILE_TIMEOUT.
+# via --file-timeout or THOTH_TEST_FILE_TIMEOUT.
 _DEFAULT_FILE_TIMEOUT_SECONDS = 600.0  # 10 minutes
 
 
@@ -504,12 +504,12 @@ def main() -> int:
         "-j",
         "--jobs",
         type=int,
-        default=int(os.environ.get("HERMES_TEST_WORKERS") or (os.cpu_count() or 4) * 2),
-        help="Parallel worker count (default: $HERMES_TEST_WORKERS or cpu_count*2)",
+        default=int(os.environ.get("THOTH_TEST_WORKERS") or (os.cpu_count() or 4) * 2),
+        help="Parallel worker count (default: $THOTH_TEST_WORKERS or cpu_count*2)",
     )
     parser.add_argument(
         "--paths",
-        default=os.environ.get("HERMES_TEST_PATHS", ":".join(_DEFAULT_ROOTS)),
+        default=os.environ.get("THOTH_TEST_PATHS", ":".join(_DEFAULT_ROOTS)),
         help="Colon-separated discovery roots (default: 'tests')",
     )
     parser.add_argument(
@@ -520,24 +520,24 @@ def main() -> int:
     parser.add_argument(
         "--coverage",
         action="store_true",
-        default=bool(os.environ.get("HERMES_TEST_COVERAGE")),
+        default=bool(os.environ.get("THOTH_TEST_COVERAGE")),
         help=(
             "Measure line+branch coverage. Wraps each per-file pytest run in "
             "``coverage run --parallel-mode`` and prints a combined report "
             "(+ writes coverage.xml) after the suite finishes. "
-            "Env: HERMES_TEST_COVERAGE=1."
+            "Env: THOTH_TEST_COVERAGE=1."
         ),
     )
     parser.add_argument(
         "--file-timeout",
         type=float,
         default=float(
-            os.environ.get("HERMES_TEST_FILE_TIMEOUT", _DEFAULT_FILE_TIMEOUT_SECONDS)
+            os.environ.get("THOTH_TEST_FILE_TIMEOUT", _DEFAULT_FILE_TIMEOUT_SECONDS)
         ),
         help=(
             "Per-file wall-clock cap in seconds. On timeout, the pytest "
             "subprocess and its full process tree are SIGKILL'd. "
-            "Default: 600 (10 min), env: HERMES_TEST_FILE_TIMEOUT."
+            "Default: 600 (10 min), env: THOTH_TEST_FILE_TIMEOUT."
         ),
     )
     parser.add_argument(

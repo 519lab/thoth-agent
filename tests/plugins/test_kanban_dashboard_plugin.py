@@ -729,9 +729,9 @@ def test_board_auto_initializes_missing_db(tmp_path, monkeypatch, thoth_db_initi
     home = tmp_path / ".hermes"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
-    monkeypatch.delenv("HERMES_KANBAN_BOARD", raising=False)
-    monkeypatch.delenv("HERMES_KANBAN_DB", raising=False)
-    monkeypatch.delenv("HERMES_KANBAN_HOME", raising=False)
+    monkeypatch.delenv("THOTH_KANBAN_BOARD", raising=False)
+    monkeypatch.delenv("THOTH_KANBAN_DB", raising=False)
+    monkeypatch.delenv("THOTH_KANBAN_HOME", raising=False)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     # Deliberately DO NOT call kb.init_db() here — the endpoint must.
 

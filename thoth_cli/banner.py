@@ -226,7 +226,7 @@ def check_via_pypi() -> Optional[int]:
 def check_for_updates() -> Optional[int]:
     """Check whether a Thoth update is available.
 
-    Two paths: if ``HERMES_REVISION`` is set (nix builds embed it), compare
+    Two paths: if ``THOTH_REVISION`` is set (nix builds embed it), compare
     it to upstream main via ``git ls-remote``. Otherwise look for a local
     git checkout and count commits behind ``origin/main``.
 
@@ -236,7 +236,7 @@ def check_for_updates() -> Optional[int]:
     """
     thoth_home = get_thoth_home()
     cache_file = thoth_home / ".update_check"
-    embedded_rev = os.environ.get("HERMES_REVISION") or None
+    embedded_rev = os.environ.get("THOTH_REVISION") or None
 
     # Read cache — invalidate if the embedded rev has changed since last check
     now = time.time()
@@ -520,7 +520,7 @@ def build_welcome_banner(console: Console, model: str, cwd: str,
     ctx_str = f" [dim {dim}]·[/] [dim {dim}]{_format_context_length(context_length)} context[/]" if context_length else ""
     left_lines.append(f"[{accent}]{model_short}[/]{ctx_str} [dim {dim}]·[/] [dim {dim}]519lab[/]")
 
-    if os.getenv("HERMES_YOLO_MODE"):
+    if os.getenv("THOTH_YOLO_MODE"):
         left_lines.append(f"[bold red]⚠ YOLO mode[/] [dim {dim}]— all approval prompts bypassed[/]")
     left_lines.append(f"[dim {dim}]{cwd}[/]")
     if session_id:

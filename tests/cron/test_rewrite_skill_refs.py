@@ -29,7 +29,7 @@ def cron_env(tmp_path, monkeypatch):
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     import cron.jobs as jobs_mod
-    monkeypatch.setattr(jobs_mod, "HERMES_DIR", thoth_home)
+    monkeypatch.setattr(jobs_mod, "THOTH_DIR", thoth_home)
     monkeypatch.setattr(jobs_mod, "CRON_DIR", thoth_home / "cron")
     monkeypatch.setattr(jobs_mod, "JOBS_FILE", thoth_home / "cron" / "jobs.json")
     monkeypatch.setattr(jobs_mod, "OUTPUT_DIR", thoth_home / "cron" / "output")

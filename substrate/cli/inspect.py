@@ -1193,7 +1193,7 @@ async def _print_l1_entities(conn, *, kind=None, limit=20) -> None:
         limit,
     )
     if not rows:
-        print("(no L1 entities — is the Parser running with HERMES_SUBSTRATE_PARSER=1?)")
+        print("(no L1 entities — is the Parser running with THOTH_SUBSTRATE_PARSER=1?)")
         return
     print(f"{'name':32s}  {'type':10s}  {'sal':>5s}  {'rels':>4s}  {'cites':>5s}  summary")
     print("-" * 100)
@@ -1327,7 +1327,7 @@ async def _print_parser_summary(conn) -> None:
     )
     print("Outcomes (24h):")
     if not outcomes:
-        print("  (no parser activity — HERMES_SUBSTRATE_PARSER off, or worker down?)")
+        print("  (no parser activity — THOTH_SUBSTRATE_PARSER off, or worker down?)")
     for o in outcomes:
         print(f"  {o['outcome']:12s} {o['n']}")
     totals = await conn.fetchrow(
@@ -1393,7 +1393,7 @@ async def _print_l2_associations(conn, *, entity=None, limit=20) -> None:
         )
     if not rows:
         print("(no L2 associations — is the Associator running with "
-              "HERMES_SUBSTRATE_ASSOCIATOR=1?)")
+              "THOTH_SUBSTRATE_ASSOCIATOR=1?)")
         return
     for r in rows:
         print(
@@ -1416,7 +1416,7 @@ async def _print_l3_patterns(conn, *, kind=None, limit=20) -> None:
     )
     if not rows:
         print("(no L3 patterns — is the Pattern-finder running with "
-              "HERMES_SUBSTRATE_PATTERNFINDER=1?)")
+              "THOTH_SUBSTRATE_PATTERNFINDER=1?)")
         return
     for r in rows:
         print(
@@ -1438,7 +1438,7 @@ async def _print_conductor(conn, *, limit=15) -> None:
         )
     except Exception:
         print("(no conductor log — is the Conductor running with "
-              "HERMES_SUBSTRATE_CONDUCTOR=1?)")
+              "THOTH_SUBSTRATE_CONDUCTOR=1?)")
         return
     if latest is not None:
         print(f"Backlog forecast (EMA): {latest['forecast']:.2%}  "
@@ -1464,7 +1464,7 @@ async def _print_dreamer(conn, *, limit=10) -> None:
         )
     except Exception:
         print("(no dreamer log — is the Dreamer running with "
-              "HERMES_SUBSTRATE_DREAMER=1?)")
+              "THOTH_SUBSTRATE_DREAMER=1?)")
         return
     if not rows:
         print("(no dreamer explorations yet)")
@@ -1484,7 +1484,7 @@ async def _print_l4(conn, *, subject=None, limit=20) -> None:
         print(f"Coherence (latest): {coherence['score']:.2f}  —  {coherence['statement']}")
     else:
         print("Coherence (latest): (none — is the Critic running with "
-              "HERMES_SUBSTRATE_CRITIC=1?)")
+              "THOTH_SUBSTRATE_CRITIC=1?)")
     print()
     rows = await conn.fetch(
         """

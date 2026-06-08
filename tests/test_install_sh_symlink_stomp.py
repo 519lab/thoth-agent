@@ -101,7 +101,7 @@ def test_re_running_setup_path_block_preserves_pip_entry_point(tmp_path: Path) -
     block = _extract_setup_path_shim_block()
     # Drive the block with the real env vars setup_path() sets. The extracted
     # block now contains a `local pg_dsn=...` line between the rm and the cat
-    # (substrate-edition added HERMES_PG_DSN injection to the launcher), so
+    # (substrate-edition added THOTH_PG_DSN injection to the launcher), so
     # wrap the block in a function — `local` is illegal at script scope.
     script = (
         "set -e\n"

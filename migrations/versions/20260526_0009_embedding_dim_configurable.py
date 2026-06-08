@@ -9,7 +9,7 @@ non-OpenAI providers — Ollama's ``nomic-embed-text`` (768-d),
 Gemini ``gemini-embedding-001`` (768/1536/3072), etc. — that pin
 prevents using the substrate at all.
 
-This migration reads ``HERMES_EMBEDDING_DIM`` from the environment
+This migration reads ``THOTH_EMBEDDING_DIM`` from the environment
 (default 1536 — back-compat with every existing install) and reshapes
 the column + ivfflat index to that dimension when they don't match.
 
@@ -24,7 +24,7 @@ Operators changing dim AFTER first install need to:
   1. Stop hermes (so the Curator isn't mid-write):
         hermes gateway stop  # or just exit the CLI
   2. Set the new env var:
-        export HERMES_EMBEDDING_DIM=768
+        export THOTH_EMBEDDING_DIM=768
   3. Re-run migrations (alembic detects this rev applied but
      ``upgrade_in_place`` reads the env each call, so a no-op upgrade
      followed by a manual re-apply via ``alembic stamp`` + repeat is
@@ -67,25 +67,25 @@ depends_on = None
 
 
 # Default keeps existing 1536-d installs as no-ops. Operators wanting a
-# different dim set HERMES_EMBEDDING_DIM in env BEFORE running alembic
+# different dim set THOTH_EMBEDDING_DIM in env BEFORE running alembic
 # upgrade (or the bundled install.sh, which inherits the env).
 _DEFAULT_DIM = 1536
 
 
 def _target_dim() -> int:
-    raw = (os.environ.get("HERMES_EMBEDDING_DIM") or "").strip()
+    raw = (os.environ.get("THOTH_EMBEDDING_DIM") or "").strip()
     if not raw:
         return _DEFAULT_DIM
     try:
         dim = int(raw)
     except ValueError as exc:
         raise ValueError(
-            f"HERMES_EMBEDDING_DIM must be an integer, got {raw!r}"
+            f"THOTH_EMBEDDING_DIM must be an integer, got {raw!r}"
         ) from exc
     if dim < 1 or dim > 16000:
         # pgvector itself caps at 16000. Anything below 1 is nonsense.
         raise ValueError(
-            f"HERMES_EMBEDDING_DIM out of range (1..16000), got {dim}"
+            f"THOTH_EMBEDDING_DIM out of range (1..16000), got {dim}"
         )
     return dim
 
@@ -125,7 +125,7 @@ def upgrade() -> None:
     if current == target:
         # Either: env var matches the existing schema (no work), OR
         # this is a fresh install where 0006 already created vector(1536)
-        # and HERMES_EMBEDDING_DIM is unset (default 1536). No-op.
+        # and THOTH_EMBEDDING_DIM is unset (default 1536). No-op.
         return
 
     if current is None:

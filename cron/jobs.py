@@ -34,8 +34,8 @@ except ImportError:
 # Configuration
 # =============================================================================
 
-HERMES_DIR = get_thoth_home().resolve()
-CRON_DIR = HERMES_DIR / "cron"
+THOTH_DIR = get_thoth_home().resolve()
+CRON_DIR = THOTH_DIR / "cron"
 JOBS_FILE = CRON_DIR / "jobs.json"
 
 # In-process lock protecting load_jobs→modify→save_jobs cycles.

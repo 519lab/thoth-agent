@@ -266,7 +266,7 @@ Presets:
 | `HONCHO_API_KEY` | `apiKey` |
 | `HONCHO_BASE_URL` | `baseUrl` |
 | `HONCHO_ENVIRONMENT` | `environment` |
-| `HERMES_HONCHO_HOST` | Host key override |
+| `THOTH_HONCHO_HOST` | Host key override |
 
 ## CLI Commands
 

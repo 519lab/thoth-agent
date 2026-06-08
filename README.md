@@ -74,11 +74,11 @@ Thoth uses **PostgreSQL 17** (with the `vector` and `pg_trgm` extensions) as the
 
 ```bash
 docker compose up -d postgres
-export THOTH_PG_DSN=postgresql://hermes:hermes@localhost:5432/hermes   # legacy HERMES_PG_DSN still works via the env bridge
+export THOTH_PG_DSN=postgresql://hermes:hermes@localhost:5432/hermes   # legacy THOTH_PG_DSN still works via the env bridge
 uv run alembic -c migrations/alembic.ini upgrade head
 ```
 
-**For production deploys:** point `THOTH_PG_DSN` (legacy `HERMES_PG_DSN` still honored via the env bridge) at any PostgreSQL 17+ instance with the `vector` and `pg_trgm` extensions installed, and run `alembic upgrade head` as part of your deploy.
+**For production deploys:** point `THOTH_PG_DSN` (legacy `THOTH_PG_DSN` still honored via the env bridge) at any PostgreSQL 17+ instance with the `vector` and `pg_trgm` extensions installed, and run `alembic upgrade head` as part of your deploy.
 
 **Coming from an older SQLite-based install?** A one-shot importer is provided:
 
@@ -98,7 +98,7 @@ It runs alongside the agent via background workers and is designed to be safe: s
 
 **Curator.** A continuous decay + release loop. Slices fade per their decay profile's half-life; below the profile's `min_salience_to_retain` threshold they release per the tombstone policy (`thin` / `full` / `none`). Every decision is itself recorded as a self-state slice, so the system can reason about its own memory over time.
 
-**Recall + embeddings.** An append-only `substrate_recall_log` audits every `recall()` call, and slices carry a pgvector `embedding` column. The Curator backfills semantic embeddings asynchronously; recall against not-yet-embedded slices falls back to keyword Jaccard. When enabled via `HERMES_SUBSTRATE_RECALL=1`, each turn's `<memory-context>` is composed from substrate slices using a composite score (vector similarity + keyword Jaccard + salience + recency, under a token budget), and the model gets a `substrate_recall_more` tool for explicit deeper searches.
+**Recall + embeddings.** An append-only `substrate_recall_log` audits every `recall()` call, and slices carry a pgvector `embedding` column. The Curator backfills semantic embeddings asynchronously; recall against not-yet-embedded slices falls back to keyword Jaccard. When enabled via `THOTH_SUBSTRATE_RECALL=1`, each turn's `<memory-context>` is composed from substrate slices using a composite score (vector similarity + keyword Jaccard + salience + recency, under a token budget), and the model gets a `substrate_recall_more` tool for explicit deeper searches.
 
 ### Inspecting substrate state
 
@@ -112,7 +112,7 @@ thoth substrate curator    # Curator decay/release activity
 thoth substrate recall     # recall coverage + recent calls
 ```
 
-If your DB is on an older Alembic revision when Thoth starts, boot raises a `RuntimeError` with the upgrade command to run; set `HERMES_AUTO_MIGRATE=1` to upgrade automatically on first boot. For the full design — the L0–L4 layer stack, the sub-agents, and the recall pipeline — see [`docs/architecture/substrate.md`](docs/architecture/substrate.md). Procedural operator docs ship as a bundled skill — load with `/substrate`.
+If your DB is on an older Alembic revision when Thoth starts, boot raises a `RuntimeError` with the upgrade command to run; set `THOTH_AUTO_MIGRATE=1` to upgrade automatically on first boot. For the full design — the L0–L4 layer stack, the sub-agents, and the recall pipeline — see [`docs/architecture/substrate.md`](docs/architecture/substrate.md). Procedural operator docs ship as a bundled skill — load with `/substrate`.
 
 ---
 
@@ -171,7 +171,7 @@ PYTEST_XDIST_WORKER=run_local uv run python -m pytest tests/substrate/test_commi
     -o "addopts=" --timeout-method=thread --timeout=120
 ```
 
-`PYTEST_XDIST_WORKER` must be set when running pytest directly (the parallel runner sets it per subprocess). The value is just a unique label — `pytest-postgresql` uses it to derive per-worker DB names so concurrent subprocesses don't race on the shared template DB. To target a different test PG, set `HERMES_TEST_POSTGRES_PORT` (or `POSTGRES_PORT`) before running pytest.
+`PYTEST_XDIST_WORKER` must be set when running pytest directly (the parallel runner sets it per subprocess). The value is just a unique label — `pytest-postgresql` uses it to derive per-worker DB names so concurrent subprocesses don't race on the shared template DB. To target a different test PG, set `THOTH_TEST_POSTGRES_PORT` (or `POSTGRES_PORT`) before running pytest.
 
 **Running tests in a Linux container (matches CI exactly):**
 

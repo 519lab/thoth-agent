@@ -38,7 +38,7 @@ The installer handles **everything**: `uv`, Python 3.11, Node.js 22, `ripgrep`, 
 
 **Why not use winget?**  Earlier designs auto-installed Git via `winget install Git.Git`, but winget fails badly when a system Git install is in a partial or broken state (exactly when users need the installer to just work).  The portable Git approach sidesteps winget, the Windows installer registry, and any existing system Git entirely.  If the Thoth Git install itself ever breaks, `Remove-Item %LOCALAPPDATA%\thoth\git` and re-run the installer — no system impact, no uninstall drama.
 
-The installer also sets `HERMES_GIT_BASH_PATH` to the located `bash.exe` so Thoth resolves it deterministically in fresh shells.
+The installer also sets `THOTH_GIT_BASH_PATH` to the located `bash.exe` so Thoth resolves it deterministically in fresh shells.
 
 If you prefer WSL2, the Linux installer above works inside it; both native and WSL installs can coexist without conflict (native data lives under `%LOCALAPPDATA%\thoth`, WSL data lives under `~/.hermes`).
 
@@ -71,7 +71,7 @@ Native Windows is in **early beta**. Everything except the browser-based dashboa
 - **MCP servers** — native (stdio and HTTP transports both supported)
 - **Dashboard `/chat` terminal pane** — **WSL2 only** (uses a POSIX PTY; native Windows has no equivalent).  The rest of the dashboard (sessions, jobs, metrics) works natively — only the embedded PTY terminal tab is gated.
 
-Set `HERMES_DISABLE_WINDOWS_UTF8=1` in your environment if you hit an encoding-related bug and want to fall back to the legacy cp1252 stdio path (useful for bisecting).
+Set `THOTH_DISABLE_WINDOWS_UTF8=1` in your environment if you hit an encoding-related bug and want to fall back to the legacy cp1252 stdio path (useful for bisecting).
 :::
 
 ### What the Installer Does

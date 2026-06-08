@@ -10,10 +10,10 @@ append-only with exact-text-only dedup (`upsert_pattern`) or none at all
 This migration adds the columns that curation needs:
 
 * ``l3_patterns.embedding`` / ``l4_observations.embedding`` —
-  ``vector(HERMES_EMBEDDING_DIM)``, for cosine near-duplicate detection.
+  ``vector(THOTH_EMBEDDING_DIM)``, for cosine near-duplicate detection.
   Start NULL; the Curator's backfill populates them (mirrors the
   ``substrate_slices`` backfill, Phase C §5.7). Dimension follows
-  ``HERMES_EMBEDDING_DIM`` exactly like ``substrate_slices`` (migration 0009).
+  ``THOTH_EMBEDDING_DIM`` exactly like ``substrate_slices`` (migration 0009).
 * ``l4_observations.salience_score`` / ``last_seen_at`` — L4 had neither;
   decay needs a salience to fade and a last-seen to bump on re-find
   (L3 already has both).
@@ -41,23 +41,23 @@ depends_on = None
 
 
 # Mirror substrate_slices (migration 0009): default keeps 1536-d installs
-# as-is; operators on a different model set HERMES_EMBEDDING_DIM before
+# as-is; operators on a different model set THOTH_EMBEDDING_DIM before
 # running alembic upgrade.
 _DEFAULT_DIM = 1536
 
 
 def _target_dim() -> int:
-    raw = (os.environ.get("HERMES_EMBEDDING_DIM") or "").strip()
+    raw = (os.environ.get("THOTH_EMBEDDING_DIM") or "").strip()
     if not raw:
         return _DEFAULT_DIM
     try:
         dim = int(raw)
     except ValueError as exc:
         raise ValueError(
-            f"HERMES_EMBEDDING_DIM must be an integer, got {raw!r}"
+            f"THOTH_EMBEDDING_DIM must be an integer, got {raw!r}"
         ) from exc
     if dim < 1 or dim > 16000:
-        raise ValueError(f"HERMES_EMBEDDING_DIM out of range (1..16000), got {dim}")
+        raise ValueError(f"THOTH_EMBEDDING_DIM out of range (1..16000), got {dim}")
     return dim
 
 

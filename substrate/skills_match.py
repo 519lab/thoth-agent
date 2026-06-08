@@ -22,9 +22,9 @@ from substrate.recall.projection import _tokenise
 
 
 def _skills_root() -> Path:
-    """The bundled-skills directory. ``HERMES_SKILLS_ROOT`` overrides (used
+    """The bundled-skills directory. ``THOTH_SKILLS_ROOT`` overrides (used
     by tests + non-standard installs); default is the repo's ``skills/``."""
-    env = (os.environ.get("HERMES_SKILLS_ROOT") or "").strip()
+    env = (os.environ.get("THOTH_SKILLS_ROOT") or "").strip()
     if env:
         return Path(env)
     # substrate/skills_match.py → substrate/ → repo root → repo/skills

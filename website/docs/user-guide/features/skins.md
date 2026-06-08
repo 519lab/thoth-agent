@@ -105,7 +105,7 @@ Text strings used throughout the CLI interface.
 |-----|------|-------------|---------|
 | `tool_prefix` | string | Character prefixed to tool output lines in the CLI | `┊` |
 | `tool_emojis` | dict | Per-tool emoji overrides for spinners and progress (`{tool_name: emoji}`) | `{}` |
-| `banner_logo` | string | Rich-markup ASCII art logo (replaces the default HERMES_AGENT banner) | `""` |
+| `banner_logo` | string | Rich-markup ASCII art logo (replaces the default THOTH_AGENT banner) | `""` |
 | `banner_hero` | string | Rich-markup hero art (replaces the default caduceus art) | `""` |
 
 ## Custom skins

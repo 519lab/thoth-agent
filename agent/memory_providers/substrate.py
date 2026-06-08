@@ -1,7 +1,7 @@
 """SubstrateMemoryProvider — Phase C built-in provider backed by the
 substrate's L0 recall API.
 
-Activation is gated by the ``HERMES_SUBSTRATE_RECALL`` env var (default
+Activation is gated by the ``THOTH_SUBSTRATE_RECALL`` env var (default
 0 in Phase C). When disabled the provider registers (so the registration
 path is exercised in CI/tests) but ``prefetch()`` returns ``""`` so the
 foreground's ``<memory-context>`` block continues to come from the
@@ -36,7 +36,7 @@ _log = logging.getLogger("substrate.memory_provider")
 # Env-var name controlling activation. Kept here (not in substrate.config)
 # so the import surface stays Thoth-side; substrate.config reads the
 # same name for its own enable flag.
-_ENABLE_ENV_VAR = "HERMES_SUBSTRATE_RECALL"
+_ENABLE_ENV_VAR = "THOTH_SUBSTRATE_RECALL"
 
 # Default tool budget for ``substrate_recall_more`` — bigger than the
 # per-turn prefetch budget because the model is explicitly asking for
@@ -49,7 +49,7 @@ def _is_enabled() -> bool:
     # Default ON: this fork installs the substrate as the primary memory
     # backend; recall opting out makes sense for power users who want to
     # diff substrate-vs-built-in behavior, not as a normal default.
-    # Set HERMES_SUBSTRATE_RECALL=0 to fall back to the upstream
+    # Set THOTH_SUBSTRATE_RECALL=0 to fall back to the upstream
     # built-in provider exclusively.
     raw = os.environ.get(_ENABLE_ENV_VAR, "1")
     return raw.strip().lower() in {"1", "true", "yes", "on"}

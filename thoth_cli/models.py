@@ -16,11 +16,11 @@ from difflib import get_close_matches
 from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
-from thoth_cli import __version__ as _HERMES_VERSION
+from thoth_cli import __version__ as _THOTH_VERSION
 
 # Identify ourselves so endpoints fronted by Cloudflare's Browser Integrity
 # Check (error 1010) don't reject the default ``Python-urllib/*`` signature.
-_THOTH_USER_AGENT = f"hermes-cli/{_HERMES_VERSION}"
+_THOTH_USER_AGENT = f"hermes-cli/{_THOTH_VERSION}"
 
 COPILOT_BASE_URL = "https://api.githubcopilot.com"
 COPILOT_MODELS_URL = f"{COPILOT_BASE_URL}/models"

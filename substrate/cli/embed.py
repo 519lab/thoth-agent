@@ -97,7 +97,7 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
             "(dim mismatch, unreachable endpoint, wrong model name). Run this "
             "after fixing the config for immediate recovery. The Curator also "
             "auto-heals a small batch per long interval "
-            "(HERMES_RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S), so this is the "
+            "(THOTH_RECALL_EMBEDDING_RETRY_FAILED_INTERVAL_S), so this is the "
             "manual fast-path."
         ),
     )
@@ -499,7 +499,7 @@ async def _backfill_inline(*, total: int, batch_size: int) -> int:
                 "unreachable endpoint). Aborting to avoid an infinite retry "
                 "loop. Check auxiliary.embedding.* (model, base_url, "
                 "dimensions vs schema dim) and raise "
-                "HERMES_RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS for slow models, "
+                "THOTH_RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS for slow models, "
                 "then re-run. The Curator's background backfill resumes the "
                 "rest once the cause is fixed.",
                 file=sys.stderr,

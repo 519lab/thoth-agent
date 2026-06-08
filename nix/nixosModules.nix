@@ -61,7 +61,7 @@
         lib.mapAttrsToList (name: value:
           if builtins.isPath value || lib.isStorePath value
           then "cp ${value} $out/${name}"
-          else "cat > $out/${name} <<'HERMES_DOC_EOF'\n${value}\nHERMES_DOC_EOF"
+          else "cat > $out/${name} <<'THOTH_DOC_EOF'\n${value}\nTHOTH_DOC_EOF"
         ) cfg.documents
       )
     );
@@ -81,26 +81,26 @@
     containerEntrypoint = pkgs.writeShellScript "hermes-container-entrypoint" ''
       set -eu
 
-      HERMES_UID="''${HERMES_UID:?HERMES_UID must be set}"
-      HERMES_GID="''${HERMES_GID:?HERMES_GID must be set}"
+      THOTH_UID="''${THOTH_UID:?THOTH_UID must be set}"
+      THOTH_GID="''${THOTH_GID:?THOTH_GID must be set}"
 
-      # ── Group: ensure a group with GID=$HERMES_GID exists ──
+      # ── Group: ensure a group with GID=$THOTH_GID exists ──
       # Check by GID (not name) to avoid collisions with pre-existing groups
       # (e.g. GID 100 = "users" on Ubuntu)
-      EXISTING_GROUP=$(getent group "$HERMES_GID" 2>/dev/null | cut -d: -f1 || true)
+      EXISTING_GROUP=$(getent group "$THOTH_GID" 2>/dev/null | cut -d: -f1 || true)
       if [ -n "$EXISTING_GROUP" ]; then
         GROUP_NAME="$EXISTING_GROUP"
       else
         GROUP_NAME="hermes"
         if command -v groupadd >/dev/null 2>&1; then
-          groupadd -g "$HERMES_GID" "$GROUP_NAME"
+          groupadd -g "$THOTH_GID" "$GROUP_NAME"
         elif command -v addgroup >/dev/null 2>&1; then
-          addgroup -g "$HERMES_GID" "$GROUP_NAME" 2>/dev/null || true
+          addgroup -g "$THOTH_GID" "$GROUP_NAME" 2>/dev/null || true
         fi
       fi
 
-      # ── User: ensure a user with UID=$HERMES_UID exists ──
-      PASSWD_ENTRY=$(getent passwd "$HERMES_UID" 2>/dev/null || true)
+      # ── User: ensure a user with UID=$THOTH_UID exists ──
+      PASSWD_ENTRY=$(getent passwd "$THOTH_UID" 2>/dev/null || true)
       if [ -n "$PASSWD_ENTRY" ]; then
         TARGET_USER=$(echo "$PASSWD_ENTRY" | cut -d: -f1)
         TARGET_HOME=$(echo "$PASSWD_ENTRY" | cut -d: -f6)
@@ -108,13 +108,13 @@
         TARGET_USER="hermes"
         TARGET_HOME="/home/hermes"
         if command -v useradd >/dev/null 2>&1; then
-          useradd -u "$HERMES_UID" -g "$HERMES_GID" -m -d "$TARGET_HOME" -s /bin/bash "$TARGET_USER"
+          useradd -u "$THOTH_UID" -g "$THOTH_GID" -m -d "$TARGET_HOME" -s /bin/bash "$TARGET_USER"
         elif command -v adduser >/dev/null 2>&1; then
-          adduser -u "$HERMES_UID" -D -h "$TARGET_HOME" -s /bin/sh -G "$GROUP_NAME" "$TARGET_USER" 2>/dev/null || true
+          adduser -u "$THOTH_UID" -D -h "$TARGET_HOME" -s /bin/sh -G "$GROUP_NAME" "$TARGET_USER" 2>/dev/null || true
         fi
       fi
       mkdir -p "$TARGET_HOME"
-      chown "$HERMES_UID:$HERMES_GID" "$TARGET_HOME"
+      chown "$THOTH_UID:$THOTH_GID" "$TARGET_HOME"
       chmod 0750 "$TARGET_HOME"
 
       # Ensure THOTH_HOME is owned by the target user.
@@ -123,7 +123,7 @@
       # script sets for group access by hostUsers.  Only touch files with
       # wrong ownership so correctly-owned dirs keep their permission bits.
       if [ -n "''${THOTH_HOME:-}" ] && [ -d "$THOTH_HOME" ]; then
-        find "$THOTH_HOME" \! -user "$HERMES_UID" -exec chown "$HERMES_UID:$HERMES_GID" {} +
+        find "$THOTH_HOME" \! -user "$THOTH_UID" -exec chown "$THOTH_UID:$THOTH_GID" {} +
       fi
 
       # ── Provision apt packages (first boot only, cached in writable layer) ──
@@ -173,7 +173,7 @@
       fi
 
       if command -v setpriv >/dev/null 2>&1; then
-        exec setpriv --reuid="$HERMES_UID" --regid="$HERMES_GID" --init-groups "$@"
+        exec setpriv --reuid="$THOTH_UID" --regid="$THOTH_GID" --init-groups "$@"
       elif command -v su >/dev/null 2>&1; then
         exec su -s /bin/sh "$TARGET_USER" -c 'exec "$0" "$@"' -- "$@"
       else
@@ -760,13 +760,13 @@
           # container instead of running locally. Removed when container mode
           # is disabled so the host CLI falls back to native execution.
           ${if cfg.container.enable then ''
-            cat > ${cfg.stateDir}/.hermes/.container-mode <<'HERMES_CONTAINER_MODE_EOF'
+            cat > ${cfg.stateDir}/.hermes/.container-mode <<'THOTH_CONTAINER_MODE_EOF'
     # Written by NixOS activation script. Do not edit manually.
     backend=${cfg.container.backend}
     container_name=${containerName}
     exec_user=${cfg.user}
     hermes_bin=${containerDataDir}/current-package/bin/thoth
-    HERMES_CONTAINER_MODE_EOF
+    THOTH_CONTAINER_MODE_EOF
             chown ${cfg.user}:${cfg.group} ${cfg.stateDir}/.hermes/.container-mode
             chmod 0644 ${cfg.stateDir}/.hermes/.container-mode
           '' else ''
@@ -826,9 +826,9 @@
           ${lib.optionalString (cfg.environment != {} || cfg.environmentFiles != []) ''
             ENV_FILE="${cfg.stateDir}/.hermes/.env"
             install -o ${cfg.user} -g ${cfg.group} -m 0640 /dev/null "$ENV_FILE"
-            cat > "$ENV_FILE" <<'HERMES_NIX_ENV_EOF'
+            cat > "$ENV_FILE" <<'THOTH_NIX_ENV_EOF'
     ${envFileContent}
-    HERMES_NIX_ENV_EOF
+    THOTH_NIX_ENV_EOF
             ${lib.concatStringsSep "\n" (map (f: ''
               if [ -f "${f}" ]; then
                 echo "" >> "$ENV_FILE"
@@ -873,7 +873,7 @@
           environment = {
             HOME = cfg.stateDir;
             THOTH_HOME = "${cfg.stateDir}/.hermes";
-            HERMES_MANAGED = "true";
+            THOTH_MANAGED = "true";
             MESSAGING_CWD = cfg.workingDirectory;
           };
 
@@ -954,8 +954,8 @@
 
             if [ "$NEED_CREATE" = "true" ]; then
               # Resolve numeric UID/GID — passed to entrypoint for in-container user setup
-              HERMES_UID=$(${pkgs.coreutils}/bin/id -u ${cfg.user})
-              HERMES_GID=$(${pkgs.coreutils}/bin/id -g ${cfg.user})
+              THOTH_UID=$(${pkgs.coreutils}/bin/id -u ${cfg.user})
+              THOTH_GID=$(${pkgs.coreutils}/bin/id -g ${cfg.user})
 
               echo "Creating container..."
               ${containerBin} create \
@@ -966,10 +966,10 @@
                 --volume ${cfg.stateDir}:${containerDataDir} \
                 --volume ${cfg.stateDir}/home:${containerHomeDir} \
                 ${lib.concatStringsSep " " (map (v: "--volume ${v}") cfg.container.extraVolumes)} \
-                --env HERMES_UID="$HERMES_UID" \
-                --env HERMES_GID="$HERMES_GID" \
+                --env THOTH_UID="$THOTH_UID" \
+                --env THOTH_GID="$THOTH_GID" \
                 --env THOTH_HOME=${containerDataDir}/.hermes \
-                --env HERMES_MANAGED=true \
+                --env THOTH_MANAGED=true \
                 --env HOME=${containerHomeDir} \
                 --env MESSAGING_CWD=${containerWorkDir} \
                 ${lib.concatStringsSep " " cfg.container.extraOptions} \

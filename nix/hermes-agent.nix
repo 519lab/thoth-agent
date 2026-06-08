@@ -60,7 +60,7 @@ let
 
   # Import bundled plugins (memory, context_engine, platforms/*).  Keeping
   # them out of the Python site-packages keeps import semantics identical
-  # to a dev checkout — the loader reads them from HERMES_BUNDLED_PLUGINS.
+  # to a dev checkout — the loader reads them from THOTH_BUNDLED_PLUGINS.
   bundledPlugins = lib.cleanSourceWith {
     src = ../plugins;
     filter = path: _type: !(lib.hasInfix "/__pycache__/" path);
@@ -159,13 +159,13 @@ stdenv.mkDerivation {
       (name: ''
         makeWrapper ${hermesVenv}/bin/${name} $out/bin/${name} \
           --suffix PATH : "${runtimePath}" \
-          --set HERMES_BUNDLED_SKILLS $out/share/hermes-agent/skills \
-          --set HERMES_BUNDLED_PLUGINS $out/share/hermes-agent/plugins \
-          --set HERMES_WEB_DIST $out/share/hermes-agent/web_dist \
-          --set HERMES_TUI_DIR $out/ui-tui \
-          --set HERMES_PYTHON ${hermesVenv}/bin/python3 \
-          --set HERMES_NODE ${lib.getExe nodejs} \
-          ${lib.optionalString (rev != null) ''--set HERMES_REVISION ${rev} \''}
+          --set THOTH_BUNDLED_SKILLS $out/share/hermes-agent/skills \
+          --set THOTH_BUNDLED_PLUGINS $out/share/hermes-agent/plugins \
+          --set THOTH_WEB_DIST $out/share/hermes-agent/web_dist \
+          --set THOTH_TUI_DIR $out/ui-tui \
+          --set THOTH_PYTHON ${hermesVenv}/bin/python3 \
+          --set THOTH_NODE ${lib.getExe nodejs} \
+          ${lib.optionalString (rev != null) ''--set THOTH_REVISION ${rev} \''}
           ${lib.optionalString (extraPythonPackages != [ ]) ''--suffix PYTHONPATH : "${pythonPath}"''}
       '')
       [
@@ -207,7 +207,7 @@ stdenv.mkDerivation {
         echo "$STAMP_VALUE" > "$STAMP"
       else
         source .venv/bin/activate
-        export HERMES_PYTHON=${hermesVenv}/bin/python3
+        export THOTH_PYTHON=${hermesVenv}/bin/python3
       fi
     '';
   };

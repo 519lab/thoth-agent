@@ -52,7 +52,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from thoth_cli import __version__ as _HERMES_VERSION
+from thoth_cli import __version__ as _THOTH_VERSION
 from utils import atomic_replace
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ DEFAULT_TTL_HOURS = 24
 DEFAULT_FETCH_TIMEOUT = 8.0
 SUPPORTED_SCHEMA_VERSION = 1
 
-_THOTH_USER_AGENT = f"hermes-cli/{_HERMES_VERSION}"
+_THOTH_USER_AGENT = f"hermes-cli/{_THOTH_VERSION}"
 
 # In-process cache to avoid repeated disk + parse work across multiple
 # calls within the same session. Invalidated by TTL against the disk file's

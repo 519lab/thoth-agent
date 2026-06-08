@@ -161,8 +161,8 @@ class TestPtyBridgeEnv:
 
     def test_env_is_forwarded(self):
         bridge = PtyBridge.spawn(
-            ["/bin/sh", "-c", "printf %s \"$HERMES_PTY_TEST\""],
-            env={**os.environ, "HERMES_PTY_TEST": "pty-env-works"},
+            ["/bin/sh", "-c", "printf %s \"$THOTH_PTY_TEST\""],
+            env={**os.environ, "THOTH_PTY_TEST": "pty-env-works"},
         )
         try:
             output = _read_until(bridge, b"pty-env-works")

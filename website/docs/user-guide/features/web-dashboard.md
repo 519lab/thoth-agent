@@ -24,7 +24,7 @@ This starts a local web server and opens `http://127.0.0.1:9119` in your browser
 | `--host` | `127.0.0.1` | Bind address |
 | `--no-open` | — | Don't auto-open the browser |
 | `--insecure` | off | Allow binding to non-localhost hosts (**DANGEROUS** — exposes API keys on the network; pair with a firewall and strong auth) |
-| `--tui` | off | Expose the in-browser Chat tab (embedded `thoth --tui` via PTY/WebSocket). Alternatively set `HERMES_DASHBOARD_TUI=1`. |
+| `--tui` | off | Expose the in-browser Chat tab (embedded `thoth --tui` via PTY/WebSocket). Alternatively set `THOTH_DASHBOARD_TUI=1`. |
 
 ```bash
 # Custom port
@@ -52,7 +52,7 @@ The `web` extra pulls in FastAPI/Uvicorn; `pty` pulls in `ptyprocess` (POSIX) or
 
 When you run `thoth dashboard` without the dependencies, it will tell you what to install. If the frontend hasn't been built yet and `npm` is available, it builds automatically on first launch.
 
-The Chat tab is intentionally off for a plain `thoth dashboard` launch. Start the dashboard with `thoth dashboard --tui` or set `HERMES_DASHBOARD_TUI=1` when you want the embedded browser chat pane.
+The Chat tab is intentionally off for a plain `thoth dashboard` launch. Start the dashboard with `thoth dashboard --tui` or set `THOTH_DASHBOARD_TUI=1` when you want the embedded browser chat pane.
 
 ## Pages
 

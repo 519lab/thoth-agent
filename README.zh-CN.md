@@ -75,11 +75,11 @@ Thoth 使用 **PostgreSQL 17**（启用 `vector` 和 `pg_trgm` 扩展）作为�
 
 ```bash
 docker compose up -d postgres
-export THOTH_PG_DSN=postgresql://hermes:hermes@localhost:5432/hermes   # 旧的 HERMES_PG_DSN 仍通过环境变量桥接生效
+export THOTH_PG_DSN=postgresql://hermes:hermes@localhost:5432/hermes   # 旧的 THOTH_PG_DSN 仍通过环境变量桥接生效
 uv run alembic -c migrations/alembic.ini upgrade head
 ```
 
-**生产部署：** 将 `THOTH_PG_DSN`（旧的 `HERMES_PG_DSN` 仍通过环境变量桥接生效）指向任意安装了 `vector` 和 `pg_trgm` 扩展的 PostgreSQL 17+ 实例，并将 `alembic upgrade head` 作为部署流程的一部分运行。
+**生产部署：** 将 `THOTH_PG_DSN`（旧的 `THOTH_PG_DSN` 仍通过环境变量桥接生效）指向任意安装了 `vector` 和 `pg_trgm` 扩展的 PostgreSQL 17+ 实例，并将 `alembic upgrade head` 作为部署流程的一部分运行。
 
 **从旧的基于 SQLite 的安装迁移？** 我们提供了一个一次性导入器：
 
@@ -99,7 +99,7 @@ uv run thoth db migrate-from-sqlite --sqlite-path ~/.hermes/state.db   # 加 --d
 
 **Curator（管理器）。** 一个持续的衰减 + 释放循环。切片按其衰减配置的半衰期逐渐淡化；当低于该配置的 `min_salience_to_retain` 阈值时，它们按墓碑策略（`thin` / `full` / `none`）释放。每一个决策本身都会作为一个 self-state 切片被记录下来，因此系统能够随时间推移对自身的记忆进行推理。
 
-**召回 + 嵌入。** 一个只追加的 `substrate_recall_log` 审计每一次 `recall()` 调用，切片带有一个 pgvector 的 `embedding` 列。Curator 会异步回填语义嵌入；对尚未嵌入的切片进行召回时会回退到关键词 Jaccard。当通过 `HERMES_SUBSTRATE_RECALL=1` 启用时，每一轮的 `<memory-context>` 都会从基底切片中按复合评分（向量相似度 + 关键词 Jaccard + 显著性 + 时近性，在 token 预算内）组装，并且模型会获得一个 `substrate_recall_more` 工具用于显式的深入搜索。
+**召回 + 嵌入。** 一个只追加的 `substrate_recall_log` 审计每一次 `recall()` 调用，切片带有一个 pgvector 的 `embedding` 列。Curator 会异步回填语义嵌入；对尚未嵌入的切片进行召回时会回退到关键词 Jaccard。当通过 `THOTH_SUBSTRATE_RECALL=1` 启用时，每一轮的 `<memory-context>` 都会从基底切片中按复合评分（向量相似度 + 关键词 Jaccard + 显著性 + 时近性，在 token 预算内）组装，并且模型会获得一个 `substrate_recall_more` 工具用于显式的深入搜索。
 
 ### 查看基底状态
 
@@ -113,7 +113,7 @@ thoth substrate curator    # Curator 衰减 / 释放活动
 thoth substrate recall     # 召回覆盖率 + 最近的调用
 ```
 
-如果 Thoth 启动时你的数据库处于较旧的 Alembic 修订版本，启动会抛出一个 `RuntimeError`，其中包含需要运行的升级命令；设置 `HERMES_AUTO_MIGRATE=1` 可在首次启动时自动升级。基底的操作员手册以内置技能形式随附——用 `/substrate` 加载。
+如果 Thoth 启动时你的数据库处于较旧的 Alembic 修订版本，启动会抛出一个 `RuntimeError`，其中包含需要运行的升级命令；设置 `THOTH_AUTO_MIGRATE=1` 可在首次启动时自动升级。基底的操作员手册以内置技能形式随附——用 `/substrate` 加载。
 
 ---
 
@@ -172,7 +172,7 @@ PYTEST_XDIST_WORKER=run_local uv run python -m pytest tests/substrate/test_commi
     -o "addopts=" --timeout-method=thread --timeout=120
 ```
 
-直接运行 pytest 时必须设置 `PYTEST_XDIST_WORKER`（并行运行器会为每个子进程设置它）。它的值只是一个唯一标签——`pytest-postgresql` 用它来派生每个 worker 的数据库名，从而让并发的子进程不会在共享的模板数据库上竞争。要指向不同的测试 PG，请在运行 pytest 前设置 `HERMES_TEST_POSTGRES_PORT`（或 `POSTGRES_PORT`）。
+直接运行 pytest 时必须设置 `PYTEST_XDIST_WORKER`（并行运行器会为每个子进程设置它）。它的值只是一个唯一标签——`pytest-postgresql` 用它来派生每个 worker 的数据库名，从而让并发的子进程不会在共享的模板数据库上竞争。要指向不同的测试 PG，请在运行 pytest 前设置 `THOTH_TEST_POSTGRES_PORT`（或 `POSTGRES_PORT`）。
 
 **在 Linux 容器中运行测试（与 CI 完全一致）：**
 

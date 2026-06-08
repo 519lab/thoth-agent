@@ -28,7 +28,7 @@ async def booted(thoth_db_initialized):
 
 @pytest.fixture(autouse=True)
 def _associator_on(monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_ASSOCIATOR", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_ASSOCIATOR", "1")
 
 
 def _edge(edges, a, b, etype):
@@ -71,7 +71,7 @@ async def test_shared_neighbor_from_common_partner(booted):
 
 @pytest.mark.asyncio
 async def test_associator_disabled_is_noop(booted, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_ASSOCIATOR", "0")
+    monkeypatch.setenv("THOTH_SUBSTRATE_ASSOCIATOR", "0")
     a, _ = await l1.upsert_entity("Solo1", "concept")
     b, _ = await l1.upsert_entity("Solo2", "concept")
     sid = uuid4()

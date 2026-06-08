@@ -44,8 +44,8 @@ Verification you may run:
 - [COMMAND_2]
 
 Verification Thoth will rerun independently:
-- [HERMES_COMMAND_1]
-- [HERMES_COMMAND_2]
+- [THOTH_COMMAND_1]
+- [THOTH_COMMAND_2]
 
 Required final report:
 - Summary of changes.

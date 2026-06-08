@@ -3537,7 +3537,7 @@ class TestRunConversation:
         self._setup_agent(agent)
         agent.max_iterations = 2
 
-        monkeypatch.setenv("HERMES_KANBAN_TASK", "t_test_task_123")
+        monkeypatch.setenv("THOTH_KANBAN_TASK", "t_test_task_123")
 
         # Return a tool call for every iteration to exhaust the budget.
         tc = _mock_tool_call(name="web_search", arguments="{}", call_id="c1")
@@ -3579,11 +3579,11 @@ class TestRunConversation:
         assert "Iteration budget exhausted" in call[0][1]["reason"]
 
     def test_no_kanban_block_when_not_in_kanban_mode(self, agent, monkeypatch):
-        """kanban_block must NOT be called when HERMES_KANBAN_TASK is unset."""
+        """kanban_block must NOT be called when THOTH_KANBAN_TASK is unset."""
         self._setup_agent(agent)
         agent.max_iterations = 2
 
-        monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
+        monkeypatch.delenv("THOTH_KANBAN_TASK", raising=False)
 
         tc = _mock_tool_call(name="web_search", arguments="{}", call_id="c1")
         tool_resp = _mock_response(

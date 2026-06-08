@@ -36,11 +36,11 @@ def resolve_active_host() -> str:
     """Derive the Honcho host key from the active Thoth profile.
 
     Resolution order:
-      1. HERMES_HONCHO_HOST env var (explicit override)
+      1. THOTH_HONCHO_HOST env var (explicit override)
       2. Active profile name via profiles system -> ``hermes.<profile>``
       3. Fallback: ``"hermes"`` (default profile)
     """
-    explicit = os.environ.get("HERMES_HONCHO_HOST", "").strip()
+    explicit = os.environ.get("THOTH_HONCHO_HOST", "").strip()
     if explicit:
         return explicit
 

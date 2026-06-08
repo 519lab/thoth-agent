@@ -409,7 +409,7 @@ class SessionManager:
         """Lazily initialise and return the SessionDB instance.
 
         Returns ``None`` if the DB is unavailable (e.g. import error in a
-        minimal test environment, or no ``HERMES_PG_DSN`` configured).
+        minimal test environment, or no ``THOTH_PG_DSN`` configured).
 
         Note: we resolve ``THOTH_HOME`` dynamically rather than relying on
         the module-level ``DEFAULT_DB_PATH`` constant, because that constant
@@ -428,7 +428,7 @@ class SessionManager:
             try:
                 if not thoth_db.ensure_pool_sync():
                     logger.debug(
-                        "No HERMES_PG_DSN configured; ACP persistence disabled"
+                        "No THOTH_PG_DSN configured; ACP persistence disabled"
                     )
                     return None
             except RuntimeError as exc:

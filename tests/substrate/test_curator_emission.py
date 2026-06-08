@@ -208,7 +208,7 @@ async def test_no_emit_when_nothing_to_audit(substrate):
 async def test_curator_embed_omits_model_kwarg_when_config_default(
     substrate, monkeypatch
 ):
-    """Regression: when ``HERMES_RECALL_EMBEDDING_MODEL`` is unset,
+    """Regression: when ``THOTH_RECALL_EMBEDDING_MODEL`` is unset,
     the Curator must NOT pass ``model=`` to ``embed()`` — letting
     ``embed()`` resolve from ``auxiliary.embedding.model`` in config.
 

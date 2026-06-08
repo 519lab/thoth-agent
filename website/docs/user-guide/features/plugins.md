@@ -89,7 +89,7 @@ def register(ctx):
 
 Drop both files into `~/.hermes/plugins/hello-world/`, restart Thoth, and the model can immediately call `hello_world`. The hook prints a log line after every tool invocation.
 
-Project-local plugins under `./.hermes/plugins/` are disabled by default. Enable them only for trusted repositories by setting `HERMES_ENABLE_PROJECT_PLUGINS=true` before starting Thoth.
+Project-local plugins under `./.hermes/plugins/` are disabled by default. Enable them only for trusted repositories by setting `THOTH_ENABLE_PROJECT_PLUGINS=true` before starting Thoth.
 
 ## What plugins can do
 
@@ -121,7 +121,7 @@ Every `ctx.*` API below is available inside a plugin's `register(ctx)` function.
 |--------|------|----------|
 | Bundled | `<repo>/plugins/` | Ships with Thoth — see [Built-in Plugins](/docs/user-guide/features/built-in-plugins) |
 | User | `~/.hermes/plugins/` | Personal plugins |
-| Project | `.hermes/plugins/` | Project-specific plugins (requires `HERMES_ENABLE_PROJECT_PLUGINS=true`) |
+| Project | `.hermes/plugins/` | Project-specific plugins (requires `THOTH_ENABLE_PROJECT_PLUGINS=true`) |
 | pip | `hermes_agent.plugins` entry_points | Distributed packages |
 | Nix | `services.hermes-agent.extraPlugins` / `extraPythonPackages` | NixOS declarative installs — see [Nix Setup](/docs/getting-started/nix-setup#plugins) |
 
@@ -235,7 +235,7 @@ The table above shows the four plugin categories, but within "General plugins" t
 | An **image-generation backend** (DALL·E, SDXL, …) | Backend plugin — `ctx.register_image_gen_provider()` | [Image Generation Provider Plugins](/docs/developer-guide/image-gen-provider-plugin) |
 | A **video-generation backend** (Veo, Kling, Pixverse, Grok-Imagine, Runway, …) | Backend plugin — `ctx.register_video_gen_provider()` | [Video Generation Provider Plugins](/docs/developer-guide/video-gen-provider-plugin) |
 | A **TTS backend** (any CLI — Piper, VoxCPM, Kokoro, xtts, voice-cloning scripts, …) | Config-driven — declare under `tts.providers.<name>` with `type: command` in `config.yaml` | [TTS setup](/docs/user-guide/features/tts#custom-command-providers) |
-| An **STT backend** (custom whisper binary, local ASR CLI) | Config-driven — set `HERMES_LOCAL_STT_COMMAND` env var to a shell template | [Voice Message Transcription (STT)](/docs/user-guide/features/tts#voice-message-transcription-stt) |
+| An **STT backend** (custom whisper binary, local ASR CLI) | Config-driven — set `THOTH_LOCAL_STT_COMMAND` env var to a shell template | [Voice Message Transcription (STT)](/docs/user-guide/features/tts#voice-message-transcription-stt) |
 | **External tools via MCP** (filesystem, GitHub, Linear, Notion, any MCP server) | Config-driven — declare `mcp_servers.<name>` with `command:` / `url:` in `config.yaml`. Thoth auto-discovers the server's tools and registers them alongside built-ins. | [MCP](/docs/user-guide/features/mcp) |
 | **Additional skill sources** (custom GitHub repos, private skill indexes) | CLI — `thoth skills tap add <repo>` | [Skills Hub](/docs/user-guide/features/skills#skills-hub) · [Publishing a custom tap](/docs/user-guide/features/skills#publishing-a-custom-skill-tap) |
 | **Gateway event hooks** (fire on `gateway:startup`, `session:start`, `agent:end`, `command:*`) | Drop `HOOK.yaml` + `handler.py` into `~/.hermes/hooks/<name>/` | [Event Hooks](/docs/user-guide/features/hooks#gateway-event-hooks) |

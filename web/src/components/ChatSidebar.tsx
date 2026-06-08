@@ -30,7 +30,7 @@ import { Card } from "@/components/ui/card";
 import { ModelPickerDialog } from "@/components/ModelPickerDialog";
 import { ToolCall, type ToolEntry } from "@/components/ToolCall";
 import { GatewayClient, type ConnectionState } from "@/lib/gatewayClient";
-import { HERMES_BASE_PATH } from "@/lib/api";
+import { THOTH_BASE_PATH } from "@/lib/api";
 
 import { cn } from "@/lib/utils";
 import { AlertCircle, ChevronDown, RefreshCw } from "lucide-react";
@@ -152,7 +152,7 @@ export function ChatSidebar({ channel, className }: ChatSidebarProps) {
   // JSON-RPC sidecar so the sidebar matches its documented best-effort
   // UX and the user always has a reconnect affordance.
   useEffect(() => {
-    const token = window.__HERMES_SESSION_TOKEN__;
+    const token = window.__THOTH_SESSION_TOKEN__;
 
     if (!token || !channel) {
       return;
@@ -161,7 +161,7 @@ export function ChatSidebar({ channel, className }: ChatSidebarProps) {
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
     const qs = new URLSearchParams({ token, channel });
     const ws = new WebSocket(
-      `${proto}//${window.location.host}${HERMES_BASE_PATH}/api/events?${qs.toString()}`,
+      `${proto}//${window.location.host}${THOTH_BASE_PATH}/api/events?${qs.toString()}`,
     );
 
     // `unmounting` suppresses the banner during cleanup — `ws.close()`

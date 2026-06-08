@@ -18,7 +18,7 @@ Two paths:
     The client is constructed lazily and cached. Cache invalidates via
     ``reset_client_cache()`` (test seam).
 
-  * **Mock**: enabled via ``HERMES_RECALL_EMBEDDING_MOCK=1``. Uses
+  * **Mock**: enabled via ``THOTH_RECALL_EMBEDDING_MOCK=1``. Uses
     SHA-256(input) to seed a deterministic pseudo-random 1536-d
     vector, then normalises to unit length. Two identical inputs
     produce identical vectors so ranker tests are stable. No
@@ -43,14 +43,14 @@ from substrate import config as _substrate_config  # noqa: F401  (forward use)
 
 # Dimension was originally pinned at 1536 (Phase C / Alembic 0006).
 # Phase C-cleanup migration 0009 makes it configurable via the
-# ``HERMES_EMBEDDING_DIM`` env var, with 1536 retained as the default
+# ``THOTH_EMBEDDING_DIM`` env var, with 1536 retained as the default
 # for back-compat. The actual column dimension is read from PG at
 # first use via ``_get_schema_dim`` — env var only matters at
 # migration time. ``EMBEDDING_DIM`` is preserved here as a fallback
 # (for code paths and tests that read it before any embed() call) and
 # for the mock path which generates fixed-size deterministic vectors.
 EMBEDDING_DIM = 1536
-MOCK_ENV_VAR = "HERMES_RECALL_EMBEDDING_MOCK"
+MOCK_ENV_VAR = "THOTH_RECALL_EMBEDDING_MOCK"
 API_KEY_ENV_VAR = "OPENAI_API_KEY"
 
 _log = logging.getLogger("substrate.recall.embeddings")
@@ -340,7 +340,7 @@ async def embed(
 
     # Dim guard: model output must match the PG column's vector(N) shape
     # exactly. Read the schema's actual dim (configurable via
-    # HERMES_EMBEDDING_DIM at migration time) instead of the module
+    # THOTH_EMBEDDING_DIM at migration time) instead of the module
     # constant so users who reshape their schema for a 768-d local model
     # don't get false-positive mismatch errors.
     schema_dim = await _get_schema_dim()
@@ -351,7 +351,7 @@ async def embed(
             raise RuntimeError(
                 f"embedding dim mismatch: got {len(vec)}, schema expects "
                 f"{schema_dim} (model={model!r}). Either pick a model whose "
-                f"output dim matches the schema, OR set HERMES_EMBEDDING_DIM="
+                f"output dim matches the schema, OR set THOTH_EMBEDDING_DIM="
                 f"{len(vec)} in env + re-run migrations to reshape the column."
             )
         out.append(vec)

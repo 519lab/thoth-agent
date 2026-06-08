@@ -1228,7 +1228,7 @@ display:
 Env override (handy for quick A/B testing):
 
 ```bash
-HERMES_TELEGRAM_NOTIFICATIONS=all
+THOTH_TELEGRAM_NOTIFICATIONS=all
 ```
 
 Unknown values log a warning and fall back to `important`.

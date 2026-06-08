@@ -39,7 +39,7 @@ async def booted(thoth_db_initialized):
 
 @pytest.fixture(autouse=True)
 def _reflector_on(monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_REFLECTOR", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_REFLECTOR", "1")
     monkeypatch.setattr(reflector_mod, "resolve_reflector_client",
                         lambda: (object(), "mock"))
 
@@ -78,7 +78,7 @@ async def test_reflector_skips_without_material(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_reflector_disabled_is_noop(booted, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_REFLECTOR", "0")
+    monkeypatch.setenv("THOTH_SUBSTRATE_REFLECTOR", "0")
     await l3.upsert_pattern("something", "theme")
 
     async def _boom(*a, **k):

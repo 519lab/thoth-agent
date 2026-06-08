@@ -5,14 +5,14 @@
  * ~/.hermes/kanban.db. Calls the plugin's backend at /api/plugins/kanban/
  * and tails task_events over a WebSocket for live updates.
  *
- * Plain IIFE, no build step. Uses window.__HERMES_PLUGIN_SDK__ for React +
+ * Plain IIFE, no build step. Uses window.__THOTH_PLUGIN_SDK__ for React +
  * shadcn primitives; HTML5 drag-and-drop for card movement on desktop and
  * a pointer-based fallback for touch.
  */
 (function () {
   "use strict";
 
-  const SDK = window.__HERMES_PLUGIN_SDK__;
+  const SDK = window.__THOTH_PLUGIN_SDK__;
   if (!SDK) return;
 
   const { React } = SDK;
@@ -588,7 +588,7 @@
       wsClosedRef.current = false;
       function openWs() {
         if (wsClosedRef.current) return;
-        const token = window.__HERMES_SESSION_TOKEN__ || "";
+        const token = window.__THOTH_SESSION_TOKEN__ || "";
         const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
         const qsParams = {
           since: String(cursorRef.current || 0),
@@ -3645,7 +3645,7 @@
   // Register
   // -------------------------------------------------------------------------
 
-  if (window.__HERMES_PLUGINS__ && typeof window.__HERMES_PLUGINS__.register === "function") {
-    window.__HERMES_PLUGINS__.register("kanban", KanbanPage);
+  if (window.__THOTH_PLUGINS__ && typeof window.__THOTH_PLUGINS__.register === "function") {
+    window.__THOTH_PLUGINS__.register("kanban", KanbanPage);
   }
 })();

@@ -1,6 +1,6 @@
 """Regression tests for the config.yaml → env var bridge in gateway/run.py.
 
-Guards against the 60-vs-500 bug where a stale `.env HERMES_MAX_ITERATIONS=60`
+Guards against the 60-vs-500 bug where a stale `.env THOTH_MAX_ITERATIONS=60`
 entry silently shadowed `agent.max_turns: 500` in config.yaml because the
 bridge used `if X not in os.environ` guards. After PR#18413 the bridge
 treats config.yaml as authoritative and unconditionally overwrites .env
@@ -41,11 +41,11 @@ def _run_gateway_import(thoth_home: Path, initial_env: dict[str, str]) -> dict[s
             sys.exit(2)
 
         for k in (
-            "HERMES_MAX_ITERATIONS",
-            "HERMES_AGENT_TIMEOUT",
-            "HERMES_AGENT_TIMEOUT_WARNING",
-            "HERMES_GATEWAY_BUSY_INPUT_MODE",
-            "HERMES_TIMEZONE",
+            "THOTH_MAX_ITERATIONS",
+            "THOTH_AGENT_TIMEOUT",
+            "THOTH_AGENT_TIMEOUT_WARNING",
+            "THOTH_GATEWAY_BUSY_INPUT_MODE",
+            "THOTH_TIMEZONE",
         ):
             v = os.environ.get(k)
             if v is not None:
@@ -107,12 +107,12 @@ def thoth_home(tmp_path: Path) -> Path:
 def test_config_max_turns_wins_over_stale_env(thoth_home: Path) -> None:
     """Regression: config.yaml:agent.max_turns=500 must beat .env=60."""
     _write_config(thoth_home, agent_cfg={"max_turns": 500})
-    _write_env(thoth_home, {"HERMES_MAX_ITERATIONS": "60"})
+    _write_env(thoth_home, {"THOTH_MAX_ITERATIONS": "60"})
 
     env = _run_gateway_import(thoth_home, initial_env={})
 
-    assert env.get("HERMES_MAX_ITERATIONS") == "500", (
-        f"expected config.yaml max_turns=500 to win; got {env.get('HERMES_MAX_ITERATIONS')!r}. "
+    assert env.get("THOTH_MAX_ITERATIONS") == "500", (
+        f"expected config.yaml max_turns=500 to win; got {env.get('THOTH_MAX_ITERATIONS')!r}. "
         "Stale .env value is shadowing config — the bridge lost its override."
     )
 
@@ -124,32 +124,32 @@ def test_config_gateway_timeout_wins_over_stale_env(thoth_home: Path) -> None:
         "gateway_timeout_warning": 900,
     })
     _write_env(thoth_home, {
-        "HERMES_AGENT_TIMEOUT": "60",
-        "HERMES_AGENT_TIMEOUT_WARNING": "30",
+        "THOTH_AGENT_TIMEOUT": "60",
+        "THOTH_AGENT_TIMEOUT_WARNING": "30",
     })
 
     env = _run_gateway_import(thoth_home, initial_env={})
 
-    assert env.get("HERMES_AGENT_TIMEOUT") == "1800"
-    assert env.get("HERMES_AGENT_TIMEOUT_WARNING") == "900"
+    assert env.get("THOTH_AGENT_TIMEOUT") == "1800"
+    assert env.get("THOTH_AGENT_TIMEOUT_WARNING") == "900"
 
 
 def test_config_display_busy_input_mode_wins_over_stale_env(thoth_home: Path) -> None:
     _write_config(thoth_home, display_cfg={"busy_input_mode": "interrupt"})
-    _write_env(thoth_home, {"HERMES_GATEWAY_BUSY_INPUT_MODE": "queue"})
+    _write_env(thoth_home, {"THOTH_GATEWAY_BUSY_INPUT_MODE": "queue"})
 
     env = _run_gateway_import(thoth_home, initial_env={})
 
-    assert env.get("HERMES_GATEWAY_BUSY_INPUT_MODE") == "interrupt"
+    assert env.get("THOTH_GATEWAY_BUSY_INPUT_MODE") == "interrupt"
 
 
 def test_config_timezone_wins_over_stale_env(thoth_home: Path) -> None:
     _write_config(thoth_home, timezone="America/Los_Angeles")
-    _write_env(thoth_home, {"HERMES_TIMEZONE": "UTC"})
+    _write_env(thoth_home, {"THOTH_TIMEZONE": "UTC"})
 
     env = _run_gateway_import(thoth_home, initial_env={})
 
-    assert env.get("HERMES_TIMEZONE") == "America/Los_Angeles"
+    assert env.get("THOTH_TIMEZONE") == "America/Los_Angeles"
 
 
 def test_env_value_survives_when_config_omits_key(thoth_home: Path) -> None:
@@ -159,8 +159,8 @@ def test_env_value_survives_when_config_omits_key(thoth_home: Path) -> None:
     config key should NOT clobber the .env value.
     """
     _write_config(thoth_home, agent_cfg={})  # no max_turns
-    _write_env(thoth_home, {"HERMES_MAX_ITERATIONS": "123"})
+    _write_env(thoth_home, {"THOTH_MAX_ITERATIONS": "123"})
 
     env = _run_gateway_import(thoth_home, initial_env={})
 
-    assert env.get("HERMES_MAX_ITERATIONS") == "123"
+    assert env.get("THOTH_MAX_ITERATIONS") == "123"

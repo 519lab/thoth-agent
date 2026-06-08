@@ -241,7 +241,7 @@ Most users should treat `agent/prompt_builder.py` as implementation code, not a 
 - Project context files such as `.hermes.md`, `HERMES.md`, `AGENTS.md`, `CLAUDE.md`, or `.cursorrules` — inject repo-specific working rules.
 - Skills — package reusable workflows and references without editing core prompt code.
 - Optional system prompt config / API overrides — add deployment-specific instruction text without forking Thoth.
-- Ephemeral overlays such as `HERMES_EPHEMERAL_SYSTEM_PROMPT` or prefill messages — add turn-scoped guidance that should not become part of the cached prompt prefix.
+- Ephemeral overlays such as `THOTH_EPHEMERAL_SYSTEM_PROMPT` or prefill messages — add turn-scoped guidance that should not become part of the cached prompt prefix.
 
 ### When to edit code instead
 

@@ -80,7 +80,7 @@ def _add_accept_hooks_flag(parser) -> None:
         default=argparse.SUPPRESS,
         help=(
             "Auto-approve unseen shell hooks without a TTY prompt "
-            "(equivalent to HERMES_ACCEPT_HOOKS=1 / hooks_auto_accept: true)."
+            "(equivalent to THOTH_ACCEPT_HOOKS=1 / hooks_auto_accept: true)."
         ),
     )
 
@@ -212,13 +212,13 @@ from thoth_cli.env_loader import load_thoth_dotenv
 
 load_thoth_dotenv(project_env=PROJECT_ROOT / ".env")
 
-# Bridge security.redact_secrets from config.yaml → HERMES_REDACT_SECRETS env
+# Bridge security.redact_secrets from config.yaml → THOTH_REDACT_SECRETS env
 # var BEFORE thoth_logging imports agent.redact (which snapshots the flag at
 # module-import time). Without this, config.yaml's toggle is ignored because
 # the setup_logging() call below imports agent.redact, which reads the env var
 # exactly once. Env var in .env still wins — this is config.yaml fallback only.
 try:
-    if "HERMES_REDACT_SECRETS" not in os.environ:
+    if "THOTH_REDACT_SECRETS" not in os.environ:
         import yaml as _yaml_early
 
         _cfg_path = get_thoth_home() / "config.yaml"
@@ -228,7 +228,7 @@ try:
             if isinstance(_early_sec_cfg, dict):
                 _early_redact = _early_sec_cfg.get("redact_secrets")
                 if _early_redact is not None:
-                    os.environ["HERMES_REDACT_SECRETS"] = str(_early_redact).lower()
+                    os.environ["THOTH_REDACT_SECRETS"] = str(_early_redact).lower()
             del _early_sec_cfg
         del _cfg_path
 except Exception:
@@ -360,7 +360,7 @@ def _termux_bundled_skills_stamp_path() -> Path:
 def _termux_bundled_skills_sync_needed() -> bool:
     if not _is_termux_startup_environment():
         return True
-    if os.environ.get("HERMES_TERMUX_FORCE_SKILLS_SYNC") == "1":
+    if os.environ.get("THOTH_TERMUX_FORCE_SKILLS_SYNC") == "1":
         return True
     try:
         stamp = _termux_bundled_skills_stamp_path()
@@ -400,7 +400,7 @@ def _sync_bundled_skills_for_startup() -> bool:
 def _termux_should_prefetch_update_check() -> bool:
     if not _is_termux_startup_environment():
         return True
-    return os.environ.get("HERMES_TERMUX_PREFETCH_UPDATES") == "1"
+    return os.environ.get("THOTH_TERMUX_PREFETCH_UPDATES") == "1"
 
 
 def _relative_time(ts) -> str:
@@ -1164,9 +1164,9 @@ def _tui_need_rebuild(root: Path) -> bool:
     The TUI bundle is self-contained. Rebuilding it on every launch adds a
     visible cold-start tax on slow Termux CPUs, while a simple mtime freshness
     check still rebuilds immediately after source updates, dependency updates,
-    or local edits. Set ``HERMES_TUI_FORCE_BUILD=1`` to force the old behaviour.
+    or local edits. Set ``THOTH_TUI_FORCE_BUILD=1`` to force the old behaviour.
     """
-    force = (os.environ.get("HERMES_TUI_FORCE_BUILD") or "").strip().lower()
+    force = (os.environ.get("THOTH_TUI_FORCE_BUILD") or "").strip().lower()
     if force in {"1", "true", "yes", "on"}:
         return True
 
@@ -1196,11 +1196,11 @@ def _ensure_tui_node() -> None:
     was used (nvm, fnm, proto, brew, or the bundled fallback).
 
     Idempotent no-op when node+npm are already discoverable. Set
-    ``HERMES_SKIP_NODE_BOOTSTRAP=1`` to disable auto-install.
+    ``THOTH_SKIP_NODE_BOOTSTRAP=1`` to disable auto-install.
     """
     if shutil.which("node") and shutil.which("npm"):
         return
-    if os.environ.get("HERMES_SKIP_NODE_BOOTSTRAP"):
+    if os.environ.get("THOTH_SKIP_NODE_BOOTSTRAP"):
         return
 
     helper = PROJECT_ROOT / "scripts" / "lib" / "node-bootstrap.sh"
@@ -1254,12 +1254,12 @@ def _find_bundled_tui(thoth_cli_dir: Path | None = None) -> Path | None:
 
 
 def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
-    """TUI: --dev → tsx src; else node dist (HERMES_TUI_DIR prebuilt or esbuild)."""
+    """TUI: --dev → tsx src; else node dist (THOTH_TUI_DIR prebuilt or esbuild)."""
     _ensure_tui_node()
 
     def _node_bin(bin: str) -> str:
         if bin == "node":
-            env_node = os.environ.get("HERMES_NODE")
+            env_node = os.environ.get("THOTH_NODE")
             if env_node and os.path.isfile(env_node) and os.access(env_node, os.X_OK):
                 return env_node
         path = shutil.which(bin)
@@ -1276,12 +1276,12 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
         return path
 
     # Footgun: --dev against a prebuilt bundle that has no source/node_modules.
-    ext_dir = os.environ.get("HERMES_TUI_DIR")
+    ext_dir = os.environ.get("THOTH_TUI_DIR")
     if tui_dev and ext_dir:
         print(
-            f"Error: --dev is incompatible with HERMES_TUI_DIR={ext_dir}\n"
+            f"Error: --dev is incompatible with THOTH_TUI_DIR={ext_dir}\n"
             f"The prebuilt TUI has no source code to hot-reload.\n"
-            f"Unset HERMES_TUI_DIR (e.g. `unset HERMES_TUI_DIR`) to use --dev from a checkout.",
+            f"Unset THOTH_TUI_DIR (e.g. `unset THOTH_TUI_DIR`) to use --dev from a checkout.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -1305,7 +1305,7 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
     did_install = False
     if _tui_need_npm_install(tui_dir):
         npm = _node_bin("npm")
-        if not os.environ.get("HERMES_QUIET"):
+        if not os.environ.get("THOTH_QUIET"):
             print("Installing TUI dependencies…")
         result = subprocess.run(
             [npm, "install", "--silent", "--no-fund", "--no-audit", "--progress=false"],
@@ -1429,12 +1429,12 @@ def _launch_tui(
         prefix="hermes-tui-active-session-", suffix=".json"
     )
     os.close(active_session_fd)
-    env["HERMES_TUI_ACTIVE_SESSION_FILE"] = active_session_file
-    env["HERMES_PYTHON_SRC_ROOT"] = os.environ.get(
-        "HERMES_PYTHON_SRC_ROOT", str(PROJECT_ROOT)
+    env["THOTH_TUI_ACTIVE_SESSION_FILE"] = active_session_file
+    env["THOTH_PYTHON_SRC_ROOT"] = os.environ.get(
+        "THOTH_PYTHON_SRC_ROOT", str(PROJECT_ROOT)
     )
-    env.setdefault("HERMES_PYTHON", sys.executable)
-    env.setdefault("HERMES_CWD", os.getcwd())
+    env.setdefault("THOTH_PYTHON", sys.executable)
+    env.setdefault("THOTH_CWD", os.getcwd())
     env.setdefault("NODE_ENV", "development" if tui_dev else "production")
 
     wt_info = None
@@ -1456,18 +1456,18 @@ def _launch_tui(
             wt_info = None
         if not wt_info:
             sys.exit(1)
-        env["HERMES_CWD"] = wt_info["path"]
+        env["THOTH_CWD"] = wt_info["path"]
         env["TERMINAL_CWD"] = wt_info["path"]
 
     if model:
-        env["HERMES_MODEL"] = model
-        env["HERMES_INFERENCE_MODEL"] = model
+        env["THOTH_MODEL"] = model
+        env["THOTH_INFERENCE_MODEL"] = model
     if provider:
-        env["HERMES_TUI_PROVIDER"] = provider
-        env["HERMES_INFERENCE_PROVIDER"] = provider
+        env["THOTH_TUI_PROVIDER"] = provider
+        env["THOTH_INFERENCE_PROVIDER"] = provider
     tui_toolsets = _normalize_tui_toolsets(toolsets)
     if tui_toolsets:
-        env["HERMES_TUI_TOOLSETS"] = ",".join(tui_toolsets)
+        env["THOTH_TUI_TOOLSETS"] = ",".join(tui_toolsets)
     if skills:
         if isinstance(skills, (list, tuple)):
             flattened = []
@@ -1476,27 +1476,27 @@ def _launch_tui(
                     part.strip() for part in str(item).split(",") if part.strip()
                 )
             if flattened:
-                env["HERMES_TUI_SKILLS"] = ",".join(flattened)
+                env["THOTH_TUI_SKILLS"] = ",".join(flattened)
         else:
             value = str(skills).strip()
             if value:
-                env["HERMES_TUI_SKILLS"] = value
+                env["THOTH_TUI_SKILLS"] = value
     if query:
-        env["HERMES_TUI_QUERY"] = query
+        env["THOTH_TUI_QUERY"] = query
     if image:
-        env["HERMES_TUI_IMAGE"] = image
+        env["THOTH_TUI_IMAGE"] = image
     if checkpoints:
-        env["HERMES_TUI_CHECKPOINTS"] = "1"
+        env["THOTH_TUI_CHECKPOINTS"] = "1"
     if pass_session_id:
-        env["HERMES_TUI_PASS_SESSION_ID"] = "1"
+        env["THOTH_TUI_PASS_SESSION_ID"] = "1"
     if max_turns is not None:
-        env["HERMES_TUI_MAX_TURNS"] = str(max_turns)
+        env["THOTH_TUI_MAX_TURNS"] = str(max_turns)
     if verbose:
-        env["HERMES_TUI_TOOL_PROGRESS"] = "verbose"
+        env["THOTH_TUI_TOOL_PROGRESS"] = "verbose"
     elif quiet:
-        env["HERMES_TUI_TOOL_PROGRESS"] = "off"
+        env["THOTH_TUI_TOOL_PROGRESS"] = "off"
     if accept_hooks:
-        env["HERMES_ACCEPT_HOOKS"] = "1"
+        env["THOTH_ACCEPT_HOOKS"] = "1"
     # Guarantee an 8GB V8 heap for the TUI. Default node cap is ~1.5–4GB
     # depending on version and can fatal-OOM on long sessions with large
     # transcripts / reasoning blobs. Token-level merge: respect any
@@ -1508,16 +1508,16 @@ def _launch_tui(
     if not any(t.startswith("--max-old-space-size=") for t in _tokens):
         _tokens.append("--max-old-space-size=8192")
     env["NODE_OPTIONS"] = " ".join(_tokens)
-    # HERMES_TUI_RESUME is an internal hand-off from the Python wrapper to the
+    # THOTH_TUI_RESUME is an internal hand-off from the Python wrapper to the
     # Ink app.  Because we start from os.environ.copy(), an exported/stale value
     # in the user's shell would otherwise make a plain `thoth --tui` try to
     # resume a non-existent session and leave the UI at "error: session not
     # found" with no live session.  Only forward a resume id that argparse
     # resolved for this invocation; direct `node ui-tui/dist/entry.js` users can
-    # still set HERMES_TUI_RESUME themselves.
-    env.pop("HERMES_TUI_RESUME", None)
+    # still set THOTH_TUI_RESUME themselves.
+    env.pop("THOTH_TUI_RESUME", None)
     if resume_session_id:
-        env["HERMES_TUI_RESUME"] = resume_session_id
+        env["THOTH_TUI_RESUME"] = resume_session_id
 
     argv, cwd = _make_tui_argv(tui_dir, tui_dev)
     code: Optional[int] = None
@@ -1556,7 +1556,7 @@ def _launch_tui(
 
 
 def _pin_kanban_board_env() -> None:
-    """Pin the active kanban board into ``HERMES_KANBAN_BOARD`` for the chat session.
+    """Pin the active kanban board into ``THOTH_KANBAN_BOARD`` for the chat session.
 
     Without this, in-process tools (``kanban_*``) and shelled-out CLI calls
     (``thoth kanban …``) resolve the board on different paths: the env-pin if
@@ -1566,19 +1566,19 @@ def _pin_kanban_board_env() -> None:
     calls hit board B (#20074). Pinning at chat boot mirrors what the
     dispatcher already does for spawned workers.
     """
-    if os.environ.get("HERMES_KANBAN_BOARD"):
+    if os.environ.get("THOTH_KANBAN_BOARD"):
         return
     try:
         from thoth_cli.kanban_db import get_current_board
 
-        os.environ["HERMES_KANBAN_BOARD"] = get_current_board()
+        os.environ["THOTH_KANBAN_BOARD"] = get_current_board()
     except Exception:
         pass
 
 
 def cmd_chat(args):
     """Run interactive chat CLI."""
-    use_tui = getattr(args, "tui", False) or os.environ.get("HERMES_TUI") == "1"
+    use_tui = getattr(args, "tui", False) or os.environ.get("THOTH_TUI") == "1"
 
     # Resolve --continue into --resume with the latest session or by name
     continue_val = getattr(args, "continue_last", None)
@@ -1688,7 +1688,7 @@ def cmd_chat(args):
 
     # --yolo: bypass all dangerous command approvals
     if getattr(args, "yolo", False):
-        os.environ["HERMES_YOLO_MODE"] = "1"
+        os.environ["THOTH_YOLO_MODE"] = "1"
 
     # --ignore-user-config: make load_cli_config() / load_config() skip the
     # user's ~/.hermes/config.yaml and return built-in defaults. Set BEFORE
@@ -1696,17 +1696,17 @@ def cmd_chat(args):
     # import time). Credentials in .env are still loaded — this flag only
     # ignores behavioral/config settings.
     if getattr(args, "ignore_user_config", False):
-        os.environ["HERMES_IGNORE_USER_CONFIG"] = "1"
+        os.environ["THOTH_IGNORE_USER_CONFIG"] = "1"
 
     # --ignore-rules: skip auto-injection of AGENTS.md/SOUL.md/.cursorrules
     # (rules), memory entries, and any preloaded skills coming from user config.
     # Maps to AIAgent(skip_context_files=True, skip_memory=True).
     if getattr(args, "ignore_rules", False):
-        os.environ["HERMES_IGNORE_RULES"] = "1"
+        os.environ["THOTH_IGNORE_RULES"] = "1"
 
     # --source: tag session source for filtering (e.g. 'tool' for third-party integrations)
     if getattr(args, "source", None):
-        os.environ["HERMES_SESSION_SOURCE"] = args.source
+        os.environ["THOTH_SESSION_SOURCE"] = args.source
 
     _pin_kanban_board_env()
 
@@ -2083,7 +2083,7 @@ def select_provider_and_model(args=None):
         config_provider = model_cfg.get("provider")
 
     effective_provider = (
-        config_provider or os.getenv("HERMES_INFERENCE_PROVIDER") or "auto"
+        config_provider or os.getenv("THOTH_INFERENCE_PROVIDER") or "auto"
     )
     compatible_custom_providers = get_compatible_custom_providers(config)
     def _named_custom_provider_map(cfg) -> dict[str, dict[str, str]]:
@@ -4823,7 +4823,7 @@ def _model_flow_copilot_acp(config, current_model=""):
     except Exception as exc:
         print(f"  ⚠ {exc}")
         print(
-            "  Set HERMES_COPILOT_ACP_COMMAND or COPILOT_CLI_PATH if Copilot CLI is installed elsewhere."
+            "  Set THOTH_COPILOT_ACP_COMMAND or COPILOT_CLI_PATH if Copilot CLI is installed elsewhere."
         )
         return
 
@@ -8800,13 +8800,13 @@ def _check_alembic_consistency(dsn: str) -> dict:
 def _run_db_migration_on_update() -> None:
     """Run ``alembic upgrade head`` during ``thoth update``.
 
-    No-op unless ``HERMES_PG_DSN`` is configured.  Performs a read-only
+    No-op unless ``THOTH_PG_DSN`` is configured.  Performs a read-only
     drift check first (:func:`_check_alembic_consistency`); on detected
     drift it prints the exact recovery command and does NOT attempt the
     upgrade (which would crash mid-ALTER).  On upgrade failure it prints a
     clear, actionable error but does not hard-crash the rest of the update.
     """
-    dsn = os.environ.get("HERMES_PG_DSN")
+    dsn = os.environ.get("THOTH_PG_DSN")
     if not dsn:
         return  # SQLite / no-Postgres install — nothing to migrate.
 
@@ -9443,7 +9443,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             print("  ✓ Configuration is up to date")
 
         # Auto-run DB schema migrations (alembic upgrade head). No-op unless
-        # HERMES_PG_DSN is set. Best-effort: a migration failure prints an
+        # THOTH_PG_DSN is set. Best-effort: a migration failure prints an
         # actionable error but does not abort the rest of the update.
         try:
             _run_db_migration_on_update()
@@ -10890,7 +10890,7 @@ def cmd_dashboard(args):
         print(f"Import error: {e}")
         sys.exit(1)
 
-    if "HERMES_WEB_DIST" not in os.environ and not getattr(args, "skip_build", False):
+    if "THOTH_WEB_DIST" not in os.environ and not getattr(args, "skip_build", False):
         if not _build_web_ui(PROJECT_ROOT / "web", fatal=True):
             sys.exit(1)
     elif getattr(args, "skip_build", False):
@@ -10898,8 +10898,8 @@ def cmd_dashboard(args):
         # Verify the dist actually exists; otherwise the server will start
         # and serve 404s with no obvious cause (issue #23817).
         _dist_root = (
-            Path(os.environ["HERMES_WEB_DIST"])
-            if "HERMES_WEB_DIST" in os.environ
+            Path(os.environ["THOTH_WEB_DIST"])
+            if "THOTH_WEB_DIST" in os.environ
             else PROJECT_ROOT / "thoth_cli" / "web_dist"
         )
         if not (_dist_root / "index.html").exists():
@@ -10911,7 +10911,7 @@ def cmd_dashboard(args):
 
     from thoth_cli.web_server import start_server
 
-    embedded_chat = args.tui or os.environ.get("HERMES_DASHBOARD_TUI") == "1"
+    embedded_chat = args.tui or os.environ.get("THOTH_DASHBOARD_TUI") == "1"
     start_server(
         host=args.host,
         port=args.port,
@@ -11155,13 +11155,13 @@ def _try_termux_fast_cli_launch() -> bool:
     """Run obvious Termux non-TUI chat/oneshot/version paths on a light parser."""
     if not _is_termux_startup_environment():
         return False
-    if os.environ.get("HERMES_TERMUX_DISABLE_FAST_CLI") == "1":
+    if os.environ.get("THOTH_TERMUX_DISABLE_FAST_CLI") == "1":
         return False
 
     argv = sys.argv[1:]
     if "-h" in argv or "--help" in argv:
         return False
-    if os.environ.get("HERMES_TUI") == "1" or "--tui" in argv:
+    if os.environ.get("THOTH_TUI") == "1" or "--tui" in argv:
         return False
 
     if _is_termux_fast_version_argv(argv):
@@ -11226,7 +11226,7 @@ def _try_termux_fast_tui_launch() -> bool:
     if "-h" in sys.argv[1:] or "--help" in sys.argv[1:]:
         return False
 
-    wants_tui = os.environ.get("HERMES_TUI") == "1" or "--tui" in sys.argv[1:]
+    wants_tui = os.environ.get("THOTH_TUI") == "1" or "--tui" in sys.argv[1:]
     if not wants_tui:
         return False
 
@@ -11245,7 +11245,7 @@ def _try_termux_fast_tui_launch() -> bool:
         return False
     if getattr(args, "command", None) not in {None, "chat"}:
         return False
-    if not (getattr(args, "tui", False) or os.environ.get("HERMES_TUI") == "1"):
+    if not (getattr(args, "tui", False) or os.environ.get("THOTH_TUI") == "1"):
         return False
 
     cmd_chat(args)
@@ -11254,7 +11254,7 @@ def _try_termux_fast_tui_launch() -> bool:
 
 def main():
     """Main entry point for thoth CLI."""
-    # PG pool initialisation: eager when ``HERMES_PG_DSN`` is set, no-op
+    # PG pool initialisation: eager when ``THOTH_PG_DSN`` is set, no-op
     # otherwise. ``thoth_db.ensure_pool_sync()`` returns False without
     # raising when the DSN env var isn't configured, so subcommands like
     # ``thoth --help`` or ``thoth version`` that never touch the DB
@@ -11972,7 +11972,7 @@ def main():
         default="login",
     )
     auth_spotify.add_argument(
-        "--client-id", help="Spotify app client_id (or set HERMES_SPOTIFY_CLIENT_ID)"
+        "--client-id", help="Spotify app client_id (or set THOTH_SPOTIFY_CLIENT_ID)"
     )
     auth_spotify.add_argument(
         "--redirect-uri",
@@ -13305,7 +13305,7 @@ Examples:
             # so we need to prime the pool here from sync context.
             if not _hermes_db.ensure_pool_sync():
                 print(
-                    "Error: HERMES_PG_DSN not set. Set it in your shell "
+                    "Error: THOTH_PG_DSN not set. Set it in your shell "
                     "or run via the launcher (~/.local/bin/thoth) which "
                     "injects it from the install-time defaults."
                 )
@@ -14015,7 +14015,7 @@ Examples:
         action="store_true",
         help=(
             "Expose the in-browser Chat tab (embedded `thoth --tui` via PTY/WebSocket). "
-            "Alternatively set HERMES_DASHBOARD_TUI=1."
+            "Alternatively set THOTH_DASHBOARD_TUI=1."
         ),
     )
     dashboard_parser.add_argument(
@@ -14123,7 +14123,7 @@ Examples:
         help="Copy legacy ~/.hermes/state.db into the configured PostgreSQL database",
         description=(
             "One-shot migration: reads sessions and messages from a legacy SQLite "
-            "state.db and copies them into the PG schema. Requires HERMES_PG_DSN "
+            "state.db and copies them into the PG schema. Requires THOTH_PG_DSN "
             "to be set and alembic upgrade head to have been run."
         ),
     )

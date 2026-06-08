@@ -6,7 +6,7 @@ Tests use `thoth_db_initialized_sync` from tests/conftest.py which:
   - Initialises the thoth_db pool
   - Yields the DSN
 
-The kanban_db module detects HERMES_PG_DSN and uses PG automatically.
+The kanban_db module detects THOTH_PG_DSN and uses PG automatically.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ import pytest_asyncio
 def _set_pg_dsn(thoth_db_initialized_sync, monkeypatch):
     """Make kanban_db use PG for the duration of each test."""
     monkeypatch.setenv("THOTH_PG_DSN", thoth_db_initialized_sync)
-    monkeypatch.setenv("HERMES_PG_DSN", thoth_db_initialized_sync)
+    monkeypatch.setenv("THOTH_PG_DSN", thoth_db_initialized_sync)
 
 
 @pytest.fixture

@@ -1527,24 +1527,24 @@ class FeishuAdapter(BasePlatformAdapter):
             bot_name=os.getenv("FEISHU_BOT_NAME", "").strip(),
             dedup_cache_size=max(
                 32,
-                int(os.getenv("HERMES_FEISHU_DEDUP_CACHE_SIZE", str(_DEFAULT_DEDUP_CACHE_SIZE))),
+                int(os.getenv("THOTH_FEISHU_DEDUP_CACHE_SIZE", str(_DEFAULT_DEDUP_CACHE_SIZE))),
             ),
             text_batch_delay_seconds=float(
-                os.getenv("HERMES_FEISHU_TEXT_BATCH_DELAY_SECONDS", str(_DEFAULT_TEXT_BATCH_DELAY_SECONDS))
+                os.getenv("THOTH_FEISHU_TEXT_BATCH_DELAY_SECONDS", str(_DEFAULT_TEXT_BATCH_DELAY_SECONDS))
             ),
             text_batch_split_delay_seconds=float(
-                os.getenv("HERMES_FEISHU_TEXT_BATCH_SPLIT_DELAY_SECONDS", "2.0")
+                os.getenv("THOTH_FEISHU_TEXT_BATCH_SPLIT_DELAY_SECONDS", "2.0")
             ),
             text_batch_max_messages=max(
                 1,
-                int(os.getenv("HERMES_FEISHU_TEXT_BATCH_MAX_MESSAGES", str(_DEFAULT_TEXT_BATCH_MAX_MESSAGES))),
+                int(os.getenv("THOTH_FEISHU_TEXT_BATCH_MAX_MESSAGES", str(_DEFAULT_TEXT_BATCH_MAX_MESSAGES))),
             ),
             text_batch_max_chars=max(
                 1,
-                int(os.getenv("HERMES_FEISHU_TEXT_BATCH_MAX_CHARS", str(_DEFAULT_TEXT_BATCH_MAX_CHARS))),
+                int(os.getenv("THOTH_FEISHU_TEXT_BATCH_MAX_CHARS", str(_DEFAULT_TEXT_BATCH_MAX_CHARS))),
             ),
             media_batch_delay_seconds=float(
-                os.getenv("HERMES_FEISHU_MEDIA_BATCH_DELAY_SECONDS", str(_DEFAULT_MEDIA_BATCH_DELAY_SECONDS))
+                os.getenv("THOTH_FEISHU_MEDIA_BATCH_DELAY_SECONDS", str(_DEFAULT_MEDIA_BATCH_DELAY_SECONDS))
             ),
             webhook_host=str(
                 extra.get("webhook_host") or os.getenv("FEISHU_WEBHOOK_HOST", _DEFAULT_WEBHOOK_HOST)

@@ -17,7 +17,7 @@ def _isolate_thoth(tmp_path, monkeypatch):
 def _make_agent(monkeypatch):
     """Create a minimal AIAgent-like object with just the methods under test."""
     monkeypatch.setenv("OPENROUTER_API_KEY", "")
-    monkeypatch.setenv("HERMES_INFERENCE_PROVIDER", "")
+    monkeypatch.setenv("THOTH_INFERENCE_PROVIDER", "")
     # Avoid full AIAgent init — just import the class and build a stub
     import run_agent as _ra
 

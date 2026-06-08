@@ -28,7 +28,7 @@ async def booted(thoth_db_initialized):
 
 @pytest.fixture(autouse=True)
 def _summarizer_on(monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_SUMMARIZER", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_SUMMARIZER", "1")
     monkeypatch.setenv("SUMMARIZER_MIN_SLICES", "3")
     monkeypatch.setattr(Summarizer, "_resolve_client", staticmethod(lambda: (object(), "mock")))
 
@@ -112,7 +112,7 @@ async def test_summarizer_skips_recent_slices(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_summarizer_disabled_is_noop(booted, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_SUMMARIZER", "0")
+    monkeypatch.setenv("THOTH_SUBSTRATE_SUMMARIZER", "0")
     for i in range(5):
         await _commit_old(booted, f"old {i}", age_h=48)
 

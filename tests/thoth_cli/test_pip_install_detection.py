@@ -22,7 +22,7 @@ def test_git_install_detected_when_git_dir_exists(tmp_path):
 
 
 def test_managed_install_takes_precedence(tmp_path):
-    """When HERMES_MANAGED is set, that takes precedence over git detection."""
+    """When THOTH_MANAGED is set, that takes precedence over git detection."""
     (tmp_path / ".git").mkdir()
     with patch("thoth_cli.config.get_managed_system", return_value="NixOS"), \
          patch("thoth_cli.config.get_thoth_home", return_value=tmp_path):

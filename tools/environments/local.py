@@ -73,7 +73,7 @@ def _resolve_safe_cwd(cwd: str) -> str:
 
 
 # Thoth-internal env vars that should NOT leak into terminal subprocesses.
-_HERMES_PROVIDER_ENV_FORCE_PREFIX = "_HERMES_FORCE_"
+_THOTH_PROVIDER_ENV_FORCE_PREFIX = "_THOTH_FORCE_"
 
 
 def _build_provider_env_blocklist() -> frozenset:
@@ -193,14 +193,14 @@ def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = Non
     sanitized: dict[str, str] = {}
 
     for key, value in (base_env or {}).items():
-        if key.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
+        if key.startswith(_THOTH_PROVIDER_ENV_FORCE_PREFIX):
             continue
         if key not in _THOTH_PROVIDER_ENV_BLOCKLIST or _is_passthrough(key):
             sanitized[key] = value
 
     for key, value in (extra_env or {}).items():
-        if key.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
-            real_key = key[len(_HERMES_PROVIDER_ENV_FORCE_PREFIX):]
+        if key.startswith(_THOTH_PROVIDER_ENV_FORCE_PREFIX):
+            real_key = key[len(_THOTH_PROVIDER_ENV_FORCE_PREFIX):]
             sanitized[real_key] = value
         elif key not in _THOTH_PROVIDER_ENV_BLOCKLIST or _is_passthrough(key):
             sanitized[key] = value
@@ -227,7 +227,7 @@ def _find_bash() -> str:
             or "/bin/sh"
         )
 
-    custom = os.environ.get("HERMES_GIT_BASH_PATH")
+    custom = os.environ.get("THOTH_GIT_BASH_PATH")
     if custom and os.path.isfile(custom):
         return custom
 
@@ -265,7 +265,7 @@ def _find_bash() -> str:
     raise RuntimeError(
         "Git Bash not found. Thoth Agent requires Git for Windows on Windows.\n"
         "Install it from: https://git-scm.com/download/win\n"
-        "Or set HERMES_GIT_BASH_PATH to your bash.exe location."
+        "Or set THOTH_GIT_BASH_PATH to your bash.exe location."
     )
 
 
@@ -290,8 +290,8 @@ def _make_run_env(env: dict) -> dict:
     merged = dict(os.environ | env)
     run_env = {}
     for k, v in merged.items():
-        if k.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
-            real_key = k[len(_HERMES_PROVIDER_ENV_FORCE_PREFIX):]
+        if k.startswith(_THOTH_PROVIDER_ENV_FORCE_PREFIX):
+            real_key = k[len(_THOTH_PROVIDER_ENV_FORCE_PREFIX):]
             run_env[real_key] = v
         elif k not in _THOTH_PROVIDER_ENV_BLOCKLIST or _is_passthrough(k):
             run_env[k] = v

@@ -1099,7 +1099,7 @@ def run_conversation(
                 except Exception:
                     pass
 
-                if env_var_enabled("HERMES_DUMP_REQUESTS"):
+                if env_var_enabled("THOTH_DUMP_REQUESTS"):
                     agent._dump_api_request_debug(api_kwargs, reason="preflight")
 
                 # Always prefer the streaming path — even without stream
@@ -3922,7 +3922,7 @@ def run_conversation(
         # protocol violation).  The agent loop strips tools before calling
         # _handle_max_iterations, so the model cannot call kanban_block
         # itself — we must do it on its behalf.
-        _kanban_task = os.environ.get("HERMES_KANBAN_TASK")
+        _kanban_task = os.environ.get("THOTH_KANBAN_TASK")
         if _kanban_task:
             try:
                 _ra().handle_function_call(

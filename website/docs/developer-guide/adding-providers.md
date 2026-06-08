@@ -116,7 +116,7 @@ When you add a plugin and it calls `register_provider()`, the following wire up 
 8. `thoth setup` wizard delegates to `main.py` automatically
 9. `provider:model` alias syntax works
 10. Runtime resolver returns the correct `base_url` and `api_key`
-11. `HERMES_INFERENCE_PROVIDER` env-var override accepts the provider id
+11. `THOTH_INFERENCE_PROVIDER` env-var override accepts the provider id
 12. Fallback model activation can switch into the provider cleanly
 
 User plugins at `$THOTH_HOME/plugins/model-providers/<name>/` override bundled plugins of the same name (last-writer-wins in `register_provider()`) — so third parties can monkey-patch or replace any built-in profile without editing the repo.

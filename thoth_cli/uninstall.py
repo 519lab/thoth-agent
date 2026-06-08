@@ -237,7 +237,7 @@ def uninstall_gateway_service():
 # The installer (``scripts/install.ps1``) does four Windows-only things that
 # ``remove_path_from_shell_configs`` / ``remove_wrapper_script`` don't cover:
 #
-#   1. Sets User-scope env vars ``THOTH_HOME`` and ``HERMES_GIT_BASH_PATH``
+#   1. Sets User-scope env vars ``THOTH_HOME`` and ``THOTH_GIT_BASH_PATH``
 #      via ``[Environment]::SetEnvironmentVariable(..., "User")``.  These
 #      don't live in ~/.bashrc — they're in the Windows registry at
 #      HKCU\Environment.
@@ -315,7 +315,7 @@ def remove_path_from_windows_registry(thoth_home: Path) -> list[str]:
 
 
 def remove_thoth_env_vars_windows() -> list[str]:
-    """Delete THOTH_HOME and HERMES_GIT_BASH_PATH from User-scope env vars."""
+    """Delete THOTH_HOME and THOTH_GIT_BASH_PATH from User-scope env vars."""
     try:
         import winreg
     except ImportError:
@@ -325,7 +325,7 @@ def remove_thoth_env_vars_windows() -> list[str]:
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0,
                             winreg.KEY_READ | winreg.KEY_WRITE) as key:
-            for name in ("THOTH_HOME", "HERMES_GIT_BASH_PATH"):
+            for name in ("THOTH_HOME", "THOTH_GIT_BASH_PATH"):
                 try:
                     winreg.QueryValueEx(key, name)
                 except FileNotFoundError:
@@ -580,7 +580,7 @@ def run_uninstall(args):
         else:
             log_info("No Thoth-owned PATH entries in User environment")
 
-        log_info("Removing THOTH_HOME / HERMES_GIT_BASH_PATH User env vars...")
+        log_info("Removing THOTH_HOME / THOTH_GIT_BASH_PATH User env vars...")
         removed_env = remove_thoth_env_vars_windows()
         if removed_env:
             for name in removed_env:

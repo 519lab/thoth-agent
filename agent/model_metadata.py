@@ -39,7 +39,7 @@ def resolve_ca_bundle() -> str | None:
     to the caller's default (certifi).
 
     Priority:
-      1. Explicit env override — ``HERMES_CA_BUNDLE`` (Thoth's own
+      1. Explicit env override — ``THOTH_CA_BUNDLE`` (Thoth's own
          convention), ``REQUESTS_CA_BUNDLE``, or ``SSL_CERT_FILE``.
       2. The OS system trust store, if present — a superset of certifi
          that also carries internally-installed CAs, so internal-CA
@@ -47,10 +47,10 @@ def resolve_ca_bundle() -> str | None:
       3. ``None`` — caller falls back to certifi (httpx/requests default).
 
     A single resolver covers both the `requests` calls here and the main
-    model client's `httpx` transport (run_agent), so HERMES_CA_BUNDLE now
+    model client's `httpx` transport (run_agent), so THOTH_CA_BUNDLE now
     works for the model client too — not just metadata discovery.
     """
-    for env_var in ("HERMES_CA_BUNDLE", "REQUESTS_CA_BUNDLE", "SSL_CERT_FILE"):
+    for env_var in ("THOTH_CA_BUNDLE", "REQUESTS_CA_BUNDLE", "SSL_CERT_FILE"):
         val = os.getenv(env_var)
         if val and os.path.isfile(val):
             return val

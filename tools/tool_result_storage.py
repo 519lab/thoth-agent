@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 PERSISTED_OUTPUT_TAG = "<persisted-output>"
 PERSISTED_OUTPUT_CLOSING_TAG = "</persisted-output>"
 STORAGE_DIR = "/tmp/hermes-results"
-HEREDOC_MARKER = "HERMES_PERSIST_EOF"
+HEREDOC_MARKER = "THOTH_PERSIST_EOF"
 _BUDGET_TOOL_NAME = "__budget_enforcement__"
 
 
@@ -72,7 +72,7 @@ def _heredoc_marker(content: str) -> str:
     """Return a heredoc delimiter that doesn't collide with content."""
     if HEREDOC_MARKER not in content:
         return HEREDOC_MARKER
-    return f"HERMES_PERSIST_{uuid.uuid4().hex[:8]}"
+    return f"THOTH_PERSIST_{uuid.uuid4().hex[:8]}"
 
 
 def _write_to_sandbox(content: str, remote_path: str, env) -> bool:

@@ -148,7 +148,7 @@ of screenshot context, not ~600K.
   Linux or Windows. For cross-platform GUI automation, use the `browser`
   toolset.
 - **Private SPI risk.** Apple can change SkyLight's symbol surface in any
-  OS update. Pin the driver version with the `HERMES_CUA_DRIVER_VERSION`
+  OS update. Pin the driver version with the `THOTH_CUA_DRIVER_VERSION`
   env var if you want reproducibility across a macOS bump.
 - **Performance.** Background mode is slower than foreground —
   SkyLight-routed events take ~5-20ms vs direct HID posting. Not
@@ -162,14 +162,14 @@ of screenshot context, not ~600K.
 Override the driver binary path (tests / CI):
 
 ```
-HERMES_CUA_DRIVER_CMD=/opt/homebrew/bin/cua-driver
-HERMES_CUA_DRIVER_VERSION=0.5.0    # optional pin
+THOTH_CUA_DRIVER_CMD=/opt/homebrew/bin/cua-driver
+THOTH_CUA_DRIVER_VERSION=0.5.0    # optional pin
 ```
 
 Swap the backend entirely (for testing):
 
 ```
-HERMES_COMPUTER_USE_BACKEND=noop   # records calls, no side effects
+THOTH_COMPUTER_USE_BACKEND=noop   # records calls, no side effects
 ```
 
 ## Troubleshooting

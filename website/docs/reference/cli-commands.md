@@ -29,7 +29,7 @@ thoth [global-options] <command> [subcommand/options]
 | `--pass-session-id` | Include the session ID in the agent's system prompt. |
 | `--ignore-user-config` | Ignore `~/.hermes/config.yaml` and fall back to built-in defaults. Credentials in `.env` are still loaded. |
 | `--ignore-rules` | Skip auto-injection of `AGENTS.md`, `SOUL.md`, `.cursorrules`, memory, and preloaded skills. |
-| `--tui` | Launch the [TUI](../user-guide/tui.md) instead of the classic CLI. Equivalent to `HERMES_TUI=1`. |
+| `--tui` | Launch the [TUI](../user-guide/tui.md) instead of the classic CLI. Equivalent to `THOTH_TUI=1`. |
 | `--dev` | With `--tui`: run the TypeScript sources directly via `tsx` instead of the prebuilt bundle (for TUI contributors). |
 
 ## Top-level commands
@@ -136,13 +136,13 @@ Per-run overrides (no mutation to `~/.hermes/config.yaml`):
 
 | Flag | Equivalent env var | Purpose |
 |---|---|---|
-| `-m` / `--model <model>` | `HERMES_INFERENCE_MODEL` | Override the model for this run |
-| `--provider <provider>` | `HERMES_INFERENCE_PROVIDER` | Override the provider for this run |
+| `-m` / `--model <model>` | `THOTH_INFERENCE_MODEL` | Override the model for this run |
+| `--provider <provider>` | `THOTH_INFERENCE_PROVIDER` | Override the provider for this run |
 
 ```bash
 thoth -z "…" --provider openrouter --model openai/gpt-5.5
 # or:
-HERMES_INFERENCE_MODEL=anthropic/claude-sonnet-4.6 thoth -z "…"
+THOTH_INFERENCE_MODEL=anthropic/claude-sonnet-4.6 thoth -z "…"
 ```
 
 Same agent, same tools, same skills — just strips every interactive / cosmetic layer. If you need tool output in the transcript too, use `thoth chat -q` instead; `-z` is explicitly for "I only want the final answer".
@@ -384,9 +384,9 @@ Multi-profile, multi-project collaboration board. Each install can host many boa
 
 | Flag | Purpose |
 |------|---------|
-| `--board <slug>` | Operate on a specific board. Defaults to the current board (set via `thoth kanban boards switch`, the `HERMES_KANBAN_BOARD` env var, or `default`). |
+| `--board <slug>` | Operate on a specific board. Defaults to the current board (set via `thoth kanban boards switch`, the `THOTH_KANBAN_BOARD` env var, or `default`). |
 
-**This is the human / scripting surface.** Agent workers spawned by the dispatcher drive the board through a dedicated `kanban_*` [toolset](/docs/user-guide/features/kanban#how-workers-interact-with-the-board) (`kanban_show`, `kanban_complete`, `kanban_block`, `kanban_create`, `kanban_link`, `kanban_comment`, `kanban_heartbeat`; orchestrator profiles also get `kanban_list` and `kanban_unblock`) instead of shelling to `thoth kanban`. Workers have `HERMES_KANBAN_BOARD` pinned in their env so they physically cannot see other boards.
+**This is the human / scripting surface.** Agent workers spawned by the dispatcher drive the board through a dedicated `kanban_*` [toolset](/docs/user-guide/features/kanban#how-workers-interact-with-the-board) (`kanban_show`, `kanban_complete`, `kanban_block`, `kanban_create`, `kanban_link`, `kanban_comment`, `kanban_heartbeat`; orchestrator profiles also get `kanban_list` and `kanban_unblock`) instead of shelling to `thoth kanban`. Workers have `THOTH_KANBAN_BOARD` pinned in their env so they physically cannot see other boards.
 
 | Action | Purpose |
 |--------|---------|
@@ -433,7 +433,7 @@ thoth kanban boards rm atm10-server
 thoth kanban boards rm atm10-server --delete
 ```
 
-Board resolution order (highest precedence first): `--board <slug>` flag → `HERMES_KANBAN_BOARD` env var → `~/.hermes/kanban/current` file → `default`.
+Board resolution order (highest precedence first): `--board <slug>` flag → `THOTH_KANBAN_BOARD` env var → `~/.hermes/kanban/current` file → `default`.
 
 All actions are also available as a slash command in the gateway (`/kanban …`), with the same argument surface — including `boards` subcommands and the `--board` flag.
 

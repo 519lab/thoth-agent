@@ -83,7 +83,7 @@ jobs:
           source .venv/bin/activate
           uv run alembic -c migrations/alembic.ini upgrade head
         env:
-          HERMES_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
+          THOTH_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
 
       - name: Run tests with coverage
         # --coverage wraps each per-file pytest subprocess in
@@ -95,10 +95,10 @@ jobs:
           source .venv/bin/activate
           python scripts/run_tests_parallel.py --coverage | tee coverage-run.log
         env:
-          HERMES_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
+          THOTH_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
           POSTGRES_USER: hermes
           POSTGRES_PASSWORD: hermes
-          HERMES_TEST_POSTGRES_PORT: "5432"
+          THOTH_TEST_POSTGRES_PORT: "5432"
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""
           NOUS_API_KEY: ""

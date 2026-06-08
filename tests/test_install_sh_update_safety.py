@@ -5,13 +5,13 @@ Concretely, the installer can be re-run for two distinct purposes:
 
   1. **Fresh install** — first time on this machine. No $THOTH_HOME state
      exists; the installer creates ``.env``, ``config.yaml``, ``SOUL.md``,
-     writes ``HERMES_PG_DSN`` based on the docker-compose port it picked,
+     writes ``THOTH_PG_DSN`` based on the docker-compose port it picked,
      and runs the interactive setup wizard so the user can configure a
      provider/model/API key.
 
   2. **Update** — second-or-later run, typically to pull new code into the
      existing checkout (handled by ``clone_repo`` via ``git pull``). The
-     user already configured everything; rewriting their ``HERMES_PG_DSN``
+     user already configured everything; rewriting their ``THOTH_PG_DSN``
      (which may point at a remote PG cluster they bring) or re-running the
      wizard from scratch is hostile.
 
@@ -83,7 +83,7 @@ def test_run_setup_wizard_skips_when_provider_already_configured() -> None:
 
 
 def test_pg_dsn_rewrite_preserves_user_customized_dsns() -> None:
-    """copy_config_templates must not rewrite HERMES_PG_DSN when the
+    """copy_config_templates must not rewrite THOTH_PG_DSN when the
     existing value points at a non-local cluster (the user almost
     certainly customized it to point at remote PG / Neon / Supabase /
     a host-network PG with custom creds)."""
@@ -92,7 +92,7 @@ def test_pg_dsn_rewrite_preserves_user_customized_dsns() -> None:
     # DSNs (safe to rewrite on port drift) from user-customized ones.
     assert "@localhost:" in body or "@127.0.0.1:" in body, (
         "copy_config_templates must detect localhost-style DSNs as a "
-        "prerequisite to deciding whether HERMES_PG_DSN is installer-"
+        "prerequisite to deciding whether THOTH_PG_DSN is installer-"
         "managed (safe to rewrite) or user-customized (preserve)."
     )
     # Escape hatch: --force-rewrite-config must be honoured so power
@@ -100,7 +100,7 @@ def test_pg_dsn_rewrite_preserves_user_customized_dsns() -> None:
     assert "FORCE_REWRITE_CONFIG" in body, (
         "copy_config_templates must honour --force-rewrite-config "
         "(FORCE_REWRITE_CONFIG var) so users have an escape hatch when "
-        "they intentionally want HERMES_PG_DSN reset to install default."
+        "they intentionally want THOTH_PG_DSN reset to install default."
     )
 
 
@@ -111,7 +111,7 @@ def test_env_mutation_is_backed_up_first() -> None:
     can't silently re-introduce blind rewrites."""
     body = _extract_function_body("copy_config_templates")
     # The single sed -i call against .env in this function rewrites
-    # HERMES_PG_DSN. It must be preceded by a backup invocation.
+    # THOTH_PG_DSN. It must be preceded by a backup invocation.
     assert "_backup_env_file" in body, (
         "copy_config_templates uses ``sed -i`` against $THOTH_HOME/.env. "
         "It must call _backup_env_file first so users can recover from a "

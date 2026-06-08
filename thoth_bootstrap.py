@@ -128,8 +128,8 @@ def apply_windows_utf8_bootstrap() -> bool:
 # import side effect does the right thing.
 apply_windows_utf8_bootstrap()
 
-# thoth→thoth env bridge (rename Phase 2): mirror HERMES_* <-> THOTH_* in
-# os.environ so either spelling works, BEFORE any HERMES_*/THOTH_* read. This
+# thoth→thoth env bridge (rename Phase 2): mirror THOTH_* <-> THOTH_* in
+# os.environ so either spelling works, BEFORE any THOTH_*/THOTH_* read. This
 # is the universal hook — every shipped entry point imports thoth_bootstrap
 # first (same invariant the Windows bootstrap relies on). Pure-stdlib + guarded
 # so a partial install can never brick startup. (load_thoth_dotenv re-runs it
@@ -155,14 +155,14 @@ _db_initialized = False
 
 
 def init_db_sync() -> None:
-    """Bootstrap helper: init PG pool from HERMES_PG_DSN; register atexit close.
+    """Bootstrap helper: init PG pool from THOTH_PG_DSN; register atexit close.
 
     Idempotent — subsequent calls after the first are a no-op.  Sync entry
     points (run_agent.py, cli.py, cron/scheduler.py, acp_adapter/entry.py) call
     this once at the top of main().  Pure-async entry points (gateway/run.py)
     call ``await thoth_db.init(dsn)`` directly inside their asyncio.run().
 
-    Raises RuntimeError if HERMES_PG_DSN is not set in the environment.
+    Raises RuntimeError if THOTH_PG_DSN is not set in the environment.
 
     Drives the init via ``thoth_db.run_sync`` so the pool binds to the
     always-running DB loop rather than a transient ``asyncio.run`` loop.
@@ -185,10 +185,10 @@ def init_db_sync() -> None:
     if _db_initialized and thoth_db._pool is not None:
         return
 
-    dsn = os.environ.get("HERMES_PG_DSN")
+    dsn = os.environ.get("THOTH_PG_DSN")
     if not dsn:
         raise RuntimeError(
-            "HERMES_PG_DSN must be set; export from .env or configure in environment"
+            "THOTH_PG_DSN must be set; export from .env or configure in environment"
         )
     if thoth_db._pool is None:
         thoth_db.run_sync(thoth_db.init(dsn))

@@ -82,7 +82,7 @@ _OFF_POLL_INTERVAL = 1.0
 # loop therefore chunks its inter-tick sleep at this cadence and beats each
 # chunk.
 _HEARTBEAT_INTERVAL_S = float(
-    os.environ.get("HERMES_SUBSTRATE_HEARTBEAT_S", "10") or "10"
+    os.environ.get("THOTH_SUBSTRATE_HEARTBEAT_S", "10") or "10"
 )
 
 

@@ -55,7 +55,7 @@ async def _seed_pending(substrate, n):
 
 @pytest.mark.asyncio
 async def test_conductor_disabled_is_noop(booted, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "0")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "0")
     await _seed_pending(booted, 10)
     await AdaptiveConductor(booted).tick()
     # Nothing dialed → conductor snapshot empty.
@@ -64,7 +64,7 @@ async def test_conductor_disabled_is_noop(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_conductor_dials_parser_up_under_backlog(booted, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
     monkeypatch.setenv("CONDUCTOR_BACKLOG_HIGH", "0.5")
     # All slices pending, none consolidated → backlog_ratio = 1.0 (>= high).
     await _seed_pending(booted, 8)
@@ -77,7 +77,7 @@ async def test_conductor_dials_parser_up_under_backlog(booted, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_conductor_intensity_off_is_noop(booted, monkeypatch):
-    monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
     await _seed_pending(booted, 8)
     c = AdaptiveConductor(booted)
     c.set_intensity(Level.OFF)
@@ -125,7 +125,7 @@ def test_trend_bias_escalates_sooner():
 async def test_conductor_forecasts_and_logs(booted, monkeypatch):
     import thoth_db
 
-    monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
     await _seed_pending(booted, 8)
     c = AdaptiveConductor(booted)
     await c.tick()
@@ -141,7 +141,7 @@ async def test_conductor_forecasts_and_logs(booted, monkeypatch):
 async def test_conductor_seeds_forecast_from_log(booted, monkeypatch):
     import thoth_db
 
-    monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
     # Pre-seed a prior forecast in the persistent log.
     async with thoth_db.connection() as conn:
         await conn.execute(
@@ -163,7 +163,7 @@ async def _set_coherence(score):
 async def test_conductor_coherence_below_floor_dials_corrective(booted, monkeypatch):
     """Coherence below the floor trips the latch → corrective dial overrides
     backlog (Parser HIGH, Critic MODERATE, Dreamer OFF) even when quiet."""
-    monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
     monkeypatch.setenv("THOTH_CONDUCTOR_COHERENCE_FLOOR", "0.5")
     monkeypatch.setenv("THOTH_CONDUCTOR_COHERENCE_RECOVERY", "0.6")
     # No backlog (no pending slices) → would otherwise be baseline LOW.
@@ -183,7 +183,7 @@ async def test_conductor_coherence_below_floor_dials_corrective(booted, monkeypa
 async def test_conductor_coherence_hysteresis(booted, monkeypatch):
     """Latch stays tripped in the band between floor and recovery, and only
     clears once coherence reaches the recovery threshold."""
-    monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
     monkeypatch.setenv("THOTH_CONDUCTOR_COHERENCE_FLOOR", "0.5")
     monkeypatch.setenv("THOTH_CONDUCTOR_COHERENCE_RECOVERY", "0.6")
     c = AdaptiveConductor(booted)
@@ -210,7 +210,7 @@ async def test_conductor_coherence_hysteresis(booted, monkeypatch):
 @pytest.mark.asyncio
 async def test_conductor_coherence_none_leaves_backlog_policy(booted, monkeypatch):
     """No coherence observation → latch untouched, backlog policy unchanged."""
-    monkeypatch.setenv("HERMES_SUBSTRATE_CONDUCTOR", "1")
+    monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
     monkeypatch.setenv("CONDUCTOR_BACKLOG_HIGH", "0.5")
     # No coherence row written. Heavy backlog → normal HIGH catch-up policy.
     await _seed_pending(booted, 8)

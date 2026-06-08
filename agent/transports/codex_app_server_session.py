@@ -177,7 +177,7 @@ class CodexAppServerSession:
         self._codex_home = codex_home
         self._permission_profile = (
             permission_profile or _THOTH_TO_CODEX_PERMISSION_PROFILE.get(
-                os.environ.get("HERMES_TERMINAL_SECURITY_MODE", "auto"),
+                os.environ.get("THOTH_TERMINAL_SECURITY_MODE", "auto"),
                 "workspace-write",
             )
         )

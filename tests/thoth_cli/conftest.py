@@ -41,7 +41,7 @@ def _suppress_concurrent_thoth_gate(request, monkeypatch):
         from thoth_cli import main as _cli_main
     except Exception:
         return
-    # (Removed a pre-Phase-2 workaround that delenv'd the legacy HERMES_HOME
+    # (Removed a pre-Phase-2 workaround that delenv'd the legacy THOTH_HOME
     # mirror here. THOTH_HOME is now canonical and the root conftest's
     # _hermetic_environment sets it to the per-test home — deleting it broke
     # tests that read os.environ["THOTH_HOME"] directly.)

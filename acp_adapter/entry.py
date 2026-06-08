@@ -233,12 +233,12 @@ def main(argv: list[str] | None = None) -> None:
     logger = logging.getLogger(__name__)
     logger.info("Starting thoth-agent ACP adapter")
 
-    # Phase 0: initialise PG pool (idempotent; no-op if HERMES_PG_DSN unset).
+    # Phase 0: initialise PG pool (idempotent; no-op if THOTH_PG_DSN unset).
     try:
         from thoth_bootstrap import init_db_sync
         init_db_sync()
     except RuntimeError:
-        pass  # No HERMES_PG_DSN → legacy path still works during cutover period.
+        pass  # No THOTH_PG_DSN → legacy path still works during cutover period.
 
     # Phase A: bootstrap the substrate so perception hooks emit slices.
     try:

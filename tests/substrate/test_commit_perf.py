@@ -50,11 +50,11 @@ from substrate.storage import (
 # substrate genuinely gets slower — never by loosening the assertion at
 # the call site.
 #
-# Env override: ``HERMES_COMMIT_P99_CEILING_MS`` lets a dev on virtualized
+# Env override: ``THOTH_COMMIT_P99_CEILING_MS`` lets a dev on virtualized
 # storage (e.g. dockerized PG under WSL2, where p50 already sits ~4 ms and
 # any jitter blows a 5 ms p99) raise the local ceiling without weakening
 # the gate for CI/dedicated runs, which leave the env var unset at 5.0.
-_P99_CEILING_MS = float(os.environ.get("HERMES_COMMIT_P99_CEILING_MS", "5.0"))
+_P99_CEILING_MS = float(os.environ.get("THOTH_COMMIT_P99_CEILING_MS", "5.0"))
 
 # Skip the benchmark on shared CI runners where runner-quality variance
 # (single 400 ms I/O outliers observed) makes p99 unstable independent

@@ -780,11 +780,11 @@ def test_computer_use_skips_configuration_when_cua_driver_already_installed():
 
 
 def test_computer_use_respects_custom_cua_driver_command():
-    """The setup gate should match runtime's HERMES_CUA_DRIVER_CMD override."""
+    """The setup gate should match runtime's THOTH_CUA_DRIVER_CMD override."""
     def fake_which(name: str):
         return "/opt/bin/custom-cua" if name == "custom-cua" else None
 
-    with patch.dict("os.environ", {"HERMES_CUA_DRIVER_CMD": "custom-cua"}), \
+    with patch.dict("os.environ", {"THOTH_CUA_DRIVER_CMD": "custom-cua"}), \
          patch("shutil.which", side_effect=fake_which):
         assert _toolset_needs_configuration_prompt("computer_use", {}) is False
 
@@ -794,7 +794,7 @@ def test_computer_use_blank_custom_driver_command_falls_back_to_default():
     def fake_which(name: str):
         return "/usr/local/bin/cua-driver" if name == "cua-driver" else None
 
-    with patch.dict("os.environ", {"HERMES_CUA_DRIVER_CMD": "   "}), \
+    with patch.dict("os.environ", {"THOTH_CUA_DRIVER_CMD": "   "}), \
          patch("shutil.which", side_effect=fake_which):
         assert _toolset_needs_configuration_prompt("computer_use", {}) is False
 
@@ -804,7 +804,7 @@ def test_computer_use_post_setup_respects_custom_driver_command_when_installed()
     def fake_which(name: str):
         return "/opt/bin/custom-cua" if name == "custom-cua" else None
 
-    with patch.dict("os.environ", {"HERMES_CUA_DRIVER_CMD": "custom-cua"}), \
+    with patch.dict("os.environ", {"THOTH_CUA_DRIVER_CMD": "custom-cua"}), \
          patch("platform.system", return_value="Darwin"), \
          patch("shutil.which", side_effect=fake_which), \
          patch("subprocess.run") as run:
@@ -828,7 +828,7 @@ def test_computer_use_post_setup_missing_override_does_not_accept_default_binary
             return None
         return None
 
-    with patch.dict("os.environ", {"HERMES_CUA_DRIVER_CMD": "custom-cua"}), \
+    with patch.dict("os.environ", {"THOTH_CUA_DRIVER_CMD": "custom-cua"}), \
          patch("platform.system", return_value="Darwin"), \
          patch("shutil.which", side_effect=fake_which), \
          patch("subprocess.run") as run:

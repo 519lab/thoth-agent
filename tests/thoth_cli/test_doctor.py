@@ -128,7 +128,7 @@ class TestDoctorToolAvailabilityOverrides:
 
     def test_marks_kanban_available_only_when_missing_worker_env_gate(self, monkeypatch):
         monkeypatch.setattr(doctor, "_honcho_is_configured_for_doctor", lambda: False)
-        monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
+        monkeypatch.delenv("THOTH_KANBAN_TASK", raising=False)
 
         available, unavailable = doctor._apply_doctor_tool_availability_overrides(
             [],
@@ -139,7 +139,7 @@ class TestDoctorToolAvailabilityOverrides:
         assert unavailable == []
 
     def test_leaves_kanban_unavailable_when_worker_env_is_set(self, monkeypatch):
-        monkeypatch.setenv("HERMES_KANBAN_TASK", "probe")
+        monkeypatch.setenv("THOTH_KANBAN_TASK", "probe")
         kanban_entry = {"name": "kanban", "env_vars": [], "tools": ["kanban_show"]}
 
         available, unavailable = doctor._apply_doctor_tool_availability_overrides(
@@ -151,7 +151,7 @@ class TestDoctorToolAvailabilityOverrides:
         assert unavailable == [kanban_entry]
 
     def test_leaves_non_worker_kanban_failure_unavailable(self, monkeypatch):
-        monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
+        monkeypatch.delenv("THOTH_KANBAN_TASK", raising=False)
         kanban_entry = {"name": "kanban", "env_vars": [], "tools": ["kanban_show", "not_a_kanban_tool"]}
 
         available, unavailable = doctor._apply_doctor_tool_availability_overrides(
@@ -163,7 +163,7 @@ class TestDoctorToolAvailabilityOverrides:
         assert unavailable == [kanban_entry]
 
     def test_kanban_doctor_detail_explains_worker_gate(self, monkeypatch):
-        monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
+        monkeypatch.delenv("THOTH_KANBAN_TASK", raising=False)
 
         assert doctor._doctor_tool_availability_detail("kanban") == "(runtime-gated; loaded only for dispatcher-spawned workers)"
 
@@ -199,12 +199,12 @@ def test_run_doctor_sets_interactive_env_for_tool_checks(monkeypatch, tmp_path):
 
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project_root)
     monkeypatch.setattr(doctor_mod, "THOTH_HOME", thoth_home)
-    monkeypatch.delenv("HERMES_INTERACTIVE", raising=False)
+    monkeypatch.delenv("THOTH_INTERACTIVE", raising=False)
 
     seen = {}
 
     def fake_check_tool_availability(*args, **kwargs):
-        seen["interactive"] = os.getenv("HERMES_INTERACTIVE")
+        seen["interactive"] = os.getenv("THOTH_INTERACTIVE")
         raise SystemExit(0)
 
     fake_model_tools = types.SimpleNamespace(

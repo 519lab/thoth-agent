@@ -44,7 +44,7 @@ Type=simple
 # bundled ``alembic.ini`` resolve correctly.
 WorkingDirectory=%h/.hermes/hermes-agent
 
-# Load .env (HERMES_PG_DSN, HERMES_EMBEDDING_DIM, etc.) before exec.
+# Load .env (THOTH_PG_DSN, THOTH_EMBEDDING_DIM, etc.) before exec.
 EnvironmentFile=%h/.hermes/.env
 
 # Single foreground process; systemd captures stdout/stderr to journal.

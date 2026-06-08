@@ -60,7 +60,7 @@ Opening any port on an internet facing machine is a security risk. You should no
 
 ## Running the dashboard
 
-The built-in web dashboard runs as an optional side-process inside the same container as the gateway. Set `HERMES_DASHBOARD=1` and expose port `9119` alongside the gateway's `8642`:
+The built-in web dashboard runs as an optional side-process inside the same container as the gateway. Set `THOTH_DASHBOARD=1` and expose port `9119` alongside the gateway's `8642`:
 
 ```sh
 docker run -d \
@@ -69,7 +69,7 @@ docker run -d \
   -v ~/.hermes:/opt/data \
   -p 8642:8642 \
   -p 9119:9119 \
-  -e HERMES_DASHBOARD=1 \
+  -e THOTH_DASHBOARD=1 \
   nousresearch/hermes-agent gateway run
 ```
 
@@ -77,12 +77,12 @@ The entrypoint starts `thoth dashboard` in the background (running as the non-ro
 
 | Environment variable | Description | Default |
 |---------------------|-------------|---------|
-| `HERMES_DASHBOARD` | Set to `1` (or `true` / `yes`) to launch the dashboard alongside the main command | *(unset — dashboard not started)* |
-| `HERMES_DASHBOARD_HOST` | Bind address for the dashboard HTTP server | `0.0.0.0` |
-| `HERMES_DASHBOARD_PORT` | Port for the dashboard HTTP server | `9119` |
-| `HERMES_DASHBOARD_TUI` | Set to `1` to expose the in-browser Chat tab (embedded `thoth --tui` via PTY/WebSocket) | *(unset)* |
+| `THOTH_DASHBOARD` | Set to `1` (or `true` / `yes`) to launch the dashboard alongside the main command | *(unset — dashboard not started)* |
+| `THOTH_DASHBOARD_HOST` | Bind address for the dashboard HTTP server | `0.0.0.0` |
+| `THOTH_DASHBOARD_PORT` | Port for the dashboard HTTP server | `9119` |
+| `THOTH_DASHBOARD_TUI` | Set to `1` to expose the in-browser Chat tab (embedded `thoth --tui` via PTY/WebSocket) | *(unset)* |
 
-The default `HERMES_DASHBOARD_HOST=0.0.0.0` is required for the host to reach the dashboard through the published port; the entrypoint automatically passes `--insecure` to `thoth dashboard` in that case. Override to `127.0.0.1` if you want to restrict the dashboard to in-container access only (e.g. behind a reverse proxy in a sidecar).
+The default `THOTH_DASHBOARD_HOST=0.0.0.0` is required for the host to reach the dashboard through the published port; the entrypoint automatically passes `--insecure` to `thoth dashboard` in that case. Override to `127.0.0.1` if you want to restrict the dashboard to in-container access only (e.g. behind a reverse proxy in a sidecar).
 
 :::note
 The dashboard side-process is **not supervised** — if it crashes, it stays down until the container restarts. Running it as a separate container is not supported: the dashboard's gateway-liveness detection requires a shared PID namespace with the gateway process.
@@ -213,11 +213,11 @@ services:
     command: gateway run
     ports:
       - "8642:8642"   # gateway API
-      - "9119:9119"   # dashboard (only reached when HERMES_DASHBOARD=1)
+      - "9119:9119"   # dashboard (only reached when THOTH_DASHBOARD=1)
     volumes:
       - ~/.hermes:/opt/data
     environment:
-      - HERMES_DASHBOARD=1
+      - THOTH_DASHBOARD=1
       # Uncomment to forward specific env vars instead of using .env file:
       # - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       # - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -272,11 +272,11 @@ The entrypoint script (`docker/entrypoint.sh`) bootstraps the data volume on fir
 - Copies default `config.yaml` if missing
 - Copies default `SOUL.md` if missing
 - Syncs bundled skills using a manifest-based approach (preserves user edits)
-- Optionally launches `thoth dashboard` as a background side-process when `HERMES_DASHBOARD=1` (see [Running the dashboard](#running-the-dashboard))
+- Optionally launches `thoth dashboard` as a background side-process when `THOTH_DASHBOARD=1` (see [Running the dashboard](#running-the-dashboard))
 - Then runs `thoth` with whatever arguments you pass
 
 :::warning
-Do not override the image entrypoint unless you keep `/opt/hermes/docker/entrypoint.sh` in the command chain. The entrypoint drops root privileges to the `hermes` user before gateway state files are created. Starting `thoth gateway run` as root inside the official image is refused by default because it can leave root-owned files in `/opt/data` and break later dashboard or gateway starts. Set `HERMES_ALLOW_ROOT_GATEWAY=1` only when you intentionally accept that risk.
+Do not override the image entrypoint unless you keep `/opt/hermes/docker/entrypoint.sh` in the command chain. The entrypoint drops root privileges to the `hermes` user before gateway state files are created. Starting `thoth gateway run` as root inside the official image is refused by default because it can leave root-owned files in `/opt/data` and break later dashboard or gateway starts. Set `THOTH_ALLOW_ROOT_GATEWAY=1` only when you intentionally accept that risk.
 :::
 
 ## Upgrading
@@ -449,7 +449,7 @@ Check logs: `docker logs thoth`. Common causes:
 
 ### "Permission denied" errors
 
-The container's entrypoint drops privileges to the non-root `hermes` user (UID 10000) via `gosu`. If your host `~/.hermes/` is owned by a different UID, set `HERMES_UID`/`HERMES_GID` to match your host user, or ensure the data directory is writable:
+The container's entrypoint drops privileges to the non-root `hermes` user (UID 10000) via `gosu`. If your host `~/.hermes/` is owned by a different UID, set `THOTH_UID`/`THOTH_GID` to match your host user, or ensure the data directory is writable:
 
 ```sh
 chmod -R 755 ~/.hermes

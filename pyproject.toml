@@ -102,7 +102,7 @@ dev = [
   "ty==0.0.21",
   "ruff==0.15.10",
   # Coverage measurement. Enabled opt-in by scripts/run_tests_parallel.py
-  # (HERMES_TEST_COVERAGE=1) which wraps each per-file pytest subprocess in
+  # (THOTH_TEST_COVERAGE=1) which wraps each per-file pytest subprocess in
   # ``coverage run --parallel-mode`` then combines the data files. The
   # ``[toml]`` extra lets coverage read its config from pyproject.toml.
   "coverage[toml]==7.6.10",

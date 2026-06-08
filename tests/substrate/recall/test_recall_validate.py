@@ -151,4 +151,4 @@ def test_validate_verdict_pure():
         enabled="0", total_slices=10, reachable=5, coverage=95.0,
         proj=_Proj("block", composed=[1]),
     )
-    assert any("HERMES_SUBSTRATE_RECALL=0" in n for n in notes)
+    assert any("THOTH_SUBSTRATE_RECALL=0" in n for n in notes)

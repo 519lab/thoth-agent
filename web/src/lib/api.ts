@@ -1,21 +1,21 @@
 // The dashboard can be served either at the root of its host (e.g.
 // https://kanban.tilos.com/) or under a URL prefix when reverse-proxied
 // (e.g. https://mission-control.tilos.com/thoth/). The Python backend
-// injects ``window.__HERMES_BASE_PATH__`` into index.html based on the
+// injects ``window.__THOTH_BASE_PATH__`` into index.html based on the
 // incoming ``X-Forwarded-Prefix`` header so the SPA can address its own
 // ``/api/...`` and ``/dashboard-plugins/...`` URLs correctly without a
 // rebuild. Empty string means "served at root".
 function readBasePath(): string {
   if (typeof window === "undefined") return "";
-  const raw = window.__HERMES_BASE_PATH__ ?? "";
+  const raw = window.__THOTH_BASE_PATH__ ?? "";
   if (!raw) return "";
   // Normalise: ensure leading slash, strip trailing slash.
   const withLead = raw.startsWith("/") ? raw : `/${raw}`;
   return withLead.replace(/\/+$/, "");
 }
 
-export const HERMES_BASE_PATH = readBasePath();
-const BASE = HERMES_BASE_PATH;
+export const THOTH_BASE_PATH = readBasePath();
+const BASE = THOTH_BASE_PATH;
 
 import type { DashboardTheme } from "@/themes/types";
 
@@ -23,8 +23,8 @@ import type { DashboardTheme } from "@/themes/types";
 // Injected into index.html by the server — never fetched via API.
 declare global {
   interface Window {
-    __HERMES_SESSION_TOKEN__?: string;
-    __HERMES_BASE_PATH__?: string;
+    __THOTH_SESSION_TOKEN__?: string;
+    __THOTH_BASE_PATH__?: string;
   }
 }
 let _sessionToken: string | null = null;
@@ -39,7 +39,7 @@ function setSessionHeader(headers: Headers, token: string): void {
 export async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
   // Inject the session token into all /api/ requests.
   const headers = new Headers(init?.headers);
-  const token = window.__HERMES_SESSION_TOKEN__;
+  const token = window.__THOTH_SESSION_TOKEN__;
   if (token) {
     setSessionHeader(headers, token);
   }
@@ -53,7 +53,7 @@ export async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> 
 
 async function getSessionToken(): Promise<string> {
   if (_sessionToken) return _sessionToken;
-  const injected = window.__HERMES_SESSION_TOKEN__;
+  const injected = window.__THOTH_SESSION_TOKEN__;
   if (injected) {
     _sessionToken = injected;
     return _sessionToken;

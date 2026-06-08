@@ -208,7 +208,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
     # --- global --board flag ---
     # Applies to every subcommand below. When set, scopes all reads and
     # writes to that board's DB. When omitted, resolves via the
-    # HERMES_KANBAN_BOARD env var, then the persisted current-board
+    # THOTH_KANBAN_BOARD env var, then the persisted current-board
     # file, then "default". See kanban_db.get_current_board().
     kanban_parser.add_argument(
         "--board",
@@ -217,7 +217,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
         help=(
             "Board slug to operate on. Defaults to the current board "
             "(set via `thoth kanban boards switch <slug>` or the "
-            "HERMES_KANBAN_BOARD env var). Use `thoth kanban boards list` "
+            "THOTH_KANBAN_BOARD env var). Use `thoth kanban boards list` "
             "to see all boards."
         ),
     )
@@ -374,7 +374,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
     # --- list ---
     p_list = sub.add_parser("list", aliases=["ls"], help="List tasks")
     p_list.add_argument("--mine", action="store_true",
-                        help="Filter by $HERMES_PROFILE as assignee")
+                        help="Filter by $THOTH_PROFILE as assignee")
     p_list.add_argument("--assignee", default=None)
     p_list.add_argument("--status", default=None,
                         choices=sorted(kb.VALID_STATUSES))
@@ -500,7 +500,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
     p_comment.add_argument("task_id")
     p_comment.add_argument("text", nargs="+", help="Comment body")
     p_comment.add_argument("--author", default=None,
-                           help="Author name (default: $HERMES_PROFILE or 'user')")
+                           help="Author name (default: $THOTH_PROFILE or 'user')")
     p_comment.add_argument("--max-len", type=int, default=None,
                            help="Trim the stored comment body to this many characters")
 
@@ -739,7 +739,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
         "--author",
         default=None,
         help="Author name recorded on the audit comment "
-             "(default: $HERMES_PROFILE or 'specifier')",
+             "(default: $THOTH_PROFILE or 'specifier')",
     )
     p_specify.add_argument(
         "--json",
@@ -776,7 +776,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
         "--author",
         default=None,
         help="Author name recorded on the audit comment "
-             "(default: $HERMES_PROFILE or 'decomposer')",
+             "(default: $THOTH_PROFILE or 'decomposer')",
     )
     p_decompose.add_argument(
         "--json",
@@ -846,21 +846,21 @@ def kanban_command(args: argparse.Namespace) -> int:
         return _dispatch_boards(args)
 
     # `--board <slug>` applies to every subcommand below by way of an
-    # env-var pin for the duration of this call. Using HERMES_KANBAN_BOARD
+    # env-var pin for the duration of this call. Using THOTH_KANBAN_BOARD
     # (rather than threading `board=` through 50+ kb.connect() sites)
     # keeps the patch small and inherits the exact same resolution the
     # dispatcher uses for workers — consistency is a feature here.
     board_override = getattr(args, "board", None)
-    prev_board_env = os.environ.get("HERMES_KANBAN_BOARD")
+    prev_board_env = os.environ.get("THOTH_KANBAN_BOARD")
     restore_board_env = False
 
     def _restore_board_env() -> None:
         if not restore_board_env:
             return
         if prev_board_env is None:
-            os.environ.pop("HERMES_KANBAN_BOARD", None)
+            os.environ.pop("THOTH_KANBAN_BOARD", None)
         else:
-            os.environ["HERMES_KANBAN_BOARD"] = prev_board_env
+            os.environ["THOTH_KANBAN_BOARD"] = prev_board_env
     if board_override:
         try:
             normed = kb._normalize_board_slug(board_override)
@@ -879,7 +879,7 @@ def kanban_command(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return 1
-        os.environ["HERMES_KANBAN_BOARD"] = normed
+        os.environ["THOTH_KANBAN_BOARD"] = normed
         restore_board_env = True
 
     # Auto-initialize the DB before dispatching any subcommand. init_db
@@ -956,7 +956,7 @@ def kanban_command(args: argparse.Namespace) -> int:
 
 def _profile_author() -> str:
     """Best-effort author name for an interactive CLI call."""
-    for env in ("HERMES_PROFILE_NAME", "HERMES_PROFILE"):
+    for env in ("THOTH_PROFILE_NAME", "THOTH_PROFILE"):
         v = os.environ.get(env)
         if v:
             return v
@@ -1831,9 +1831,9 @@ def _cmd_comment(args: argparse.Namespace) -> int:
 
 
 def _worker_run_id_for(task_id: str) -> Optional[int]:
-    if os.environ.get("HERMES_KANBAN_TASK") != task_id:
+    if os.environ.get("THOTH_KANBAN_TASK") != task_id:
         return None
-    raw = os.environ.get("HERMES_KANBAN_RUN_ID")
+    raw = os.environ.get("THOTH_KANBAN_RUN_ID")
     if not raw:
         return None
     try:

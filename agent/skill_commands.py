@@ -34,8 +34,8 @@ def _resolve_skill_commands_platform() -> Optional[str]:
     :func:`get_skill_commands` can drop a stale cache that was populated
     for a different platform's ``skills.platform_disabled`` view (#14536).
 
-    Resolves from (in order) ``HERMES_PLATFORM`` env var and
-    ``HERMES_SESSION_PLATFORM`` from the gateway session context. Returns
+    Resolves from (in order) ``THOTH_PLATFORM`` env var and
+    ``THOTH_SESSION_PLATFORM`` from the gateway session context. Returns
     ``None`` when no platform scope is active (e.g. classic CLI, RL
     rollouts, standalone scripts).
     """
@@ -43,11 +43,11 @@ def _resolve_skill_commands_platform() -> Optional[str]:
         from gateway.session_context import get_session_env
 
         resolved_platform = (
-            os.getenv("HERMES_PLATFORM")
-            or get_session_env("HERMES_SESSION_PLATFORM")
+            os.getenv("THOTH_PLATFORM")
+            or get_session_env("THOTH_SESSION_PLATFORM")
         )
     except Exception:
-        resolved_platform = os.getenv("HERMES_PLATFORM")
+        resolved_platform = os.getenv("THOTH_PLATFORM")
     return resolved_platform or None
 
 def _load_skill_payload(skill_identifier: str, task_id: str | None = None) -> tuple[dict[str, Any], Path | None, str] | None:

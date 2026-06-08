@@ -1071,7 +1071,7 @@ def dump_api_request_debug(
 
         agent._vprint(f"{agent.log_prefix}🧾 Request debug dump written to: {dump_file}")
 
-        if env_var_enabled("HERMES_DUMP_REQUEST_STDOUT"):
+        if env_var_enabled("THOTH_DUMP_REQUEST_STDOUT"):
             print(json.dumps(dump_payload, ensure_ascii=False, indent=2, default=str))
 
         return dump_file

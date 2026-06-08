@@ -50,7 +50,7 @@ class TestHandleUpdateCommand:
     async def test_managed_install_returns_package_manager_guidance(self, monkeypatch):
         runner = _make_runner()
         event = _make_event()
-        monkeypatch.setenv("HERMES_MANAGED", "homebrew")
+        monkeypatch.setenv("THOTH_MANAGED", "homebrew")
 
         result = await runner._handle_update_command(event)
 

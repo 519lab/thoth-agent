@@ -32,7 +32,7 @@ Hermes Kanban worker를 위한 pitfalls, examples, edge cases 문서입니다. l
 
 ## Workspace handling
 
-workspace 종류에 따라 `$HERMES_KANBAN_WORKSPACE` 안에서의 행동 방식이 달라집니다.
+workspace 종류에 따라 `$THOTH_KANBAN_WORKSPACE` 안에서의 행동 방식이 달라집니다.
 
 | Kind | 의미 | 작업 방식 |
 |---|---|---|
@@ -42,7 +42,7 @@ workspace 종류에 따라 `$HERMES_KANBAN_WORKSPACE` 안에서의 행동 방식
 
 ## Tenant isolation
 
-`$HERMES_TENANT`가 설정되어 있으면 이 task는 특정 tenant namespace에 속합니다. persistent memory를 읽거나 쓸 때는 tenant prefix를 붙여서 context가 다른 tenant로 새지 않게 하세요.
+`$THOTH_TENANT`가 설정되어 있으면 이 task는 특정 tenant namespace에 속합니다. persistent memory를 읽거나 쓸 때는 tenant prefix를 붙여서 context가 다른 tenant로 새지 않게 하세요.
 
 - Good: `business-a: Acme is our biggest customer`
 - Bad (leaks): `Acme is our biggest customer`
@@ -101,7 +101,7 @@ kanban_complete(
 
 ```python
 kanban_comment(
-    task_id=os.environ["HERMES_KANBAN_TASK"],
+    task_id=os.environ["THOTH_KANBAN_TASK"],
     body="Full context: I have user IPs from Cloudflare headers but some users are behind NATs with thousands of peers. Keying on IP alone causes false positives.",
 )
 kanban_block(reason="Rate limit key choice: IP (simple, NAT-unsafe) or user_id (requires auth, skips anonymous endpoints)?")
@@ -128,7 +128,7 @@ block message는 dashboard / gateway notifier에 그대로 나타나는 짧은 �
 ## Do NOT
 
 - `kanban_create` 대신 `delegate_task`를 cross-agent handoff로 쓰지 마세요. `delegate_task`는 **당신 자신의 run 내부**에서 쓰는 짧은 reasoning subtask용이고, `kanban_create`는 API loop를 넘어서 살아남는 cross-agent handoff용입니다.
-- task body에 명시되지 않았다면 `$HERMES_KANBAN_WORKSPACE` 밖의 파일을 수정하지 마세요.
+- task body에 명시되지 않았다면 `$THOTH_KANBAN_WORKSPACE` 밖의 파일을 수정하지 마세요.
 - follow-up task를 자기 자신에게 assign하지 마세요. 올바른 specialist에게 assign하세요.
 - 실제로 끝내지 않은 task를 completed로 처리하지 마세요. 그 대신 block하세요.
 

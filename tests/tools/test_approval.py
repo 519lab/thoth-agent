@@ -147,7 +147,7 @@ class TestSessionKeyContext:
     def test_context_session_key_overrides_process_env(self):
         token = approval_module.set_current_session_key("alice")
         try:
-            with mock_patch.dict("os.environ", {"HERMES_SESSION_KEY": "bob"}, clear=False):
+            with mock_patch.dict("os.environ", {"THOTH_SESSION_KEY": "bob"}, clear=False):
                 assert approval_module.get_current_session_key() == "alice"
         finally:
             approval_module.reset_current_session_key(token)

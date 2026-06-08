@@ -63,7 +63,7 @@ pip install playwright websockets && python -m playwright install chromium
 #   Linux:  sudo apt install pulseaudio-utils
 #   macOS:  brew install blackhole-2ch ffmpeg
 #           → System Settings → Sound → Input → BlackHole 2ch
-#   Then set OPENAI_API_KEY or HERMES_MEET_REALTIME_KEY in ~/.hermes/.env
+#   Then set OPENAI_API_KEY or THOTH_MEET_REALTIME_KEY in ~/.hermes/.env
 ```
 
 For a remote node:
@@ -106,7 +106,7 @@ Run `thoth meet setup` to preflight local prereqs.
 
 - Captions are only as good as Google Meet's live captions. English-biased, lossy on overlapping speakers.
 - Guest mode sits in the lobby until a host admits. Warn the user; `thoth meet auth` avoids this.
-- **Lobby timeout**: if the host doesn't admit the bot within 5 minutes (configurable via `HERMES_MEET_LOBBY_TIMEOUT` env), the bot leaves and `meet_status` reports `leaveReason: "lobby_timeout"`.
+- **Lobby timeout**: if the host doesn't admit the bot within 5 minutes (configurable via `THOTH_MEET_LOBBY_TIMEOUT` env), the bot leaves and `meet_status` reports `leaveReason: "lobby_timeout"`.
 - **One active meeting per install per location.** A second `meet_join` leaves the first.
 - **Windows not supported.**
 - Realtime mode needs a virtual audio device. If the audio bridge setup fails, the bot falls back to transcribe mode and flags it in `meet_status().error`.

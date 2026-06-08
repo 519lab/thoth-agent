@@ -288,7 +288,7 @@ def test_termux_fast_cli_launch_chat_uses_light_parser(monkeypatch, main_mod):
     prepared = []
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.delenv("HERMES_TUI", raising=False)
+    monkeypatch.delenv("THOTH_TUI", raising=False)
     monkeypatch.setattr(
         sys, "argv", ["hermes", "chat", "-q", "hello", "--toolsets", "web,terminal"]
     )
@@ -317,7 +317,7 @@ def test_termux_fast_cli_launch_oneshot_uses_light_parser(monkeypatch, main_mod)
     prepared = []
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.delenv("HERMES_TUI", raising=False)
+    monkeypatch.delenv("THOTH_TUI", raising=False)
     monkeypatch.setattr(
         sys,
         "argv",
@@ -354,7 +354,7 @@ def test_termux_fast_cli_launch_version_skips_update_check(monkeypatch, main_mod
     captured = []
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.delenv("HERMES_TUI", raising=False)
+    monkeypatch.delenv("THOTH_TUI", raising=False)
     monkeypatch.setattr(sys, "argv", ["hermes", "version"])
     monkeypatch.setattr(
         main_mod, "_print_version_info", lambda *, check_updates: captured.append(check_updates)
@@ -366,7 +366,7 @@ def test_termux_fast_cli_launch_version_skips_update_check(monkeypatch, main_mod
 
 def test_termux_fast_cli_launch_skips_help(monkeypatch, main_mod):
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.delenv("HERMES_TUI", raising=False)
+    monkeypatch.delenv("THOTH_TUI", raising=False)
     monkeypatch.setattr(sys, "argv", ["hermes", "chat", "--help"])
 
     assert main_mod._try_termux_fast_cli_launch() is False
@@ -374,8 +374,8 @@ def test_termux_fast_cli_launch_skips_help(monkeypatch, main_mod):
 
 def test_termux_fast_cli_launch_can_be_disabled(monkeypatch, main_mod):
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.setenv("HERMES_TERMUX_DISABLE_FAST_CLI", "1")
-    monkeypatch.delenv("HERMES_TUI", raising=False)
+    monkeypatch.setenv("THOTH_TERMUX_DISABLE_FAST_CLI", "1")
+    monkeypatch.delenv("THOTH_TUI", raising=False)
     monkeypatch.setattr(sys, "argv", ["hermes", "version"])
 
     assert main_mod._try_termux_fast_cli_launch() is False
@@ -390,7 +390,7 @@ def test_termux_bundled_skills_stamp_controls_sync(monkeypatch, tmp_path, main_m
     main_mod._mark_termux_bundled_skills_synced()
     assert main_mod._termux_bundled_skills_sync_needed() is False
 
-    monkeypatch.setenv("HERMES_TERMUX_FORCE_SKILLS_SYNC", "1")
+    monkeypatch.setenv("THOTH_TERMUX_FORCE_SKILLS_SYNC", "1")
     assert main_mod._termux_bundled_skills_sync_needed() is True
 
 
@@ -415,7 +415,7 @@ def test_termux_forced_bundled_skill_sync_runs(monkeypatch, tmp_path, main_mod):
     calls = []
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.setenv("HERMES_TERMUX_FORCE_SKILLS_SYNC", "1")
+    monkeypatch.setenv("THOTH_TERMUX_FORCE_SKILLS_SYNC", "1")
     monkeypatch.setattr(main_mod, "get_thoth_home", lambda: tmp_path)
     monkeypatch.setattr(main_mod, "_termux_bundled_skills_fingerprint", lambda: "fp1")
     monkeypatch.setitem(
@@ -757,7 +757,7 @@ def test_launch_tui_exports_model_provider_and_toolsets(monkeypatch, main_mod):
     def fake_call(argv, cwd=None, env=None):
         nonlocal active_path_during_call
         captured.update({"argv": argv, "cwd": cwd, "env": env})
-        active_path_during_call = Path(env["HERMES_TUI_ACTIVE_SESSION_FILE"])
+        active_path_during_call = Path(env["THOTH_TUI_ACTIVE_SESSION_FILE"])
         assert active_path_during_call.exists()
         return 1
 
@@ -769,12 +769,12 @@ def test_launch_tui_exports_model_provider_and_toolsets(monkeypatch, main_mod):
         )
 
     env = captured["env"]
-    assert env["HERMES_MODEL"] == "nous/hermes-test"
-    assert env["HERMES_INFERENCE_MODEL"] == "nous/hermes-test"
-    assert env["HERMES_TUI_PROVIDER"] == "nous"
-    assert env["HERMES_INFERENCE_PROVIDER"] == "nous"
-    assert env["HERMES_TUI_TOOLSETS"] == "web,terminal"
-    active_path = Path(env["HERMES_TUI_ACTIVE_SESSION_FILE"])
+    assert env["THOTH_MODEL"] == "nous/hermes-test"
+    assert env["THOTH_INFERENCE_MODEL"] == "nous/hermes-test"
+    assert env["THOTH_TUI_PROVIDER"] == "nous"
+    assert env["THOTH_INFERENCE_PROVIDER"] == "nous"
+    assert env["THOTH_TUI_TOOLSETS"] == "web,terminal"
+    active_path = Path(env["THOTH_TUI_ACTIVE_SESSION_FILE"])
     assert active_path.name.startswith("hermes-tui-active-session-")
     assert active_path.suffix == ".json"
     assert active_path_during_call == active_path
@@ -803,7 +803,7 @@ def test_launch_tui_exit_code_42_relaunches_update(monkeypatch, main_mod):
 def test_launch_tui_drops_stale_resume_env_without_resume_arg(monkeypatch, main_mod):
     captured = {}
 
-    monkeypatch.setenv("HERMES_TUI_RESUME", "stale-missing-session")
+    monkeypatch.setenv("THOTH_TUI_RESUME", "stale-missing-session")
     monkeypatch.setattr(
         main_mod,
         "_make_tui_argv",
@@ -818,13 +818,13 @@ def test_launch_tui_drops_stale_resume_env_without_resume_arg(monkeypatch, main_
     with pytest.raises(SystemExit):
         main_mod._launch_tui()
 
-    assert "HERMES_TUI_RESUME" not in captured["env"]
+    assert "THOTH_TUI_RESUME" not in captured["env"]
 
 
 def test_launch_tui_sets_resume_env_from_resume_arg(monkeypatch, main_mod):
     captured = {}
 
-    monkeypatch.setenv("HERMES_TUI_RESUME", "stale-missing-session")
+    monkeypatch.setenv("THOTH_TUI_RESUME", "stale-missing-session")
     monkeypatch.setattr(
         main_mod,
         "_make_tui_argv",
@@ -839,7 +839,7 @@ def test_launch_tui_sets_resume_env_from_resume_arg(monkeypatch, main_mod):
     with pytest.raises(SystemExit):
         main_mod._launch_tui(resume_session_id="20260518_000000_goodid")
 
-    assert captured["env"]["HERMES_TUI_RESUME"] == "20260518_000000_goodid"
+    assert captured["env"]["THOTH_TUI_RESUME"] == "20260518_000000_goodid"
 
 
 def test_make_tui_argv_dev_prebuilds_thoth_ink(monkeypatch, main_mod, tmp_path):
@@ -852,7 +852,7 @@ def test_make_tui_argv_dev_prebuilds_thoth_ink(monkeypatch, main_mod, tmp_path):
 
     monkeypatch.setattr(main_mod, "_ensure_tui_node", lambda: None)
     monkeypatch.setattr(main_mod, "_tui_need_npm_install", lambda _tui_dir: False)
-    monkeypatch.delenv("HERMES_TUI_DIR", raising=False)
+    monkeypatch.delenv("THOTH_TUI_DIR", raising=False)
     monkeypatch.setattr(main_mod.shutil, "which", lambda bin_name: f"/usr/bin/{bin_name}")
 
     calls = []

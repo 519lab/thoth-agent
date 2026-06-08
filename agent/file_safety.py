@@ -76,8 +76,8 @@ def build_write_denied_prefixes(home: str) -> list[str]:
 
 
 def get_safe_write_root() -> Optional[str]:
-    """Return the resolved HERMES_WRITE_SAFE_ROOT path, or None if unset."""
-    root = os.getenv("HERMES_WRITE_SAFE_ROOT", "")
+    """Return the resolved THOTH_WRITE_SAFE_ROOT path, or None if unset."""
+    root = os.getenv("THOTH_WRITE_SAFE_ROOT", "")
     if not root:
         return None
     try:

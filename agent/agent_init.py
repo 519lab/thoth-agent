@@ -904,7 +904,7 @@ def init_agent(
 
     # Kanban worker/orchestrator lifecycle guidance is session-static:
     # the dispatcher decides at spawn time whether this process is a kanban
-    # worker (kanban_show tool is present iff HERMES_KANBAN_TASK is set).
+    # worker (kanban_show tool is present iff THOTH_KANBAN_TASK is set).
     # Resolving the ~835-token block once here avoids re-running the
     # membership test + reference on every system-prompt rebuild
     # (init + each context compression).
@@ -956,7 +956,7 @@ def init_agent(
     # session_context.py for concurrency safety (gateway runs multiple
     # sessions in one process).  Also writes os.environ as fallback for
     # CLI mode where ContextVars aren't used.
-    os.environ["HERMES_SESSION_ID"] = agent.session_id
+    os.environ["THOTH_SESSION_ID"] = agent.session_id
     try:
         from gateway.session_context import _SESSION_ID
         _SESSION_ID.set(agent.session_id)
@@ -1062,7 +1062,7 @@ def init_agent(
     #
     # Phase C: a SubstrateMemoryProvider is registered alongside any
     # external plugin when the substrate has booted. The provider's
-    # prefetch is gated by HERMES_SUBSTRATE_RECALL (default 1 in this
+    # prefetch is gated by THOTH_SUBSTRATE_RECALL (default 1 in this
     # fork — substrate is the primary memory backend). Set the env var
     # to 0 to fall back to the upstream built-in provider exclusively.
     agent._memory_manager = None

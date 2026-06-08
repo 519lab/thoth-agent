@@ -177,8 +177,8 @@ def get_disabled_skill_names(platform: str | None = None) -> Set[str]:
 
     Args:
         platform: Explicit platform name (e.g. ``"telegram"``).  When
-            *None*, resolves from ``HERMES_PLATFORM`` or
-            ``HERMES_SESSION_PLATFORM`` env vars.  Falls back to the
+            *None*, resolves from ``THOTH_PLATFORM`` or
+            ``THOTH_SESSION_PLATFORM`` env vars.  Falls back to the
             global disabled list when no platform is determined.
 
     Reads the config file directly (no CLI config imports) to stay
@@ -202,8 +202,8 @@ def get_disabled_skill_names(platform: str | None = None) -> Set[str]:
     from gateway.session_context import get_session_env
     resolved_platform = (
         platform
-        or os.getenv("HERMES_PLATFORM")
-        or get_session_env("HERMES_SESSION_PLATFORM")
+        or os.getenv("THOTH_PLATFORM")
+        or get_session_env("THOTH_SESSION_PLATFORM")
     )
     if resolved_platform:
         platform_disabled = (skills_cfg.get("platform_disabled") or {}).get(

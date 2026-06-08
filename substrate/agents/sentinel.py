@@ -3,7 +3,7 @@
 Polls the pending queue and decides each slice ``passed`` (with a trust
 score) or ``quarantined``. By default it's the Phase A pass-through
 (modality-derived trust, quarantines nothing); when
-``HERMES_SUBSTRATE_SENTINEL_DEFENSE=1`` it runs the real content defense
+``THOTH_SUBSTRATE_SENTINEL_DEFENSE=1`` it runs the real content defense
 (``sentinel_defense.assess`` — heuristic prompt-injection / impersonation /
 exfiltration detection) and quarantines hostile slices so they never reach
 consolidation or recall (MVS §6.2).
@@ -68,7 +68,7 @@ class StubSentinel(SubAgent):
 
     @staticmethod
     def _defense_enabled() -> bool:
-        raw = (os.environ.get("HERMES_SUBSTRATE_SENTINEL_DEFENSE") or "").strip().lower()
+        raw = (os.environ.get("THOTH_SUBSTRATE_SENTINEL_DEFENSE") or "").strip().lower()
         return raw in {"1", "true", "yes", "on"}
 
     def _decide(self, s) -> tuple:
