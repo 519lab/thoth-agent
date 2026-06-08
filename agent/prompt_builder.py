@@ -86,11 +86,11 @@ def _find_git_root(start: Path) -> Optional[Path]:
     return None
 
 
-_THOTH_MD_NAMES = (".hermes.md", "HERMES.md")
+_THOTH_MD_NAMES = (".thoth.md", "THOTH.md")
 
 
 def _find_thoth_md(cwd: Path) -> Optional[Path]:
-    """Discover the nearest ``.hermes.md`` or ``HERMES.md``.
+    """Discover the nearest ``.thoth.md`` or ``THOTH.md``.
 
     Search order: *cwd* first, then each parent directory up to (and
     including) the git repository root.  Returns the first match, or
@@ -1339,7 +1339,7 @@ def load_soul_md() -> Optional[str]:
 
 
 def _load_thoth_md(cwd_path: Path) -> str:
-    """.hermes.md / HERMES.md — walk to git root."""
+    """.thoth.md / THOTH.md — walk to git root."""
     thoth_md_path = _find_thoth_md(cwd_path)
     if not thoth_md_path:
         return ""
@@ -1355,7 +1355,7 @@ def _load_thoth_md(cwd_path: Path) -> str:
             pass
         content = _scan_context_content(content, rel)
         result = f"## {rel}\n\n{content}"
-        return _truncate_content(result, ".hermes.md")
+        return _truncate_content(result, ".thoth.md")
     except Exception as e:
         logger.debug("Could not read %s: %s", thoth_md_path, e)
         return ""
@@ -1427,7 +1427,7 @@ def build_context_files_prompt(cwd: Optional[str] = None, skip_soul: bool = Fals
     """Discover and load context files for the system prompt.
 
     Priority (first found wins — only ONE project context type is loaded):
-      1. .hermes.md / HERMES.md  (walk to git root)
+      1. .thoth.md / THOTH.md  (walk to git root)
       2. AGENTS.md / agents.md   (cwd only)
       3. CLAUDE.md / claude.md   (cwd only)
       4. .cursorrules / .cursor/rules/*.mdc  (cwd only)
