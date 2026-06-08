@@ -1,6 +1,6 @@
 # Spotify
 
-Thoth can control Spotify directly — playback, queue, search, playlists, saved tracks/albums, and listening history — using Spotify's official Web API with PKCE OAuth. Tokens are stored in `~/.hermes/auth.json` and refreshed automatically on 401; you only log in once per machine.
+Thoth can control Spotify directly — playback, queue, search, playlists, saved tracks/albums, and listening history — using Spotify's official Web API with PKCE OAuth. Tokens are stored in `~/.thoth/auth.json` and refreshed automatically on 401; you only log in once per machine.
 
 Unlike Thoth's built-in OAuth integrations (Google, GitHub Copilot, Codex), Spotify requires every user to register their own lightweight developer app. Spotify does not let third parties ship a public OAuth app that anyone can use. It takes about two minutes and `thoth auth spotify` walks you through it.
 
@@ -49,10 +49,10 @@ If no `THOTH_SPOTIFY_CLIENT_ID` is set, Thoth walks you through the app registra
 1. Opens `https://developer.spotify.com/dashboard` in your browser
 2. Prints the exact values to paste into Spotify's "Create app" form
 3. Prompts you for the Client ID you get back
-4. Saves it to `~/.hermes/.env` so future runs skip this step
+4. Saves it to `~/.thoth/.env` so future runs skip this step
 5. Continues straight into the OAuth consent flow
 
-After you approve, tokens are written under `providers.spotify` in `~/.hermes/auth.json`. The active inference provider is NOT changed — Spotify auth is independent of your LLM provider.
+After you approve, tokens are written under `providers.spotify` in `~/.thoth/auth.json`. The active inference provider is NOT changed — Spotify auth is independent of your LLM provider.
 
 ### Creating the Spotify app (what the wizard asks for)
 
@@ -60,7 +60,7 @@ When the dashboard opens, click **Create app** and fill in:
 
 | Field | Value |
 |-------|-------|
-| App name | anything (e.g. `hermes-agent`) |
+| App name | anything (e.g. `thoth-agent`) |
 | App description | anything (e.g. `personal Thoth integration`) |
 | Website | leave blank |
 | Redirect URI | `http://127.0.0.1:43827/spotify/callback` |
@@ -225,7 +225,7 @@ Full cron reference: [Cron Jobs](./cron).
 thoth auth logout spotify
 ```
 
-Removes tokens from `~/.hermes/auth.json`. To also clear the app config, delete `THOTH_SPOTIFY_CLIENT_ID` (and `THOTH_SPOTIFY_REDIRECT_URI` if you set it) from `~/.hermes/.env`, or run the wizard again.
+Removes tokens from `~/.thoth/auth.json`. To also clear the app config, delete `THOTH_SPOTIFY_CLIENT_ID` (and `THOTH_SPOTIFY_REDIRECT_URI` if you set it) from `~/.thoth/.env`, or run the wizard again.
 
 To revoke the app on Spotify's side, visit [Apps connected to your account](https://www.spotify.com/account/apps/) and click **REMOVE ACCESS**.
 
@@ -237,7 +237,7 @@ To revoke the app on Spotify's side, visit [Apps connected to your account](http
 
 **`204 No Content` on `get_currently_playing`** — nothing is currently playing on any device. This is Spotify's normal response, not an error; Thoth surfaces it as an explanatory empty result (`is_playing: false`).
 
-**`INVALID_CLIENT: Invalid redirect URI`** — the redirect URI in your Spotify app settings doesn't match what Thoth is using. The default is `http://127.0.0.1:43827/spotify/callback`. Either add that to your app's allowed redirect URIs, or set `THOTH_SPOTIFY_REDIRECT_URI` in `~/.hermes/.env` to whatever you registered.
+**`INVALID_CLIENT: Invalid redirect URI`** — the redirect URI in your Spotify app settings doesn't match what Thoth is using. The default is `http://127.0.0.1:43827/spotify/callback`. Either add that to your app's allowed redirect URIs, or set `THOTH_SPOTIFY_REDIRECT_URI` in `~/.thoth/.env` to whatever you registered.
 
 **`429 Too Many Requests`** — Spotify's rate limit. Thoth returns a friendly error; wait a minute and retry. If this persists, you're probably running a tight loop in a script — Spotify's quota resets roughly every 30 seconds.
 
@@ -261,7 +261,7 @@ Scope reference: [Spotify Web API scopes](https://developer.spotify.com/document
 thoth auth spotify --client-id <id> --redirect-uri http://localhost:3000/callback
 ```
 
-Or set them permanently in `~/.hermes/.env`:
+Or set them permanently in `~/.thoth/.env`:
 
 ```
 THOTH_SPOTIFY_CLIENT_ID=<your_id>
@@ -274,6 +274,6 @@ The redirect URI must be allow-listed in your Spotify app's settings. The defaul
 
 | File | Contents |
 |------|----------|
-| `~/.hermes/auth.json` → `providers.spotify` | access token, refresh token, expiry, scope, redirect URI |
-| `~/.hermes/.env` | `THOTH_SPOTIFY_CLIENT_ID`, optional `THOTH_SPOTIFY_REDIRECT_URI` |
+| `~/.thoth/auth.json` → `providers.spotify` | access token, refresh token, expiry, scope, redirect URI |
+| `~/.thoth/.env` | `THOTH_SPOTIFY_CLIENT_ID`, optional `THOTH_SPOTIFY_REDIRECT_URI` |
 | Spotify app | owned by you at [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard); contains the Client ID and the redirect URI allow-list |

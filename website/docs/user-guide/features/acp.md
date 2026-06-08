@@ -93,7 +93,7 @@ This is the standalone command. The Zed registry's terminal-auth flow (`thoth ac
 
 What it does:
 
-- Installs Node.js 22 LTS into `~/.hermes/node/` if missing
+- Installs Node.js 22 LTS into `~/.thoth/node/` if missing
 - `npm install -g agent-browser @askjo/camofox-browser` into that prefix (no sudo needed — `npm`'s `--prefix` points at the user-writable Thoth-managed Node)
 - Installs Playwright Chromium, or uses a detected system Chrome/Chromium when available
 
@@ -135,7 +135,7 @@ Zed v0.221.x and newer installs external agents through the official ACP Registr
 
 Prerequisites:
 
-- Configure Thoth provider credentials first with `thoth model`, or set them in `~/.hermes/.env` / `~/.hermes/config.yaml`.
+- Configure Thoth provider credentials first with `thoth model`, or set them in `~/.thoth/.env` / `~/.thoth/config.yaml`.
 - Install `uv` so the registry launcher can run `uvx --from 'thoth-agent[acp]==<version>' thoth-acp`.
 
 For local development before the registry entry is available, use a custom agent server in Zed settings:
@@ -157,7 +157,7 @@ For local development before the registry entry is available, use a custom agent
 Use an ACP-compatible plugin and point it at:
 
 ```text
-/path/to/hermes-agent/acp_registry
+/path/to/thoth-agent/acp_registry
 ```
 
 ## Registry manifest
@@ -169,7 +169,7 @@ acp_registry/agent.json
 acp_registry/icon.svg
 ```
 
-The upstream registry PR copies those files into the top-level `hermes-agent/` directory in `agentclientprotocol/registry`.
+The upstream registry PR copies those files into the top-level `thoth-agent/` directory in `agentclientprotocol/registry`.
 
 The registry entry uses a `uvx` distribution that points directly at the `thoth-agent` PyPI release:
 
@@ -183,10 +183,10 @@ The registry CI verifies that the pinned version exists on PyPI, so the manifest
 
 ACP mode uses the same Thoth configuration as the CLI:
 
-- `~/.hermes/.env`
-- `~/.hermes/config.yaml`
-- `~/.hermes/skills/`
-- `~/.hermes/state.db`
+- `~/.thoth/.env`
+- `~/.thoth/config.yaml`
+- `~/.thoth/skills/`
+- `~/.thoth/state.db`
 
 Provider resolution uses Thoth's normal runtime resolver, so ACP inherits the currently configured provider and credentials. Thoth also advertises a terminal auth method (`--setup`) for first-run registry clients; this opens Thoth's interactive model/provider setup.
 
@@ -264,7 +264,7 @@ ACP mode uses Thoth's existing provider setup. Configure credentials with:
 thoth model
 ```
 
-or by editing `~/.hermes/.env`. Registry clients can also trigger Thoth's terminal auth flow, which runs the same interactive provider/model setup.
+or by editing `~/.thoth/.env`. Registry clients can also trigger Thoth's terminal auth flow, which runs the same interactive provider/model setup.
 
 ### Zed registry launcher cannot find uv
 

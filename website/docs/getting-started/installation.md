@@ -40,7 +40,7 @@ The installer handles **everything**: `uv`, Python 3.11, Node.js 22, `ripgrep`, 
 
 The installer also sets `THOTH_GIT_BASH_PATH` to the located `bash.exe` so Thoth resolves it deterministically in fresh shells.
 
-If you prefer WSL2, the Linux installer above works inside it; both native and WSL installs can coexist without conflict (native data lives under `%LOCALAPPDATA%\thoth`, WSL data lives under `~/.hermes`).
+If you prefer WSL2, the Linux installer above works inside it; both native and WSL installs can coexist without conflict (native data lives under `%LOCALAPPDATA%\thoth`, WSL data lives under `~/.thoth`).
 
 **Desktop installer (alternative):** A thin GUI installer is also available — download Thoth Desktop, run the `.exe`, and on first launch it calls `install.ps1` under the hood to provision Python (via `uv`), Node, PortableGit, and the rest of the dependencies. The desktop app and the PowerShell-installed CLI share the same install and data directories, so you can use either or both. See the [Windows (Native) guide](../user-guide/windows-native#desktop-installer-alternative) for details.
 
@@ -84,11 +84,11 @@ Where the installer puts things depends on whether you're installing as a normal
 
 | Installer | Code lives at | `thoth` binary | Data directory |
 |---|---|---|---|
-| pip install | Python site-packages | `~/.local/bin/thoth` (console_scripts) | `~/.hermes/` |
-| Per-user (git installer) | `~/.hermes/hermes-agent/` | `~/.local/bin/thoth` (symlink) | `~/.hermes/` |
-| Root-mode (`sudo curl … \| sudo bash`) | `/usr/local/lib/hermes-agent/` | `/usr/local/bin/thoth` | `/root/.hermes/` (or `$THOTH_HOME`) |
+| pip install | Python site-packages | `~/.local/bin/thoth` (console_scripts) | `~/.thoth/` |
+| Per-user (git installer) | `~/.thoth/hermes-agent/` | `~/.local/bin/thoth` (symlink) | `~/.thoth/` |
+| Root-mode (`sudo curl … \| sudo bash`) | `/usr/local/lib/hermes-agent/` | `/usr/local/bin/thoth` | `/root/.thoth/` (or `$THOTH_HOME`) |
 
-The root-mode **FHS layout** (`/usr/local/lib/…`, `/usr/local/bin/thoth`) matches where other system-wide developer tools land on Linux. It's useful for shared-machine deployments where one system install should serve every user. Per-user config (auth, skills, sessions) still lives under each user's `~/.hermes/` or explicit `THOTH_HOME`.
+The root-mode **FHS layout** (`/usr/local/lib/…`, `/usr/local/bin/thoth`) matches where other system-wide developer tools land on Linux. It's useful for shared-machine deployments where one system install should serve every user. Per-user config (auth, skills, sessions) still lives under each user's `~/.thoth/` or explicit `THOTH_HOME`.
 
 ### After Installation
 
@@ -167,10 +167,10 @@ Running Thoth as a dedicated unprivileged user (e.g. a `thoth` systemd service a
    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
    # Option B — symlink system-wide (run as an admin)
-   sudo ln -s /home/hermes/.hermes/hermes-agent/venv/bin/hermes /usr/local/bin/thoth
+   sudo ln -s /home/thoth/.thoth/hermes-agent/venv/bin/thoth /usr/local/bin/thoth
    ```
 
-4. **Verify:** `thoth doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `thoth` file (`~/.hermes/hermes-agent/hermes`) with system Python instead of the venv launcher (`~/.hermes/hermes-agent/venv/bin/hermes`) — fix step 3.
+4. **Verify:** `thoth doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `thoth` file (`~/.thoth/hermes-agent/thoth`) with system Python instead of the venv launcher (`~/.thoth/hermes-agent/venv/bin/thoth`) — fix step 3.
 
 The same pattern works on Arch (the installer uses pacman with the same sudo-detection logic), Fedora/RHEL, and openSUSE — those distros don't support `--with-deps` at all, so an administrator always installs the system libraries separately. The relevant `dnf`/`zypper` commands are printed by the installer.
 
@@ -180,7 +180,7 @@ The same pattern works on Arch (the installer uses pacman with the same sudo-det
 
 | Problem | Solution |
 |---------|----------|
-| `hermes: command not found` | Reload your shell (`source ~/.bashrc`) or check PATH |
+| `thoth: command not found` | Reload your shell (`source ~/.bashrc`) or check PATH |
 | `API key not set` | Run `thoth model` to configure your provider, or `thoth config set OPENROUTER_API_KEY your_key` |
 | Missing config after update | Run `thoth config check` then `thoth config migrate` |
 
@@ -188,4 +188,4 @@ For more diagnostics, run `thoth doctor` — it will tell you exactly what's mis
 
 ## Install method auto-detection
 
-Thoth auto-detects whether it was installed via `pip`, the git installer, Homebrew, or NixOS, and `thoth update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (Python site-packages, `~/.hermes/hermes-agent/`, Homebrew prefix, or Nix store path). `thoth doctor` also surfaces the detected method under its environment summary.
+Thoth auto-detects whether it was installed via `pip`, the git installer, Homebrew, or NixOS, and `thoth update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (Python site-packages, `~/.thoth/hermes-agent/`, Homebrew prefix, or Nix store path). `thoth doctor` also surfaces the detected method under its environment summary.

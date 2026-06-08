@@ -33,7 +33,7 @@ thoth login nous
 ```
 
 This opens your browser for the Nous Portal OAuth flow. Thoth stores
-the refresh token in `~/.hermes/auth.json` — the same place all Thoth
+the refresh token in `~/.thoth/auth.json` — the same place all Thoth
 provider logins live.
 
 ### 2. Start the proxy

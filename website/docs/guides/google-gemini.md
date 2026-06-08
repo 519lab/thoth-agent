@@ -24,7 +24,7 @@ Set `GOOGLE_API_KEY` or `GEMINI_API_KEY`. Thoth checks both names for the `gemin
 
 ```bash
 # Add your Gemini API key
-echo "GOOGLE_API_KEY=..." >> ~/.hermes/.env
+echo "GOOGLE_API_KEY=..." >> ~/.thoth/.env
 
 # Select Gemini as your provider
 thoth model
@@ -47,7 +47,7 @@ model:
 
 ## Configuration
 
-After running `thoth model`, your `~/.hermes/config.yaml` will contain:
+After running `thoth model`, your `~/.thoth/config.yaml` will contain:
 
 ```yaml
 model:
@@ -56,7 +56,7 @@ model:
   base_url: https://generativelanguage.googleapis.com/v1beta
 ```
 
-And in `~/.hermes/.env`:
+And in `~/.thoth/.env`:
 
 ```bash
 GOOGLE_API_KEY=...
@@ -218,7 +218,7 @@ The gateway reads `config.yaml` and uses the same Gemini provider configuration.
 
 ### "Gemini native client requires an API key"
 
-Thoth could not find a usable API key. Add one of these to `~/.hermes/.env`:
+Thoth could not find a usable API key. Add one of these to `~/.thoth/.env`:
 
 ```bash
 GOOGLE_API_KEY=...
@@ -244,7 +244,7 @@ The selected model is not available for your account, region, or key. Run `thoth
 
 ### Gemma model is not shown in `thoth model`
 
-Thoth may hide low-throughput Gemma models from the picker by default. If you intentionally want to evaluate one, set the model ID directly in `~/.hermes/config.yaml`.
+Thoth may hide low-throughput Gemma models from the picker by default. If you intentionally want to evaluate one, set the model ID directly in `~/.thoth/config.yaml`.
 
 ### "429 quota exceeded" on Gemma
 
@@ -252,7 +252,7 @@ Gemma models exposed through the Gemini API are useful for evaluation, but their
 
 ### OpenAI-compatible endpoint is configured
 
-Check `~/.hermes/.env` for:
+Check `~/.thoth/.env` for:
 
 ```bash
 GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/

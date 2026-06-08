@@ -81,7 +81,7 @@ Why these packages?
 
 ```bash
 git clone --recurse-submodules https://github.com/519lab/thoth-agent.git
-cd hermes-agent
+cd thoth-agent
 ```
 
 If you already cloned without submodules:
@@ -144,7 +144,7 @@ thoth
 thoth model
 ```
 
-Or set keys directly in `~/.hermes/.env`.
+Or set keys directly in `~/.thoth/.env`.
 
 ### Re-run the full interactive setup wizard later
 

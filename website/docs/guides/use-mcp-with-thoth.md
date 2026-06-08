@@ -42,7 +42,7 @@ If you installed Thoth with the standard install script, MCP support is already 
 If you installed without extras and need to add MCP separately:
 
 ```bash
-cd ~/.hermes/hermes-agent
+cd ~/.thoth/thoth-agent
 uv pip install -e ".[mcp]"
 ```
 

@@ -36,7 +36,7 @@ Webhook payloads contain attacker-controlled data — PR titles, commit messages
 
 ## Step 1 — Enable the webhook platform
 
-Add the following to your `~/.hermes/config.yaml`:
+Add the following to your `~/.thoth/config.yaml`:
 
 ```yaml
 platforms:
@@ -135,7 +135,7 @@ Create a branch, push a change, and open a PR. Within 30–90 seconds (depending
 To follow the agent's progress in real time:
 
 ```bash
-tail -f "${THOTH_HOME:-$HOME/.hermes}/logs/gateway.log"
+tail -f "${THOTH_HOME:-$HOME/.thoth}/logs/gateway.log"
 ```
 
 ---
@@ -171,7 +171,7 @@ curl -s -X POST http://localhost:8644/webhooks/github-pr-review \
 
 Then watch the agent run:
 ```bash
-tail -f "${THOTH_HOME:-$HOME/.hermes}/logs/gateway.log"
+tail -f "${THOTH_HOME:-$HOME/.thoth}/logs/gateway.log"
 ```
 
 :::note

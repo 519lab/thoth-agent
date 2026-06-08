@@ -14,12 +14,12 @@ If you want a practical setup walkthrough with recommended configurations and re
 
 Before using voice features, make sure you have:
 
-1. **Thoth Agent installed** — `pip install hermes-agent` (see [Installation](/docs/getting-started/installation))
-2. **An LLM provider configured** — run `thoth model` or set your preferred provider credentials in `~/.hermes/.env`
+1. **Thoth Agent installed** — `pip install thoth-agent` (see [Installation](/docs/getting-started/installation))
+2. **An LLM provider configured** — run `thoth model` or set your preferred provider credentials in `~/.thoth/.env`
 3. **A working base setup** — run `thoth` to verify the agent responds to text before enabling voice
 
 :::tip
-The `~/.hermes/` directory and default `config.yaml` are created automatically the first time you run `thoth`. You only need to create `~/.hermes/.env` manually for API keys.
+The `~/.thoth/` directory and default `config.yaml` are created automatically the first time you run `thoth`. You only need to create `~/.thoth/.env` manually for API keys.
 :::
 
 ## Overview
@@ -36,19 +36,19 @@ The `~/.hermes/` directory and default `config.yaml` are created automatically t
 
 ```bash
 # CLI voice mode (microphone + audio playback)
-pip install "hermes-agent[voice]"
+pip install "thoth-agent[voice]"
 
 # Discord + Telegram messaging (includes discord.py[voice] for VC support)
-pip install "hermes-agent[messaging]"
+pip install "thoth-agent[messaging]"
 
 # Premium TTS (ElevenLabs)
-pip install "hermes-agent[tts-premium]"
+pip install "thoth-agent[tts-premium]"
 
 # Local TTS (NeuTTS, optional)
 python -m pip install -U neutts[all]
 
 # Everything at once
-pip install "hermes-agent[all]"
+pip install "thoth-agent[all]"
 ```
 
 | Extra | Packages | Required For |
@@ -84,7 +84,7 @@ sudo apt install espeak-ng   # for NeuTTS
 
 ### API Keys
 
-Add to `~/.hermes/.env`:
+Add to `~/.thoth/.env`:
 
 ```bash
 # Speech-to-Text — local provider needs NO key at all
@@ -105,7 +105,7 @@ If `faster-whisper` is installed, voice mode works with **zero API keys** for ST
 
 ## CLI Voice Mode
 
-Voice mode is available in both the **classic CLI** (`thoth chat`) and the **TUI** (`thoth --tui`). Behavior is identical across both — same slash commands, same VAD silence detection, same streaming TTS, same hallucination filter. The TUI additionally forwards crash-forensic logs to `~/.hermes/logs/` so push-to-talk failures on exotic audio backends can be reported with a full stack trace rather than disappearing silently.
+Voice mode is available in both the **classic CLI** (`thoth chat`) and the **TUI** (`thoth --tui`). Behavior is identical across both — same slash commands, same VAD silence detection, same streaming TTS, same hallucination filter. The TUI additionally forwards crash-forensic logs to `~/.thoth/logs/` so push-to-talk failures on exotic audio backends can be reported with a full stack trace rather than disappearing silently.
 
 ### Quick Start
 
@@ -139,7 +139,7 @@ Then use these commands inside the CLI:
 This loop continues until you press **Ctrl+B** during recording (exits continuous mode) or 3 consecutive recordings detect no speech.
 
 :::tip
-The record key is configurable via `voice.record_key` in `~/.hermes/config.yaml` (default: `ctrl+b`).
+The record key is configurable via `voice.record_key` in `~/.thoth/config.yaml` (default: `ctrl+b`).
 :::
 
 ### Silence Detection
@@ -191,10 +191,10 @@ The bot supports two interaction modes on Discord:
 
 **DM (recommended for personal use):** Just open a DM with the bot and type — no @mention needed. Voice replies and all commands work the same as in channels.
 
-**Server channels:** The bot only responds when you @mention it (e.g. `@hermesbyt4 hello`). Make sure you select the **bot user** from the mention popup, not the role with the same name.
+**Server channels:** The bot only responds when you @mention it (e.g. `@thothbyt4 hello`). Make sure you select the **bot user** from the mention popup, not the role with the same name.
 
 :::tip
-To disable the mention requirement in server channels, add to `~/.hermes/.env`:
+To disable the mention requirement in server channels, add to `~/.thoth/.env`:
 ```bash
 DISCORD_REQUIRE_MENTION=false
 ```
@@ -305,7 +305,7 @@ The bot auto-loads the codec from:
 #### 4. Environment Variables
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 
 # Discord bot (already configured for text)
 DISCORD_BOT_TOKEN=your-bot-token
@@ -369,7 +369,7 @@ The bot automatically pauses its audio listener while playing TTS replies, preve
 Only users listed in `DISCORD_ALLOWED_USERS` can interact via voice. Other users' audio is silently ignored.
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 DISCORD_ALLOWED_USERS=284102345871466496
 ```
 
@@ -487,7 +487,7 @@ The bot requires an @mention by default in server channels. Make sure you:
 
 1. Type `@` and select the **bot user** (with the #discriminator), not the **role** with the same name
 2. Or use DMs instead — no mention needed
-3. Or set `DISCORD_REQUIRE_MENTION=false` in `~/.hermes/.env`
+3. Or set `DISCORD_REQUIRE_MENTION=false` in `~/.thoth/.env`
 
 ### Bot joins VC but doesn't hear me
 
@@ -499,7 +499,7 @@ The bot requires an @mention by default in server channels. Make sure you:
 
 - Verify STT is available: install `faster-whisper` (no key needed) or set `GROQ_API_KEY` / `VOICE_TOOLS_OPENAI_KEY`
 - Check the LLM model is configured and accessible
-- Review gateway logs: `tail -f ~/.hermes/logs/gateway.log`
+- Review gateway logs: `tail -f ~/.thoth/logs/gateway.log`
 
 ### Bot responds in text but not in voice channel
 

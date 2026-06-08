@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Monitor a running video-production kanban. Polls `hermes kanban list` and
+Monitor a running video-production kanban. Polls `thoth kanban list` and
 `events` for a tenant and surfaces issues (stuck tasks, missing heartbeats,
 repeated retries, dependency deadlocks).
 
@@ -27,24 +27,24 @@ from datetime import datetime, timedelta
 
 
 def thoth_available() -> bool:
-    return shutil.which("hermes") is not None
+    return shutil.which("thoth") is not None
 
 
 def kanban_list(tenant: str) -> list[dict]:
     """Returns parsed task rows. Falls back to plain stdout parsing if JSON
-    output isn't supported by the installed hermes CLI."""
+    output isn't supported by the installed thoth CLI."""
     try:
         out = subprocess.run(
-            ["hermes", "kanban", "list", "--tenant", tenant, "--json"],
+            ["thoth", "kanban", "list", "--tenant", tenant, "--json"],
             capture_output=True, text=True, check=False,
         )
         if out.returncode == 0 and out.stdout.strip().startswith("["):
             return json.loads(out.stdout)
     except (FileNotFoundError, json.JSONDecodeError):
         pass
-    # Fallback: textual parse of `hermes kanban list`
+    # Fallback: textual parse of `thoth kanban list`
     out = subprocess.run(
-        ["hermes", "kanban", "list", "--tenant", tenant],
+        ["thoth", "kanban", "list", "--tenant", tenant],
         capture_output=True, text=True, check=False,
     )
     rows = []
@@ -68,7 +68,7 @@ def kanban_list(tenant: str) -> list[dict]:
 
 def kanban_show(task_id: str) -> dict | None:
     out = subprocess.run(
-        ["hermes", "kanban", "show", task_id, "--json"],
+        ["thoth", "kanban", "show", task_id, "--json"],
         capture_output=True, text=True, check=False,
     )
     if out.returncode != 0:
@@ -172,7 +172,7 @@ def main():
     args = ap.parse_args()
 
     if not thoth_available():
-        print("ERROR: 'hermes' CLI not found in PATH", file=sys.stderr)
+        print("ERROR: 'thoth' CLI not found in PATH", file=sys.stderr)
         sys.exit(1)
 
     if args.once:

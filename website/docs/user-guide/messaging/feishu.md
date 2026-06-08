@@ -107,7 +107,7 @@ Select **Feishu / Lark** and fill in the prompts.
 
 ### Option B: Manual Configuration
 
-Add the following to `~/.hermes/.env`:
+Add the following to `~/.thoth/.env`:
 
 ```bash
 FEISHU_APP_ID=cli_xxx
@@ -296,7 +296,7 @@ Two policies are available per rule:
 - **`allowlist`** — a static list of users / tenants.
 - **`pairing`** — static list ∪ runtime-approved store. Useful for rollouts where moderators can grant access live.
 
-Rules live in `~/.hermes/feishu_comment_rules.json` (pairing grants in `~/.hermes/feishu_comment_pairing.json`) with mtime-cached hot-reload — edits take effect on the next comment event without restarting the gateway.
+Rules live in `~/.thoth/feishu_comment_rules.json` (pairing grants in `~/.thoth/feishu_comment_pairing.json`) with mtime-cached hot-reload — edits take effect on the next comment event without restarting the gateway.
 
 CLI:
 
@@ -473,7 +473,7 @@ Groups not listed in `group_rules` fall back to `default_group_policy` (defaults
 
 ## Deduplication
 
-Inbound messages are deduplicated using message IDs with a 24-hour TTL. The dedup state is persisted across restarts to `~/.hermes/feishu_seen_message_ids.json`.
+Inbound messages are deduplicated using message IDs with a 24-hour TTL. The dedup state is persisted across restarts to `~/.thoth/feishu_seen_message_ids.json`.
 
 | Setting | Env Var | Default |
 |---------|---------|---------|

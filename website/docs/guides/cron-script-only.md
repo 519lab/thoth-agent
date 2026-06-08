@@ -28,7 +28,7 @@ Thoth calls this **no-agent mode**. It's the cron system minus the LLM.
 
 - **No LLM call.** Zero tokens, zero agent loop, zero model spend.
 - **Script is the job.** The script decides whether to alert. Emit output → message gets sent. Emit nothing → silent tick.
-- **Bash or Python.** `.sh` / `.bash` files run under `/bin/bash`; any other extension runs under the current Python interpreter. Anything in `~/.hermes/scripts/` is accepted.
+- **Bash or Python.** `.sh` / `.bash` files run under `/bin/bash`; any other extension runs under the current Python interpreter. Anything in `~/.thoth/scripts/` is accepted.
 - **Same scheduler.** Lives in `cronjob` alongside LLM jobs — pausing, resuming, listing, logs, and delivery targeting all work the same way.
 
 ## When to Use It
@@ -51,7 +51,7 @@ The real win of no-agent mode is that the agent itself can set up the watchdog f
 
 > **You:** ping me on telegram if RAM is over 85% every 5 minutes
 >
-> **Thoth:** *(writes `~/.hermes/scripts/memory-watchdog.sh`, then calls `cronjob(...)` with `no_agent=true`)*
+> **Thoth:** *(writes `~/.thoth/scripts/memory-watchdog.sh`, then calls `cronjob(...)` with `no_agent=true`)*
 >
 > Set up. Runs every 5 min, alerts Telegram only when RAM is over 85%. Script: `memory-watchdog.sh`. Job ID: `abc123`.
 
@@ -60,7 +60,7 @@ Under the hood, the agent makes two tool calls:
 ```python
 # 1. Write the check script
 write_file(
-    path="~/.hermes/scripts/memory-watchdog.sh",
+    path="~/.thoth/scripts/memory-watchdog.sh",
     content='''#!/usr/bin/env bash
 ram_pct=$(free | awk '/^Mem:/ {printf "%d", $3 * 100 / $2}')
 if [ "$ram_pct" -ge 85 ]; then
@@ -111,7 +111,7 @@ Prefer the shell? The CLI path gives you the same result with three commands:
 
 ```bash
 # 1. Write your script
-cat > ~/.hermes/scripts/memory-watchdog.sh <<'EOF'
+cat > ~/.thoth/scripts/memory-watchdog.sh <<'EOF'
 #!/usr/bin/env bash
 # Alert when RAM usage is over 85%. Silent otherwise.
 RAM_PCT=$(free | awk '/^Mem:/ {printf "%d", $3 * 100 / $2}')
@@ -120,7 +120,7 @@ if [ "$RAM_PCT" -ge 85 ]; then
 fi
 # Empty stdout = silent run; no message sent.
 EOF
-chmod +x ~/.hermes/scripts/memory-watchdog.sh
+chmod +x ~/.thoth/scripts/memory-watchdog.sh
 
 # 2. Schedule it
 thoth cron create "every 5m" \
@@ -151,7 +151,7 @@ The "silent when empty" behavior is the key to the classic watchdog pattern: the
 
 ## Script Rules
 
-Scripts must live in `~/.hermes/scripts/`. This is enforced at both job-creation time and run time — absolute paths, `~/` expansion, and path-traversal patterns (`../`) are rejected. The same directory is shared with the pre-check script gate used by LLM jobs.
+Scripts must live in `~/.thoth/scripts/`. This is enforced at both job-creation time and run time — absolute paths, `~/` expansion, and path-traversal patterns (`../`) are rejected. The same directory is shared with the pre-check script gate used by LLM jobs.
 
 Interpreter choice is by file extension:
 
@@ -186,10 +186,10 @@ See the [cron feature reference](/docs/user-guide/features/cron) for the full sy
 --deliver discord:#ops
 --deliver slack:#engineering
 --deliver signal:+15551234567
---deliver local                          # just save to ~/.hermes/cron/output/
+--deliver local                          # just save to ~/.thoth/cron/output/
 ```
 
-No running gateway is required at script-run time for bot-token platforms (Telegram, Discord, Slack, Signal, SMS, WhatsApp) — the tool calls each platform's REST endpoint directly using the credentials already in `~/.hermes/.env` / `~/.hermes/config.yaml`.
+No running gateway is required at script-run time for bot-token platforms (Telegram, Discord, Slack, Signal, SMS, WhatsApp) — the tool calls each platform's REST endpoint directly using the credentials already in `~/.thoth/.env` / `~/.thoth/config.yaml`.
 
 ## Editing and Lifecycle
 
@@ -208,7 +208,7 @@ Everything that works on LLM jobs (pause, resume, manual trigger, delivery targe
 ## Worked Example: Disk Space Alert
 
 ```bash
-cat > ~/.hermes/scripts/disk-alert.sh <<'EOF'
+cat > ~/.thoth/scripts/disk-alert.sh <<'EOF'
 #!/usr/bin/env bash
 # Alert when / or /home is over 90% full.
 THRESHOLD=90
@@ -218,7 +218,7 @@ df -h / /home 2>/dev/null | awk -v t="$THRESHOLD" '
   }
 '
 EOF
-chmod +x ~/.hermes/scripts/disk-alert.sh
+chmod +x ~/.thoth/scripts/disk-alert.sh
 
 thoth cron create "*/15 * * * *" \
   --no-agent \

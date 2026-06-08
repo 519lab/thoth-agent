@@ -17,7 +17,7 @@ Web search is one of several **backend plugins** Thoth supports. The others (wit
 Thoth scans for web-search backends in three places:
 
 1. **Bundled** — `<repo>/plugins/web/<name>/` (auto-loaded with `kind: backend`, always available)
-2. **User** — `~/.hermes/plugins/web/<name>/` (opt-in via `plugins.enabled` or `thoth plugins enable <name>`)
+2. **User** — `~/.thoth/plugins/web/<name>/` (opt-in via `plugins.enabled` or `thoth plugins enable <name>`)
 3. **Pip** — packages declaring a `hermes_agent.plugins` entry point
 
 Each plugin's `register(ctx)` function calls `ctx.register_web_search_provider(...)` — that puts the instance into the registry in `agent/web_search_registry.py`. The active provider for each capability is picked by config:
@@ -214,7 +214,7 @@ Both `search()` and `extract()` may be `async def` — the dispatcher detects co
 Thoth routes calls to the right provider based on the `supports_*` flags. A common multi-provider setup:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 web:
   search_backend: "brave-free"     # search-only, fast, free 2k/mo
   extract_backend: "firecrawl"     # extract + crawl, paid quota

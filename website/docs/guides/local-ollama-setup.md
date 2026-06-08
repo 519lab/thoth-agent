@@ -34,7 +34,7 @@ By the end, you'll have:
 Ollama runs on CPU-only servers. A 9B model on a modern 8-core CPU gives ~10 tokens/sec. A 31B model on CPU is slower (~2–5 tokens/sec) — each response takes 30–120 seconds, but it works. A GPU dramatically improves this. For CPU-only setups, widen the API timeout via the env var (it's not a `config.yaml` key):
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 THOTH_API_TIMEOUT=1800   # 30 minutes — generous for slow local models
 ```
 :::
@@ -105,7 +105,7 @@ When prompted for a provider, select **Custom Endpoint** and enter:
 - **API Key:** Leave empty or type `no-key` (Ollama doesn't need one)
 - **Model:** `gemma4:31b` (or whichever model you pulled)
 
-Alternatively, edit `~/.hermes/config.yaml` directly:
+Alternatively, edit `~/.thoth/config.yaml` directly:
 
 ```yaml
 model:
@@ -205,7 +205,7 @@ Once Thoth works locally in the CLI, you can expose it as a Telegram or Discord 
 ### Telegram
 
 1. Create a bot via [@BotFather](https://t.me/BotFather) and get the token
-2. Add to your `~/.hermes/config.yaml`:
+2. Add to your `~/.thoth/config.yaml`:
 
 ```yaml
 model:

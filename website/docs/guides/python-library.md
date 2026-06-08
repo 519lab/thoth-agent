@@ -27,7 +27,7 @@ uv pip install git+https://github.com/519lab/thoth-agent.git
 You can also pin it in your `requirements.txt`:
 
 ```text
-hermes-agent @ git+https://github.com/519lab/thoth-agent.git
+thoth-agent @ git+https://github.com/519lab/thoth-agent.git
 ```
 
 :::tip

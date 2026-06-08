@@ -24,13 +24,13 @@ PyPI releases track **tagged versions** (major and minor releases), not every co
 
 ```bash
 thoth update --check    # see if a newer release is on PyPI
-thoth update            # runs pip install --upgrade hermes-agent
+thoth update            # runs pip install --upgrade thoth-agent
 ```
 
 Or manually:
 
 ```bash
-pip install --upgrade hermes-agent    # or: uv pip install --upgrade hermes-agent
+pip install --upgrade thoth-agent    # or: uv pip install --upgrade thoth-agent
 ```
 
 :::tip
@@ -41,7 +41,7 @@ pip install --upgrade hermes-agent    # or: uv pip install --upgrade hermes-agen
 
 When you run `thoth update`, the following steps occur:
 
-1. **Pairing-data snapshot** — a lightweight pre-update state snapshot is saved (covers `~/.hermes/pairing/`, Feishu comment rules, and other state files that get modified at runtime). Recoverable via the snapshot restore flow described under [Snapshots and rollback](../user-guide/checkpoints-and-rollback.md), or by extracting the most recent quick-snapshot zip Thoth wrote next to your `~/.hermes/` directory.
+1. **Pairing-data snapshot** — a lightweight pre-update state snapshot is saved (covers `~/.thoth/pairing/`, Feishu comment rules, and other state files that get modified at runtime). Recoverable via the snapshot restore flow described under [Snapshots and rollback](../user-guide/checkpoints-and-rollback.md), or by extracting the most recent quick-snapshot zip Thoth wrote next to your `~/.thoth/` directory.
 2. **Git pull** — pulls the latest code from the `main` branch and updates submodules
 3. **Dependency install** — runs `uv pip install -e ".[all]"` to pick up new or changed dependencies
 4. **Config migration** — detects new config options added since your version and prompts you to set them
@@ -62,7 +62,7 @@ thoth update --backup
 Or make it the default for every run:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 updates:
   pre_update_backup: true
 ```
@@ -124,10 +124,10 @@ If `git status --short` shows unexpected changes after `thoth update`, stop and 
 `thoth update` protects itself against accidental terminal loss:
 
 - The update ignores `SIGHUP`, so closing your SSH session or terminal window no longer kills it mid-install. `pip` and `git` child processes inherit this protection, so the Python environment cannot be left half-installed by a dropped connection.
-- All output is mirrored to `~/.hermes/logs/update.log` while the update runs. If your terminal disappears, reconnect and inspect the log to see whether the update finished and whether the gateway restart succeeded:
+- All output is mirrored to `~/.thoth/logs/update.log` while the update runs. If your terminal disappears, reconnect and inspect the log to see whether the update finished and whether the gateway restart succeeded:
 
 ```bash
-tail -f ~/.hermes/logs/update.log
+tail -f ~/.thoth/logs/update.log
 ```
 
 - `Ctrl-C` (SIGINT) and system shutdown (SIGTERM) are still honored — those are deliberate cancellations, not accidents.
@@ -232,13 +232,13 @@ See [Nix Setup](./nix-setup.md) for more details.
 thoth uninstall
 ```
 
-The uninstaller gives you the option to keep your configuration files (`~/.hermes/`) for a future reinstall.
+The uninstaller gives you the option to keep your configuration files (`~/.thoth/`) for a future reinstall.
 
 ### pip installs
 
 ```bash
-pip uninstall hermes-agent
-rm -rf ~/.hermes            # Optional — keep if you plan to reinstall
+pip uninstall thoth-agent
+rm -rf ~/.thoth            # Optional — keep if you plan to reinstall
 ```
 
 ### Manual Uninstall
@@ -246,7 +246,7 @@ rm -rf ~/.hermes            # Optional — keep if you plan to reinstall
 ```bash
 rm -f ~/.local/bin/thoth
 rm -rf /path/to/hermes-agent
-rm -rf ~/.hermes            # Optional — keep if you plan to reinstall
+rm -rf ~/.thoth            # Optional — keep if you plan to reinstall
 ```
 
 :::info
@@ -254,6 +254,6 @@ If you installed the gateway as a system service, stop and disable it first:
 ```bash
 thoth gateway stop
 # Linux: systemctl --user disable thoth-gateway
-# macOS: launchctl remove ai.hermes.gateway
+# macOS: launchctl remove ai.thoth.gateway
 ```
 :::

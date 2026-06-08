@@ -57,7 +57,7 @@ The `web_extract` auxiliary task. By default (`auxiliary.web_extract.provider: "
 To route extraction summaries to a cheap, fast model regardless of your main:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 auxiliary:
   web_extract:
     provider: openrouter
@@ -92,7 +92,7 @@ thoth tools
 Full-featured search, extract, and crawl. Recommended for most users.
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 FIRECRAWL_API_KEY=fc-your-key-here
 ```
 
@@ -101,7 +101,7 @@ Get a key at [firecrawl.dev](https://firecrawl.dev). The free tier includes 500 
 **Self-hosted Firecrawl:** Point at your own instance instead of the cloud API:
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 FIRECRAWL_API_URL=http://localhost:3002
 ```
 
@@ -190,11 +190,11 @@ You should see something like `10 results`. If you get a `403 Forbidden`, JSON f
 **7. Configure Thoth:**
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 SEARXNG_URL=http://localhost:8888
 ```
 
-Then select SearXNG as the search backend in `~/.hermes/config.yaml`:
+Then select SearXNG as the search backend in `~/.thoth/config.yaml`:
 
 ```yaml
 web:
@@ -210,7 +210,7 @@ Or set via `thoth tools` → Web Search & Extract → SearXNG.
 Public SearXNG instances are listed at [searx.space](https://searx.space/). Filter by instances that have **JSON format enabled** (shown in the table).
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 SEARXNG_URL=https://searx.example.com
 ```
 
@@ -225,7 +225,7 @@ Public instances have rate limits, variable uptime, and may disable JSON format 
 SearXNG handles search; you need a separate provider for `web_extract` (including any deep-crawl modes). Use the per-capability keys:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 web:
   search_backend: "searxng"
   extract_backend: "firecrawl"   # or tavily, exa, parallel
@@ -240,7 +240,7 @@ With this config, Thoth uses SearXNG for all search queries and Firecrawl for UR
 AI-optimised search, extract, and crawl with a generous free tier.
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 TAVILY_API_KEY=tvly-your-key-here
 ```
 
@@ -253,7 +253,7 @@ Get a key at [app.tavily.com](https://app.tavily.com/home). The free tier includ
 Neural search with semantic understanding. Good for research and finding conceptually related content.
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 EXA_API_KEY=your-exa-key-here
 ```
 
@@ -266,7 +266,7 @@ Get a key at [exa.ai](https://exa.ai). The free tier includes 1 000 searches/mon
 AI-native search and extraction with deep research capabilities.
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 PARALLEL_API_KEY=your-parallel-key-here
 ```
 
@@ -281,7 +281,7 @@ Routes `web_search` through Grok's server-side [web_search tool](https://docs.x.
 Works with either credential path — no new env vars, no new setup wizard:
 
 ```bash
-# ~/.hermes/.env (env-var path)
+# ~/.thoth/.env (env-var path)
 XAI_API_KEY=sk-xai-your-key-here
 ```
 
@@ -294,7 +294,7 @@ thoth auth login xai-oauth
 Then select xAI as the search backend:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 web:
   backend: "xai"
 ```
@@ -328,7 +328,7 @@ Unlike index-backed providers (Brave, Tavily, Exa) which return verbatim search-
 Set one provider for all web capabilities:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 web:
   backend: "searxng"   # firecrawl | searxng | brave-free | ddgs | tavily | exa | parallel | xai
 ```
@@ -338,7 +338,7 @@ web:
 Use different providers for search vs extract. This lets you combine free search (SearXNG) with a paid extract provider, or vice versa:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 web:
   search_backend: "searxng"     # used by web_search
   extract_backend: "firecrawl"  # used by web_extract (and its deep-crawl modes)
@@ -379,7 +379,7 @@ Or check via the CLI:
 
 ```bash
 # Activate the venv and run the web tools module directly
-source ~/.hermes/hermes-agent/.venv/bin/activate
+source ~/.thoth/thoth-agent/.venv/bin/activate
 python -m tools.web_tools
 ```
 

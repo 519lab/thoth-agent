@@ -139,7 +139,7 @@ The kanban tools are gated by `THOTH_KANBAN_TASK` env var the dispatcher sets �
    ```bash
    codex login                  # writes tokens to ~/.codex/auth.json
    ```
-   Thoth's own `thoth auth login codex` writes to `~/.hermes/auth.json` — that's a separate session. **Run `codex login` separately** if you haven't.
+   Thoth's own `thoth auth login codex` writes to `~/.thoth/auth.json` — that's a separate session. **Run `codex login` separately** if you haven't.
 
 3. **(Optional) Install the Codex plugins you want.** When you enable the runtime, Thoth auto-migrates whichever curated plugins you've already installed via Codex CLI:
    ```bash
@@ -159,7 +159,7 @@ In a Thoth session:
 That command:
 - Verifies the `codex` CLI is installed (blocks with an install hint if not).
 - Persists `model.openai_runtime: codex_app_server` to your config.yaml.
-- Migrates user MCP servers from `~/.hermes/config.yaml` to `~/.codex/config.toml`.
+- Migrates user MCP servers from `~/.thoth/config.yaml` to `~/.codex/config.toml`.
 - **Discovers and migrates installed native Codex plugins** (Linear, GitHub, Gmail, Calendar, Canva, etc.) by querying Codex's `plugin/list` RPC.
 - **Registers Thoth's own tools as an MCP server** so the codex subprocess can call back for tools codex doesn't ship with.
 - **Writes `default_permissions = ":workspace"`** so the sandbox allows writes within the workspace without prompting for every operation.
@@ -172,7 +172,7 @@ To check current state without changing anything:
 /codex-runtime
 ```
 
-You can also set it manually in `~/.hermes/config.yaml`:
+You can also set it manually in `~/.thoth/config.yaml`:
 ```yaml
 model:
   openai_runtime: codex_app_server   # default is "auto" (= Thoth runtime)
@@ -246,7 +246,7 @@ When this runtime is on with the `openai-codex` provider, **auxiliary tasks (tit
 
 This isn't specific to `codex_app_server` — it's true for the existing `codex_responses` path too — but it's more visible here because you're explicitly opting in for the subscription billing.
 
-To route specific aux tasks to a cheaper / different model, set explicit overrides in `~/.hermes/config.yaml`:
+To route specific aux tasks to a cheaper / different model, set explicit overrides in `~/.thoth/config.yaml`:
 
 ```yaml
 auxiliary:
@@ -296,8 +296,8 @@ By default, Thoth points the codex subprocess at `~/.codex/` regardless of which
 If you want per-profile Codex isolation (separate auth, separate installed plugins, separate config), set `CODEX_HOME` explicitly per profile. The cleanest way is to point at a directory under your `THOTH_HOME`:
 
 ```bash
-# Inside the work profile, you might wrap hermes:
-CODEX_HOME=~/.hermes/profiles/work/codex thoth chat
+# Inside the work profile, you might wrap thoth:
+CODEX_HOME=~/.thoth/profiles/work/codex thoth chat
 ```
 
 You'll need to re-run `codex login` once with that `CODEX_HOME` set so the OAuth tokens land in the profile-scoped location. After that, `thoth -p work` will operate on isolated Codex state.
@@ -350,7 +350,7 @@ Codex's built-in toolset covers shell/file ops/patches but doesn't have web sear
 [mcp_servers.hermes-tools]
 command = "/path/to/python"
 args = ["-m", "agent.transports.hermes_tools_mcp_server"]
-env = { THOTH_HOME = "/your/.hermes", PYTHONPATH = "...", THOTH_QUIET = "1" }
+env = { THOTH_HOME = "/your/.thoth", PYTHONPATH = "...", THOTH_QUIET = "1" }
 startup_timeout_sec = 30.0
 tool_timeout_sec = 600.0
 ```

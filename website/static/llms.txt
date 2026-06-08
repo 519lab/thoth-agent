@@ -36,7 +36,7 @@ Repo: https://github.com/519lab/thoth-agent
 - [Curator](https://thoth.519lab.com/docs/user-guide/features/curator): Background maintenance for agent-created skills — usage tracking, staleness, archival, and LLM-driven review
 - [Memory](https://thoth.519lab.com/docs/user-guide/features/memory): How Thoth Agent remembers across sessions — MEMORY.md, USER.md, and session search
 - [Memory Providers](https://thoth.519lab.com/docs/user-guide/features/memory-providers): External memory provider plugins — Honcho, OpenViking, Mem0, Hindsight, Holographic, RetainDB, ByteRover, Supermemory
-- [Context Files](https://thoth.519lab.com/docs/user-guide/features/context-files): Project context files — .hermes.md, AGENTS.md, CLAUDE.md, global SOUL.md, and .cursorrules — automatically injected into every conversation
+- [Context Files](https://thoth.519lab.com/docs/user-guide/features/context-files): Project context files — .thoth.md, AGENTS.md, CLAUDE.md, global SOUL.md, and .cursorrules — automatically injected into every conversation
 - [Context References](https://thoth.519lab.com/docs/user-guide/features/context-references): Inline @-syntax for attaching files, folders, git diffs, and URLs directly into your messages
 - [Personality & SOUL.md](https://thoth.519lab.com/docs/user-guide/features/personality): Customize Thoth Agent's personality with a global SOUL.md, built-in personalities, and custom persona definitions
 - [Plugins](https://thoth.519lab.com/docs/user-guide/features/plugins): Extend Thoth with custom tools, hooks, and integrations via the plugin system
@@ -82,7 +82,7 @@ Repo: https://github.com/519lab/thoth-agent
 - [Providers](https://thoth.519lab.com/docs/integrations/providers)
 - [MCP (Model Context Protocol)](https://thoth.519lab.com/docs/user-guide/features/mcp): Connect Thoth Agent to external tool servers via MCP — and control exactly which MCP tools Thoth loads
 - [ACP (Agent Context Protocol)](https://thoth.519lab.com/docs/user-guide/features/acp): Use Thoth Agent inside ACP-compatible editors such as VS Code, Zed, and JetBrains
-- [API Server](https://thoth.519lab.com/docs/user-guide/features/api-server): Expose hermes-agent as an OpenAI-compatible API for any frontend
+- [API Server](https://thoth.519lab.com/docs/user-guide/features/api-server): Expose thoth-agent as an OpenAI-compatible API for any frontend
 - [Honcho Memory](https://thoth.519lab.com/docs/user-guide/features/honcho): AI-native persistent memory via Honcho — dialectic reasoning, multi-agent user modeling, and deep personalization
 - [Provider Routing](https://thoth.519lab.com/docs/user-guide/features/provider-routing)
 - [Fallback Providers](https://thoth.519lab.com/docs/user-guide/features/fallback-providers)

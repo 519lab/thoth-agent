@@ -181,7 +181,7 @@ This shows the profile's Thoth home directory, not the terminal working director
 ```bash
 $ thoth profile show work
 Profile: work
-Path:    ~/.hermes/profiles/work
+Path:    ~/.thoth/profiles/work
 Model:   anthropic/claude-sonnet-4 (anthropic)
 Gateway: stopped
 Skills:  12
@@ -234,7 +234,7 @@ Renames a profile. Updates the directory and shell alias.
 
 ```bash
 thoth profile rename mybot assistant
-# ~/.hermes/profiles/mybot → ~/.hermes/profiles/assistant
+# ~/.thoth/profiles/mybot → ~/.thoth/profiles/assistant
 # ~/.local/bin/mybot → ~/.local/bin/assistant
 ```
 
@@ -481,7 +481,7 @@ Generates shell completion scripts. Includes completions for profile names and p
 # Install completions
 thoth completion bash >> ~/.bashrc
 thoth completion zsh >> ~/.zshrc
-thoth completion fish > ~/.config/fish/completions/hermes.fish
+thoth completion fish > ~/.config/fish/completions/thoth.fish
 
 # Reload shell
 source ~/.bashrc

@@ -13,7 +13,7 @@ description: "Connect Open WebUI to Thoth Agent via the OpenAI-compatible API se
 ```mermaid
 flowchart LR
     A["Open WebUI<br/>browser UI<br/>port 3000"]
-    B["hermes-agent<br/>gateway API server<br/>port 8642"]
+    B["thoth-agent<br/>gateway API server<br/>port 8642"]
     A -->|POST /v1/chat/completions| B
     B -->|SSE streaming response| A
 ```
@@ -35,16 +35,16 @@ Open WebUI talks to Thoth server-to-server, so you do not need `API_SERVER_CORS_
 If you want Thoth + Open WebUI wired together locally with a reusable launcher, run:
 
 ```bash
-cd ~/.hermes/hermes-agent
+cd ~/.thoth/thoth-agent
 bash scripts/setup_open_webui.sh
 ```
 
 What the script does:
 
-- ensures `~/.hermes/.env` contains `API_SERVER_ENABLED`, `API_SERVER_HOST`, `API_SERVER_KEY`, `API_SERVER_PORT`, and `API_SERVER_MODEL_NAME`
+- ensures `~/.thoth/.env` contains `API_SERVER_ENABLED`, `API_SERVER_HOST`, `API_SERVER_KEY`, `API_SERVER_PORT`, and `API_SERVER_MODEL_NAME`
 - restarts the Thoth gateway so the API server comes up
 - installs Open WebUI into `~/.local/open-webui-venv`
-- writes a launcher at `~/.local/bin/start-open-webui-hermes.sh`
+- writes a launcher at `~/.local/bin/start-open-webui-thoth.sh`
 - on macOS, installs a `launchd` user service; on Linux with `systemd --user`, installs a user service there
 
 Defaults:
@@ -75,7 +75,7 @@ thoth config set API_SERVER_ENABLED true
 thoth config set API_SERVER_KEY your-secret-key
 ```
 
-`thoth config set` auto-routes the flag to `config.yaml` and the secret to `~/.hermes/.env`. If the gateway is already running, restart it so the change takes effect:
+`thoth config set` auto-routes the flag to `config.yaml` and the secret to `~/.thoth/.env`. If the gateway is already running, restart it so the change takes effect:
 
 ```bash
 thoth gateway stop && thoth gateway
@@ -100,7 +100,7 @@ curl -s http://127.0.0.1:8642/health
 # {"status": "ok", ...}
 
 curl -s -H "Authorization: Bearer your-secret-key" http://127.0.0.1:8642/v1/models
-# {"object":"list","data":[{"id":"hermes-agent", ...}]}
+# {"object":"list","data":[{"id":"thoth-agent", ...}]}
 ```
 
 If `/health` fails, the gateway didn't pick up `API_SERVER_ENABLED=true` — restart it. If `/v1/models` returns `401`, your `Authorization` header doesn't match `API_SERVER_KEY`.
@@ -125,7 +125,7 @@ First launch takes 15–30 seconds: Open WebUI downloads sentence-transformer em
 
 ### 5. Open the UI
 
-Go to **http://localhost:3000**. Create your admin account (the first user becomes admin). You should see your agent in the model dropdown (named after your profile, or **hermes-agent** for the default profile). Start chatting!
+Go to **http://localhost:3000**. Create your admin account (the first user becomes admin). You should see your agent in the model dropdown (named after your profile, or **thoth-agent** for the default profile). Start chatting!
 
 ## Docker Compose Setup
 
@@ -172,7 +172,7 @@ If you prefer to configure the connection through the UI instead of environment 
 7. Click the **checkmark** to verify the connection
 8. **Save**
 
-Your agent model should now appear in the model dropdown (named after your profile, or **hermes-agent** for the default profile).
+Your agent model should now appear in the model dropdown (named after your profile, or **thoth-agent** for the default profile).
 
 :::warning
 Environment variables only take effect on Open WebUI's **first launch**. After that, connection settings are stored in its internal database. To change them later, use the Admin UI or delete the Docker volume and start fresh.
@@ -196,7 +196,7 @@ This is the default and requires no extra configuration. Open WebUI sends standa
 To use the Responses API mode:
 
 1. Go to **Admin Settings** → **Connections** → **OpenAI** → **Manage**
-2. Edit your hermes-agent connection
+2. Edit your thoth-agent connection
 3. Change **API Type** from "Chat Completions" to **"Responses (Experimental)"**
 4. Save
 
@@ -249,7 +249,7 @@ With streaming enabled (the default), you'll see brief inline indicators as tool
 
 - **Check the URL has `/v1` suffix**: `http://host.docker.internal:8642/v1` (not just `:8642`)
 - **Verify the gateway is running**: `curl http://localhost:8642/health` should return `{"status": "ok"}`
-- **Check model listing**: `curl -H "Authorization: Bearer your-secret-key" http://localhost:8642/v1/models` should return a list with `hermes-agent`
+- **Check model listing**: `curl -H "Authorization: Bearer your-secret-key" http://localhost:8642/v1/models` should return a list with `thoth-agent`
 - **Docker networking**: From inside Docker, `localhost` means the container, not your host. Use `host.docker.internal` or `--network=host`.
 - **Empty Ollama backend shadowing the picker**: If you omitted `ENABLE_OLLAMA_API=false`, Open WebUI shows an empty Ollama section above your Thoth models. Restart the container with `-e ENABLE_OLLAMA_API=false` or disable Ollama in **Admin Settings → Connections**.
 
@@ -279,14 +279,14 @@ To run separate Thoth instances per user — each with their own config, memory,
 
 ```bash
 thoth profile create alice
-cat >> ~/.hermes/profiles/alice/.env <<EOF
+cat >> ~/.thoth/profiles/alice/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8650
 API_SERVER_KEY=alice-secret
 EOF
 
 thoth profile create bob
-cat >> ~/.hermes/profiles/bob/.env <<EOF
+cat >> ~/.thoth/profiles/bob/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8651
 API_SERVER_KEY=bob-secret

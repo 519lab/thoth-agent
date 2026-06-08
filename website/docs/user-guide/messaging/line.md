@@ -44,9 +44,9 @@ cloudflared tunnel --url http://localhost:8646
 ngrok http 8646
 
 # devtunnel
-devtunnel create hermes-line --allow-anonymous
-devtunnel port create hermes-line -p 8646 --protocol https
-devtunnel host hermes-line
+devtunnel create thoth-line --allow-anonymous
+devtunnel port create thoth-line -p 8646 --protocol https
+devtunnel host thoth-line
 ```
 
 Copy the `https://...` URL — you'll set it as the webhook URL below. **Leave the tunnel running** while testing. For production, set up a fixed Cloudflare named tunnel so the webhook URL doesn't change on restart.
@@ -55,7 +55,7 @@ Copy the `https://...` URL — you'll set it as the webhook URL below. **Leave t
 
 ## Step 3: Configure Thoth
 
-Add to `~/.hermes/.env`:
+Add to `~/.thoth/.env`:
 
 ```env
 LINE_CHANNEL_ACCESS_TOKEN=YOUR_LONG_LIVED_TOKEN
@@ -71,7 +71,7 @@ LINE_ALLOWED_ROOMS=R1234567890abcdef...           # optional room IDs
 LINE_PUBLIC_URL=https://my-tunnel.example.com
 ```
 
-Then in `~/.hermes/config.yaml`:
+Then in `~/.thoth/config.yaml`:
 
 ```yaml
 gateway:
@@ -134,7 +134,7 @@ LINE_SLOW_RESPONSE_THRESHOLD=0
 For the postback flow to fire reliably, suppress chatter that would consume the reply token before the threshold:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 display:
   interim_assistant_messages: false
   platforms:
@@ -180,7 +180,7 @@ Cron jobs with `deliver: line` route to `LINE_HOME_CHANNEL`. The adapter ships a
 
 **"invalid signature" on webhook verify.** The `Channel secret` was copied wrong, or your tunnel rewrote the request body. Verify with `curl -i https://<tunnel>/line/webhook/health` first — that should return `{"status":"ok","platform":"line"}`.
 
-**Bot receives nothing in groups.** Check `LINE_ALLOWED_GROUPS` includes the `C...` group ID. To find a group ID, send a test message and grep `~/.hermes/logs/gateway.log` for `LINE: rejecting unauthorized source` — the rejected source dict has the IDs.
+**Bot receives nothing in groups.** Check `LINE_ALLOWED_GROUPS` includes the `C...` group ID. To find a group ID, send a test message and grep `~/.thoth/logs/gateway.log` for `LINE: rejecting unauthorized source` — the rejected source dict has the IDs.
 
 **`send_image` fails with "LINE_PUBLIC_URL must be set".** LINE's Messaging API does not accept binary uploads — images, audio, and video must be reachable HTTPS URLs. Set `LINE_PUBLIC_URL` to the tunnel's public hostname and the adapter will serve files from `/line/media/<token>/<filename>` automatically.
 

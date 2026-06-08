@@ -42,7 +42,7 @@ If you have a paid [Nous Portal](https://portal.nousresearch.com) subscription, 
 To use Browserbase-managed cloud browsers, add:
 
 ```bash
-# Add to ~/.hermes/.env
+# Add to ~/.thoth/.env
 BROWSERBASE_API_KEY=***
 BROWSERBASE_PROJECT_ID=your-project-id-here
 ```
@@ -54,7 +54,7 @@ Get your credentials at [browserbase.com](https://browserbase.com).
 To use Browser Use as your cloud browser provider, add:
 
 ```bash
-# Add to ~/.hermes/.env
+# Add to ~/.thoth/.env
 BROWSER_USE_API_KEY=***
 ```
 
@@ -65,7 +65,7 @@ Get your API key at [browser-use.com](https://browser-use.com). Browser Use prov
 To use Firecrawl as your cloud browser provider, add:
 
 ```bash
-# Add to ~/.hermes/.env
+# Add to ~/.thoth/.env
 FIRECRAWL_API_KEY=fc-***
 ```
 
@@ -103,7 +103,7 @@ The feature is **on by default**. To disable it (all URLs go to the configured
 cloud provider, as before):
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 browser:
   cloud_provider: browserbase
   auto_local_for_private_urls: false
@@ -179,7 +179,7 @@ make down
 # then run the custom docker run command above
 ```
 
-Then set in `~/.hermes/.env`:
+Then set in `~/.thoth/.env`:
 
 ```bash
 CAMOFOX_URL=http://localhost:9377
@@ -191,7 +191,7 @@ When `CAMOFOX_URL` is set, all browser tools automatically route through Camofox
 
 #### Persistent browser sessions
 
-By default, each Camofox session gets a random identity — cookies and logins don't survive across agent restarts. To enable persistent browser sessions, add the following to `~/.hermes/config.yaml`:
+By default, each Camofox session gets a random identity — cookies and logins don't survive across agent restarts. To enable persistent browser sessions, add the following to `~/.thoth/config.yaml`:
 
 ```yaml
 browser:
@@ -233,7 +233,7 @@ If step 5 logs you out, the Camofox server isn't honoring the stable `userId`. D
 
 ##### Where state lives
 
-Thoth derives the stable `userId` from the profile-scoped directory `~/.hermes/browser_auth/camofox/` (or the equivalent under `$THOTH_HOME` for non-default profiles). The actual browser profile data lives on the Camofox server side, keyed by that `userId`. To fully reset a persistent profile, clear it on the Camofox server and remove the corresponding Thoth profile's state directory.
+Thoth derives the stable `userId` from the profile-scoped directory `~/.thoth/browser_auth/camofox/` (or the equivalent under `$THOTH_HOME` for non-default profiles). The actual browser profile data lives on the Camofox server side, keyed by that `userId`. To fully reset a persistent profile, clear it on the Camofox server and remove the corresponding Thoth profile's state directory.
 
 #### Externally managed Camofox sessions
 
@@ -311,28 +311,28 @@ To start a Chromium-family browser manually with CDP enabled, use a dedicated us
 # Linux — Brave
 brave-browser \
   --remote-debugging-port=9222 \
-  --user-data-dir=$HOME/.hermes/chrome-debug \
+  --user-data-dir=$HOME/.thoth/chrome-debug \
   --no-first-run \
   --no-default-browser-check &
 
 # Linux — Google Chrome
 google-chrome \
   --remote-debugging-port=9222 \
-  --user-data-dir=$HOME/.hermes/chrome-debug \
+  --user-data-dir=$HOME/.thoth/chrome-debug \
   --no-first-run \
   --no-default-browser-check &
 
 # macOS — Brave
 "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" \
   --remote-debugging-port=9222 \
-  --user-data-dir="$HOME/.hermes/chrome-debug" \
+  --user-data-dir="$HOME/.thoth/chrome-debug" \
   --no-first-run \
   --no-default-browser-check &
 
 # macOS — Google Chrome
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --remote-debugging-port=9222 \
-  --user-data-dir="$HOME/.hermes/chrome-debug" \
+  --user-data-dir="$HOME/.thoth/chrome-debug" \
   --no-first-run \
   --no-default-browser-check &
 ```
@@ -358,7 +358,7 @@ For that setup, prefer `chrome-devtools-mcp` through Thoth MCP support.
 
 See the MCP guide for the practical setup:
 
-- [Use MCP with Thoth](../../guides/use-mcp-with-thoth.md#wsl2-bridge-hermes-in-wsl-to-windows-chrome)
+- [Use MCP with Thoth](../../guides/use-mcp-with-thoth.md#wsl2-bridge-thoth-in-wsl-to-windows-chrome)
 
 ### Local browser mode
 
@@ -478,7 +478,7 @@ The screenshot is saved persistently and the file path is returned alongside the
 What does the chart on this page show?
 ```
 
-Screenshots are stored in `~/.hermes/cache/screenshots/` and automatically cleaned up after 24 hours.
+Screenshots are stored in `~/.thoth/cache/screenshots/` and automatically cleaned up after 24 hours.
 
 ### `browser_console`
 
@@ -608,7 +608,7 @@ browser:
   record_sessions: true  # default: false
 ```
 
-When enabled, recording starts automatically on the first `browser_navigate` and saves to `~/.hermes/browser_recordings/` when the session closes. Works in both local and cloud (Browserbase) modes. Recordings older than 72 hours are automatically cleaned up.
+When enabled, recording starts automatically on the first `browser_navigate` and saves to `~/.thoth/browser_recordings/` when the session closes. Works in both local and cloud (Browserbase) modes. Recordings older than 72 hours are automatically cleaned up.
 
 ## Stealth Features
 

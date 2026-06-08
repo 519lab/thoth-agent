@@ -53,7 +53,7 @@ The WebSocket URL and API Domain have sensible defaults built in. You only need 
 
 ### 3. Configure Environment Variables
 
-After initial setup, verify these variables in `~/.hermes/.env`:
+After initial setup, verify these variables in `~/.thoth/.env`:
 
 ```bash
 # Required
@@ -130,7 +130,7 @@ Use the `/sethome` command in any Yuanbao chat (DM or group) to designate it as 
 If no home channel is configured, the first user to message the bot will be automatically set as the home channel owner. If the current home channel is a group chat, the first DM will upgrade it to a direct channel.
 :::
 
-You can also set it manually in `~/.hermes/.env`:
+You can also set it manually in `~/.thoth/.env`:
 
 ```bash
 YUANBAO_HOME_CHANNEL=direct:user_account_id
@@ -204,7 +204,7 @@ When you ask the bot to create or export a file, it sends the file directly to y
 1. Verify APP_ID and APP_SECRET are correct
 2. Check that the WebSocket URL is accessible
 3. Ensure the bot account has proper permissions
-4. Review gateway logs: `tail -f ~/.hermes/logs/gateway.log`
+4. Review gateway logs: `tail -f ~/.thoth/logs/gateway.log`
 
 ### "Connection refused" error
 

@@ -44,14 +44,14 @@ thoth setup
 thoth chat
 ```
 
-After `nix profile install`, `thoth`, `hermes-agent`, and `thoth-acp` are on your PATH. From here, the workflow is identical to the [standard installation](./installation.md) — `thoth setup` walks you through provider selection, `thoth gateway install` sets up a launchd (macOS) or systemd user service, and config lives in `~/.hermes/`.
+After `nix profile install`, `thoth`, `thoth-agent`, and `thoth-acp` are on your PATH. From here, the workflow is identical to the [standard installation](./installation.md) — `thoth setup` walks you through provider selection, `thoth gateway install` sets up a launchd (macOS) or systemd user service, and config lives in `~/.thoth/`.
 
 <details>
 <summary><strong>Building from a local clone</strong></summary>
 
 ```bash
 git clone https://github.com/519lab/thoth-agent.git
-cd hermes-agent
+cd thoth-agent
 nix build
 ./result/bin/thoth setup
 ```
@@ -119,7 +119,7 @@ services.hermes-agent.environmentFiles = [ "/var/lib/thoth/env" ];
 :::
 
 :::tip addToSystemPackages
-Setting `addToSystemPackages = true` does two things: puts the `thoth` CLI on your system PATH **and** sets `THOTH_HOME` system-wide so the interactive CLI shares state (sessions, skills, cron) with the gateway service. Without it, running `thoth` in your shell creates a separate `~/.hermes/` directory.
+Setting `addToSystemPackages = true` does two things: puts the `thoth` CLI on your system PATH **and** sets `THOTH_HOME` system-wide so the interactive CLI shares state (sessions, skills, cron) with the gateway service. Without it, running `thoth` in your shell creates a separate `~/.thoth/` directory.
 :::
 
 ### Container-aware CLI
@@ -592,7 +592,7 @@ The container is only recreated when its **identity hash** changes. The hash cov
 :::warning Writable layer loss
 When the identity hash changes (image upgrade, new volumes, new container options), the container is destroyed and recreated from a fresh pull of `container.image`. Any `apt install`, `pip install`, or `npm install` packages in the writable layer are lost. State in `/data` and `/home/thoth` is preserved (these are bind mounts).
 
-If the agent relies on specific packages, consider baking them into a custom image (`container.image = "my-registry/hermes-base:latest"`) or scripting their installation in the agent's SOUL.md.
+If the agent relies on specific packages, consider baking them into a custom image (`container.image = "my-registry/thoth-base:latest"`) or scripting their installation in the agent's SOUL.md.
 :::
 
 ### GC Root Protection
@@ -719,7 +719,7 @@ A build-time collision check prevents plugin packages from shadowing core thoth 
 The flake provides a development shell with Python 3.12, uv, Node.js, and all runtime tools:
 
 ```bash
-cd hermes-agent
+cd thoth-agent
 nix develop
 
 # Shell provides:
@@ -736,7 +736,7 @@ thoth chat
 The included `.envrc` activates the dev shell automatically:
 
 ```bash
-cd hermes-agent
+cd thoth-agent
 direnv allow    # one-time
 # Subsequent entries are near-instant (stamp file skips dep install)
 ```
@@ -763,7 +763,7 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 
 | Check | What it tests |
 |---|---|
-| `package-contents` | `thoth` and `hermes-agent` binaries exist and `thoth version` runs |
+| `package-contents` | `thoth` and `thoth-agent` binaries exist and `thoth version` runs |
 | `entry-points-sync` | Every `[project.scripts]` entry in `pyproject.toml` has a wrapped binary in the Nix package |
 | `cli-commands` | `thoth --help` exposes `gateway` and `config` subcommands |
 | `managed-guard` | `THOTH_MANAGED=true thoth config set ...` prints the NixOS error |

@@ -53,7 +53,7 @@ If you have a public endpoint available, check out [Automated GitHub PR Comments
 - **Messaging configured** (optional) — [Telegram](/docs/user-guide/messaging/telegram) or [Discord](/docs/user-guide/messaging/discord)
 
 :::tip No messaging? No problem
-Use `deliver: "local"` to save reviews to `~/.hermes/cron/output/`. Great for testing before wiring up notifications.
+Use `deliver: "local"` to save reviews to `~/.thoth/cron/output/`. Great for testing before wiring up notifications.
 :::
 
 ---
@@ -101,10 +101,10 @@ If you're happy with the quality, time to automate it.
 A skill gives Thoth consistent review guidelines that persist across sessions and cron runs. Without one, review quality varies.
 
 ```bash
-mkdir -p ~/.hermes/skills/code-review
+mkdir -p ~/.thoth/skills/code-review
 ```
 
-Create `~/.hermes/skills/code-review/SKILL.md`:
+Create `~/.thoth/skills/code-review/SKILL.md`:
 
 ```markdown
 ---

@@ -15,7 +15,7 @@ This guide walks through:
 4. Admin-consenting those permissions
 5. (Optional) Scoping the app to specific users with an Application Access Policy
 
-You need **tenant admin rights** (or an admin to grant consent on your behalf) to finish this. Bookmark the values you collect — they go into `~/.hermes/.env` at the end.
+You need **tenant admin rights** (or an admin to grant consent on your behalf) to finish this. Bookmark the values you collect — they go into `~/.thoth/.env` at the end.
 
 ## Prerequisites
 
@@ -43,7 +43,7 @@ You'll land on the app's overview page. Copy two values:
 
 1. In the left nav, open **Certificates & secrets**.
 2. Click **New client secret**.
-3. **Description:** `hermes-graph-secret`. **Expires:** pick a value that matches your rotation policy (6-24 months is typical).
+3. **Description:** `thoth-graph-secret`. **Expires:** pick a value that matches your rotation policy (6-24 months is typical).
 4. Click **Add**.
 5. Copy the **Value** column immediately — it's only shown once. That value is `MSGRAPH_CLIENT_SECRET`.
 
@@ -121,7 +121,7 @@ Without the policy, **any** user's meetings are readable — that's what the per
 
 ## Step 5: Write the Credentials to Your Env File
 
-Put the three values you collected into `~/.hermes/.env`:
+Put the three values you collected into `~/.thoth/.env`:
 
 ```bash
 MSGRAPH_TENANT_ID=<directory-tenant-id>
@@ -132,7 +132,7 @@ MSGRAPH_CLIENT_SECRET=<client-secret-value>
 Set file permissions so only you can read the secret:
 
 ```bash
-chmod 600 ~/.hermes/.env
+chmod 600 ~/.thoth/.env
 ```
 
 ## Step 6: Verify the Token Flow
@@ -164,7 +164,7 @@ A successful run prints a long token string and a health dict showing `cached: T
 Azure client secrets have a hard expiry. Before yours expires:
 
 1. Create a second client secret in step 2 without deleting the first one.
-2. Update `MSGRAPH_CLIENT_SECRET` in `~/.hermes/.env` with the new value.
+2. Update `MSGRAPH_CLIENT_SECRET` in `~/.thoth/.env` with the new value.
 3. Restart the gateway so the new secret is picked up: `thoth gateway restart`.
 4. Verify with the smoke test above.
 5. Delete the old secret from the Azure portal.

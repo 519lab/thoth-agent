@@ -48,7 +48,7 @@ Signal-cli works as a **linked device** — like WhatsApp Web, but for Signal. Y
 
 ```bash
 # Generate a linking URI (displays a QR code or link)
-signal-cli link -n "HermesAgent"
+signal-cli link -n "ThothAgent"
 ```
 
 1. Open **Signal** on your phone
@@ -96,7 +96,7 @@ Select **Signal** from the platform menu. The wizard will:
 
 ### Manual Configuration
 
-Add to `~/.hermes/.env`:
+Add to `~/.thoth/.env`:
 
 ```bash
 # Required

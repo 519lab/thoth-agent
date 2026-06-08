@@ -16,7 +16,7 @@ Thoth runs natively on Windows 10 and Windows 11 — no WSL, no Cygwin, no Docke
 If you just want to install, the one-liner on the [landing page](/) or [Installation page](../getting-started/installation#windows-native-powershell--early-beta) is all you need. Come back here when something surprises you.
 
 :::tip Want WSL instead?
-If you prefer a real POSIX environment (for the dashboard's embedded terminal, `fork` semantics, Linux-style file watchers, etc.), see the **[Windows (WSL2) Guide](./windows-wsl-quickstart.md)**. Both coexist cleanly: native data lives under `%LOCALAPPDATA%\thoth`, WSL data lives under `~/.hermes`.
+If you prefer a real POSIX environment (for the dashboard's embedded terminal, `fork` semantics, Linux-style file watchers, etc.), see the **[Windows (WSL2) Guide](./windows-wsl-quickstart.md)**. Both coexist cleanly: native data lives under `%LOCALAPPDATA%\thoth`, WSL data lives under `~/.thoth`.
 :::
 
 ## Quick install
@@ -49,7 +49,7 @@ The installer auto-retries flaky git fetches and strips BOM from any downloaded 
 
 ### Desktop installer (alternative)
 
-A thin GUI installer is also available — useful if you'd rather double-click an `.exe` than open PowerShell. Download Thoth Desktop, run the installer, and on first launch the GUI calls `install.ps1` under the hood to provision Python (via `uv`), Node, PortableGit, and the rest of the dependency bootstrap described below. After the first run, the desktop app and the PowerShell-installed `thoth` CLI share the same `%LOCALAPPDATA%\thoth\hermes-agent` install and `%USERPROFILE%\.hermes` data directory — switch between the GUI and the CLI freely.
+A thin GUI installer is also available — useful if you'd rather double-click an `.exe` than open PowerShell. Download Thoth Desktop, run the installer, and on first launch the GUI calls `install.ps1` under the hood to provision Python (via `uv`), Node, PortableGit, and the rest of the dependency bootstrap described below. After the first run, the desktop app and the PowerShell-installed `thoth` CLI share the same `%LOCALAPPDATA%\thoth\hermes-agent` install and `%USERPROFILE%\.thoth` data directory — switch between the GUI and the CLI freely.
 
 Use the desktop installer when you want a familiar Windows install experience or you're handing Thoth to a non-developer; use the PowerShell one-liner when you're already in a terminal.
 
@@ -205,10 +205,10 @@ Services require admin rights to install and tie the gateway's lifecycle to mach
 | `%LOCALAPPDATA%\thoth\hermes-agent\` | Git checkout + venv. Safe to `Remove-Item -Recurse` and reinstall. |
 | `%LOCALAPPDATA%\thoth\git\` | PortableGit (only if the installer provisioned it). |
 | `%LOCALAPPDATA%\thoth\node\` | Portable Node.js (only if the installer provisioned it). |
-| `%LOCALAPPDATA%\thoth\bin\` | `hermes.cmd` shim, added to User PATH. |
-| `%USERPROFILE%\.hermes\` | Your config, auth, skills, sessions, logs. **Survives reinstalls.** |
+| `%LOCALAPPDATA%\thoth\bin\` | `thoth.cmd` shim, added to User PATH. |
+| `%USERPROFILE%\.thoth\` | Your config, auth, skills, sessions, logs. **Survives reinstalls.** |
 
-The split is deliberate: `%LOCALAPPDATA%\thoth` is disposable infrastructure (you can blow it away and the one-liner restores it). `%USERPROFILE%\.hermes` is your data — config, memory, skills, session history — and is identical in shape to a Linux install. Mirror it between machines and your Thoth moves with you.
+The split is deliberate: `%LOCALAPPDATA%\thoth` is disposable infrastructure (you can blow it away and the one-liner restores it). `%USERPROFILE%\.thoth` is your data — config, memory, skills, session history — and is identical in shape to a Linux install. Mirror it between machines and your Thoth moves with you.
 
 **Override `THOTH_HOME`:** set the environment variable to point at a different data dir. Works the same as on Linux.
 
@@ -229,13 +229,13 @@ The installer adds `%LOCALAPPDATA%\thoth\bin` to your **User PATH** via `[Enviro
 Verify:
 
 ```powershell
-Get-Command thoth        # should print C:\Users\<you>\AppData\Local\thoth\bin\hermes.cmd
+Get-Command thoth        # should print C:\Users\<you>\AppData\Local\thoth\bin\thoth.cmd
 thoth --version
 ```
 
 ### Environment variables
 
-Thoth honors both `$env:X` (process-scope) and User environment variables (permanent, set in System Properties → Environment Variables). Setting API keys in `%USERPROFILE%\.hermes\.env` is the normal path — same as Linux:
+Thoth honors both `$env:X` (process-scope) and User environment variables (permanent, set in System Properties → Environment Variables). Setting API keys in `%USERPROFILE%\.thoth\.env` is the normal path — same as Linux:
 
 ```
 OPENROUTER_API_KEY=sk-or-...
@@ -262,13 +262,13 @@ From PowerShell:
 thoth uninstall
 ```
 
-That's the clean path — removes the schtasks entry, Startup folder shortcut, `hermes.cmd` shim, deletes `%LOCALAPPDATA%\thoth\hermes-agent\`, and trims the User PATH. It leaves `%USERPROFILE%\.hermes\` alone (your config, auth, skills, sessions, logs) in case you're reinstalling.
+That's the clean path — removes the schtasks entry, Startup folder shortcut, `thoth.cmd` shim, deletes `%LOCALAPPDATA%\thoth\hermes-agent\`, and trims the User PATH. It leaves `%USERPROFILE%\.thoth\` alone (your config, auth, skills, sessions, logs) in case you're reinstalling.
 
 To nuke everything:
 
 ```powershell
 thoth uninstall
-Remove-Item -Recurse -Force "$env:USERPROFILE\.hermes"
+Remove-Item -Recurse -Force "$env:USERPROFILE\.thoth"
 Remove-Item -Recurse -Force "$env:LOCALAPPDATA\thoth"
 ```
 
@@ -286,8 +286,8 @@ Consequence: any codepath that said "check if this PID is alive" via `os.kill(pi
 
 ## Common pitfalls
 
-**`hermes: command not found` right after install.**
-Open a new PowerShell window. The installer added `%LOCALAPPDATA%\thoth\bin` to User PATH, but existing shells need to be restarted to pick it up. In the meantime you can run `& "$env:LOCALAPPDATA\thoth\bin\hermes.cmd"`.
+**`thoth: command not found` right after install.**
+Open a new PowerShell window. The installer added `%LOCALAPPDATA%\thoth\bin` to User PATH, but existing shells need to be restarted to pick it up. In the meantime you can run `& "$env:LOCALAPPDATA\thoth\bin\thoth.cmd"`.
 
 **`WinError 193: %1 is not a valid Win32 application` when running a tool.**
 You hit a shebang-script invocation that bypassed the `.cmd` shim. Thoth resolves commands through `shutil.which(cmd, path=local_bin)` so PATHEXT picks up `.CMD` — if you're invoking the tool via a hardcoded path instead, switch to the `.cmd` variant (e.g., `npx.cmd`, not `npx`).

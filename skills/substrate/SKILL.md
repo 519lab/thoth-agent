@@ -41,8 +41,7 @@ infrastructure beneath them.
 
 ## Prerequisites
 
-- `THOTH_PG_DSN` (legacy `THOTH_PG_DSN` still honored via the env bridge)
-  set and pointing at a PG 17+ instance with the `vector`,
+- `THOTH_PG_DSN` set and pointing at a PG 17+ instance with the `vector`,
   `pg_trgm`, and `pgcrypto` extensions. Verify with `thoth doctor`.
 - Alembic at head (`uv run alembic -c migrations/alembic.ini current` should
   match the latest revision under `migrations/versions/`). If behind, run
@@ -123,7 +122,7 @@ thoth substrate curator pressure     # per-stream density + 5m update rate
 ```bash
 thoth substrate recall               # last-hour call stats + embedding coverage
 thoth substrate recall recent --limit 20
-thoth substrate recall sample --session-id <hermes-session-id>
+thoth substrate recall sample --session-id <thoth-session-id>
 thoth substrate recall config        # current RECALL_* knobs
 ```
 
@@ -324,7 +323,7 @@ SELECT substrate_create_partition_if_not_exists(date_trunc('month', now() + inte
 
 ```bash
 # Check the Thoth process log for substrate sub-agent boot messages
-tail -F ~/.hermes/logs/agent.log | grep -i substrate
+tail -F ~/.thoth/logs/agent.log | grep -i substrate
 ```
 
 Sub-agents are spawned by `Substrate.boot()`. If any raised on startup,
@@ -343,7 +342,7 @@ echo $THOTH_SUBSTRATE_RECALL
 If it's `1` but recall is empty, check the provider registration log:
 
 ```bash
-grep -i "SubstrateMemoryProvider" ~/.hermes/logs/agent.log | tail
+grep -i "SubstrateMemoryProvider" ~/.thoth/logs/agent.log | tail
 ```
 
 If registration failed (Phase C provider import error), the upstream memory

@@ -7,7 +7,7 @@ license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [hermes, setup, configuration, multi-agent, spawning, cli, gateway, development]
+    tags: [thoth, setup, configuration, multi-agent, spawning, cli, gateway, development]
     homepage: https://github.com/519lab/thoth-agent
     related_skills: [claude-code, codex, opencode, substrate]
 ---
@@ -279,7 +279,7 @@ The registry of record is `thoth_cli/commands.py` — every consumer
 /toolsets            List toolsets (CLI)
 /skills              Search/install skills (CLI)
 /skill <name>        Load a skill into session
-/reload-skills       Re-scan ~/.hermes/skills/ for added/removed skills
+/reload-skills       Re-scan ~/.thoth/skills/ for added/removed skills
 /reload              Reload .env variables into the running session (CLI)
 /reload-mcp          Reload MCP servers
 /cron                Manage cron jobs (CLI)
@@ -333,25 +333,24 @@ The registry of record is `thoth_cli/commands.py` — every consumer
 ## Key Paths & Config
 
 ```
-~/.hermes/config.yaml       Main configuration
-~/.hermes/.env              API keys and secrets
+~/.thoth/config.yaml        Main configuration
+~/.thoth/.env               API keys and secrets
 $THOTH_HOME/skills/        Installed skills
-~/.hermes/sessions/         Gateway routing index, request dumps, *.jsonl transcripts (and optional per-session JSON snapshots when sessions.write_json_snapshots: true)
-~/.hermes/logs/             Gateway and error logs
-~/.hermes/auth.json         OAuth tokens and credential pools
-~/.hermes/hermes-agent/     Source code (if git-installed)
+~/.thoth/sessions/          Gateway routing index, request dumps, *.jsonl transcripts (and optional per-session JSON snapshots when sessions.write_json_snapshots: true)
+~/.thoth/logs/              Gateway and error logs
+~/.thoth/auth.json          OAuth tokens and credential pools
+~/.thoth/thoth-agent/       Source code (if git-installed)
 ```
 
 **Substrate Edition (this fork) differences:** session + kanban + substrate
-state all live in **PostgreSQL** (DSN `THOTH_PG_DSN`; legacy `THOTH_PG_DSN`
-still honored via the env bridge; default
+state all live in **PostgreSQL** (DSN `THOTH_PG_DSN`; default
 `postgresql://hermes:hermes@localhost:5432/hermes`) rather than `state.db`.
 The `state.db` SQLite file no longer exists in this fork. The installer's
-defaults still place `THOTH_HOME` at `~/.hermes/` and the launcher at
-`hermes`; pass `--cli-name thoth-substrate --hermes-home ~/.thoth-substrate`
+defaults place `THOTH_HOME` at `~/.thoth/` and the launcher at
+`thoth`; pass `--cli-name thoth-substrate --hermes-home ~/.thoth-substrate`
 to coexist with an existing upstream install.
 
-Profiles use `~/.hermes/profiles/<name>/` with the same layout.
+Profiles use `~/.thoth/profiles/<name>/` with the same layout.
 
 ### Config Sections
 
@@ -496,7 +495,7 @@ Note: YOLO / `approvals.mode: off` does NOT turn off secret redaction. They are 
 
 ### Shell hooks allowlist
 
-Some shell-hook integrations require explicit allowlisting before they fire. Managed via `~/.hermes/shell-hooks-allowlist.json` — prompted interactively the first time a hook wants to run.
+Some shell-hook integrations require explicit allowlisting before they fire. Managed via `~/.thoth/shell-hooks-allowlist.json` — prompted interactively the first time a hook wants to run.
 
 ### Disabling the web/browser/image-gen tools
 
@@ -677,7 +676,7 @@ so nothing is lost.
   Bundled + hub-installed skills are off-limits. **Never deletes** —
   max destructive action is archive. Pinned skills are exempt from
   every auto-transition and every LLM review pass.
-- **Telemetry:** sidecar at `~/.hermes/skills/.usage.json` holds
+- **Telemetry:** sidecar at `~/.thoth/skills/.usage.json` holds
   per-skill `use_count`, `view_count`, `patch_count`,
   `last_activity_at`, `state`, `pinned`.
 
@@ -891,7 +890,7 @@ and logs — avoids shell-escaping backslashes in bash.
 ### Gateway issues
 Check logs first:
 ```bash
-grep -i "failed to send\|error" ~/.hermes/logs/gateway.log | tail -20
+grep -i "failed to send\|error" ~/.thoth/logs/gateway.log | tail -20
 ```
 
 Common gateway problems:
@@ -929,9 +928,9 @@ thoth config set auxiliary.vision.model <model_name>
 | Memory | `thoth memory status` or [Memory docs](https://thoth.519lab.com/docs/user-guide/features/memory) |
 | Env variables | `thoth config env-path` or [Env vars reference](https://thoth.519lab.com/docs/reference/environment-variables) |
 | CLI commands | `thoth --help` or [CLI reference](https://thoth.519lab.com/docs/reference/cli-commands) |
-| Gateway logs | `~/.hermes/logs/gateway.log` |
+| Gateway logs | `~/.thoth/logs/gateway.log` |
 | Session files | `thoth sessions browse` (reads PostgreSQL `sessions` table; upstream reads `state.db`) |
-| Source code | `~/.hermes/hermes-agent/` |
+| Source code | `~/.thoth/thoth-agent/` |
 
 ---
 
@@ -942,11 +941,11 @@ For occasional contributors and PR authors. Full developer docs: https://thoth.5
 ### Project Layout
 
 ```
-hermes-agent/
+thoth-agent/
 ├── run_agent.py          # AIAgent — core conversation loop
 ├── model_tools.py        # Tool discovery and dispatch
 ├── toolsets.py           # Toolset definitions
-├── cli.py                # Interactive CLI (HermesCLI)
+├── cli.py                # Interactive CLI (ThothCLI)
 ├── thoth_state.py       # Session store (PostgreSQL in this fork; SQLite upstream)
 ├── agent/                # Prompt builder, context compression, memory, model routing, credential pooling, skill dispatch
 ├── thoth_cli/           # CLI subcommands, config, setup, commands
@@ -962,7 +961,7 @@ hermes-agent/
 └── website/              # Docusaurus docs site
 ```
 
-Config: `~/.hermes/config.yaml` (settings), `~/.hermes/.env` (API keys).
+Config: `~/.thoth/config.yaml` (settings), `~/.thoth/.env` (API keys).
 
 ### Adding a Tool (3 files)
 
@@ -992,7 +991,7 @@ registry.register(
 
 Auto-discovery: any `tools/*.py` file with a top-level `registry.register()` call is imported automatically — no manual list needed.
 
-All handlers must return JSON strings. Use `get_thoth_home()` for paths, never hardcode `~/.hermes`.
+All handlers must return JSON strings. Use `get_thoth_home()` for paths, never hardcode `~/.thoth`.
 
 ### Adding a Slash Command
 
@@ -1021,7 +1020,7 @@ python -m pytest tests/ -o 'addopts=' -q   # Full suite
 python -m pytest tests/tools/ -q            # Specific area
 ```
 
-- Tests auto-redirect `THOTH_HOME` to temp dirs — never touch real `~/.hermes/`
+- Tests auto-redirect `THOTH_HOME` to temp dirs — never touch real `~/.thoth/`
 - Run full suite before pushing any change
 - Use `-o 'addopts='` to clear any baked-in pytest flags
 

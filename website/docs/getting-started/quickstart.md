@@ -51,7 +51,7 @@ Pick the row that matches your goal:
 **Option A — pip (simplest):**
 
 ```bash
-pip install hermes-agent
+pip install thoth-agent
 thoth postinstall     # optional: installs Node.js, browser, ripgrep, ffmpeg + runs setup
 ```
 
@@ -131,8 +131,8 @@ You can switch providers at any time with `thoth model` — no lock-in. For a fu
 
 Thoth separates secrets from normal config:
 
-- **Secrets and tokens** → `~/.hermes/.env`
-- **Non-secret settings** → `~/.hermes/config.yaml`
+- **Secrets and tokens** → `~/.thoth/.env`
+- **Non-secret settings** → `~/.thoth/config.yaml`
 
 The easiest way to set values correctly is through the CLI:
 
@@ -250,8 +250,8 @@ thoth config set terminal.backend ssh       # Remote server
 
 ```bash
 # From the Thoth install directory (the curl installer placed it at
-# ~/.hermes/hermes-agent on Linux/macOS or %LOCALAPPDATA%\thoth\hermes-agent on Windows):
-cd ~/.hermes/hermes-agent
+# ~/.thoth/hermes-agent on Linux/macOS or %LOCALAPPDATA%\thoth\hermes-agent on Windows):
+cd ~/.thoth/hermes-agent
 uv pip install -e ".[voice]"
 # Includes faster-whisper for free local speech-to-text
 ```
@@ -270,7 +270,7 @@ Or use `/skills` inside a chat session.
 ### MCP servers
 
 ```yaml
-# Add to ~/.hermes/config.yaml
+# Add to ~/.thoth/config.yaml
 mcp_servers:
   github:
     command: npx
@@ -287,7 +287,7 @@ ACP support ships with the standard `[all]` extras, so the curl installer alread
 thoth acp
 ```
 
-(If you installed without `[all]`, run `cd ~/.hermes/hermes-agent && uv pip install -e ".[acp]"` first.)
+(If you installed without `[all]`, run `cd ~/.thoth/hermes-agent && uv pip install -e ".[acp]"` first.)
 
 See [ACP Editor Integration](../user-guide/features/acp.md).
 

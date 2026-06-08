@@ -44,7 +44,7 @@ thoth model
 thoth
 ```
 
-After the first login, credentials are stored under `~/.hermes/auth.json` and are refreshed automatically before each session.
+After the first login, credentials are stored under `~/.thoth/auth.json` and are refreshed automatically before each session.
 
 ## Logging In Manually
 
@@ -61,7 +61,7 @@ If your account is on the China platform (`minimaxi.com`), use the China-region 
 ```bash
 thoth auth add minimax-cn --type oauth   # if OAuth is supported on your CN account
 # or simpler:
-echo 'MINIMAX_CN_API_KEY=your-key' >> ~/.hermes/.env
+echo 'MINIMAX_CN_API_KEY=your-key' >> ~/.thoth/.env
 ```
 
 ### Remote / headless sessions
@@ -82,7 +82,7 @@ Thoth implements a PKCE device-code flow against the MiniMax OAuth endpoints:
 2. It POSTs to `{base_url}/oauth/code` with the challenge and receives a `user_code` and `verification_uri`.
 3. Your browser opens `verification_uri`. If prompted, enter the `user_code`.
 4. Thoth polls `{base_url}/oauth/token` until the token arrives (or the deadline passes).
-5. Tokens (`access_token`, `refresh_token`, expiry) are saved to `~/.hermes/auth.json` under the `minimax-oauth` key.
+5. Tokens (`access_token`, `refresh_token`, expiry) are saved to `~/.thoth/auth.json` under the `minimax-oauth` key.
 
 Token refresh (standard OAuth `refresh_token` grant) runs automatically at each session start when the access token is within 60 seconds of expiry.
 
@@ -121,7 +121,7 @@ thoth config set provider minimax-oauth
 
 ## Configuration Reference
 
-After login, `~/.hermes/config.yaml` will contain entries similar to:
+After login, `~/.thoth/config.yaml` will contain entries similar to:
 
 ```yaml
 model:

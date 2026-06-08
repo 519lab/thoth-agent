@@ -87,7 +87,7 @@ If a command exists in the TUI but doesn't show in autocomplete:
 
 3. Ensure `subcommands` matches the expected tab-completion options shown by the TUI.
 
-4. If the command runs server-side, add a handler in `HermesCLI.process_command()` in `cli.py`:
+4. If the command runs server-side, add a handler in `ThothCLI.process_command()` in `cli.py`:
    ```python
    elif canonical == "commandname":
        self._handle_commandname(cmd_original)
@@ -146,7 +146,7 @@ After fixing:
 
 4. Execute the command and confirm:
    - Expected behavior fires
-   - Any persisted config updates correctly (`read_file ~/.hermes/config.yaml`)
+   - Any persisted config updates correctly (`read_file ~/.thoth/config.yaml`)
    - Live UI state reflects the change immediately (not just after restart)
 
 5. If the command is also gateway-available, test it from at least one messaging platform (or run the gateway tests: `scripts/run_tests.sh tests/gateway/`).

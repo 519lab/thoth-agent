@@ -15,7 +15,7 @@ Thoth Agent supports Amazon Bedrock as a native provider using the **Converse AP
   - `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` environment variables
   - `AWS_PROFILE` for SSO or named profiles
   - `aws configure` for local development
-- **boto3** — install with `pip install hermes-agent[bedrock]`
+- **boto3** — install with `pip install thoth-agent[bedrock]`
 - **IAM permissions** — at minimum:
   - `bedrock:InvokeModel` and `bedrock:InvokeModelWithResponseStream` (for inference)
   - `bedrock:ListFoundationModels` and `bedrock:ListInferenceProfiles` (for model discovery)
@@ -28,7 +28,7 @@ On AWS compute, attach an IAM role with `AmazonBedrockFullAccess` and you're don
 
 ```bash
 # Install with Bedrock support
-pip install hermes-agent[bedrock]
+pip install thoth-agent[bedrock]
 
 # Select Bedrock as your provider
 thoth model
@@ -41,7 +41,7 @@ thoth chat
 
 ## Configuration
 
-After running `thoth model`, your `~/.hermes/config.yaml` will contain:
+After running `thoth model`, your `~/.thoth/config.yaml` will contain:
 
 ```yaml
 model:

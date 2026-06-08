@@ -44,7 +44,7 @@ A good rule:
 Thoth now uses only the global SOUL file for the current instance:
 
 ```text
-~/.hermes/SOUL.md
+~/.thoth/SOUL.md
 ```
 
 If you run Thoth with a custom home directory, it becomes:
@@ -212,13 +212,13 @@ This is the most common mistake.
 ## How to edit it
 
 ```bash
-nano ~/.hermes/SOUL.md
+nano ~/.thoth/SOUL.md
 ```
 
 or
 
 ```bash
-vim ~/.hermes/SOUL.md
+vim ~/.thoth/SOUL.md
 ```
 
 Then restart Thoth or start a new session.
@@ -238,7 +238,7 @@ That iterative approach works better than trying to design the perfect personali
 ### I edited SOUL.md but Thoth still sounds the same
 
 Check:
-- you edited `~/.hermes/SOUL.md` or `$THOTH_HOME/SOUL.md`
+- you edited `~/.thoth/SOUL.md` or `$THOTH_HOME/SOUL.md`
 - not some repo-local `SOUL.md`
 - the file is not empty
 - your session was restarted after the edit
