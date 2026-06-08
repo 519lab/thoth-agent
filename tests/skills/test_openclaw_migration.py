@@ -823,7 +823,7 @@ def test_cron_store_is_archived_without_config_cron_section(tmp_path: Path):
     assert Path(archived_store["destination"]).joinpath("jobs.json").exists()
 
     notes_text = (output_dir / "MIGRATION_NOTES.md").read_text(encoding="utf-8")
-    assert "Run `hermes cron` to recreate scheduled tasks" in notes_text
+    assert "Run `thoth cron` to recreate scheduled tasks" in notes_text
     assert "archive/cron-config.json" not in notes_text
 
 
@@ -857,24 +857,24 @@ def test_skill_installs_cleanly_under_skills_guard():
 
 def test_rebrand_text_replaces_openclaw_variants():
     mod = load_module()
-    # Mixed-case / capitalized matches → capital-H ``Hermes``.
-    assert mod.rebrand_text("OpenClaw prefers Python 3.11") == "Hermes prefers Python 3.11"
-    assert mod.rebrand_text("I told Open Claw to use dark mode") == "I told Hermes to use dark mode"
-    assert mod.rebrand_text("Open-Claw config is great") == "Hermes config is great"
-    assert mod.rebrand_text("OPENCLAW uses tools well") == "Hermes uses tools well"
-    # All-lowercase matches → lowercase ``hermes``; this preserves the
-    # real filesystem path ``~/.hermes`` (Hermes home) when rebranding
+    # Mixed-case / capitalized matches → capital-T ``Thoth``.
+    assert mod.rebrand_text("OpenClaw prefers Python 3.11") == "Thoth prefers Python 3.11"
+    assert mod.rebrand_text("I told Open Claw to use dark mode") == "I told Thoth to use dark mode"
+    assert mod.rebrand_text("Open-Claw config is great") == "Thoth config is great"
+    assert mod.rebrand_text("OPENCLAW uses tools well") == "Thoth uses tools well"
+    # All-lowercase matches → lowercase ``thoth``; this preserves the
+    # real filesystem path ``~/.thoth`` (Thoth home) when rebranding
     # memory entries that reference ``~/.openclaw`` or ``openclaw`` prose.
-    assert mod.rebrand_text("openclaw should always respond concisely") == "hermes should always respond concisely"
+    assert mod.rebrand_text("openclaw should always respond concisely") == "thoth should always respond concisely"
 
 
 def test_rebrand_text_replaces_legacy_bot_names():
     mod = load_module()
     # Same case-preservation rule as above.
-    assert mod.rebrand_text("ClawdBot remembers my timezone") == "Hermes remembers my timezone"
-    assert mod.rebrand_text("clawdbot prefers tabs") == "hermes prefers tabs"
-    assert mod.rebrand_text("MoltBot was configured for Spanish") == "Hermes was configured for Spanish"
-    assert mod.rebrand_text("moltbot uses Python") == "hermes uses Python"
+    assert mod.rebrand_text("ClawdBot remembers my timezone") == "Thoth remembers my timezone"
+    assert mod.rebrand_text("clawdbot prefers tabs") == "thoth prefers tabs"
+    assert mod.rebrand_text("MoltBot was configured for Spanish") == "Thoth was configured for Spanish"
+    assert mod.rebrand_text("moltbot uses Python") == "thoth uses Python"
 
 
 def test_rebrand_text_preserves_unrelated_content():
@@ -886,12 +886,12 @@ def test_rebrand_text_preserves_unrelated_content():
 def test_rebrand_text_handles_multiple_replacements():
     mod = load_module()
     text = "OpenClaw said to ask ClawdBot about MoltBot settings"
-    assert mod.rebrand_text(text) == "Hermes said to ask Hermes about Hermes settings"
+    assert mod.rebrand_text(text) == "Thoth said to ask Thoth about Thoth settings"
 
 
 def test_rebrand_text_preserves_filesystem_path_casing():
     """Lowercase matches — especially ``.openclaw`` filesystem paths — must
-    rewrite to lowercase ``.hermes`` (the real Thoth home), not the broken
+    rewrite to lowercase ``.thoth`` (the real Thoth home), not the broken
     ``.Thoth``.
 
     Regression test for @versun's OpenClaw-residue feedback: after migration,
@@ -901,12 +901,12 @@ def test_rebrand_text_preserves_filesystem_path_casing():
     """
     mod = load_module()
     assert mod.rebrand_text("config is at ~/.openclaw/config.yaml") == \
-        "config is at ~/.hermes/config.yaml"
-    assert mod.rebrand_text("use .openclaw directory") == "use .hermes directory"
-    assert mod.rebrand_text("Path.home() / '.openclaw'") == "Path.home() / '.hermes'"
+        "config is at ~/.thoth/config.yaml"
+    assert mod.rebrand_text("use .openclaw directory") == "use .thoth directory"
+    assert mod.rebrand_text("Path.home() / '.openclaw'") == "Path.home() / '.thoth'"
     # Sentence with both lowercase path and capitalized prose.
     assert mod.rebrand_text("openclaw config path: ~/.openclaw/") == \
-        "hermes config path: ~/.hermes/"
+        "thoth config path: ~/.thoth/"
 
 
 def test_migrate_memory_rebrands_entries(tmp_path):
@@ -940,7 +940,7 @@ def test_migrate_memory_rebrands_entries(tmp_path):
     result = (target_root / "memories" / "MEMORY.md").read_text(encoding="utf-8")
     assert "OpenClaw" not in result
     assert "ClawdBot" not in result
-    assert "Hermes" in result
+    assert "Thoth" in result
 
 
 def test_migrate_soul_rebrands_content(tmp_path):
@@ -969,7 +969,7 @@ def test_migrate_soul_rebrands_content(tmp_path):
 
     result = (target_root / "SOUL.md").read_text(encoding="utf-8")
     assert "OpenClaw" not in result
-    assert "You are Hermes" in result
+    assert "You are Thoth" in result
 
 
 # ── migrate_model_config: alias resolution (issue #16745) ──────────────────
