@@ -1090,7 +1090,7 @@ def _run_state_db_auto_maintenance(session_db) -> None:
     try:
         from thoth_cli.config import load_config as _load_full_config
         from thoth_constants import get_thoth_home as _get_thoth_home
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         _thoth_home_maint = _get_thoth_home()
 
         # Skip maintenance unless the asyncpg pool is already initialised.
@@ -1111,7 +1111,7 @@ def _run_state_db_auto_maintenance(session_db) -> None:
         #      here means maintenance runs on the NEXT CLI invocation
         #      where the pool is properly inited — acceptable for
         #      one-time-flagged cleanups.
-        if _hermes_db._pool is None:
+        if _thoth_db._pool is None:
             logger.debug(
                 "Skipping session-DB maintenance: asyncpg pool not "
                 "initialised. Will retry on next CLI startup."
@@ -1120,11 +1120,11 @@ def _run_state_db_auto_maintenance(session_db) -> None:
 
         # One-time prune of empty TUI ghost sessions.
         try:
-            if not _hermes_db.run_sync(session_db.get_meta("ghost_session_prune_v1")):
-                pruned = _hermes_db.run_sync(session_db.prune_empty_ghost_sessions(
+            if not _thoth_db.run_sync(session_db.get_meta("ghost_session_prune_v1")):
+                pruned = _thoth_db.run_sync(session_db.prune_empty_ghost_sessions(
                     sessions_dir=_thoth_home_maint / "sessions"
                 ))
-                _hermes_db.run_sync(session_db.set_meta("ghost_session_prune_v1", "1"))
+                _thoth_db.run_sync(session_db.set_meta("ghost_session_prune_v1", "1"))
                 if pruned:
                     logger.info("Pruned %d empty TUI ghost sessions", pruned)
         except Exception as _prune_exc:
@@ -1132,9 +1132,9 @@ def _run_state_db_auto_maintenance(session_db) -> None:
 
         # One-time finalize of orphaned compression continuations (#20001).
         try:
-            if not _hermes_db.run_sync(session_db.get_meta("orphaned_compression_finalize_v1")):
-                finalized = _hermes_db.run_sync(session_db.finalize_orphaned_compression_sessions())
-                _hermes_db.run_sync(session_db.set_meta("orphaned_compression_finalize_v1", "1"))
+            if not _thoth_db.run_sync(session_db.get_meta("orphaned_compression_finalize_v1")):
+                finalized = _thoth_db.run_sync(session_db.finalize_orphaned_compression_sessions())
+                _thoth_db.run_sync(session_db.set_meta("orphaned_compression_finalize_v1", "1"))
                 if finalized:
                     logger.info(
                         "Finalized %d orphaned compression sessions", finalized
@@ -1145,7 +1145,7 @@ def _run_state_db_auto_maintenance(session_db) -> None:
         cfg = (_load_full_config().get("sessions") or {})
         if not cfg.get("auto_prune", False):
             return
-        _hermes_db.run_sync(session_db.maybe_auto_prune_and_vacuum(
+        _thoth_db.run_sync(session_db.maybe_auto_prune_and_vacuum(
             retention_days=int(cfg.get("retention_days", 90)),
             min_interval_hours=int(cfg.get("min_interval_hours", 24)),
             vacuum=bool(cfg.get("vacuum_after_prune", True)),
@@ -2940,7 +2940,7 @@ class ThothCLI:
             self.session_id = f"{timestamp_str}_{short_uuid}"
         
         # History file for persistent input recall across sessions
-        self._history_file = _thoth_home / ".hermes_history"
+        self._history_file = _thoth_home / ".thoth_history"
         self._last_invalidate: float = 0.0  # throttle UI repaints
         self._app = None
 
@@ -4547,8 +4547,8 @@ class ThothCLI:
         # run() for immediate display).  In that case, conversation_history
         # is non-empty and we skip the DB round-trip.
         if self._resumed and self._session_db and not self.conversation_history:
-            import thoth_db as _hermes_db
-            session_meta = _hermes_db.run_sync(self._session_db.get_session(self.session_id))
+            import thoth_db as _thoth_db
+            session_meta = _thoth_db.run_sync(self._session_db.get_session(self.session_id))
             if not session_meta:
                 _cprint(f"\033[1;31mSession not found: {self.session_id}{_RST}")
                 _cprint(f"{_DIM}Use a session ID from a previous CLI run ({cli_name()} sessions list).{_RST}")
@@ -4557,7 +4557,7 @@ class ThothCLI:
             # chain, walk to the descendant that actually holds the messages.
             # See #15000 and SessionDB.resolve_resume_session_id.
             try:
-                resolved_id = _hermes_db.run_sync(self._session_db.resolve_resume_session_id(self.session_id))
+                resolved_id = _thoth_db.run_sync(self._session_db.resolve_resume_session_id(self.session_id))
             except Exception:
                 resolved_id = self.session_id
             if resolved_id and resolved_id != self.session_id:
@@ -4567,10 +4567,10 @@ class ThothCLI:
                     f"transcript.[/]"
                 )
                 self.session_id = resolved_id
-                resolved_meta = _hermes_db.run_sync(self._session_db.get_session(self.session_id))
+                resolved_meta = _thoth_db.run_sync(self._session_db.get_session(self.session_id))
                 if resolved_meta:
                     session_meta = resolved_meta
-            restored = _hermes_db.run_sync(self._session_db.get_messages_as_conversation(self.session_id))
+            restored = _thoth_db.run_sync(self._session_db.get_messages_as_conversation(self.session_id))
             if restored:
                 restored = [m for m in restored if m.get("role") != "session_meta"]
                 self.conversation_history = restored
@@ -4590,7 +4590,7 @@ class ThothCLI:
                 )
             # Re-open the session (clear ended_at so it's active again)
             try:
-                _hermes_db.run_sync(self._session_db.reopen_session(self.session_id))
+                _thoth_db.run_sync(self._session_db.reopen_session(self.session_id))
             except Exception:
                 pass
         
@@ -4672,8 +4672,8 @@ class ThothCLI:
                 try:
                     self.agent._ensure_db_session()
                     if self.agent._session_db_created:
-                        import thoth_db as _hermes_db
-                        _hermes_db.run_sync(self._session_db.set_session_title(self.session_id, self._pending_title))
+                        import thoth_db as _thoth_db
+                        _thoth_db.run_sync(self._session_db.set_session_title(self.session_id, self._pending_title))
                         _cprint(f"  Session title applied: {self._pending_title}")
                         self._pending_title = None
                     # else: row creation failed transiently — keep _pending_title for retry
@@ -4804,8 +4804,8 @@ class ThothCLI:
         if not self._resumed or not self._session_db:
             return False
 
-        import thoth_db as _hermes_db
-        session_meta = _hermes_db.run_sync(self._session_db.get_session(self.session_id))
+        import thoth_db as _thoth_db
+        session_meta = _thoth_db.run_sync(self._session_db.get_session(self.session_id))
         if not session_meta:
             self._console_print(
                 f"[bold red]Session not found: {self.session_id}[/]"
@@ -4819,7 +4819,7 @@ class ThothCLI:
         # If the requested session is the (empty) head of a compression chain,
         # walk to the descendant that actually holds the messages. See #15000.
         try:
-            resolved_id = _hermes_db.run_sync(self._session_db.resolve_resume_session_id(self.session_id))
+            resolved_id = _thoth_db.run_sync(self._session_db.resolve_resume_session_id(self.session_id))
         except Exception:
             resolved_id = self.session_id
         if resolved_id and resolved_id != self.session_id:
@@ -4828,11 +4828,11 @@ class ThothCLI:
                 f"{resolved_id}; resuming the descendant with your transcript.[/]"
             )
             self.session_id = resolved_id
-            resolved_meta = _hermes_db.run_sync(self._session_db.get_session(self.session_id))
+            resolved_meta = _thoth_db.run_sync(self._session_db.get_session(self.session_id))
             if resolved_meta:
                 session_meta = resolved_meta
 
-        restored = _hermes_db.run_sync(self._session_db.get_messages_as_conversation(self.session_id))
+        restored = _thoth_db.run_sync(self._session_db.get_messages_as_conversation(self.session_id))
         if restored:
             restored = [m for m in restored if m.get("role") != "session_meta"]
             self.conversation_history = restored
@@ -4857,7 +4857,7 @@ class ThothCLI:
 
         # Re-open the session (clear ended_at so it's active again)
         try:
-            _hermes_db.run_sync(self._session_db.reopen_session(self.session_id))
+            _thoth_db.run_sync(self._session_db.reopen_session(self.session_id))
         except Exception:
             pass
 
@@ -5560,8 +5560,8 @@ class ThothCLI:
         session_meta = {}
         if self._session_db:
             try:
-                import thoth_db as _hermes_db
-                session_meta = _hermes_db.run_sync(self._session_db.get_session(self.session_id)) or {}
+                import thoth_db as _thoth_db
+                session_meta = _thoth_db.run_sync(self._session_db.get_session(self.session_id)) or {}
             except Exception:
                 session_meta = {}
 
@@ -5919,8 +5919,8 @@ class ThothCLI:
         if not self._session_db:
             return []
         try:
-            import thoth_db as _hermes_db
-            sessions = _hermes_db.run_sync(self._session_db.list_sessions_rich(
+            import thoth_db as _thoth_db
+            sessions = _thoth_db.run_sync(self._session_db.list_sessions_rich(
                 source="cli",
                 exclude_sources=["tool"],
                 limit=limit,
@@ -6054,8 +6054,8 @@ class ThothCLI:
         old_session_id = self.session_id
         if self._session_db and old_session_id:
             try:
-                import thoth_db as _hermes_db
-                _hermes_db.run_sync(self._session_db.end_session(old_session_id, "new_session"))
+                import thoth_db as _thoth_db
+                _thoth_db.run_sync(self._session_db.end_session(old_session_id, "new_session"))
             except Exception:
                 pass
 
@@ -6084,9 +6084,9 @@ class ThothCLI:
 
             if self._session_db:
                 try:
-                    import thoth_db as _hermes_db
+                    import thoth_db as _thoth_db
                     self.agent._session_db_created = False
-                    _hermes_db.run_sync(self._session_db.create_session(
+                    _thoth_db.run_sync(self._session_db.create_session(
                         session_id=self.session_id,
                         source=os.environ.get("THOTH_SESSION_SOURCE", "cli"),
                         model=self.model,
@@ -6108,8 +6108,8 @@ class ThothCLI:
                         title = None
                     if sanitized:
                         try:
-                            import thoth_db as _hermes_db
-                            _hermes_db.run_sync(self._session_db.set_session_title(self.session_id, sanitized))
+                            import thoth_db as _thoth_db
+                            _thoth_db.run_sync(self._session_db.set_session_title(self.session_id, sanitized))
                             self._pending_title = None
                             title = sanitized
                         except ValueError as e:
@@ -6224,16 +6224,16 @@ class ThothCLI:
         # are written via _flush_messages_to_session_db on the first turn
         # already, but if the user tries to hand off an empty session we
         # still want a row to mark.
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         try:
-            row = _hermes_db.run_sync(self._session_db.get_session(self.session_id))
+            row = _thoth_db.run_sync(self._session_db.get_session(self.session_id))
             if not row:
                 # Nothing has flushed yet. Create a stub so the gateway has
                 # something to switch_session onto. Inserting via title-set
                 # is the simplest path because set_session_title's INSERT OR
                 # IGNORE creates the row.
                 placeholder_title = f"handoff-{self.session_id[:8]}"
-                _hermes_db.run_sync(self._session_db.set_session_title(self.session_id, placeholder_title))
+                _thoth_db.run_sync(self._session_db.set_session_title(self.session_id, placeholder_title))
         except Exception as exc:
             _cprint(f"  Could not ensure session row in state.db: {exc}")
             return True
@@ -6241,7 +6241,7 @@ class ThothCLI:
         # Display title for messaging.
         session_title = ""
         try:
-            row = _hermes_db.run_sync(self._session_db.get_session(self.session_id))
+            row = _thoth_db.run_sync(self._session_db.get_session(self.session_id))
             if row:
                 session_title = row.get("title") or ""
         except Exception:
@@ -6250,7 +6250,7 @@ class ThothCLI:
             session_title = self.session_id[:8]
 
         # Mark pending — gateway watcher will pick this up.
-        ok = _hermes_db.run_sync(self._session_db.request_handoff(self.session_id, platform_name))
+        ok = _thoth_db.run_sync(self._session_db.request_handoff(self.session_id, platform_name))
         if not ok:
             _cprint("  Session is already in flight for handoff. Wait for it to settle, then retry.")
             return True
@@ -6264,7 +6264,7 @@ class ThothCLI:
         last_state = "pending"
         while _time.time() < deadline:
             try:
-                state_row = _hermes_db.run_sync(self._session_db.get_handoff_state(self.session_id))
+                state_row = _thoth_db.run_sync(self._session_db.get_handoff_state(self.session_id))
             except Exception:
                 state_row = None
             current = (state_row or {}).get("state") or "pending"
@@ -6289,7 +6289,7 @@ class ThothCLI:
 
         # Timed out. Clear the pending flag so the user can retry.
         try:
-            _hermes_db.run_sync(self._session_db.fail_handoff(self.session_id, "timed out waiting for gateway"))
+            _thoth_db.run_sync(self._session_db.fail_handoff(self.session_id, "timed out waiting for gateway"))
         except Exception:
             pass
         _cprint(f"  Timed out waiting for the gateway. Is `{cli_name()} gateway` running?")
@@ -6318,8 +6318,8 @@ class ThothCLI:
         resolved = _resolve_session_by_name_or_id(target)
         target_id = resolved or target
 
-        import thoth_db as _hermes_db
-        session_meta = _hermes_db.run_sync(self._session_db.get_session(target_id))
+        import thoth_db as _thoth_db
+        session_meta = _thoth_db.run_sync(self._session_db.get_session(target_id))
         if not session_meta:
             _cprint(f"  Session not found: {target}")
             _cprint(f"  Use /history or `{cli_name()} sessions list` to see available sessions.")
@@ -6328,7 +6328,7 @@ class ThothCLI:
         # If the target is the empty head of a compression chain, redirect to
         # the descendant that actually holds the transcript. See #15000.
         try:
-            resolved_id = _hermes_db.run_sync(self._session_db.resolve_resume_session_id(target_id))
+            resolved_id = _thoth_db.run_sync(self._session_db.resolve_resume_session_id(target_id))
         except Exception:
             resolved_id = target_id
         if resolved_id and resolved_id != target_id:
@@ -6337,7 +6337,7 @@ class ThothCLI:
                 f"resuming the descendant with your transcript."
             )
             target_id = resolved_id
-            resolved_meta = _hermes_db.run_sync(self._session_db.get_session(target_id))
+            resolved_meta = _thoth_db.run_sync(self._session_db.get_session(target_id))
             if resolved_meta:
                 session_meta = resolved_meta
 
@@ -6348,7 +6348,7 @@ class ThothCLI:
         old_session_id = self.session_id
         # End current session
         try:
-            _hermes_db.run_sync(self._session_db.end_session(self.session_id, "resumed_other"))
+            _thoth_db.run_sync(self._session_db.end_session(self.session_id, "resumed_other"))
         except Exception:
             pass
 
@@ -6358,13 +6358,13 @@ class ThothCLI:
         self._pending_title = None
 
         # Load conversation history (strip transcript-only metadata entries)
-        restored = _hermes_db.run_sync(self._session_db.get_messages_as_conversation(target_id))
+        restored = _thoth_db.run_sync(self._session_db.get_messages_as_conversation(target_id))
         restored = [m for m in (restored or []) if m.get("role") != "session_meta"]
         self.conversation_history = restored
 
         # Re-open the target session so it's not marked as ended
         try:
-            _hermes_db.run_sync(self._session_db.reopen_session(target_id))
+            _thoth_db.run_sync(self._session_db.reopen_session(target_id))
         except Exception:
             pass
 
@@ -6472,26 +6472,26 @@ class ThothCLI:
             branch_title = branch_name
         else:
             # Auto-generate from the current session title
-            import thoth_db as _hermes_db
+            import thoth_db as _thoth_db
             current_title = None
             if self._session_db:
-                current_title = _hermes_db.run_sync(self._session_db.get_session_title(self.session_id))
+                current_title = _thoth_db.run_sync(self._session_db.get_session_title(self.session_id))
             base = current_title or "branch"
-            branch_title = _hermes_db.run_sync(self._session_db.get_next_title_in_lineage(base))
+            branch_title = _thoth_db.run_sync(self._session_db.get_next_title_in_lineage(base))
 
         # Save the current session's state before branching
         parent_session_id = self.session_id
 
         # End the old session
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         try:
-            _hermes_db.run_sync(self._session_db.end_session(self.session_id, "branched"))
+            _thoth_db.run_sync(self._session_db.end_session(self.session_id, "branched"))
         except Exception:
             pass
 
         # Create the new session with parent link
         try:
-            _hermes_db.run_sync(self._session_db.create_session(
+            _thoth_db.run_sync(self._session_db.create_session(
                 session_id=new_session_id,
                 source=os.environ.get("THOTH_SESSION_SOURCE", "cli"),
                 model=self.model,
@@ -6508,7 +6508,7 @@ class ThothCLI:
         # Copy conversation history to the new session
         for msg in self.conversation_history:
             try:
-                _hermes_db.run_sync(self._session_db.append_message(
+                _thoth_db.run_sync(self._session_db.append_message(
                     session_id=new_session_id,
                     role=msg.get("role", "user"),
                     content=msg.get("content"),
@@ -6522,7 +6522,7 @@ class ThothCLI:
 
         # Set title on the branch
         try:
-            _hermes_db.run_sync(self._session_db.set_session_title(new_session_id, branch_title))
+            _thoth_db.run_sync(self._session_db.set_session_title(new_session_id, branch_title))
         except Exception:
             pass
 
@@ -7977,11 +7977,11 @@ class ThothCLI:
                         if not new_title:
                             _cprint("  Title is empty after cleanup. Please use printable characters.")
                         else:
-                            import thoth_db as _hermes_db
-                            if _hermes_db.run_sync(self._session_db.get_session(self.session_id)):
+                            import thoth_db as _thoth_db
+                            if _thoth_db.run_sync(self._session_db.get_session(self.session_id)):
                                 # Session exists in DB — set title directly
                                 try:
-                                    if _hermes_db.run_sync(self._session_db.set_session_title(self.session_id, new_title)):
+                                    if _thoth_db.run_sync(self._session_db.set_session_title(self.session_id, new_title)):
                                         _cprint(f"  Session title set: {new_title}")
                                     else:
                                         _cprint("  Session not found in database.")
@@ -7990,7 +7990,7 @@ class ThothCLI:
                             else:
                                 # Session not created yet — defer the title
                                 # Check uniqueness proactively with the sanitized title
-                                existing = _hermes_db.run_sync(self._session_db.get_session_by_title(new_title))
+                                existing = _thoth_db.run_sync(self._session_db.get_session_by_title(new_title))
                                 if existing:
                                     _cprint(f"  Title '{new_title}' is already in use by session {existing['id']}")
                                 else:
@@ -8003,9 +8003,9 @@ class ThothCLI:
                     _cprint("  Usage: /title <your session title>")
             # Show current title and session ID if no argument given
             elif self._session_db:
-                import thoth_db as _hermes_db
+                import thoth_db as _thoth_db
                 _cprint(f"  Session ID: {self.session_id}")
-                session = _hermes_db.run_sync(self._session_db.get_session(self.session_id))
+                session = _thoth_db.run_sync(self._session_db.get_session(self.session_id))
                 if session and session.get("title"):
                     _cprint(f"  Title: {session['title']}")
                 elif self._pending_title:
@@ -11635,8 +11635,8 @@ class ThothCLI:
             session_title = None
             if self._session_db:
                 try:
-                    import thoth_db as _hermes_db
-                    session_title = _hermes_db.run_sync(self._session_db.get_session_title(self.session_id))
+                    import thoth_db as _thoth_db
+                    session_title = _thoth_db.run_sync(self._session_db.get_session_title(self.session_id))
                 except Exception:
                     pass
 
@@ -14212,19 +14212,19 @@ class ThothCLI:
             # Close session in PG
             if hasattr(self, '_session_db') and self._session_db and self.agent:
                 try:
-                    import thoth_db as _hermes_db
-                    _hermes_db.run_sync(self._session_db.end_session(self.agent.session_id, "cli_close"))
+                    import thoth_db as _thoth_db
+                    _thoth_db.run_sync(self._session_db.end_session(self.agent.session_id, "cli_close"))
                 except (Exception, KeyboardInterrupt) as e:
                     logger.debug("Could not close session in DB: %s", e)
                 # /exit --delete: also remove the current session's transcripts
                 # and DB history. Ported from google-gemini/gemini-cli#19332.
                 if getattr(self, '_delete_session_on_exit', False):
                     try:
-                        import thoth_db as _hermes_db
+                        import thoth_db as _thoth_db
                         from thoth_constants import get_thoth_home as _ghh
                         _sessions_dir = _ghh() / "sessions"
                         _sid = self.agent.session_id
-                        if _hermes_db.run_sync(self._session_db.delete_session(_sid, sessions_dir=_sessions_dir)):
+                        if _thoth_db.run_sync(self._session_db.delete_session(_sid, sessions_dir=_sessions_dir)):
                             _cprint(f"  {_DIM}✓ Session {_escape(_sid)} deleted{_RST}")
                         else:
                             _cprint(f"  {_DIM}✗ Session {_escape(_sid)} not found for deletion{_RST}")

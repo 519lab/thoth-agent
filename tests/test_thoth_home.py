@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 import thoth_constants
-import thoth_env
 
 
 @pytest.fixture
@@ -107,51 +106,6 @@ def test_subprocess_home_uses_thoth_home(fake_home, monkeypatch):
     assert thoth_constants.get_subprocess_home() == str(th / "home")
 
 
-# ── normalize_thoth_home_env + propagate helpers ────────────────────────────
-
-def test_normalize_home_only_hermes():
-    env = {"HERMES_HOME": "/h"}
-    thoth_env.normalize_thoth_home_env(env)
-    assert env == {"HERMES_HOME": "/h", "THOTH_HOME": "/h"}
-
-
-def test_normalize_home_only_thoth():
-    env = {"THOTH_HOME": "/t"}
-    thoth_env.normalize_thoth_home_env(env)
-    assert env == {"HERMES_HOME": "/t", "THOTH_HOME": "/t"}
-
-
-def test_normalize_home_thoth_wins():
-    env = {"HERMES_HOME": "/old", "THOTH_HOME": "/new"}
-    thoth_env.normalize_thoth_home_env(env)
-    assert env["HERMES_HOME"] == "/new" and env["THOTH_HOME"] == "/new"
-
-
-def test_normalize_home_empty_thoth_guard():
-    env = {"HERMES_HOME": "/real", "THOTH_HOME": ""}
-    thoth_env.normalize_thoth_home_env(env)
-    assert env["HERMES_HOME"] == "/real" and env["THOTH_HOME"] == "/real"
-
-
-def test_normalize_home_idempotent():
-    env = {"THOTH_HOME": "/t"}
-    thoth_env.normalize_thoth_home_env(env)
-    assert thoth_env.normalize_thoth_home_env(env) == 0
-
-
-def test_propagate_home_sets_both():
-    env = {"PATH": "/x"}
-    thoth_env.propagate_thoth_home_into(env, "/profile")
-    assert env["HERMES_HOME"] == "/profile" and env["THOTH_HOME"] == "/profile"
-
-
-def test_propagate_home_copy_does_not_mutate_base():
-    base = {"HERMES_HOME": "/parent", "THOTH_HOME": "/parent"}
-    child = thoth_env.propagate_thoth_home(base, "/child")
-    assert child["HERMES_HOME"] == "/child" and child["THOTH_HOME"] == "/child"
-    assert base["HERMES_HOME"] == "/parent"  # base untouched
-
-
 def test_main_import_user_env_over_shell_with_thoth_home(fake_home, monkeypatch):
     """User .env must override stale shell values after main import, with the
     new THOTH-aware home resolution (regression for the Phase 3a resolver)."""
@@ -163,8 +117,7 @@ def test_main_import_user_env_over_shell_with_thoth_home(fake_home, monkeypatch)
     (home / ".env").write_text(
         "OPENAI_BASE_URL=https://new.example/v1\n", encoding="utf-8"
     )
-    monkeypatch.setenv("HERMES_HOME", str(home))
-    monkeypatch.delenv("THOTH_HOME", raising=False)
+    monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setenv("OPENAI_BASE_URL", "https://old.example/v1")
 
     sys.modules.pop("thoth_cli.main", None)

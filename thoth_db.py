@@ -60,7 +60,7 @@ def _get_sync_loop() -> asyncio.AbstractEventLoop:
                 loop.run_forever()
 
             _db_thread = threading.Thread(
-                target=_run_db_loop, name="hermes-db-loop", daemon=True
+                target=_run_db_loop, name="thoth-db-loop", daemon=True
             )
             _db_thread.start()
         return _sync_loop

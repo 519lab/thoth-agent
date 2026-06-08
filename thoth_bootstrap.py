@@ -128,25 +128,6 @@ def apply_windows_utf8_bootstrap() -> bool:
 # import side effect does the right thing.
 apply_windows_utf8_bootstrap()
 
-# thoth→thoth env bridge (rename Phase 2): mirror THOTH_* <-> THOTH_* in
-# os.environ so either spelling works, BEFORE any THOTH_*/THOTH_* read. This
-# is the universal hook — every shipped entry point imports thoth_bootstrap
-# first (same invariant the Windows bootstrap relies on). Pure-stdlib + guarded
-# so a partial install can never brick startup. (load_thoth_dotenv re-runs it
-# after the .env is loaded; see thoth_cli/env_loader.py.)
-try:
-    from thoth_env import normalize_thoth_env as _normalize_thoth_env
-    from thoth_env import normalize_thoth_home_env as _normalize_thoth_home_env
-
-    # Home keys first (rename Phase 3) so THOTH_HOME/THOTH_HOME agree before
-    # any home read; then the general env mirror (Phase 2). Both are pure env
-    # ops (no filesystem) — symlink/migration happens only in install/update.
-    _normalize_thoth_home_env()
-    _normalize_thoth_env()
-except Exception:
-    pass
-
-
 # ---------------------------------------------------------------------------
 # PG pool bootstrap helper (Phase 0 Task 22)
 # ---------------------------------------------------------------------------

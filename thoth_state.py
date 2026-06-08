@@ -1455,9 +1455,9 @@ class _AsyncSessionDB:
             matching that was handled by the SQLite trigram FTS5 table.
           - ``auto``: tries ``keyword`` first; if fewer than ``limit // 2``
             hits are returned, re-runs as ``fuzzy`` and merges (deduped) on
-            top. Value-add over FTS5.
+            top.
 
-        Returns the same columns as the SQLite FTS5 path:
+        Returns these columns:
           id, session_id, role, snippet, content (dropped below), timestamp,
           tool_name, source, model, session_started.
         Context (±1 message) is appended as ``context`` on each row; full

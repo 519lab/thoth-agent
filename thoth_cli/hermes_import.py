@@ -117,6 +117,22 @@ def _copy_item(src: Path, dst: Path) -> None:
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
 
+    # Translate legacy HERMES_* env-var names to THOTH_* in the copied .env so
+    # the migrated install is THOTH_*-native (the in-memory HERMES_<->THOTH_
+    # mirror no longer exists). Best-effort, idempotent: a failure here must not
+    # fail the whole import.
+    if dst.name == ".env" and dst.is_file():
+        try:
+            from thoth_cli.env_translator import translate_env_file_legacy_to_thoth
+
+            count = translate_env_file_legacy_to_thoth(dst)
+            if count:
+                logger.debug(
+                    "translated %d HERMES_* vars to THOTH_* in %s", count, dst
+                )
+        except Exception:
+            logger.debug("env translation failed for %s", dst, exc_info=True)
+
 
 def _cmd_migrate(args) -> int:
     hermes, thoth = _resolve_paths(getattr(args, "source", None))

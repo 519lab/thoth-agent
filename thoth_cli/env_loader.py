@@ -9,53 +9,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from utils import atomic_replace
 
-# hermes→thoth env bridge (rename Phase 2). After a .env load / secret-source
-# injection populates os.environ, mirror THOTH_* <-> THOTH_* so either
-# spelling resolves for every reader. ``sync_thoth_aliases`` makes the
-# just-loaded value authoritative for the keys a source set (so a rotated
-# value on reload isn't reverted by a stale mirror); ``normalize_thoth_env``
-# mirrors everything else (shell-set vars).
-from thoth_env import (
-    normalize_thoth_env,
-    sync_thoth_aliases,
-)
-
-
-def _dotenv_key_names(path) -> set:
-    """Return the variable NAMES defined in a .env file.
-
-    We only need key names (to make a just-loaded source authoritative over a
-    stale mirrored twin); values are already in os.environ via load_dotenv.
-    Avoids importing ``dotenv.dotenv_values`` because in some installs
-    ``dotenv`` resolves as a namespace package without that symbol
-    (ImportError: cannot import name 'dotenv_values' ... unknown location).
-    Best-effort parse of ``KEY=...`` / ``export KEY=...`` lines.
-    """
-    keys: set = set()
-    try:
-        for enc in ("utf-8", "latin-1"):
-            try:
-                text = open(path, "r", encoding=enc).read()
-                break
-            except UnicodeDecodeError:
-                continue
-        else:
-            return keys
-    except OSError:
-        return keys
-    for raw in text.splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#"):
-            continue
-        if line.startswith("export "):
-            line = line[len("export "):].lstrip()
-        if "=" not in line:
-            continue
-        name = line.split("=", 1)[0].strip()
-        if name and name.replace("_", "").isalnum() and not name[0].isdigit():
-            keys.add(name)
-    return keys
-
 
 # Env var name suffixes that indicate credential values.  These are the
 # only env vars whose values we sanitize on load — we must not silently
@@ -169,21 +122,14 @@ def _sanitize_loaded_credentials() -> None:
 def _load_dotenv_with_fallback(path: Path, *, override: bool) -> None:
     try:
         load_dotenv(dotenv_path=path, override=override, encoding="utf-8")
-        file_keys = _dotenv_key_names(path)
     except UnicodeDecodeError:
         load_dotenv(dotenv_path=path, override=override, encoding="latin-1")
-        file_keys = _dotenv_key_names(path)
     # Strip non-ASCII characters from credential env vars that were just
     # loaded.  API keys must be pure ASCII since they're sent as HTTP
     # header values (httpx encodes headers as ASCII).  Non-ASCII chars
     # typically come from copy-pasting keys from PDFs or rich-text editors
     # that substitute Unicode lookalike glyphs (e.g. ʋ U+028B for v).
     _sanitize_loaded_credentials()
-    # Make THIS file's keys authoritative for their twins FIRST — a value just
-    # (re)loaded from .env wins over a stale mirrored alias (rotated key on a
-    # gateway hot-reload). Then mirror the remaining shell-only vars.
-    sync_thoth_aliases(file_keys)
-    normalize_thoth_env()
 
 
 def _sanitize_env_file_if_needed(path: Path) -> None:
@@ -246,11 +192,9 @@ def load_thoth_dotenv(
     """
     loaded: list[Path] = []
 
-    # Resolve the home dir for the .env path. Phase 3: THOTH_HOME is canonical,
-    # THOTH_HOME is the legacy fallback. get_thoth_home() already checks
-    # THOTH_HOME → THOTH_HOME → disk default, so no explicit normalization call
-    # is needed here (and calling normalize_thoth_home_env() would write THOTH_HOME
-    # to os.environ as a side-effect that pollutes test env isolation).
+    # Resolve the home dir for the .env path. get_thoth_home() reads THOTH_HOME
+    # and falls through to the disk default when unset, so no explicit
+    # normalization is needed here.
     if thoth_home is not None:
         home_path = Path(thoth_home)
     else:
@@ -315,9 +259,6 @@ def _apply_external_secret_sources(home_path: Path) -> None:
         # and might have the same copy-paste corruption as a manually
         # edited .env (see #6843).
         _sanitize_loaded_credentials()
-        # Bitwarden-injected secrets are authoritative for the names applied.
-        sync_thoth_aliases(result.applied)
-        normalize_thoth_env()
         # Remember where these came from so the setup / `thoth model`
         # flows can label detected credentials with "(from Bitwarden)" —
         # otherwise users see "credentials ✓" with no hint that the value
