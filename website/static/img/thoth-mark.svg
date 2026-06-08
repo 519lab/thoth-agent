@@ -1,0 +1,30 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Thoth">
+  <defs>
+    <linearGradient id="tlapis" x1="10" y1="6" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F4279"/>
+      <stop offset="1" stop-color="#11264A"/>
+    </linearGradient>
+    <linearGradient id="tgold" x1="20" y1="14" x2="44" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2C75E"/>
+      <stop offset="1" stop-color="#E8B23A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- lapis roundel + gold-leaf ring -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#tlapis)"/>
+  <rect x="3.25" y="3.25" width="57.5" height="57.5" rx="14.75" fill="none" stroke="#E8B23A" stroke-opacity="0.5" stroke-width="1.25"/>
+
+  <!-- the scribe's gesture: ibis head + decurved bill in one gold stroke -->
+  <path d="M42 18.5 C 46 23.5, 45 30, 39 33 C 32.5 36.5, 25.5 40, 21 47.5"
+        stroke="url(#tgold)" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+  <!-- ibis head + eye -->
+  <circle cx="42" cy="18.5" r="4.2" fill="url(#tgold)"/>
+  <circle cx="43.1" cy="17.6" r="1.05" fill="#11264A"/>
+
+  <!-- L0–L4: strata of memory beneath the scribe, lapis deepening to gold -->
+  <g stroke-width="2.4" stroke-linecap="round">
+    <line x1="22" y1="42" x2="33" y2="42" stroke="#4A82D4" stroke-opacity="0.9"/>
+    <line x1="24" y1="46.5" x2="35" y2="46.5" stroke="#7AA8E6" stroke-opacity="0.7"/>
+    <line x1="26" y1="51" x2="37" y2="51" stroke="#E8B23A" stroke-opacity="0.9"/>
+  </g>
+</svg>
