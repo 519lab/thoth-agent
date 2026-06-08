@@ -62,7 +62,7 @@ Select **WeCom** and follow the prompts. The wizard will guide you through:
 
 #### Option B: Manual Configuration
 
-Add the following to `~/.hermes/.env`:
+Add the following to `~/.thoth/.env`:
 
 ```bash
 WECOM_BOT_ID=your-bot-id

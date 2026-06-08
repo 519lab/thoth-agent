@@ -46,7 +46,7 @@ You can also set or auto-generate the description later with `thoth profile desc
 thoth profile create work --clone
 ```
 
-Copies your current profile's `config.yaml`, `.env`, and `SOUL.md` into the new profile. Same API keys and model, but fresh sessions and memory. Edit `~/.hermes/profiles/work/.env` for different API keys, or `~/.hermes/profiles/work/SOUL.md` for a different personality.
+Copies your current profile's `config.yaml`, `.env`, and `SOUL.md` into the new profile. Same API keys and model, but fresh sessions and memory. Edit `~/.thoth/profiles/work/.env` for different API keys, or `~/.thoth/profiles/work/SOUL.md` for a different personality.
 
 ### Clone everything (`--clone-all`)
 
@@ -153,10 +153,10 @@ Each profile has its own `.env` file. Configure a different Telegram/Discord/Sla
 
 ```bash
 # Edit coder's tokens
-nano ~/.hermes/profiles/coder/.env
+nano ~/.thoth/profiles/coder/.env
 
 # Edit assistant's tokens
-nano ~/.hermes/profiles/assistant/.env
+nano ~/.thoth/profiles/assistant/.env
 ```
 
 ### Safety: token locks
@@ -182,7 +182,7 @@ Each profile has its own:
 
 ```bash
 coder config set model.default anthropic/claude-sonnet-4
-echo "You are a focused coding assistant." > ~/.hermes/profiles/coder/SOUL.md
+echo "You are a focused coding assistant." > ~/.thoth/profiles/coder/SOUL.md
 ```
 
 If you want this profile to work in a specific project by default, also set its own `terminal.cwd`:
@@ -224,7 +224,7 @@ This stops the gateway, removes the systemd/launchd service, removes the command
 Use `--yes` to skip confirmation: `thoth profile delete coder --yes`
 
 :::note
-You cannot delete the default profile (`~/.hermes`). To remove everything, use `thoth uninstall`.
+You cannot delete the default profile (`~/.thoth`). To remove everything, use `thoth uninstall`.
 :::
 
 ## Tab completion
@@ -241,11 +241,11 @@ Add the line to your `~/.bashrc` or `~/.zshrc` for persistent completion. Comple
 
 ## How it works
 
-Profiles use the `THOTH_HOME` environment variable. When you run `coder chat`, the wrapper script sets `THOTH_HOME=~/.hermes/profiles/coder` before launching thoth. Since 119+ files in the codebase resolve paths via `get_thoth_home()`, Thoth state automatically scopes to the profile's directory — config, sessions, memory, skills, state database, gateway PID, logs, and cron jobs.
+Profiles use the `THOTH_HOME` environment variable. When you run `coder chat`, the wrapper script sets `THOTH_HOME=~/.thoth/profiles/coder` before launching thoth. Since 119+ files in the codebase resolve paths via `get_thoth_home()`, Thoth state automatically scopes to the profile's directory — config, sessions, memory, skills, state database, gateway PID, logs, and cron jobs.
 
 This is separate from terminal working directory. Tool execution starts from `terminal.cwd` (or the launch directory when `cwd: "."` on the local backend), not automatically from `THOTH_HOME`.
 
-The default profile is simply `~/.hermes` itself. No migration needed — existing installs work identically.
+The default profile is simply `~/.thoth` itself. No migration needed — existing installs work identically.
 
 ## Sharing profiles as distributions
 

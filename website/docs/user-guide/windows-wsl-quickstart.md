@@ -124,7 +124,7 @@ Both are real, both work, but they are **not the same filesystem** — they're b
 
 **Rule of thumb: keep everything Linux-ish inside the Linux filesystem.**
 
-- Your Thoth install (`~/.hermes/`) — Linux side. The installer already does this.
+- Your Thoth install (`~/.thoth/`) — Linux side. The installer already does this.
 - Your git repos that you work on from WSL — Linux side (`~/code/...`, `~/projects/...`).
 - Your models, datasets, venvs — Linux side.
 

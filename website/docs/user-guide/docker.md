@@ -18,13 +18,13 @@ This page covers option 1. The container stores all user data (config, API keys,
 If this is your first time running Thoth Agent, create a data directory on the host and start the container interactively to run the setup wizard:
 
 ```sh
-mkdir -p ~/.hermes
+mkdir -p ~/.thoth
 docker run -it --rm \
-  -v ~/.hermes:/opt/data \
+  -v ~/.thoth:/opt/data \
   nousresearch/hermes-agent setup
 ```
 
-This drops you into the setup wizard, which will prompt you for your API keys and write them to `~/.hermes/.env`. You only need to do this once. It is highly recommended to set up a chat system for the gateway to work with at this point.
+This drops you into the setup wizard, which will prompt you for your API keys and write them to `~/.thoth/.env`. You only need to do this once. It is highly recommended to set up a chat system for the gateway to work with at this point.
 
 ## Running in gateway mode
 
@@ -34,7 +34,7 @@ Once configured, run the container in the background as a persistent gateway (Te
 docker run -d \
   --name thoth \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.thoth:/opt/data \
   -p 8642:8642 \
   nousresearch/hermes-agent gateway run
 ```
@@ -47,7 +47,7 @@ Note: the API server is gated on `API_SERVER_ENABLED=true`. To expose it beyond 
 docker run -d \
   --name thoth \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.thoth:/opt/data \
   -p 8642:8642 \
   -e API_SERVER_ENABLED=true \
   -e API_SERVER_HOST=0.0.0.0 \
@@ -66,7 +66,7 @@ The built-in web dashboard runs as an optional side-process inside the same cont
 docker run -d \
   --name thoth \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.thoth:/opt/data \
   -p 8642:8642 \
   -p 9119:9119 \
   -e THOTH_DASHBOARD=1 \
@@ -94,7 +94,7 @@ To open an interactive chat session against a running data directory:
 
 ```sh
 docker run -it --rm \
-  -v ~/.hermes:/opt/data \
+  -v ~/.thoth:/opt/data \
   nousresearch/hermes-agent
 ```
 
@@ -106,7 +106,7 @@ Or if you have already opened a terminal in your running container (via Docker D
 
 ## Persistent volumes
 
-The `/opt/data` volume is the single source of truth for all Thoth state. It maps to your host's `~/.hermes/` directory and contains:
+The `/opt/data` volume is the single source of truth for all Thoth state. It maps to your host's `~/.thoth/` directory and contains:
 
 | Path | Contents |
 |------|----------|
@@ -127,24 +127,24 @@ Never run two Thoth **gateway** containers against the same data directory simul
 
 ## Multi-profile support
 
-Thoth supports [multiple profiles](../reference/profile-commands.md) — separate `~/.hermes/` directories that let you run independent agents (different SOUL, skills, memory, sessions, credentials) from a single installation. **When running under Docker, using Thoth's built-in multi-profile feature is not recommended.**
+Thoth supports [multiple profiles](../reference/profile-commands.md) — separate `~/.thoth/` directories that let you run independent agents (different SOUL, skills, memory, sessions, credentials) from a single installation. **When running under Docker, using Thoth's built-in multi-profile feature is not recommended.**
 
 Instead, the recommended pattern is **one container per profile**, with each container bind-mounting its own host directory as `/opt/data`:
 
 ```sh
 # Work profile
 docker run -d \
-  --name hermes-work \
+  --name thoth-work \
   --restart unless-stopped \
-  -v ~/.hermes-work:/opt/data \
+  -v ~/.thoth-work:/opt/data \
   -p 8642:8642 \
   nousresearch/hermes-agent gateway run
 
 # Personal profile
 docker run -d \
-  --name hermes-personal \
+  --name thoth-personal \
   --restart unless-stopped \
-  -v ~/.hermes-personal:/opt/data \
+  -v ~/.thoth-personal:/opt/data \
   -p 8643:8642 \
   nousresearch/hermes-agent gateway run
 ```
@@ -152,7 +152,7 @@ docker run -d \
 Why separate containers over profiles in Docker:
 
 - **Isolation** — each container has its own filesystem, process table, and resource limits. A crash, dependency change, or runaway session in one profile can't affect another.
-- **Independent lifecycle** — upgrade, restart, pause, or roll back each agent separately (`docker restart hermes-work` leaves `hermes-personal` untouched).
+- **Independent lifecycle** — upgrade, restart, pause, or roll back each agent separately (`docker restart thoth-work` leaves `thoth-personal` untouched).
 - **Clean port and network separation** — each gateway binds its own host port; there's no risk of cross-talk between chat platforms or API servers.
 - **Simpler mental model** — the container *is* the profile. Backups, migrations, and permissions all follow the bind-mounted directory, with no extra `--profile` flags to remember.
 - **Avoids concurrent-write risk** — the warning above about never running two gateways against the same data directory still applies to profiles within a single container.
@@ -161,25 +161,25 @@ In Docker Compose, this just means declaring one service per profile with distin
 
 ```yaml
 services:
-  hermes-work:
+  thoth-work:
     image: nousresearch/hermes-agent:latest
-    container_name: hermes-work
+    container_name: thoth-work
     restart: unless-stopped
     command: gateway run
     ports:
       - "8642:8642"
     volumes:
-      - ~/.hermes-work:/opt/data
+      - ~/.thoth-work:/opt/data
 
-  hermes-personal:
+  thoth-personal:
     image: nousresearch/hermes-agent:latest
-    container_name: hermes-personal
+    container_name: thoth-personal
     restart: unless-stopped
     command: gateway run
     ports:
       - "8643:8642"
     volumes:
-      - ~/.hermes-personal:/opt/data
+      - ~/.thoth-personal:/opt/data
 ```
 
 ## Environment variable forwarding
@@ -188,7 +188,7 @@ API keys are read from `/opt/data/.env` inside the container. You can also pass 
 
 ```sh
 docker run -it --rm \
-  -v ~/.hermes:/opt/data \
+  -v ~/.thoth:/opt/data \
   -e ANTHROPIC_API_KEY="sk-ant-..." \
   -e OPENAI_API_KEY="sk-..." \
   nousresearch/hermes-agent
@@ -206,7 +206,7 @@ For persistent deployment with both the gateway and dashboard, a `docker-compose
 
 ```yaml
 services:
-  hermes:
+  thoth:
     image: nousresearch/hermes-agent:latest
     container_name: thoth
     restart: unless-stopped
@@ -215,7 +215,7 @@ services:
       - "8642:8642"   # gateway API
       - "9119:9119"   # dashboard (only reached when THOTH_DASHBOARD=1)
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.thoth:/opt/data
     environment:
       - THOTH_DASHBOARD=1
       # Uncomment to forward specific env vars instead of using .env file:
@@ -250,7 +250,7 @@ docker run -d \
   --name thoth \
   --restart unless-stopped \
   --memory=4g --cpus=2 \
-  -v ~/.hermes:/opt/data \
+  -v ~/.thoth:/opt/data \
   nousresearch/hermes-agent gateway run
 ```
 
@@ -289,7 +289,7 @@ docker rm -f thoth
 docker run -d \
   --name thoth \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.thoth:/opt/data \
   nousresearch/hermes-agent gateway run
 ```
 
@@ -302,7 +302,7 @@ docker compose up -d
 
 ## Skills and credential files
 
-When using Docker as the execution environment (not the methods above, but when the agent runs commands inside a Docker sandbox — see [Configuration → Docker Backend](./configuration.md#docker-backend)), Thoth reuses a single long-lived container for all tool calls and automatically bind-mounts the skills directory (`~/.hermes/skills/`) and any credential files declared by skills into that container as read-only volumes. Skill scripts, templates, and references are available inside the sandbox without manual configuration, and because the container persists for the life of the Thoth process, any dependencies you install or files you write stay around for the next tool call.
+When using Docker as the execution environment (not the methods above, but when the agent runs commands inside a Docker sandbox — see [Configuration → Docker Backend](./configuration.md#docker-backend)), Thoth reuses a single long-lived container for all tool calls and automatically bind-mounts the skills directory (`~/.thoth/skills/`) and any credential files declared by skills into that container as read-only volumes. Skill scripts, templates, and references are available inside the sandbox without manual configuration, and because the container persists for the life of the Thoth process, any dependencies you install or files you write stay around for the next tool call.
 
 The same syncing happens for SSH and Modal backends — skills and credential files are uploaded via rsync or the Modal mount API before each command.
 
@@ -327,14 +327,14 @@ services:
     ports:
       - "8000:8000"
     networks:
-      - hermes-net
+      - thoth-net
     deploy:
       resources:
         reservations:
           devices:
             - capabilities: [gpu]
 
-  hermes:
+  thoth:
     image: nousresearch/hermes-agent:latest
     container_name: thoth
     restart: unless-stopped
@@ -342,16 +342,16 @@ services:
     ports:
       - "8642:8642"
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.thoth:/opt/data
     networks:
-      - hermes-net
+      - thoth-net
 
 networks:
-  hermes-net:
+  thoth-net:
     driver: bridge
 ```
 
-Then in your `~/.hermes/config.yaml`, use the **container name** as the hostname:
+Then in your `~/.thoth/config.yaml`, use the **container name** as the hostname:
 
 ```yaml
 model:
@@ -377,7 +377,7 @@ If your inference server runs directly on the host (not in Docker), use `host.do
 ```sh
 docker run -d \
   --name thoth \
-  -v ~/.hermes:/opt/data \
+  -v ~/.thoth:/opt/data \
   -p 8642:8642 \
   nousresearch/hermes-agent gateway run
 ```
@@ -397,7 +397,7 @@ model:
 docker run -d \
   --name thoth \
   --network host \
-  -v ~/.hermes:/opt/data \
+  -v ~/.thoth:/opt/data \
   nousresearch/hermes-agent gateway run
 ```
 
@@ -423,7 +423,7 @@ docker exec thoth curl -s http://vllm:8000/v1/models
 
 You should see a JSON response listing your served model. If this fails, check:
 
-1. Both containers are on the same Docker network (`docker network inspect hermes-net`)
+1. Both containers are on the same Docker network (`docker network inspect thoth-net`)
 2. The inference server is listening on `0.0.0.0`, not `127.0.0.1`
 3. The port number matches
 
@@ -449,10 +449,10 @@ Check logs: `docker logs thoth`. Common causes:
 
 ### "Permission denied" errors
 
-The container's entrypoint drops privileges to the non-root `hermes` user (UID 10000) via `gosu`. If your host `~/.hermes/` is owned by a different UID, set `THOTH_UID`/`THOTH_GID` to match your host user, or ensure the data directory is writable:
+The container's entrypoint drops privileges to the non-root `hermes` user (UID 10000) via `gosu`. If your host `~/.thoth/` is owned by a different UID, set `THOTH_UID`/`THOTH_GID` to match your host user, or ensure the data directory is writable:
 
 ```sh
-chmod -R 755 ~/.hermes
+chmod -R 755 ~/.thoth
 ```
 
 ### Browser tools not working
@@ -463,7 +463,7 @@ Playwright needs shared memory. Add `--shm-size=1g` to your Docker run command:
 docker run -d \
   --name thoth \
   --shm-size=1g \
-  -v ~/.hermes:/opt/data \
+  -v ~/.thoth:/opt/data \
   nousresearch/hermes-agent gateway run
 ```
 

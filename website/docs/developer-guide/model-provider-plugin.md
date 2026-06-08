@@ -158,7 +158,7 @@ Look at these bundled plugins for idioms:
 
 ## User overrides — replace a built-in without editing the repo
 
-Say you want to point `gmi` at your private staging endpoint for testing. Create `~/.hermes/plugins/model-providers/gmi/__init__.py`:
+Say you want to point `gmi` at your private staging endpoint for testing. Create `~/.thoth/plugins/model-providers/gmi/__init__.py`:
 
 ```python
 from providers import register_provider
@@ -224,7 +224,7 @@ for p in list_providers():
 Point `THOTH_HOME` at a temp directory so you don't pollute your real config:
 
 ```bash
-export THOTH_HOME=/tmp/hermes-plugin-test
+export THOTH_HOME=/tmp/thoth-plugin-test
 mkdir -p $THOTH_HOME/plugins/model-providers/my-provider
 cat > $THOTH_HOME/plugins/model-providers/my-provider/__init__.py <<'EOF'
 from providers import register_provider
@@ -251,10 +251,10 @@ Like any Thoth plugin, model providers can ship as a pip package. Add an entry p
 
 ```toml
 [project.entry-points."hermes.plugins"]
-acme-inference = "acme_hermes_plugin:register"
+acme-inference = "acme_thoth_plugin:register"
 ```
 
-…where `acme_hermes_plugin:register` is a function that calls `register_provider(profile)`. The general PluginManager picks up entry-point plugins during `discover_and_load()`. For `kind: model-provider` pip plugins, you still need to declare the kind in your manifest (or rely on the source-text heuristic).
+…where `acme_thoth_plugin:register` is a function that calls `register_provider(profile)`. The general PluginManager picks up entry-point plugins during `discover_and_load()`. For `kind: model-provider` pip plugins, you still need to declare the kind in your manifest (or rely on the source-text heuristic).
 
 See [Building a Thoth Plugin](/docs/guides/build-a-thoth-plugin#distribute-via-pip) for the full entry-points setup.
 

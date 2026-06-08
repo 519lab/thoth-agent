@@ -46,7 +46,7 @@ Follow the prompts to enable webhooks, set the port, and set a global HMAC secre
 
 ### Via environment variables
 
-Add to `~/.hermes/.env`:
+Add to `~/.thoth/.env`:
 
 ```bash
 WEBHOOK_ENABLED=true
@@ -174,7 +174,7 @@ This walkthrough sets up automatic code review on every pull request.
 
 ### 2. Add the route config
 
-Add the `github-pr` route to your `~/.hermes/config.yaml` as shown in the example above.
+Add the `github-pr` route to your `~/.thoth/config.yaml` as shown in the example above.
 
 ### 3. Ensure `gh` CLI is authenticated
 
@@ -365,7 +365,7 @@ thoth webhook test github-issues --payload '{"issue": {"number": 42, "title": "T
 
 ### How dynamic subscriptions work
 
-- Subscriptions are stored in `~/.hermes/webhook_subscriptions.json`
+- Subscriptions are stored in `~/.thoth/webhook_subscriptions.json`
 - The webhook adapter hot-reloads this file on each incoming request (mtime-gated, negligible overhead)
 - Static routes from `config.yaml` always take precedence over dynamic ones with the same name
 - Dynamic subscriptions use the same route format and capabilities as static routes (events, prompt templates, skills, delivery)

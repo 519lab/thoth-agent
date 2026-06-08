@@ -18,7 +18,7 @@ The `x_search` tool lets the agent search X (Twitter) posts, profiles, and threa
 | Credential | Source | Setup |
 |------------|--------|-------|
 | **SuperGrok / X Premium+ OAuth** (preferred) | Browser login at `accounts.x.ai`, refreshed automatically | `thoth auth add xai-oauth` — see [xAI Grok OAuth (SuperGrok / X Premium+)](../../guides/xai-grok-oauth.md) |
-| **`XAI_API_KEY`** | Paid xAI API key | Set in `~/.hermes/.env` |
+| **`XAI_API_KEY`** | Paid xAI API key | Set in `~/.thoth/.env` |
 
 Both hit the same endpoint with the same payload — the only difference is the bearer token. **When both are configured, SuperGrok OAuth wins** so x_search runs against your subscription quota instead of paid API spend.
 
@@ -43,7 +43,7 @@ Either choice satisfies the gating. You can pick whichever credentials you alrea
 ## Configuration
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 x_search:
   # xAI model used for the Responses call.
   # grok-4.20-reasoning is the recommended default; any Grok model
@@ -110,7 +110,7 @@ The agent will:
 
 ### "No xAI credentials available"
 
-The tool surfaces this when both auth paths fail. Either set `XAI_API_KEY` in `~/.hermes/.env` or run `thoth auth add xai-oauth` and complete the browser login. Then restart your session so the agent re-reads the tool registry.
+The tool surfaces this when both auth paths fail. Either set `XAI_API_KEY` in `~/.thoth/.env` or run `thoth auth add xai-oauth` and complete the browser login. Then restart your session so the agent re-reads the tool registry.
 
 ### "`x_search` is not enabled for this model"
 

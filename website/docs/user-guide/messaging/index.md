@@ -169,7 +169,7 @@ Sessions reset based on configurable policies:
 | Idle | 1440 min | Reset after N minutes of inactivity |
 | Both | (combined) | Whichever triggers first |
 
-Configure per-platform overrides in `~/.hermes/gateway.json`:
+Configure per-platform overrides in `~/.thoth/gateway.json`:
 
 ```json
 {
@@ -286,7 +286,7 @@ If you find the busy-ack noisy — especially with voice input or rapid-fire mes
 
 ## Tool Progress Notifications
 
-Control how much tool activity is displayed in `~/.hermes/config.yaml`:
+Control how much tool activity is displayed in `~/.thoth/config.yaml`:
 
 ```yaml
 display:
@@ -329,7 +329,7 @@ Each `/background` prompt spawns a **separate agent instance** that runs asynchr
 
 ### Background Process Notifications
 
-When the agent running a background session uses `terminal(background=true)` to start long-running processes (servers, builds, etc.), the gateway can push status updates to your chat. Control this with `display.background_process_notifications` in `~/.hermes/config.yaml`:
+When the agent running a background session uses `terminal(background=true)` to start long-running processes (servers, builds, etc.), the gateway can push status updates to your chat. Control this with `display.background_process_notifications` in `~/.thoth/config.yaml`:
 
 ```yaml
 display:
@@ -386,7 +386,7 @@ Use the user service on laptops and dev boxes. Use the system service on VPS or 
 Avoid keeping both the user and system gateway units installed at once unless you really mean to. Thoth will warn if it detects both because start/stop/status behavior gets ambiguous.
 
 :::info Multiple installations
-If you run multiple Thoth installations on the same machine (with different `THOTH_HOME` directories), each gets its own systemd service name. The default `~/.hermes` uses `thoth-gateway`; other installations use `thoth-gateway-<hash>`. The `thoth gateway` commands automatically target the correct service for your current `THOTH_HOME`.
+If you run multiple Thoth installations on the same machine (with different `THOTH_HOME` directories), each gets its own systemd service name. The default `~/.thoth` uses `thoth-gateway`; other installations use `thoth-gateway-<hash>`. The `thoth gateway` commands automatically target the correct service for your current `THOTH_HOME`.
 :::
 
 ### macOS (launchd)
@@ -396,7 +396,7 @@ thoth gateway install               # Install as launchd agent
 thoth gateway start                 # Start the service
 thoth gateway stop                  # Stop the service
 thoth gateway status                # Check status
-tail -f ~/.hermes/logs/gateway.log   # View logs
+tail -f ~/.thoth/logs/gateway.log   # View logs
 ```
 
 The generated plist lives at `~/Library/LaunchAgents/ai.hermes.gateway.plist`. It includes three environment variables:
@@ -410,7 +410,7 @@ launchd plists are static — if you install new tools (e.g. a new Node.js versi
 :::
 
 :::info Multiple installations
-Like the Linux systemd service, each `THOTH_HOME` directory gets its own launchd label. The default `~/.hermes` uses `ai.hermes.gateway`; other installations use `ai.hermes.gateway-<suffix>`.
+Like the Linux systemd service, each `THOTH_HOME` directory gets its own launchd label. The default `~/.thoth` uses `ai.thoth.gateway`; other installations use `ai.thoth.gateway-<suffix>`.
 :::
 
 ## Platform-Specific Toolsets
@@ -424,7 +424,7 @@ Each platform has its own toolset:
 | Discord | `thoth-discord` | Full tools including terminal |
 | WhatsApp | `thoth-whatsapp` | Full tools including terminal |
 | Slack | `thoth-slack` | Full tools including terminal |
-| Google Chat | `hermes-google_chat` | Full tools including terminal |
+| Google Chat | `thoth-google_chat` | Full tools including terminal |
 | Signal | `thoth-signal` | Full tools including terminal |
 | SMS | `thoth-sms` | Full tools including terminal |
 | Email | `thoth-email` | Full tools including terminal |
@@ -439,7 +439,7 @@ Each platform has its own toolset:
 | BlueBubbles | `thoth-bluebubbles` | Full tools including terminal |
 | QQBot | `thoth-qqbot` | Full tools including terminal |
 | Yuanbao | `thoth-yuanbao` | Full tools including terminal |
-| Microsoft Teams | `hermes-teams` | Full tools including terminal |
+| Microsoft Teams | `thoth-teams` | Full tools including terminal |
 | API Server | `thoth-api-server` | Full tools (drops `clarify`, `send_message`, `text_to_speech` — programmatic access doesn't have an interactive user) |
 | Webhooks | `thoth-webhook` | Full tools including terminal |
 
@@ -471,7 +471,7 @@ The breaker does **not** auto-resume — it stays open until you run `/platform 
 
 When an adapter is paused, check:
 
-1. **Gateway log** (`~/.hermes/logs/gateway.log` or the systemd / launchd unit log). Search for the platform name and `circuit breaker`, `paused`, or `disabled`. The trip event includes the failure count and the last error.
+1. **Gateway log** (`~/.thoth/logs/gateway.log` or the systemd / launchd unit log). Search for the platform name and `circuit breaker`, `paused`, or `disabled`. The trip event includes the failure count and the last error.
 2. **`/platform list`** output — shows the current state and last reason.
 3. **The provider's status page** (Telegram bot API status, Discord status, etc.). The breaker tripped because the platform was unhealthy; don't try to resume until it's back.
 

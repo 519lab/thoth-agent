@@ -128,7 +128,7 @@ print(json.dumps(report, indent=2))
 
 ## Execution Mode
 
-`execute_code` has two execution modes controlled by `code_execution.mode` in `~/.hermes/config.yaml`:
+`execute_code` has two execution modes controlled by `code_execution.mode` in `~/.thoth/config.yaml`:
 
 | Mode | Working directory | Python interpreter |
 |------|-------------------|--------------------|
@@ -140,7 +140,7 @@ print(json.dumps(report, indent=2))
 **When to flip to `strict`:** you need maximum reproducibility — you want the same interpreter every session regardless of which venv the user activated, and you want scripts quarantined from the project tree (no risk of accidentally reading project files through a relative path).
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 code_execution:
   mode: project   # or "strict"
 ```
@@ -167,7 +167,7 @@ Switching mode changes where scripts run and which interpreter runs them, not wh
 All limits are configurable via `config.yaml`:
 
 ```yaml
-# In ~/.hermes/config.yaml
+# In ~/.thoth/config.yaml
 code_execution:
   mode: project      # project (default) | strict
   timeout: 300       # Max seconds per script (default: 300)

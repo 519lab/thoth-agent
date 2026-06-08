@@ -6,7 +6,7 @@ description: Remotely-hosted manifest driving curated model picker lists for Ope
 
 # Model Catalog
 
-Thoth fetches curated model lists for **OpenRouter** and **Nous Portal** from a JSON manifest hosted alongside the docs site. This lets maintainers update picker lists without shipping a new `hermes-agent` release.
+Thoth fetches curated model lists for **OpenRouter** and **Nous Portal** from a JSON manifest hosted alongside the docs site. This lets maintainers update picker lists without shipping a new `thoth-agent` release.
 
 When the manifest is unreachable (offline, network blocked, hosting failure), Thoth silently falls back to the in-repo snapshot that ships with the CLI. The manifest never breaks the picker — worst case you see whatever list was bundled with your installed version.
 
@@ -61,7 +61,7 @@ Field notes:
 | Network failure, no cache | Silent fallback to in-repo snapshot |
 | Manifest fails schema validation | Treated as unreachable |
 
-Cache location: `~/.hermes/cache/model_catalog.json`.
+Cache location: `~/.thoth/cache/model_catalog.json`.
 
 ## Config
 

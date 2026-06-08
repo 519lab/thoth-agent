@@ -84,14 +84,14 @@ Build and refine the agent like any other profile:
 ```bash
 thoth profile create research-bot
 research-bot setup                    # configure model, API keys
-# Edit ~/.hermes/profiles/research-bot/SOUL.md
+# Edit ~/.thoth/profiles/research-bot/SOUL.md
 # Install skills, wire up MCP servers, schedule cron jobs, etc.
 research-bot chat                     # dogfood until it feels right
 ```
 
 ### Step 2 — Add a `distribution.yaml`
 
-Create `~/.hermes/profiles/research-bot/distribution.yaml`:
+Create `~/.thoth/profiles/research-bot/distribution.yaml`:
 
 ```yaml
 name: research-bot
@@ -119,7 +119,7 @@ That's the whole manifest. Every field except `name` has a sensible default.
 ### Step 3 — Push to a git repo
 
 ```bash
-cd ~/.hermes/profiles/research-bot
+cd ~/.thoth/profiles/research-bot
 git init
 git add .
 git commit -m "v1.0.0"
@@ -204,7 +204,7 @@ What happens:
 2. Reads `distribution.yaml`, shows you the manifest (name, version, description, author, required env vars).
 3. Checks each required env var against your shell environment and the target profile's existing `.env`. Marks each as `✓ set` or `needs setting` so you know exactly what to configure.
 4. Asks for confirmation. Pass `-y` / `--yes` to skip.
-5. Copies distribution-owned files into `~/.hermes/profiles/research-bot/` (or wherever the manifest's `name` resolves).
+5. Copies distribution-owned files into `~/.thoth/profiles/research-bot/` (or wherever the manifest's `name` resolves).
 6. Writes `.env.EXAMPLE` with the required keys commented out — copy to `.env` and fill in.
 7. With `--alias`, creates a wrapper so you can run `research-bot chat` directly.
 
@@ -263,7 +263,7 @@ OPENAI_API_KEY=
 Copy it:
 
 ```bash
-cp ~/.hermes/profiles/research-bot/.env.EXAMPLE ~/.hermes/profiles/research-bot/.env
+cp ~/.thoth/profiles/research-bot/.env.EXAMPLE ~/.thoth/profiles/research-bot/.env
 # Edit .env, paste your real keys
 ```
 
@@ -327,7 +327,7 @@ The delete prompt surfaces distribution info before asking you to confirm:
 
 ```
 Profile: research-bot
-Path:    ~/.hermes/profiles/research-bot
+Path:    ~/.thoth/profiles/research-bot
 Model:   claude-opus-4 (anthropic)
 Skills:  12
 Distribution: research-bot@1.0.0
@@ -352,7 +352,7 @@ You built a research assistant on your laptop. You want the same agent on your w
 
 ```bash
 # Laptop
-cd ~/.hermes/profiles/research-bot
+cd ~/.thoth/profiles/research-bot
 git init && git add . && git commit -m "initial"
 git remote add origin git@github.com:you/research-bot.git
 git push -u origin main
@@ -370,7 +370,7 @@ Your engineering team wants a shared PR-review bot with a specific SOUL, specifi
 
 ```bash
 # Engineering lead
-cd ~/.hermes/profiles/pr-reviewer
+cd ~/.thoth/profiles/pr-reviewer
 # ... build and tune ...
 git init && git add . && git commit -m "v1.0 PR reviewer"
 git tag v1.0.0
@@ -390,7 +390,7 @@ You built something novel — maybe a "Polymarket trader" or an "academic paper 
 
 ```bash
 # You
-cd ~/.hermes/profiles/polymarket-trader
+cd ~/.thoth/profiles/polymarket-trader
 # Write a solid README.md at the repo root — GitHub shows it on the repo page
 git init && git add . && git commit -m "v1.0"
 git tag v1.0.0
@@ -475,7 +475,7 @@ git ls-remote --tags https://github.com/you/research-bot | tail -5
 The default update behavior already does this: `config.yaml` is preserved. To be safe, write your local tweaks to a file the distribution doesn't own:
 
 ```yaml
-# ~/.hermes/profiles/research-bot/local/my-overrides.yaml
+# ~/.thoth/profiles/research-bot/local/my-overrides.yaml
 # (distribution never touches local/)
 ```
 
@@ -500,7 +500,7 @@ The standard git workflow — distributions are just repos:
 # Fork the repo on GitHub, then install your fork
 thoth profile install github.com/yourname/forked-research-bot --alias
 
-# Iterate locally in ~/.hermes/profiles/forked-research-bot/
+# Iterate locally in ~/.thoth/profiles/forked-research-bot/
 # Edit SOUL.md, commit, push to your fork
 # Upstream changes: pull them into your fork the usual way
 ```
@@ -511,11 +511,11 @@ From the author's machine:
 
 ```bash
 # Install from a local directory (no git push needed)
-thoth profile install ~/.hermes/profiles/research-bot --name research-bot-test --alias
+thoth profile install ~/.thoth/profiles/research-bot --name research-bot-test --alias
 
 # Tweak, delete, re-install until it's right
 thoth profile delete research-bot-test --yes
-thoth profile install ~/.hermes/profiles/research-bot --name research-bot-test
+thoth profile install ~/.thoth/profiles/research-bot --name research-bot-test
 ```
 
 ---

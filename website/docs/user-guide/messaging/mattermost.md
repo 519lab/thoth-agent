@@ -136,7 +136,7 @@ Select **Mattermost** when prompted, then paste your server URL, bot token, and 
 
 ### Option B: Manual Configuration
 
-Add the following to your `~/.hermes/.env` file:
+Add the following to your `~/.thoth/.env` file:
 
 ```bash
 # Required
@@ -157,7 +157,7 @@ MATTERMOST_ALLOWED_USERS=3uo8dkh1p7g1mfk49ear5fzs5c
 # MATTERMOST_FREE_RESPONSE_CHANNELS=channel_id_1,channel_id_2
 ```
 
-Optional behavior settings in `~/.hermes/config.yaml`:
+Optional behavior settings in `~/.thoth/config.yaml`:
 
 ```yaml
 group_sessions_per_user: true
@@ -189,7 +189,7 @@ Type `/sethome` in any Mattermost channel where the bot is present. That channel
 
 ### Manual Configuration
 
-Add this to your `~/.hermes/.env`:
+Add this to your `~/.thoth/.env`:
 
 ```bash
 MATTERMOST_HOME_CHANNEL=abc123def456ghi789jkl012mn
@@ -206,7 +206,7 @@ The `MATTERMOST_REPLY_MODE` setting controls how Thoth posts responses:
 | `off` (default) | Thoth posts flat messages in the channel, like a normal user. |
 | `thread` | Thoth replies in a thread under your original message. Keeps channels clean when there's lots of back-and-forth. |
 
-Set it in your `~/.hermes/.env`:
+Set it in your `~/.thoth/.env`:
 
 ```bash
 MATTERMOST_REPLY_MODE=thread
@@ -306,7 +306,7 @@ If this returns your bot's user info, the token is valid. If it returns an error
 
 **Cause**: Your User ID isn't in `MATTERMOST_ALLOWED_USERS`.
 
-**Fix**: Add your User ID to `MATTERMOST_ALLOWED_USERS` in `~/.hermes/.env` and restart the gateway. Remember: the User ID is a 26-character alphanumeric string, not your `@username`.
+**Fix**: Add your User ID to `MATTERMOST_ALLOWED_USERS` in `~/.thoth/.env` and restart the gateway. Remember: the User ID is a 26-character alphanumeric string, not your `@username`.
 
 ## Per-Channel Prompts
 

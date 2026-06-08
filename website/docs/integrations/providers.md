@@ -19,28 +19,28 @@ You need at least one way to connect to an LLM. Use `thoth model` to switch prov
 | **GitHub Copilot** | `thoth model` (OAuth device code flow, `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token`) |
 | **GitHub Copilot ACP** | `thoth model` (spawns local `copilot --acp --stdio`) |
 | **Anthropic** | `thoth model` (Claude Max + extra usage credits via OAuth; also supports Anthropic API key or manual setup-token — see note below) |
-| **OpenRouter** | `OPENROUTER_API_KEY` in `~/.hermes/.env` |
-| **NovitaAI** | `NOVITA_API_KEY` in `~/.hermes/.env` (provider: `novita`, 200+ models, Model API, Agent Sandbox, GPU Cloud) |
-| **AI Gateway** | `AI_GATEWAY_API_KEY` in `~/.hermes/.env` (provider: `ai-gateway`) |
-| **z.ai / GLM** | `GLM_API_KEY` in `~/.hermes/.env` (provider: `zai`) |
-| **Kimi / Moonshot** | `KIMI_API_KEY` in `~/.hermes/.env` (provider: `kimi-coding`) |
-| **Kimi / Moonshot (China)** | `KIMI_CN_API_KEY` in `~/.hermes/.env` (provider: `kimi-coding-cn`; aliases: `kimi-cn`, `moonshot-cn`) |
-| **Arcee AI** | `ARCEEAI_API_KEY` in `~/.hermes/.env` (provider: `arcee`; aliases: `arcee-ai`, `arceeai`) |
-| **GMI Cloud** | `GMI_API_KEY` in `~/.hermes/.env` (provider: `gmi`; aliases: `gmi-cloud`, `gmicloud`) |
-| **MiniMax** | `MINIMAX_API_KEY` in `~/.hermes/.env` (provider: `minimax`) |
-| **MiniMax China** | `MINIMAX_CN_API_KEY` in `~/.hermes/.env` (provider: `minimax-cn`) |
-| **xAI (Grok) — Responses API** | `XAI_API_KEY` in `~/.hermes/.env` (provider: `xai`) |
+| **OpenRouter** | `OPENROUTER_API_KEY` in `~/.thoth/.env` |
+| **NovitaAI** | `NOVITA_API_KEY` in `~/.thoth/.env` (provider: `novita`, 200+ models, Model API, Agent Sandbox, GPU Cloud) |
+| **AI Gateway** | `AI_GATEWAY_API_KEY` in `~/.thoth/.env` (provider: `ai-gateway`) |
+| **z.ai / GLM** | `GLM_API_KEY` in `~/.thoth/.env` (provider: `zai`) |
+| **Kimi / Moonshot** | `KIMI_API_KEY` in `~/.thoth/.env` (provider: `kimi-coding`) |
+| **Kimi / Moonshot (China)** | `KIMI_CN_API_KEY` in `~/.thoth/.env` (provider: `kimi-coding-cn`; aliases: `kimi-cn`, `moonshot-cn`) |
+| **Arcee AI** | `ARCEEAI_API_KEY` in `~/.thoth/.env` (provider: `arcee`; aliases: `arcee-ai`, `arceeai`) |
+| **GMI Cloud** | `GMI_API_KEY` in `~/.thoth/.env` (provider: `gmi`; aliases: `gmi-cloud`, `gmicloud`) |
+| **MiniMax** | `MINIMAX_API_KEY` in `~/.thoth/.env` (provider: `minimax`) |
+| **MiniMax China** | `MINIMAX_CN_API_KEY` in `~/.thoth/.env` (provider: `minimax-cn`) |
+| **xAI (Grok) — Responses API** | `XAI_API_KEY` in `~/.thoth/.env` (provider: `xai`) |
 | **xAI Grok OAuth (SuperGrok)** | `thoth model` → "xAI Grok OAuth (SuperGrok Subscription)" — browser login, no API key. See [guide](../guides/xai-grok-oauth.md) |
-| **Qwen Cloud (Alibaba DashScope)** | `DASHSCOPE_API_KEY` in `~/.hermes/.env` (provider: `alibaba`) |
+| **Qwen Cloud (Alibaba DashScope)** | `DASHSCOPE_API_KEY` in `~/.thoth/.env` (provider: `alibaba`) |
 | **Alibaba Cloud (Coding Plan)** | `DASHSCOPE_API_KEY` (provider: `alibaba-coding-plan`, alias: `alibaba_coding`) — separate billing SKU, different endpoint |
-| **Kilo Code** | `KILOCODE_API_KEY` in `~/.hermes/.env` (provider: `kilocode`) |
-| **Xiaomi MiMo** | `XIAOMI_API_KEY` in `~/.hermes/.env` (provider: `xiaomi`, aliases: `mimo`, `xiaomi-mimo`) |
-| **Tencent TokenHub** | `TOKENHUB_API_KEY` in `~/.hermes/.env` (provider: `tencent-tokenhub`, aliases: `tencent`, `tokenhub`, `tencentmaas`) |
-| **OpenCode Zen** | `OPENCODE_ZEN_API_KEY` in `~/.hermes/.env` (provider: `opencode-zen`) |
-| **OpenCode Go** | `OPENCODE_GO_API_KEY` in `~/.hermes/.env` (provider: `opencode-go`) |
-| **DeepSeek** | `DEEPSEEK_API_KEY` in `~/.hermes/.env` (provider: `deepseek`) |
-| **Hugging Face** | `HF_TOKEN` in `~/.hermes/.env` (provider: `huggingface`, aliases: `hf`) |
-| **Google / Gemini** | `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) in `~/.hermes/.env` (provider: `gemini`) |
+| **Kilo Code** | `KILOCODE_API_KEY` in `~/.thoth/.env` (provider: `kilocode`) |
+| **Xiaomi MiMo** | `XIAOMI_API_KEY` in `~/.thoth/.env` (provider: `xiaomi`, aliases: `mimo`, `xiaomi-mimo`) |
+| **Tencent TokenHub** | `TOKENHUB_API_KEY` in `~/.thoth/.env` (provider: `tencent-tokenhub`, aliases: `tencent`, `tokenhub`, `tencentmaas`) |
+| **OpenCode Zen** | `OPENCODE_ZEN_API_KEY` in `~/.thoth/.env` (provider: `opencode-zen`) |
+| **OpenCode Go** | `OPENCODE_GO_API_KEY` in `~/.thoth/.env` (provider: `opencode-go`) |
+| **DeepSeek** | `DEEPSEEK_API_KEY` in `~/.thoth/.env` (provider: `deepseek`) |
+| **Hugging Face** | `HF_TOKEN` in `~/.thoth/.env` (provider: `huggingface`, aliases: `hf`) |
+| **Google / Gemini** | `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) in `~/.thoth/.env` (provider: `gemini`) |
 | **Google Gemini (OAuth)** | `thoth model` → "Google Gemini (OAuth)" (provider: `google-gemini-cli`, free tier supported, browser PKCE login) |
 | **LM Studio** | `thoth model` → "LM Studio" (provider: `lmstudio`, optional `LM_API_KEY`) |
 | **Custom Endpoint** | `thoth model` → choose "Custom endpoint" (saved in `config.yaml`) |
@@ -77,7 +77,7 @@ need to install `gemini-cli` or register your own GCP OAuth client.
 **How auth works:**
 - PKCE Authorization Code flow against `accounts.google.com`
 - Browser callback at `http://127.0.0.1:8085/oauth2callback` (with ephemeral-port fallback if busy)
-- Tokens stored at `~/.hermes/auth/google_oauth.json` (chmod 0600, atomic write, cross-process `fcntl` lock)
+- Tokens stored at `~/.thoth/auth/google_oauth.json` (chmod 0600, atomic write, cross-process `fcntl` lock)
 - Automatic refresh 60 s before expiry
 - Headless environments (SSH, `THOTH_HEADLESS=1`) → paste-mode fallback
 - Inflight refresh deduplication — two concurrent requests won't double-refresh
@@ -138,7 +138,7 @@ Register a **Desktop app** OAuth client at
 with the Generative Language API enabled.
 
 :::info Codex Note
-The OpenAI Codex provider authenticates via device code (open a URL, enter a code). Thoth stores the resulting credentials in its own auth store under `~/.hermes/auth.json` and can import existing Codex CLI credentials from `~/.codex/auth.json` when present. No Codex CLI installation is required.
+The OpenAI Codex provider authenticates via device code (open a URL, enter a code). Thoth stores the resulting credentials in its own auth store under `~/.thoth/auth.json` and can import existing Codex CLI credentials from `~/.codex/auth.json` when present. No Codex CLI installation is required.
 
 If a token refresh fails with a terminal error (HTTP 4xx, `invalid_grant`, revoked grant, etc.), Thoth marks the refresh token as dead and stops replaying it so you don't see a flood of identical auth failures. The next request surfaces a typed re-auth message instead. Run `thoth auth add codex-oauth` (or `thoth model` → OpenAI Codex) to start a fresh device-code login; the quarantine clears on the next successful exchange.
 :::
@@ -164,7 +164,7 @@ If you're trying to switch to a provider you haven't set up yet (e.g. you only h
 
 ### Nous Portal
 
-Subscription-based access to Hermes-4 models (`Hermes-4-70B`, `Hermes-4.3-36B`, `Hermes-4-405B`) via Nous Research's portal. Run `thoth model`, pick **Nous Portal**, sign in through the browser — Thoth stores a long-lived refresh token at `~/.hermes/auth.json`.
+Subscription-based access to Hermes-4 models (`Hermes-4-70B`, `Hermes-4.3-36B`, `Hermes-4-405B`) via Nous Research's portal. Run `thoth model`, pick **Nous Portal**, sign in through the browser — Thoth stores a long-lived refresh token at `~/.thoth/auth.json`.
 
 The refresh token is also shared across profiles via a shared token store, so logging in on one profile carries over to the others.
 
@@ -201,7 +201,7 @@ thoth chat --provider anthropic
 thoth chat --provider anthropic  # reads Claude Code credential files automatically
 ```
 
-When you choose Anthropic OAuth through `thoth model`, Thoth prefers Claude Code's own credential store over copying the token into `~/.hermes/.env`. That keeps refreshable Claude credentials refreshable.
+When you choose Anthropic OAuth through `thoth model`, Thoth prefers Claude Code's own credential store over copying the token into `~/.thoth/.env`. That keeps refreshable Claude credentials refreshable.
 
 Or set it permanently:
 ```yaml
@@ -286,48 +286,48 @@ These providers have built-in support with dedicated provider IDs. Set the API k
 ```bash
 # NovitaAI Model API
 thoth chat --provider novita --model moonshotai/kimi-k2.5
-# Requires: NOVITA_API_KEY in ~/.hermes/.env
+# Requires: NOVITA_API_KEY in ~/.thoth/.env
 
 # z.ai / ZhipuAI GLM
 thoth chat --provider zai --model glm-5
-# Requires: GLM_API_KEY in ~/.hermes/.env
+# Requires: GLM_API_KEY in ~/.thoth/.env
 
 # Kimi / Moonshot AI (international: api.moonshot.ai)
 thoth chat --provider kimi-coding --model kimi-for-coding
-# Requires: KIMI_API_KEY in ~/.hermes/.env
+# Requires: KIMI_API_KEY in ~/.thoth/.env
 
 # Kimi / Moonshot AI (China: api.moonshot.cn)
 thoth chat --provider kimi-coding-cn --model kimi-k2.5
-# Requires: KIMI_CN_API_KEY in ~/.hermes/.env
+# Requires: KIMI_CN_API_KEY in ~/.thoth/.env
 
 # MiniMax (global endpoint)
 thoth chat --provider minimax --model MiniMax-M2.7
-# Requires: MINIMAX_API_KEY in ~/.hermes/.env
+# Requires: MINIMAX_API_KEY in ~/.thoth/.env
 
 # MiniMax (China endpoint)
 thoth chat --provider minimax-cn --model MiniMax-M2.7
-# Requires: MINIMAX_CN_API_KEY in ~/.hermes/.env
+# Requires: MINIMAX_CN_API_KEY in ~/.thoth/.env
 
 # Qwen Cloud / DashScope (Qwen models)
 thoth chat --provider alibaba --model qwen3.5-plus
-# Requires: DASHSCOPE_API_KEY in ~/.hermes/.env
+# Requires: DASHSCOPE_API_KEY in ~/.thoth/.env
 
 # Xiaomi MiMo
 thoth chat --provider xiaomi --model mimo-v2-pro
-# Requires: XIAOMI_API_KEY in ~/.hermes/.env
+# Requires: XIAOMI_API_KEY in ~/.thoth/.env
 
 # Tencent TokenHub (Hy3 Preview)
 thoth chat --provider tencent-tokenhub --model hy3-preview
-# Requires: TOKENHUB_API_KEY in ~/.hermes/.env
+# Requires: TOKENHUB_API_KEY in ~/.thoth/.env
 
 # Arcee AI (Trinity models)
 thoth chat --provider arcee --model trinity-large-thinking
-# Requires: ARCEEAI_API_KEY in ~/.hermes/.env
+# Requires: ARCEEAI_API_KEY in ~/.thoth/.env
 
 # GMI Cloud
 # Use the exact model ID returned by GMI's /v1/models endpoint.
 thoth chat --provider gmi --model zai-org/GLM-5.1-FP8
-# Requires: GMI_API_KEY in ~/.hermes/.env
+# Requires: GMI_API_KEY in ~/.thoth/.env
 ```
 
 Or set the provider permanently in `config.yaml`:
@@ -345,7 +345,7 @@ When using the Z.AI / GLM provider, Thoth automatically probes multiple endpoint
 
 ### xAI (Grok) — Responses API + Prompt Caching
 
-xAI is wired through the Responses API (`codex_responses` transport) for automatic reasoning support on Grok 4 models — no `reasoning_effort` parameter needed, the server reasons by default. Set `XAI_API_KEY` in `~/.hermes/.env` and pick xAI in `thoth model`, or drop `grok` as a shortcut into `/model grok-4-1-fast-reasoning`.
+xAI is wired through the Responses API (`codex_responses` transport) for automatic reasoning support on Grok 4 models — no `reasoning_effort` parameter needed, the server reasons by default. Set `XAI_API_KEY` in `~/.thoth/.env` and pick xAI in `thoth model`, or drop `grok` as a shortcut into `/model grok-4-1-fast-reasoning`.
 
 SuperGrok and X Premium+ subscribers can sign in with browser OAuth instead of using an API key — pick **xAI Grok OAuth (SuperGrok Subscription)** in `thoth model`, or run `thoth auth add xai-oauth`. The same OAuth bearer token is automatically reused by direct-to-xAI tools (TTS, image gen, video gen, transcription). See the [xAI Grok OAuth guide](../guides/xai-grok-oauth.md) for the full flow — and if Thoth runs on a remote host, also see [OAuth over SSH / Remote Hosts](../guides/oauth-over-ssh.md) for the required `ssh -L` tunnel.
 
@@ -362,7 +362,7 @@ xAI also ships a dedicated TTS endpoint (`/v1/tts`). Select **xAI TTS** in `thot
 ```bash
 # Use any available model
 thoth chat --provider novita --model moonshotai/kimi-k2.5
-# Requires: NOVITA_API_KEY in ~/.hermes/.env
+# Requires: NOVITA_API_KEY in ~/.thoth/.env
 
 # Short alias
 thoth chat --provider novita-ai --model deepseek/deepseek-v3-0324
@@ -442,7 +442,7 @@ Alibaba's Qwen Portal with browser-based OAuth login. Pick **Qwen OAuth (Portal)
 thoth model
 # → pick "Qwen OAuth (Portal)"
 # → browser opens; sign in with your Alibaba account
-# → confirm — credentials are saved to ~/.hermes/auth.json
+# → confirm — credentials are saved to ~/.thoth/auth.json
 
 thoth chat   # uses portal.qwen.ai/v1 endpoint
 ```
@@ -486,7 +486,7 @@ MiniMax-M2.7 via browser OAuth login — no API key needed. Pick **MiniMax (OAut
 thoth model
 # → pick "MiniMax (OAuth)"
 # → browser opens; sign in with your MiniMax account (global or CN region)
-# → confirm — credentials are saved to ~/.hermes/auth.json
+# → confirm — credentials are saved to ~/.thoth/auth.json
 
 thoth chat   # uses api.minimax.io/anthropic endpoint
 ```
@@ -511,7 +511,7 @@ Nemotron and other open source models via [build.nvidia.com](https://build.nvidi
 ```bash
 # Cloud (build.nvidia.com)
 thoth chat --provider nvidia --model nvidia/nemotron-3-super-120b-a12b
-# Requires: NVIDIA_API_KEY in ~/.hermes/.env
+# Requires: NVIDIA_API_KEY in ~/.thoth/.env
 
 # Local NIM endpoint — override base URL
 NVIDIA_BASE_URL=http://localhost:8000/v1 thoth chat --provider nvidia --model nvidia/nemotron-3-super-120b-a12b
@@ -537,7 +537,7 @@ Open and reasoning models via [GMI Cloud](https://www.gmicloud.ai/) — OpenAI-c
 ```bash
 # GMI Cloud
 thoth chat --provider gmi --model deepseek-ai/DeepSeek-R1
-# Requires: GMI_API_KEY in ~/.hermes/.env
+# Requires: GMI_API_KEY in ~/.thoth/.env
 ```
 
 Or set it permanently in `config.yaml`:
@@ -556,7 +556,7 @@ Step-series models via [StepFun](https://platform.stepfun.com) — OpenAI-compat
 ```bash
 # StepFun
 thoth chat --provider stepfun --model step-3-mini
-# Requires: STEPFUN_API_KEY in ~/.hermes/.env
+# Requires: STEPFUN_API_KEY in ~/.thoth/.env
 ```
 
 Or set it permanently in `config.yaml`:
@@ -575,7 +575,7 @@ The base URL can be overridden with `STEPFUN_BASE_URL` (default: `https://api.st
 ```bash
 # Use any available model
 thoth chat --provider huggingface --model Qwen/Qwen3-235B-A22B-Thinking-2507
-# Requires: HF_TOKEN in ~/.hermes/.env
+# Requires: HF_TOKEN in ~/.thoth/.env
 
 # Short alias
 thoth chat --provider hf --model deepseek-ai/DeepSeek-V3.2
@@ -611,7 +611,7 @@ thoth model
 
 **Manual config (`config.yaml`):**
 ```yaml
-# In ~/.hermes/config.yaml
+# In ~/.thoth/config.yaml
 model:
   default: your-model-name
   provider: custom
@@ -1264,14 +1264,14 @@ You can also select named custom providers from the interactive `thoth model` me
 
 ### Cookbook: Together AI, Groq, Perplexity
 
-The cloud providers listed in [Other Compatible Providers](#other-compatible-providers) all speak OpenAI's REST dialect, so they wire up the same way under `custom_providers:`. Three worked recipes follow. Each drops into `~/.hermes/config.yaml` and the matching API key goes in `~/.hermes/.env`.
+The cloud providers listed in [Other Compatible Providers](#other-compatible-providers) all speak OpenAI's REST dialect, so they wire up the same way under `custom_providers:`. Three worked recipes follow. Each drops into `~/.thoth/config.yaml` and the matching API key goes in `~/.thoth/.env`.
 
 #### Together AI
 
 Hosts open-weight models (Llama, MiniMax, Gemma, DeepSeek, Qwen) at prices significantly below first-party APIs. Good default for multi-model fleets.
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 custom_providers:
   - name: together
     base_url: https://api.together.xyz/v1
@@ -1284,7 +1284,7 @@ model:
 ```
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 TOGETHER_API_KEY=your-together-key
 ```
 
@@ -1303,7 +1303,7 @@ Together's `/v1/models` endpoint works, so `thoth model` can auto-discover avail
 Ultra-fast inference (~500 tok/s on Llama-3.3-70B). Small catalog but strong for latency-sensitive interactive use.
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 custom_providers:
   - name: groq
     base_url: https://api.groq.com/openai/v1
@@ -1315,7 +1315,7 @@ model:
 ```
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 GROQ_API_KEY=your-groq-key
 ```
 
@@ -1324,7 +1324,7 @@ GROQ_API_KEY=your-groq-key
 Useful when you want a model that does live web search and citation automatically. Strict about which models are available — check [perplexity.ai/settings/api](https://www.perplexity.ai/settings/api) for the current list.
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 custom_providers:
   - name: perplexity
     base_url: https://api.perplexity.ai
@@ -1336,7 +1336,7 @@ model:
 ```
 
 ```bash
-# ~/.hermes/.env
+# ~/.thoth/.env
 PERPLEXITY_API_KEY=your-perplexity-key
 ```
 
@@ -1427,7 +1427,7 @@ You can also set both `FIRECRAWL_API_KEY` and `FIRECRAWL_API_URL` if your self-h
 
 ## OpenRouter Provider Routing
 
-When using OpenRouter, you can control how requests are routed across providers. Add a `provider_routing` section to `~/.hermes/config.yaml`:
+When using OpenRouter, you can control how requests are routed across providers. Add a `provider_routing` section to `~/.thoth/config.yaml`:
 
 ```yaml
 provider_routing:
@@ -1443,7 +1443,7 @@ provider_routing:
 
 ## OpenRouter Pareto Code Router
 
-OpenRouter ships an experimental coding-model router at `openrouter/pareto-code` that auto-routes requests to the cheapest model meeting a coding-quality bar (ranked by [Artificial Analysis](https://artificialanalysis.ai/)). Pick this model and tune the `min_coding_score` knob in `~/.hermes/config.yaml`:
+OpenRouter ships an experimental coding-model router at `openrouter/pareto-code` that auto-routes requests to the cheapest model meeting a coding-quality bar (ranked by [Artificial Analysis](https://artificialanalysis.ai/)). Pick this model and tune the `min_coding_score` knob in `~/.thoth/config.yaml`:
 
 ```yaml
 model:

@@ -43,7 +43,7 @@ class MyMemoryProvider(MemoryProvider):
         """Called once at agent startup.
 
         kwargs always includes:
-          hermes_home (str): Active THOTH_HOME path. Use for storage.
+          thoth_home (str): Active THOTH_HOME path. Use for storage.
         """
         self._api_key = os.environ.get("MY_API_KEY", "")
         self._session_id = session_id
@@ -68,7 +68,7 @@ class MyMemoryProvider(MemoryProvider):
 | Method | Purpose | Must Implement? |
 |--------|---------|-----------------|
 | `get_config_schema()` | Declare config fields for `thoth memory setup` | **Yes** |
-| `save_config(values, hermes_home)` | Write non-secret config to native location | **Yes** (unless env-var-only) |
+| `save_config(values, thoth_home)` | Write non-secret config to native location | **Yes** (unless env-var-only) |
 
 ### Optional Hooks
 
@@ -121,11 +121,11 @@ Every field in `get_config_schema()` is prompted during `thoth memory setup`. Pr
 ## Save Config
 
 ```python
-def save_config(self, values: dict, hermes_home: str) -> None:
+def save_config(self, values: dict, thoth_home: str) -> None:
     """Write non-secret config to your native location."""
     import json
     from pathlib import Path
-    config_path = Path(hermes_home) / "my-provider.json"
+    config_path = Path(thoth_home) / "my-provider.json"
     config_path.write_text(json.dumps(values, indent=2))
 ```
 
@@ -169,7 +169,7 @@ def sync_turn(self, user_content, assistant_content):
 
 ## Profile Isolation
 
-All storage paths **must** use the `hermes_home` kwarg from `initialize()`, not hardcoded `~/.hermes`:
+All storage paths **must** use the `thoth_home` kwarg from `initialize()`, not hardcoded `~/.thoth`:
 
 ```python
 # CORRECT — profile-scoped
@@ -177,7 +177,7 @@ from thoth_constants import get_thoth_home
 data_dir = get_thoth_home() / "my-provider"
 
 # WRONG — shared across all profiles
-data_dir = Path("~/.hermes/my-provider").expanduser()
+data_dir = Path("~/.thoth/my-provider").expanduser()
 ```
 
 ## Testing

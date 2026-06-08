@@ -26,7 +26,7 @@ Thoth Agent works with any OpenAI-compatible API. Supported providers include:
 - **MiniMax** — global and China endpoints
 - **Local models** — via [Ollama](https://ollama.com/), [vLLM](https://docs.vllm.ai/), [llama.cpp](https://github.com/ggerganov/llama.cpp), [SGLang](https://github.com/sgl-project/sglang), or any OpenAI-compatible server
 
-Set your provider with `thoth model` or by editing `~/.hermes/.env`. See the [Environment Variables](./environment-variables.md) reference for all provider keys.
+Set your provider with `thoth model` or by editing `~/.thoth/.env`. See the [Environment Variables](./environment-variables.md) reference for all provider keys.
 
 ### Does it work on Windows?
 
@@ -51,7 +51,7 @@ This is more reliable than trying to force Thoth core browser transport to attac
 
 See:
 
-- [Use MCP with Thoth](../guides/use-mcp-with-thoth.md#wsl2-bridge-hermes-in-wsl-to-windows-chrome)
+- [Use MCP with Thoth](../guides/use-mcp-with-thoth.md#wsl2-bridge-thoth-in-wsl-to-windows-chrome)
 - [Browser Automation](../user-guide/features/browser.md#wsl2--windows-chrome-prefer-mcp-over-browser-connect)
 
 ### Does it work on Android / Termux?
@@ -70,7 +70,7 @@ Important caveat: the full `.[all]` extra is not currently available on Android 
 
 ### Is my data sent anywhere?
 
-API calls go **only to the LLM provider you configure** (e.g., OpenRouter, your local Ollama instance). Thoth Agent does not collect telemetry, usage data, or analytics. Your conversations, memory, and skills are stored locally in `~/.hermes/`.
+API calls go **only to the LLM provider you configure** (e.g., OpenRouter, your local Ollama instance). Thoth Agent does not collect telemetry, usage data, or analytics. Your conversations, memory, and skills are stored locally in `~/.thoth/`.
 
 ### Can I use it offline / with local models?
 
@@ -140,7 +140,7 @@ See the [Python Library guide](../user-guide/features/code-execution.md) for ful
 
 ### Installation Issues
 
-#### `hermes: command not found` after installation
+#### `thoth: command not found` after installation
 
 **Cause:** Your shell hasn't reloaded the updated PATH.
 
@@ -182,7 +182,7 @@ The installer handles this automatically — if you see this error during manual
 
 **Cause:** Thoth builds a per-session environment snapshot by running `bash -l` once at startup. A bash login shell reads `/etc/profile`, `~/.bash_profile`, and `~/.profile`, but **does not source `~/.bashrc`** — so tools that install themselves there (`nvm`, `asdf`, `pyenv`, `cargo`, custom `PATH` exports) stay invisible to the snapshot. This most commonly happens when Thoth runs under systemd or in a minimal shell where nothing has pre-loaded the interactive shell profile.
 
-**Solution:** Thoth auto-sources `~/.bashrc` by default. If that's not enough — e.g. you're a zsh user whose PATH lives in `~/.zshrc`, or you init `nvm` from a standalone file — list the extra files to source in `~/.hermes/config.yaml`:
+**Solution:** Thoth auto-sources `~/.bashrc` by default. If that's not enough — e.g. you're a zsh user whose PATH lives in `~/.zshrc`, or you init `nvm` from a standalone file — list the extra files to source in `~/.thoth/config.yaml`:
 
 ```yaml
 terminal:
@@ -275,7 +275,7 @@ thoth config set OPENROUTER_API_KEY sk-or-v1-xxxxxxxxxxxx
 ```
 
 :::warning
-Make sure the key matches the provider. An OpenAI key won't work with OpenRouter and vice versa. Check `~/.hermes/.env` for conflicting entries.
+Make sure the key matches the provider. An OpenAI key won't work with OpenRouter and vice versa. Check `~/.thoth/.env` for conflicting entries.
 :::
 
 #### Model not available / model not found
@@ -326,7 +326,7 @@ Look at the CLI startup line — it shows the detected context length (e.g., `�
 To fix context detection, set it explicitly:
 
 ```yaml
-# In ~/.hermes/config.yaml
+# In ~/.thoth/config.yaml
 model:
   default: your-model-name
   context_length: 131072  # your model's actual context window
@@ -404,7 +404,7 @@ thoth gateway status
 thoth gateway start
 
 # Check logs for errors
-cat ~/.hermes/logs/gateway.log | tail -50
+cat ~/.thoth/logs/gateway.log | tail -50
 ```
 
 #### Messages not delivering
@@ -413,7 +413,7 @@ cat ~/.hermes/logs/gateway.log | tail -50
 
 **Solution:**
 - Verify your bot token is valid with `thoth gateway setup`
-- Check gateway logs: `cat ~/.hermes/logs/gateway.log | tail -50`
+- Check gateway logs: `cat ~/.thoth/logs/gateway.log | tail -50`
 - For webhook-based platforms (Slack, WhatsApp), ensure your server is publicly accessible
 
 #### Allowlist confusion — who can talk to the bot?
@@ -428,7 +428,7 @@ cat ~/.hermes/logs/gateway.log | tail -50
 | **DM pairing** | First user to message in DM claims exclusive access |
 | **Open** | Anyone can interact (not recommended for production) |
 
-Configure in `~/.hermes/config.yaml` under your gateway's settings. See the [Messaging docs](../user-guide/messaging/index.md).
+Configure in `~/.thoth/config.yaml` under your gateway's settings. See the [Messaging docs](../user-guide/messaging/index.md).
 
 #### Gateway won't start
 
@@ -437,7 +437,7 @@ Configure in `~/.hermes/config.yaml` under your gateway's settings. See the [Mes
 **Solution:**
 ```bash
 # Install core messaging gateway dependencies
-pip install "hermes-agent[messaging]"  # Telegram, Discord, Slack, and shared gateway deps
+pip install "thoth-agent[messaging]"  # Telegram, Discord, Slack, and shared gateway deps
 
 # Check for port conflicts
 lsof -i :8080
@@ -461,7 +461,7 @@ tmux new -s thoth 'thoth gateway run'
 # Reattach later: tmux attach -t thoth
 
 # Option 3: Background via nohup
-nohup thoth gateway run > ~/.hermes/logs/gateway.log 2>&1 &
+nohup thoth gateway run > ~/.thoth/logs/gateway.log 2>&1 &
 ```
 
 If you want to try systemd anyway, make sure it's enabled:
@@ -496,7 +496,7 @@ thoth gateway start      # Detects the updated plist and reloads
 You can verify the plist has the correct PATH:
 ```bash
 /usr/libexec/PlistBuddy -c "Print :EnvironmentVariables:PATH" \
-  ~/Library/LaunchAgents/ai.hermes.gateway.plist
+  ~/Library/LaunchAgents/ai.thoth.gateway.plist
 ```
 
 ---
@@ -557,7 +557,7 @@ thoth chat --continue
 **Solution:**
 ```bash
 # Ensure MCP dependencies are installed (already included in standard install)
-cd ~/.hermes/hermes-agent && uv pip install -e ".[mcp]"
+cd ~/.thoth/thoth-agent && uv pip install -e ".[mcp]"
 
 # For npm-based servers, ensure Node.js is available
 node --version
@@ -567,7 +567,7 @@ npx --version
 npx -y @modelcontextprotocol/server-filesystem /tmp
 ```
 
-Verify your `~/.hermes/config.yaml` MCP configuration:
+Verify your `~/.thoth/config.yaml` MCP configuration:
 ```yaml
 mcp_servers:
   filesystem:
@@ -618,7 +618,7 @@ If an MCP server crashes mid-request, Thoth will report a timeout. Check the ser
 
 ### How do profiles differ from just setting THOTH_HOME?
 
-Profiles are a managed layer on top of `THOTH_HOME`. You *could* manually set `THOTH_HOME=/some/path` before every command, but profiles handle all the plumbing for you: creating the directory structure, generating shell aliases (`hermes-work`), tracking the active profile in `~/.hermes/active_profile`, and syncing skill updates across all profiles automatically. They also integrate with tab completion so you don't have to remember paths.
+Profiles are a managed layer on top of `THOTH_HOME`. You *could* manually set `THOTH_HOME=/some/path` before every command, but profiles handle all the plumbing for you: creating the directory structure, generating shell aliases (`thoth-work`), tracking the active profile in `~/.thoth/active_profile`, and syncing skill updates across all profiles automatically. They also integrate with tab completion so you don't have to remember paths.
 
 ### Can two profiles share the same bot token?
 
@@ -635,7 +635,7 @@ No. Each profile has its own memory store, session database, and skills director
 
 ### How many profiles can I run?
 
-There is no hard limit. Each profile is just a directory under `~/.hermes/profiles/`. The practical limit depends on your disk space and how many concurrent gateways your system can handle (each gateway is a lightweight Python process). Running dozens of profiles is fine; each idle profile uses no resources.
+There is no hard limit. Each profile is just a directory under `~/.thoth/profiles/`. The practical limit depends on your disk space and how many concurrent gateways your system can handle (each gateway is a lightweight Python process). Running dozens of profiles is fine; each idle profile uses no resources.
 
 ---
 
@@ -645,7 +645,7 @@ There is no hard limit. Each profile is just a directory under `~/.hermes/profil
 
 **Scenario:** You use GPT-5.4 as your daily driver, but Gemini or Grok writes better social media content. Manually switching models every time is tedious.
 
-**Solution: Delegation config.** Thoth can route subagents to a different model automatically. Set this in `~/.hermes/config.yaml`:
+**Solution: Delegation config.** Thoth can route subagents to a different model automatically. Set this in `~/.thoth/config.yaml`:
 
 ```yaml
 delegation:
@@ -758,7 +758,7 @@ Skills with very long descriptions are truncated to 40 characters in the Telegra
    ```bash
    thoth backup
    ```
-   This creates a zip of your entire `~/.hermes/` directory — config, API keys, memories, skills, sessions, and profiles — saved to your home directory as `~/hermes-backup-<timestamp>.zip`.
+   This creates a zip of your entire `~/.thoth/` directory — config, API keys, memories, skills, sessions, and profiles — saved to your home directory as `~/hermes-backup-<timestamp>.zip`.
 
 3. Copy the zip to the new machine and import it:
    ```bash
@@ -790,14 +790,14 @@ The imported profile will have all config, memories, sessions, and skills from t
 | Feature | `thoth backup` | `thoth profile export` |
 | :--- | :--- | :--- |
 | **Use Case** | **Full machine migration** | **Porting/sharing a specific profile** |
-| **Scope** | Global (entire `~/.hermes` directory) | Local (single profile directory) |
+| **Scope** | Global (entire `~/.thoth` directory) | Local (single profile directory) |
 | **Includes** | All profiles, global config, API keys, sessions | Single profile: SOUL.md, memories, sessions, skills |
 | **Credentials** | **Included** (`.env` and `auth.json`) | **Excluded** (stripped for safe sharing) |
 | **Format** | `.zip` | `.tar.gz` |
 
 **Manual fallback (rsync):** If you prefer to copy files directly, exclude the code repo:
 ```bash
-rsync -av --exclude='hermes-agent' ~/.hermes/ newmachine:~/.hermes/
+rsync -av --exclude='thoth-agent' ~/.thoth/ newmachine:~/.thoth/
 ```
 
 :::tip

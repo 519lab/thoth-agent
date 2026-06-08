@@ -77,11 +77,11 @@ python $THOTH_HOME/skills/devops/watchers/scripts/watch_rss.py \
   --name hn --url https://news.ycombinator.com/rss --max 5
 ```
 
-Watch a GitHub repo (set `GITHUB_TOKEN` in `~/.hermes/.env` to avoid the 60 req/hr anonymous rate limit):
+Watch a GitHub repo (set `GITHUB_TOKEN` in `~/.thoth/.env` to avoid the 60 req/hr anonymous rate limit):
 
 ```bash
 python $THOTH_HOME/skills/devops/watchers/scripts/watch_github.py \
-  --name hermes-issues --repo 519lab/thoth-agent --scope issues
+  --name thoth-issues --repo 519lab/thoth-agent --scope issues
 ```
 
 Poll an arbitrary JSON API:

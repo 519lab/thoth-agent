@@ -274,7 +274,7 @@ pre.prism-code.language-ascii code {
 }
 
 /* Hero banner for docs landing if needed */
-.hero--hermes {
+.hero--thoth {
   background: linear-gradient(135deg, #07070d 0%, #0f0f18 100%);
   padding: 4rem 0;
 }

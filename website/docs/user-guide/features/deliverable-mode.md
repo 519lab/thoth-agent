@@ -64,7 +64,7 @@ messaging platforms.
 
 **Project-level:** add the bias to `AGENTS.md` / `CLAUDE.md` /
 `.cursorrules` in a project the agent works from, or to your global
-custom instructions in `~/.hermes/config.yaml` under `agent.custom_instructions`.
+custom instructions in `~/.thoth/config.yaml` under `agent.custom_instructions`.
 
 The mechanic the agent has to use is simple: render the file to an
 absolute path (e.g. `/tmp/q3-revenue.png`) and mention that path as
@@ -111,7 +111,7 @@ community servers for most popular tools — install whichever you need:
 | **Snowflake / BigQuery** | SQL against data warehouses |
 | **Google Drive** | File search, contents, share management |
 
-Install MCP servers via `~/.hermes/config.yaml` under the `mcp_servers`
+Install MCP servers via `~/.thoth/config.yaml` under the `mcp_servers`
 section. See [MCP integration](./mcp.md) for the full setup guide.
 
 ## Comparison to Perplexity Computer in Slack

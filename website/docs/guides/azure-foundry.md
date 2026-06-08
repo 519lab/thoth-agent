@@ -122,9 +122,9 @@ Thoth only manages one Entra-specific knob in `config.yaml`:
 
 - **`scope`** — the OAuth resource scope. Defaults to Microsoft's documented inference scope (`https://ai.azure.com/.default`). Override only if your resource was provisioned against a non-standard audience.
 
-Everything else (tenant, service principal secret, federated token file, sovereign cloud authority, broker preferences) is read by `azure-identity` directly from the standard `AZURE_*` environment variables — see the [credential resolution order](#credential-resolution-order) below. Set those in `~/.hermes/.env` or your deployment environment, exactly as Microsoft's SDK reference describes.
+Everything else (tenant, service principal secret, federated token file, sovereign cloud authority, broker preferences) is read by `azure-identity` directly from the standard `AZURE_*` environment variables — see the [credential resolution order](#credential-resolution-order) below. Set those in `~/.thoth/.env` or your deployment environment, exactly as Microsoft's SDK reference describes.
 
-No secrets land in `~/.hermes/.env` for Entra mode — `azure-identity` caches tokens in-process (and where available, in your OS keychain / `~/.IdentityService`).
+No secrets land in `~/.thoth/.env` for Entra mode — `azure-identity` caches tokens in-process (and where available, in your OS keychain / `~/.IdentityService`).
 
 ### Credential resolution order
 
@@ -205,7 +205,7 @@ model:
   context_length: 400000             # auto-detected
 ```
 
-And in `~/.hermes/.env`:
+And in `~/.thoth/.env`:
 
 ```
 AZURE_FOUNDRY_API_KEY=<your-azure-key>
@@ -261,7 +261,7 @@ model:
   default: claude-sonnet-4-6
 ```
 
-With `AZURE_ANTHROPIC_KEY` set in `~/.hermes/.env`. Thoth detects `azure.com` in the base URL and short-circuits around the Claude Code OAuth token chain so the Azure key is used directly with `x-api-key` auth.
+With `AZURE_ANTHROPIC_KEY` set in `~/.thoth/.env`. Thoth detects `azure.com` in the base URL and short-circuits around the Claude Code OAuth token chain so the Azure key is used directly with `x-api-key` auth.
 
 `key_env` is the canonical snake_case field name; `api_key_env` (and the camelCase `keyEnv` / `apiKeyEnv`) are accepted as aliases. If both `key_env` and `AZURE_ANTHROPIC_KEY`/`ANTHROPIC_API_KEY` are set, the `key_env`-named env var wins.
 

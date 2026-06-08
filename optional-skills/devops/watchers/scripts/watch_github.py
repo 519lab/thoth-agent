@@ -3,12 +3,12 @@
 
 Usage (via cron with --no-agent):
 
-    hermes cron create hermes-issues \\
+    thoth cron create thoth-issues \\
       --schedule "*/5 * * * *" --no-agent \\
       --script "$THOTH_HOME/skills/devops/watchers/scripts/watch_github.py" \\
-      --script-args "--name hermes-issues --repo 519lab/thoth-agent --scope issues"
+      --script-args "--name thoth-issues --repo 519lab/thoth-agent --scope issues"
 
-Set GITHUB_TOKEN (or GH_TOKEN) in ~/.hermes/.env to avoid the 60 req/hr
+Set GITHUB_TOKEN (or GH_TOKEN) in ~/.thoth/.env to avoid the 60 req/hr
 anonymous rate limit.
 
 Scopes: issues | pulls | releases | commits.  Or pass --search QUERY to

@@ -42,7 +42,7 @@ We value contributions in this order:
 
 ```bash
 git clone --recurse-submodules https://github.com/519lab/thoth-agent.git
-cd hermes-agent
+cd thoth-agent
 
 # Create venv with Python 3.11
 uv venv venv --python 3.11
@@ -58,12 +58,12 @@ npm install
 ### Configure for Development
 
 ```bash
-mkdir -p ~/.hermes/{cron,sessions,logs,memories,skills}
-cp cli-config.yaml.example ~/.hermes/config.yaml
-touch ~/.hermes/.env
+mkdir -p ~/.thoth/{cron,sessions,logs,memories,skills}
+cp cli-config.yaml.example ~/.thoth/config.yaml
+touch ~/.thoth/.env
 
 # Add at minimum an LLM provider key:
-echo 'OPENROUTER_API_KEY=sk-or-v1-your-key' >> ~/.hermes/.env
+echo 'OPENROUTER_API_KEY=sk-or-v1-your-key' >> ~/.thoth/.env
 ```
 
 ### Run
@@ -90,7 +90,7 @@ pytest tests/ -v
 - **Comments**: Only when explaining non-obvious intent, trade-offs, or API quirks
 - **Error handling**: Catch specific exceptions. Use `logger.warning()`/`logger.error()` with `exc_info=True` for unexpected errors
 - **Cross-platform**: Never assume Unix (see below)
-- **Profile-safe paths**: Never hardcode `~/.hermes` — use `get_thoth_home()` from `thoth_constants` for code paths and `display_thoth_home()` for user-facing messages. See [AGENTS.md](https://github.com/519lab/thoth-agent/blob/main/AGENTS.md#profiles-multi-instance-support) for full rules.
+- **Profile-safe paths**: Never hardcode `~/.thoth` — use `get_thoth_home()` from `thoth_constants` for code paths and `display_thoth_home()` for user-facing messages. See [AGENTS.md](https://github.com/519lab/thoth-agent/blob/main/AGENTS.md#profiles-multi-instance-support) for full rules.
 
 ## Cross-Platform Compatibility
 

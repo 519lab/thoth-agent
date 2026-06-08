@@ -33,7 +33,7 @@ Reads from `~/.openclaw/` by default. Legacy `~/.clawdbot/` or `~/.moltbot/` dir
 | `--preset <name>` | `full` (all compatible settings) or `user-data` (excludes infrastructure config). Neither preset imports secrets by default — pass `--migrate-secrets` explicitly. |
 | `--overwrite` | Overwrite existing Thoth files on conflicts (default: refuse to apply when the plan has conflicts). |
 | `--migrate-secrets` | Include API keys. Required even under `--preset full` — no preset imports secrets silently. |
-| `--no-backup` | Skip the pre-migration zip snapshot of `~/.hermes/` (by default a single restore-point archive is written before apply, under `~/.hermes/backups/pre-migration-*.zip`; restorable with `thoth import`). |
+| `--no-backup` | Skip the pre-migration zip snapshot of `~/.thoth/` (by default a single restore-point archive is written before apply, under `~/.thoth/backups/pre-migration-*.zip`; restorable with `thoth import`). |
 | `--source <path>` | Custom OpenClaw directory. |
 | `--workspace-target <path>` | Where to place `AGENTS.md`. |
 | `--skill-conflict <mode>` | `skip` (default), `overwrite`, or `rename`. |
@@ -45,11 +45,11 @@ Reads from `~/.openclaw/` by default. Legacy `~/.clawdbot/` or `~/.moltbot/` dir
 
 | What | OpenClaw source | Thoth destination | Notes |
 |------|----------------|-------------------|-------|
-| Persona | `workspace/SOUL.md` | `~/.hermes/SOUL.md` | Direct copy |
+| Persona | `workspace/SOUL.md` | `~/.thoth/SOUL.md` | Direct copy |
 | Workspace instructions | `workspace/AGENTS.md` | `AGENTS.md` in `--workspace-target` | Requires `--workspace-target` flag |
-| Long-term memory | `workspace/MEMORY.md` | `~/.hermes/memories/MEMORY.md` | Parsed into entries, merged with existing, deduped. Uses `§` delimiter. |
-| User profile | `workspace/USER.md` | `~/.hermes/memories/USER.md` | Same entry-merge logic as memory. |
-| Daily memory files | `workspace/memory/*.md` | `~/.hermes/memories/MEMORY.md` | All daily files merged into main memory. |
+| Long-term memory | `workspace/MEMORY.md` | `~/.thoth/memories/MEMORY.md` | Parsed into entries, merged with existing, deduped. Uses `§` delimiter. |
+| User profile | `workspace/USER.md` | `~/.thoth/memories/USER.md` | Same entry-merge logic as memory. |
+| Daily memory files | `workspace/memory/*.md` | `~/.thoth/memories/MEMORY.md` | All daily files merged into main memory. |
 
 Workspace files are also checked at `workspace.default/` and `workspace-main/` as fallback paths (OpenClaw renamed `workspace/` to `workspace-main/` in recent versions, and uses `workspace-{agentId}` for multi-agent setups).
 
@@ -57,10 +57,10 @@ Workspace files are also checked at `workspace.default/` and `workspace-main/` a
 
 | Source | OpenClaw location | Thoth destination |
 |--------|------------------|-------------------|
-| Workspace skills | `workspace/skills/` | `~/.hermes/skills/openclaw-imports/` |
-| Managed/shared skills | `~/.openclaw/skills/` | `~/.hermes/skills/openclaw-imports/` |
-| Personal cross-project | `~/.agents/skills/` | `~/.hermes/skills/openclaw-imports/` |
-| Project-level shared | `workspace/.agents/skills/` | `~/.hermes/skills/openclaw-imports/` |
+| Workspace skills | `workspace/skills/` | `~/.thoth/skills/openclaw-imports/` |
+| Managed/shared skills | `~/.openclaw/skills/` | `~/.thoth/skills/openclaw-imports/` |
+| Personal cross-project | `~/.agents/skills/` | `~/.thoth/skills/openclaw-imports/` |
+| Project-level shared | `workspace/.agents/skills/` | `~/.thoth/skills/openclaw-imports/` |
 
 Skill conflicts are handled by `--skill-conflict`: `skip` leaves the existing Thoth skill, `overwrite` replaces it, `rename` creates a `-imported` copy.
 
@@ -70,7 +70,7 @@ Skill conflicts are handled by `--skill-conflict`: `skip` leaves the existing Th
 |------|---------------------|-------------------|-------|
 | Default model | `agents.defaults.model` | `config.yaml` → `model` | Can be a string or `{primary, fallbacks}` object |
 | Custom providers | `models.providers.*` | `config.yaml` → `custom_providers` | Maps `baseUrl`, `apiType`/`api` — handles both short ("openai", "anthropic") and hyphenated ("openai-completions", "anthropic-messages", "google-generative-ai") values |
-| Provider API keys | `models.providers.*.apiKey` | `~/.hermes/.env` | Requires `--migrate-secrets`. See [API key resolution](#api-key-resolution) below. |
+| Provider API keys | `models.providers.*.apiKey` | `~/.thoth/.env` | Requires `--migrate-secrets`. See [API key resolution](#api-key-resolution) below. |
 
 ### Agent behavior
 
@@ -126,7 +126,7 @@ TTS settings are read from **two** OpenClaw config locations with this priority:
 | OpenAI model | `config.yaml` → `tts.openai.model` |
 | OpenAI voice | `config.yaml` → `tts.openai.voice` |
 | Edge TTS voice | `config.yaml` → `tts.edge.voice` (OpenClaw renamed "edge" to "microsoft" — both are recognized) |
-| TTS assets | `~/.hermes/tts/` (file copy) |
+| TTS assets | `~/.thoth/tts/` (file copy) |
 
 ### Messaging platforms
 
@@ -160,7 +160,7 @@ TTS settings are read from **two** OpenClaw config locations with this priority:
 
 ### Archived (no direct Thoth equivalent)
 
-These are saved to `~/.hermes/migration/openclaw/<timestamp>/archive/` for manual review:
+These are saved to `~/.thoth/migration/openclaw/<timestamp>/archive/` for manual review:
 
 | What | Archive file | How to recreate in Thoth |
 |------|-------------|--------------------------|
@@ -217,7 +217,7 @@ The migration resolves all three formats. For env templates and SecretRef object
 
 1. **Check the migration report** — printed on completion with counts of migrated, skipped, and conflicting items.
 
-2. **Review archived files** — anything in `~/.hermes/migration/openclaw/<timestamp>/archive/` needs manual attention.
+2. **Review archived files** — anything in `~/.thoth/migration/openclaw/<timestamp>/archive/` needs manual attention.
 
 3. **Start a new session** — imported skills and memory entries take effect in new sessions, not the current one.
 
@@ -243,7 +243,7 @@ Keys might be stored in several places depending on your OpenClaw version: inlin
 
 ### Skills not appearing after migration
 
-Imported skills land in `~/.hermes/skills/openclaw-imports/`. Start a new session for them to take effect, or run `/skills` to verify they're loaded.
+Imported skills land in `~/.thoth/skills/openclaw-imports/`. Start a new session for them to take effect, or run `/skills` to verify they're loaded.
 
 ### TTS voice not migrated
 

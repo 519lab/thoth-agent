@@ -175,7 +175,7 @@ TIPS = [
     "Skills can restrict to specific OS platforms — some only load on macOS or Linux.",
     "skills.external_dirs in config.yaml lets you load skills from custom directories.",
     "The agent can create its own skills as procedural memory using skill_manage.",
-    "The plan skill saves markdown plans under .hermes/plans/ in the active workspace.",
+    "The plan skill saves markdown plans under .thoth/plans/ in the active workspace.",
 
     # --- Cron & Scheduling ---
     "Cron jobs can attach skills: thoth cron add --skill blogwatcher \"Check for new posts\".",

@@ -166,7 +166,7 @@ After fixing:
 
 4. Execute the command and confirm:
    - Expected behavior fires
-   - Any persisted config updates correctly (`read_file ~/.hermes/config.yaml`)
+   - Any persisted config updates correctly (`read_file ~/.thoth/config.yaml`)
    - Live UI state reflects the change immediately (not just after restart)
 
 5. If the command is also gateway-available, test it from at least one messaging platform (or run the gateway tests: `scripts/run_tests.sh tests/gateway/`).

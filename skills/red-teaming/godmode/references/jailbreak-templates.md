@@ -93,7 +93,7 @@ Z={QUERY}
 
 ### As ephemeral system prompt (config.yaml)
 
-Pick a template above and set it in `~/.hermes/config.yaml`:
+Pick a template above and set it in `~/.thoth/config.yaml`:
 
 ```yaml
 agent:
@@ -114,7 +114,7 @@ thoth
 ### Via the GODMODE CLASSIC racer script
 
 ```python
-exec(open(os.path.join(os.environ.get("THOTH_HOME", os.path.expanduser("~/.hermes")), "skills/red-teaming/godmode/scripts/godmode_race.py")).read())
+exec(open(os.path.join(os.environ.get("THOTH_HOME", os.path.expanduser("~/.thoth")), "skills/red-teaming/godmode/scripts/godmode_race.py")).read())
 result = race_godmode_classic("Your query here")
 print(f"Winner: {result['codename']} — Score: {result['score']}")
 print(result['content'])

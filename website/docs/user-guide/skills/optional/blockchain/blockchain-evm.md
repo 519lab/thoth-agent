@@ -72,14 +72,14 @@ Tx decoding: 4byte.directory public API.
 
 Override RPC endpoint: `export EVM_RPC_URL=https://your-rpc.com`
 
-Helper script path: `~/.hermes/skills/blockchain/evm/scripts/evm_client.py`
+Helper script path: `~/.thoth/skills/blockchain/evm/scripts/evm_client.py`
 
 ---
 
 ## Quick Reference
 
 ```
-SCRIPT=~/.hermes/skills/blockchain/evm/scripts/evm_client.py
+SCRIPT=~/.thoth/skills/blockchain/evm/scripts/evm_client.py
 
 # Network & prices
 python3 $SCRIPT stats                            # Ethereum stats
@@ -125,7 +125,7 @@ python3 $SCRIPT whale --blocks 50 --min-usd 100000 --chain arbitrum
 ### 0. Setup Check
 ```bash
 python3 --version   # 3.8+ required
-python3 ~/.hermes/skills/blockchain/evm/scripts/evm_client.py stats
+python3 ~/.thoth/skills/blockchain/evm/scripts/evm_client.py stats
 ```
 
 ### 1. Wallet Portfolio
@@ -220,8 +220,8 @@ Shows gwei price + USD cost for: transfer, ERC-20 transfer, approve, swap, NFT m
 ## Verification
 ```bash
 # Should print current block, gas price, ETH price
-python3 ~/.hermes/skills/blockchain/evm/scripts/evm_client.py stats
+python3 ~/.thoth/skills/blockchain/evm/scripts/evm_client.py stats
 
 # Should resolve vitalik.eth to 0xd8dA...
-python3 ~/.hermes/skills/blockchain/evm/scripts/evm_client.py ens vitalik.eth
+python3 ~/.thoth/skills/blockchain/evm/scripts/evm_client.py ens vitalik.eth
 ```

@@ -54,15 +54,15 @@ You MUST run `maintain-subscriptions` on a schedule. Pick one of these three opt
 
 #### Option 1: Thoth cron (recommended if you already run the Thoth gateway)
 
-Thoth ships a built-in cron scheduler. The `--no-agent` mode runs a script as the job (rather than using an LLM), and `--script` must point at a file under `~/.hermes/scripts/`. First create the script:
+Thoth ships a built-in cron scheduler. The `--no-agent` mode runs a script as the job (rather than using an LLM), and `--script` must point at a file under `~/.thoth/scripts/`. First create the script:
 
 ```bash
-mkdir -p ~/.hermes/scripts
-cat > ~/.hermes/scripts/maintain-teams-subscriptions.sh <<'EOF'
+mkdir -p ~/.thoth/scripts
+cat > ~/.thoth/scripts/maintain-teams-subscriptions.sh <<'EOF'
 #!/usr/bin/env bash
 exec thoth teams-pipeline maintain-subscriptions
 EOF
-chmod +x ~/.hermes/scripts/maintain-teams-subscriptions.sh
+chmod +x ~/.thoth/scripts/maintain-teams-subscriptions.sh
 ```
 
 Then register a script-only cron job that runs every 12 hours (gives 6x headroom against the 72h expiry window):
@@ -84,7 +84,7 @@ thoth cron status        # scheduler status
 
 #### Option 2: systemd timer (recommended for Linux production deployments)
 
-Create `/etc/systemd/system/hermes-teams-pipeline-maintain.service`:
+Create `/etc/systemd/system/thoth-teams-pipeline-maintain.service`:
 
 ```ini
 [Unit]
@@ -98,7 +98,7 @@ EnvironmentFile=/etc/thoth/env
 ExecStart=/usr/local/bin/thoth teams-pipeline maintain-subscriptions
 ```
 
-And `/etc/systemd/system/hermes-teams-pipeline-maintain.timer`:
+And `/etc/systemd/system/thoth-teams-pipeline-maintain.timer`:
 
 ```ini
 [Unit]
@@ -117,8 +117,8 @@ Enable:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now hermes-teams-pipeline-maintain.timer
-systemctl list-timers hermes-teams-pipeline-maintain.timer
+sudo systemctl enable --now thoth-teams-pipeline-maintain.timer
+systemctl list-timers thoth-teams-pipeline-maintain.timer
 ```
 
 #### Option 3: Plain crontab
@@ -127,7 +127,7 @@ systemctl list-timers hermes-teams-pipeline-maintain.timer
 0 */12 * * * /usr/local/bin/thoth teams-pipeline maintain-subscriptions >> /var/log/thoth/teams-pipeline-maintain.log 2>&1
 ```
 
-Make sure the cron environment has the `MSGRAPH_*` credentials. Simplest fix: source `~/.hermes/.env` at the top of a wrapper script that crontab calls.
+Make sure the cron environment has the `MSGRAPH_*` credentials. Simplest fix: source `~/.thoth/.env` at the top of a wrapper script that crontab calls.
 
 #### Verifying renewal is working
 

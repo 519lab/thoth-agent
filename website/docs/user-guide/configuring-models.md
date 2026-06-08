@@ -35,7 +35,7 @@ The picker has two columns:
 
 Type in the filter box to narrow by provider name, slug, or model ID.
 
-Pick a model, hit **Switch**, and Thoth writes it to `~/.hermes/config.yaml` under the `model` section. **This applies to new sessions only** — any chat tab you already have open keeps running whatever model it started with. To hot-swap the current chat, use the `/model` slash command inside it.
+Pick a model, hit **Switch**, and Thoth writes it to `~/.thoth/config.yaml` under the `model` section. **This applies to new sessions only** — any chat tab you already have open keeps running whatever model it started with. To hot-swap the current chat, use the `/model` slash command inside it.
 
 ## Setting auxiliary models
 
@@ -81,7 +81,7 @@ Cards are badged with `main` or `aux · <task>` when they're currently assigned 
 
 ## What gets written to `config.yaml`
 
-When you save via the dashboard, Thoth writes to `~/.hermes/config.yaml`:
+When you save via the dashboard, Thoth writes to `~/.thoth/config.yaml`:
 
 **Main model:**
 ```yaml
@@ -165,7 +165,7 @@ Inside any `thoth chat` session:
 Define your own short names for models you reach for often, then use `/model <alias>` in the CLI or any messaging platform:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.thoth/config.yaml
 model_aliases:
   fav:
     model: claude-sonnet-4.6
@@ -190,13 +190,13 @@ Then `/model fav` or `/model grok` in chat. User aliases shadow built-in short n
 thoth model            # Interactive provider + model picker (the canonical way to switch defaults)
 ```
 
-`thoth model` walks you through picking a provider, authenticating (OAuth flows open a browser; API-key providers prompt for the key), and then choosing a specific model from that provider's curated catalog. The choice is written to `model.provider` and `model.model` in `~/.hermes/config.yaml`.
+`thoth model` walks you through picking a provider, authenticating (OAuth flows open a browser; API-key providers prompt for the key), and then choosing a specific model from that provider's curated catalog. The choice is written to `model.provider` and `model.model` in `~/.thoth/config.yaml`.
 
 To list providers/models without launching the picker, use the dashboard or the REST endpoints below. To inspect what the CLI will actually use right now: `thoth config get model` and `thoth status`.
 
 ### Direct config edit
 
-Edit `~/.hermes/config.yaml` and restart whatever reads it. See the [Configuration reference](./configuration.md) for the full schema.
+Edit `~/.thoth/config.yaml` and restart whatever reads it. See the [Configuration reference](./configuration.md) for the full schema.
 
 ### REST API
 

@@ -18,7 +18,7 @@ If you want to change who Thoth is — or replace it with an entirely different 
 Thoth now seeds a default `SOUL.md` automatically in:
 
 ```text
-~/.hermes/SOUL.md
+~/.thoth/SOUL.md
 ```
 
 More precisely, it uses the current instance's `THOTH_HOME`, so if you run Thoth with a custom home directory, it will use:
@@ -47,14 +47,14 @@ This keeps personality predictable.
 If Thoth loaded `SOUL.md` from whatever directory you happened to launch it in, your personality could change unexpectedly between projects. By loading only from `THOTH_HOME`, the personality belongs to the Thoth instance itself.
 
 That also makes it easier to teach users:
-- "Edit `~/.hermes/SOUL.md` to change Thoth's default personality."
+- "Edit `~/.thoth/SOUL.md` to change Thoth's default personality."
 
 ## Where to edit it
 
 For most users:
 
 ```bash
-~/.hermes/SOUL.md
+~/.thoth/SOUL.md
 ```
 
 If you use a custom home:
@@ -124,7 +124,7 @@ The content goes through:
 - prompt-injection scanning
 - truncation if it is too large
 
-If the file is empty, whitespace-only, or cannot be read, Thoth falls back to a built-in default identity ("You are Thoth Agent, an intelligent AI assistant created by Nous Research..."). This fallback also applies when `skip_context_files` is set (e.g., in subagent/delegation contexts).
+If the file is empty, whitespace-only, or cannot be read, Thoth falls back to a built-in default identity ("You are Thoth Agent, an intelligent AI assistant created by 519lab..."). This fallback also applies when `skip_context_files` is set (e.g., in subagent/delegation contexts).
 
 ## Security scanning
 
@@ -211,7 +211,7 @@ These are convenient overlays, but your global `SOUL.md` still gives Thoth its p
 
 ## Custom personalities in config
 
-You can also define named custom personalities in `~/.hermes/config.yaml` under `agent.personalities`.
+You can also define named custom personalities in `~/.thoth/config.yaml` under `agent.personalities`.
 
 ```yaml
 agent:
@@ -231,7 +231,7 @@ Then switch to it with:
 
 A strong default setup is:
 
-1. Keep a thoughtful global `SOUL.md` in `~/.hermes/SOUL.md`
+1. Keep a thoughtful global `SOUL.md` in `~/.thoth/SOUL.md`
 2. Put project instructions in `AGENTS.md`
 3. Use `/personality` only when you want a temporary mode shift
 
