@@ -21,7 +21,7 @@ def _make_adapter(
     group_allowed_chats=None,
     guest_mode=None,
     observe_unmentioned_group_messages=None,
-    bot_username="hermes_bot",
+    bot_username="thoth_bot",
 ):
     from gateway.platforms.telegram import TelegramAdapter
 
@@ -130,7 +130,7 @@ def _dm_message(text="hello", *, from_user_id=111):
     )
 
 
-def _mention_entity(text, mention="@hermes_bot"):
+def _mention_entity(text, mention="@thoth_bot"):
     offset = text.index(mention)
     return SimpleNamespace(type="mention", offset=offset, length=len(mention))
 
@@ -200,7 +200,7 @@ def test_observed_group_context_uses_shared_source_and_prompt_for_later_mentions
             observe_unmentioned_group_messages=True,
         )
         adapter._session_store = _FakeSessionStore()
-        text = "@hermes_bot what did Alice say?"
+        text = "@thoth_bot what did Alice say?"
         msg = _group_message(
             text,
             from_user_id=222,
@@ -311,7 +311,7 @@ def test_group_messages_can_require_direct_trigger_via_config():
     adapter = _make_adapter(require_mention=True)
 
     assert adapter._should_process_message(_group_message("hello everyone")) is False
-    assert adapter._should_process_message(_group_message("hi @hermes_bot", entities=[_mention_entity("hi @hermes_bot")])) is True
+    assert adapter._should_process_message(_group_message("hi @thoth_bot", entities=[_mention_entity("hi @thoth_bot")])) is True
     assert adapter._should_process_message(_group_message("replying", reply_to_bot=True)) is True
     # Commands must also respect require_mention when it is enabled
     assert adapter._should_process_message(_group_message("/status"), is_command=True) is False
@@ -320,8 +320,8 @@ def test_group_messages_can_require_direct_trigger_via_config():
     # entity). We must accept it so the menu works when require_mention is on.
     assert adapter._should_process_message(
         _group_message(
-            "/status@hermes_bot",
-            entities=[_bot_command_entity("/status@hermes_bot", "/status@hermes_bot")],
+            "/status@thoth_bot",
+            entities=[_bot_command_entity("/status@thoth_bot", "/status@thoth_bot")],
         ),
         is_command=True,
     ) is True
@@ -395,11 +395,11 @@ def test_bot_command_addressed_to_other_bot_is_exclusive_even_when_mentions_not_
 
 
 def test_raw_bot_mention_fallback_does_not_match_email_or_substring():
-    adapter = _make_adapter(require_mention=True, bot_username="hermes_bot")
+    adapter = _make_adapter(require_mention=True, bot_username="thoth_bot")
 
-    assert adapter._should_process_message(_group_message("email ops@hermes_bot.example")) is False
-    assert adapter._should_process_message(_group_message("prefix@hermes_bot hi")) is False
-    assert adapter._should_process_message(_group_message("hi @hermes_bot")) is True
+    assert adapter._should_process_message(_group_message("email ops@thoth_bot.example")) is False
+    assert adapter._should_process_message(_group_message("prefix@thoth_bot hi")) is False
+    assert adapter._should_process_message(_group_message("hi @thoth_bot")) is True
 
 
 def test_exclusive_bot_mentions_can_be_disabled_for_legacy_groups():
@@ -430,9 +430,9 @@ def test_guest_mode_allows_only_direct_mentions_outside_allowed_chats():
     )
 
     mentioned = _group_message(
-        "hi @hermes_bot",
+        "hi @thoth_bot",
         chat_id=-201,
-        entities=[_mention_entity("hi @hermes_bot")],
+        entities=[_mention_entity("hi @thoth_bot")],
     )
     assert adapter._should_process_message(mentioned) is True
     assert adapter._should_process_message(_group_message("reply", chat_id=-201, reply_to_bot=True)) is False
@@ -444,9 +444,9 @@ def test_guest_mode_defaults_to_false_for_allowed_chat_bypass():
     adapter = _make_adapter(require_mention=True, allowed_chats=["-200"], guest_mode=False)
 
     mentioned = _group_message(
-        "hi @hermes_bot",
+        "hi @thoth_bot",
         chat_id=-201,
-        entities=[_mention_entity("hi @hermes_bot")],
+        entities=[_mention_entity("hi @thoth_bot")],
     )
     assert adapter._should_process_message(mentioned) is False
 
@@ -460,9 +460,9 @@ def test_guest_mode_mention_dropped_in_ignored_thread():
         ignored_threads=[42],
     )
     mentioned = _group_message(
-        "hi @hermes_bot",
+        "hi @thoth_bot",
         chat_id=-201,
-        entities=[_mention_entity("hi @hermes_bot")],
+        entities=[_mention_entity("hi @thoth_bot")],
         thread_id=42,
     )
     assert adapter._should_process_message(mentioned) is False
@@ -482,7 +482,7 @@ def test_allowed_topics_drop_other_forum_topics_before_other_gates():
     assert adapter._should_process_message(_group_message("hello", chat_id=-100, thread_id=8)) is True
     assert adapter._should_process_message(_group_message("hello", chat_id=-100, thread_id=11)) is False
     assert adapter._should_process_message(
-        _group_message("hi @hermes_bot", chat_id=-100, thread_id=11, entities=[_mention_entity("hi @hermes_bot")])
+        _group_message("hi @thoth_bot", chat_id=-100, thread_id=11, entities=[_mention_entity("hi @thoth_bot")])
     ) is False
 
 

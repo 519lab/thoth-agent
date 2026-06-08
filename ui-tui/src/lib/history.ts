@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 const MAX = 1000
 const dir = process.env.THOTH_HOME ?? join(homedir(), '.thoth')
-const file = join(dir, '.hermes_history')
+const file = join(dir, '.thoth_history')
 
 let cache: string[] | null = null
 

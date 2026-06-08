@@ -1208,7 +1208,6 @@ def _ensure_tui_node() -> None:
         return
 
     from thoth_constants import get_thoth_home
-    from thoth_env import propagate_thoth_home
 
     thoth_home = str(get_thoth_home())
     try:
@@ -1221,7 +1220,7 @@ def _ensure_tui_node() -> None:
                 "-c",
                 f'source "{helper}" >&2 && ensure_node >&2 && command -v node',
             ],
-            env=propagate_thoth_home(os.environ, thoth_home),
+            env={**os.environ, "THOTH_HOME": thoth_home},
             capture_output=True,
             text=True,
             check=False,

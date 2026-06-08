@@ -5,22 +5,23 @@ Session Search Tool - Long-Term Conversation Recall
 Single-shape tool with three calling modes (inferred from args, no explicit
 mode parameter):
 
-  1. DISCOVERY — pass ``query``. Runs FTS5, dedupes hits by session lineage,
-     returns top N sessions each with: snippet, ±5 message window around the
-     match, plus bookend_start (first 3 user+assistant msgs of session) and
-     bookend_end (last 3). Zero LLM cost.
+  1. DISCOVERY — pass ``query``. Runs Postgres full-text search, dedupes hits
+     by session lineage, returns top N sessions each with: snippet, ±5 message
+     window around the match, plus bookend_start (first 3 user+assistant msgs
+     of session) and bookend_end (last 3). Zero LLM cost.
 
   2. SCROLL — pass ``session_id`` + ``around_message_id``. Returns a window
-     of ±window messages centered on the anchor, no FTS5, no bookends. To
-     scroll forward / backward, re-anchor on the last / first message id of
-     the returned window.
+     of ±window messages centered on the anchor, no full-text search, no
+     bookends. To scroll forward / backward, re-anchor on the last / first
+     message id of the returned window.
 
   3. BROWSE — no args. Returns recent sessions chronologically (titles,
      previews, timestamps).
 
-All three modes operate on the SQLite session DB via the FTS5 index and
-the get_anchored_view / get_messages_around primitives in thoth_state.
-No LLM calls anywhere — every shape returns actual messages from the DB.
+All three modes operate on the Postgres session store via the tsvector
+full-text index and the get_anchored_view / get_messages_around primitives
+in thoth_state. No LLM calls anywhere — every shape returns actual messages
+from the DB.
 
 History: PR #20238 (JabberELF) seeded a fast/summary dual-mode split; the
 toolkit expansion in PR #26419 (yoniebans) added the anchored drill-down,
@@ -139,7 +140,7 @@ def _shape_message(m: Dict[str, Any], anchor_id: Optional[int] = None) -> Dict[s
 
 
 def _list_recent_sessions(db, limit: int, current_session_id: str = None) -> str:
-    """Return metadata for the most recent sessions (no LLM calls, no FTS5)."""
+    """Return metadata for the most recent sessions (no LLM calls, no full-text search)."""
     try:
         sessions = db.list_sessions_rich(
             limit=limit + 5,
@@ -190,7 +191,7 @@ def _scroll(
 ) -> str:
     """Scroll shape: return a window of messages centered on an anchor.
 
-    No FTS5, no bookends — just the slice. The discovery shape's lineage
+    No full-text search, no bookends — just the slice. The discovery shape's lineage
     fixup is preserved: if the anchor doesn't live in the named session
     but does live in a child session in the same lineage, rebind silently.
     """
@@ -313,7 +314,7 @@ def _discover(
     sort: Optional[str],
     current_session_id: str = None,
 ) -> str:
-    """Discovery shape: FTS5 + anchored window + bookends per hit. Single call."""
+    """Discovery shape: full-text search + anchored window + bookends per hit. Single call."""
     role_list = role_filter if role_filter else ["user", "assistant"]
 
     try:
@@ -326,7 +327,7 @@ def _discover(
             sort=sort,
         )
     except Exception as e:
-        logging.error("FTS5 search failed: %s", e, exc_info=True)
+        logging.error("Full-text search failed: %s", e, exc_info=True)
         return tool_error(f"Search failed: {e}", success=False)
 
     if not raw_results:
@@ -342,7 +343,7 @@ def _discover(
     current_lineage_root = _resolve_to_parent(db, current_session_id) if current_session_id else None
 
     # Dedupe by lineage. Keep the raw owning session_id on the surviving
-    # row — only that pairs validly with the FTS5 match id for the anchored
+    # row — only that pairs validly with the full-text match id for the anchored
     # window. parent_session_id is exposed separately when different.
     seen_sessions = {}
     for r in raw_results:
@@ -513,19 +514,19 @@ def check_session_search_requirements() -> bool:
 SESSION_SEARCH_SCHEMA = {
     "name": "session_search",
     "description": (
-        "Search past sessions stored in the local session DB, or scroll inside one. "
-        "FTS5-backed retrieval over the SQLite message store. No LLM calls — every "
+        "Search past sessions stored in the session DB, or scroll inside one. "
+        "Postgres full-text (tsvector) retrieval over the message store. No LLM calls — every "
         "shape returns actual messages from the DB.\n\n"
         "THREE CALLING SHAPES\n\n"
         "  1) DISCOVERY — pass `query`:\n"
         "     session_search(query=\"auth refactor\", limit=3)\n"
-        "     Runs FTS5, dedupes hits by session lineage, returns the top N sessions. "
+        "     Runs full-text search, dedupes hits by session lineage, returns the top N sessions. "
         "Each result carries:\n"
         "       - session_id, title, when, source\n"
-        "       - snippet: FTS5-highlighted match excerpt\n"
+        "       - snippet: highlighted match excerpt\n"
         "       - bookend_start: first 3 user+assistant messages of the session "
         "(the goal / kickoff)\n"
-        "       - messages: ±5 messages around the FTS5 match, with the anchor message "
+        "       - messages: ±5 messages around the match, with the anchor message "
         "flagged (the hit in context)\n"
         "       - bookend_end: last 3 user+assistant messages of the session "
         "(the resolution / decisions)\n"
@@ -534,7 +535,7 @@ SESSION_SEARCH_SCHEMA = {
         "without paying for the whole transcript.\n\n"
         "  2) SCROLL — pass `session_id` + `around_message_id`:\n"
         "     session_search(session_id=\"...\", around_message_id=12345, window=10)\n"
-        "     Returns a window of ±`window` messages centered on the anchor. No FTS5, "
+        "     Returns a window of ±`window` messages centered on the anchor. No full-text search, "
         "no bookends — just the slice. Use after a discovery call when you need more "
         "context than the ±5 default window.\n"
         "       - To scroll FORWARD: pass messages[-1].id back as around_message_id.\n"
@@ -546,7 +547,7 @@ SESSION_SEARCH_SCHEMA = {
         "     session_search()\n"
         "     Returns recent sessions chronologically: titles, previews, timestamps. "
         "Use when the user asks \"what was I working on\" without naming a topic.\n\n"
-        "FTS5 SYNTAX\n\n"
+        "QUERY SYNTAX\n\n"
         "  AND is the default — multi-word queries require all terms. Use OR explicitly "
         "for broader recall (`alpha OR beta OR gamma`), quoted phrases for exact match "
         "(`\"docker networking\"`), boolean (`python NOT java`), or prefix wildcards "
@@ -582,7 +583,7 @@ SESSION_SEARCH_SCHEMA = {
                 "type": "string",
                 "enum": ["newest", "oldest"],
                 "description": (
-                    "Discovery shape only. Temporal bias on top of FTS5 ranking. Omit "
+                    "Discovery shape only. Temporal bias on top of full-text ranking. Omit "
                     "to keep relevance-only ordering (suitable for exploratory recall — "
                     "\"what do we know about X\"). Set 'newest' for recency-shaped "
                     "questions (\"where did we leave X\"). Set 'oldest' for "
