@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Thoth Agent',
   tagline: 'The self-improving agent with a cognitive memory substrate',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/favicon.svg',
 
   url: 'https://thoth.519lab.com',
   baseUrl: '/docs/',
@@ -103,7 +103,9 @@ const config: Config = {
       title: 'Thoth Agent',
       logo: {
         alt: 'Thoth Agent',
-        src: 'img/logo.png',
+        src: 'img/thoth-mark.svg',
+        width: 30,
+        height: 30,
       },
       items: [
         {
