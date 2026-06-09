@@ -3185,7 +3185,23 @@ async def get_models_analytics(days: int = 30):
     db = SessionDB()
     if not hasattr(db, "_conn"):
         # Running against PG (_AsyncSessionDB) — raw SQL path not yet ported.
-        return {"models": [], "period_days": days}
+        # Return an empty-but-complete shape (incl. a zeroed ``totals``) so the
+        # Models page renders cleanly instead of crashing on ``totals.*``.
+        return {
+            "models": [],
+            "totals": {
+                "distinct_models": 0,
+                "total_input": 0,
+                "total_output": 0,
+                "total_cache_read": 0,
+                "total_reasoning": 0,
+                "total_estimated_cost": 0,
+                "total_actual_cost": 0,
+                "total_sessions": 0,
+                "total_api_calls": 0,
+            },
+            "period_days": days,
+        }
     try:
         cutoff = time.time() - (days * 86400)
 

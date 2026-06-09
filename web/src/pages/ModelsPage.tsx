@@ -876,7 +876,7 @@ export default function ModelsPage() {
           onSaved={onAssigned}
         />
 
-        {data && (
+        {data?.totals && (
           <Card className="min-w-0 max-w-full overflow-hidden">
             <CardContent className="min-w-0 py-6">
               <div className="min-w-0 max-w-full [&_div.grid]:grid-cols-[auto_minmax(0,1fr)_auto]">

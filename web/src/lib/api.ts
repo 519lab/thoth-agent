@@ -538,7 +538,9 @@ export interface ModelsAnalyticsModelEntry {
 
 export interface ModelsAnalyticsResponse {
   models: ModelsAnalyticsModelEntry[];
-  totals: {
+  // Absent on the not-yet-ported PG path (server returns models + period_days
+  // only); the Models page guards on `data?.totals` before reading it.
+  totals?: {
     distinct_models: number;
     total_input: number;
     total_output: number;
