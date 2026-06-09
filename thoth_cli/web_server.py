@@ -3107,7 +3107,34 @@ async def get_usage_analytics(days: int = 30):
     db = SessionDB()
     if not hasattr(db, "_conn"):
         # Running against PG (_AsyncSessionDB) — raw SQL path not yet ported.
-        return {"daily": [], "by_model": [], "totals": {}, "period_days": days, "skills": []}
+        # Return an empty-but-complete shape so the Analytics page renders
+        # cleanly: ``totals`` zeroed (was {} → NaN reads) and ``skills`` the
+        # {summary, top_skills} object the page expects (was [] → crash on
+        # ``skills.top_skills``).
+        return {
+            "daily": [],
+            "by_model": [],
+            "totals": {
+                "total_input": 0,
+                "total_output": 0,
+                "total_cache_read": 0,
+                "total_reasoning": 0,
+                "total_estimated_cost": 0,
+                "total_actual_cost": 0,
+                "total_sessions": 0,
+                "total_api_calls": 0,
+            },
+            "period_days": days,
+            "skills": {
+                "summary": {
+                    "total_skill_loads": 0,
+                    "total_skill_edits": 0,
+                    "total_skill_actions": 0,
+                    "distinct_skills_used": 0,
+                },
+                "top_skills": [],
+            },
+        }
     try:
         cutoff = time.time() - (days * 86400)
         cur = db._conn.execute("""
@@ -3185,7 +3212,23 @@ async def get_models_analytics(days: int = 30):
     db = SessionDB()
     if not hasattr(db, "_conn"):
         # Running against PG (_AsyncSessionDB) — raw SQL path not yet ported.
-        return {"models": [], "period_days": days}
+        # Return an empty-but-complete shape (incl. a zeroed ``totals``) so the
+        # Models page renders cleanly instead of crashing on ``totals.*``.
+        return {
+            "models": [],
+            "totals": {
+                "distinct_models": 0,
+                "total_input": 0,
+                "total_output": 0,
+                "total_cache_read": 0,
+                "total_reasoning": 0,
+                "total_estimated_cost": 0,
+                "total_actual_cost": 0,
+                "total_sessions": 0,
+                "total_api_calls": 0,
+            },
+            "period_days": days,
+        }
     try:
         cutoff = time.time() - (days * 86400)
 
