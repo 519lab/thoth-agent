@@ -573,14 +573,14 @@ export default function AnalyticsPage() {
 
           <DailyTable daily={data.daily} />
           <ModelTable models={data.by_model} />
-          <SkillTable skills={data.skills.top_skills} />
+          <SkillTable skills={data.skills?.top_skills ?? []} />
         </>
       )}
 
       {data &&
         data.daily.length === 0 &&
         data.by_model.length === 0 &&
-        data.skills.top_skills.length === 0 && (
+        (data.skills?.top_skills?.length ?? 0) === 0 && (
           <Card>
             <CardContent className="py-12">
               <div className="flex flex-col items-center text-muted-foreground">

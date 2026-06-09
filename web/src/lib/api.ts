@@ -496,7 +496,9 @@ export interface AnalyticsResponse {
     total_sessions: number;
     total_api_calls: number;
   };
-  skills: {
+  // Optional to reflect the not-yet-ported PG path; the Analytics page guards
+  // on `data.skills?.top_skills` before reading it.
+  skills?: {
     summary: AnalyticsSkillsSummary;
     top_skills: AnalyticsSkillEntry[];
   };
