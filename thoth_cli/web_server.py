@@ -610,7 +610,9 @@ async def get_status():
         from thoth_state import SessionDB
         db = SessionDB()
         try:
-            sessions = await db.list_sessions_rich(limit=50)
+            sessions = _epochify(
+                await _route_session_db(db, db.list_sessions_rich(limit=50))
+            )
             now = time.time()
             active_sessions = sum(
                 1 for s in sessions
@@ -773,14 +775,62 @@ async def get_action_status(name: str, lines: int = 200):
     }
 
 
+# ---------------------------------------------------------------------------
+# Session endpoints — Postgres-backend helpers.
+#
+# Two backend-shape gaps the dashboard has to bridge when SessionDB is backed
+# by Postgres (``_AsyncSessionDB``, no ``_conn``) rather than SQLite:
+#
+#   1. asyncpg pools are loop-bound. The dashboard's ``async def`` handlers run
+#      on uvicorn's event loop, but the pool lives on thoth_db's dedicated DB
+#      loop, so awaiting a DB coroutine directly raises "got Future attached to
+#      a different loop". ``_route_session_db`` routes through
+#      ``thoth_db.run_on_pool_loop`` on PG and awaits directly on SQLite (whose
+#      connection is thread-bound and must NOT hop loops).
+#   2. PG returns ``timestamptz`` columns as ``datetime``; the SQLite contract
+#      (and the frontend's epoch arithmetic / ``timeAgo``) expect epoch floats.
+#      ``_epochify`` normalizes datetimes to epoch floats in the response.
+# ---------------------------------------------------------------------------
+async def _route_session_db(db, coro):
+    """Await a SessionDB coroutine on the loop its backend is bound to."""
+    if hasattr(db, "_conn"):
+        # SQLite: connection is thread-bound — await on the current loop.
+        return await coro
+    import thoth_db
+    return await thoth_db.run_on_pool_loop(coro)
+
+
+def _epochify(obj):
+    """Recursively convert ``datetime`` values to epoch floats (in place).
+
+    PG ``timestamptz`` columns decode to ``datetime``; SQLite stores epoch
+    REALs. Normalize so both backends hand the frontend the same shape.
+    JSONB values never contain datetimes, so recursing is safe.
+    """
+    import datetime as _dt
+    if isinstance(obj, _dt.datetime):
+        return obj.timestamp()
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            obj[k] = _epochify(v)
+        return obj
+    if isinstance(obj, list):
+        return [_epochify(v) for v in obj]
+    return obj
+
+
 @app.get("/api/sessions")
 async def get_sessions(limit: int = 20, offset: int = 0):
     try:
         from thoth_state import SessionDB
         db = SessionDB()
         try:
-            sessions = await db.list_sessions_rich(limit=limit, offset=offset)
-            total = await db.session_count()
+            sessions = _epochify(
+                await _route_session_db(
+                    db, db.list_sessions_rich(limit=limit, offset=offset)
+                )
+            )
+            total = await _route_session_db(db, db.session_count())
             now = time.time()
             for s in sessions:
                 s["is_active"] = (
@@ -815,7 +865,9 @@ async def search_sessions(q: str = "", limit: int = 20):
                 else:
                     terms.append(token + "*")
             prefix_query = " ".join(terms)
-            matches = await db.search_messages(query=prefix_query, limit=limit)
+            matches = await _route_session_db(
+                db, db.search_messages(query=prefix_query, limit=limit)
+            )
             # Group by session_id — return unique sessions with their best snippet
             seen: dict = {}
             for m in matches:
@@ -829,7 +881,7 @@ async def search_sessions(q: str = "", limit: int = 20):
                         "model": m.get("model"),
                         "session_started": m.get("session_started"),
                     }
-            return {"results": list(seen.values())}
+            return _epochify({"results": list(seen.values())})
         finally:
             db.close()
     except Exception:
@@ -2444,11 +2496,13 @@ async def get_session_detail(session_id: str):
     from thoth_state import SessionDB
     db = SessionDB()
     try:
-        sid = await db.resolve_session_id(session_id)
-        session = await db.get_session(sid) if sid else None
+        sid = await _route_session_db(db, db.resolve_session_id(session_id))
+        session = (
+            await _route_session_db(db, db.get_session(sid)) if sid else None
+        )
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
-        return session
+        return _epochify(session)
     finally:
         db.close()
 
@@ -2471,11 +2525,11 @@ async def get_session_messages(session_id: str):
     from thoth_state import SessionDB
     db = SessionDB()
     try:
-        sid = await db.resolve_session_id(session_id)
+        sid = await _route_session_db(db, db.resolve_session_id(session_id))
         if not sid:
             raise HTTPException(status_code=404, detail="Session not found")
-        messages = await db.get_messages(sid)
-        return {"session_id": sid, "messages": messages}
+        messages = await _route_session_db(db, db.get_messages(sid))
+        return _epochify({"session_id": sid, "messages": messages})
     finally:
         db.close()
 
@@ -2485,7 +2539,7 @@ async def delete_session_endpoint(session_id: str):
     from thoth_state import SessionDB
     db = SessionDB()
     try:
-        if not await db.delete_session(session_id):
+        if not await _route_session_db(db, db.delete_session(session_id)):
             raise HTTPException(status_code=404, detail="Session not found")
         return {"ok": True}
     finally:
