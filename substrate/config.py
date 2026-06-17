@@ -96,7 +96,11 @@ RECALL_CANDIDATE_LIMIT = _envint("THOTH_RECALL_CANDIDATE_LIMIT", default=50)
 #     across the semantic vs keyword score regimes — the strongest hit
 #     always survives, the long weak tail is dropped).
 RECALL_MIN_RELEVANCE = _envfloat("THOTH_RECALL_MIN_RELEVANCE", default=0.05)
-RECALL_RELATIVE_FLOOR = _envfloat("THOTH_RECALL_RELATIVE_FLOOR", default=0.4)
+# Tightened 0.4 → 0.5 (2026-06-17): keep only candidates within half the top
+# score, so the long weakly-related tail is dropped instead of padding the
+# block to the token ceiling. See the salience-weight reduction below — the
+# two together stop the projection echoing the live transcript.
+RECALL_RELATIVE_FLOOR = _envfloat("THOTH_RECALL_RELATIVE_FLOOR", default=0.5)
 # MMR-style diversity: skip a candidate whose payload token-overlap
 # (Jaccard) with an already-selected block exceeds this — kills
 # near-duplicate excerpts. 0 disables dedup.
@@ -112,6 +116,22 @@ RECALL_SHOW_PROVENANCE = _envbool("THOTH_RECALL_SHOW_PROVENANCE", default=False)
 RECALL_INCLUDE_L1 = _envbool("RECALL_INCLUDE_L1", default=True)
 RECALL_L1_LIMIT = _envint("RECALL_L1_LIMIT", default=5)
 
+# L3 pattern + L4 self-model headers in the recall projection (added
+# 2026-06-17). The substrate distils L0 episodes into L3 patterns
+# (generalisations / themes) and L4 self-model observations, but recall
+# previously only ever surfaced L0 quotes + the L1 entity header — the
+# higher-order abstractions were unreachable from the foreground. When on,
+# the projection prepends a "## Patterns" block (top patterns by query
+# trigram-relevance + salience) and a "## Self-model" block (top non-coherence
+# observations by query relevance), sharing the token budget ahead of the L0
+# quotes. Independent of THOTH_SUBSTRATE_RECALL — the headers only manifest
+# when recall is also on. Limits are small by design: these are dense,
+# high-value summaries, so a few go a long way.
+RECALL_INCLUDE_L3 = _envbool("RECALL_INCLUDE_L3", default=True)
+RECALL_L3_LIMIT = _envint("RECALL_L3_LIMIT", default=3)
+RECALL_INCLUDE_L4 = _envbool("RECALL_INCLUDE_L4", default=True)
+RECALL_L4_LIMIT = _envint("RECALL_L4_LIMIT", default=2)
+
 # Skill suggestion in the recall projection. Opt-in (default
 # OFF) so it never adds noise to the per-turn block unless wanted; the
 # `thoth substrate skills <query>` CLI works regardless.
@@ -119,11 +139,24 @@ RECALL_SUGGEST_SKILLS = _envbool("RECALL_SUGGEST_SKILLS", default=False)
 RECALL_SKILL_LIMIT = _envint("RECALL_SKILL_LIMIT", default=3)
 
 # Composite-score weights (must keep sum of three active terms in a
-# reasonable range; spec defaults sum to 1.0 for the active path).
-RECALL_SIMILARITY_WEIGHT = _envfloat("THOTH_RECALL_SIMILARITY_WEIGHT", default=0.3)
-RECALL_KEYWORD_WEIGHT = _envfloat("THOTH_RECALL_KEYWORD_WEIGHT", default=0.3)
-RECALL_SALIENCE_WEIGHT = _envfloat("THOTH_RECALL_SALIENCE_WEIGHT", default=0.5)
-RECALL_RECENCY_WEIGHT = _envfloat("THOTH_RECALL_RECENCY_WEIGHT", default=0.2)
+# reasonable range; the active path is salience + recency + ONE of
+# similarity/keyword).
+#
+# Rebalanced 2026-06-17 (was sim=0.3, kw=0.3, sal=0.5, rec=0.2). Live
+# testing showed salience dominating topical relevance: high-salience
+# `assistant_response` slices were out-ranking the user messages and tool
+# results that actually matched the query, so recall echoed the agent's own
+# recent turns. Lowering salience (0.5 → 0.35) and raising the topical terms
+# (0.3 → 0.4) makes the query-match the primary signal while salience/recency
+# break ties. NOTE: these are the *operational* defaults read by
+# ``recall()`` via the kwargs in ``substrate/recall/api.py``; the
+# module-level ``DEFAULT_*`` in ``substrate/recall/projection.py`` are the
+# pure-function library fallbacks (used only by direct callers/tests) and are
+# deliberately left at the original values.
+RECALL_SIMILARITY_WEIGHT = _envfloat("THOTH_RECALL_SIMILARITY_WEIGHT", default=0.4)
+RECALL_KEYWORD_WEIGHT = _envfloat("THOTH_RECALL_KEYWORD_WEIGHT", default=0.4)
+RECALL_SALIENCE_WEIGHT = _envfloat("THOTH_RECALL_SALIENCE_WEIGHT", default=0.35)
+RECALL_RECENCY_WEIGHT = _envfloat("THOTH_RECALL_RECENCY_WEIGHT", default=0.15)
 RECALL_RECENCY_HALF_LIFE_HOURS = _envfloat(
     "THOTH_RECALL_RECENCY_HALF_LIFE_HOURS", default=12.0
 )
@@ -141,8 +174,15 @@ RECALL_REINFORCE_RATE_LIMIT_PER_MIN = _envint(
 # re-injecting every turn (the recall feedback loop). Above the floor,
 # the bump is scaled by relevance. 0.0 restores the old reinforce-all
 # behaviour.
+#
+# Raised 0.05 → 0.2 (2026-06-17): 0.05 was low enough that a slice sharing
+# almost any vocabulary with the query still cleared the floor and got
+# reinforced, so same-topic `assistant_response` slices kept ratcheting their
+# salience turn after turn — the feedback loop was technically mitigated but
+# the threshold didn't bite. 0.2 requires a genuine topical match before a
+# recall reinforces a slice.
 RECALL_REINFORCE_MIN_RELEVANCE = _envfloat(
-    "THOTH_RECALL_REINFORCE_MIN_RELEVANCE", default=0.05
+    "THOTH_RECALL_REINFORCE_MIN_RELEVANCE", default=0.2
 )
 
 # Recall log writer.
@@ -264,6 +304,10 @@ __all__ = [
     "RECALL_SHOW_PROVENANCE",
     "RECALL_INCLUDE_L1",
     "RECALL_L1_LIMIT",
+    "RECALL_INCLUDE_L3",
+    "RECALL_L3_LIMIT",
+    "RECALL_INCLUDE_L4",
+    "RECALL_L4_LIMIT",
     "RECALL_SUGGEST_SKILLS",
     "RECALL_SKILL_LIMIT",
     "RECALL_SIMILARITY_WEIGHT",

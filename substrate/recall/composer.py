@@ -139,6 +139,51 @@ def render_l1_header(entities: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def render_l3_header(patterns: list[dict]) -> str:
+    """Render the ``## Patterns`` block from already-fetched L3 pattern dicts
+    (``kind``, ``statement``, ``cites`` — a list of short slice-id strings).
+
+    Pure (DB-free), mirroring :func:`render_l1_header`. Returns "" for an empty
+    list so the caller can skip prepending. These are the substrate's
+    generalisations / recurring themes — dense and high-value, so the recall
+    limit that feeds this is small."""
+    if not patterns:
+        return ""
+    lines = [f"## Patterns ({len(patterns)})"]
+    for p in patterns:
+        kind = p.get("kind", "other")
+        statement = (p.get("statement") or "").strip()
+        if not statement:
+            continue
+        cites = p.get("cites") or []
+        cite_str = f" (cites: {', '.join(cites)})" if cites else ""
+        lines.append(f"- [{kind}] {statement}{cite_str}")
+    # All statements empty → nothing worth a header.
+    return "\n".join(lines) if len(lines) > 1 else ""
+
+
+def render_l4_header(observations: list[dict]) -> str:
+    """Render the ``## Self-model`` block from already-fetched L4 observation
+    dicts (``kind``, ``subject``, ``statement``).
+
+    Pure (DB-free), mirroring :func:`render_l1_header`. Returns "" for an empty
+    list. These are the substrate's calibration / bias / self-model notes —
+    what it has observed about itself — surfaced so recall can reach beyond raw
+    episodes into the higher-order self-knowledge."""
+    if not observations:
+        return ""
+    lines = [f"## Self-model ({len(observations)})"]
+    for o in observations:
+        kind = o.get("kind", "other")
+        subject = (o.get("subject") or "").strip()
+        statement = (o.get("statement") or "").strip()
+        if not statement:
+            continue
+        subj = f"{subject}: " if subject else ""
+        lines.append(f"- [{kind}] {subj}{statement}")
+    return "\n".join(lines) if len(lines) > 1 else ""
+
+
 def compose_projection(
     ranked: "list[RecallCandidate]",
     *,
@@ -268,4 +313,9 @@ def _truncate_to_budget(text: str, encoder, token_budget: int) -> str:
     return candidate + marker
 
 
-__all__ = ["compose_projection"]
+__all__ = [
+    "compose_projection",
+    "render_l1_header",
+    "render_l3_header",
+    "render_l4_header",
+]

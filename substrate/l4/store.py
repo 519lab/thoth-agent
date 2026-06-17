@@ -74,6 +74,36 @@ async def list_observations(
     return [_row(r) for r in rows]
 
 
+async def get_observations_for_query(
+    query: str, *, limit: int = 3, conn=None
+) -> list[Observation]:
+    """Self-model observations most relevant to ``query`` (highest
+    trigram-similarity + salience first), excluding the ``coherence`` vital
+    sign (that's a singleton surfaced separately, not recall content).
+
+    Mirrors :func:`substrate.l3.store.get_patterns_for_query`. ``l4_observations``
+    has no trigram GIN index on ``statement`` (unlike ``l3_patterns``), but the
+    table is tiny — a sequential scan with the ``%`` operator from the
+    globally-enabled ``pg_trgm`` extension is well within budget. Used by the
+    recall L4 header (substrate/recall/api.py)."""
+    if not (query or "").strip():
+        return []
+    async with _acquire(conn) as c:
+        rows = await c.fetch(
+            """
+            SELECT * FROM l4_observations
+             WHERE kind <> 'coherence'
+               AND statement % $1
+             ORDER BY (similarity(statement, $1) + salience_score) DESC,
+                      last_seen_at DESC
+             LIMIT $2
+            """,
+            query,
+            limit,
+        )
+    return [_row(r) for r in rows]
+
+
 async def upsert_coherence(
     statement: str, *, score: float, metadata: Optional[dict] = None, conn=None
 ) -> None:
@@ -269,6 +299,7 @@ async def latest_coherence(*, conn=None) -> Optional[Observation]:
 __all__ = [
     "record_observation",
     "list_observations",
+    "get_observations_for_query",
     "latest_coherence",
     "upsert_coherence",
     "set_embedding",

@@ -610,6 +610,84 @@ class TestSequentialDispatchRouting:
         assert names == {"builtin_tool", "ext_recall", "ext_retain"}
 
 
+class LazyToolProvider(FakeMemoryProvider):
+    """Provider that hides its tools until initialize() runs.
+
+    Mirrors SubstrateMemoryProvider: get_tool_schemas() returns [] until
+    _enabled is flipped in initialize(), so its tools are invisible at
+    add_provider() time and only appear after initialize_all().
+    """
+
+    def __init__(self, name="lazy", tools=None):
+        super().__init__(name=name, tools=tools)
+        self._enabled = False
+
+    def initialize(self, session_id, **kwargs):
+        super().initialize(session_id, **kwargs)
+        self._enabled = True
+
+    def get_tool_schemas(self):
+        return self._tools if self._enabled else []
+
+
+class TestLazyToolRouting:
+    """Regression test: a provider whose schemas are gated on initialize()
+    must still be routable after initialize_all().
+
+    Bug: add_provider() indexed _tool_to_provider from get_tool_schemas(),
+    but a provider like SubstrateMemoryProvider returns [] until initialize()
+    sets _enabled. initialize_all() flipped _enabled but never re-indexed, so
+    has_tool('substrate_recall_more') stayed False and every call fell through
+    to "Unknown tool". The fix re-indexes after initialization.
+    """
+
+    def test_lazy_tool_not_routable_before_initialize(self):
+        """Before initialize_all(), the gated tool is correctly absent."""
+        mgr = MemoryManager()
+        mgr.add_provider(LazyToolProvider("substrate", tools=[
+            {"name": "substrate_recall_more", "description": "x", "parameters": {}},
+        ]))
+        assert not mgr.has_tool("substrate_recall_more")
+
+    def test_lazy_tool_routable_after_initialize_all(self):
+        """After initialize_all() the gated tool routes to its provider."""
+        mgr = MemoryManager()
+        provider = LazyToolProvider("substrate", tools=[
+            {"name": "substrate_recall_more", "description": "x", "parameters": {}},
+        ])
+        mgr.add_provider(provider)
+
+        mgr.initialize_all(session_id="s-1", platform="cli")
+
+        assert mgr.has_tool("substrate_recall_more")
+        assert "substrate_recall_more" in mgr.get_all_tool_names()
+        result = json.loads(mgr.handle_tool_call("substrate_recall_more", {"topic": "pg"}))
+        assert result["handled"] == "substrate_recall_more"
+        assert result["args"] == {"topic": "pg"}
+
+    def test_reindex_is_idempotent_no_duplicate_or_drop(self):
+        """Re-indexing an already-registered eager tool keeps it mapped to its
+        original provider (no spurious conflict, no drop)."""
+        mgr = MemoryManager()
+        eager = FakeMemoryProvider("builtin", tools=[
+            {"name": "builtin_tool", "description": "b", "parameters": {}},
+        ])
+        lazy = LazyToolProvider("substrate", tools=[
+            {"name": "substrate_recall_more", "description": "x", "parameters": {}},
+        ])
+        mgr.add_provider(eager)
+        mgr.add_provider(lazy)
+
+        mgr.initialize_all(session_id="s-1")
+
+        # Eager tool still routes to the eager provider (not clobbered).
+        assert mgr.get_provider("builtin") is eager
+        r = json.loads(mgr.handle_tool_call("builtin_tool", {}))
+        assert r["handled"] == "builtin_tool"
+        # Both tools present exactly once.
+        assert mgr.get_all_tool_names() == {"builtin_tool", "substrate_recall_more"}
+
+
 # ---------------------------------------------------------------------------
 # Setup wizard field filtering tests (when clause and default_from)
 # ---------------------------------------------------------------------------
