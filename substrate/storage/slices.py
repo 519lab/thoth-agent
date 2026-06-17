@@ -552,6 +552,7 @@ class SliceRepo:
         stream_names: list[str],
         min_salience: float,
         limit: int,
+        exclude_session_id: "Optional[str]" = None,
     ) -> "list[RecallCandidate]":
         """Read recent passed slices across the named streams.
 
@@ -572,6 +573,11 @@ class SliceRepo:
             stay invisible to the projection
           * ``salience_score >= min_salience`` — drop trivially-decayed
             rows before they bloat the candidate set
+          * ``metadata->>'session_id'`` is not ``exclude_session_id`` (when
+            given) — keeps the live session's own slices, already present in
+            the transcript, out of recall; session-less slices (NULL id) are
+            always kept (``IS DISTINCT FROM``). NULL ``exclude_session_id``
+            disables the filter.
 
         Order: ``salience DESC, event_time DESC LIMIT limit``. The
         ranker (``substrate.recall.projection.rank_candidates``) reorders
@@ -597,6 +603,8 @@ class SliceRepo:
                AND sl.sentinel_state = 'passed'
                AND sl.consolidation_state <> 'released'
                AND sl.salience_score >= $4
+               AND ($6::text IS NULL
+                    OR sl.metadata->>'session_id' IS DISTINCT FROM $6)
              ORDER BY sl.salience_score DESC, sl.event_time_world DESC
              LIMIT $5
             """,
@@ -605,6 +613,7 @@ class SliceRepo:
             time_window,
             min_salience,
             limit,
+            exclude_session_id,
         )
         candidates: list[RecallCandidate] = []
         for r in rows:

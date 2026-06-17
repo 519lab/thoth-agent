@@ -79,6 +79,47 @@ async def _seed_passed_slice(substrate, *, text: str, t_now: datetime) -> None:
 
 
 @pytest.mark.asyncio
+async def test_recall_excludes_current_session_when_enabled(
+    booted_substrate, monkeypatch
+):
+    """RECALL_EXCLUDE_CURRENT_SESSION drops the live session's own slices from
+    recall (they're already in the transcript); turning it off recalls them.
+    Higher-layer headers are disabled so the assertion is on the L0 body."""
+    import substrate.config as cfg
+    import thoth_db
+
+    for flag in ("RECALL_INCLUDE_L1", "RECALL_INCLUDE_L3", "RECALL_INCLUDE_L4"):
+        monkeypatch.setattr(cfg, flag, False)
+
+    t = datetime.now(timezone.utc)
+    await _seed_passed_slice(
+        booted_substrate, text="substrate session exclusion probe", t_now=t
+    )
+    # Tag the slice to session "live" (recall groups on metadata->>'session_id').
+    async with thoth_db.connection() as conn:
+        await conn.execute(
+            "UPDATE substrate_slices "
+            "SET metadata = COALESCE(metadata,'{}'::jsonb) "
+            "|| '{\"session_id\":\"live\"}'::jsonb "
+            "WHERE payload->>'text' = 'substrate session exclusion probe'"
+        )
+
+    # Flag ON → recalling for session "live" excludes its own slice.
+    monkeypatch.setattr(cfg, "RECALL_EXCLUDE_CURRENT_SESSION", True)
+    proj_on = await recall(
+        booted_substrate, "substrate session exclusion probe", session_id="live"
+    )
+    assert "substrate session exclusion probe" not in proj_on.text
+
+    # Flag OFF → the slice is recalled again.
+    monkeypatch.setattr(cfg, "RECALL_EXCLUDE_CURRENT_SESSION", False)
+    proj_off = await recall(
+        booted_substrate, "substrate session exclusion probe", session_id="live"
+    )
+    assert "substrate session exclusion probe" in proj_off.text
+
+
+@pytest.mark.asyncio
 async def test_recall_empty_substrate_returns_empty_projection(booted_substrate):
     """No slices → projection with empty_reason='no_candidates'."""
     proj = await recall(booted_substrate, "anything")

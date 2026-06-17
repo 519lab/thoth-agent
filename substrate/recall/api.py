@@ -259,6 +259,16 @@ async def recall(
         else _cfg.RECALL_TIMEOUT_MS
     )
 
+    # Drop the live session's own slices from the candidate pool when
+    # RECALL_EXCLUDE_CURRENT_SESSION is on (issue #178) — they're already in
+    # the transcript, so recalling them just echoes the conversation. Only
+    # applies when we know which session we're recalling for.
+    exclude_session_id = (
+        session_id
+        if (session_id and _cfg.RECALL_EXCLUDE_CURRENT_SESSION)
+        else None
+    )
+
     t_start = time.monotonic()
 
     # 1+2. Embed the query and fetch candidates — both wrapped in the
@@ -274,6 +284,7 @@ async def recall(
                 stream_names=stream_filter,
                 min_salience=min_salience,
                 limit=candidate_limit,
+                exclude_session_id=exclude_session_id,
             ),
             timeout=recall_timeout_ms / 1000.0,
         )
@@ -560,6 +571,7 @@ async def _fetch_candidates(
     stream_names: list[str],
     min_salience: float,
     limit: int,
+    exclude_session_id: Optional[str] = None,
 ) -> list[RecallCandidate]:
     """Acquire a connection and run the recall_window query.
 
@@ -577,6 +589,7 @@ async def _fetch_candidates(
             stream_names=stream_names,
             min_salience=min_salience,
             limit=limit,
+            exclude_session_id=exclude_session_id,
         )
 
 
