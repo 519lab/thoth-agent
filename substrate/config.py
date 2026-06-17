@@ -89,6 +89,21 @@ RECALL_TIMEOUT_MS = _envint("THOTH_RECALL_TIMEOUT_MS", default=300)
 RECALL_MIN_SALIENCE = _envfloat("THOTH_RECALL_MIN_SALIENCE", default=0.05)
 RECALL_CANDIDATE_LIMIT = _envint("THOTH_RECALL_CANDIDATE_LIMIT", default=50)
 
+# Exclude the current session's own slices from recall (added 2026-06-17,
+# issue #178). recall_window is time-windowed but not session-aware, so during
+# a live session it re-surfaces the current session's user/assistant turns —
+# which are already verbatim in the conversation transcript the model is
+# reasoning over. Recall's distinct value is *cross-session*: bringing back
+# what is NOT in the current context. When on, recall() filters out slices
+# whose metadata->>'session_id' equals the session it was called for (session-
+# less slices are always kept). Tradeoff: also hides within-session content
+# that has been compressed out of the live context — acceptable for now since
+# the conversation loop manages in-session compression. Set to 0 to restore
+# the session-blind behaviour.
+RECALL_EXCLUDE_CURRENT_SESSION = _envbool(
+    "THOTH_RECALL_EXCLUDE_CURRENT_SESSION", default=True
+)
+
 # Precision controls. After ranking, a
 # candidate is injected only if its composite score clears BOTH floors:
 #   * an absolute floor (drops near-zero, loosely-related slices), and
@@ -298,6 +313,7 @@ __all__ = [
     "RECALL_TIMEOUT_MS",
     "RECALL_MIN_SALIENCE",
     "RECALL_CANDIDATE_LIMIT",
+    "RECALL_EXCLUDE_CURRENT_SESSION",
     "RECALL_MIN_RELEVANCE",
     "RECALL_RELATIVE_FLOOR",
     "RECALL_DEDUP_THRESHOLD",

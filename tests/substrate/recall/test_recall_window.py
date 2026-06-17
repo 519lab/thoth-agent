@@ -295,6 +295,67 @@ async def test_recall_window_respects_min_salience(substrate):
 
 
 @pytest.mark.asyncio
+async def test_recall_window_excludes_named_session(substrate):
+    """``exclude_session_id`` drops slices from that session; other sessions
+    and session-less slices (NULL id) are kept. NULL exclude → no filtering."""
+    import thoth_db
+
+    stream = await substrate.streams.register(
+        name="hermes.test.recall_session_filter",
+        family=Family.SELF_STATE,
+        modality=Modality.TEXT,
+        source="test",
+        organ="pytest",
+        decay_profile_id=DEFAULT_TEXT_PROFILE,
+    )
+    t = _now_utc()
+    await commit_slice(substrate, stream.stream_id, "live-1", event_time_world=t)
+    await commit_slice(substrate, stream.stream_id, "live-2", event_time_world=t)
+    await commit_slice(substrate, stream.stream_id, "other-session", event_time_world=t)
+    await commit_slice(substrate, stream.stream_id, "session-less", event_time_world=t)
+    await _pass_all_pending(substrate)
+
+    async with thoth_db.connection() as conn:
+        # Tag sessions in metadata (no dedicated column — recall groups on
+        # metadata->>'session_id'). "session-less" deliberately left untagged.
+        await conn.execute(
+            "UPDATE substrate_slices "
+            "SET metadata = COALESCE(metadata,'{}'::jsonb) || '{\"session_id\":\"live\"}'::jsonb "
+            "WHERE payload->>'text' IN ('live-1','live-2')"
+        )
+        await conn.execute(
+            "UPDATE substrate_slices "
+            "SET metadata = COALESCE(metadata,'{}'::jsonb) || '{\"session_id\":\"other\"}'::jsonb "
+            "WHERE payload->>'text' = 'other-session'"
+        )
+
+        kwargs = dict(
+            t_now=t + timedelta(seconds=1),
+            time_window=timedelta(hours=1),
+            stream_names=[stream.name],
+            min_salience=0.0,
+            limit=10,
+        )
+        excluded = await substrate.slices.recall_window(
+            conn, exclude_session_id="live", **kwargs
+        )
+        unfiltered = await substrate.slices.recall_window(
+            conn, exclude_session_id=None, **kwargs
+        )
+
+    excluded_payloads = {c.payload for c in excluded}
+    # The live session's slices are gone; other session + session-less survive.
+    assert "live-1" not in excluded_payloads
+    assert "live-2" not in excluded_payloads
+    assert "other-session" in excluded_payloads
+    assert "session-less" in excluded_payloads
+    # NULL exclude_session_id disables the filter — everything comes back.
+    assert {c.payload for c in unfiltered} == {
+        "live-1", "live-2", "other-session", "session-less"
+    }
+
+
+@pytest.mark.asyncio
 async def test_recall_window_returns_embedding_when_present(substrate):
     """When ``embedding`` is populated the candidate carries it as a 1536-d list."""
     import thoth_db
