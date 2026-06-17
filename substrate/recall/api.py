@@ -26,7 +26,12 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from substrate import config as _cfg
-from substrate.recall.composer import compose_projection, render_l1_header
+from substrate.recall.composer import (
+    compose_projection,
+    render_l1_header,
+    render_l3_header,
+    render_l4_header,
+)
 from substrate.recall.embeddings import embed_query
 from substrate.recall.log import RecallLogRow
 from substrate.recall.projection import (
@@ -358,22 +363,41 @@ async def recall(
     # this so salience-only survivors aren't pumped further (breaks the loop).
     relevance_by_id = {sc.candidate.slice_id: sc.relevance for sc in kept}
 
-    # 3b. Phase D: fetch a bounded L1 entity header (best-effort — a
-    # missing L1 layer / DB hiccup degrades to no header, never an error).
-    # The header shares the token budget: it's prepended ahead of the L0
-    # quotes, so the L0 composer gets the remaining budget.
-    l1_header = ""
-    if _cfg.RECALL_INCLUDE_L1 and (query or "").strip():
+    # 3b. Fetch bounded higher-layer headers (best-effort — a missing layer
+    # or DB hiccup degrades to no header, never an error). They share the
+    # token budget: prepended ahead of the L0 quotes in cognitive order
+    # (entities → patterns → self-model → episodes), so the L0 composer gets
+    # whatever budget is left. L1 is Phase D; L3/L4 added 2026-06-17 so recall
+    # can reach the substrate's abstractions, not just raw episodes.
+    headers: list[str] = []
+    has_query = bool((query or "").strip())
+    if _cfg.RECALL_INCLUDE_L1 and has_query:
         try:
-            l1_header = await _build_l1_header(query)
+            h = await _build_l1_header(query)
+            if h:
+                headers.append(h)
         except Exception as exc:  # pragma: no cover — defensive
             _log.debug("recall L1 header fetch failed: %s", exc)
-            l1_header = ""
-    header_tokens = max(1, len(l1_header) // 4) if l1_header else 0
+    if _cfg.RECALL_INCLUDE_L3 and has_query:
+        try:
+            h = await _build_l3_header(query)
+            if h:
+                headers.append(h)
+        except Exception as exc:  # pragma: no cover — defensive
+            _log.debug("recall L3 header fetch failed: %s", exc)
+    if _cfg.RECALL_INCLUDE_L4 and has_query:
+        try:
+            h = await _build_l4_header(query)
+            if h:
+                headers.append(h)
+        except Exception as exc:  # pragma: no cover — defensive
+            _log.debug("recall L4 header fetch failed: %s", exc)
+    header_text = "\n\n".join(headers)
+    header_tokens = max(1, len(header_text) // 4) if header_text else 0
 
-    # 4. Compose (L0 quotes get the budget left after the L1 header).
-    # Dedup near-duplicate excerpts; provenance recorded always, shown
-    # inline only when RECALL_SHOW_PROVENANCE (clean block by default).
+    # 4. Compose (L0 quotes get the budget left after the higher-layer
+    # headers). Dedup near-duplicate excerpts; provenance recorded always,
+    # shown inline only when RECALL_SHOW_PROVENANCE (clean block by default).
     l0_budget = max(0, token_budget - header_tokens)
     text, composed, tokens = compose_projection(
         ranked,
@@ -382,8 +406,8 @@ async def recall(
         provenance=provenance,
         show_provenance=_cfg.RECALL_SHOW_PROVENANCE,
     )
-    if l1_header:
-        text = l1_header + ("\n\n" + text if text else "")
+    if header_text:
+        text = header_text + ("\n\n" + text if text else "")
         tokens += header_tokens
 
     # 4b. Opt-in skill suggestion — append a compact
@@ -484,6 +508,48 @@ async def _build_l1_header(query: str) -> str:
             }
         )
     return render_l1_header(rendered)
+
+
+async def _build_l3_header(query: str) -> str:
+    """Fetch the top L3 patterns for *query* (by trigram-relevance + salience)
+    and render the ``## Patterns`` block. Returns "" when L3 is empty or
+    nothing matches. Used by :func:`recall`."""
+    from substrate.l3 import store as l3_store
+
+    patterns = await l3_store.get_patterns_for_query(
+        query, limit=_cfg.RECALL_L3_LIMIT
+    )
+    if not patterns:
+        return ""
+    rendered = [
+        {
+            "kind": p.kind,
+            "statement": p.statement,
+            # Shorten citation slice-ids and cap at 3 so the block stays compact.
+            "cites": [str(c)[:6] for c in (p.cites or [])][:3],
+        }
+        for p in patterns
+    ]
+    return render_l3_header(rendered)
+
+
+async def _build_l4_header(query: str) -> str:
+    """Fetch the top L4 self-model observations for *query* and render the
+    ``## Self-model`` block. Returns "" when L4 is empty or nothing matches.
+    Excludes the coherence vital sign (handled separately as the recall
+    relevance-floor pin). Used by :func:`recall`."""
+    from substrate.l4 import store as l4_store
+
+    observations = await l4_store.get_observations_for_query(
+        query, limit=_cfg.RECALL_L4_LIMIT
+    )
+    if not observations:
+        return ""
+    rendered = [
+        {"kind": o.kind, "subject": o.subject, "statement": o.statement}
+        for o in observations
+    ]
+    return render_l4_header(rendered)
 
 
 async def _fetch_candidates(
