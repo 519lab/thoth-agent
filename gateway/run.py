@@ -17864,6 +17864,40 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     except Exception as _se:  # noqa: BLE001 — defensive
         logger.warning("substrate bootstrap failed, continuing: %s", _se)
 
+    # Bind guard (issue #180): the memory provider reads get_bound_substrate()
+    # on every agent build (agent_init.py), so a gateway that comes up without
+    # substrate bound silently disables recall + substrate_recall_more with no
+    # error — exactly the 2026-06-17 incident. Verify the postcondition; if it's
+    # missing, retry the boot once, then escalate to a loud error so it's
+    # visible in logs/monitoring. Still non-fatal (spec §0 — substrate must
+    # never crash the gateway); we make the failure loud + self-healing, not
+    # silent.
+    try:
+        from substrate import get_bound_substrate as _gbs
+
+        if _gbs() is None:
+            logger.error(
+                "substrate not bound after writer bootstrap — recall and "
+                "substrate_recall_more will be DISABLED for all sessions. "
+                "Retrying boot once."
+            )
+            try:
+                await _hermes_db.run_on_pool_loop(
+                    _bootstrap_substrate(log=logger, mode="writer")
+                )
+            except Exception as _se2:  # noqa: BLE001 — defensive
+                logger.warning("substrate bootstrap retry failed: %s", _se2)
+            if _gbs() is None:
+                logger.error(
+                    "substrate STILL not bound after retry — gateway is "
+                    "running with memory DISABLED; a restart is required to "
+                    "recover recall."
+                )
+            else:
+                logger.info("substrate bound on retry — memory recovered.")
+    except Exception as _ge:  # noqa: BLE001 — defensive
+        logger.warning("substrate bind verification failed: %s", _ge)
+
     # ── Duplicate-instance guard ──────────────────────────────────────
     # Prevent two gateways from running under the same THOTH_HOME.
     # The PID file is scoped to THOTH_HOME, so future multi-profile

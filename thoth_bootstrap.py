@@ -306,6 +306,23 @@ async def bootstrap_substrate(log=None, *, mode: str = "writer"):
 
         if mode == "writer":
             substrate = await Substrate.boot_writer(log=log)
+            # Postcondition guard (issue #180): a writer boot MUST bind the
+            # perception hooks so ``get_bound_substrate()`` resolves — that is
+            # the per-process global the SubstrateMemoryProvider reads (see
+            # agent/agent_init.py, which skips the whole memory block when it's
+            # None). If boot_writer returned without binding (no exception),
+            # surface it as a boot FAILURE rather than a silent "success" that
+            # leaves the gateway running with recall + substrate_recall_more
+            # quietly disabled (the 2026-06-17 incident). The raise routes into
+            # the loud ``except`` path below (error log + ok=False status).
+            from substrate import get_bound_substrate as _gbs
+
+            if _gbs() is None:
+                raise RuntimeError(
+                    "boot_writer completed but get_bound_substrate() is None — "
+                    "perception hooks did not bind; recall and memory would be "
+                    "silently disabled"
+                )
         elif mode == "worker":
             substrate = await Substrate.boot_worker(log=log)
         else:
