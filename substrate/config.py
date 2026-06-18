@@ -288,9 +288,20 @@ THOTH_SUBSTRATE_RECALL_ENABLED = _envbool(
 )
 
 
-# Default stream set for recall (spec §4.3). User-message + assistant-
-# response streams; explicitly excludes self-state. ``stream_filter=None``
-# in the recall API resolves to this list at call time.
+# Default stream set for recall (spec §4.3). User-message streams + the
+# Summarizer's retrospective summaries. ``stream_filter=None`` in the recall
+# API resolves to this list at call time.
+#
+# Deliberately EXCLUDES ``thoth.self_action.assistant_response`` (removed
+# 2026-06-18, issue #182): surfacing the agent's own prior replies back into
+# its context is circular, and re-injects past *wrong* conclusions with
+# memory-authority (the 2026-06-17 incident where recall fed debunked findings
+# back as fact). Those slices are still written and still feed consolidation —
+# the Summarizer distils them into the ``summary`` stream below, and the
+# Parser / Pattern-finder promote them to L1/L3 (surfaced via the recall
+# headers) — both read by session_id, independent of this list. Recall
+# surfaces the distilled forms, never the raw self-quotes. Self-state streams
+# are likewise excluded.
 DEFAULT_RECALL_STREAMS: tuple[str, ...] = (
     "thoth.world.user_message.cli",
     "thoth.world.user_message.telegram",
@@ -299,7 +310,6 @@ DEFAULT_RECALL_STREAMS: tuple[str, ...] = (
     "thoth.world.user_message.whatsapp",
     "thoth.world.user_message.signal",
     "thoth.world.user_message.acp",
-    "thoth.self_action.assistant_response",
     # Retrospective summaries (the Summarizer): dense, carry older context
     # forward so recall surfaces a summary instead of the faded originals.
     "thoth.self_action.summary",
