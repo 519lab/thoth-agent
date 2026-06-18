@@ -100,6 +100,7 @@ async def test_record_boot_status_never_raises_without_db(monkeypatch):
 @pytest.mark.asyncio
 async def test_bootstrap_records_success(thoth_db_initialized, monkeypatch):
     import thoth_db
+    import substrate.events.hermes_hooks as hh
 
     sentinel = object()
 
@@ -107,6 +108,9 @@ async def test_bootstrap_records_success(thoth_db_initialized, monkeypatch):
         return sentinel
 
     monkeypatch.setattr("substrate.Substrate.boot_writer", _fake_boot_writer)
+    # A real writer boot binds the perception hooks; the bind postcondition
+    # (issue #180) requires get_bound_substrate() to resolve, so simulate it.
+    monkeypatch.setattr(hh, "_substrate", sentinel)
 
     result = await thoth_bootstrap.bootstrap_substrate(mode="writer")
     assert result is sentinel
@@ -254,3 +258,58 @@ async def test_summary_includes_last_boot_section(thoth_db_initialized):
     assert "Last boot:" in out
     assert "writer" in out
     assert "OK" in out
+
+
+# ---------------------------------------------------------------------------
+# Writer-boot bind postcondition (issue #180)
+#
+# A writer boot MUST leave get_bound_substrate() non-None — that's the
+# per-process global the SubstrateMemoryProvider reads. If boot_writer returns
+# without binding (no exception), bootstrap_substrate must treat it as a
+# FAILURE rather than a silent success that leaves recall quietly disabled.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_writer_boot_unbound_is_treated_as_failure(monkeypatch):
+    """boot_writer returns but get_bound_substrate() is None → bootstrap
+    returns None and records ok=False (loud failure, not silent success)."""
+    import substrate.events.hermes_hooks as hh
+
+    async def _fake_boot_writer(log=None):
+        return object()  # a "substrate", but hooks never bound
+
+    monkeypatch.setattr("substrate.facade.Substrate.boot_writer", _fake_boot_writer)
+    # Simulate the silent-unbind: the hook global stays None after boot.
+    monkeypatch.setattr(hh, "_substrate", None)
+
+    result = await thoth_bootstrap.bootstrap_substrate(mode="writer")
+
+    assert result is None
+    status = thoth_bootstrap.get_boot_status("writer")
+    assert status is not None and status["ok"] is False
+    # Not cached as booted — a later retry can re-attempt.
+    assert thoth_bootstrap._substrate_booted is False
+
+
+@pytest.mark.asyncio
+async def test_writer_boot_bound_succeeds(monkeypatch):
+    """boot_writer that leaves get_bound_substrate() non-None → bootstrap
+    returns the handle and records ok=True (happy path still works)."""
+    import substrate.events.hermes_hooks as hh
+
+    sentinel = object()
+
+    async def _fake_boot_writer(log=None):
+        return sentinel
+
+    monkeypatch.setattr("substrate.facade.Substrate.boot_writer", _fake_boot_writer)
+    # Simulate a successful bind: the hook global resolves after boot.
+    monkeypatch.setattr(hh, "_substrate", sentinel)
+
+    result = await thoth_bootstrap.bootstrap_substrate(mode="writer")
+
+    assert result is sentinel
+    status = thoth_bootstrap.get_boot_status("writer")
+    assert status is not None and status["ok"] is True
+    assert thoth_bootstrap._substrate_booted is True
