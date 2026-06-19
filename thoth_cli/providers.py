@@ -353,6 +353,12 @@ ALIASES: Dict[str, str] = {
     "gmi-cloud": "gmi",
     "gmicloud": "gmi",
 
+    # evolink
+    "evolink-ai": "evolink",
+    "evolinkai": "evolink",
+    "evo-link": "evolink",
+    "evo_link": "evolink",
+
     # Local server aliases → virtual "local" concept (resolved via user config)
     "lmstudio": "lmstudio",
     "lm-studio": "lmstudio",
