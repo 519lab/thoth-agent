@@ -349,10 +349,78 @@ async def validate(
         print(f"  - {note}")
 
 
+# ---------------------------------------------------------------------------
+# Recall-replay report (innovation #1) — REPORT ONLY.
+#
+# Runs the offline replay sweep over the labelled recall log and prints the
+# weight grid ranked by the v1 kept-vs-dropped outcome-separation metric. This
+# command NEVER applies the winning weights — it's an A/B oracle the operator
+# reads, and tuning stays a deliberate config edit.
+# ---------------------------------------------------------------------------
+
+
+async def replay(
+    conn: "asyncpg.Connection",
+    *,
+    since: "datetime | None" = None,
+    limit: "int | None" = None,
+    grid: str = "default",
+) -> None:
+    """Print the recall-replay sweep over labelled recall rows."""
+    from substrate.recall import replay as _replay
+
+    corpus = await _replay.load_labeled_recalls(conn, since=since, limit=limit)
+    if not corpus:
+        print(
+            "(no labelled recalls with per-candidate records to replay; "
+            "outcome labelling needs THOTH_RECALL_OUTCOME_LABEL on and a few "
+            "completed turns)"
+        )
+        return
+
+    n_pos = sum(1 for r in corpus if r.outcome_score >= 0.5)
+    print(
+        f"Recall replay over {len(corpus)} labelled recall(s) "
+        f"({n_pos} good-outcome, {len(corpus) - n_pos} poor-outcome)."
+    )
+    if since is not None:
+        print(f"  since: {since.isoformat()}")
+    print()
+    print(
+        "v1 metric = kept-vs-dropped outcome separation (NOT NDCG — no "
+        "per-slice graded labels yet). Higher separation = the weight "
+        "vector's top pick better predicts a good turn. REPORT ONLY: this "
+        "command never applies weights."
+    )
+    print()
+
+    base = _replay.baseline_weights()
+    if grid != "default":
+        print(f"(unknown grid {grid!r}; using the default grid)")
+    entries = _replay.sweep(corpus, _replay.default_grid(base))
+
+    print(
+        f"{'sep':>7}  {'kept µ':>7}  {'drop µ':>7}  "
+        f"{'n_kept':>6}  {'n_drop':>6}  weights"
+    )
+    print("-" * 72)
+    base_label = base.label()
+    for e in entries:
+        marker = " *" if e.weights.label() == base_label else "  "
+        print(
+            f"{e.separation:>7.3f}  {e.mean_outcome_kept:>7.3f}  "
+            f"{e.mean_outcome_dropped:>7.3f}  {e.n_kept:>6}  "
+            f"{e.n_dropped:>6}  {e.weights.label()}{marker}"
+        )
+    print()
+    print("  (* = current live baseline from substrate/config.py)")
+
+
 __all__ = [
     "print_summary",
     "print_recent",
     "print_sample",
     "print_config",
     "validate",
+    "replay",
 ]
