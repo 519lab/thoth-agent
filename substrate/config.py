@@ -164,6 +164,19 @@ RECALL_L3L4_SEMANTIC = _envbool("THOTH_RECALL_L3L4_SEMANTIC", default=False)
 RECALL_SUGGEST_SKILLS = _envbool("RECALL_SUGGEST_SKILLS", default=False)
 RECALL_SKILL_LIMIT = _envint("RECALL_SKILL_LIMIT", default=3)
 
+# LLM-judge rerank pass over the top-K scored candidates (innovation #3). After
+# the pure ranker scores candidates and before the relevance floor, an aux
+# LLM-judge re-orders the top ``RECALL_RERANK_K`` (capped at 15) by direct
+# relevance to the query — a precision pass the cheap scalar score can't do.
+# Reuses the aux text client (no new dep) under the ``recall_reranker`` task,
+# batched into one call, timeout-bound; ANY failure falls back to the pre-rerank
+# order (recall never raises). Default OFF — A/B via #1's replay report before
+# enabling in prod.
+RECALL_RERANK = _envbool("THOTH_SUBSTRATE_RECALL_RERANK", default=False)
+# Top-K window handed to the reranker. Hard-capped at 15 in rerank() so a large
+# env value can't blow the judge's context / latency budget.
+RECALL_RERANK_K = _envint("THOTH_SUBSTRATE_RECALL_RERANK_K", default=12)
+
 # Composite-score weights (must keep sum of three active terms in a
 # reasonable range; the active path is salience + recency + ONE of
 # similarity/keyword).
@@ -348,6 +361,8 @@ __all__ = [
     "RECALL_SUGGEST_SKILLS",
     "RECALL_SKILL_LIMIT",
     "RECALL_L3L4_SEMANTIC",
+    "RECALL_RERANK",
+    "RECALL_RERANK_K",
     "RECALL_SIMILARITY_WEIGHT",
     "RECALL_KEYWORD_WEIGHT",
     "RECALL_SALIENCE_WEIGHT",
