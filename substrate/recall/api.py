@@ -391,14 +391,14 @@ async def recall(
             _log.debug("recall L1 header fetch failed: %s", exc)
     if _cfg.RECALL_INCLUDE_L3 and has_query:
         try:
-            h = await _build_l3_header(query)
+            h = await _build_l3_header(query, query_embedding=query_embedding)
             if h:
                 headers.append(h)
         except Exception as exc:  # pragma: no cover — defensive
             _log.debug("recall L3 header fetch failed: %s", exc)
     if _cfg.RECALL_INCLUDE_L4 and has_query:
         try:
-            h = await _build_l4_header(query)
+            h = await _build_l4_header(query, query_embedding=query_embedding)
             if h:
                 headers.append(h)
         except Exception as exc:  # pragma: no cover — defensive
@@ -521,14 +521,23 @@ async def _build_l1_header(query: str) -> str:
     return render_l1_header(rendered)
 
 
-async def _build_l3_header(query: str) -> str:
-    """Fetch the top L3 patterns for *query* (by trigram-relevance + salience)
-    and render the ``## Patterns`` block. Returns "" when L3 is empty or
-    nothing matches. Used by :func:`recall`."""
+async def _build_l3_header(
+    query: str, *, query_embedding: Optional[list[float]] = None
+) -> str:
+    """Fetch the top L3 patterns for *query* and render the ``## Patterns``
+    block. Returns "" when L3 is empty or nothing matches. Used by
+    :func:`recall`.
+
+    When ``RECALL_L3L4_SEMANTIC`` is on and a ``query_embedding`` is available,
+    patterns are ordered by cosine distance over their (already-backfilled)
+    embedding column; otherwise the trigram+salience path is used (innovation
+    #3)."""
     from substrate.l3 import store as l3_store
 
     patterns = await l3_store.get_patterns_for_query(
-        query, limit=_cfg.RECALL_L3_LIMIT
+        query,
+        limit=_cfg.RECALL_L3_LIMIT,
+        query_embedding=query_embedding if _cfg.RECALL_L3L4_SEMANTIC else None,
     )
     if not patterns:
         return ""
@@ -544,15 +553,24 @@ async def _build_l3_header(query: str) -> str:
     return render_l3_header(rendered)
 
 
-async def _build_l4_header(query: str) -> str:
+async def _build_l4_header(
+    query: str, *, query_embedding: Optional[list[float]] = None
+) -> str:
     """Fetch the top L4 self-model observations for *query* and render the
     ``## Self-model`` block. Returns "" when L4 is empty or nothing matches.
     Excludes the coherence vital sign (handled separately as the recall
-    relevance-floor pin). Used by :func:`recall`."""
+    relevance-floor pin). Used by :func:`recall`.
+
+    When ``RECALL_L3L4_SEMANTIC`` is on and a ``query_embedding`` is available,
+    observations are ordered by cosine distance over their (already-backfilled)
+    embedding column; otherwise the trigram+salience path is used (innovation
+    #3)."""
     from substrate.l4 import store as l4_store
 
     observations = await l4_store.get_observations_for_query(
-        query, limit=_cfg.RECALL_L4_LIMIT
+        query,
+        limit=_cfg.RECALL_L4_LIMIT,
+        query_embedding=query_embedding if _cfg.RECALL_L3L4_SEMANTIC else None,
     )
     if not observations:
         return ""

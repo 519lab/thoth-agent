@@ -73,22 +73,45 @@ async def upsert_pattern(
 
 
 async def get_patterns_for_query(
-    query: str, *, limit: int = 5, conn=None
+    query: str,
+    *,
+    limit: int = 5,
+    query_embedding: Optional[list[float]] = None,
+    conn=None,
 ) -> list[Pattern]:
+    """Patterns most relevant to ``query``.
+
+    When ``query_embedding`` is provided, rank by cosine distance over the
+    backfilled ``embedding`` column (``embedding <=> $vec``, mirroring
+    :func:`find_near_duplicates`), restricted to embedded rows — the semantic
+    path used by the recall L3 header when ``RECALL_L3L4_SEMANTIC`` is on.
+    Otherwise fall back to the trigram-similarity + salience path."""
     if not (query or "").strip():
         return []
     async with _acquire(conn) as c:
-        rows = await c.fetch(
-            """
-            SELECT * FROM l3_patterns
-             WHERE statement % $1
-             ORDER BY (similarity(statement, $1) + salience_score) DESC,
-                      last_seen_at DESC
-             LIMIT $2
-            """,
-            query,
-            limit,
-        )
+        if query_embedding is not None:
+            rows = await c.fetch(
+                """
+                SELECT * FROM l3_patterns
+                 WHERE embedding IS NOT NULL
+                 ORDER BY embedding <=> $1::vector
+                 LIMIT $2
+                """,
+                query_embedding,
+                limit,
+            )
+        else:
+            rows = await c.fetch(
+                """
+                SELECT * FROM l3_patterns
+                 WHERE statement % $1
+                 ORDER BY (similarity(statement, $1) + salience_score) DESC,
+                          last_seen_at DESC
+                 LIMIT $2
+                """,
+                query,
+                limit,
+            )
     return [_row_to_pattern(r) for r in rows]
 
 

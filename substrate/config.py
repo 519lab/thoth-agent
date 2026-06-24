@@ -147,6 +147,17 @@ RECALL_L3_LIMIT = _envint("RECALL_L3_LIMIT", default=3)
 RECALL_INCLUDE_L4 = _envbool("RECALL_INCLUDE_L4", default=True)
 RECALL_L4_LIMIT = _envint("RECALL_L4_LIMIT", default=2)
 
+# Semantic ordering for the L3/L4 recall headers (innovation #3). L3 patterns
+# and L4 observations already carry backfilled embedding columns (the Curator
+# fills them for near-duplicate merging), but the header queries rank by trigram
+# similarity + salience and ignore those embeddings. When on, ``get_patterns_
+# for_query`` / ``get_observations_for_query`` order by cosine distance
+# (``embedding <=> $vec``, mirroring ``find_near_duplicates``) against the
+# already-computed query embedding, falling back to the trigram path when no
+# query embedding is available. Default OFF — flip on only after #1's replay
+# report validates the lift.
+RECALL_L3L4_SEMANTIC = _envbool("THOTH_RECALL_L3L4_SEMANTIC", default=False)
+
 # Skill suggestion in the recall projection. Opt-in (default
 # OFF) so it never adds noise to the per-turn block unless wanted; the
 # `thoth substrate skills <query>` CLI works regardless.
@@ -336,6 +347,7 @@ __all__ = [
     "RECALL_L4_LIMIT",
     "RECALL_SUGGEST_SKILLS",
     "RECALL_SKILL_LIMIT",
+    "RECALL_L3L4_SEMANTIC",
     "RECALL_SIMILARITY_WEIGHT",
     "RECALL_KEYWORD_WEIGHT",
     "RECALL_SALIENCE_WEIGHT",
