@@ -43,6 +43,14 @@ def run_codex_app_server_turn(
     """
     from agent.transports.codex_app_server_session import CodexAppServerSession
 
+    # Recall outcome label (innovation #1): capture the turn-start time up
+    # front (world clock — same clock recall stamps ``requested_at`` with) so
+    # the post-turn windowed UPDATE below can scope to this turn. The codex
+    # path bypasses the chat_completions loop and its post-turn block, so the
+    # outcome write is duplicated here.
+    from datetime import datetime as _dt, timezone as _tz
+    _turn_started_at = _dt.now(_tz.utc)
+
     # Lazy session: one CodexAppServerSession per AIAgent instance.
     # Spawned on first turn, reused across turns, closed at AIAgent
     # shutdown (see _cleanup hook).
@@ -161,11 +169,43 @@ def run_codex_app_server_turn(
         except Exception:
             logger.debug("background review spawn raised", exc_info=True)
 
+    # Recall outcome label (innovation #1) — mirror the chat_completions
+    # post-turn block. Best-effort; gated by THOTH_RECALL_OUTCOME_LABEL. Codex
+    # tool iterations don't feed the per-turn tool counters, so the proxy is
+    # the completed/failed/interrupted signal alone here.
+    _codex_completed = not turn.interrupted and turn.error is None
+    try:
+        from substrate import config as _recall_cfg
+        if _recall_cfg.RECALL_OUTCOME_LABEL_ENABLED:
+            from substrate import get_bound_substrate
+            _substrate = get_bound_substrate()
+            if _substrate is not None:
+                from agent.turn_outcome import (
+                    compute_outcome_score,
+                    write_recall_outcome,
+                )
+                import thoth_db
+                _outcome_score = compute_outcome_score(
+                    completed=_codex_completed,
+                    failed=turn.error is not None,
+                    interrupted=turn.interrupted,
+                )
+                thoth_db.run_sync(
+                    write_recall_outcome(
+                        _substrate,
+                        session_id=agent.session_id,
+                        turn_started_at=_turn_started_at,
+                        outcome_score=_outcome_score,
+                    )
+                )
+    except Exception as exc:
+        logger.debug("recall outcome label failed: %s", exc)
+
     return {
         "final_response": turn.final_text,
         "messages": messages,
         "api_calls": 1,  # one app-server "turn" maps to one logical API call
-        "completed": not turn.interrupted and turn.error is None,
+        "completed": _codex_completed,
         "partial": turn.interrupted or turn.error is not None,
         "error": turn.error,
         "codex_thread_id": turn.thread_id,

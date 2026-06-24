@@ -595,7 +595,18 @@ def run_conversation(
     # present are surfaced in an advisory footer so the model cannot
     # over-claim success while the file is actually unchanged on disk.
     agent._turn_failed_file_mutations: Dict[str, Dict[str, Any]] = {}
-    
+
+    # Per-turn tool tallies for the recall outcome proxy (innovation #1).
+    # Reset here, incremented in agent/tool_executor.py as results land,
+    # consumed in the post-turn block to label the recall_log rows this turn
+    # used. ``_turn_started_at`` is the lower bound of the windowed UPDATE —
+    # captured in world time (the same clock recall stamps ``requested_at``
+    # with) so the correlation window lines up.
+    agent._turn_tool_calls = 0
+    agent._turn_tool_failures = 0
+    from datetime import datetime as _dt, timezone as _tz
+    _turn_started_at = _dt.now(_tz.utc)
+
     # Record the execution thread so interrupt()/clear_interrupt() can
     # scope the tool-level interrupt signal to THIS agent's thread only.
     # Must be set before any thread-scoped interrupt syncing.
@@ -4145,6 +4156,42 @@ def run_conversation(
 
     # Clear stream callback so it doesn't leak into future calls
     agent._stream_callback = None
+
+    # Recall outcome label (innovation #1) — stamp this turn's success proxy
+    # onto the recall_log rows the turn consumed, so the offline replay
+    # harness has a label. Best-effort: a failure here must never affect the
+    # response we just produced. Gated by THOTH_RECALL_OUTCOME_LABEL.
+    try:
+        from substrate import config as _recall_cfg
+        if _recall_cfg.RECALL_OUTCOME_LABEL_ENABLED:
+            from substrate import get_bound_substrate
+            _substrate = get_bound_substrate()
+            if _substrate is not None:
+                from agent.turn_outcome import (
+                    compute_outcome_score,
+                    write_recall_outcome,
+                )
+                import thoth_db
+                _outcome_score = compute_outcome_score(
+                    completed=completed,
+                    failed=failed,
+                    interrupted=interrupted,
+                    tool_calls=getattr(agent, "_turn_tool_calls", 0),
+                    tool_failures=getattr(agent, "_turn_tool_failures", 0),
+                    tool_failure_penalty=(
+                        _recall_cfg.RECALL_OUTCOME_TOOL_FAILURE_PENALTY
+                    ),
+                )
+                thoth_db.run_sync(
+                    write_recall_outcome(
+                        _substrate,
+                        session_id=agent.session_id,
+                        turn_started_at=_turn_started_at,
+                        outcome_score=_outcome_score,
+                    )
+                )
+    except Exception as exc:
+        logger.debug("recall outcome label failed: %s", exc)
 
     # Check skill trigger NOW — based on how many tool iterations THIS turn used.
     _should_review_skills = False
