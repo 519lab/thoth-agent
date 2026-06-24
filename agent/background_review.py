@@ -240,6 +240,49 @@ _COMBINED_REVIEW_PROMPT = (
 
 
 
+def should_review_skills_after_turn(agent: Any) -> bool:
+    """Decide whether to fire a background skill review for the just-ended turn.
+
+    Innovation #8 — churn-bias fix.  Replaces the old fixed-cadence nudge
+    (``_iters_since_skill >= _skill_nudge_interval``) with a signal-based
+    trigger so the agent stops emitting low-value skill edits on smooth,
+    uneventful sessions.
+
+    Behaviour (shared by both the chat_completions loop and the codex
+    app-server loop so the two runtimes stay in sync):
+
+    * Skill review is only ever eligible when ``_skill_nudge_interval > 0``
+      and ``skill_manage`` is in ``valid_tool_names`` (unchanged gate).
+    * Signal mode (``_skill_review_signal_mode``, default on / flag
+      ``THOTH_SKILL_REVIEW_SIGNAL_MODE``): fire when ``_skill_review_signal``
+      was set during the turn (a tool error or a failed turn), OR-ed with a
+      RAISED interval fallback (``_skill_review_fallback_interval``) so long,
+      signal-less sessions still get an occasional review.
+    * Signal mode off: restore the pure fixed-interval cadence.
+
+    Side effects mirror the historic trigger: on a fire we reset
+    ``_iters_since_skill`` to 0; the per-turn ``_skill_review_signal`` is
+    always cleared so it can never leak into a later, unrelated turn.
+    """
+    nudge_interval = getattr(agent, "_skill_nudge_interval", 0)
+    should_review = False
+    if nudge_interval > 0 and "skill_manage" in getattr(agent, "valid_tool_names", ()):
+        iters = getattr(agent, "_iters_since_skill", 0)
+        if getattr(agent, "_skill_review_signal_mode", True):
+            fallback = getattr(
+                agent, "_skill_review_fallback_interval", nudge_interval
+            )
+            if getattr(agent, "_skill_review_signal", False) or iters >= fallback:
+                should_review = True
+                agent._iters_since_skill = 0
+        elif iters >= nudge_interval:
+            should_review = True
+            agent._iters_since_skill = 0
+    # Always clear the per-turn signal, fired or not.
+    agent._skill_review_signal = False
+    return should_review
+
+
 def summarize_background_review_actions(
     review_messages: List[Dict],
     prior_snapshot: List[Dict],

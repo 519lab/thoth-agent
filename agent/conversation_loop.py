@@ -29,6 +29,7 @@ from typing import Any, Dict, List, Optional
 
 from agent.anthropic_adapter import _is_oauth_token
 from agent.auxiliary_client import set_runtime_main
+from agent.background_review import should_review_skills_after_turn
 from agent.codex_responses_adapter import _summarize_user_message_for_log
 from agent.display import KawaiiSpinner
 from agent.error_classifier import FailoverReason, classify_api_error
@@ -4193,13 +4194,15 @@ def run_conversation(
     except Exception as exc:
         logger.debug("recall outcome label failed: %s", exc)
 
-    # Check skill trigger NOW — based on how many tool iterations THIS turn used.
-    _should_review_skills = False
-    if (agent._skill_nudge_interval > 0
-            and agent._iters_since_skill >= agent._skill_nudge_interval
-            and "skill_manage" in agent.valid_tool_names):
-        _should_review_skills = True
-        agent._iters_since_skill = 0
+    # Check skill trigger NOW — based on how many tool iterations THIS turn
+    # used and/or whether a review signal fired during the turn (innovation #8).
+    # A failed turn is itself hard evidence worth a review, so fold it into the
+    # in-turn signal before the shared trigger helper evaluates it.  The helper
+    # also resets _iters_since_skill on a fire and always clears the per-turn
+    # signal so it can't leak into a later turn.
+    if failed:
+        agent._skill_review_signal = True
+    _should_review_skills = should_review_skills_after_turn(agent)
 
     # External memory provider: sync the completed turn + queue next prefetch.
     agent._sync_external_memory_for_turn(
