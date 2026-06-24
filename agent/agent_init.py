@@ -1039,6 +1039,11 @@ def init_agent(
     agent._memory_nudge_interval = 10
     agent._turns_since_memory = 0
     agent._iters_since_skill = 0
+    # Per-turn tool-call tallies feeding the recall outcome proxy
+    # (innovation #1). Reset at the top of each turn in run_conversation;
+    # incremented in agent/tool_executor.py as tool results land.
+    agent._turn_tool_calls = 0
+    agent._turn_tool_failures = 0
     if not skip_memory:
         try:
             mem_config = _agent_cfg.get("memory", {})

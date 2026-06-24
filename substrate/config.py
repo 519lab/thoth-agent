@@ -203,6 +203,22 @@ RECALL_REINFORCE_MIN_RELEVANCE = _envfloat(
 # Recall log writer.
 RECALL_LOG_QUEUE_DEPTH = _envint("THOTH_RECALL_LOG_QUEUE_DEPTH", default=1024)
 
+# Recall outcome label (innovation #1). When on, the post-turn block stamps
+# an ``outcome_score`` onto the recall_log rows the turn consumed (windowed
+# UPDATE keyed on session_id + turn-start time), so the offline replay
+# harness has a label to measure ranking against. Kill-switch: set
+# THOTH_RECALL_OUTCOME_LABEL=0 to stop the write entirely (the recall hot
+# path is unaffected either way — the write is post-turn and best-effort).
+RECALL_OUTCOME_LABEL_ENABLED = _envbool(
+    "THOTH_RECALL_OUTCOME_LABEL", default=True
+)
+# Penalty weight on the tool-failure ratio in the v1 outcome proxy. A turn
+# that completed cleanly scores 1.0; each unit of (failures / calls) docks
+# this much before the [0, 1] clamp.
+RECALL_OUTCOME_TOOL_FAILURE_PENALTY = _envfloat(
+    "THOTH_RECALL_OUTCOME_TOOL_FAILURE_PENALTY", default=0.5
+)
+
 # Embedding pipeline.
 #
 # ``RECALL_EMBEDDING_MODEL`` is an *override* knob, not a fallback.
@@ -344,6 +360,8 @@ __all__ = [
     "RECALL_REINFORCE_RATE_LIMIT_PER_MIN",
     "RECALL_REINFORCE_MIN_RELEVANCE",
     "RECALL_LOG_QUEUE_DEPTH",
+    "RECALL_OUTCOME_LABEL_ENABLED",
+    "RECALL_OUTCOME_TOOL_FAILURE_PENALTY",
     "RECALL_EMBEDDING_MODEL",
     "RECALL_EMBEDDING_DIM",
     "RECALL_EMBEDDING_TIMEOUT_MS",
