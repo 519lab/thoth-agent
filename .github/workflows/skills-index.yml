@@ -87,8 +87,17 @@ jobs:
       - name: Stage deployment
         run: |
           mkdir -p _site/docs
-          cp -r landingpage/* _site/
           cp -r website/build/* _site/docs/
+          # llms.txt / llms-full.txt are also published at the site root
+          # (https://thoth.519lab.com/llms.txt) because some
+          # agents and IDE plugins probe the classic root-level path rather
+          # than /docs/llms.txt. Same file, two URLs, one source of truth.
+          if [ -f website/build/llms.txt ]; then
+            cp website/build/llms.txt _site/llms.txt
+          fi
+          if [ -f website/build/llms-full.txt ]; then
+            cp website/build/llms-full.txt _site/llms-full.txt
+          fi
           echo "thoth.519lab.com" > _site/CNAME
 
       - name: Upload artifact
