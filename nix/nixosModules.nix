@@ -66,7 +66,11 @@
       )
     );
 
-    containerName = "hermes-agent";
+    # The managed container's docker/podman name. Thoth-branded; a pre-rename
+    # deployment's `hermes-agent` container is removed in the create path below
+    # so it doesn't linger under host networking. (The `services.hermes-agent`
+    # *option* name is kept for back-compat — renaming it would break configs.)
+    containerName = "thoth-agent";
     containerDataDir = "/data";     # stateDir mount point inside container
     containerHomeDir = "/home/hermes";
 
@@ -941,6 +945,15 @@
             # GC roots so nix-collect-garbage doesn't remove store paths in use
             ${pkgs.nix}/bin/nix-store --add-root ${cfg.stateDir}/.gc-root --indirect -r ${effectivePackage} 2>/dev/null || true
             ${pkgs.nix}/bin/nix-store --add-root ${cfg.stateDir}/.gc-root-entrypoint --indirect -r ${containerEntrypoint} 2>/dev/null || true
+
+            # Back-compat: a pre-rename deployment left a container named
+            # `hermes-agent`. Remove it so it doesn't keep running (host
+            # networking → gateway.lock / port contention) alongside the new
+            # `${containerName}` container. Idempotent; guarded so it never
+            # removes the active container if someone pins the legacy name.
+            if [ "${containerName}" != "hermes-agent" ]; then
+              ${containerBin} rm -f hermes-agent &>/dev/null || true
+            fi
 
             # Check if container needs (re)creation
             NEED_CREATE=false

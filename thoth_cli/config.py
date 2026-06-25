@@ -338,7 +338,12 @@ def get_container_exec_info() -> Optional[dict]:
     # All other exceptions (PermissionError, malformed data, etc.) propagate
 
     backend = info.get("backend", "docker")
-    container_name = info.get("container_name", "hermes-agent")
+    # Default container name is Thoth-branded; the NixOS activation writes the
+    # actual name (now `thoth-agent`) explicitly, so this only applies to
+    # hand-rolled .container-mode files. exec_user defaults to `hermes` — the
+    # container image's OS user is still `hermes` (deferred), independent of the
+    # container name — so this stays correct even for a legacy hermes-agent name.
+    container_name = info.get("container_name", "thoth-agent")
     exec_user = info.get("exec_user", "hermes")
     thoth_bin = info.get("thoth_bin", "/data/current-package/bin/thoth")
 

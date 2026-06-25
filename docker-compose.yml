@@ -4,6 +4,10 @@
 # Usage:
 #   THOTH_UID=$(id -u) THOTH_GID=$(id -g) docker compose up -d
 #
+# Upgrading from a pre-rename deploy (services were named `hermes`/`hermes-dashboard`)?
+# Add --remove-orphans once so the old explicitly-named containers are swept:
+#   THOTH_UID=$(id -u) THOTH_GID=$(id -g) docker compose up -d --remove-orphans
+#
 # Set THOTH_UID / THOTH_GID to the host user that owns ~/.thoth so
 # files created inside the container stay readable/writable on the host.
 # The entrypoint remaps the internal `hermes` user to these values via

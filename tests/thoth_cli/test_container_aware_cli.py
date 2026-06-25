@@ -112,7 +112,10 @@ def test_get_container_exec_info_defaults():
 
         assert info is not None
         assert info["backend"] == "docker"
-        assert info["container_name"] == "hermes-agent"
+        # Thoth-branded default container name (NixOS writes the real name
+        # explicitly; this is the hand-rolled fallback). exec_user stays `hermes`
+        # — the image's OS user is unchanged, independent of the container name.
+        assert info["container_name"] == "thoth-agent"
         assert info["exec_user"] == "hermes"
         assert info["thoth_bin"] == "/data/current-package/bin/thoth"
 
