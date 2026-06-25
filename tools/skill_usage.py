@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import tempfile
+import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -54,6 +55,63 @@ STATE_ACTIVE = "active"
 STATE_STALE = "stale"
 STATE_ARCHIVED = "archived"
 _VALID_STATES = {STATE_ACTIVE, STATE_STALE, STATE_ARCHIVED}
+
+# Default EMA smoothing factor for the efficacy signal (innovation #2).
+# Higher = faster to react to recent turns; 0.2 ≈ a ~9-turn half-life.
+DEFAULT_EFFICACY_ALPHA = 0.2
+
+
+# ---------------------------------------------------------------------------
+# Per-turn skill-load tracking (innovation #2)
+#
+# The bump_use/bump_view helpers fire deep in skill-loading code paths that
+# don't carry the AIAgent handle, so we record "which skills were loaded this
+# turn" in a thread-local set on the turn's execution thread. The conversation
+# loop resets it at turn start and drains it post-turn to attribute the turn's
+# outcome score to the loaded skill(s). Thread-local (not a plain global) so
+# concurrent agents / background forks on other threads don't cross-contaminate.
+# ---------------------------------------------------------------------------
+
+_loaded_this_turn = threading.local()
+
+
+def _loaded_set() -> Set[str]:
+    s = getattr(_loaded_this_turn, "names", None)
+    if s is None:
+        s = set()
+        _loaded_this_turn.names = s
+    return s
+
+
+def note_skill_loaded(skill_name: str) -> None:
+    """Record that *skill_name* was loaded on the current turn's thread.
+
+    Best-effort: a tracking failure never breaks skill loading. Called from the
+    counter-bump helpers (and the recall-footer suggestion path) so the
+    conversation loop can attribute the turn's outcome to the loaded skill(s).
+    """
+    if not skill_name:
+        return
+    try:
+        _loaded_set().add(str(skill_name))
+    except Exception:  # pragma: no cover — thread-local set never realistically raises
+        pass
+
+
+def reset_skills_loaded_this_turn() -> Set[str]:
+    """Clear and return the loaded-skills set for the current thread.
+
+    Called at turn start to drop any residue from a prior turn on this thread.
+    Returns the (now-empty) live set so the caller can hold a reference.
+    """
+    s = _loaded_set()
+    s.clear()
+    return s
+
+
+def skills_loaded_this_turn() -> Set[str]:
+    """Return a snapshot copy of the skills loaded so far on this thread."""
+    return set(_loaded_set())
 
 
 def _skills_dir() -> Path:
@@ -317,6 +375,15 @@ def _empty_record() -> Dict[str, Any]:
         "state": STATE_ACTIVE,
         "pinned": False,
         "archived_at": None,
+        # Skill-efficacy signal (innovation #2). EMA of per-turn outcome
+        # scores attributed to this skill; ``None`` until the first sample
+        # lands. ``efficacy_samples`` counts how many turns fed the EMA so
+        # callers can gate on a minimum confidence. ``eval_verdict`` is the
+        # SkillScout evaluator's verdict (pass | flag | reject | None),
+        # copied in by name when a proposal is promoted to a skill.
+        "efficacy_ema": None,
+        "efficacy_samples": 0,
+        "eval_verdict": None,
     }
 
 
@@ -364,6 +431,26 @@ def save_usage(data: Dict[str, Dict[str, Any]]) -> None:
         logger.debug("Failed to write %s: %s", path, e, exc_info=True)
 
 
+def get_eval_verdict(skill_name: str) -> Optional[str]:
+    """Return the stored evaluator verdict for *skill_name*, or ``None``.
+
+    Dependency-light accessor for ``substrate/skills_match.py``'s hot scan
+    path: a single sidecar read, no DB. Returns one of ``pass`` / ``flag`` /
+    ``reject`` when present and recognised, else ``None``.
+    """
+    if not skill_name:
+        return None
+    rec = load_usage().get(skill_name)
+    if not isinstance(rec, dict):
+        return None
+    v = rec.get("eval_verdict")
+    if isinstance(v, str):
+        v = v.strip().lower()
+        if v in {"pass", "flag", "reject"}:
+            return v
+    return None
+
+
 def get_record(skill_name: str) -> Dict[str, Any]:
     """Return the record for *skill_name*, creating a fresh one if missing."""
     data = load_usage()
@@ -407,6 +494,7 @@ def _mutate(skill_name: str, mutator) -> None:
 
 def bump_view(skill_name: str) -> None:
     """Bump view_count and last_viewed_at. Called from skill_view()."""
+    note_skill_loaded(skill_name)
     def _apply(rec: Dict[str, Any]) -> None:
         rec["view_count"] = int(rec.get("view_count") or 0) + 1
         rec["last_viewed_at"] = _now_iso()
@@ -416,6 +504,7 @@ def bump_view(skill_name: str) -> None:
 def bump_use(skill_name: str) -> None:
     """Bump use_count and last_used_at. Called when a skill is actively used
     (e.g. loaded into the prompt path or referenced from an assistant turn)."""
+    note_skill_loaded(skill_name)
     def _apply(rec: Dict[str, Any]) -> None:
         rec["use_count"] = int(rec.get("use_count") or 0) + 1
         rec["last_used_at"] = _now_iso()
@@ -438,6 +527,81 @@ def mark_agent_created(skill_name: str) -> None:
     """
     def _apply(rec: Dict[str, Any]) -> None:
         rec["created_by"] = "agent"
+    _mutate(skill_name, _apply)
+
+
+def record_efficacy(
+    skill_name: str,
+    outcome_score: float,
+    *,
+    alpha: float = DEFAULT_EFFICACY_ALPHA,
+) -> None:
+    """Fold a turn's outcome score into a skill's efficacy EMA (innovation #2).
+
+    ``outcome_score`` is the per-turn success proxy from
+    ``agent.turn_outcome.compute_outcome_score`` (a float in [0, 1]). We keep a
+    plain exponential moving average:
+
+        ema_0     = score_0
+        ema_{n+1} = alpha * score + (1 - alpha) * ema_n
+
+    so the first sample seeds the EMA outright and later samples decay the old
+    value. ``efficacy_samples`` counts contributing turns so curation/ranking
+    can require a minimum confidence before acting.
+
+    Best-effort and NEVER raises — efficacy is an observability signal, never
+    load-bearing for the turn. Out-of-range scores are clamped to [0, 1]; a
+    nonsense ``alpha`` falls back to the default. Bundled/hub skills are never
+    recorded (``_mutate`` enforces the provenance gate).
+    """
+    try:
+        score = float(outcome_score)
+    except (TypeError, ValueError):
+        return
+    if score < 0.0:
+        score = 0.0
+    elif score > 1.0:
+        score = 1.0
+
+    try:
+        a = float(alpha)
+    except (TypeError, ValueError):
+        a = DEFAULT_EFFICACY_ALPHA
+    if not (0.0 < a <= 1.0):
+        a = DEFAULT_EFFICACY_ALPHA
+
+    def _apply(rec: Dict[str, Any]) -> None:
+        prev = rec.get("efficacy_ema")
+        try:
+            samples = int(rec.get("efficacy_samples") or 0)
+        except (TypeError, ValueError):
+            samples = 0
+        if prev is None or samples <= 0:
+            rec["efficacy_ema"] = score
+        else:
+            try:
+                prev_f = float(prev)
+            except (TypeError, ValueError):
+                prev_f = score
+            rec["efficacy_ema"] = a * score + (1.0 - a) * prev_f
+        rec["efficacy_samples"] = samples + 1
+
+    _mutate(skill_name, _apply)
+
+
+def set_eval_verdict(skill_name: str, verdict: Optional[str]) -> None:
+    """Stamp the SkillScout evaluator verdict onto a skill's usage record.
+
+    Called when a proposal is promoted to a skill so ``skills_match`` can join
+    the verdict by name and weight ranking (pass 1.0 / flag 0.7 / reject
+    excluded). ``verdict`` is one of ``pass`` / ``flag`` / ``reject`` / None;
+    anything else is normalised to ``None``. Best-effort.
+    """
+    norm = (str(verdict).strip().lower() if verdict is not None else "") or None
+    if norm not in {"pass", "flag", "reject", None}:
+        norm = None
+    def _apply(rec: Dict[str, Any]) -> None:
+        rec["eval_verdict"] = norm
     _mutate(skill_name, _apply)
 
 

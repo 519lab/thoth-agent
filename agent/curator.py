@@ -58,6 +58,17 @@ DEFAULT_MIN_IDLE_HOURS = 2
 DEFAULT_STALE_AFTER_DAYS = 30
 DEFAULT_ARCHIVE_AFTER_DAYS = 90
 
+# Efficacy-based curation (innovation #2). A *mature* skill (enough activity,
+# old enough) whose efficacy EMA sits below this floor is archived regardless
+# of recency — a skill that keeps getting loaded into turns that fail is worse
+# than a skill that's merely idle. ``EFFICACY_MIN_SAMPLES`` is the confidence
+# gate: don't act on an EMA built from too few turns. ``EFFICACY_MATURE_ACTIVITY``
+# is the activity floor below which we never apply the efficacy path (a skill
+# loaded once or twice hasn't earned a verdict).
+DEFAULT_EFFICACY_FLOOR = 0.35
+DEFAULT_EFFICACY_MIN_SAMPLES = 5
+DEFAULT_EFFICACY_MATURE_ACTIVITY = 5
+
 
 # ---------------------------------------------------------------------------
 # .curator_state — persistent scheduler + status
@@ -183,6 +194,38 @@ def get_archive_after_days() -> int:
         return DEFAULT_ARCHIVE_AFTER_DAYS
 
 
+def efficacy_archival_enabled() -> bool:
+    """Whether efficacy-based archival is active (innovation #2).
+
+    Default OFF — the signal ships report-only first. Driven by the
+    ``THOTH_SKILL_EFFICACY_ENABLED`` env kill-switch (truthy = on); the
+    ``curator.efficacy_floor`` config block tunes the threshold once enabled.
+    Env wins over config so an operator can flip it without editing config.yaml.
+    """
+    env = (os.environ.get("THOTH_SKILL_EFFICACY_ENABLED") or "").strip().lower()
+    if env in {"1", "true", "yes", "on"}:
+        return True
+    if env in {"0", "false", "no", "off"}:
+        return False
+    return bool(_load_config().get("efficacy_enabled", False))
+
+
+def get_efficacy_floor() -> float:
+    cfg = _load_config()
+    try:
+        return float(cfg.get("efficacy_floor", DEFAULT_EFFICACY_FLOOR))
+    except (TypeError, ValueError):
+        return DEFAULT_EFFICACY_FLOOR
+
+
+def get_efficacy_min_samples() -> int:
+    cfg = _load_config()
+    try:
+        return int(cfg.get("efficacy_min_samples", DEFAULT_EFFICACY_MIN_SAMPLES))
+    except (TypeError, ValueError):
+        return DEFAULT_EFFICACY_MIN_SAMPLES
+
+
 # ---------------------------------------------------------------------------
 # Idle / interval check
 # ---------------------------------------------------------------------------
@@ -264,7 +307,23 @@ def apply_automatic_transitions(now: Optional[datetime] = None) -> Dict[str, int
     stale_cutoff = now - timedelta(days=get_stale_after_days())
     archive_cutoff = now - timedelta(days=get_archive_after_days())
 
-    counts = {"marked_stale": 0, "archived": 0, "reactivated": 0, "checked": 0}
+    # Efficacy-based archival (innovation #2): only when explicitly enabled
+    # (report-only by default). A mature skill whose efficacy EMA is below the
+    # floor is archived regardless of recency, alongside the inactivity path.
+    efficacy_on = efficacy_archival_enabled()
+    efficacy_floor = get_efficacy_floor()
+    efficacy_min_samples = get_efficacy_min_samples()
+    # Maturity gate: enough total activity AND old enough that the EMA reflects
+    # real use, not a cold-start artifact. Reuse the stale window as the age bar.
+    mature_age_cutoff = stale_cutoff
+
+    counts = {
+        "marked_stale": 0,
+        "archived": 0,
+        "archived_low_efficacy": 0,
+        "reactivated": 0,
+        "checked": 0,
+    }
 
     for row in _u.agent_created_report():
         counts["checked"] += 1
@@ -281,6 +340,26 @@ def apply_automatic_transitions(now: Optional[datetime] = None) -> Dict[str, int
 
         current = row.get("state", _u.STATE_ACTIVE)
 
+        # Efficacy path FIRST so a chronically-failing-but-recently-used skill
+        # is archived even though the inactivity cutoffs wouldn't touch it.
+        # Inactivity stays as the fallback below.
+        if (
+            efficacy_on
+            and current != _u.STATE_ARCHIVED
+            and _is_low_efficacy_mature(
+                row,
+                floor=efficacy_floor,
+                min_samples=efficacy_min_samples,
+                mature_age_cutoff=mature_age_cutoff,
+                created_anchor=anchor,
+            )
+        ):
+            ok, _msg = _u.archive_skill(name)
+            if ok:
+                counts["archived"] += 1
+                counts["archived_low_efficacy"] += 1
+            continue
+
         if anchor <= archive_cutoff and current != _u.STATE_ARCHIVED:
             ok, _msg = _u.archive_skill(name)
             if ok:
@@ -294,6 +373,57 @@ def apply_automatic_transitions(now: Optional[datetime] = None) -> Dict[str, int
             counts["reactivated"] += 1
 
     return counts
+
+
+def _is_low_efficacy_mature(
+    row: Dict[str, Any],
+    *,
+    floor: float,
+    min_samples: int,
+    mature_age_cutoff: datetime,
+    created_anchor: datetime,
+) -> bool:
+    """Return True when a skill is mature AND under the efficacy floor.
+
+    "Mature" = enough observed activity (``activity_count >=
+    DEFAULT_EFFICACY_MATURE_ACTIVITY``), enough efficacy samples to trust the
+    EMA (``efficacy_samples >= min_samples``), and old enough that the EMA isn't
+    a cold-start artifact (created before ``mature_age_cutoff``). Skills missing
+    an EMA (never attributed) are never archived on this path — absence of
+    signal is not a low score.
+    """
+    ema = row.get("efficacy_ema")
+    if ema is None:
+        return False
+    try:
+        ema_f = float(ema)
+    except (TypeError, ValueError):
+        return False
+
+    try:
+        samples = int(row.get("efficacy_samples") or 0)
+    except (TypeError, ValueError):
+        samples = 0
+    if samples < max(1, min_samples):
+        return False
+
+    try:
+        activity = int(row.get("activity_count") or 0)
+    except (TypeError, ValueError):
+        activity = 0
+    if activity < DEFAULT_EFFICACY_MATURE_ACTIVITY:
+        return False
+
+    # Age gate: the skill must have existed long enough for the EMA to mean
+    # something. ``created_anchor`` is the latest-activity-or-created anchor the
+    # caller already computed; fall back to created_at for the age check.
+    created = _parse_iso(row.get("created_at")) or created_anchor
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    if created > mature_age_cutoff:
+        return False
+
+    return ema_f < floor
 
 
 # ---------------------------------------------------------------------------
