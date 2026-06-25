@@ -67,6 +67,27 @@ def test_detect_install_mode_function_exists() -> None:
     )
 
 
+def test_update_uses_hard_reset_not_stash_replay() -> None:
+    """The update path must hard-reset the (disposable) code dir to upstream
+    rather than stash/replay. Stash-apply on a diverged checkout produces
+    catastrophic modify/delete conflicts that leave the tree broken (#209)."""
+    body = _extract_function_body("clone_repo")
+    assert 'git reset --hard "origin/$BRANCH"' in body, (
+        "update path must `git reset --hard origin/$BRANCH` — the code dir is "
+        "managed/disposable, so a clean reset is conflict-proof."
+    )
+    # The fragile stash/replay strategy must be gone.
+    assert "git stash apply" not in body, (
+        "git stash apply must not be used — it caused #209 (modify/delete "
+        "conflict storm on a diverged checkout)."
+    )
+    # Local changes must be backed up before the reset, not silently dropped.
+    assert ".install-backup" in body and "git diff HEAD" in body, (
+        "update path must back up local code-dir changes to "
+        "THOTH_HOME/.install-backup before resetting."
+    )
+
+
 def test_run_setup_wizard_skips_when_provider_already_configured() -> None:
     """Update mode: don't re-prompt the wizard if .env already has an
     API key for one of the supported providers."""
