@@ -100,17 +100,26 @@ async def get_observations_for_query(
         return []
     async with _acquire(conn) as c:
         if query_embedding is not None:
-            rows = await c.fetch(
-                """
-                SELECT * FROM l4_observations
-                 WHERE kind <> 'coherence'
-                   AND embedding IS NOT NULL
-                 ORDER BY embedding <=> $1::vector
-                 LIMIT $2
-                """,
-                query_embedding,
-                limit,
-            )
+            # Exact nearest-neighbour scan — see the matching note in
+            # substrate.l3.store.get_patterns_for_query. The ivfflat index on
+            # ``embedding`` is approximate (default ``ivfflat.probes = 1``) and
+            # can MISS the true nearest row on this small table, dropping the L4
+            # header. ``SET LOCAL`` forces an exact scan for this transaction
+            # only. (innovation #3)
+            async with c.transaction():
+                await c.execute("SET LOCAL enable_indexscan = off")
+                await c.execute("SET LOCAL enable_indexonlyscan = off")
+                rows = await c.fetch(
+                    """
+                    SELECT * FROM l4_observations
+                     WHERE kind <> 'coherence'
+                       AND embedding IS NOT NULL
+                     ORDER BY embedding <=> $1::vector
+                     LIMIT $2
+                    """,
+                    query_embedding,
+                    limit,
+                )
         else:
             rows = await c.fetch(
                 """

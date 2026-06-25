@@ -90,16 +90,27 @@ async def get_patterns_for_query(
         return []
     async with _acquire(conn) as c:
         if query_embedding is not None:
-            rows = await c.fetch(
-                """
-                SELECT * FROM l3_patterns
-                 WHERE embedding IS NOT NULL
-                 ORDER BY embedding <=> $1::vector
-                 LIMIT $2
-                """,
-                query_embedding,
-                limit,
-            )
+            # Exact nearest-neighbour scan. The ``embedding`` column carries an
+            # ivfflat (approximate) index, which with the default
+            # ``ivfflat.probes = 1`` probes a single list and can MISS the true
+            # nearest row on a small/sparse table — surfacing as an empty L3
+            # header even though a matching pattern exists. ``l3_patterns`` is a
+            # small curated table (abstractions, not raw slices), so an exact
+            # scan is cheap and correct. ``SET LOCAL`` scopes the planner hint to
+            # this transaction only. (innovation #3)
+            async with c.transaction():
+                await c.execute("SET LOCAL enable_indexscan = off")
+                await c.execute("SET LOCAL enable_indexonlyscan = off")
+                rows = await c.fetch(
+                    """
+                    SELECT * FROM l3_patterns
+                     WHERE embedding IS NOT NULL
+                     ORDER BY embedding <=> $1::vector
+                     LIMIT $2
+                    """,
+                    query_embedding,
+                    limit,
+                )
         else:
             rows = await c.fetch(
                 """
