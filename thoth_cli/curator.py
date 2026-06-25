@@ -463,6 +463,83 @@ def _cmd_rollback(args) -> int:
     return 1
 
 
+def _cmd_skills(args) -> int:
+    """Read-only skill report. With ``--by-efficacy``, rank agent-created
+    skills by their efficacy EMA (innovation #2) — the per-turn success proxy
+    folded over the turns that loaded each skill. Never mutates anything."""
+    from agent import curator
+    from tools import skill_usage
+
+    rows = skill_usage.agent_created_report()
+    if not rows:
+        print("curator: no agent-created skills")
+        return 0
+
+    by_efficacy = bool(getattr(args, "by_efficacy", False))
+    if not by_efficacy:
+        # Default ordering: most-active first, mirroring `status`.
+        rows = sorted(
+            rows,
+            key=lambda r: (r.get("activity_count") or 0, r.get("last_activity_at") or ""),
+            reverse=True,
+        )
+    else:
+        # Rank by efficacy. Skills with no EMA yet (never attributed) sort last
+        # so the ones with a real signal — especially the low scorers the
+        # operator cares about — float to the top.
+        def _eff_key(r):
+            ema = r.get("efficacy_ema")
+            has = ema is not None
+            try:
+                ema_f = float(ema) if has else 1.0
+            except (TypeError, ValueError):
+                ema_f = 1.0
+            # (has_signal first, then ascending EMA so worst is at the top)
+            return (0 if has else 1, ema_f)
+
+        rows = sorted(rows, key=_eff_key)
+        floor = curator.get_efficacy_floor()
+        min_samples = curator.get_efficacy_min_samples()
+        enabled = curator.efficacy_archival_enabled()
+        print(
+            f"efficacy report  ·  floor={floor:.2f}  "
+            f"min_samples={min_samples}  "
+            f"archival={'ON' if enabled else 'OFF (report-only)'}"
+        )
+
+    print(f"\nagent-created skills: {len(rows)} total\n")
+    header = (
+        f"  {'name':40s}  {'state':8s}  {'efficacy':>8s}  "
+        f"{'samples':>7s}  {'verdict':>7s}  {'activity':>8s}"
+    )
+    print(header)
+    print("  " + "-" * (len(header) - 2))
+    for r in rows:
+        ema = r.get("efficacy_ema")
+        try:
+            ema_label = f"{float(ema):.3f}" if ema is not None else "—"
+        except (TypeError, ValueError):
+            ema_label = "—"
+        verdict = r.get("eval_verdict") or "—"
+        flag = ""
+        if by_efficacy and ema is not None:
+            try:
+                if float(ema) < curator.get_efficacy_floor():
+                    flag = "  ⚠ below floor"
+            except (TypeError, ValueError):
+                pass
+        print(
+            f"  {r['name']:40s}  "
+            f"{r.get('state', 'active'):8s}  "
+            f"{ema_label:>8s}  "
+            f"{int(r.get('efficacy_samples') or 0):7d}  "
+            f"{verdict:>7s}  "
+            f"{int(r.get('activity_count') or 0):8d}"
+            f"{flag}"
+        )
+    return 0
+
+
 def _cmd_list_archived(args) -> int:
     """List archived (recoverable) skills."""
     from tools import skill_usage
@@ -524,6 +601,17 @@ def register_cli(parent: argparse.ArgumentParser) -> None:
     p_restore = subs.add_parser("restore", help="Restore an archived skill")
     p_restore.add_argument("skill", help="Skill name")
     p_restore.set_defaults(func=_cmd_restore)
+
+    p_skills = subs.add_parser(
+        "skills",
+        help="Read-only skill report (use --by-efficacy to rank by efficacy EMA)",
+    )
+    p_skills.add_argument(
+        "--by-efficacy", dest="by_efficacy", action="store_true",
+        help="Rank agent-created skills by their efficacy EMA (innovation #2); "
+             "skills with no signal yet sort last. Report only — no mutations.",
+    )
+    p_skills.set_defaults(func=_cmd_skills)
 
     subs.add_parser("list-archived", help="List archived skills") \
         .set_defaults(func=_cmd_list_archived)
