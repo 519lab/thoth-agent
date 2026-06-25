@@ -223,6 +223,35 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
     )
     recall_validate.set_defaults(func=_cmd_inspect_recall_validate)
 
+    # Innovation #1: offline recall-replay eval harness. REPORT ONLY — sweeps
+    # candidate weight vectors over the labelled recall log and ranks them by
+    # the v1 outcome-separation metric; never applies weights.
+    recall_replay = recall_sub.add_parser(
+        "replay",
+        help="Replay labelled recalls under a weight grid (report only)",
+        description="Offline A/B oracle: re-rank already-logged recalls under "
+        "a grid of salience/recency weights and rank them by kept-vs-dropped "
+        "outcome separation. Reads the outcome_score label (innovation #1). "
+        "REPORT ONLY — never applies the winning weights.",
+    )
+    recall_replay.add_argument(
+        "--since",
+        default=None,
+        help="Only replay recalls newer than this (e.g. 7d, 24h, 90m)",
+    )
+    recall_replay.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max labelled recall rows to load (newest first)",
+    )
+    recall_replay.add_argument(
+        "--grid",
+        default="default",
+        help="Weight grid to sweep (currently only 'default')",
+    )
+    recall_replay.set_defaults(func=_cmd_inspect_recall_replay)
+
     # ── Phase D: L1 + Parser subtrees ─────────────────────────────────
     l1_p = substrate_sub.add_parser(
         "l1", help="Inspect L1 (entities + relationships)"
@@ -441,6 +470,42 @@ def _cmd_inspect_recall_validate(args: argparse.Namespace) -> int:
             conn, query=args.query, token_budget=args.token_budget
         )
     )
+
+
+def _cmd_inspect_recall_replay(args: argparse.Namespace) -> int:
+    from substrate.recall.cli_inspect import replay
+
+    since = _parse_since(getattr(args, "since", None))
+    return _run_inspect(
+        lambda conn: replay(
+            conn, since=since, limit=args.limit, grid=args.grid
+        )
+    )
+
+
+def _parse_since(raw: "str | None"):
+    """Parse a ``--since`` duration like ``7d`` / ``24h`` / ``90m`` into a UTC
+    cutoff datetime. Returns ``None`` for an unset/blank value (no cutoff)."""
+    if not raw:
+        return None
+    from datetime import datetime, timedelta, timezone
+
+    raw = raw.strip().lower()
+    units = {"d": "days", "h": "hours", "m": "minutes", "s": "seconds"}
+    unit = raw[-1]
+    if unit in units:
+        try:
+            qty = float(raw[:-1])
+        except ValueError:
+            print(f"warning: bad --since {raw!r}; ignoring", file=sys.stderr)
+            return None
+        delta = timedelta(**{units[unit]: qty})
+        return datetime.now(timezone.utc) - delta
+    print(
+        f"warning: bad --since {raw!r} (expected e.g. 7d/24h/90m); ignoring",
+        file=sys.stderr,
+    )
+    return None
 
 
 def _cmd_inspect_l1_entities(args: argparse.Namespace) -> int:

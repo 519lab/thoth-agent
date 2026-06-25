@@ -476,6 +476,23 @@ async def recall(
     extra_meta.update(
         empty_reason=empty_reason,
         embedding_path=embedding_path,
+        # Per-candidate record for the offline recall-replay harness
+        # (innovation #1). The full candidate objects aren't persisted
+        # anywhere, so the replay sweep has nothing to re-rank against unless
+        # we stash the ranking inputs here. JSONB metadata only — no schema
+        # change. ``relevance`` is the fixed similarity term (the harness
+        # sweeps salience/recency weights against it); ``path`` records which
+        # similarity path produced it (semantic vs keyword).
+        candidates=[
+            {
+                "slice_id": str(sc.candidate.slice_id),
+                "salience": float(sc.candidate.salience_score),
+                "event_time": sc.candidate.event_time_world.isoformat(),
+                "relevance": float(sc.relevance),
+                "path": sc.path,
+            }
+            for sc in kept
+        ],
         # "Why injected" — the score + path for each composed slice, so
         # `recall recent` / `recall validate` can explain the block even
         # when provenance isn't shown inline.

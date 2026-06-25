@@ -217,6 +217,9 @@ _EXPECTED_REVISIONS = frozenset(
         #   token-usage sink (operational telemetry, never read by the awareness
         #   loop). Surfaced in ``thoth substrate health``.
         "20260528_0024",
+        # - ``20260624_0025`` — recall outcome label (innovation #1: recall-replay
+        #   eval harness). Adds nullable substrate_recall_log.outcome_score.
+        "20260624_0025",
     }
 )
 

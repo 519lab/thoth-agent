@@ -372,6 +372,17 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
                 result_preview = _err_text[:200] if len(_err_text) > 200 else _err_text
                 logger.warning("Tool %s returned error (%.2fs): %s", function_name, tool_duration, result_preview)
 
+            # Per-turn tool tallies feeding the recall outcome proxy
+            # (innovation #1). Guardrail-blocked calls never ran, so they
+            # count as neither a call nor a failure (mirrors the file-mutation
+            # verifier's `not blocked` gate just below).
+            if not blocked:
+                agent._turn_tool_calls = getattr(agent, "_turn_tool_calls", 0) + 1
+                if is_error:
+                    agent._turn_tool_failures = (
+                        getattr(agent, "_turn_tool_failures", 0) + 1
+                    )
+
             # Track file-mutation outcome for the turn-end verifier.
             # `blocked` calls never actually ran — don't let a guardrail
             # block count as either a failure or a success.
