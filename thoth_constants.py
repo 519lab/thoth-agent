@@ -424,6 +424,30 @@ def get_env_path() -> Path:
     return get_thoth_home() / ".env"
 
 
+def get_workspace_dir() -> Path:
+    """Return the agent's default working space under THOTH_HOME.
+
+    This is where the agent operates by default (its "active root") when the
+    user hasn't pointed it at a specific project — distinct from config/state,
+    which live directly under THOTH_HOME.
+    """
+    return get_thoth_home() / "workspace"
+
+
+def ensure_workspace_dir() -> Path:
+    """Return :func:`get_workspace_dir`, creating it if missing.
+
+    Best-effort: never raises during startup. If the directory can't be created
+    (e.g. a read-only home), falls back to THOTH_HOME so the agent still runs.
+    """
+    ws = get_workspace_dir()
+    try:
+        ws.mkdir(parents=True, exist_ok=True)
+        return ws
+    except OSError:
+        return get_thoth_home()
+
+
 # ─── Network Preferences ─────────────────────────────────────────────────────
 
 
