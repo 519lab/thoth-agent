@@ -1961,11 +1961,15 @@ def _launchd_user_home() -> Path:
 def get_launchd_plist_path() -> Path:
     """Return the launchd plist path, scoped per profile.
 
-    Default ``~/.hermes`` → ``ai.hermes.gateway.plist`` (backward compatible).
-    Profile ``~/.hermes/profiles/coder`` → ``ai.hermes.gateway-coder.plist``.
+    Default ``~/.thoth`` → ``ai.thoth.gateway.plist``. Profile
+    ``~/.thoth/profiles/coder`` → ``ai.thoth.gateway-coder.plist``. The old
+    ``ai.hermes.gateway*.plist`` filenames written by pre-rename Hermes installs
+    are listed in :func:`_legacy_launchd_plist_paths_for_profile` so
+    install/uninstall/refresh can delete the orphaned FILE alongside the
+    ``launchctl bootout`` of its label.
     """
     suffix = _profile_suffix()
-    name = f"ai.hermes.gateway-{suffix}" if suffix else "ai.hermes.gateway"
+    name = f"ai.thoth.gateway-{suffix}" if suffix else "ai.thoth.gateway"
     return _launchd_user_home() / "Library" / "LaunchAgents" / f"{name}.plist"
 
 def _detect_venv_dir() -> Path | None:
@@ -2868,6 +2872,36 @@ def _bootout_legacy_launchd_agent() -> None:
             pass
 
 
+def _legacy_launchd_plist_paths_for_profile() -> list[Path]:
+    """Return the OLD launchd plist FILE paths for the CURRENT profile.
+
+    Pre-rename Hermes installs wrote ``ai.hermes.gateway*.plist`` into
+    ``~/Library/LaunchAgents`` next to the renamed ``ai.thoth.gateway*.plist``.
+    The plist basename matches its label, so this mirrors
+    :func:`_legacy_launchd_labels_for_profile` to locate the orphaned FILE(s).
+    """
+    launch_agents = _launchd_user_home() / "Library" / "LaunchAgents"
+    return [launch_agents / f"{label}.plist" for label in _legacy_launchd_labels_for_profile()]
+
+
+def _remove_legacy_launchd_plist() -> None:
+    """Best-effort removal of the orphaned pre-rename ``ai.hermes.gateway`` plist FILE(s).
+
+    The loaded label is unloaded by :func:`_bootout_legacy_launchd_agent`; this
+    deletes the leftover plist file so a stale definition can't be re-bootstrapped
+    after the rename. Mirrors that helper's defensive, never-raising philosophy:
+    a missing file (the common case) is silently ignored.
+    """
+    for legacy_path in _legacy_launchd_plist_paths_for_profile():
+        try:
+            if legacy_path.exists():
+                legacy_path.unlink()
+                print(f"✓ Removed legacy launchd plist {legacy_path}")
+        except Exception:
+            # Never let legacy migration break install/uninstall.
+            pass
+
+
 def generate_launchd_plist() -> str:
     python_path = get_python_path()
     working_dir = str(PROJECT_ROOT)
@@ -2983,6 +3017,7 @@ def refresh_launchd_plist_if_needed() -> bool:
     # Best-effort: bootout any orphaned pre-rename ai.hermes.gateway agent for
     # this profile so it does not double-run alongside the renamed label.
     _bootout_legacy_launchd_agent()
+    _remove_legacy_launchd_plist()
     # Bootout/bootstrap so launchd picks up the new definition
     subprocess.run(["launchctl", "bootout", f"{_launchd_domain()}/{label}"], check=False, timeout=90)
     subprocess.run(["launchctl", "bootstrap", _launchd_domain(), str(plist_path)], check=False, timeout=30)
@@ -3010,9 +3045,10 @@ def launchd_install(force: bool = False):
     # Best-effort: bootout any orphaned pre-rename ai.hermes.gateway agent for
     # this profile so it does not double-run alongside the renamed label.
     _bootout_legacy_launchd_agent()
+    _remove_legacy_launchd_plist()
 
     subprocess.run(["launchctl", "bootstrap", _launchd_domain(), str(plist_path)], check=True, timeout=30)
-    
+
     print()
     print("✓ Service installed and loaded!")
     print()
@@ -3026,8 +3062,10 @@ def launchd_uninstall():
     label = get_launchd_label()
     subprocess.run(["launchctl", "bootout", f"{_launchd_domain()}/{label}"], check=False, timeout=90)
     # Best-effort: also bootout any orphaned pre-rename ai.hermes.gateway agent
-    # for this profile so an old install is fully removed.
+    # for this profile and delete its leftover plist FILE so an old install is
+    # fully removed.
     _bootout_legacy_launchd_agent()
+    _remove_legacy_launchd_plist()
 
     if plist_path.exists():
         plist_path.unlink()
