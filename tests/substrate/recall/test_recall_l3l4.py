@@ -159,3 +159,111 @@ async def test_recall_l4_header_excludes_coherence(booted, monkeypatch):
     proj = await recall(booted, "postgresql migration")
     # Coherence observation is excluded by kind, so no self-model header from it.
     assert "## Self-model" not in proj.text
+
+
+# ---------------------------------------------------------------------------
+# L3/L4 semantic ordering (innovation #3). When THOTH_RECALL_L3L4_SEMANTIC is
+# on and a query embedding exists, the header stores order patterns/observations
+# by cosine distance over the backfilled embedding column instead of trigram +
+# salience. These exercise the new query_embedding path on get_patterns_for_query
+# / get_observations_for_query directly against PG.
+#
+# DB-BACKED — written but NOT run by the innovation agent (a live Postgres on
+# 5433 must not be touched). Run under the normal test harness.
+# ---------------------------------------------------------------------------
+
+
+async def _embed(text: str) -> list[float]:
+    from substrate.recall import embeddings
+
+    return await embeddings.embed_query(text)
+
+
+@pytest.mark.asyncio
+async def test_get_patterns_semantic_orders_by_embedding(booted):
+    """With a query embedding, patterns rank by cosine distance — the row whose
+    embedding is closest to the query embedding comes first, regardless of
+    trigram overlap with the query string."""
+    near = "the postgresql migration plan spans several phases"
+    far = "the user prefers terse answers in chat"
+    near_id, _ = await l3_store.upsert_pattern(near, "generalization")
+    far_id, _ = await l3_store.upsert_pattern(far, "theme")
+    # Embed each pattern statement so the semantic path has rows to order.
+    await l3_store.set_embedding(near_id, await _embed(near))
+    await l3_store.set_embedding(far_id, await _embed(far))
+
+    # Query embedding matches the "near" statement (mock embeddings are
+    # deterministic per-string), so it must sort first under semantic ordering.
+    q_emb = await _embed(near)
+    rows = await l3_store.get_patterns_for_query(
+        "anything", limit=5, query_embedding=q_emb
+    )
+    assert rows, "semantic path returned no embedded patterns"
+    assert rows[0].id == near_id
+
+
+@pytest.mark.asyncio
+async def test_get_patterns_trigram_fallback_when_no_embedding(booted):
+    """No query embedding → the trigram + salience path (back-compat). A row
+    with no embedding is still reachable via trigram match."""
+    await l3_store.upsert_pattern(
+        "the postgresql migration plan spans several phases", "generalization"
+    )
+    rows = await l3_store.get_patterns_for_query(
+        "postgresql migration plan", limit=5
+    )
+    assert rows
+    assert any("postgresql migration" in r.statement for r in rows)
+
+
+@pytest.mark.asyncio
+async def test_get_observations_semantic_orders_by_embedding(booted):
+    """L4 mirror of the L3 semantic-ordering test."""
+    near = "tends to overestimate postgresql migration risk"
+    far = "favours recent context over older facts"
+    near_id = await l4_store.record_observation("calibration", "self", near)
+    far_id = await l4_store.record_observation("bias", "self", far)
+    await l4_store.set_embedding(near_id, await _embed(near))
+    await l4_store.set_embedding(far_id, await _embed(far))
+
+    q_emb = await _embed(near)
+    rows = await l4_store.get_observations_for_query(
+        "anything", limit=5, query_embedding=q_emb
+    )
+    assert rows, "semantic path returned no embedded observations"
+    assert rows[0].id == near_id
+
+
+@pytest.mark.asyncio
+async def test_get_observations_semantic_excludes_coherence(booted):
+    """The coherence vital sign is excluded from the semantic path too, even
+    when it carries an embedding."""
+    coh = "coherence steady across the postgresql migration work"
+    await l4_store.upsert_coherence(coh, score=0.9)
+    # Give the coherence singleton an embedding so only the kind filter can
+    # exclude it.
+    obs = await l4_store.latest_coherence()
+    await l4_store.set_embedding(obs.id, await _embed(coh))
+
+    rows = await l4_store.get_observations_for_query(
+        "postgresql migration", limit=5, query_embedding=await _embed(coh)
+    )
+    assert all(o.kind != "coherence" for o in rows)
+
+
+@pytest.mark.asyncio
+async def test_recall_l3_semantic_header_when_flag_on(booted, monkeypatch):
+    """End-to-end: with the semantic flag on and embedded patterns, recall()
+    threads the query embedding into the L3 header and still renders it."""
+    import substrate.config as cfg
+    monkeypatch.setattr(cfg, "RECALL_INCLUDE_L3", True)
+    monkeypatch.setattr(cfg, "RECALL_L3L4_SEMANTIC", True)
+
+    stmt = "the postgresql migration plan spans several phases"
+    pid, _ = await l3_store.upsert_pattern(stmt, "generalization")
+    await l3_store.set_embedding(pid, await _embed(stmt))
+    await _seed_passed_slice(booted, "we discussed the postgresql migration today")
+
+    proj = await recall(booted, "postgresql migration plan")
+    assert "## Patterns" in proj.text
+    assert "postgresql migration plan" in proj.text

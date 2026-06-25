@@ -341,6 +341,20 @@ async def recall(
         recency_half_life_hours=_cfg.RECALL_RECENCY_HALF_LIFE_HOURS,
     )
 
+    # 3z. Optional LLM-judge rerank of the top-K (innovation #3). Inserted
+    # after the scalar ranker and before the relevance floor so the judge sees
+    # the strongest candidates and the floor then prunes whatever survives the
+    # reorder. Gated behind RECALL_RERANK (default off); on ANY failure rerank()
+    # returns the scored order unchanged — recall never raises.
+    if _cfg.RECALL_RERANK and scored:
+        from substrate.recall.rerank import rerank
+
+        judge = _build_recall_reranker_judge(substrate)
+        if judge is not None:
+            k = max(0, min(_cfg.RECALL_RERANK_K, len(scored)))
+            head = await rerank(query, scored[:k], judge=judge)
+            scored = head + scored[k:]
+
     # 3a0. Coherence pin — when the substrate's self-assessed identity
     # health dips, raise the relevance floor so only high-confidence
     # context reaches the foreground (low coherence => thin, precise
@@ -391,14 +405,14 @@ async def recall(
             _log.debug("recall L1 header fetch failed: %s", exc)
     if _cfg.RECALL_INCLUDE_L3 and has_query:
         try:
-            h = await _build_l3_header(query)
+            h = await _build_l3_header(query, query_embedding=query_embedding)
             if h:
                 headers.append(h)
         except Exception as exc:  # pragma: no cover — defensive
             _log.debug("recall L3 header fetch failed: %s", exc)
     if _cfg.RECALL_INCLUDE_L4 and has_query:
         try:
-            h = await _build_l4_header(query)
+            h = await _build_l4_header(query, query_embedding=query_embedding)
             if h:
                 headers.append(h)
         except Exception as exc:  # pragma: no cover — defensive
@@ -513,6 +527,71 @@ async def recall(
     return proj
 
 
+# ---------------------------------------------------------------------------
+# Recall reranker judge (innovation #3).
+#
+# Builds the LLM-judge that substrate.recall.rerank.rerank() calls. Reuses the
+# aux text client (no new dependency) under the ``recall_reranker`` task name;
+# the whole top-K window is batched into ONE chat call that returns a JSON
+# array of 0-based indices in best-first order. The judge raises on any
+# failure (missing client, timeout, malformed output) — rerank() swallows it
+# and falls back to the scored order, so recall never raises.
+# ---------------------------------------------------------------------------
+
+
+# Per-judge-call ceiling. Generous enough for the small aux models but bounded
+# so a stalled provider can't hold the recall hot path. Reuses the recall
+# embedding timeout budget shape (ms → s) rather than inventing a new knob.
+_RERANK_TIMEOUT_S = max(1.0, _cfg.RECALL_EMBEDDING_TIMEOUT_MS / 1000.0 * 4)
+
+
+def _build_recall_reranker_judge(substrate: "Substrate"):
+    """Return an async judge ``(query, excerpts) -> list[int]`` backed by the
+    aux text client, or ``None`` when no aux provider is configured (rerank is
+    then skipped). The judge is timeout-bound and parses a JSON index array;
+    any error propagates to ``rerank()`` which falls back to the scored order."""
+    from agent.auxiliary_client import get_async_text_auxiliary_client
+
+    client, model = get_async_text_auxiliary_client("recall_reranker")
+    if client is None:
+        return None
+
+    async def _judge(query: str, excerpts: list[str]) -> list[int]:
+        from substrate import cost
+        from substrate.l1.extract import _strip_fences
+
+        listing = "\n".join(f"[{i}] {ex}" for i, ex in enumerate(excerpts))
+        prompt = (
+            "You are reranking recalled memory excerpts by how directly each "
+            "one helps answer the user's query. Return ONLY a JSON array of the "
+            "excerpt indices in best-first order (most relevant first), every "
+            "index exactly once.\n\n"
+            f"Query: {query}\n\n"
+            f"Excerpts:\n{listing}\n\n"
+            'Example output: [2, 0, 1]'
+        )
+        resp = await asyncio.wait_for(
+            cost.acreate_and_record(
+                client,
+                substrate=substrate,
+                agent="recall_reranker",
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.0,
+            ),
+            timeout=_RERANK_TIMEOUT_S,
+        )
+        raw = resp.choices[0].message.content or ""
+        import json
+
+        data = json.loads(_strip_fences(raw))
+        if not isinstance(data, list):
+            raise ValueError("reranker did not return a JSON array")
+        return [int(x) for x in data]
+
+    return _judge
+
+
 async def _build_l1_header(query: str) -> str:
     """Fetch the top L1 entities for *query* (+ up to 2 citations each) and
     render the ``## Known entities`` block. Returns "" when L1 is empty or
@@ -538,14 +617,23 @@ async def _build_l1_header(query: str) -> str:
     return render_l1_header(rendered)
 
 
-async def _build_l3_header(query: str) -> str:
-    """Fetch the top L3 patterns for *query* (by trigram-relevance + salience)
-    and render the ``## Patterns`` block. Returns "" when L3 is empty or
-    nothing matches. Used by :func:`recall`."""
+async def _build_l3_header(
+    query: str, *, query_embedding: Optional[list[float]] = None
+) -> str:
+    """Fetch the top L3 patterns for *query* and render the ``## Patterns``
+    block. Returns "" when L3 is empty or nothing matches. Used by
+    :func:`recall`.
+
+    When ``RECALL_L3L4_SEMANTIC`` is on and a ``query_embedding`` is available,
+    patterns are ordered by cosine distance over their (already-backfilled)
+    embedding column; otherwise the trigram+salience path is used (innovation
+    #3)."""
     from substrate.l3 import store as l3_store
 
     patterns = await l3_store.get_patterns_for_query(
-        query, limit=_cfg.RECALL_L3_LIMIT
+        query,
+        limit=_cfg.RECALL_L3_LIMIT,
+        query_embedding=query_embedding if _cfg.RECALL_L3L4_SEMANTIC else None,
     )
     if not patterns:
         return ""
@@ -561,15 +649,24 @@ async def _build_l3_header(query: str) -> str:
     return render_l3_header(rendered)
 
 
-async def _build_l4_header(query: str) -> str:
+async def _build_l4_header(
+    query: str, *, query_embedding: Optional[list[float]] = None
+) -> str:
     """Fetch the top L4 self-model observations for *query* and render the
     ``## Self-model`` block. Returns "" when L4 is empty or nothing matches.
     Excludes the coherence vital sign (handled separately as the recall
-    relevance-floor pin). Used by :func:`recall`."""
+    relevance-floor pin). Used by :func:`recall`.
+
+    When ``RECALL_L3L4_SEMANTIC`` is on and a ``query_embedding`` is available,
+    observations are ordered by cosine distance over their (already-backfilled)
+    embedding column; otherwise the trigram+salience path is used (innovation
+    #3)."""
     from substrate.l4 import store as l4_store
 
     observations = await l4_store.get_observations_for_query(
-        query, limit=_cfg.RECALL_L4_LIMIT
+        query,
+        limit=_cfg.RECALL_L4_LIMIT,
+        query_embedding=query_embedding if _cfg.RECALL_L3L4_SEMANTIC else None,
     )
     if not observations:
         return ""
