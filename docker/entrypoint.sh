@@ -76,6 +76,13 @@ mkdir -p "$THOTH_HOME"/{cron,sessions,logs,hooks,memories,skills,skins,plans,wor
 # .env
 if [ ! -f "$THOTH_HOME/.env" ]; then
     cp "$INSTALL_DIR/.env.example" "$THOTH_HOME/.env"
+    # In a container the DB is reached by its compose SERVICE NAME, not
+    # localhost: docker-compose sets THOTH_PG_DSN=...@postgres:5432. But
+    # env_loader loads this .env with override=True, so the localhost default
+    # copied from .env.example would clobber the compose value and the gateway
+    # could never reach Postgres on bridge networking. Neutralize the seeded
+    # default so the compose-provided DSN wins. (Container is Linux → GNU sed.)
+    sed -i 's/^THOTH_PG_DSN=/#THOTH_PG_DSN=/' "$THOTH_HOME/.env" 2>/dev/null || true
 fi
 
 # config.yaml
