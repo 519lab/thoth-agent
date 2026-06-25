@@ -63,6 +63,38 @@ async def test_conductor_disabled_is_noop(booted, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_backlog_excludes_aged_out_slices(booted):
+    """Slices older than the Parser's 7-day selection horizon must NOT count as
+    backlog. They can never be selected/consolidated and have no terminal state,
+    so counting them pins the ratio high forever and starves enrichment (the
+    undrainable-backlog feedback trap)."""
+    import thoth_db
+
+    await _seed_pending(booted, 3)  # 3 fresh passed/unconsolidated slices
+    async with thoth_db.connection() as conn:
+        # Backdate one of them past the 7-day horizon (same month → same
+        # partition, no cross-partition row move).
+        # Backdate the temporal cluster together to keep the
+        # event<=perception<=ingest CHECK invariant (migration 0003) satisfied.
+        await conn.execute(
+            """
+            UPDATE substrate_slices
+               SET ingest_time_world     = now() - interval '8 days',
+                   perception_time_world = now() - interval '8 days',
+                   event_time_world      = now() - interval '8 days'
+             WHERE slice_id = (
+                 SELECT slice_id FROM substrate_slices
+                  WHERE consolidation_state = 'unconsolidated'
+                    AND sentinel_state = 'passed'
+                  ORDER BY ingest_time_world DESC LIMIT 1)
+            """
+        )
+    signals = await AdaptiveConductor(booted)._read_load()
+    # 3 seeded, 1 aged out → only 2 count as drainable backlog.
+    assert signals["pending"] == 2
+
+
+@pytest.mark.asyncio
 async def test_conductor_dials_parser_up_under_backlog(booted, monkeypatch):
     monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
     monkeypatch.setenv("CONDUCTOR_BACKLOG_HIGH", "0.5")

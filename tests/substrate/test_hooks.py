@@ -190,7 +190,7 @@ async def test_on_subagent_spawn_and_return(booted_substrate):
     async with thoth_db.connection() as conn:
         spawn = await conn.fetchrow(
             """
-            SELECT payload FROM substrate_slices sl
+            SELECT sl.payload, sl.metadata FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
              WHERE st.name = 'thoth.self_action.subagent_spawn'
             """
@@ -203,6 +203,12 @@ async def test_on_subagent_spawn_and_return(booted_substrate):
             """
         )
     assert spawn["payload"] == {"child_id": "child-A", "goal": "investigate bug 42"}
+    # The spawn slice is keyed to the parent's session_id (mirroring return) so
+    # the Parser folds it into the parent's batch and it can consolidate —
+    # otherwise it strands forever under a parent_session_id-only key as
+    # undrainable backlog.
+    assert spawn["metadata"]["session_id"] == "parent-1"
+    assert spawn["metadata"]["parent_session_id"] == "parent-1"
     assert ret["payload"] == {"child_id": "child-A", "summary": "fixed and verified"}
     # The return summary carries real NL worth consolidating: it's keyed to
     # the parent's session_id so the Parser folds it into the parent's
