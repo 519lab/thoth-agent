@@ -114,7 +114,10 @@ RUN uv pip install --no-cache-dir --no-deps -e "."
 # ---------- Runtime ----------
 ENV THOTH_WEB_DIST=/opt/hermes/thoth_cli/web_dist
 ENV THOTH_HOME=/opt/data
-ENV PATH="/opt/data/.local/bin:${PATH}"
+# Put the app venv's console scripts (thoth/thoth-agent/thoth-acp) on PATH so the
+# entrypoint's bare `exec thoth "$@"` resolves. Without this the container exits
+# 127 ("thoth: command not found") and crash-loops.
+ENV PATH="/opt/hermes/.venv/bin:/opt/data/.local/bin:${PATH}"
 RUN mkdir -p /opt/data
 VOLUME [ "/opt/data" ]
 ENTRYPOINT [ "/usr/bin/tini", "-g", "--", "/opt/hermes/docker/entrypoint.sh" ]
