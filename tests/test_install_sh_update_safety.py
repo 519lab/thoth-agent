@@ -88,6 +88,38 @@ def test_update_uses_hard_reset_not_stash_replay() -> None:
     )
 
 
+def test_compose_project_name_is_pinned_not_derived_from_code_dir() -> None:
+    """The DB's docker-compose project (→ volume + container names) must be
+    pinned and decoupled from the code-dir basename. Otherwise renaming the
+    code dir (hermes-agent → app) flips the compose project and orphans the
+    real database behind a new empty volume."""
+    text = _read_install_sh()
+    assert "resolve_compose_project()" in text, (
+        "resolve_compose_project() missing — without a pinned "
+        "COMPOSE_PROJECT_NAME the DB volume name follows the install dir and "
+        "renaming the code dir orphans the database."
+    )
+    body = _extract_function_body("resolve_compose_project")
+    # Must export the project name so every `docker compose` call is consistent.
+    assert "export COMPOSE_PROJECT_NAME" in body
+    # Fresh installs get the stable Thoth name.
+    assert 'COMPOSE_PROJECT_NAME="thoth"' in body, (
+        "fresh installs must use the stable 'thoth' compose project."
+    )
+    # Upgraders reuse the project of an existing *_hermes_pg_data volume so
+    # their real data re-attaches.
+    assert "_hermes_pg_data" in body and "existing_vol" in body, (
+        "must detect an existing *_hermes_pg_data volume and reuse its project."
+    )
+    # setup_postgres must pin the project BEFORE choosing the port / touching
+    # any container, so detection + compose-up + reset all agree.
+    pg_body = _extract_function_body("setup_postgres")
+    assert "resolve_compose_project" in pg_body
+    assert pg_body.index("resolve_compose_project") < pg_body.index("choose_pg_port"), (
+        "resolve_compose_project must run before choose_pg_port."
+    )
+
+
 def test_run_setup_wizard_skips_when_provider_already_configured() -> None:
     """Update mode: don't re-prompt the wizard if .env already has an
     API key for one of the supported providers."""

@@ -1028,10 +1028,14 @@ choose_pg_port() {
     # subsequent re-install drifted further up the port range.
     #
     # Container name candidates, in priority order. First match wins:
-    #   1. ``hermes-agent-postgres-1`` — current compose project name
-    #   2. ``hermes-substrate-postgres-1`` — legacy (pre-2026-05-26)
+    #   1. ``${COMPOSE_PROJECT_NAME}-postgres-1`` — the pinned project (thoth,
+    #      or a reused legacy project) resolved in resolve_compose_project
+    #   2. ``thoth-postgres-1`` — stable fresh-install name
+    #   3. ``hermes-agent-postgres-1`` — pre-rename code-dir project
+    #   4. ``hermes-substrate-postgres-1`` — legacy (pre-2026-05-26)
     local existing_container=""
-    for name in hermes-agent-postgres-1 hermes-substrate-postgres-1; do
+    for name in "${COMPOSE_PROJECT_NAME:-thoth}-postgres-1" thoth-postgres-1 \
+                hermes-agent-postgres-1 hermes-substrate-postgres-1; do
         if docker inspect "$name" >/dev/null 2>&1; then
             existing_container="$name"
             break
@@ -1120,6 +1124,42 @@ choose_pg_port() {
     export POSTGRES_PORT="$port"
 }
 
+# Pin a STABLE docker-compose project name, decoupled from the install dir.
+# Compose otherwise derives the project (and thus the DB volume + container
+# names) from the code-dir basename — so `~/.thoth/app` yields project `app`
+# and volume `app_hermes_pg_data`. That couples the database's identity to a
+# directory name that we rename (hermes-agent → app), which would silently
+# point a "fresh" install at a NEW empty volume and orphan the real data.
+#
+# Resolution (exported so EVERY `docker compose` call below is consistent,
+# regardless of the `cd "$INSTALL_DIR"` the compose steps do):
+#   1. An explicit COMPOSE_PROJECT_NAME in the environment always wins.
+#   2. An existing `<project>_hermes_pg_data` volume → reuse <project> so an
+#      upgrading install re-attaches its real database (no data orphaned).
+#   3. Fresh install → the stable Thoth name `thoth`.
+# The internal db/user/password stay `hermes` (out of scope here); only the
+# OUTER compose project/volume/container naming is stabilized.
+resolve_compose_project() {
+    if [ -n "${COMPOSE_PROJECT_NAME:-}" ]; then
+        export COMPOSE_PROJECT_NAME
+        log_info "PostgreSQL: compose project '$COMPOSE_PROJECT_NAME' (from environment)"
+        return 0
+    fi
+    local existing_vol=""
+    if command -v docker >/dev/null 2>&1; then
+        existing_vol=$(docker volume ls --format '{{.Name}}' 2>/dev/null \
+            | grep -E '_hermes_pg_data$' | head -n1)
+    fi
+    if [ -n "$existing_vol" ]; then
+        COMPOSE_PROJECT_NAME="${existing_vol%_hermes_pg_data}"
+        log_info "PostgreSQL: reusing existing compose project '$COMPOSE_PROJECT_NAME' (volume '$existing_vol')"
+    else
+        COMPOSE_PROJECT_NAME="thoth"
+        log_info "PostgreSQL: compose project '$COMPOSE_PROJECT_NAME' (fresh install)"
+    fi
+    export COMPOSE_PROJECT_NAME
+}
+
 setup_postgres() {
     if [ "$SKIP_POSTGRES" = true ]; then
         log_info "Skipping PostgreSQL setup (--skip-postgres)"
@@ -1129,6 +1169,9 @@ setup_postgres() {
         return 0
     fi
 
+    # Pin the compose project BEFORE any docker-compose / container lookup so
+    # the DB volume + container names are stable and dir-independent.
+    resolve_compose_project
     choose_pg_port
 
     log_info "Starting PostgreSQL via docker compose (host port $PG_PORT_DEFAULT → container 5432)..."
