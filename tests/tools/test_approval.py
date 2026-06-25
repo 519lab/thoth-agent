@@ -1326,12 +1326,39 @@ class TestDetectOutOfRootCommand:
         assert flagged is True
         assert key == f"workspace_boundary:{root}"
 
-    def test_absolute_path_arg_outside_flags(self, tmp_path):
+    def test_read_with_absolute_path_not_flagged(self, tmp_path):
+        # Reads are never gated, even with an absolute path outside the root.
         from tools.approval import detect_out_of_root_command
 
         root = self._root(tmp_path)
         flagged, _, _ = detect_out_of_root_command(
             "cat /etc/hostname", root, effective_cwd=root
+        )
+        assert flagged is False
+
+    def test_absolute_binary_path_not_flagged(self, tmp_path):
+        # The command's own binary path must not trip the boundary.
+        from tools.approval import detect_out_of_root_command
+
+        root = self._root(tmp_path)
+        flagged, _, _ = detect_out_of_root_command("/bin/ls", root, effective_cwd=root)
+        assert flagged is False
+
+    def test_mutating_command_outside_flags(self, tmp_path):
+        from tools.approval import detect_out_of_root_command
+
+        root = self._root(tmp_path)
+        flagged, _, _ = detect_out_of_root_command(
+            "rm /opt/elsewhere/file", root, effective_cwd=root
+        )
+        assert flagged is True
+
+    def test_redirection_outside_flags(self, tmp_path):
+        from tools.approval import detect_out_of_root_command
+
+        root = self._root(tmp_path)
+        flagged, _, _ = detect_out_of_root_command(
+            "echo hi > /opt/elsewhere/out.txt", root, effective_cwd=root
         )
         assert flagged is True
 

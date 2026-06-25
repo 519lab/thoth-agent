@@ -496,80 +496,112 @@ def _resolve_token_against_base(token: str, base: str) -> str:
     return os.path.join(base, token)
 
 
+# Shell commands that mutate the filesystem at a target path. A *mutating*
+# command with an argument resolving outside the active root is flagged; a
+# read-only command (cat/grep/ls/find/...) referencing an outside path is NOT —
+# reads are never gated, and flagging every absolute path (binaries like
+# /bin/ls, reads like `cat /etc/hosts`) would make the boundary unusably noisy.
+_MUTATING_CMDS = frozenset({
+    "rm", "rmdir", "mv", "cp", "mkdir", "touch", "tee", "dd", "truncate",
+    "ln", "chmod", "chown", "chgrp", "install", "shred", "rsync",
+})
+
+
 def detect_out_of_root_command(command: str, active_root,
                                effective_cwd=None) -> tuple:
-    """Detect when a shell command operates outside the active workspace root.
+    """Detect when a shell command WRITES or OPERATES outside the active root.
 
     Flags True when:
-      * the command's effective cwd is itself outside *active_root*, or
-      * any shell token is an absolute path, a ``~/...`` path, or a
-        ``cd`` / ``pushd`` target that *resolves* outside *active_root*.
+      * the command's effective cwd is itself outside *active_root*; or
+      * a ``cd`` / ``pushd`` target resolves outside *active_root*; or
+      * an output redirection (``>`` / ``>>``) targets a path outside it; or
+      * a *mutating* command (rm/mv/cp/mkdir/tee/dd/…) has a path argument
+        resolving outside it.
+
+    Reads (cat/grep/ls/…), bare absolute binary paths (``/bin/ls``), and
+    absolute-path *arguments* to read-only commands are intentionally NOT
+    flagged — reads stay free and the gate stays low-noise.
 
     Returns ``(is_out_of_root, pattern_key, description)``.
 
-    Limitations (best-effort, conservative): paths hidden inside shell
-    variables (``$VAR``), command substitution (``$(...)`` / backticks),
-    here-docs, redirections, and globs are NOT visible to this token scan, so a
-    determined command can still reach outside the root.  This is a guardrail
-    against accidental drift, not a sandbox.  Container backends are excluded
-    by the caller before this runs.
+    Limitations (best-effort): paths hidden in shell variables (``$VAR``),
+    command substitution (``$(...)``/backticks), here-docs, and globs are not
+    visible to this token scan. This is a guardrail against drift, not a sandbox.
+    Container backends are excluded by the caller before this runs.
     """
     pattern_key = f"workspace_boundary:{active_root}"
     description = (
-        f"command touches paths outside the active workspace root {active_root}"
+        f"command writes/operates outside the active workspace root {active_root}"
     )
     if not active_root:
         return (False, pattern_key, description)
 
     from agent.file_safety import is_path_outside_active_root
 
+    base = effective_cwd or active_root
+
+    def _outside(token: str) -> bool:
+        cand = _resolve_token_against_base(token, base)
+        return bool(cand) and is_path_outside_active_root(cand, active_root)
+
     # 1. The command's working directory is itself outside the root.
     if effective_cwd and is_path_outside_active_root(effective_cwd, active_root):
-        return (
-            True,
-            pattern_key,
-            f"command runs in {effective_cwd}, outside the active "
-            f"workspace root {active_root}",
-        )
+        return (True, pattern_key,
+                f"command runs in {effective_cwd}, outside the active "
+                f"workspace root {active_root}")
 
-    base = effective_cwd or active_root
     try:
         tokens = shlex.split(command, posix=True)
     except Exception:
         tokens = command.split()
+    if not tokens:
+        return (False, pattern_key, description)
+
+    cmd_base = os.path.basename(tokens[0])
+    is_mutating = cmd_base in _MUTATING_CMDS
 
     expect_cd_target = False
-    for tok in tokens:
+    expect_redirect_target = False
+    for i, tok in enumerate(tokens):
         if expect_cd_target:
             expect_cd_target = False
-            cand = _resolve_token_against_base(tok, base)
-            if cand and is_path_outside_active_root(cand, active_root):
-                return (
-                    True,
-                    pattern_key,
-                    f"command changes directory to {tok}, outside the "
-                    f"active workspace root {active_root}",
-                )
+            if _outside(tok):
+                return (True, pattern_key,
+                        f"command changes directory to {tok}, outside the "
+                        f"active workspace root {active_root}")
+            continue
+        if expect_redirect_target:
+            expect_redirect_target = False
+            if _outside(tok):
+                return (True, pattern_key,
+                        f"command writes to {tok}, outside the active "
+                        f"workspace root {active_root}")
             continue
         if tok in {"cd", "pushd"}:
             expect_cd_target = True
             continue
-        if tok.startswith("~"):
-            if is_path_outside_active_root(os.path.expanduser(tok), active_root):
-                return (
-                    True,
-                    pattern_key,
-                    f"command references {tok}, outside the active "
-                    f"workspace root {active_root}",
-                )
-        elif tok.startswith("/"):
-            if is_path_outside_active_root(tok, active_root):
-                return (
-                    True,
-                    pattern_key,
-                    f"command references {tok}, outside the active "
-                    f"workspace root {active_root}",
-                )
+        # Output redirection (standalone `>`/`>>` or attached `>file`/`>>file`).
+        if tok in {">", ">>"}:
+            expect_redirect_target = True
+            continue
+        redir_target = None
+        if tok.startswith(">>"):
+            redir_target = tok[2:]
+        elif tok.startswith(">"):
+            redir_target = tok[1:]
+        if redir_target:
+            if _outside(redir_target):
+                return (True, pattern_key,
+                        f"command writes to {redir_target}, outside the active "
+                        f"workspace root {active_root}")
+            continue
+        # Mutating command with a path argument resolving outside the root.
+        if is_mutating and i > 0 and not tok.startswith("-"):
+            looks_like_path = tok.startswith(("/", "~", "./", "../")) or "/" in tok
+            if looks_like_path and _outside(tok):
+                return (True, pattern_key,
+                        f"{cmd_base} targets {tok}, outside the active "
+                        f"workspace root {active_root}")
 
     return (False, pattern_key, description)
 
