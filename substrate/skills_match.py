@@ -92,6 +92,32 @@ def scan_skills(root_str: str) -> tuple:
     return tuple(skills)
 
 
+# Evaluator-verdict → ranking multiplier (innovation #2). A skill the
+# SkillScout evaluator passed ranks at full weight; one it merely flagged is
+# down-weighted; one it rejected is excluded from suggestions entirely. Skills
+# with no recorded verdict (the common case for bundled/hand-written skills)
+# rank at full weight.
+_VERDICT_FACTORS = {"pass": 1.0, "flag": 0.7, "reject": 0.0}
+
+
+def _verdict_factor(skill_name: str) -> float:
+    """Multiplier for *skill_name* from its stored evaluator verdict.
+
+    Dependency-light: a single ``.usage.json`` read via ``skill_usage`` (no
+    DB), so the hot scan path stays cheap. Any lookup failure degrades to the
+    neutral 1.0 — verdict weighting is a ranking nudge, never load-bearing.
+    """
+    try:
+        from tools.skill_usage import get_eval_verdict
+
+        verdict = get_eval_verdict(skill_name)
+    except Exception:
+        return 1.0
+    if verdict is None:
+        return 1.0
+    return _VERDICT_FACTORS.get(verdict, 1.0)
+
+
 def suggest_skills(
     context: str,
     *,
@@ -102,7 +128,14 @@ def suggest_skills(
     """Rank bundled skills against *context* by keyword overlap. Returns up
     to ``limit`` skills (name, description, tags, path, overlap) whose token
     overlap with the context is at least ``min_overlap``. Empty when nothing
-    clears the bar — so a callsite can simply skip an empty result."""
+    clears the bar — so a callsite can simply skip an empty result.
+
+    Overlap is weighted by the skill's stored evaluator verdict (innovation
+    #2): ``flag`` skills are down-weighted (×0.7), ``reject`` skills are
+    excluded, and ``pass``/unrecorded skills rank at full weight. The
+    ``min_overlap`` gate is applied to the RAW token overlap so verdict
+    weighting only reorders/excludes — it never promotes a skill that didn't
+    independently clear the bar."""
     ctx_tokens = _tokenise(context or "")
     if not ctx_tokens:
         return []
@@ -110,9 +143,15 @@ def suggest_skills(
     scored = []
     for s in catalog:
         overlap = len(ctx_tokens & s["_tokens"])
-        if overlap >= min_overlap:
-            scored.append((overlap, s))
-    scored.sort(key=lambda t: (-t[0], t[1]["name"]))
+        if overlap < min_overlap:
+            continue
+        factor = _verdict_factor(s["name"])
+        if factor <= 0.0:
+            # Rejected by the evaluator — never suggest it.
+            continue
+        scored.append((overlap * factor, overlap, s))
+    # Sort by weighted score, then raw overlap, then name for stable ties.
+    scored.sort(key=lambda t: (-t[0], -t[1], t[2]["name"]))
     return [
         {
             "name": s["name"],
@@ -121,7 +160,7 @@ def suggest_skills(
             "path": s["path"],
             "overlap": overlap,
         }
-        for overlap, s in scored[:limit]
+        for _weighted, overlap, s in scored[:limit]
     ]
 
 
