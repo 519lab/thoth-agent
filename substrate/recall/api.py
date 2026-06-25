@@ -435,6 +435,17 @@ async def recall(
                 )
                 text = (text + "\n\n" + footer) if text else footer
                 tokens += max(1, len(footer) // 4)
+                # Skill-efficacy attribution (innovation #2): a skill surfaced
+                # in the recall footer is "loaded" for this turn — record it on
+                # the turn's thread so the post-turn EMA update credits it.
+                # Best-effort; no-op if recall ran off the turn's thread.
+                try:
+                    from tools.skill_usage import note_skill_loaded
+
+                    for h in hits:
+                        note_skill_loaded(h.get("name", ""))
+                except Exception:  # pragma: no cover — best-effort
+                    pass
         except Exception as exc:  # pragma: no cover — best-effort
             _log.debug("recall skill-suggestion failed: %s", exc)
 

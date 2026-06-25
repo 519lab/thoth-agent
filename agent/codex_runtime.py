@@ -51,6 +51,16 @@ def run_codex_app_server_turn(
     from datetime import datetime as _dt, timezone as _tz
     _turn_started_at = _dt.now(_tz.utc)
 
+    # Per-turn skill-load tracking (innovation #2): reset the thread-local
+    # loaded-skills set on this turn's thread so the post-turn efficacy
+    # attribution below only sees skills loaded by THIS turn. The codex path
+    # bypasses the chat_completions loop and its reset, so we mirror it here.
+    try:
+        from tools.skill_usage import reset_skills_loaded_this_turn
+        agent._skills_loaded_this_turn = reset_skills_loaded_this_turn()
+    except Exception:
+        agent._skills_loaded_this_turn = set()
+
     # Lazy session: one CodexAppServerSession per AIAgent instance.
     # Spawned on first turn, reused across turns, closed at AIAgent
     # shutdown (see _cleanup hook).
@@ -200,6 +210,26 @@ def run_codex_app_server_turn(
                 )
     except Exception as exc:
         logger.debug("recall outcome label failed: %s", exc)
+
+    # Skill-efficacy attribution (innovation #2) — mirror the chat_completions
+    # post-turn block. Single-skill turns only; multi-skill credit-splitting is
+    # a TODO. Codex tool iterations don't feed the per-turn tool counters, so
+    # the proxy is the completed/failed/interrupted signal alone here.
+    try:
+        _loaded = getattr(agent, "_skills_loaded_this_turn", None) or set()
+        if len(_loaded) == 1:
+            from agent.turn_outcome import compute_outcome_score
+            from tools.skill_usage import record_efficacy
+
+            _eff_score = compute_outcome_score(
+                completed=_codex_completed,
+                failed=turn.error is not None,
+                interrupted=turn.interrupted,
+            )
+            for _skill_name in _loaded:
+                record_efficacy(_skill_name, _eff_score)
+    except Exception as exc:
+        logger.debug("skill efficacy attribution failed: %s", exc)
 
     return {
         "final_response": turn.final_text,

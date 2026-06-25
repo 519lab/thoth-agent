@@ -607,6 +607,16 @@ def run_conversation(
     from datetime import datetime as _dt, timezone as _tz
     _turn_started_at = _dt.now(_tz.utc)
 
+    # Per-turn skill-load tracking (innovation #2). The counter-bump helpers
+    # (bump_use/bump_view) record loaded skills into a thread-local set on this
+    # turn's execution thread; we reset it here and drain it in the post-turn
+    # block to attribute the turn's outcome score to the loaded skill(s).
+    try:
+        from tools.skill_usage import reset_skills_loaded_this_turn
+        agent._skills_loaded_this_turn = reset_skills_loaded_this_turn()
+    except Exception:
+        agent._skills_loaded_this_turn = set()
+
     # Record the execution thread so interrupt()/clear_interrupt() can
     # scope the tool-level interrupt signal to THIS agent's thread only.
     # Must be set before any thread-scoped interrupt syncing.
@@ -4192,6 +4202,35 @@ def run_conversation(
                 )
     except Exception as exc:
         logger.debug("recall outcome label failed: %s", exc)
+
+    # Skill-efficacy attribution (innovation #2) — fold this turn's outcome
+    # score into the efficacy EMA of every skill loaded this turn. Independent
+    # of the recall-outcome flag above (different signal, different store: a
+    # JSON sidecar, no DB). START with single-skill turns only so credit is
+    # unambiguous; multi-skill credit-splitting is a TODO. Best-effort: a
+    # failure here must never affect the response we just produced.
+    #
+    # TODO(#2): multi-skill turns. When len(loaded) > 1 we currently skip
+    # attribution entirely rather than guess how to split credit across the
+    # loaded skills. Revisit with a credit-assignment heuristic (e.g. equal
+    # split, or weight by which skill the turn's tool calls actually exercised).
+    try:
+        _loaded = getattr(agent, "_skills_loaded_this_turn", None) or set()
+        if len(_loaded) == 1:
+            from agent.turn_outcome import compute_outcome_score
+            from tools.skill_usage import record_efficacy
+
+            _eff_score = compute_outcome_score(
+                completed=completed,
+                failed=failed,
+                interrupted=interrupted,
+                tool_calls=getattr(agent, "_turn_tool_calls", 0),
+                tool_failures=getattr(agent, "_turn_tool_failures", 0),
+            )
+            for _skill_name in _loaded:
+                record_efficacy(_skill_name, _eff_score)
+    except Exception as exc:
+        logger.debug("skill efficacy attribution failed: %s", exc)
 
     # Check skill trigger NOW — based on how many tool iterations THIS turn used.
     _should_review_skills = False
