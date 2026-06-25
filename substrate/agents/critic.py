@@ -91,7 +91,11 @@ class Critic(SubAgent):
                 """
                 SELECT COUNT(*) FILTER (
                           WHERE sl.consolidation_state='unconsolidated'
-                            AND sl.sentinel_state='passed')::int AS pending,
+                            AND sl.sentinel_state='passed'
+                            -- Match the Parser's 7-day selection horizon: aged-out
+                            -- slices can never consolidate, so they must not count
+                            -- as backlog (see conductor_policy._read_load).
+                            AND sl.ingest_time_world > now() - interval '7 days')::int AS pending,
                        COUNT(*) FILTER (WHERE sl.consolidation_state='consolidated')::int AS done
                   FROM substrate_slices sl
                   JOIN substrate_streams st ON st.stream_id = sl.stream_id

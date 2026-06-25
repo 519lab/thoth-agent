@@ -402,7 +402,14 @@ async def on_subagent_spawn_async(
         stream_id=stream.stream_id,
         payload={"child_id": child_id, "goal": _summarize(goal)},
         event_time_world=t_event,
-        metadata={"parent_session_id": parent_session_id},
+        # Tag with session_id (= parent's) so this spawn slice joins the parent
+        # session's parse batch and can consolidate — instead of stranding
+        # forever under a parent_session_id-only key as undrainable backlog.
+        # Mirrors on_subagent_return (which was already fixed this way).
+        metadata={
+            "session_id": parent_session_id,
+            "parent_session_id": parent_session_id,
+        },
     )
 
 
