@@ -497,8 +497,20 @@ def load_cli_config() -> Dict[str, Any]:
     effective_backend = terminal_config.get("env_type", "local")
 
     if effective_backend == "local":
-        terminal_config["cwd"] = os.getcwd()
+        # Resolve the active root: explicit terminal.cwd wins; an intentional
+        # `cd /project && thoth` makes that the root; launching from $HOME (or
+        # THOTH_HOME) with no explicit cwd falls back to {THOTH_HOME}/workspace.
+        from agent.file_safety import resolve_active_root
+        _raw_cwd = terminal_config.get("cwd")
+        _active_root = resolve_active_root(
+            explicit_cwd=_raw_cwd, launch_cwd=os.getcwd(), is_gateway=False
+        )
+        terminal_config["cwd"] = str(_active_root)
         defaults["terminal"]["cwd"] = terminal_config["cwd"]
+        # THOTH_ACTIVE_ROOT is the fixed boundary (TERMINAL_CWD may drift as the
+        # agent cd's). Don't override the gateway, which sets it in gateway/run.py.
+        if os.environ.get("_THOTH_GATEWAY") != "1":
+            os.environ["THOTH_ACTIVE_ROOT"] = str(_active_root)
     elif terminal_config.get("cwd") in _CWD_PLACEHOLDERS:
         terminal_config.pop("cwd", None)
     

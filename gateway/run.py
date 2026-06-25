@@ -831,13 +831,23 @@ os.environ["THOTH_EXEC_ASK"] = "1"
 
 # Set terminal working directory for messaging platforms.
 # config.yaml terminal.cwd is the canonical source (bridged to TERMINAL_CWD
-# by the config bridge above).  When it's unset or a placeholder, default
-# to home directory.  MESSAGING_CWD is accepted as a backward-compat
-# fallback (deprecated — the warning above tells users to migrate).
+# by the config bridge above).  When it's unset or a placeholder, default to
+# the agent workspace ({THOTH_HOME}/workspace) rather than the user's $HOME —
+# the gateway should operate in its own space, not the operator's home.
+# MESSAGING_CWD is accepted as a deprecated explicit override.
+# THOTH_ACTIVE_ROOT is the fixed permission boundary (TERMINAL_CWD may drift).
+from agent.file_safety import resolve_active_root as _resolve_active_root
 _configured_cwd = os.environ.get("TERMINAL_CWD", "")
 if not _configured_cwd or _configured_cwd in {".", "auto", "cwd"}:
-    _fallback = os.getenv("MESSAGING_CWD") or str(Path.home())
-    os.environ["TERMINAL_CWD"] = _fallback
+    _active_root = _resolve_active_root(
+        explicit_cwd=os.getenv("MESSAGING_CWD") or None, launch_cwd=None, is_gateway=True
+    )
+    os.environ["TERMINAL_CWD"] = str(_active_root)
+else:
+    _active_root = _resolve_active_root(
+        explicit_cwd=_configured_cwd, launch_cwd=None, is_gateway=True
+    )
+os.environ["THOTH_ACTIVE_ROOT"] = str(_active_root)
 
 from gateway.config import (
     Platform,

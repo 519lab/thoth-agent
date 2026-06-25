@@ -25,6 +25,59 @@ def _thoth_root_path() -> Path:
         return Path(os.path.expanduser("~/.thoth"))
 
 
+_CWD_PLACEHOLDERS = {"", ".", "auto", "cwd"}
+
+
+def resolve_active_root(
+    explicit_cwd: Optional[str],
+    launch_cwd: Optional[str],
+    is_gateway: bool,
+) -> Path:
+    """Resolve the agent's *active root* — the directory it may freely operate in.
+
+    Fixed and session-immutable (distinct from ``TERMINAL_CWD``, which drifts as
+    the agent ``cd``s around). Resolution order:
+
+    1. An explicit, non-placeholder working dir (``terminal.cwd`` / ``MESSAGING_CWD``
+       — the user chose it) wins.
+    2. Interactive CLI launch (``not is_gateway``): if the launch dir is the user's
+       ``$HOME`` or inside THOTH_HOME ("no project intent"), fall through to the
+       default workspace; otherwise the launch dir is the active root (the user
+       intentionally ``cd``'d into a project before running ``thoth``).
+    3. Default: ``{THOTH_HOME}/workspace`` (auto-created).
+    """
+    def _real(p: str) -> str:
+        return os.path.realpath(os.path.expanduser(p))
+
+    # 1. Explicit working dir.
+    if explicit_cwd and explicit_cwd not in _CWD_PLACEHOLDERS:
+        try:
+            return Path(_real(explicit_cwd))
+        except Exception:
+            pass  # fall through to default
+
+    # 2. Interactive CLI launched intentionally inside a project dir.
+    if not is_gateway and launch_cwd:
+        try:
+            launch_real = _real(launch_cwd)
+            home_real = _real("~")
+            thoth_real = os.path.realpath(_thoth_home_path())
+            inside_thoth = (
+                launch_real == thoth_real or launch_real.startswith(thoth_real + os.sep)
+            )
+            if launch_real != home_real and not inside_thoth:
+                return Path(launch_real)
+        except Exception:
+            pass
+
+    # 3. Default workspace.
+    try:
+        from thoth_constants import ensure_workspace_dir  # local import to avoid cycles
+        return ensure_workspace_dir()
+    except Exception:
+        return _thoth_home_path() / "workspace"
+
+
 def build_write_denied_paths(home: str) -> set[str]:
     """Return exact sensitive paths that must never be written."""
     thoth_home = _thoth_home_path()
