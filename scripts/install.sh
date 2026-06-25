@@ -751,30 +751,31 @@ clone_repo() {
         if [ -d "$INSTALL_DIR/.git" ]; then
             log_info "Existing installation found, updating..."
             cd "$INSTALL_DIR"
-            local autostash_ref=""
-            if [ -n "$(git status --porcelain)" ]; then
-                local stash_name="thoth-install-autostash-$(date -u +%Y%m%d-%H%M%S)"
-                log_info "Local changes detected, stashing before update..."
-                git stash push --include-untracked -m "$stash_name"
-                autostash_ref="stash@{0}"
-            fi
             git fetch origin
-            git checkout "$BRANCH"
-            git pull --ff-only origin "$BRANCH"
-            if [ -n "$autostash_ref" ]; then
-                local restore_now="yes"
-                if [ -t 0 ] && [ -t 1 ]; then
-                    printf "Restore local changes now? [Y/n] "
-                    read -r ans
-                    case "$ans" in ""|y|Y|yes|YES|Yes) restore_now="yes" ;; *) restore_now="no" ;; esac
-                fi
-                if [ "$restore_now" = "yes" ]; then
-                    git stash apply "$autostash_ref" && git stash drop "$autostash_ref" >/dev/null \
-                        && log_warn "Local changes restored — review git status if behavior is unexpected"
-                else
-                    log_info "Local changes preserved in git stash ($autostash_ref)"
-                fi
+            # The code dir is managed and DISPOSABLE — config + state live in
+            # THOTH_HOME, never in this checkout. If it has diverged (hand-edits
+            # from debugging, partially-deleted files, etc.), do NOT stash/replay:
+            # that produces catastrophic modify/delete conflicts on nearly every
+            # file. Instead back up the diff and hard-reset to the upstream branch.
+            if [ -n "$(git status --porcelain)" ]; then
+                local backup_dir="${THOTH_HOME:-$HOME/.thoth}/.install-backup"
+                local stamp; stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+                local patch_file="$backup_dir/code-local-changes-$stamp.patch"
+                mkdir -p "$backup_dir" 2>/dev/null || true
+                git diff HEAD > "$patch_file" 2>/dev/null || true
+                git status --porcelain > "$backup_dir/code-local-status-$stamp.txt" 2>/dev/null || true
+                log_warn "Local changes in the code dir detected — resetting to a clean"
+                log_warn "  upstream copy (the code dir is managed; your config + data in"
+                log_warn "  ${THOTH_HOME:-$HOME/.thoth} are untouched)."
+                [ -s "$patch_file" ] && log_warn "  Saved a diff of your changes to: $patch_file"
             fi
+            # Force the local branch to exactly match upstream — conflict-proof.
+            git checkout -q "$BRANCH" 2>/dev/null || git checkout -q -B "$BRANCH" "origin/$BRANCH"
+            git reset --hard "origin/$BRANCH"
+            # Remove stray now-untracked files (e.g. modules deleted upstream) but
+            # KEEP gitignored build artifacts: no -x, so venv/ and node_modules/
+            # (gitignored) are preserved; -e is belt-and-suspenders for old checkouts.
+            git clean -fd -e venv -e node_modules >/dev/null 2>&1 || true
         else
             log_error "Directory exists but is not a git repository: $INSTALL_DIR"
             log_info "Remove it or choose a different directory with --dir"
