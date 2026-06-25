@@ -689,11 +689,12 @@ class TestLaunchdServiceRecovery:
 
 
 class TestLaunchdLabelRename:
-    """The launchd Label was renamed ai.hermes.gateway -> ai.thoth.gateway.
+    """The launchd Label AND plist filename are ai.thoth.gateway (#226).
 
-    The plist *filename* is intentionally kept (``ai.hermes.gateway.plist``) so
-    a pre-rename install auto-migrates in place via refresh; only the Label
-    changes, and the orphaned old-Label agent is booted out best-effort.
+    Both the Label and the plist *filename* were renamed
+    ai.hermes.gateway -> ai.thoth.gateway. The orphaned pre-rename agent is
+    booted out best-effort and its leftover ``ai.hermes.gateway*.plist`` file is
+    deleted on install/uninstall/refresh.
     """
 
     def test_label_is_thoth_for_default_profile(self, monkeypatch):
@@ -703,6 +704,24 @@ class TestLaunchdLabelRename:
     def test_label_is_suffixed_for_named_profile(self, monkeypatch):
         monkeypatch.setattr(gateway_cli, "_profile_suffix", lambda: "coder")
         assert gateway_cli.get_launchd_label() == "ai.thoth.gateway-coder"
+
+    def test_plist_filename_is_thoth_for_default_profile(self, monkeypatch):
+        monkeypatch.setattr(gateway_cli, "_profile_suffix", lambda: "")
+        assert gateway_cli.get_launchd_plist_path().name == "ai.thoth.gateway.plist"
+
+    def test_plist_filename_is_suffixed_for_named_profile(self, monkeypatch):
+        monkeypatch.setattr(gateway_cli, "_profile_suffix", lambda: "coder")
+        assert gateway_cli.get_launchd_plist_path().name == "ai.thoth.gateway-coder.plist"
+
+    def test_legacy_plist_paths_track_profile(self, monkeypatch):
+        monkeypatch.setattr(gateway_cli, "_profile_suffix", lambda: "")
+        assert [p.name for p in gateway_cli._legacy_launchd_plist_paths_for_profile()] == [
+            "ai.hermes.gateway.plist"
+        ]
+        monkeypatch.setattr(gateway_cli, "_profile_suffix", lambda: "coder")
+        assert [p.name for p in gateway_cli._legacy_launchd_plist_paths_for_profile()] == [
+            "ai.hermes.gateway-coder.plist"
+        ]
 
     def test_generated_plist_carries_thoth_label(self, tmp_path, monkeypatch):
         monkeypatch.setattr(gateway_cli, "_profile_suffix", lambda: "")
@@ -771,6 +790,40 @@ class TestLaunchdLegacyBootout:
         monkeypatch.setattr(gateway_cli.subprocess, "run", boom)
         # Best-effort: must swallow the error, never propagate.
         gateway_cli._bootout_legacy_launchd_agent()
+
+    def test_uninstall_deletes_orphaned_legacy_plist_file(self, tmp_path, monkeypatch):
+        # A pre-rename install left ai.hermes.gateway.plist next to the renamed
+        # ai.thoth.gateway.plist; uninstall must delete BOTH files (#226).
+        launch_agents = tmp_path / "Library" / "LaunchAgents"
+        launch_agents.mkdir(parents=True)
+        legacy_plist = launch_agents / "ai.hermes.gateway.plist"
+        legacy_plist.write_text("<plist/>", encoding="utf-8")
+        current_plist = launch_agents / "ai.thoth.gateway.plist"
+        current_plist.write_text("<plist/>", encoding="utf-8")
+
+        monkeypatch.setattr(gateway_cli, "_launchd_user_home", lambda: tmp_path)
+        monkeypatch.setattr(gateway_cli, "get_launchd_plist_path", lambda: current_plist)
+        monkeypatch.setattr(gateway_cli, "_profile_suffix", lambda: "")
+        self._capture_run(monkeypatch)
+
+        gateway_cli.launchd_uninstall()
+
+        assert not legacy_plist.exists()
+        assert not current_plist.exists()
+
+    def test_remove_legacy_plist_never_raises_on_unlink_error(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(gateway_cli, "_launchd_user_home", lambda: tmp_path)
+        monkeypatch.setattr(gateway_cli, "_profile_suffix", lambda: "")
+
+        def boom(*args, **kwargs):
+            raise OSError("permission denied")
+
+        monkeypatch.setattr(gateway_cli.Path, "unlink", boom)
+        launch_agents = tmp_path / "Library" / "LaunchAgents"
+        launch_agents.mkdir(parents=True)
+        (launch_agents / "ai.hermes.gateway.plist").write_text("<plist/>", encoding="utf-8")
+        # Best-effort: must swallow the error, never propagate.
+        gateway_cli._remove_legacy_launchd_plist()
 
 
 class TestGatewayServiceDetection:
@@ -1745,7 +1798,7 @@ class TestProfileArg:
 
         plist_path = gateway_cli.get_launchd_plist_path()
 
-        assert plist_path == machine_home / "Library" / "LaunchAgents" / "ai.hermes.gateway-orcha.plist"
+        assert plist_path == machine_home / "Library" / "LaunchAgents" / "ai.thoth.gateway-orcha.plist"
 
 
 class TestRemapPathForUser:
