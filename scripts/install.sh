@@ -767,17 +767,24 @@ clone_repo() {
             log_info "Remove it or choose a different directory with --dir"
             exit 1
         fi
-    else
-        log_info "Trying SSH clone..."
+    elif [ "${THOTH_INSTALL_SSH:-}" = "1" ]; then
+        # Opt-in SSH (maintainers who want to push later). Falls back to HTTPS.
+        log_info "Trying SSH clone (THOTH_INSTALL_SSH=1)..."
         if GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=5" \
            git clone --branch "$BRANCH" "$REPO_URL_SSH" "$INSTALL_DIR" 2>/dev/null; then
             log_success "Cloned via SSH"
         else
             rm -rf "$INSTALL_DIR" 2>/dev/null
-            log_info "SSH failed, trying HTTPS..."
+            log_info "SSH failed, falling back to HTTPS..."
             git clone --branch "$BRANCH" "$REPO_URL_HTTPS" "$INSTALL_DIR" || { log_error "git clone failed"; exit 1; }
             log_success "Cloned via HTTPS"
         fi
+    else
+        # Public project: clone over HTTPS by default — no SSH keys or GitHub
+        # auth required, works for anyone. (Set THOTH_INSTALL_SSH=1 to use SSH.)
+        log_info "Cloning from the public repo over HTTPS..."
+        git clone --branch "$BRANCH" "$REPO_URL_HTTPS" "$INSTALL_DIR" || { log_error "git clone failed"; exit 1; }
+        log_success "Cloned via HTTPS"
     fi
     cd "$INSTALL_DIR"
     log_success "Repository ready"
