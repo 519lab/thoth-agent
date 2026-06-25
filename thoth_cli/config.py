@@ -1484,6 +1484,13 @@ DEFAULT_CONFIG = {
         # false.  TUI has its own modal overlay (THOTH_TUI_NO_CONFIRM=1 to
         # opt out there).
         "destructive_slash_confirm": True,
+        # When true, file writes / patches and shell commands that operate
+        # outside the agent's active workspace root (THOTH_ACTIVE_ROOT) require
+        # approval, reusing the same once/session/always flow as dangerous
+        # commands.  Reads are never gated.  Default ON for fresh installs;
+        # the config migration turns it OFF for existing users who already set
+        # an explicit terminal.cwd (so the boundary doesn't surprise them).
+        "workspace_boundary": True,
     },
 
     # Permanently allowed dangerous command patterns (added via "always" approval)
@@ -1820,7 +1827,7 @@ DEFAULT_CONFIG = {
     },
 
     # Config schema version - bump this when adding new required fields
-    "_config_version": 23,
+    "_config_version": 24,
 }
 
 # =============================================================================
@@ -4004,6 +4011,34 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
                         "  ✓ Seeded auxiliary.curator defaults in config.yaml: "
                         f"{', '.join(added_aux)}"
                     )
+
+    # ── Version 23 → 24: workspace permission boundary default ──
+    # Fresh installs default workspace_boundary ON (it's in DEFAULT_CONFIG, so
+    # the generic missing-field fill below would add it as True).  But existing
+    # users who already chose an explicit terminal.cwd shouldn't suddenly get
+    # approval prompts for operating outside it — set it OFF for them so the
+    # generic fill (which only adds *missing* keys) leaves it alone.
+    if current_ver < 24:
+        config = read_raw_config()
+        approvals = config.get("approvals")
+        if not isinstance(approvals, dict):
+            approvals = {}
+        if "workspace_boundary" not in approvals:
+            terminal_cfg = config.get("terminal")
+            cwd_val = (
+                terminal_cfg.get("cwd", ".")
+                if isinstance(terminal_cfg, dict) else "."
+            )
+            has_explicit_cwd = str(cwd_val).strip() not in {".", "auto", "cwd", ""}
+            approvals["workspace_boundary"] = not has_explicit_cwd
+            config["approvals"] = approvals
+            save_config(config)
+            results["config_added"].append(
+                f"approvals.workspace_boundary={approvals['workspace_boundary']}"
+            )
+            if not quiet:
+                state = "on" if approvals["workspace_boundary"] else "off (explicit terminal.cwd set)"
+                print(f"  ✓ Workspace boundary: {state}")
 
     if current_ver < latest_ver and not quiet:
         print(f"Config version: {current_ver} → {latest_ver}")

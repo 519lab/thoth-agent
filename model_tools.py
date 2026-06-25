@@ -812,6 +812,19 @@ def handle_function_call(
             if function_name in {"write_file", "patch"}:
                 return json.dumps({"error": "Edit approval denied: approval guard failed"}, ensure_ascii=False)
 
+        # Workspace permission-boundary guard: writes/patches outside the
+        # active root (THOTH_ACTIVE_ROOT) require approval, reusing the same
+        # approval system.  Reads are never inspected.
+        try:
+            from agent.workspace_boundary import maybe_require_workspace_boundary_approval
+            _wb_block = maybe_require_workspace_boundary_approval(function_name, function_args, function_args.get("task_id", "default"))
+            if _wb_block is not None:
+                return _wb_block
+        except Exception as _wb_err:
+            logger.debug("workspace boundary guard error: %s", _wb_err)
+            if function_name in {"write_file", "patch"}:
+                return json.dumps({"error": "Write denied: workspace boundary guard failed"}, ensure_ascii=False)
+
         # Notify the read-loop tracker when a non-read/search tool runs,
         # so the *consecutive* counter resets (reads after other work are fine).
         if function_name not in _READ_SEARCH_TOOLS:
