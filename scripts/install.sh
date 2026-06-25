@@ -75,6 +75,13 @@ fi
 
 PYTHON_VERSION="3.11"
 NODE_VERSION="22"
+# Minimum system Node we'll accept before falling back to a managed install.
+# package.json engines require >=20; older distro node → EBADENGINE and
+# silently-broken browser tools / TUI / dashboard.
+NODE_MIN_MAJOR="20"
+# Minimum uv that reliably supports `uv python find` + `uv sync --locked`.
+# Older uv self-updates / gets reinstalled rather than being trusted.
+UV_MIN_VERSION="0.4.0"
 
 # PostgreSQL — substrate's source of truth.
 # Defaults match the docker-compose.yml shipped with this repo.
@@ -214,6 +221,23 @@ log_info()    { echo -e "${CYAN}→${NC} $1"; }
 log_success() { echo -e "${GREEN}✓${NC} $1"; }
 log_warn()    { echo -e "${YELLOW}⚠${NC} $1"; }
 log_error()   { echo -e "${RED}✗${NC} $1"; }
+
+# _version_ge A B → succeeds when version A is >= version B. Uses `sort -V`
+# so multi-component versions (0.4.18 vs 0.4.0) compare correctly. Falls
+# back to a string compare if `sort -V` is unavailable.
+_version_ge() {
+    [ "$(printf '%s\n%s\n' "$2" "$1" | sort -V 2>/dev/null | head -1)" = "$2" ]
+}
+
+# Portable in-place sed. GNU sed accepts `sed -i EXPR FILE`; BSD/macOS sed
+# requires a backup-suffix arg (`sed -i '' EXPR FILE`) and otherwise errors —
+# which, bare under `set -e`, aborts the whole install on re-runs (#214).
+# Sidestep the incompatibility with a temp-file rewrite.
+_sed_inplace() {
+    local expr="$1" file="$2" tmp
+    tmp="$(mktemp 2>/dev/null || echo "${file}.tmp.$$")"
+    sed "$expr" "$file" > "$tmp" && mv "$tmp" "$file"
+}
 
 prompt_yes_no() {
     local question="$1"
@@ -441,14 +465,24 @@ install_uv() {
         return 0
     fi
     log_info "Checking for uv package manager..."
+    # Accept an existing uv only if it meets the minimum version; `uv python
+    # find` and `uv sync --locked` need a reasonably recent uv (#222). An old
+    # uv falls through and gets (re)installed via the astral installer below.
+    local _uv_candidate="" _uv_where=""
     if command -v uv &> /dev/null; then
-        UV_CMD="uv"; log_success "uv found ($($UV_CMD --version 2>/dev/null))"; return 0
+        _uv_candidate="uv"; _uv_where=""
+    elif [ -x "$HOME/.local/bin/uv" ]; then
+        _uv_candidate="$HOME/.local/bin/uv"; _uv_where=" at ~/.local/bin"
+    elif [ -x "$HOME/.cargo/bin/uv" ]; then
+        _uv_candidate="$HOME/.cargo/bin/uv"; _uv_where=" at ~/.cargo/bin"
     fi
-    if [ -x "$HOME/.local/bin/uv" ]; then
-        UV_CMD="$HOME/.local/bin/uv"; log_success "uv found at ~/.local/bin ($($UV_CMD --version 2>/dev/null))"; return 0
-    fi
-    if [ -x "$HOME/.cargo/bin/uv" ]; then
-        UV_CMD="$HOME/.cargo/bin/uv"; log_success "uv found at ~/.cargo/bin ($($UV_CMD --version 2>/dev/null))"; return 0
+    if [ -n "$_uv_candidate" ]; then
+        local _uv_ver
+        _uv_ver="$("$_uv_candidate" --version 2>/dev/null | awk '{print $2}')"
+        if [ -n "$_uv_ver" ] && _version_ge "$_uv_ver" "$UV_MIN_VERSION"; then
+            UV_CMD="$_uv_candidate"; log_success "uv found$_uv_where ($($UV_CMD --version 2>/dev/null))"; return 0
+        fi
+        log_warn "uv ${_uv_ver:-unknown} is older than $UV_MIN_VERSION — upgrading via the astral installer"
     fi
     log_info "Installing uv (fast Python package manager)..."
     local _log _inst
@@ -551,11 +585,25 @@ check_docker() {
         log_info "  (you'll still need to run 'alembic upgrade head' yourself)"
         exit 1
     fi
-    if ! docker info >/dev/null 2>&1; then
-        log_error "Docker is installed but not running"
-        case "$OS" in
-            macos) log_info "  Launch Docker Desktop" ;;
-            linux) log_info "  sudo systemctl start docker  (or: sudo service docker start)" ;;
+    # Capture stderr (drop stdout) so we can tell "daemon down" apart from
+    # "daemon up but you lack permission". For rootless / user-not-in-docker-
+    # group the daemon IS running and `systemctl start docker` is the wrong
+    # remedy — the fix is the docker group (#219).
+    local _docker_err
+    if ! _docker_err="$(docker info 2>&1 >/dev/null)"; then
+        case "$_docker_err" in
+            *"permission denied"*|*"dial unix"*|*"connect: permission denied"*)
+                log_error "Docker is running but you don't have permission to access it"
+                log_info "  Add your user to the docker group, then re-run:"
+                log_info "    sudo usermod -aG docker $USER && newgrp docker"
+                ;;
+            *)
+                log_error "Docker is installed but not running"
+                case "$OS" in
+                    macos) log_info "  Launch Docker Desktop" ;;
+                    linux) log_info "  sudo systemctl start docker  (or: sudo service docker start)" ;;
+                esac
+                ;;
         esac
         exit 1
     fi
@@ -582,9 +630,16 @@ check_node() {
     fi
     log_info "Checking Node.js (for TUI + dashboard + browser tools)..."
     if command -v node &> /dev/null; then
-        log_success "Node.js $(node --version) found"
-        HAS_NODE=true
-        return 0
+        # Gate on the major version: package.json engines require >=20, and an
+        # old distro node otherwise breaks browser tools / TUI silently (#218).
+        local node_major
+        node_major="$(node --version 2>/dev/null | sed 's/^v//' | cut -d. -f1)"
+        if [ -n "$node_major" ] && [ "$node_major" -ge "$NODE_MIN_MAJOR" ] 2>/dev/null; then
+            log_success "Node.js $(node --version) found"
+            HAS_NODE=true
+            return 0
+        fi
+        log_warn "Node.js $(node --version 2>/dev/null) is older than v$NODE_MIN_MAJOR (required) — installing a Thoth-managed Node.js $NODE_VERSION LTS"
     fi
     if [ -x "$THOTH_HOME/node/bin/node" ]; then
         export PATH="$THOTH_HOME/node/bin:$PATH"
@@ -1242,9 +1297,18 @@ setup_path() {
     mkdir -p "$link_dir"
     rm -f "$link_dir/$CLI_NAME"
 
-    # Launcher injects THOTH_PG_DSN if --skip-postgres wasn't used.
+    # Launcher injects THOTH_PG_DSN only when we actually have one.
     # Clears PYTHONPATH/PYTHONHOME so a parent process can't shadow this venv.
-    local pg_dsn="${PG_DSN_OVERRIDE:-postgresql://${PG_USER_DEFAULT}:${PG_PASSWORD_DEFAULT}@${PG_HOST_DEFAULT}:${PG_PORT_DEFAULT}/${PG_DATABASE_DEFAULT}}"
+    # With --skip-postgres and no --pg-dsn there is no local cluster, so baking
+    # the localhost:5432 default would just point the agent at a non-existent
+    # DB — leave THOTH_PG_DSN unset and let the user's own env/.env win (#227).
+    local pg_dsn_export=""
+    if [ -n "${PG_DSN_OVERRIDE:-}" ]; then
+        pg_dsn_export="export THOTH_PG_DSN=\"\${THOTH_PG_DSN:-$PG_DSN_OVERRIDE}\""
+    elif [ "$SKIP_POSTGRES" != true ]; then
+        local pg_dsn="postgresql://${PG_USER_DEFAULT}:${PG_PASSWORD_DEFAULT}@${PG_HOST_DEFAULT}:${PG_PORT_DEFAULT}/${PG_DATABASE_DEFAULT}"
+        pg_dsn_export="export THOTH_PG_DSN=\"\${THOTH_PG_DSN:-$pg_dsn}\""
+    fi
     # Pin the embedding dim choice (if the operator set one at install
     # time) into the launcher so re-installs and subsequent ``alembic
     # upgrade head`` invocations preserve the schema shape. Unset env →
@@ -1260,7 +1324,7 @@ setup_path() {
 unset PYTHONPATH
 unset PYTHONHOME
 export THOTH_HOME="\${THOTH_HOME:-$THOTH_HOME}"
-export THOTH_PG_DSN="\${THOTH_PG_DSN:-$pg_dsn}"
+$pg_dsn_export
 # Echo the user-facing launcher name into resume/setup hints. The venv
 # console script is itself named "thoth" so argv[0] can't carry this.
 export THOTH_CLI_NAME="\${THOTH_CLI_NAME:-$CLI_NAME}"
@@ -1304,7 +1368,11 @@ EOF
                   [ -f "$HOME/.zprofile"  ] && cfgs+=("$HOME/.zprofile")
                   [ ${#cfgs[@]} -eq 0 ] && { touch "$HOME/.zshrc"; cfgs+=("$HOME/.zshrc"); } ;;
             bash) [ -f "$HOME/.bashrc"       ] && cfgs+=("$HOME/.bashrc")
-                  [ -f "$HOME/.bash_profile" ] && cfgs+=("$HOME/.bash_profile") ;;
+                  [ -f "$HOME/.bash_profile" ] && cfgs+=("$HOME/.bash_profile")
+                  # No rc file at all (e.g. a minimal/login-only environment):
+                  # create ~/.bashrc so ~/.local/bin actually persists — mirror
+                  # the zsh/fish create-if-missing branches (#215).
+                  [ ${#cfgs[@]} -eq 0 ] && { touch "$HOME/.bashrc"; cfgs+=("$HOME/.bashrc"); } ;;
             fish)
                 local FISH_CONFIG="$HOME/.config/fish/config.fish"
                 mkdir -p "$(dirname "$FISH_CONFIG")"
@@ -1392,13 +1460,13 @@ copy_config_templates() {
 
             if [ "$FORCE_REWRITE_CONFIG" = true ]; then
                 _backup_env_file "force-rewrite-config"
-                sed -i "s|^THOTH_PG_DSN=.*|THOTH_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
+                _sed_inplace "s|^THOTH_PG_DSN=.*|THOTH_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
                 log_success "Updated THOTH_PG_DSN in $THOTH_HOME/.env ($cur → $pg_dsn) [--force-rewrite-config]"
             elif [ "$_looks_local" = true ]; then
                 # Local DSN whose port drifted (typical after a port-bump
                 # on an upgrade). Safe to rewrite — but back up first.
                 _backup_env_file "pg-dsn-port-drift"
-                sed -i "s|^THOTH_PG_DSN=.*|THOTH_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
+                _sed_inplace "s|^THOTH_PG_DSN=.*|THOTH_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
                 log_success "Updated THOTH_PG_DSN in $THOTH_HOME/.env ($cur → $pg_dsn)"
             else
                 # Non-local DSN — almost certainly user-customized
@@ -1480,7 +1548,29 @@ configure_browser_env_from_system_browser() {
 
 run_browser_install_with_timeout() {
     local seconds="$1"; shift
-    if command -v timeout >/dev/null 2>&1; then timeout "$seconds" "$@"; else "$@"; fi
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "$seconds" "$@"
+    elif command -v gtimeout >/dev/null 2>&1; then
+        # macOS coreutils (brew) installs GNU timeout as `gtimeout`.
+        gtimeout "$seconds" "$@"
+    else
+        # Stock macOS ships neither `timeout` nor `gtimeout`. Run in the
+        # background and kill it on overrun so Playwright can't hang the
+        # installer forever (#222).
+        "$@" &
+        local _cmd_pid=$! _waited=0
+        while kill -0 "$_cmd_pid" 2>/dev/null; do
+            if [ "$_waited" -ge "$seconds" ]; then
+                log_warn "Browser install exceeded ${seconds}s — terminating"
+                kill "$_cmd_pid" 2>/dev/null
+                wait "$_cmd_pid" 2>/dev/null
+                return 124
+            fi
+            sleep 1
+            _waited=$((_waited + 1))
+        done
+        wait "$_cmd_pid"
+    fi
 }
 
 install_node_deps() {
@@ -1831,6 +1921,14 @@ print_success() {
 
     [ "$HAS_NODE" = false ]    && echo -e "${YELLOW}Note: Node.js missing — browser tools / TUI / dashboard disabled.${NC}"
     [ "$HAS_RIPGREP" = false ] && echo -e "${YELLOW}Note: ripgrep missing — file search uses grep fallback.${NC}"
+
+    # Non-interactive / CI installs can finish with no provider key (the
+    # wizard was skipped or had nothing to read). Say so loudly so the user
+    # isn't surprised by a chat that can't reach any model (#227).
+    if ! _env_has_provider_api_key; then
+        echo ""
+        echo -e "${YELLOW}${BOLD}⚠  No provider key configured — run \`$CLI_NAME setup\` before chatting.${NC}"
+    fi
 }
 
 # ── Main ───────────────────────────────────────────────────────────────────
