@@ -1,8 +1,8 @@
 """
 Backup and import commands for thoth CLI.
 
-`thoth backup` creates a zip archive of the entire ~/.hermes/ directory
-(excluding the hermes-agent repo and transient files).
+`thoth backup` creates a zip archive of the entire ~/.thoth/ directory
+(excluding the app/ code repo and transient files).
 
 `thoth import` restores from a backup zip, overlaying onto the current
 THOTH_HOME root.
@@ -33,7 +33,8 @@ logger = logging.getLogger(__name__)
 
 # Directory names to skip entirely (matched against each path component)
 _EXCLUDED_DIRS = {
-    "hermes-agent",     # the codebase repo — re-clone instead
+    "app",              # the codebase repo — re-clone instead
+    "hermes-agent",     # legacy code-dir name (pre-rename installs)
     "__pycache__",      # bytecode caches — regenerated on import
     ".git",             # nested git dirs (profiles shouldn't have these, but safety)
     "node_modules",     # js deps if website/ somehow leaks in
@@ -451,8 +452,8 @@ def run_import(args) -> None:
 
         # Guidance
         print()
-        if not (thoth_root / "hermes-agent").is_dir():
-            print("Note: The hermes-agent codebase was not included in the backup.")
+        if not (thoth_root / "app").is_dir() and not (thoth_root / "hermes-agent").is_dir():
+            print("Note: The app/ codebase was not included in the backup.")
             print(f"  If this is a fresh install, run: {cli_name()} update")
 
         if restored_profiles:

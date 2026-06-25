@@ -266,8 +266,9 @@ def _thoth_path_markers(thoth_home: Path) -> list[str]:
     """Path-entry substrings that identify Thoth-owned User-PATH entries."""
     root = str(thoth_home).rstrip("\\/")
     # Match on prefix so sub-entries (git\cmd, git\bin, git\usr\bin, node, etc.)
-    # all get swept.  Also match the bare hermes-agent install dir.
-    markers = [root + "\\hermes-agent", root + "\\git", root + "\\node", root + "\\venv"]
+    # all get swept.  Also match the bare app install dir (and the legacy
+    # hermes-agent code-dir name so pre-rename installs still get cleaned up).
+    markers = [root + "\\app", root + "\\hermes-agent", root + "\\git", root + "\\node", root + "\\venv"]
     # Also match if THOTH_HOME was customised to somewhere else — find-and-nuke
     # any entry whose path component contains "hermes".  We don't want to catch
     # unrelated entries like "chermes-foo" or "ephermeral", so we look for
@@ -604,7 +605,7 @@ def run_uninstall(args):
     # We need to be careful here
     try:
         if project_root.exists():
-            # If the install is inside ~/.hermes/, just remove the hermes-agent subdir
+            # If the install is inside ~/.thoth/, just remove the app/ code subdir
             if thoth_home in project_root.parents or project_root.parent == thoth_home:
                 shutil.rmtree(project_root)
                 log_success(f"Removed {project_root}")

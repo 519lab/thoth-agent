@@ -82,7 +82,8 @@ _CLONE_ALL_STRIP: list[str] = [
 # user data from a named-profile source.
 #
 # Rationale per item:
-#   hermes-agent  — git repo checkout (~84 MB source + ~3 GB venv)
+#   app           — git repo checkout (~84 MB source + ~3 GB venv)
+#   hermes-agent  — legacy code-dir name (pre-rename installs)
 #   .worktrees    — git worktrees
 #   profiles      — sibling named profiles (recursive copy never intended)
 #   bin           — installed binaries (tirith etc., ~10 MB) shared per-host
@@ -93,7 +94,8 @@ _CLONE_ALL_STRIP: list[str] = [
 # archive is a portable snapshot; clone-all keeps those because the cloned
 # profile is meant to keep working immediately).
 _CLONE_ALL_DEFAULT_EXCLUDE_ROOT: frozenset[str] = frozenset({
-    "hermes-agent",
+    "app",
+    "hermes-agent",  # legacy code-dir name (pre-rename installs)
     ".worktrees",
     "profiles",
     "bin",
@@ -170,7 +172,8 @@ def _clone_all_copytree_ignore(source_dir: Path):
 # export is a portable, reasonable-size archive of actual profile data.
 _DEFAULT_EXPORT_EXCLUDE_ROOT = frozenset({
     # Infrastructure
-    "hermes-agent",         # repo checkout (multi-GB)
+    "app",                  # repo checkout (multi-GB)
+    "hermes-agent",         # legacy code-dir name (pre-rename installs)
     ".worktrees",           # git worktrees
     "profiles",             # other profiles — never recursive-export
     "bin",                  # installed binaries (tirith, etc.)

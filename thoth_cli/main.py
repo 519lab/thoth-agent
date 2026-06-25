@@ -8340,7 +8340,7 @@ def _ensure_fhs_path_guard() -> None:
     except AttributeError:
         return
     # Only act when this is actually an FHS-layout install (command link at
-    # /usr/local/bin/thoth, code at /usr/local/lib/hermes-agent).
+    # /usr/local/bin/thoth, code at /usr/local/lib/thoth).
     fhs_link = Path("/usr/local/bin/thoth")
     if not fhs_link.is_symlink() and not fhs_link.exists():
         return
@@ -12412,7 +12412,7 @@ Examples:
         "backup",
         help="Back up Thoth home directory to a zip file",
         description="Create a zip archive of your entire Thoth configuration, "
-        "skills, sessions, and data (excludes the hermes-agent codebase). "
+        "skills, sessions, and data (excludes the app/ codebase). "
         "Use --quick for a fast snapshot of just critical state files.",
     )
     backup_parser.add_argument(
