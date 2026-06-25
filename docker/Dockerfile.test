@@ -84,7 +84,7 @@ RUN uv pip install --no-deps -e "."
 
 # Default test environment — overridden by docker-compose at run time
 # but documents the intent.
-ENV THOTH_PG_DSN=postgresql://hermes:hermes@postgres-test:5432/hermes
+ENV THOTH_PG_DSN=postgresql://thoth:thoth@postgres-test:5432/thoth
 ENV THOTH_TEST_POSTGRES_PORT=5432
 ENV TZ=UTC
 ENV LANG=C.UTF-8

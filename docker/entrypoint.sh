@@ -3,62 +3,62 @@
 set -e
 
 THOTH_HOME="${THOTH_HOME:-/opt/data}"
-INSTALL_DIR="/opt/hermes"
+INSTALL_DIR="/opt/thoth"
 
 # --- Privilege dropping via gosu ---
 # When started as root (the default for Docker, or fakeroot in rootless Podman),
-# optionally remap the hermes user/group to match host-side ownership, fix volume
-# permissions, then re-exec as hermes.
+# optionally remap the thoth user/group to match host-side ownership, fix volume
+# permissions, then re-exec as thoth.
 if [ "$(id -u)" = "0" ]; then
-    if [ -n "$THOTH_UID" ] && [ "$THOTH_UID" != "$(id -u hermes)" ]; then
-        echo "Changing hermes UID to $THOTH_UID"
-        usermod -u "$THOTH_UID" hermes
+    if [ -n "$THOTH_UID" ] && [ "$THOTH_UID" != "$(id -u thoth)" ]; then
+        echo "Changing thoth UID to $THOTH_UID"
+        usermod -u "$THOTH_UID" thoth
     fi
 
-    if [ -n "$THOTH_GID" ] && [ "$THOTH_GID" != "$(id -g hermes)" ]; then
-        echo "Changing hermes GID to $THOTH_GID"
+    if [ -n "$THOTH_GID" ] && [ "$THOTH_GID" != "$(id -g thoth)" ]; then
+        echo "Changing thoth GID to $THOTH_GID"
         # -o allows non-unique GID (e.g. macOS GID 20 "staff" may already exist
         # as "dialout" in the Debian-based container image)
-        groupmod -o -g "$THOTH_GID" hermes 2>/dev/null || true
+        groupmod -o -g "$THOTH_GID" thoth 2>/dev/null || true
     fi
 
-    # Fix ownership of the data volume. When THOTH_UID remaps the hermes user,
+    # Fix ownership of the data volume. When THOTH_UID remaps the thoth user,
     # files created by previous runs (under the old UID) become inaccessible.
     # Always chown -R when UID was remapped; otherwise only if top-level is wrong.
-    actual_hermes_uid=$(id -u hermes)
+    actual_thoth_uid=$(id -u thoth)
     needs_chown=false
     if [ -n "$THOTH_UID" ] && [ "$THOTH_UID" != "10000" ]; then
         needs_chown=true
-    elif [ "$(stat -c %u "$THOTH_HOME" 2>/dev/null)" != "$actual_hermes_uid" ]; then
+    elif [ "$(stat -c %u "$THOTH_HOME" 2>/dev/null)" != "$actual_thoth_uid" ]; then
         needs_chown=true
     fi
     if [ "$needs_chown" = true ]; then
-        echo "Fixing ownership of $THOTH_HOME to hermes ($actual_hermes_uid)"
+        echo "Fixing ownership of $THOTH_HOME to thoth ($actual_thoth_uid)"
         # In rootless Podman the container's "root" is mapped to an unprivileged
         # host UID — chown will fail.  That's fine: the volume is already owned
         # by the mapped user on the host side.
-        chown -R hermes:hermes "$THOTH_HOME" 2>/dev/null || \
+        chown -R thoth:thoth "$THOTH_HOME" 2>/dev/null || \
             echo "Warning: chown failed (rootless container?) — continuing anyway"
         # The .venv must also be re-chowned when UID is remapped, otherwise
         # lazy_deps.py cannot install platform packages (discord.py, etc.).
-        chown -R hermes:hermes "$INSTALL_DIR/.venv" 2>/dev/null || \
+        chown -R thoth:thoth "$INSTALL_DIR/.venv" 2>/dev/null || \
             echo "Warning: chown .venv failed (rootless container?) — continuing anyway"
     fi
 
-    # Ensure config.yaml is readable by the hermes runtime user even if it was
+    # Ensure config.yaml is readable by the thoth runtime user even if it was
     # edited on the host after initial ownership setup. Must run here (as root)
     # rather than after the gosu drop, otherwise a non-root caller like
     # `docker run -u $(id -u):$(id -g)` hits "Operation not permitted" (#15865).
     if [ -f "$THOTH_HOME/config.yaml" ]; then
-        chown hermes:hermes "$THOTH_HOME/config.yaml" 2>/dev/null || true
+        chown thoth:thoth "$THOTH_HOME/config.yaml" 2>/dev/null || true
         chmod 640 "$THOTH_HOME/config.yaml" 2>/dev/null || true
     fi
 
     echo "Dropping root privileges"
-    exec gosu hermes "$0" "$@"
+    exec gosu thoth "$0" "$@"
 fi
 
-# --- Running as hermes from here ---
+# --- Running as thoth from here ---
 source "${INSTALL_DIR}/.venv/bin/activate"
 
 # Stamp install method for detect_install_method()
@@ -67,7 +67,7 @@ echo "docker" > "${THOTH_HOME:=/opt/data}/.install_method" 2>/dev/null || true
 # Create essential directory structure.  Cache and platform directories
 # (cache/images, cache/audio, platforms/whatsapp, etc.) are created on
 # demand by the application — don't pre-create them here so new installs
-# get the consolidated layout from get_hermes_dir().
+# get the consolidated layout from get_thoth_dir().
 # The "home/" subdirectory is a per-profile HOME for subprocesses (git,
 # ssh, gh, npm …).  Without it those tools write to /root which is
 # ephemeral and shared across profiles.  See issue #4426.
