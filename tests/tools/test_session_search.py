@@ -37,6 +37,36 @@ def db(thoth_db_initialized_sync):
     return SyncSessionDB(_AsyncSessionDB())
 
 
+def test_ensure_sync_db_wraps_async_only():
+    """_ensure_sync_db wraps a raw async db, leaves sync dbs untouched, idempotent."""
+    from tools.session_search_tool import _SyncDB, _ensure_sync_db
+
+    class _Asyncish:
+        async def get_session(self, sid):  # coroutine method
+            return None
+
+    class _Syncish:
+        def get_session(self, sid):
+            return None
+
+    assert _ensure_sync_db(None) is None
+    syncish = _Syncish()
+    assert _ensure_sync_db(syncish) is syncish          # sync db untouched
+    wrapped = _ensure_sync_db(_Asyncish())
+    assert isinstance(wrapped, _SyncDB)                 # async db wrapped
+    assert _ensure_sync_db(wrapped) is wrapped          # idempotent
+
+
+def test_session_search_wraps_raw_async_db(thoth_db_initialized_sync):
+    """Regression: agent/tool_executor.py passes the RAW _AsyncSessionDB as db=.
+    session_search must wrap it rather than call its coroutine methods un-awaited
+    (which crashed with "'coroutine' object is not iterable"). Browse mode (no
+    query) is enough to drive db.list_sessions_rich through the adapter."""
+    raw = _AsyncSessionDB()
+    out = session_search(db=raw)
+    assert isinstance(out, str) and "coroutine" not in out
+
+
 def _seed_modpack_sessions(db):
     """Create three sessions about a modpack so trigram search has
     hits to dedupe.
