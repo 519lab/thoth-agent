@@ -173,6 +173,11 @@ class TestRunConversationCodexPath:
         agent = _make_codex_agent()
         agent._skill_nudge_interval = 10
         agent._iters_since_skill = 0
+        # Innovation #8 made signal-mode the default: crossing the interval
+        # alone no longer fires (only a turn signal or the RAISED fallback
+        # does). Pin the legacy fixed-interval cadence so this test keeps
+        # exercising the "interval tripped -> fire" call path it guards.
+        agent._skill_review_signal_mode = False
         # Make valid_tool_names include 'skill_manage' so the gate passes
         agent.valid_tool_names = set(getattr(agent, "valid_tool_names", set()))
         agent.valid_tool_names.add("skill_manage")
@@ -201,6 +206,7 @@ class TestRunConversationCodexPath:
         agent = _make_codex_agent()
         agent._skill_nudge_interval = 1  # very low so any iter trips it
         agent._iters_since_skill = 0
+        agent._skill_review_signal_mode = False  # legacy interval cadence (see #8)
         agent.valid_tool_names = set(getattr(agent, "valid_tool_names", set()))
         agent.valid_tool_names.add("skill_manage")
 
