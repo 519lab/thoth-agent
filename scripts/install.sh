@@ -7,7 +7,7 @@
 #
 # Defaults:
 #
-#   - INSTALL_DIR:  ~/.thoth/hermes-agent
+#   - INSTALL_DIR:  ~/.thoth/app
 #   - THOTH_HOME:  ~/.thoth
 #   - CLI command:  thoth
 #   - PostgreSQL:   docker compose service on port 5432, db `hermes`
@@ -156,8 +156,8 @@ Options:
                         DESTRUCTIVE: all substrate state in that volume is lost.
   --branch NAME       Git branch to install (default: main)
   --dir PATH          Installation directory
-                        default (non-root): ~/.thoth/hermes-agent
-                        default (root, Linux): /usr/local/lib/hermes-agent
+                        default (non-root): ~/.thoth/app
+                        default (root, Linux): /usr/local/lib/thoth
   --hermes-home PATH  Data directory
                         default: ~/.thoth
                         (Override env: THOTH_HOME)
@@ -286,18 +286,25 @@ resolve_install_layout() {
     fi
 
     if is_termux; then
-        INSTALL_DIR="$THOTH_HOME/hermes-agent"
+        INSTALL_DIR="$THOTH_HOME/app"
         return 0
     fi
 
     # Root on Linux: FHS layout, unless a legacy install exists at THOTH_HOME.
+    # Prefer the current ``app`` checkout, but still adopt a legacy
+    # ``hermes-agent`` checkout so old installs upgrade in place.
     if [ "$OS" = "linux" ] && [ "$(id -u)" -eq 0 ]; then
-        if [ -d "$THOTH_HOME/hermes-agent/.git" ]; then
-            INSTALL_DIR="$THOTH_HOME/hermes-agent"
+        if [ -d "$THOTH_HOME/app/.git" ]; then
+            INSTALL_DIR="$THOTH_HOME/app"
             log_info "Existing install detected at $INSTALL_DIR — keeping layout"
             return 0
         fi
-        INSTALL_DIR="/usr/local/lib/hermes-agent"
+        if [ -d "$THOTH_HOME/hermes-agent/.git" ]; then
+            INSTALL_DIR="$THOTH_HOME/hermes-agent"
+            log_info "Existing legacy install detected at $INSTALL_DIR — keeping layout"
+            return 0
+        fi
+        INSTALL_DIR="/usr/local/lib/thoth"
         ROOT_FHS_LAYOUT=true
         log_info "Root install on Linux — using FHS layout"
         log_info "  Code:    $INSTALL_DIR"
@@ -306,7 +313,13 @@ resolve_install_layout() {
         return 0
     fi
 
-    INSTALL_DIR="$THOTH_HOME/hermes-agent"
+    # Non-root default: prefer the current ``app`` checkout, but adopt a
+    # legacy ``hermes-agent`` checkout in place so old installs upgrade.
+    if [ -d "$THOTH_HOME/hermes-agent/.git" ] && [ ! -d "$THOTH_HOME/app/.git" ]; then
+        INSTALL_DIR="$THOTH_HOME/hermes-agent"
+        return 0
+    fi
+    INSTALL_DIR="$THOTH_HOME/app"
 }
 
 get_command_link_dir() {

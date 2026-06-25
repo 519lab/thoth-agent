@@ -390,14 +390,14 @@ else
 fi
 
 # ============================================================================
-# Seed bundled skills into ~/.hermes/skills/
+# Seed bundled skills into ~/.thoth/skills/
 # ============================================================================
 
 THOTH_SKILLS_DIR="${THOTH_HOME:-$HOME/.thoth}/skills"
 mkdir -p "$THOTH_SKILLS_DIR"
 
 echo ""
-echo "Syncing bundled skills to ~/.hermes/skills/ ..."
+echo "Syncing bundled skills to ~/.thoth/skills/ ..."
 if "$SCRIPT_DIR/venv/bin/python" "$SCRIPT_DIR/tools/skills_sync.py" 2>/dev/null; then
     echo -e "${GREEN}✓${NC} Skills synced"
 else

@@ -227,12 +227,18 @@ def _augment_path_with_known_tools() -> None:
     # should match so this prefill fully mirrors what a fresh shell would
     # see on next launch.
     candidate_dirs = [
+        os.path.join(local_appdata, "thoth", "git", "cmd"),
+        os.path.join(local_appdata, "thoth", "git", "bin"),
+        os.path.join(local_appdata, "thoth", "git", "usr", "bin"),
+        # Thoth venv Scripts directory — host of the thoth.exe shim itself,
+        # also where any pip-installed console scripts land.  Usually already
+        # on PATH when the user invokes thoth, but harmless to include.
+        os.path.join(local_appdata, "thoth", "app", "venv", "Scripts"),
+        # Legacy pre-rename install layout (data root ``hermes``, code dir
+        # ``hermes-agent``) — kept so old installs still resolve git/venv.
         os.path.join(local_appdata, "hermes", "git", "cmd"),
         os.path.join(local_appdata, "hermes", "git", "bin"),
         os.path.join(local_appdata, "hermes", "git", "usr", "bin"),
-        # Thoth venv Scripts directory — host of the hermes.exe shim itself,
-        # also where any pip-installed console scripts land.  Usually already
-        # on PATH when the user invokes thoth, but harmless to include.
         os.path.join(local_appdata, "hermes", "hermes-agent", "venv", "Scripts"),
         # WinGet packages directory — where ``winget install`` drops CLI
         # shims by default (ripgrep lands here as rg.exe).  Covers the case
