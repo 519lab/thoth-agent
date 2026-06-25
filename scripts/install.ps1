@@ -26,6 +26,16 @@ param(
     [string]$HermesHome = "$env:LOCALAPPDATA\thoth",
     [string]$InstallDir = "$env:LOCALAPPDATA\thoth\app",
 
+    # --- PostgreSQL (substrate / headline memory) ---
+    # By default the installer provisions the bundled pgvector container via
+    # docker compose and runs Alembic migrations (parity with install.sh).
+    # -SkipPostgres skips Docker entirely; combine with -PgDsn to point at your
+    # own cluster (migrations still run against it). With neither, memory is
+    # left disabled and the installer says so loudly instead of writing a dead
+    # localhost DSN. See issue #217.
+    [switch]$SkipPostgres,
+    [string]$PgDsn = "",
+
     # --- Stage protocol (additive; default invocation behaves as before) ----
     # See the "Stage protocol" section near the bottom of the file for the
     # full contract.  Intended for programmatic drivers (the desktop GUI's
@@ -924,6 +934,362 @@ function Install-SystemPackages {
 }
 
 # ============================================================================
+# Backup helpers (parity with install.sh _backup_env_file + #210 code-dir
+# diff backup). These let destructive update/rewrite paths be recoverable.
+# ============================================================================
+
+# Back up $HermesHome\.env before any in-place mutation. Backup name embeds a
+# UTC timestamp + a short reason tag so users can tell which rewrite produced
+# each file. No-op if .env doesn't exist yet. Mirrors install.sh
+# _backup_env_file.
+function Backup-EnvFile {
+    param(
+        [string]$EnvPath,
+        [string]$Reason = "rewrite"
+    )
+    if (-not (Test-Path $EnvPath)) { return }
+    $backupDir = Join-Path $HermesHome ".install-backup"
+    New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+    $ts = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
+    $backupPath = Join-Path $backupDir ".env.$ts.$Reason"
+    Copy-Item -LiteralPath $EnvPath -Destination $backupPath -Force
+    Write-Info "Backed up .env to $backupPath"
+}
+
+# Back up local changes in the (disposable) code dir before a hard reset.
+# Mirrors install.sh clone_repo #210: save `git diff HEAD` to a .patch and the
+# `git status --porcelain` listing under $HermesHome\.install-backup, then warn.
+# Assumes the caller has Push-Location'd into $InstallDir (a git repo).
+function Backup-CodeDirChanges {
+    $dirty = git -c windows.appendAtomically=false status --porcelain 2>$null
+    if (-not $dirty) { return }
+    $backupDir = Join-Path $HermesHome ".install-backup"
+    New-Item -ItemType Directory -Force -Path $backupDir -ErrorAction SilentlyContinue | Out-Null
+    $ts = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
+    $patchFile = Join-Path $backupDir "code-local-changes-$ts.patch"
+    $statusFile = Join-Path $backupDir "code-local-status-$ts.txt"
+    try {
+        git -c windows.appendAtomically=false diff HEAD 2>$null | Out-File -LiteralPath $patchFile -Encoding utf8
+        $dirty | Out-File -LiteralPath $statusFile -Encoding utf8
+    } catch {}
+    Write-Warn "Local changes in the code dir detected -- resetting to a clean"
+    Write-Warn "  upstream copy (the code dir is managed; your config + data in"
+    Write-Warn "  $HermesHome are untouched)."
+    if ((Test-Path $patchFile) -and ((Get-Item $patchFile).Length -gt 0)) {
+        Write-Warn "  Saved a diff of your changes to: $patchFile"
+    }
+}
+
+# ============================================================================
+# PostgreSQL provisioning (substrate / headline memory). Parity with
+# install.sh resolve_compose_project + setup_postgres + run_migrations.
+# Without this the Windows agent writes a dead THOTH_PG_DSN (localhost:5432
+# with nothing listening) and the substrate silently fails on every op
+# (issue #217).
+# ============================================================================
+
+# True if TCP $Port is already bound on the loopback interface.
+function Test-PortInUse {
+    param([int]$Port)
+    try {
+        $conns = Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction SilentlyContinue
+        if ($conns) { return $true }
+        return $false
+    } catch {
+        # Older hosts without the NetTCPIP module: fall back to a bind probe.
+        try {
+            $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
+            $listener.Start(); $listener.Stop()
+            return $false
+        } catch {
+            return $true
+        }
+    }
+}
+
+# Detect docker + a compose flavor. Sets $script:ComposeIsV2 ($true for the
+# `docker compose` subcommand, $false for legacy `docker-compose`). Returns
+# $true when docker is installed, running, and compose is available.
+function Test-DockerForPostgres {
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { return $false }
+    & docker info *> $null
+    if ($LASTEXITCODE -ne 0) { return $false }
+    & docker compose version *> $null
+    if ($LASTEXITCODE -eq 0) { $script:ComposeIsV2 = $true; return $true }
+    if (Get-Command docker-compose -ErrorAction SilentlyContinue) {
+        $script:ComposeIsV2 = $false
+        return $true
+    }
+    return $false
+}
+
+# Run `docker compose` (v2) or `docker-compose` (v1) with the given args.
+# Callers pass an explicit array (e.g. -ComposeArgs 'up','-d','postgres') so
+# that compose flags like -d are never mis-parsed as PowerShell parameters.
+function Invoke-DockerCompose {
+    param([string[]]$ComposeArgs)
+    if ($script:ComposeIsV2) {
+        & docker compose @ComposeArgs
+    } else {
+        & docker-compose @ComposeArgs
+    }
+}
+
+# Pin a STABLE docker-compose project name, decoupled from the install dir.
+# Compose otherwise derives the project (and thus the DB volume + container
+# names) from the code-dir basename -- so $InstallDir\app yields project `app`
+# and volume `app_hermes_pg_data`, which would orphan the real data when the
+# code dir is renamed. Resolution (parity with install.sh resolve_compose_project):
+#   1. An explicit COMPOSE_PROJECT_NAME in the environment always wins.
+#   2. An existing `<project>_hermes_pg_data` volume -> reuse <project> so an
+#      upgrading install re-attaches its real database (no data orphaned).
+#   3. Fresh install -> the stable Thoth name `thoth`.
+# Exports COMPOSE_PROJECT_NAME so every subsequent docker compose call agrees.
+function Resolve-ComposeProject {
+    if ($env:COMPOSE_PROJECT_NAME) {
+        Write-Info "PostgreSQL: compose project '$($env:COMPOSE_PROJECT_NAME)' (from environment)"
+        return $env:COMPOSE_PROJECT_NAME
+    }
+    $existingVol = $null
+    try {
+        $existingVol = (& docker volume ls --format '{{.Name}}' 2>$null) |
+            Where-Object { $_ -match '_hermes_pg_data$' } | Select-Object -First 1
+    } catch {}
+    if ($existingVol) {
+        $proj = $existingVol -replace '_hermes_pg_data$', ''
+        Write-Info "PostgreSQL: reusing existing compose project '$proj' (volume '$existingVol')"
+    } else {
+        $proj = "thoth"
+        Write-Info "PostgreSQL: compose project '$proj' (fresh install)"
+    }
+    $env:COMPOSE_PROJECT_NAME = $proj
+    return $proj
+}
+
+# Inspect an existing Thoth/Hermes postgres container's published host port for
+# container port 5432. Returns the port string, or $null. Mirrors the dual-stack
+# handling in install.sh choose_pg_port (IPv4 + IPv6 bindings emit two HostPort
+# entries; whitespace-separate and take the first).
+function Get-ContainerPgPort {
+    param([string]$ContainerName)
+    $bound = & docker inspect `
+        --format '{{range $p, $conf := .NetworkSettings.Ports}}{{if eq $p "5432/tcp"}}{{range $conf}}{{.HostPort}} {{end}}{{end}}{{end}}' `
+        $ContainerName 2>$null
+    if (-not $bound) { return $null }
+    $first = ($bound -split '\s+' | Where-Object { $_ }) | Select-Object -First 1
+    return $first
+}
+
+# Decide the host port the bundled postgres should bind. Reuse an existing
+# Thoth/Hermes container's port (removing the old container so compose-up
+# rebinds the same port; the named data volume persists); otherwise default
+# 5432, bumping to 5433-5450 if it is already taken. Parity with
+# install.sh choose_pg_port.
+function Resolve-PostgresPort {
+    param([string]$Project)
+    $default = 5432
+    $candidates = @(
+        "$Project-postgres-1",
+        "thoth-postgres-1",
+        "hermes-agent-postgres-1",
+        "hermes-substrate-postgres-1"
+    )
+    foreach ($name in $candidates) {
+        if (-not $name) { continue }
+        $found = & docker ps -a --filter "name=^/$name$" --format '{{.Names}}' 2>$null
+        if ($found -ne $name) { continue }
+        $port = Get-ContainerPgPort -ContainerName $name
+        if ($port) {
+            Write-Info "PostgreSQL upgrade: reusing existing container '$name' on port $port"
+            Write-Warn "PostgreSQL: REUSING existing database (named volume persists);"
+            Write-Warn "  schema + alembic_version are inherited from the previous install."
+            Write-Info "  Stopping + removing the container so compose-up reuses the same port."
+            & docker rm -f $name *> $null
+            return $port
+        }
+        # Container exists but has no 5432 mapping -- remove + fall through.
+        Write-Warn "PostgreSQL: found existing '$name' with no 5432 mapping; removing"
+        & docker rm -f $name *> $null
+    }
+    if (Test-PortInUse -Port $default) {
+        Write-Warn "PostgreSQL: port $default is taken (likely a native Postgres install);"
+        Write-Warn "  searching 5433-5450 for a free port..."
+        for ($p = 5433; $p -le 5450; $p++) {
+            if (-not (Test-PortInUse -Port $p)) {
+                Write-Info "PostgreSQL: bumping to port $p to avoid collision"
+                return $p
+            }
+        }
+        Write-Warn "No free port in 5433-5450; using $default anyway."
+    }
+    return $default
+}
+
+# Run `alembic upgrade head` against $Dsn using the venv's alembic. Mirrors
+# install.sh run_migrations (fails loudly so a broken substrate schema can't
+# masquerade as a healthy install).
+function Invoke-AlembicUpgrade {
+    param([string]$Dsn)
+    $alembic = "$InstallDir\venv\Scripts\alembic.exe"
+    if (-not (Test-Path $alembic)) {
+        Write-Warn "alembic not found at $alembic -- skipping migrations."
+        Write-Info "Run manually later: cd `"$InstallDir`"; `$env:THOTH_PG_DSN='$Dsn'; venv\Scripts\alembic -c migrations\alembic.ini upgrade head"
+        return
+    }
+    Write-Info "Running Alembic migrations against:"
+    Write-Info "  $Dsn"
+    Push-Location $InstallDir
+    $prevDsn = $env:THOTH_PG_DSN
+    try {
+        $env:THOTH_PG_DSN = $Dsn
+        & $alembic -c migrations/alembic.ini upgrade head
+        $code = $LASTEXITCODE
+    } finally {
+        $env:THOTH_PG_DSN = $prevDsn
+        Pop-Location
+    }
+    if ($code -eq 0) {
+        Write-Success "Substrate schema migrated to head"
+    } else {
+        throw "Alembic upgrade failed (exit $code). Substrate will not work until migrations succeed. Check connectivity to $Dsn."
+    }
+}
+
+# Resolve the DSN that should be written into .env. Prefers the one this
+# install just provisioned ($script:ResolvedPgDsn); else an operator-supplied
+# -PgDsn; else, in cross-process stage-driver mode where $script:ResolvedPgDsn
+# isn't visible, best-effort re-inspect a running Thoth postgres container's
+# bound port. Returns $null when no DSN can be determined (e.g. -SkipPostgres
+# with no -PgDsn, or Docker absent).
+function Resolve-RunningPgDsn {
+    if ($script:ResolvedPgDsn) { return $script:ResolvedPgDsn }
+    if ($PgDsn) { return $PgDsn }
+    if ($SkipPostgres) { return $null }
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { return $null }
+    $names = @("$($env:COMPOSE_PROJECT_NAME)-postgres-1", "thoth-postgres-1", "hermes-agent-postgres-1")
+    foreach ($name in $names) {
+        if (-not $name -or $name -eq "-postgres-1") { continue }
+        $found = & docker ps --filter "name=^/$name$" --format '{{.Names}}' 2>$null
+        if ($found -ne $name) { continue }
+        $port = Get-ContainerPgPort -ContainerName $name
+        if ($port) { return "postgresql://hermes:hermes@localhost:$port/hermes" }
+    }
+    return $null
+}
+
+# Rewrite THOTH_PG_DSN in .env to match the PostgreSQL this install actually
+# provisioned. Only rewrites installer-managed (localhost-style) DSNs after a
+# backup; user-customized / remote DSNs (Neon, Supabase, RDS, custom creds) are
+# preserved. Parity with install.sh copy_config_templates' DSN handling.
+function Update-EnvPgDsn {
+    param(
+        [string]$EnvPath,
+        [string]$Dsn
+    )
+    if (-not $Dsn) { return }
+    if (-not (Test-Path $EnvPath)) { return }
+    $lines = @(Get-Content -LiteralPath $EnvPath)
+    $existing = $lines | Where-Object { $_ -match '^THOTH_PG_DSN=' } | Select-Object -First 1
+    if ($existing) {
+        $cur = $existing -replace '^THOTH_PG_DSN=', ''
+        if ($cur -eq $Dsn) { return }
+        # Installer-managed DSNs point at a docker-compose-friendly localhost
+        # alias. Anything else is treated as user-customized and left alone.
+        $looksLocal = $cur -match '@(localhost|127\.0\.0\.1|postgres):'
+        if (-not $looksLocal) {
+            Write-Warn "THOTH_PG_DSN in .env points at a non-local cluster; leaving it untouched:"
+            Write-Info "  $cur"
+            return
+        }
+        Backup-EnvFile -EnvPath $EnvPath -Reason "pgdsn"
+        $new = $lines | ForEach-Object {
+            if ($_ -match '^THOTH_PG_DSN=') { "THOTH_PG_DSN=$Dsn" } else { $_ }
+        }
+        $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+        [System.IO.File]::WriteAllText($EnvPath, (($new -join "`n") + "`n"), $utf8NoBom)
+        Write-Success "Updated THOTH_PG_DSN in .env ($cur -> $Dsn)"
+    } else {
+        Add-Content -LiteralPath $EnvPath -Value "`n# Substrate PostgreSQL DSN (added by installer)`nTHOTH_PG_DSN=$Dsn"
+        Write-Success "Wrote THOTH_PG_DSN to .env"
+    }
+}
+
+# Provision the bundled pgvector PostgreSQL and run migrations. When Docker is
+# absent we DO NOT silently leave a dead DSN -- we print a clear "memory /
+# substrate disabled" block so the user knows what to do. Mirrors the overall
+# shape of install.sh check_docker + setup_postgres + run_migrations.
+function Install-Postgres {
+    if ($SkipPostgres) {
+        Write-Info "Skipping PostgreSQL setup (-SkipPostgres)"
+        if ($PgDsn) {
+            $script:ResolvedPgDsn = $PgDsn
+            Invoke-AlembicUpgrade -Dsn $PgDsn
+        } else {
+            Write-Warn "Memory / substrate is DISABLED until you set THOTH_PG_DSN and run migrations."
+            Write-Info "  Provide your own PostgreSQL, then:"
+            Write-Info "    `$env:THOTH_PG_DSN='postgresql://user:pw@host:5432/db'"
+            Write-Info "    cd `"$InstallDir`"; venv\Scripts\alembic -c migrations\alembic.ini upgrade head"
+        }
+        return
+    }
+
+    # Operator brought their own cluster: skip Docker, just migrate.
+    if ($PgDsn) {
+        $script:ResolvedPgDsn = $PgDsn
+        Invoke-AlembicUpgrade -Dsn $PgDsn
+        return
+    }
+
+    if (-not (Test-DockerForPostgres)) {
+        Write-Warn "------------------------------------------------------------------"
+        Write-Warn " PostgreSQL was NOT provisioned (Docker not found / not running)."
+        Write-Warn " Memory / substrate (headline memory) is DISABLED until you start"
+        Write-Warn " PostgreSQL or set THOTH_PG_DSN yourself."
+        Write-Warn "------------------------------------------------------------------"
+        Write-Info "  Option A: install Docker Desktop, then re-run this installer."
+        Write-Info "    https://docs.docker.com/desktop/install/windows-install/"
+        Write-Info "  Option B: bring your own PostgreSQL and run migrations:"
+        Write-Info "    `$env:THOTH_PG_DSN='postgresql://user:pw@host:5432/db'"
+        Write-Info "    cd `"$InstallDir`"; venv\Scripts\alembic -c migrations\alembic.ini upgrade head"
+        # Leave $script:ResolvedPgDsn unset so config-templates does NOT bake a
+        # dead localhost DSN over the user's .env.
+        $script:ResolvedPgDsn = $null
+        return
+    }
+
+    $proj = Resolve-ComposeProject
+    $port = Resolve-PostgresPort -Project $proj
+    $env:POSTGRES_PORT = "$port"
+
+    Push-Location $InstallDir
+    try {
+        Write-Info "Starting PostgreSQL via docker compose (host port $port -> container 5432)..."
+        Invoke-DockerCompose -ComposeArgs 'up','-d','postgres'
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to start postgres service. Inspect: docker compose logs postgres"
+        }
+
+        Write-Info "Waiting for PostgreSQL to be healthy..."
+        $healthy = $false
+        for ($i = 1; $i -le 60; $i++) {
+            $psOut = Invoke-DockerCompose -ComposeArgs 'ps','postgres' 2>$null
+            if ($psOut -match 'healthy') { $healthy = $true; break }
+            Start-Sleep -Seconds 1
+        }
+        if (-not $healthy) {
+            throw "PostgreSQL did not become healthy within 60s. Inspect: docker compose logs postgres"
+        }
+        Write-Success "PostgreSQL is ready (port $port)"
+    } finally {
+        Pop-Location
+    }
+
+    $dsn = "postgresql://hermes:hermes@localhost:$port/hermes"
+    $script:ResolvedPgDsn = $dsn
+    Invoke-AlembicUpgrade -Dsn $dsn
+}
+
+# ============================================================================
 # Installation
 # ============================================================================
 
@@ -973,6 +1339,14 @@ function Install-Repository {
             try {
                 git -c windows.appendAtomically=false fetch origin
                 if ($LASTEXITCODE -ne 0) { throw "git fetch failed (exit $LASTEXITCODE)" }
+                # The code dir is managed and DISPOSABLE -- config + state live in
+                # $HermesHome, never in this checkout. If it has diverged (hand-
+                # edits from debugging, partially-deleted files, force-pushed
+                # upstream, etc.), do NOT stash/pull-replay: that produces
+                # catastrophic modify/delete conflicts that wedge the update
+                # (the bash installer was hardened the same way in #210/#220).
+                # Instead back up the diff and hard-reset to the upstream ref.
+                Backup-CodeDirChanges
                 # Precedence: Commit > Tag > Branch.  Commit and Tag check
                 # out as detached HEAD intentionally -- they're meant to be
                 # reproducible pins, not branches the user pulls into.
@@ -980,18 +1354,29 @@ function Install-Repository {
                     # Make sure we have the commit locally (a tag-less commit
                     # SHA isn't always reachable from any one branch fetch).
                     git -c windows.appendAtomically=false fetch origin $Commit
-                    git -c windows.appendAtomically=false checkout --detach $Commit
+                    git -c windows.appendAtomically=false checkout -f --detach $Commit
                     if ($LASTEXITCODE -ne 0) { throw "git checkout $Commit failed (exit $LASTEXITCODE)" }
+                    git -c windows.appendAtomically=false reset --hard $Commit
+                    if ($LASTEXITCODE -ne 0) { throw "git reset --hard $Commit failed (exit $LASTEXITCODE)" }
                 } elseif ($Tag) {
                     git -c windows.appendAtomically=false fetch origin "refs/tags/${Tag}:refs/tags/${Tag}"
-                    git -c windows.appendAtomically=false checkout --detach "refs/tags/$Tag"
+                    git -c windows.appendAtomically=false checkout -f --detach "refs/tags/$Tag"
                     if ($LASTEXITCODE -ne 0) { throw "git checkout tag $Tag failed (exit $LASTEXITCODE)" }
+                    git -c windows.appendAtomically=false reset --hard "refs/tags/$Tag"
+                    if ($LASTEXITCODE -ne 0) { throw "git reset --hard tag $Tag failed (exit $LASTEXITCODE)" }
                 } else {
-                    git -c windows.appendAtomically=false checkout $Branch
+                    # Force the local branch to exactly match upstream --
+                    # conflict-proof. No stash, no `git pull` replay.
+                    git -c windows.appendAtomically=false checkout -B $Branch "origin/$Branch"
                     if ($LASTEXITCODE -ne 0) { throw "git checkout $Branch failed (exit $LASTEXITCODE)" }
-                    git -c windows.appendAtomically=false pull origin $Branch
-                    if ($LASTEXITCODE -ne 0) { throw "git pull failed (exit $LASTEXITCODE)" }
+                    git -c windows.appendAtomically=false reset --hard "origin/$Branch"
+                    if ($LASTEXITCODE -ne 0) { throw "git reset --hard origin/$Branch failed (exit $LASTEXITCODE)" }
                 }
+                # Remove stray now-untracked files (e.g. modules deleted
+                # upstream) but KEEP gitignored build artifacts: no -x, so
+                # venv\ and node_modules\ (gitignored) are preserved; -e is
+                # belt-and-suspenders for old checkouts.
+                git -c windows.appendAtomically=false clean -fd -e venv -e node_modules 2>$null
             } finally {
                 $ErrorActionPreference = $prevEAP
                 Pop-Location
@@ -1413,43 +1798,54 @@ function Set-PathVariable {
 function Copy-ConfigTemplates {
     Write-Info "Setting up configuration files..."
     
-    # Create ~/.hermes directory structure
+    # Create the Thoth home directory structure ($HermesHome = %LOCALAPPDATA%\thoth).
+    # NOTE: do NOT pre-create the legacy image_cache/audio_cache dirs -- those
+    # names are obsolete; the agent creates whatever cache dirs it actually needs
+    # on demand. The agent workspace/ dir IS required up front (it is the
+    # write/command sandbox root the runtime expects to exist).
     New-Item -ItemType Directory -Force -Path "$HermesHome\cron" | Out-Null
     New-Item -ItemType Directory -Force -Path "$HermesHome\sessions" | Out-Null
     New-Item -ItemType Directory -Force -Path "$HermesHome\logs" | Out-Null
     New-Item -ItemType Directory -Force -Path "$HermesHome\pairing" | Out-Null
     New-Item -ItemType Directory -Force -Path "$HermesHome\hooks" | Out-Null
-    New-Item -ItemType Directory -Force -Path "$HermesHome\image_cache" | Out-Null
-    New-Item -ItemType Directory -Force -Path "$HermesHome\audio_cache" | Out-Null
     New-Item -ItemType Directory -Force -Path "$HermesHome\memories" | Out-Null
     New-Item -ItemType Directory -Force -Path "$HermesHome\skills" | Out-Null
+    New-Item -ItemType Directory -Force -Path "$HermesHome\workspace" | Out-Null
 
-    
+
     # Create .env
     $envPath = "$HermesHome\.env"
     if (-not (Test-Path $envPath)) {
         $examplePath = "$InstallDir\.env.example"
         if (Test-Path $examplePath) {
             Copy-Item $examplePath $envPath
-            Write-Success "Created ~/.hermes/.env from template"
+            Write-Success "Created $HermesHome\.env from template"
         } else {
             New-Item -ItemType File -Force -Path $envPath | Out-Null
-            Write-Success "Created ~/.hermes/.env"
+            Write-Success "Created $HermesHome\.env"
         }
     } else {
-        Write-Info "~/.hermes/.env already exists, keeping it"
+        Write-Info "$HermesHome\.env already exists, keeping it"
     }
-    
+
+    # Point THOTH_PG_DSN at the PostgreSQL this install actually provisioned
+    # (the bundled docker-compose service may have been bound to a bumped port,
+    # e.g. 5433, when 5432 was taken). Without this the .env keeps the dead
+    # template DSN (localhost:5432) and the substrate silently fails on every
+    # op. Installer-managed (localhost-style) DSNs are rewritten in place after
+    # a backup; user-customized / remote DSNs are preserved. See issue #217.
+    Update-EnvPgDsn -EnvPath $envPath -Dsn (Resolve-RunningPgDsn)
+
     # Create config.yaml
     $configPath = "$HermesHome\config.yaml"
     if (-not (Test-Path $configPath)) {
         $examplePath = "$InstallDir\cli-config.yaml.example"
         if (Test-Path $examplePath) {
             Copy-Item $examplePath $configPath
-            Write-Success "Created ~/.hermes/config.yaml from template"
+            Write-Success "Created $HermesHome\config.yaml from template"
         }
     } else {
-        Write-Info "~/.hermes/config.yaml already exists, keeping it"
+        Write-Info "$HermesHome\config.yaml already exists, keeping it"
     }
     
     # Create SOUL.md if it doesn't exist (global persona file).
@@ -1482,25 +1878,25 @@ Delete the contents (or this file) to use the default personality.
 "@
         $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
         [System.IO.File]::WriteAllText($soulPath, $soulContent, $utf8NoBom)
-        Write-Success "Created ~/.hermes/SOUL.md (edit to customize personality)"
+        Write-Success "Created $HermesHome\SOUL.md (edit to customize personality)"
     }
-    
-    Write-Success "Configuration directory ready: ~/.hermes/"
-    
-    # Seed bundled skills into ~/.hermes/skills/ (manifest-based, one-time per skill)
-    Write-Info "Syncing bundled skills to ~/.hermes/skills/ ..."
+
+    Write-Success "Configuration directory ready: $HermesHome"
+
+    # Seed bundled skills into $HermesHome\skills\ (manifest-based, one-time per skill)
+    Write-Info "Syncing bundled skills to $HermesHome\skills\ ..."
     $pythonExe = "$InstallDir\venv\Scripts\python.exe"
     if (Test-Path $pythonExe) {
         try {
             & $pythonExe "$InstallDir\tools\skills_sync.py" 2>$null
-            Write-Success "Skills synced to ~/.hermes/skills/"
+            Write-Success "Skills synced to $HermesHome\skills\"
         } catch {
             # Fallback: simple directory copy
             $bundledSkills = "$InstallDir\skills"
             $userSkills = "$HermesHome\skills"
             if ((Test-Path $bundledSkills) -and -not (Get-ChildItem $userSkills -Exclude '.bundled_manifest' -ErrorAction SilentlyContinue)) {
                 Copy-Item -Path "$bundledSkills\*" -Destination $userSkills -Recurse -Force -ErrorAction SilentlyContinue
-                Write-Success "Skills copied to ~/.hermes/skills/"
+                Write-Success "Skills copied to $HermesHome\skills\"
             }
         }
     }
@@ -1959,7 +2355,23 @@ function Write-Completion {
     Write-Host "   Code:      " -NoNewline -ForegroundColor Yellow
     Write-Host "$HermesHome\app\"
     Write-Host ""
-    
+
+    # Substrate / memory status: be explicit about whether PostgreSQL was
+    # provisioned, so a Windows user isn't left wondering why memory is inert.
+    $pgDsnNow = Resolve-RunningPgDsn
+    Write-Host "* Memory (substrate):" -ForegroundColor Cyan
+    Write-Host ""
+    if ($pgDsnNow) {
+        Write-Host "   PostgreSQL: " -NoNewline -ForegroundColor Yellow
+        Write-Host "$pgDsnNow" -ForegroundColor Green
+    } else {
+        Write-Host "   PostgreSQL: " -NoNewline -ForegroundColor Yellow
+        Write-Host "NOT provisioned -- memory/substrate is disabled" -ForegroundColor Red
+        Write-Host "   Install Docker Desktop and re-run, or set THOTH_PG_DSN + run:" -ForegroundColor DarkGray
+        Write-Host "     cd `"$InstallDir`"; venv\Scripts\alembic -c migrations\alembic.ini upgrade head" -ForegroundColor DarkGray
+    }
+    Write-Host ""
+
     Write-Host "---------------------------------------------------------" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "* Commands:" -ForegroundColor Cyan
@@ -2079,6 +2491,7 @@ $InstallStages = @(
     @{ Name = "repository";       Title = "Cloning Thoth repository";            Category = "install";      NeedsUserInput = $false; Worker = "Stage-Repository" }
     @{ Name = "venv";             Title = "Creating Python virtual environment";  Category = "install";      NeedsUserInput = $false; Worker = "Stage-Venv" }
     @{ Name = "dependencies";     Title = "Installing Python dependencies";       Category = "install";      NeedsUserInput = $false; Worker = "Stage-Dependencies" }
+    @{ Name = "postgres";         Title = "Provisioning PostgreSQL (substrate)";  Category = "install";      NeedsUserInput = $false; Worker = "Stage-Postgres" }
     @{ Name = "node-deps";        Title = "Installing Node.js dependencies";      Category = "install";      NeedsUserInput = $false; Worker = "Stage-NodeDeps" }
     @{ Name = "path";             Title = "Adding Thoth to PATH";                Category = "finalize";     NeedsUserInput = $false; Worker = "Stage-Path" }
     @{ Name = "config-templates"; Title = "Writing configuration templates";      Category = "finalize";     NeedsUserInput = $false; Worker = "Stage-ConfigTemplates" }
@@ -2118,6 +2531,17 @@ function Stage-SystemPackages   { Install-SystemPackages }
 function Stage-Repository       { Install-Repository }
 function Stage-Venv             { Resolve-UvCmd; Install-Venv }
 function Stage-Dependencies     { Resolve-UvCmd; Install-Dependencies }
+function Stage-Postgres         {
+    Install-Postgres | Out-Null
+    # Surface "ran, but memory is disabled" as skipped=true (not a hard error)
+    # so a GUI driver consuming the manifest can distinguish provisioned from
+    # disabled without the install aborting.
+    if ($SkipPostgres -and -not $PgDsn) {
+        $script:_StageSkippedReason = "PostgreSQL not provisioned (-SkipPostgres with no -PgDsn); memory/substrate disabled until THOTH_PG_DSN is set and migrations are run."
+    } elseif (-not $SkipPostgres -and -not $PgDsn -and -not $script:ResolvedPgDsn) {
+        $script:_StageSkippedReason = "PostgreSQL not provisioned (Docker unavailable); memory/substrate disabled until Docker is installed or THOTH_PG_DSN is set."
+    }
+}
 function Stage-NodeDeps         { Install-NodeDeps }
 function Stage-Path             { Set-PathVariable }
 function Stage-ConfigTemplates  { Copy-ConfigTemplates }
