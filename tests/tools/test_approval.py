@@ -1305,3 +1305,175 @@ class TestEtcPatternsUnaffectedByRefactor:
     def test_grep_etc_passwd_is_safe(self):
         dangerous, _, _ = detect_dangerous_command("grep root /etc/passwd")
         assert dangerous is False
+
+
+class TestDetectOutOfRootCommand:
+    """detect_out_of_root_command flags commands that touch paths outside
+    the active workspace root."""
+
+    def _root(self, tmp_path):
+        root = tmp_path / "root"
+        root.mkdir()
+        return str(root)
+
+    def test_effective_cwd_outside_flags(self, tmp_path):
+        from tools.approval import detect_out_of_root_command
+
+        root = self._root(tmp_path)
+        flagged, key, desc = detect_out_of_root_command(
+            "ls", root, effective_cwd="/opt/elsewhere"
+        )
+        assert flagged is True
+        assert key == f"workspace_boundary:{root}"
+
+    def test_read_with_absolute_path_not_flagged(self, tmp_path):
+        # Reads are never gated, even with an absolute path outside the root.
+        from tools.approval import detect_out_of_root_command
+
+        root = self._root(tmp_path)
+        flagged, _, _ = detect_out_of_root_command(
+            "cat /etc/hostname", root, effective_cwd=root
+        )
+        assert flagged is False
+
+    def test_absolute_binary_path_not_flagged(self, tmp_path):
+        # The command's own binary path must not trip the boundary.
+        from tools.approval import detect_out_of_root_command
+
+        root = self._root(tmp_path)
+        flagged, _, _ = detect_out_of_root_command("/bin/ls", root, effective_cwd=root)
+        assert flagged is False
+
+    def test_mutating_command_outside_flags(self, tmp_path):
+        from tools.approval import detect_out_of_root_command
+
+        root = self._root(tmp_path)
+        flagged, _, _ = detect_out_of_root_command(
+            "rm /opt/elsewhere/file", root, effective_cwd=root
+        )
+        assert flagged is True
+
+    def test_redirection_outside_flags(self, tmp_path):
+        from tools.approval import detect_out_of_root_command
+
+        root = self._root(tmp_path)
+        flagged, _, _ = detect_out_of_root_command(
+            "echo hi > /opt/elsewhere/out.txt", root, effective_cwd=root
+        )
+        assert flagged is True
+
+    def test_cd_target_outside_flags(self, tmp_path):
+        from tools.approval import detect_out_of_root_command
+
+        root = self._root(tmp_path)
+        flagged, _, _ = detect_out_of_root_command(
+            "cd /other && ls", root, effective_cwd=root
+        )
+        assert flagged is True
+
+    def test_inside_root_not_flagged(self, tmp_path):
+        from tools.approval import detect_out_of_root_command
+
+        root = self._root(tmp_path)
+        flagged, _, _ = detect_out_of_root_command(
+            "ls subdir", root, effective_cwd=root
+        )
+        assert flagged is False
+
+    def test_no_active_root_never_flags(self, tmp_path):
+        from tools.approval import detect_out_of_root_command
+
+        flagged, _, _ = detect_out_of_root_command(
+            "cat /etc/hostname", None, effective_cwd="/opt/elsewhere"
+        )
+        assert flagged is False
+
+
+class _BoundaryCallback:
+    def __init__(self, choice):
+        self.choice = choice
+        self.calls = 0
+
+    def __call__(self, command, description, *, allow_permanent=True):
+        self.calls += 1
+        return self.choice
+
+
+class TestCheckPathBoundaryGuard:
+    """check_path_boundary_guard: CLI prompt caching + non-interactive deny."""
+
+    ROOT = "/some/active/root"
+
+    def setup_method(self):
+        approval_module._session_approved.clear()
+        approval_module._permanent_approved.clear()
+
+    def teardown_method(self):
+        approval_module._session_approved.clear()
+        approval_module._permanent_approved.clear()
+
+    def _env(self, monkeypatch, interactive=True):
+        monkeypatch.setenv("THOTH_ACTIVE_ROOT", self.ROOT)
+        monkeypatch.delenv("THOTH_YOLO_MODE", raising=False)
+        monkeypatch.delenv("THOTH_GATEWAY_SESSION", raising=False)
+        monkeypatch.delenv("THOTH_EXEC_ASK", raising=False)
+        monkeypatch.delenv("THOTH_CRON_SESSION", raising=False)
+        if interactive:
+            monkeypatch.setenv("THOTH_INTERACTIVE", "1")
+        else:
+            monkeypatch.delenv("THOTH_INTERACTIVE", raising=False)
+        monkeypatch.setattr(approval_module, "_get_approval_mode", lambda: "manual")
+
+    def test_once_does_not_cache(self, monkeypatch):
+        from tools.approval import check_path_boundary_guard
+
+        self._env(monkeypatch)
+        cb = _BoundaryCallback("once")
+        r1 = check_path_boundary_guard(["/outside/a.txt"], approval_callback=cb)
+        r2 = check_path_boundary_guard(["/outside/a.txt"], approval_callback=cb)
+        assert r1["approved"] is True
+        assert r2["approved"] is True
+        assert cb.calls == 2  # prompted both times — no caching
+
+    def test_session_caches(self, monkeypatch):
+        from tools.approval import check_path_boundary_guard
+
+        self._env(monkeypatch)
+        cb = _BoundaryCallback("session")
+        r1 = check_path_boundary_guard(["/outside/a.txt"], approval_callback=cb)
+        r2 = check_path_boundary_guard(["/outside/b.txt"], approval_callback=cb)
+        assert r1["approved"] is True
+        assert r2["approved"] is True
+        assert cb.calls == 1  # second call served from session cache
+
+    def test_always_caches_and_persists(self, monkeypatch):
+        from tools.approval import check_path_boundary_guard
+
+        self._env(monkeypatch)
+        monkeypatch.setattr(approval_module, "save_permanent_allowlist", lambda *a, **k: None)
+        cb = _BoundaryCallback("always")
+        r1 = check_path_boundary_guard(["/outside/a.txt"], approval_callback=cb)
+        r2 = check_path_boundary_guard(["/outside/b.txt"], approval_callback=cb)
+        assert r1["approved"] is True
+        assert r2["approved"] is True
+        assert cb.calls == 1
+        assert f"workspace_boundary:{self.ROOT}" in approval_module._permanent_approved
+
+    def test_deny_not_approved(self, monkeypatch):
+        from tools.approval import check_path_boundary_guard
+
+        self._env(monkeypatch)
+        cb = _BoundaryCallback("deny")
+        r = check_path_boundary_guard(["/outside/a.txt"], approval_callback=cb)
+        assert r["approved"] is False
+        assert "Write denied" in r["message"]
+
+    def test_non_interactive_fails_closed(self, monkeypatch):
+        from tools.approval import check_path_boundary_guard
+
+        self._env(monkeypatch, interactive=False)
+        cb = _BoundaryCallback("once")
+        r = check_path_boundary_guard(["/outside/a.txt"], approval_callback=cb)
+        assert r["approved"] is False
+        assert "BLOCKED" in r["message"]
+        assert cb.calls == 0  # no user prompted in headless context

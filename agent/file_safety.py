@@ -78,6 +78,71 @@ def resolve_active_root(
         return _thoth_home_path() / "workspace"
 
 
+def get_active_root() -> Optional[str]:
+    """Return the resolved THOTH_ACTIVE_ROOT (the workspace boundary), or None."""
+    v = os.getenv("THOTH_ACTIVE_ROOT", "").strip()
+    if not v:
+        return None
+    try:
+        return os.path.realpath(os.path.expanduser(v))
+    except Exception:
+        return None
+
+
+def boundary_enabled() -> bool:
+    """Whether the workspace permission boundary is active.
+
+    Off if the kill-switch env ``THOTH_NO_WORKSPACE_BOUNDARY`` is truthy, or if
+    ``approvals.workspace_boundary`` is false in config. Defaults to True.
+    """
+    if os.getenv("THOTH_NO_WORKSPACE_BOUNDARY", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return False
+    try:
+        from thoth_cli.config import load_config  # local import to avoid cycles
+        approvals = (load_config() or {}).get("approvals", {}) or {}
+        return bool(approvals.get("workspace_boundary", True))
+    except Exception:
+        return True
+
+
+def is_path_outside_active_root(path: str, active_root: Optional[str] = None) -> bool:
+    """Return True if *path* resolves outside the active root.
+
+    Boundary unset → always False (never gate). The system temp dir is always
+    treated as inside (scratch space), mirroring should_auto_approve_edit.
+    """
+    root = active_root if active_root is not None else get_active_root()
+    if not root:
+        return False
+    try:
+        resolved = os.path.realpath(os.path.expanduser(str(path)))
+    except Exception:
+        return False
+    if resolved == root or resolved.startswith(root + os.sep):
+        return False
+    try:
+        import tempfile
+        tmp = os.path.realpath(tempfile.gettempdir())
+        if resolved == tmp or resolved.startswith(tmp + os.sep):
+            return False
+    except Exception:
+        pass
+    return True
+
+
+def check_path_boundary(path: str, op_type: str, active_root: Optional[str] = None) -> str:
+    """Return 'allow' or 'needs_approval' for a path op against the active root.
+
+    Reads are NEVER gated. Writes/execs outside the active root need approval
+    (when the boundary is enabled).
+    """
+    if op_type == "read":
+        return "allow"
+    if not boundary_enabled():
+        return "allow"
+    return "needs_approval" if is_path_outside_active_root(path, active_root) else "allow"
+
+
 def build_write_denied_paths(home: str) -> set[str]:
     """Return exact sensitive paths that must never be written."""
     thoth_home = _thoth_home_path()

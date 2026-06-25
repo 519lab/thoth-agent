@@ -12,6 +12,7 @@ import contextvars
 import logging
 import os
 import re
+import shlex
 import sys
 import threading
 import time
@@ -479,6 +480,130 @@ def detect_dangerous_command(command: str) -> tuple:
             pattern_key = description
             return (True, pattern_key, description)
     return (False, None, None)
+
+
+def _resolve_token_against_base(token: str, base: str) -> str:
+    """Resolve a shell token (possibly relative) against *base* dir.
+
+    ``~`` is expanded; absolute paths are returned as-is; relative paths are
+    joined onto *base* (the command's effective cwd) so that e.g. ``cd ../x``
+    resolves like the real shell would.
+    """
+    if token.startswith("~"):
+        return os.path.expanduser(token)
+    if os.path.isabs(token):
+        return token
+    return os.path.join(base, token)
+
+
+# Shell commands that mutate the filesystem at a target path. A *mutating*
+# command with an argument resolving outside the active root is flagged; a
+# read-only command (cat/grep/ls/find/...) referencing an outside path is NOT —
+# reads are never gated, and flagging every absolute path (binaries like
+# /bin/ls, reads like `cat /etc/hosts`) would make the boundary unusably noisy.
+_MUTATING_CMDS = frozenset({
+    "rm", "rmdir", "mv", "cp", "mkdir", "touch", "tee", "dd", "truncate",
+    "ln", "chmod", "chown", "chgrp", "install", "shred", "rsync",
+})
+
+
+def detect_out_of_root_command(command: str, active_root,
+                               effective_cwd=None) -> tuple:
+    """Detect when a shell command WRITES or OPERATES outside the active root.
+
+    Flags True when:
+      * the command's effective cwd is itself outside *active_root*; or
+      * a ``cd`` / ``pushd`` target resolves outside *active_root*; or
+      * an output redirection (``>`` / ``>>``) targets a path outside it; or
+      * a *mutating* command (rm/mv/cp/mkdir/tee/dd/…) has a path argument
+        resolving outside it.
+
+    Reads (cat/grep/ls/…), bare absolute binary paths (``/bin/ls``), and
+    absolute-path *arguments* to read-only commands are intentionally NOT
+    flagged — reads stay free and the gate stays low-noise.
+
+    Returns ``(is_out_of_root, pattern_key, description)``.
+
+    Limitations (best-effort): paths hidden in shell variables (``$VAR``),
+    command substitution (``$(...)``/backticks), here-docs, and globs are not
+    visible to this token scan. This is a guardrail against drift, not a sandbox.
+    Container backends are excluded by the caller before this runs.
+    """
+    pattern_key = f"workspace_boundary:{active_root}"
+    description = (
+        f"command writes/operates outside the active workspace root {active_root}"
+    )
+    if not active_root:
+        return (False, pattern_key, description)
+
+    from agent.file_safety import is_path_outside_active_root
+
+    base = effective_cwd or active_root
+
+    def _outside(token: str) -> bool:
+        cand = _resolve_token_against_base(token, base)
+        return bool(cand) and is_path_outside_active_root(cand, active_root)
+
+    # 1. The command's working directory is itself outside the root.
+    if effective_cwd and is_path_outside_active_root(effective_cwd, active_root):
+        return (True, pattern_key,
+                f"command runs in {effective_cwd}, outside the active "
+                f"workspace root {active_root}")
+
+    try:
+        tokens = shlex.split(command, posix=True)
+    except Exception:
+        tokens = command.split()
+    if not tokens:
+        return (False, pattern_key, description)
+
+    cmd_base = os.path.basename(tokens[0])
+    is_mutating = cmd_base in _MUTATING_CMDS
+
+    expect_cd_target = False
+    expect_redirect_target = False
+    for i, tok in enumerate(tokens):
+        if expect_cd_target:
+            expect_cd_target = False
+            if _outside(tok):
+                return (True, pattern_key,
+                        f"command changes directory to {tok}, outside the "
+                        f"active workspace root {active_root}")
+            continue
+        if expect_redirect_target:
+            expect_redirect_target = False
+            if _outside(tok):
+                return (True, pattern_key,
+                        f"command writes to {tok}, outside the active "
+                        f"workspace root {active_root}")
+            continue
+        if tok in {"cd", "pushd"}:
+            expect_cd_target = True
+            continue
+        # Output redirection (standalone `>`/`>>` or attached `>file`/`>>file`).
+        if tok in {">", ">>"}:
+            expect_redirect_target = True
+            continue
+        redir_target = None
+        if tok.startswith(">>"):
+            redir_target = tok[2:]
+        elif tok.startswith(">"):
+            redir_target = tok[1:]
+        if redir_target:
+            if _outside(redir_target):
+                return (True, pattern_key,
+                        f"command writes to {redir_target}, outside the active "
+                        f"workspace root {active_root}")
+            continue
+        # Mutating command with a path argument resolving outside the root.
+        if is_mutating and i > 0 and not tok.startswith("-"):
+            looks_like_path = tok.startswith(("/", "~", "./", "../")) or "/" in tok
+            if looks_like_path and _outside(tok):
+                return (True, pattern_key,
+                        f"{cmd_base} targets {tok}, outside the active "
+                        f"workspace root {active_root}")
+
+    return (False, pattern_key, description)
 
 
 # =========================================================================
@@ -1040,8 +1165,221 @@ def _format_tirith_description(tirith_result: dict) -> str:
     return "Security scan — " + "; ".join(parts)
 
 
+def _block_on_gateway_approval(notify_cb, command: str, description: str,
+                               primary_key: str, all_keys: list,
+                               session_key: str) -> tuple:
+    """Enqueue + notify + block-wait on a gateway/ask approval request.
+
+    Shared by ``check_all_command_guards`` (dangerous/tirith/out-of-root) and
+    ``check_path_boundary_guard`` (out-of-root writes).  Fires the pre/post
+    approval hooks and polls with activity heartbeats so the gateway's
+    inactivity watchdog does not kill the agent while the user is responding.
+
+    Returns ``(resolved: bool, choice: str|None, notify_ok: bool)`` where
+    *choice* is ``'once'|'session'|'always'|'deny'`` (or ``None`` on timeout).
+    ``notify_ok`` is False when the notify callback raised.
+    """
+    approval_data = {
+        "command": command,
+        "pattern_key": primary_key,
+        "pattern_keys": list(all_keys),
+        "description": description,
+    }
+    entry = _ApprovalEntry(approval_data)
+    with _lock:
+        _gateway_queues.setdefault(session_key, []).append(entry)
+
+    _fire_approval_hook(
+        "pre_approval_request",
+        command=command,
+        description=description,
+        pattern_key=primary_key,
+        pattern_keys=list(all_keys),
+        session_key=session_key,
+        surface="gateway",
+    )
+
+    try:
+        notify_cb(approval_data)
+    except Exception as exc:
+        logger.warning("Gateway approval notify failed: %s", exc)
+        with _lock:
+            queue = _gateway_queues.get(session_key, [])
+            if entry in queue:
+                queue.remove(entry)
+            if not queue:
+                _gateway_queues.pop(session_key, None)
+        return (False, None, False)
+
+    timeout = _get_approval_config().get("gateway_timeout", 300)
+    try:
+        timeout = int(timeout)
+    except (ValueError, TypeError):
+        timeout = 300
+
+    try:
+        from tools.environments.base import touch_activity_if_due
+    except Exception:  # pragma: no cover
+        touch_activity_if_due = None
+
+    _now = time.monotonic()
+    _deadline = _now + max(timeout, 0)
+    _activity_state = {"last_touch": _now, "start": _now}
+    resolved = False
+    while True:
+        _remaining = _deadline - time.monotonic()
+        if _remaining <= 0:
+            break
+        if entry.event.wait(timeout=min(1.0, _remaining)):
+            resolved = True
+            break
+        if touch_activity_if_due is not None:
+            touch_activity_if_due(_activity_state, "waiting for user approval")
+
+    with _lock:
+        queue = _gateway_queues.get(session_key, [])
+        if entry in queue:
+            queue.remove(entry)
+        if not queue:
+            _gateway_queues.pop(session_key, None)
+
+    choice = entry.result
+    _outcome = "timeout" if not resolved else (choice if choice else "timeout")
+    _fire_approval_hook(
+        "post_approval_response",
+        command=command,
+        description=description,
+        pattern_key=primary_key,
+        pattern_keys=list(all_keys),
+        session_key=session_key,
+        surface="gateway",
+        choice=_outcome,
+    )
+    return (resolved, choice, True)
+
+
+def check_path_boundary_guard(paths, approval_callback=None) -> dict:
+    """Approve (or deny) a write whose target path(s) lie outside the active root.
+
+    Mirrors the context branching of ``check_all_command_guards``: yolo /
+    mode=off bypass; session/permanent caching via ``is_approved`` /
+    ``approve_session`` keyed on ``workspace_boundary:<active_root>``; CLI / ask
+    prompt; gateway blocking approval; and a fail-closed deny for
+    non-interactive contexts (cron, batch, headless) where no user can approve.
+
+    Returns ``{"approved": bool, "message": str|None}``.
+    """
+    from agent.file_safety import get_active_root
+
+    active_root = get_active_root()
+    pattern_key = f"workspace_boundary:{active_root}"
+    paths_desc = ", ".join(str(p) for p in paths)
+    synthetic_cmd = f"write outside workspace: {paths_desc}"
+    description = (
+        f"Write to {paths_desc}, outside the active workspace root {active_root}"
+    )
+
+    # yolo / mode=off → approve.
+    approval_mode = _get_approval_mode()
+    if (is_truthy_value(os.getenv("THOTH_YOLO_MODE"))
+            or is_current_session_yolo_enabled()
+            or approval_mode == "off"):
+        return {"approved": True, "message": None}
+
+    session_key = get_current_session_key()
+    if is_approved(session_key, pattern_key):
+        return {"approved": True, "message": None}
+
+    is_cli = env_var_enabled("THOTH_INTERACTIVE")
+    is_gateway = _is_gateway_approval_context()
+    is_ask = env_var_enabled("THOTH_EXEC_ASK")
+
+    deny_message = (
+        f"Write denied: {paths_desc} is outside the active workspace root "
+        f"{active_root}. Approve to proceed."
+    )
+
+    # Non-interactive (incl. cron / batch / headless): no user to approve →
+    # fail closed.
+    if not is_cli and not is_gateway and not is_ask:
+        return {
+            "approved": False,
+            "message": (
+                f"BLOCKED: write to {paths_desc} is outside the active "
+                f"workspace root {active_root}, and no user is present to "
+                "approve operating outside it. Stay inside the workspace root, "
+                "or disable the boundary (approvals.workspace_boundary: false)."
+            ),
+        }
+
+    def _persist(choice: str) -> None:
+        if choice == "session":
+            approve_session(session_key, pattern_key)
+        elif choice == "always":
+            approve_session(session_key, pattern_key)
+            approve_permanent(pattern_key)
+            save_permanent_allowlist(_permanent_approved)
+
+    # Gateway: blocking approval request.
+    if is_gateway:
+        with _lock:
+            notify_cb = _gateway_notify_cbs.get(session_key)
+        if notify_cb is not None:
+            resolved, choice, notify_ok = _block_on_gateway_approval(
+                notify_cb, synthetic_cmd, description,
+                pattern_key, [pattern_key], session_key,
+            )
+            if not notify_ok:
+                return {
+                    "approved": False,
+                    "message": "BLOCKED: Failed to send approval request to user. Do NOT retry.",
+                }
+            if not resolved or choice is None or choice == "deny":
+                return {"approved": False, "message": deny_message}
+            _persist(choice)
+            return {"approved": True, "message": None}
+        # No gateway callback registered → fail closed (cannot reach a user).
+        return {
+            "approved": False,
+            "message": (
+                f"BLOCKED: {deny_message} (no approval channel available)."
+            ),
+        }
+
+    # CLI / ask: synchronous prompt (callback-driven on interactive threads).
+    _fire_approval_hook(
+        "pre_approval_request",
+        command=synthetic_cmd,
+        description=description,
+        pattern_key=pattern_key,
+        pattern_keys=[pattern_key],
+        session_key=session_key,
+        surface="cli",
+    )
+    choice = prompt_dangerous_approval(
+        synthetic_cmd, description,
+        approval_callback=approval_callback,
+        allow_permanent=True,
+    )
+    _fire_approval_hook(
+        "post_approval_response",
+        command=synthetic_cmd,
+        description=description,
+        pattern_key=pattern_key,
+        pattern_keys=[pattern_key],
+        session_key=session_key,
+        surface="cli",
+        choice=choice,
+    )
+    if choice == "deny":
+        return {"approved": False, "message": deny_message}
+    _persist(choice)
+    return {"approved": True, "message": None}
+
+
 def check_all_command_guards(command: str, env_type: str,
-                             approval_callback=None) -> dict:
+                             approval_callback=None, *,
+                             active_root=None, effective_cwd=None) -> dict:
     """Run all pre-exec security checks and return a single approval decision.
 
     Gathers findings from tirith and dangerous-command detection, then
@@ -1086,6 +1424,25 @@ def check_all_command_guards(command: str, env_type: str,
     # Preserve the existing non-interactive behavior: outside CLI/gateway/ask
     # flows, we do not block on approvals and we skip external guard work.
     if not is_cli and not is_gateway and not is_ask:
+        # Workspace boundary: a command operating outside the active root has
+        # no user present to approve it → fail closed (incl. cron / batch).
+        try:
+            from agent.file_safety import boundary_enabled
+            if boundary_enabled():
+                _oor, _oor_key, _oor_desc = detect_out_of_root_command(
+                    command, active_root, effective_cwd)
+                if _oor:
+                    return {
+                        "approved": False,
+                        "message": (
+                            f"BLOCKED: {_oor_desc}, and no user is present to "
+                            "approve operating outside the active workspace "
+                            "root. Stay inside the workspace root, or disable "
+                            "the boundary (approvals.workspace_boundary: false)."
+                        ),
+                    }
+        except Exception as _oor_err:
+            logger.debug("out-of-root detection error (non-interactive): %s", _oor_err)
         # Cron sessions: respect cron_mode config
         if env_var_enabled("THOTH_CRON_SESSION"):
             if _get_cron_approval_mode() == "deny":
@@ -1118,6 +1475,20 @@ def check_all_command_guards(command: str, env_type: str,
     # Dangerous command check (detection only, no approval)
     is_dangerous, pattern_key, description = detect_dangerous_command(command)
 
+    # Workspace boundary check (detection only, no approval) — flags commands
+    # that operate outside the active root so they flow through the same
+    # combined approval prompt / caching as dangerous commands.
+    is_out_of_root = False
+    oor_key = None
+    oor_desc = None
+    try:
+        from agent.file_safety import boundary_enabled
+        if boundary_enabled():
+            is_out_of_root, oor_key, oor_desc = detect_out_of_root_command(
+                command, active_root, effective_cwd)
+    except Exception as _oor_err:
+        logger.debug("out-of-root detection error: %s", _oor_err)
+
     # --- Phase 2: Decide ---
 
     # Collect warnings that need approval
@@ -1140,6 +1511,10 @@ def check_all_command_guards(command: str, env_type: str,
     if is_dangerous:
         if not is_approved(session_key, pattern_key):
             warnings.append((pattern_key, description, False))
+
+    if is_out_of_root and oor_key:
+        if not is_approved(session_key, oor_key):
+            warnings.append((oor_key, oor_desc, False))
 
     # Nothing to warn about
     if not warnings:
@@ -1191,112 +1566,21 @@ def check_all_command_guards(command: str, env_type: str,
         if notify_cb is not None:
             # --- Blocking gateway approval (queue-based) ---
             # Each call gets its own _ApprovalEntry so parallel subagents
-            # and execute_code threads can block concurrently.
-            approval_data = {
-                "command": command,
-                "pattern_key": primary_key,
-                "pattern_keys": all_keys,
-                "description": combined_desc,
-            }
-            entry = _ApprovalEntry(approval_data)
-            with _lock:
-                _gateway_queues.setdefault(session_key, []).append(entry)
-
-            # Notify plugins that an approval is being requested. Fires before
-            # the gateway notify callback so observers (e.g. macOS notifier
-            # plugins, audit logs, Slack alerts) get the event in real time.
-            _fire_approval_hook(
-                "pre_approval_request",
-                command=command,
-                description=combined_desc,
-                pattern_key=primary_key,
-                pattern_keys=list(all_keys),
-                session_key=session_key,
-                surface="gateway",
+            # and execute_code threads can block concurrently.  The enqueue +
+            # notify + heartbeat-polled wait is shared with the workspace
+            # boundary guard via _block_on_gateway_approval.
+            resolved, choice, notify_ok = _block_on_gateway_approval(
+                notify_cb, command, combined_desc,
+                primary_key, all_keys, session_key,
             )
 
-            # Notify the user (bridges sync agent thread → async gateway)
-            try:
-                notify_cb(approval_data)
-            except Exception as exc:
-                logger.warning("Gateway approval notify failed: %s", exc)
-                with _lock:
-                    queue = _gateway_queues.get(session_key, [])
-                    if entry in queue:
-                        queue.remove(entry)
-                    if not queue:
-                        _gateway_queues.pop(session_key, None)
+            if not notify_ok:
                 return {
                     "approved": False,
                     "message": "BLOCKED: Failed to send approval request to user. Do NOT retry.",
                     "pattern_key": primary_key,
                     "description": combined_desc,
                 }
-
-            # Block until the user responds or timeout (default 5 min).
-            # Poll in short slices so we can fire activity heartbeats every
-            # ~10s to the agent's inactivity tracker.  Without this, the
-            # blocking event.wait() never touches activity, and the
-            # gateway's inactivity watchdog (agent.gateway_timeout, default
-            # 1800s) kills the agent while the user is still responding to
-            # the approval prompt.  Mirrors the _wait_for_process() cadence
-            # in tools/environments/base.py.
-            timeout = _get_approval_config().get("gateway_timeout", 300)
-            try:
-                timeout = int(timeout)
-            except (ValueError, TypeError):
-                timeout = 300
-
-            try:
-                from tools.environments.base import touch_activity_if_due
-            except Exception:  # pragma: no cover
-                touch_activity_if_due = None
-
-            _now = time.monotonic()
-            _deadline = _now + max(timeout, 0)
-            _activity_state = {"last_touch": _now, "start": _now}
-            resolved = False
-            while True:
-                _remaining = _deadline - time.monotonic()
-                if _remaining <= 0:
-                    break
-                # 1s poll slice — the event is set immediately when the
-                # user responds, so slice length only controls heartbeat
-                # cadence, not user-visible responsiveness.
-                if entry.event.wait(timeout=min(1.0, _remaining)):
-                    resolved = True
-                    break
-                if touch_activity_if_due is not None:
-                    touch_activity_if_due(
-                        _activity_state, "waiting for user approval"
-                    )
-
-            # Clean up this entry from the queue
-            with _lock:
-                queue = _gateway_queues.get(session_key, [])
-                if entry in queue:
-                    queue.remove(entry)
-                if not queue:
-                    _gateway_queues.pop(session_key, None)
-
-            choice = entry.result
-            # Normalize outcome for the post hook. Unresolved (timeout) and
-            # None both mean the user never responded; report that explicitly
-            # so plugins can distinguish timeout from explicit deny.
-            _outcome = (
-                "timeout" if not resolved
-                else (choice if choice else "timeout")
-            )
-            _fire_approval_hook(
-                "post_approval_response",
-                command=command,
-                description=combined_desc,
-                pattern_key=primary_key,
-                pattern_keys=list(all_keys),
-                session_key=session_key,
-                surface="gateway",
-                choice=_outcome,
-            )
 
             if not resolved or choice is None or choice == "deny":
                 reason = "timed out" if not resolved else "denied by user"
