@@ -167,6 +167,13 @@ def test_update_uses_hard_reset_not_pull_replay() -> None:
         "on a drifted/force-pushed checkout."
     )
     assert "git stash" not in body, "stash/replay must not be used."
+    # The branch checkout itself must be force (-f) or a locally-modified file
+    # that also changed upstream makes `checkout -B` abort (exit 1) and throw
+    # BEFORE the reset --hard runs — the very wedge #220 fixes.
+    assert "checkout -f -B $Branch" in body, (
+        "branch checkout must be `git checkout -f -B $Branch` so a drifted "
+        "working tree can't abort the switch before reset --hard (#220)."
+    )
 
 
 def test_update_backs_up_local_changes_first() -> None:

@@ -1366,8 +1366,10 @@ function Install-Repository {
                     if ($LASTEXITCODE -ne 0) { throw "git reset --hard tag $Tag failed (exit $LASTEXITCODE)" }
                 } else {
                     # Force the local branch to exactly match upstream --
-                    # conflict-proof. No stash, no `git pull` replay.
-                    git -c windows.appendAtomically=false checkout -B $Branch "origin/$Branch"
+                    # conflict-proof. No stash, no `git pull` replay. `-f` so a
+                    # locally-modified file that also changed upstream can't make
+                    # the checkout abort (exit 1) BEFORE the reset --hard runs.
+                    git -c windows.appendAtomically=false checkout -f -B $Branch "origin/$Branch"
                     if ($LASTEXITCODE -ne 0) { throw "git checkout $Branch failed (exit $LASTEXITCODE)" }
                     git -c windows.appendAtomically=false reset --hard "origin/$Branch"
                     if ($LASTEXITCODE -ne 0) { throw "git reset --hard origin/$Branch failed (exit $LASTEXITCODE)" }
