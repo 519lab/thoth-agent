@@ -69,6 +69,36 @@ _OFF_POLL_INTERVAL = 1.0
 
 
 # ---------------------------------------------------------------------------
+# Per-tick watchdog. A single tick() that hangs (a wedged DB call, a model
+# request with no client-side timeout) would otherwise freeze the whole run
+# loop forever — and because the heartbeat task beats independently (see
+# ``_heartbeat_loop``), the agent would *look* alive while making zero
+# progress. To make a stuck tick recoverable, the run loop wraps each tick in
+# ``asyncio.wait_for`` with a generous per-intensity ceiling: hit the ceiling
+# and the tick is abandoned (TimeoutError), counted, and the loop moves on.
+#
+# The ceiling is derived from the agent's tick interval times this multiplier,
+# with a 30s floor so fast-cadence agents (FULL = 0.2s) still get a sane window.
+# The multiplier is deliberately large — the watchdog catches *wedged* ticks,
+# not merely slow ones; a tick that legitimately runs many multiples of its
+# cadence (the Curator's hourly L3/L4 backfill) sets a per-agent
+# ``tick_timeout_s`` override instead of relying on this derivation.
+_TICK_TIMEOUT_MULT = float(
+    os.environ.get("THOTH_SUBSTRATE_TICK_TIMEOUT_MULT", "50") or "50"
+)
+_TICK_TIMEOUT_FLOOR_S = 30.0
+
+# DEFERRED (innovation #4 follow-up): in-process supervisor. With the watchdog
+# above, a wedged agent is now *observable* — frozen ``_tick_count`` while the
+# independent heartbeat keeps ``last_beat_at`` advancing. The planned next step
+# (option a) is a small in-process supervisor inside the worker that watches its
+# agents' ``_tick_count`` and ``os._exit(1)`` once it stalls past
+# ``THOTH_SUBSTRATE_STALL_THRESHOLD``, letting ``systemd Restart=on-failure``
+# respawn. NOT built in this slice — the watchdog + decoupled heartbeat are the
+# self-contained recovery primitive; the supervisor is a separate, gated change.
+
+
+# ---------------------------------------------------------------------------
 # Liveness heartbeat. The sub-agent run loop upserts a row into
 # ``substrate_agent_heartbeat`` on this cadence so a *different process*
 # (the ``thoth substrate`` inspect CLI) can tell a live worker subprocess
@@ -152,6 +182,22 @@ class SubAgent(ABC):
         self._started_at: Optional[datetime] = None
         self._last_beat_mono: Optional[float] = None
 
+        # Per-tick watchdog bookkeeping. ``_tick_timeout_count`` counts ticks
+        # abandoned because they blew past ``_tick_ceiling_for(level)`` — a
+        # frozen ``_tick_count`` paired with a climbing ``_tick_timeout_count``
+        # is the signature of a wedged agent. ``tick_timeout_s`` is a per-agent
+        # override (seconds) that, when set, replaces the interval-derived
+        # ceiling — for agents whose tick legitimately runs far longer than its
+        # cadence (the Curator's hourly upper-layer backfill).
+        self._tick_timeout_count: int = 0
+        self.tick_timeout_s: Optional[float] = None
+
+        # Independent heartbeat task. The liveness beat must keep firing while
+        # a tick hangs (that is precisely the case operators must see), so it
+        # runs in its own task spawned by ``run()`` rather than being driven
+        # off the tick loop's inter-tick sleep.
+        self._heartbeat_task: Optional[asyncio.Task] = None
+
     # ------------------------------------------------------------------
     # Public lifecycle
     # ------------------------------------------------------------------
@@ -182,6 +228,14 @@ class SubAgent(ABC):
         """Main loop. Sleeps per current intensity, calls ``tick()``,
         respects the stopped event.
 
+        Each ``tick()`` is wrapped in ``asyncio.wait_for`` with a generous
+        per-intensity ceiling (``_tick_ceiling_for``): a wedged tick is
+        abandoned (counted in ``_tick_timeout_count``, ``_tick_count`` frozen)
+        and the loop moves on rather than hanging forever. Liveness is beaten
+        by an *independent* ``_heartbeat_loop`` task spawned here, so a hung
+        tick still reports its (frozen) ``tick_count`` and a wedged agent is
+        distinguishable from a dead process.
+
         Exceptions in ``tick()`` are logged and the loop continues —
         Phase A sub-agents must never crash the substrate process.
         Phase B+ may introduce circuit-breaker behavior; not yet.
@@ -198,10 +252,15 @@ class SubAgent(ABC):
             "subagent.run.start name=%s level=%s", self.name, self._level.value
         )
 
+        # Spawn the heartbeat as an independent task so liveness keeps beating
+        # regardless of tick state — a hung tick must still report the (frozen)
+        # tick_count so operators can distinguish a wedged agent from a dead
+        # process. It is cancelled in ``finally`` (and by ``stop_and_wait``).
+        self._heartbeat_task = asyncio.create_task(
+            self._heartbeat_loop(), name=f"substrate-{self.name}-heartbeat"
+        )
+
         try:
-            # Beat once at startup so the agent is visible to the inspect
-            # CLI immediately, before its first (possibly slow) tick.
-            await self._maybe_heartbeat(force=True)
             while not self._stopped.is_set():
                 # Call ``self._interval_for(...)`` so subclasses can
                 # override the mapping (e.g. partition-maintenance
@@ -212,39 +271,91 @@ class SubAgent(ABC):
                     await self._wait(_OFF_POLL_INTERVAL)
                     continue
                 try:
-                    await self.tick()
+                    # Per-tick watchdog: abandon a tick that blows past the
+                    # ceiling rather than freezing the loop forever. A timed-out
+                    # tick is counted but does NOT advance ``_tick_count`` — the
+                    # frozen count is what the inspect CLI reads as "stuck".
+                    await asyncio.wait_for(
+                        self.tick(),
+                        timeout=self._tick_ceiling_for(self._level),
+                    )
                     self._tick_count += 1
+                except asyncio.TimeoutError:
+                    self._tick_timeout_count += 1
+                    self._log.warning(
+                        "subagent.tick.timeout name=%s level=%s "
+                        "ceiling_s=%s tick_count=%s timeout_count=%s",
+                        self.name,
+                        self._level.value,
+                        self._tick_ceiling_for(self._level),
+                        self._tick_count,
+                        self._tick_timeout_count,
+                    )
                 except Exception:
                     # Log with exc_info so the traceback lands in the
                     # substrate's log; never re-raise to the loop.
                     self._log.exception("subagent.tick.error name=%s", self.name)
                 await self._wait(interval)
         finally:
+            # Stop the heartbeat task before the loop returns so a shutdown
+            # doesn't leave a dangling beater. Best-effort: cancellation races
+            # are swallowed — a heartbeat teardown error must not mask a real
+            # shutdown.
+            await self._cancel_heartbeat()
             self._log.debug("subagent.run.stop name=%s", self.name)
+
+    async def _heartbeat_loop(self) -> None:
+        """Independent liveness beat. Fires a forced startup beat (so the agent
+        is visible to the inspect CLI immediately, before its first — possibly
+        slow — tick) then beats every ``_HEARTBEAT_INTERVAL_S`` until cancelled.
+
+        Decoupled from the tick loop on purpose: a tick that hangs must NOT
+        silence the heartbeat, otherwise a wedged agent would look dead. The
+        beat reports the current (frozen, while a tick hangs) ``_tick_count``.
+        """
+        try:
+            await self._maybe_heartbeat(force=True)
+            while not self._stopped.is_set():
+                try:
+                    await asyncio.wait_for(
+                        self._stopped.wait(), timeout=_HEARTBEAT_INTERVAL_S
+                    )
+                    return  # stop requested
+                except asyncio.TimeoutError:
+                    await self._maybe_heartbeat()
+        except asyncio.CancelledError:
+            # Normal teardown path (run()/stop_and_wait cancel us); re-raise so
+            # the task records as cancelled rather than swallowing the signal.
+            raise
+
+    async def _cancel_heartbeat(self) -> None:
+        """Cancel and await the heartbeat task. Idempotent + best-effort: a
+        teardown error (including the expected ``CancelledError``) is swallowed
+        so it can't mask a shutdown in progress."""
+        task = self._heartbeat_task
+        if task is None or task.done():
+            self._heartbeat_task = None
+            return
+        task.cancel()
+        try:
+            await task
+        except (asyncio.CancelledError, Exception):
+            pass
+        self._heartbeat_task = None
 
     async def _wait(self, seconds: float) -> None:
         """Sleep up to *seconds*, returning early if ``stop()`` is called.
 
-        Chunked at ``_HEARTBEAT_INTERVAL_S`` so liveness beats keep firing
-        even while a long-interval agent (24h partition maintenance) is
-        between ticks. ``stop()`` still wakes the loop immediately —
-        ``stop_and_wait``'s 2-second grace is never threatened because the
-        chunk boundary checks the stop event every heartbeat cadence.
+        The liveness beat now runs in its own task (``_heartbeat_loop``), so
+        this is a plain interruptible sleep — ``stop()`` wakes it immediately,
+        and the full interval is otherwise waited out.
         """
-        loop = asyncio.get_event_loop()
-        deadline = loop.time() + seconds
-        while not self._stopped.is_set():
-            remaining = deadline - loop.time()
-            if remaining <= 0:
-                return
-            chunk = min(remaining, _HEARTBEAT_INTERVAL_S)
-            try:
-                await asyncio.wait_for(self._stopped.wait(), timeout=chunk)
-                return  # stop requested mid-sleep
-            except asyncio.TimeoutError:
-                # A heartbeat-cadence chunk elapsed without a stop; beat
-                # and keep waiting out the remaining interval.
-                await self._maybe_heartbeat()
+        if seconds <= 0:
+            return
+        try:
+            await asyncio.wait_for(self._stopped.wait(), timeout=seconds)
+        except asyncio.TimeoutError:
+            return  # interval elapsed without a stop
 
     async def _maybe_heartbeat(self, *, force: bool = False) -> None:
         """Upsert this agent's liveness row, rate-limited to the heartbeat
@@ -303,6 +414,10 @@ class SubAgent(ABC):
         indefinitely.
         """
         self.stop()
+        # Tear the heartbeat task down explicitly: if ``run()`` itself is
+        # wedged (a hung tick the watchdog hasn't yet caught), its ``finally``
+        # may not run promptly, so we cancel the beater here too.
+        await self._cancel_heartbeat()
         if self._task is None:
             return
         try:
@@ -348,6 +463,23 @@ class SubAgent(ABC):
         ``level``. Returns ``None`` for ``OFF``.
         """
         return _INTERVAL_BY_LEVEL[level]
+
+    def _tick_ceiling_for(self, level: Level) -> Optional[float]:
+        """Watchdog deadline (seconds) for one ``tick()`` at *level*.
+
+        A per-agent ``tick_timeout_s`` override wins outright (used by agents
+        whose tick legitimately runs far longer than its cadence — the
+        Curator's hourly L3/L4 backfill). Otherwise the ceiling is the agent's
+        tick interval times ``_TICK_TIMEOUT_MULT``, floored at
+        ``_TICK_TIMEOUT_FLOOR_S`` so a fast cadence (FULL = 0.2s) still gets a
+        sane window. Returns ``None`` for ``OFF`` (the loop never ticks then).
+        """
+        if self.tick_timeout_s is not None:
+            return self.tick_timeout_s
+        interval = self._interval_for(level)
+        if interval is None:  # OFF — no tick, no ceiling
+            return None
+        return max(_TICK_TIMEOUT_FLOOR_S, interval * _TICK_TIMEOUT_MULT)
 
 
 __all__ = ["Level", "SubAgent"]
