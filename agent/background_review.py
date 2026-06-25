@@ -43,15 +43,25 @@ _MEMORY_REVIEW_PROMPT = (
 )
 
 _SKILL_REVIEW_PROMPT = (
-    "Review the conversation above and update the skill library. Be "
-    "ACTIVE — most sessions produce at least one skill update, even if "
-    "small. A pass that does nothing is a missed learning opportunity, "
-    "not a neutral outcome.\n\n"
+    "Review the conversation above and decide whether the skill library "
+    "needs a change. NO CHANGE is the common, correct outcome — a clean "
+    "session that produced no durable lesson should end with 'Nothing to "
+    "save.', and that is a first-class success. Only "
+    "propose or patch a skill when the conversation shows hard evidence:\n"
+    "  (a) a repeated, multi-turn pattern (the same task shape or mistake "
+    "recurred across turns),\n"
+    "  (b) a user correction (the user pushed back on your style, "
+    "workflow, or output),\n"
+    "  (c) a loaded skill that proved wrong (a skill consulted this "
+    "session was inaccurate, incomplete, or outdated).\n"
+    "If none of (a)/(b)/(c) is present, reply 'Nothing to save.' and "
+    "stop.\n\n"
     "Target shape of the library: CLASS-LEVEL skills, each with a rich "
     "SKILL.md and a `references/` directory for session-specific detail. "
     "Not a long flat list of narrow one-session-one-skill entries. This "
-    "shapes HOW you update, not WHETHER you update.\n\n"
-    "Signals to look for (any one of these warrants action):\n"
+    "shapes HOW you update once a gate above has fired, not WHETHER you "
+    "update.\n\n"
+    "Signals that map to the gates above (any one warrants action):\n"
     "  • User corrected your style, tone, format, legibility, or "
     "verbosity. Frustration signals like 'stop doing X', 'this is too "
     "verbose', 'don't format like this', 'why are you explaining', "
@@ -138,10 +148,10 @@ _SKILL_REVIEW_PROMPT = (
     "command, config step, env var to set) under an existing setup or "
     "troubleshooting skill — never 'this tool does not work' as a "
     "standalone constraint.\n\n"
-    "'Nothing to save.' is a real option but should NOT be the "
-    "default. If the session ran smoothly with no corrections and "
-    "produced no new technique, just say 'Nothing to save.' and stop. "
-    "Otherwise, act."
+    "'Nothing to save.' is the default. If the session ran smoothly "
+    "with no corrections and produced no new technique — and none of the "
+    "(a)/(b)/(c) gates above fired — just say 'Nothing to save.' and "
+    "stop. Only when a gate fired should you act."
 )
 
 _COMBINED_REVIEW_PROMPT = (
@@ -150,9 +160,11 @@ _COMBINED_REVIEW_PROMPT = (
     "desires, preferences, personal details, or expectations about "
     "how you should behave? Save facts about the user and durable "
     "preferences with the memory tool.\n\n"
-    "**Skills**: how to do this class of task. Be ACTIVE — most "
-    "sessions produce at least one skill update. A pass that does "
-    "nothing is a missed learning opportunity, not a neutral outcome.\n\n"
+    "**Skills**: how to do this class of task. NO CHANGE is the common, "
+    "correct outcome — only propose or patch a skill on hard evidence: "
+    "(a) a repeated multi-turn pattern, (b) a user correction, or (c) a "
+    "loaded skill that proved wrong. If none of these is present, leave "
+    "the skill library untouched.\n\n"
     "Target shape of the skill library: CLASS-LEVEL skills with a rich "
     "SKILL.md and a `references/` directory for session-specific detail. "
     "Not a long flat list of narrow one-session-one-skill entries.\n\n"
@@ -223,9 +235,52 @@ _COMBINED_REVIEW_PROMPT = (
     "standalone constraint.\n\n"
     "Act on whichever of the two dimensions has real signal. If "
     "genuinely nothing stands out on either, say 'Nothing to save.' "
-    "and stop — but don't reach for that conclusion as a default."
+    "and stop — for skills that is the common, correct outcome."
 )
 
+
+
+def should_review_skills_after_turn(agent: Any) -> bool:
+    """Decide whether to fire a background skill review for the just-ended turn.
+
+    Innovation #8 — churn-bias fix.  Replaces the old fixed-cadence nudge
+    (``_iters_since_skill >= _skill_nudge_interval``) with a signal-based
+    trigger so the agent stops emitting low-value skill edits on smooth,
+    uneventful sessions.
+
+    Behaviour (shared by both the chat_completions loop and the codex
+    app-server loop so the two runtimes stay in sync):
+
+    * Skill review is only ever eligible when ``_skill_nudge_interval > 0``
+      and ``skill_manage`` is in ``valid_tool_names`` (unchanged gate).
+    * Signal mode (``_skill_review_signal_mode``, default on / flag
+      ``THOTH_SKILL_REVIEW_SIGNAL_MODE``): fire when ``_skill_review_signal``
+      was set during the turn (a tool error or a failed turn), OR-ed with a
+      RAISED interval fallback (``_skill_review_fallback_interval``) so long,
+      signal-less sessions still get an occasional review.
+    * Signal mode off: restore the pure fixed-interval cadence.
+
+    Side effects mirror the historic trigger: on a fire we reset
+    ``_iters_since_skill`` to 0; the per-turn ``_skill_review_signal`` is
+    always cleared so it can never leak into a later, unrelated turn.
+    """
+    nudge_interval = getattr(agent, "_skill_nudge_interval", 0)
+    should_review = False
+    if nudge_interval > 0 and "skill_manage" in getattr(agent, "valid_tool_names", ()):
+        iters = getattr(agent, "_iters_since_skill", 0)
+        if getattr(agent, "_skill_review_signal_mode", True):
+            fallback = getattr(
+                agent, "_skill_review_fallback_interval", nudge_interval
+            )
+            if getattr(agent, "_skill_review_signal", False) or iters >= fallback:
+                should_review = True
+                agent._iters_since_skill = 0
+        elif iters >= nudge_interval:
+            should_review = True
+            agent._iters_since_skill = 0
+    # Always clear the per-turn signal, fired or not.
+    agent._skill_review_signal = False
+    return should_review
 
 
 def summarize_background_review_actions(

@@ -1044,6 +1044,12 @@ def init_agent(
     # incremented in agent/tool_executor.py as tool results land.
     agent._turn_tool_calls = 0
     agent._turn_tool_failures = 0
+    # Signal-based skill-review trigger (innovation #8): a turn sets this
+    # when something happened worth reviewing (a tool error, or a failed
+    # turn post-hoc).  The conversation/codex loops fire a background
+    # review on the signal OR a raised interval fallback, instead of the
+    # old fixed-cadence nudge that churned out low-value skill edits.
+    agent._skill_review_signal = False
     if not skip_memory:
         try:
             mem_config = _agent_cfg.get("memory", {})
@@ -1209,6 +1215,21 @@ def init_agent(
         agent._skill_nudge_interval = int(skills_config.get("creation_nudge_interval", 10))
     except Exception:
         pass
+
+    # Signal-based skill review (innovation #8): default ON.  When on, the
+    # background skill review fires on an in-turn signal (tool error /
+    # failed turn) OR-ed with a RAISED interval fallback so long, uneventful
+    # sessions still get an occasional review.  THOTH_SKILL_REVIEW_SIGNAL_MODE=off
+    # restores the pure fixed-interval cadence (creation_nudge_interval).
+    agent._skill_review_signal_mode = os.getenv(
+        "THOTH_SKILL_REVIEW_SIGNAL_MODE", "true"
+    ).strip().lower() in {"1", "true", "yes", "on"}
+    # Fallback ceiling: when in signal mode, a signal-less session only
+    # reviews once it has run this many tool iterations — deliberately
+    # higher than creation_nudge_interval so quiet sessions stop churning.
+    agent._skill_review_fallback_interval = max(
+        agent._skill_nudge_interval * 3, agent._skill_nudge_interval
+    )
 
     # Tool-use enforcement config: "auto" (default — matches hardcoded
     # model list), true (always), false (never), or list of substrings.

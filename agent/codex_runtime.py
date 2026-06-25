@@ -130,15 +130,15 @@ def run_codex_app_server_turn(
     )
 
     # Now check the skill nudge AFTER iters were incremented — same
-    # pattern the chat_completions path uses (line ~15432).
-    should_review_skills = False
-    if (
-        agent._skill_nudge_interval > 0
-        and agent._iters_since_skill >= agent._skill_nudge_interval
-        and "skill_manage" in agent.valid_tool_names
-    ):
-        should_review_skills = True
-        agent._iters_since_skill = 0
+    # signal-based trigger the chat_completions path uses (innovation #8),
+    # via the shared helper so both runtimes stay in sync.  A failed turn is
+    # hard evidence worth a review; the codex path bypasses tool_executor, so
+    # turn.error is the failure signal we fold into _skill_review_signal here.
+    from agent.background_review import should_review_skills_after_turn
+
+    if turn.error is not None:
+        agent._skill_review_signal = True
+    should_review_skills = should_review_skills_after_turn(agent)
 
     # External memory provider sync (mirrors line ~15439). Skipped on
     # interrupt/error to avoid feeding partial transcripts to memory.
