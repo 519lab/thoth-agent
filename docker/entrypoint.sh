@@ -1,5 +1,5 @@
 #!/bin/bash
-# Docker/Podman entrypoint: bootstrap config files into the mounted volume, then run hermes.
+# Docker/Podman entrypoint: bootstrap config files into the mounted volume, then run thoth.
 set -e
 
 THOTH_HOME="${THOTH_HOME:-/opt/data}"
@@ -91,7 +91,7 @@ fi
 # auth.json: bootstrap from env on first boot only.  Used by orchestrators
 # (e.g. provisioning a Thoth VPS from an account-management service) that
 # need to seed the OAuth refresh credential non-interactively, instead of
-# walking the user through `hermes setup` + the device-flow login dance.
+# walking the user through `thoth setup` + the device-flow login dance.
 # Subsequent token rotations write back to the same file, which lives on a
 # persistent volume — so this env var is consumed exactly once at first
 # boot.  The `[ ! -f ... ]` guard is critical: without it, a container
@@ -107,16 +107,16 @@ if [ -d "$INSTALL_DIR/skills" ]; then
     python3 "$INSTALL_DIR/tools/skills_sync.py"
 fi
 
-# Optionally start `hermes dashboard` as a side-process.
+# Optionally start `thoth dashboard` as a side-process.
 #
 # Toggled by THOTH_DASHBOARD=1 (also accepts "true"/"yes", case-insensitive).
 # Host/port/TUI can be overridden via:
 #   THOTH_DASHBOARD_HOST  (default 0.0.0.0 — exposed outside the container)
-#   THOTH_DASHBOARD_PORT  (default 9119, matches `hermes dashboard` default)
-#   THOTH_DASHBOARD_TUI   (already honored by `hermes dashboard` itself)
+#   THOTH_DASHBOARD_PORT  (default 9119, matches `thoth dashboard` default)
+#   THOTH_DASHBOARD_TUI   (already honored by `thoth dashboard` itself)
 #
 # The dashboard is a long-lived server.  We background it *before* the final
-# `exec hermes "$@"` so the user's chosen foreground command (chat, gateway,
+# `exec thoth "$@"` so the user's chosen foreground command (chat, gateway,
 # sleep infinity, …) remains PID-of-interest for the container runtime.  When
 # the container stops the whole process tree is torn down, so no explicit
 # cleanup is needed.
@@ -132,11 +132,11 @@ case "${THOTH_DASHBOARD:-}" in
         if [ "$dash_host" != "127.0.0.1" ] && [ "$dash_host" != "localhost" ]; then
             dash_args+=(--insecure)
         fi
-        echo "Starting hermes dashboard on ${dash_host}:${dash_port} (background)"
+        echo "Starting thoth dashboard on ${dash_host}:${dash_port} (background)"
         # Prefix dashboard output so it's distinguishable from the main
         # process in `docker logs`.  stdbuf keeps the pipe line-buffered.
         (
-            stdbuf -oL -eL hermes dashboard "${dash_args[@]}" 2>&1 \
+            stdbuf -oL -eL thoth dashboard "${dash_args[@]}" 2>&1 \
                 | sed -u 's/^/[dashboard] /'
         ) &
         ;;
@@ -144,17 +144,17 @@ esac
 
 # Final exec: two supported invocation patterns.
 #
-#   docker run <image>                 -> exec `hermes` with no args (legacy default)
-#   docker run <image> chat -q "..."   -> exec `hermes chat -q "..."` (legacy wrap)
+#   docker run <image>                 -> exec `thoth` with no args (legacy default)
+#   docker run <image> chat -q "..."   -> exec `thoth chat -q "..."` (legacy wrap)
 #   docker run <image> sleep infinity  -> exec `sleep infinity` directly
 #   docker run <image> bash            -> exec `bash` directly
 #
 # If the first positional arg resolves to an executable on PATH, we assume the
 # caller wants to run it directly (needed by the launcher which runs long-lived
 # `sleep infinity` sandbox containers — see tools/environments/docker.py).
-# Otherwise we treat the args as a hermes subcommand and wrap with `hermes`,
+# Otherwise we treat the args as a thoth subcommand and wrap with `thoth`,
 # preserving the documented `docker run <image> <subcommand>` behavior.
 if [ $# -gt 0 ] && command -v "$1" >/dev/null 2>&1; then
     exec "$@"
 fi
-exec hermes "$@"
+exec thoth "$@"
