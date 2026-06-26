@@ -1091,7 +1091,7 @@ class TestThothHomeIsolation:
         """The conftest autouse fixture sets THOTH_HOME; verify it's active."""
         thoth_home = os.getenv("THOTH_HOME")
         assert thoth_home is not None, "THOTH_HOME should be set by conftest"
-        assert "hermes_test" in thoth_home, "Should point to test temp dir"
+        assert "thoth_test" in thoth_home, "Should point to test temp dir"
 
     def test_get_thoth_home_fallback(self):
         """Without THOTH_HOME/THOTH_HOME set, falls back to ~/.thoth (new default)."""
