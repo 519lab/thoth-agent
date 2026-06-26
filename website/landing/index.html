@@ -7,17 +7,32 @@
   <meta name="description" content="Thoth is a self-improving AI agent with a cognitive memory substrate. It creates skills from experience, improves them during use, and remembers across sessions. MIT-licensed, self-hostable." />
   <link rel="icon" href="/docs/img/favicon.svg" type="image/svg+xml" />
   <link rel="canonical" href="https://thoth.519lab.com/" />
+  <meta name="theme-color" content="#14305C" />
 
   <!-- Open Graph / Twitter -->
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Thoth" />
   <meta property="og:title" content="Thoth — the self-improving AI agent" />
   <meta property="og:description" content="A cognitive memory substrate, skills that improve from experience, and a runtime that works everywhere — gateway, editors (ACP), TUI, and messaging." />
   <meta property="og:url" content="https://thoth.519lab.com/" />
-  <meta property="og:image" content="https://thoth.519lab.com/docs/img/thoth-banner.png" />
+  <meta property="og:image" content="https://thoth.519lab.com/docs/img/og-card.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Thoth — the self-improving AI agent" />
   <meta name="twitter:description" content="A cognitive memory substrate, skills that improve from experience, and a runtime that works everywhere." />
-  <meta name="twitter:image" content="https://thoth.519lab.com/docs/img/thoth-banner.png" />
+  <meta name="twitter:image" content="https://thoth.519lab.com/docs/img/og-card.png" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "WebSite", "@id": "https://thoth.519lab.com/#website", "url": "https://thoth.519lab.com/", "name": "Thoth", "description": "Self-improving, self-hostable AI agent with a cognitive memory substrate.", "publisher": { "@id": "https://thoth.519lab.com/#org" } },
+      { "@type": "Organization", "@id": "https://thoth.519lab.com/#org", "name": "519lab", "url": "https://github.com/519lab" },
+      { "@type": "SoftwareApplication", "name": "Thoth", "applicationCategory": "DeveloperApplication", "operatingSystem": "Linux, macOS, Windows (WSL2)", "url": "https://thoth.519lab.com/", "downloadUrl": "https://github.com/519lab/thoth-agent", "license": "https://opensource.org/licenses/MIT", "description": "A self-improving AI agent that creates skills from experience and remembers across sessions, backed by a PostgreSQL + pgvector memory substrate.", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" } }
+    ]
+  }
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -107,9 +122,15 @@
     .btn-ghost { color: var(--vellum); border: 1px solid rgba(250,246,236,0.3); }
     .btn-ghost:hover { border-color: var(--gold); color: var(--gold-bright); }
 
+    /* keyboard focus — brand ring (UA default is low-contrast on lapis) */
+    .btn:focus-visible, nav.top a:focus-visible, .copy:focus-visible,
+    .foot .links a:focus-visible, .brand a:focus-visible {
+      outline: 2px solid var(--gold-bright); outline-offset: 3px; border-radius: 6px;
+    }
+
     /* ── Features ── */
     section.features { padding: 50px 0 30px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 760px; margin: 0 auto; }
     .card {
       background: rgba(43,91,168,0.10); border: 1px solid rgba(74,130,212,0.22);
       border-radius: 16px; padding: 26px 24px; transition: border-color .2s, transform .2s, background .2s;
@@ -136,9 +157,10 @@
     .foot .attr a { color: var(--vellum-dim); text-decoration: underline; }
 
     @media (max-width: 600px) {
-      nav.top a:not(.gh) { display: none; }
+      nav.top a.install-link { display: none; }   /* keep Docs + GitHub on mobile */
+      .grid { grid-template-columns: 1fr; max-width: 420px; }
       .install { flex-direction: column; align-items: stretch; }
-      .install code { white-space: normal; word-break: break-all; }
+      .install code { white-space: nowrap; overflow-x: auto; font-size: 0.8rem; -webkit-overflow-scrolling: touch; }
     }
   </style>
 </head>
@@ -151,7 +173,7 @@
       </div>
       <nav class="top">
         <a href="/docs/">Docs</a>
-        <a href="/docs/getting-started/installation">Install</a>
+        <a class="install-link" href="/docs/getting-started/installation/">Install</a>
         <a class="gh" href="https://github.com/519lab/thoth-agent">GitHub</a>
       </nav>
     </header>
@@ -164,34 +186,34 @@
 
         <div class="install">
           <code id="cmd"><span class="p">curl</span> -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | <span class="p">bash</span></code>
-          <button class="copy" id="copy" aria-label="Copy install command">Copy</button>
+          <button class="copy" id="copy" aria-live="polite" aria-label="Copy install command">Copy</button>
         </div>
 
         <div class="cta">
-          <a class="btn btn-primary" href="/docs/getting-started/quickstart">Get started →</a>
-          <a class="btn btn-ghost" href="https://github.com/519lab/thoth-agent">★ Star on GitHub</a>
+          <a class="btn btn-primary" href="/docs/getting-started/quickstart/">Get started <span aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="https://github.com/519lab/thoth-agent"><span aria-hidden="true">★</span> Star on GitHub</a>
         </div>
       </section>
 
       <section class="features">
         <div class="grid">
           <div class="card">
-            <span class="ic">📜</span>
+            <span class="ic" aria-hidden="true">📜</span>
             <h3>Skills from experience</h3>
             <p>It writes and refines its own reusable skills as it solves real tasks — capability compounds instead of resetting every session.</p>
           </div>
           <div class="card">
-            <span class="ic">🧠</span>
+            <span class="ic" aria-hidden="true">🧠</span>
             <h3>Cognitive memory substrate</h3>
             <p>A persistent, queryable memory layer (PostgreSQL + pgvector) keeps context, decisions, and learnings alive across runs.</p>
           </div>
           <div class="card">
-            <span class="ic">🔌</span>
+            <span class="ic" aria-hidden="true">🔌</span>
             <h3>Runs where you work</h3>
             <p>One agent, many surfaces: a gateway for messaging platforms, ACP for editors like Zed, a terminal TUI, and an OpenAI-compatible API.</p>
           </div>
           <div class="card">
-            <span class="ic">🗝️</span>
+            <span class="ic" aria-hidden="true">🗝️</span>
             <h3>Your models, your keys</h3>
             <p>Bring any provider — Anthropic, OpenAI, Nous, local — with credential pooling, fallback chains, and per-task model tiering.</p>
           </div>
@@ -215,7 +237,7 @@
       <div class="foot">
         <div class="links">
           <a href="/docs/">Docs</a>
-          <a href="/docs/getting-started/installation">Install</a>
+          <a href="/docs/getting-started/installation/">Install</a>
           <a href="https://github.com/519lab/thoth-agent">GitHub</a>
           <a href="/llms.txt">llms.txt</a>
         </div>

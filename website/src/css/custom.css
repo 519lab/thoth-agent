@@ -68,6 +68,9 @@
 
   --thoth-surface-border: rgba(27, 58, 107, 0.16);
   --thoth-accent: var(--thoth-gold-deep);
+  /* AA-safe gold for NORMAL-size text on vellum (~4.6:1); gold-deep #A8791E is
+     only 3.59:1 and fails AA for small text like the eyebrow / stratum IDs. */
+  --thoth-gold-text: #8A6212;
 }
 
 /* ─── Dark mode (the primary surface) ─────────────────────────────────────── */
@@ -100,6 +103,8 @@
 
   --thoth-surface-border: rgba(74, 130, 212, 0.18);
   --thoth-accent: var(--thoth-gold);
+  /* On dark, bright gold #E8B23A is ~10:1 — already AA for small text. */
+  --thoth-gold-text: var(--thoth-gold);
 }
 
 /* Optical sizing for the display serif */
@@ -288,7 +293,7 @@ table { border-collapse: collapse; }
   font-size: 0.78rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--thoth-accent);
+  color: var(--thoth-gold-text);
   margin: 0 0 1rem;
   animation: thoth-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -381,7 +386,7 @@ table { border-collapse: collapse; }
   font-family: var(--ifm-font-family-monospace);
   font-weight: 600;
   font-size: 0.9rem;
-  color: var(--thoth-accent);
+  color: var(--thoth-gold-text);
 }
 .stratum__name { font-family: var(--ifm-heading-font-family); font-weight: 600; font-size: 1.02rem; }
 .stratum__role { font-size: 0.85rem; color: var(--ifm-font-color-secondary); text-align: right; }

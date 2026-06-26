@@ -26,19 +26,43 @@ const config: Config = {
     defaultLocale: 'en',
     locales: ['en', 'zh-Hans', 'ko'],
     localeConfigs: {
+      // htmlLang is region-qualified so og:locale (language_TERRITORY) and the
+      // hreflang alternates are valid; the locale *key* still drives the URL
+      // path (/docs/zh-Hans/), so URLs are unchanged.
       en: {
         label: 'English',
+        htmlLang: 'en-US',
       },
       'zh-Hans': {
         label: '简体中文',
-        htmlLang: 'zh-Hans',
+        htmlLang: 'zh-CN',
       },
       ko: {
         label: '한국어',
-        htmlLang: 'ko',
+        htmlLang: 'ko-KR',
       },
     },
   },
+
+  headTags: [
+    {
+      tagName: 'script',
+      attributes: { type: 'application/ld+json' },
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'Thoth',
+        applicationCategory: 'DeveloperApplication',
+        operatingSystem: 'Linux, macOS, Windows (WSL2)',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        url: 'https://thoth.519lab.com/',
+        downloadUrl: 'https://github.com/519lab/thoth-agent',
+        license: 'https://opensource.org/licenses/MIT',
+        description:
+          'A self-improving, self-hostable AI agent with a cognitive memory substrate — it builds skills from experience and remembers across sessions.',
+      }),
+    },
+  ],
 
   themes: [
     '@docusaurus/theme-mermaid',
@@ -88,7 +112,14 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/thoth-banner.png',
+    image: 'img/og-card.png',
+    metadata: [
+      {
+        name: 'keywords',
+        content:
+          'AI agent, self-improving agent, autonomous agent, AI memory, cognitive substrate, pgvector, self-hostable, developer tool, open source',
+      },
+    ],
     colorMode: {
       defaultMode: 'dark',
       respectPrefersColorScheme: true,
