@@ -726,8 +726,8 @@ class ThothACPAgent(acp.Agent):
             # ``thoth_db.run_sync`` instead — it now detects the
             # different-loop case and offloads to a worker thread that
             # drives ``_sync_loop`` directly.
-            import thoth_db as _hermes_db
-            row = _hermes_db.run_sync(db.get_session(session_id))
+            import thoth_db as _thoth_db
+            row = _thoth_db.run_sync(db.get_session(session_id))
         except Exception:
             logger.debug("Could not read ACP session info for %s", session_id, exc_info=True)
             return
@@ -1959,6 +1959,3 @@ class ThothACPAgent(acp.Agent):
         self.session_manager.save_session(session_id)
         logger.info("Session %s: config option %s updated", session_id, config_id)
         return SetSessionConfigOptionResponse(config_options=[])
-
-# Back-compat alias (Hermes→Thoth rename). Remove in a later cleanup phase.
-HermesACPAgent = ThothACPAgent

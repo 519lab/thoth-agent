@@ -1,6 +1,6 @@
 """CLI entry point for the thoth-agent ACP adapter.
 
-Loads environment variables from ``~/.hermes/.env``, configures logging
+Loads environment variables from ``~/.thoth/.env``, configures logging
 to write to stderr (so stdout is reserved for ACP JSON-RPC transport),
 and starts the ACP agent server.
 
@@ -10,7 +10,7 @@ Usage::
     # or
     thoth acp
     # or
-    hermes-acp
+    thoth-acp
 """
 
 # IMPORTANT: thoth_bootstrap must be the very first import — UTF-8 stdio
@@ -94,7 +94,7 @@ def _setup_logging() -> None:
 
 
 def _load_env() -> None:
-    """Load .env from THOTH_HOME (default ``~/.hermes``)."""
+    """Load .env from THOTH_HOME (default ``~/.thoth``)."""
     from thoth_cli.env_loader import load_thoth_dotenv
 
     thoth_home = get_thoth_home()
@@ -110,7 +110,7 @@ def _load_env() -> None:
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="hermes-acp",
+        prog="thoth-acp",
         description="Run Thoth Agent as an ACP stdio server.",
     )
     parser.add_argument("--version", action="store_true", help="Print Thoth version and exit")
@@ -127,7 +127,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--setup-browser",
         action="store_true",
-        help="Install agent-browser + Playwright Chromium into ~/.hermes/node/ "
+        help="Install agent-browser + Playwright Chromium into ~/.thoth/node/ "
              "for browser tool support. Idempotent.",
     )
     parser.add_argument(

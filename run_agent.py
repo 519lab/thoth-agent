@@ -507,8 +507,8 @@ class AIAgent:
         if self._session_db_created or not self._session_db:
             return
         try:
-            import thoth_db as _hermes_db
-            _hermes_db.run_sync(self._session_db.create_session(
+            import thoth_db as _thoth_db
+            _thoth_db.run_sync(self._session_db.create_session(
                 session_id=self.session_id,
                 source=self.platform or os.environ.get("THOTH_SESSION_SOURCE", "cli"),
                 model=self.model,
@@ -1279,8 +1279,8 @@ class AIAgent:
                     ]
                 elif isinstance(msg.get("tool_calls"), list):
                     tool_calls_data = msg["tool_calls"]
-                import thoth_db as _hermes_db
-                _hermes_db.run_sync(self._session_db.append_message(
+                import thoth_db as _thoth_db
+                _thoth_db.run_sync(self._session_db.append_message(
                     session_id=self.session_id,
                     role=role,
                     content=content,
@@ -1523,7 +1523,7 @@ class AIAgent:
 
         Gated by ``sessions.write_json_snapshots`` (default False).  state.db
         is the canonical message store; this writer exists only for users
-        whose external tooling consumes ``~/.hermes/sessions/session_{sid}.json``
+        whose external tooling consumes ``~/.thoth/sessions/session_{sid}.json``
         directly.  When the flag is off this is a fast no-op.
 
         When enabled, rewrites the snapshot after every persistence point with

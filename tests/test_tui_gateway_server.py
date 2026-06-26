@@ -19,7 +19,7 @@ def _pass_through_run_sync_for_sync_mocks(monkeypatch):
 
     Phase 0 turned every ``SessionDB`` method into an async coroutine, and
     ``tui_gateway.server`` correspondingly wraps every DB call with
-    ``_hermes_db.run_sync(db.<method>(...))``. The 20+ ``FakeDB`` classes
+    ``_thoth_db.run_sync(db.<method>(...))``. The 20+ ``FakeDB`` classes
     in this file are sync — their methods return plain dicts / lists, not
     coroutines — so the production wrapper crashes with ``TypeError: An
     asyncio.Future, a coroutine or an awaitable is required`` before the
