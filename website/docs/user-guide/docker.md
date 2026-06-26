@@ -21,7 +21,7 @@ If this is your first time running Thoth Agent, create a data directory on the h
 mkdir -p ~/.thoth
 docker run -it --rm \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent setup
+  519lab/thoth-agent setup
 ```
 
 This drops you into the setup wizard, which will prompt you for your API keys and write them to `~/.thoth/.env`. You only need to do this once. It is highly recommended to set up a chat system for the gateway to work with at this point.
@@ -36,7 +36,7 @@ docker run -d \
   --restart unless-stopped \
   -v ~/.thoth:/opt/data \
   -p 8642:8642 \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 Port 8642 exposes the gateway's [OpenAI-compatible API server](./features/api-server.md) and health endpoint. It's optional if you only use chat platforms (Telegram, Discord, etc.), but required if you want the dashboard or external tools to reach the gateway.
@@ -53,7 +53,7 @@ docker run -d \
   -e API_SERVER_HOST=0.0.0.0 \
   -e API_SERVER_KEY=your_api_key_here \
   -e API_SERVER_CORS_ORIGINS='*' \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 Opening any port on an internet facing machine is a security risk. You should not do it unless you understand the risks.
@@ -70,10 +70,10 @@ docker run -d \
   -p 8642:8642 \
   -p 9119:9119 \
   -e THOTH_DASHBOARD=1 \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
-The entrypoint starts `thoth dashboard` in the background (running as the non-root `hermes` user) before `exec`-ing the main command. Dashboard output is prefixed with `[dashboard]` in `docker logs` so it's easy to separate from gateway logs.
+The entrypoint starts `thoth dashboard` in the background (running as the non-root `thoth` user) before `exec`-ing the main command. Dashboard output is prefixed with `[dashboard]` in `docker logs` so it's easy to separate from gateway logs.
 
 | Environment variable | Description | Default |
 |---------------------|-------------|---------|
@@ -95,13 +95,13 @@ To open an interactive chat session against a running data directory:
 ```sh
 docker run -it --rm \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent
+  519lab/thoth-agent
 ```
 
 Or if you have already opened a terminal in your running container (via Docker Desktop for instance), just run:
 
 ```sh
-/opt/hermes/.venv/bin/thoth
+/opt/thoth/.venv/bin/thoth
 ```
 
 ## Persistent volumes
@@ -138,7 +138,7 @@ docker run -d \
   --restart unless-stopped \
   -v ~/.thoth-work:/opt/data \
   -p 8642:8642 \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 
 # Personal profile
 docker run -d \
@@ -146,7 +146,7 @@ docker run -d \
   --restart unless-stopped \
   -v ~/.thoth-personal:/opt/data \
   -p 8643:8642 \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 Why separate containers over profiles in Docker:
@@ -162,7 +162,7 @@ In Docker Compose, this just means declaring one service per profile with distin
 ```yaml
 services:
   thoth-work:
-    image: nousresearch/hermes-agent:latest
+    image: 519lab/thoth-agent:latest
     container_name: thoth-work
     restart: unless-stopped
     command: gateway run
@@ -172,7 +172,7 @@ services:
       - ~/.thoth-work:/opt/data
 
   thoth-personal:
-    image: nousresearch/hermes-agent:latest
+    image: 519lab/thoth-agent:latest
     container_name: thoth-personal
     restart: unless-stopped
     command: gateway run
@@ -191,7 +191,7 @@ docker run -it --rm \
   -v ~/.thoth:/opt/data \
   -e ANTHROPIC_API_KEY="sk-ant-..." \
   -e OPENAI_API_KEY="sk-..." \
-  nousresearch/hermes-agent
+  519lab/thoth-agent
 ```
 
 Direct `-e` flags override values from `.env`. This is useful for CI/CD or secrets-manager integrations where you don't want keys on disk.
@@ -207,7 +207,7 @@ For persistent deployment with both the gateway and dashboard, a `docker-compose
 ```yaml
 services:
   thoth:
-    image: nousresearch/hermes-agent:latest
+    image: 519lab/thoth-agent:latest
     container_name: thoth
     restart: unless-stopped
     command: gateway run
@@ -251,7 +251,7 @@ docker run -d \
   --restart unless-stopped \
   --memory=4g --cpus=2 \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 ## What the Dockerfile does
@@ -276,7 +276,7 @@ The entrypoint script (`docker/entrypoint.sh`) bootstraps the data volume on fir
 - Then runs `thoth` with whatever arguments you pass
 
 :::warning
-Do not override the image entrypoint unless you keep `/opt/hermes/docker/entrypoint.sh` in the command chain. The entrypoint drops root privileges to the `hermes` user before gateway state files are created. Starting `thoth gateway run` as root inside the official image is refused by default because it can leave root-owned files in `/opt/data` and break later dashboard or gateway starts. Set `THOTH_ALLOW_ROOT_GATEWAY=1` only when you intentionally accept that risk.
+Do not override the image entrypoint unless you keep `/opt/thoth/docker/entrypoint.sh` in the command chain. The entrypoint drops root privileges to the `thoth` user before gateway state files are created. Starting `thoth gateway run` as root inside the official image is refused by default because it can leave root-owned files in `/opt/data` and break later dashboard or gateway starts. Set `THOTH_ALLOW_ROOT_GATEWAY=1` only when you intentionally accept that risk.
 :::
 
 ## Upgrading
@@ -284,13 +284,13 @@ Do not override the image entrypoint unless you keep `/opt/hermes/docker/entrypo
 Pull the latest image and recreate the container. Your data directory is untouched.
 
 ```sh
-docker pull nousresearch/hermes-agent:latest
+docker pull 519lab/thoth-agent:latest
 docker rm -f thoth
 docker run -d \
   --name thoth \
   --restart unless-stopped \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 Or with Docker Compose:
@@ -335,7 +335,7 @@ services:
             - capabilities: [gpu]
 
   thoth:
-    image: nousresearch/hermes-agent:latest
+    image: 519lab/thoth-agent:latest
     container_name: thoth
     restart: unless-stopped
     command: gateway run
@@ -379,7 +379,7 @@ docker run -d \
   --name thoth \
   -v ~/.thoth:/opt/data \
   -p 8642:8642 \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 ```yaml
@@ -398,7 +398,7 @@ docker run -d \
   --name thoth \
   --network host \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 ```yaml
@@ -449,7 +449,7 @@ Check logs: `docker logs thoth`. Common causes:
 
 ### "Permission denied" errors
 
-The container's entrypoint drops privileges to the non-root `hermes` user (UID 10000) via `gosu`. If your host `~/.thoth/` is owned by a different UID, set `THOTH_UID`/`THOTH_GID` to match your host user, or ensure the data directory is writable:
+The container's entrypoint drops privileges to the non-root `thoth` user (UID 10000) via `gosu`. If your host `~/.thoth/` is owned by a different UID, set `THOTH_UID`/`THOTH_GID` to match your host user, or ensure the data directory is writable:
 
 ```sh
 chmod -R 755 ~/.thoth
@@ -464,7 +464,7 @@ docker run -d \
   --name thoth \
   --shm-size=1g \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 ### Gateway not reconnecting after network issues
@@ -479,6 +479,6 @@ docker restart thoth
 
 ```sh
 docker logs --tail 50 thoth          # Recent logs
-docker run -it --rm nousresearch/hermes-agent:latest version     # Verify version
+docker run -it --rm 519lab/thoth-agent:latest version     # Verify version
 docker stats thoth                    # Resource usage
 ```
