@@ -1268,11 +1268,11 @@ def skill_view(
                     )
 
         # Read tags/related_skills with backward compat:
-        # Check metadata.thoth.* first (agentskills.io convention), fall back to top-level
+        # Check metadata.hermes.* first (agentskills.io convention), fall back to top-level
         thoth_meta = {}
         metadata = frontmatter.get("metadata")
         if isinstance(metadata, dict):
-            thoth_meta = metadata.get("thoth", {}) or {}
+            thoth_meta = metadata.get("hermes", {}) or {}
 
         tags = _parse_tags(thoth_meta.get("tags") or frontmatter.get("tags", ""))
         related_skills = _parse_tags(

@@ -95,7 +95,7 @@ def test_main_setup_skips_browser_prompt_on_no(monkeypatch):
 
 
 def test_main_setup_browser_calls_ensure_dependency(monkeypatch):
-    """`hermes-acp --setup-browser` routes through dep_ensure.ensure_dependency."""
+    """`thoth-acp --setup-browser` routes through dep_ensure.ensure_dependency."""
     calls = []
 
     def fake_ensure(dep, interactive=True):

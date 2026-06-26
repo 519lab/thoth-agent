@@ -292,7 +292,7 @@ gateway:
   update:
     platform_not_messaging:  "✗ /update 仅在消息平台可用。请在终端运行 `thoth update`。"
     not_git_repo:            "✗ 不是 git 仓库 — 无法更新。"
-    hermes_cmd_not_found:    "✗ 无法找到 `thoth` 命令。Thoth 正在运行，但更新命令无法在 PATH 上或通过当前 Python 解释器找到可执行文件。请尝试在终端中手动运行 `thoth update`。"
+    thoth_cmd_not_found:    "✗ 无法找到 `thoth` 命令。Thoth 正在运行，但更新命令无法在 PATH 上或通过当前 Python 解释器找到可执行文件。请尝试在终端中手动运行 `thoth update`。"
     start_failed:            "✗ 启动更新失败：{error}"
     starting:                "⚕ 正在启动 Thoth 更新…… 进度将在此处显示。"
 

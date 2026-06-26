@@ -25,7 +25,7 @@ import { api } from "@/lib/api";
 
 /** LocalStorage key — pre-applied before the React tree mounts to avoid
  *  a visible flash of the default palette on theme-overridden installs. */
-const STORAGE_KEY = "hermes-dashboard-theme";
+const STORAGE_KEY = "thoth-dashboard-theme";
 
 /** Tracks fontUrls we've already injected so multiple theme switches don't
  *  pile up <link> tags. Keyed by URL. */
@@ -207,7 +207,7 @@ let _PREV_DYNAMIC_VAR_KEYS: Set<string> = new Set();
 
 /** ID for the injected <style> tag that carries a theme's customCSS.
  *  A single tag is reused + replaced on every theme switch. */
-const CUSTOM_CSS_STYLE_ID = "hermes-theme-custom-css";
+const CUSTOM_CSS_STYLE_ID = "thoth-theme-custom-css";
 
 function applyCustomCSS(css: string | undefined) {
   if (typeof document === "undefined") return;
@@ -219,7 +219,7 @@ function applyCustomCSS(css: string | undefined) {
   if (!el) {
     el = document.createElement("style");
     el.id = CUSTOM_CSS_STYLE_ID;
-    el.setAttribute("data-hermes-theme-css", "true");
+    el.setAttribute("data-thoth-theme-css", "true");
     document.head.appendChild(el);
   }
   el.textContent = css;
@@ -251,7 +251,7 @@ function injectFontStylesheet(url: string | undefined) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
   link.href = url;
-  link.setAttribute("data-hermes-theme-font", "true");
+  link.setAttribute("data-thoth-theme-font", "true");
   document.head.appendChild(link);
   INJECTED_FONT_URLS.add(url);
 }

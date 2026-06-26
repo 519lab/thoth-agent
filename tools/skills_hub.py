@@ -442,7 +442,7 @@ class GitHubSource(SkillSource):
         tags = []
         metadata = fm.get("metadata", {})
         if isinstance(metadata, dict):
-            thoth_meta = metadata.get("thoth", {})
+            thoth_meta = metadata.get("hermes", {})
             if isinstance(thoth_meta, dict):
                 tags = thoth_meta.get("tags", [])
         if not tags:
@@ -1037,7 +1037,7 @@ class UrlSource(SkillSource):
         tags: List[str] = []
         metadata = fm.get("metadata", {})
         if isinstance(metadata, dict):
-            thoth_meta = metadata.get("thoth", {})
+            thoth_meta = metadata.get("hermes", {})
             if isinstance(thoth_meta, dict):
                 raw_tags = thoth_meta.get("tags", [])
                 if isinstance(raw_tags, list):
@@ -2668,7 +2668,7 @@ class OptionalSkillSource(SkillSource):
             tags = []
             meta_block = fm.get("metadata", {})
             if isinstance(meta_block, dict):
-                thoth_meta = meta_block.get("thoth", {})
+                thoth_meta = meta_block.get("hermes", {})
                 if isinstance(thoth_meta, dict):
                     tags = thoth_meta.get("tags", [])
 

@@ -13656,7 +13656,7 @@ class GatewayRunner:
 
         thoth_cmd = _resolve_thoth_bin()
         if not thoth_cmd:
-            return t("gateway.update.hermes_cmd_not_found")
+            return t("gateway.update.thoth_cmd_not_found")
 
         pending_path = _thoth_home / ".update_pending.json"
         output_path = _thoth_home / ".update_output.txt"

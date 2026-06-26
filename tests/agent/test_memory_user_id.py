@@ -166,7 +166,7 @@ class TestMem0UserIdScoping:
         # Mock _load_config to return a config with default user_id
         with patch("plugins.memory.mem0._load_config", return_value={
             "api_key": "test-key",
-            "user_id": "hermes-user",
+            "user_id": "thoth-user",
             "agent_id": "hermes",
             "rerank": True,
         }):
@@ -190,7 +190,7 @@ class TestMem0UserIdScoping:
         assert provider._user_id == "custom-default"
 
     def test_no_user_id_no_config_uses_thoth_user(self):
-        """Without user_id or config override, should default to 'hermes-user'."""
+        """Without user_id or config override, should default to 'thoth-user'."""
         from plugins.memory.mem0 import Mem0MemoryProvider
 
         provider = Mem0MemoryProvider()
@@ -201,7 +201,7 @@ class TestMem0UserIdScoping:
         }):
             provider.initialize(session_id="test-sess")
 
-        assert provider._user_id == "hermes-user"
+        assert provider._user_id == "thoth-user"
 
     def test_different_users_get_different_ids(self):
         """Two providers initialized with different user_ids should be scoped differently."""
@@ -212,7 +212,7 @@ class TestMem0UserIdScoping:
 
         with patch("plugins.memory.mem0._load_config", return_value={
             "api_key": "test-key",
-            "user_id": "hermes-user",
+            "user_id": "thoth-user",
             "agent_id": "hermes",
             "rerank": True,
         }):

@@ -296,7 +296,7 @@ gateway:
   update:
     platform_not_messaging:  "✗ Tá /update ar fáil amháin ó ardáin teachtaireachtaí. Rith `thoth update` ón teirminéal."
     not_git_repo:            "✗ Ní stór git é seo — ní féidir nuashonrú."
-    hermes_cmd_not_found:    "✗ Níorbh fhéidir an t-ordú `thoth` a aimsiú. Tá Thoth ag rith, ach níorbh fhéidir leis an ordú nuashonraithe an inrite a aimsiú ar PATH ná tríd an léirmhínitheoir Python reatha. Bain triail as `thoth update` a rith de láimh i do theirminéal."
+    thoth_cmd_not_found:    "✗ Níorbh fhéidir an t-ordú `thoth` a aimsiú. Tá Thoth ag rith, ach níorbh fhéidir leis an ordú nuashonraithe an inrite a aimsiú ar PATH ná tríd an léirmhínitheoir Python reatha. Bain triail as `thoth update` a rith de láimh i do theirminéal."
     start_failed:            "✗ Theip ar nuashonrú a thosú: {error}"
     starting:                "⚕ Ag tosú nuashonrú Thoth… Cuirfidh mé an dul chun cinn ar shruth anseo."
 

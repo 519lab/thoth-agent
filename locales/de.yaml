@@ -292,7 +292,7 @@ gateway:
   update:
     platform_not_messaging:  "✗ /update ist nur auf Messaging-Plattformen verfügbar. Führen Sie `thoth update` im Terminal aus."
     not_git_repo:            "✗ Kein Git-Repository — Update nicht möglich."
-    hermes_cmd_not_found:    "✗ Der Befehl `thoth` konnte nicht gefunden werden. Thoth läuft, aber der Update-Befehl konnte das ausführbare Programm weder im PATH noch über den aktuellen Python-Interpreter finden. Versuchen Sie, `thoth update` manuell im Terminal auszuführen."
+    thoth_cmd_not_found:    "✗ Der Befehl `thoth` konnte nicht gefunden werden. Thoth läuft, aber der Update-Befehl konnte das ausführbare Programm weder im PATH noch über den aktuellen Python-Interpreter finden. Versuchen Sie, `thoth update` manuell im Terminal auszuführen."
     start_failed:            "✗ Update konnte nicht gestartet werden: {error}"
     starting:                "⚕ Thoth-Update wird gestartet… Ich streame den Fortschritt hier."
 
