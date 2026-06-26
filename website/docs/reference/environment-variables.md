@@ -542,7 +542,7 @@ Advanced per-platform knobs for throttling the outbound message batcher. Most us
 | `THOTH_AGENT_NOTIFY_INTERVAL` | Gateway: interval in seconds between progress notifications on long-running agent turns. |
 | `THOTH_CHECKPOINT_TIMEOUT` | Timeout for filesystem checkpoint creation in seconds (default: `30`). |
 | `THOTH_EXEC_ASK` | Enable execution approval prompts in gateway mode (`true`/`false`) |
-| `THOTH_ENABLE_PROJECT_PLUGINS` | Enable auto-discovery of repo-local plugins from `./.hermes/plugins/` (`true`/`false`, default: `false`) |
+| `THOTH_ENABLE_PROJECT_PLUGINS` | Enable auto-discovery of repo-local plugins from `./.thoth/plugins/` (`true`/`false`, default: `false`) |
 | `THOTH_PLUGINS_DEBUG` | `1`/`true` to surface verbose plugin-discovery logs on stderr — directories scanned, manifests parsed, skip reasons, and full tracebacks on parse or `register()` failure. Aimed at plugin authors. |
 | `THOTH_BACKGROUND_NOTIFICATIONS` | Background process notification mode in gateway: `all` (default), `result`, `error`, `off` |
 | `THOTH_EPHEMERAL_SYSTEM_PROMPT` | Ephemeral system prompt injected at API-call time (never persisted to sessions) |
