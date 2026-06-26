@@ -12,7 +12,7 @@ These target the two behaviors that matter for official integration:
 The upstream repo ships its own unittest suite under
 ``plugins/thoth-achievements/tests/`` covering the achievement engine
 internals (tier math, secret-state handling, catalog invariants). These
-tests live at the hermes-agent level and focus on the integration
+tests live at the thoth-agent level and focus on the integration
 contract: the plugin scans ALL of your sessions, not the first 200.
 """
 from __future__ import annotations
@@ -37,7 +37,7 @@ PLUGIN_MODULE_PATH = (
 
 @pytest.fixture
 def plugin_api(tmp_path, monkeypatch):
-    """Load plugin_api with isolated ~/.hermes so state/snapshot files don't collide.
+    """Load plugin_api with isolated ~/.thoth so state/snapshot files don't collide.
 
     We load the module fresh per test because the plugin keeps module-level
     caches (``_SNAPSHOT_CACHE``, ``_SCAN_STATUS``, background thread handle).

@@ -48,7 +48,7 @@ def _load_plugin_router():
 @pytest.fixture
 def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """Isolated THOTH_HOME with an empty kanban DB on the per-test PG db."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -278,7 +278,7 @@ def test_inspect_run_live_pid(client, monkeypatch):
         "num_threads": 4,
         "status": "sleeping",
         "create_time": time.time() - 300,
-        "cmdline": ["python", "-m", "hermes"],
+        "cmdline": ["python", "-m", "thoth_cli.main"],
     }
     fake_proc.num_fds.return_value = 12
     mock_psutil.Process.return_value = fake_proc
