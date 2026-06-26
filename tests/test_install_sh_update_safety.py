@@ -91,8 +91,8 @@ def test_update_uses_hard_reset_not_stash_replay() -> None:
 def test_compose_project_name_is_pinned_not_derived_from_code_dir() -> None:
     """The DB's docker-compose project (→ volume + container names) must be
     pinned and decoupled from the code-dir basename. Otherwise renaming the
-    code dir (hermes-agent → app) flips the compose project and orphans the
-    real database behind a new empty volume."""
+    code dir flips the compose project and orphans the real database behind a
+    new empty volume."""
     text = _read_install_sh()
     assert "resolve_compose_project()" in text, (
         "resolve_compose_project() missing — without a pinned "
@@ -102,14 +102,9 @@ def test_compose_project_name_is_pinned_not_derived_from_code_dir() -> None:
     body = _extract_function_body("resolve_compose_project")
     # Must export the project name so every `docker compose` call is consistent.
     assert "export COMPOSE_PROJECT_NAME" in body
-    # Fresh installs get the stable Thoth name.
+    # The stable Thoth name is always used (an explicit env override aside).
     assert 'COMPOSE_PROJECT_NAME="thoth"' in body, (
-        "fresh installs must use the stable 'thoth' compose project."
-    )
-    # Upgraders reuse the project of an existing *_hermes_pg_data volume so
-    # their real data re-attaches.
-    assert "_hermes_pg_data" in body and "existing_vol" in body, (
-        "must detect an existing *_hermes_pg_data volume and reuse its project."
+        "installs must use the stable 'thoth' compose project."
     )
     # setup_postgres must pin the project BEFORE choosing the port / touching
     # any container, so detection + compose-up + reset all agree.
@@ -224,20 +219,20 @@ def test_setup_substrate_worker_service_called_from_main() -> None:
 def test_substrate_worker_unit_uses_install_paths() -> None:
     """The rendered unit must reference the install's actual paths
     (INSTALL_DIR for ExecStart, THOTH_HOME for EnvironmentFile) so
-    operators with custom --hermes-home / --cli-name don't get a broken
+    operators with custom --thoth-home / --cli-name don't get a broken
     unit pointing at someone else's home directory."""
     body = _extract_function_body("setup_substrate_worker_service")
     # ExecStart resolves to the actual venv python in this install.
     assert "$INSTALL_DIR/venv/bin/python" in body or \
            "$python_path" in body, (
         "Unit's ExecStart must use $INSTALL_DIR-derived python path; "
-        "hardcoding ~/.hermes/hermes-agent breaks custom-dir installs."
+        "hardcoding ~/.thoth/app breaks custom-dir installs."
     )
-    # EnvironmentFile points at $THOTH_HOME/.env, not %h/.hermes/.env.
+    # EnvironmentFile points at $THOTH_HOME/.env, not a hardcoded home.
     assert "EnvironmentFile=$env_file" in body or \
            "EnvironmentFile=$THOTH_HOME" in body, (
         "Unit's EnvironmentFile must use $THOTH_HOME-derived path so "
-        "operators with custom --hermes-home get a working unit."
+        "operators with custom --thoth-home get a working unit."
     )
 
 
@@ -296,7 +291,7 @@ def test_pg_port_detection_handles_dual_stack_bindings() -> None:
 # scripts/install.sh::_warn_or_reset_pg_volume / choose_pg_port / verify_core_deps.
 #
 # Background: a "fresh" install on a new machine inherited a leftover postgres
-# named volume (hermes_pg_data). choose_pg_port removed the OLD container to
+# named volume (thoth_pg_data). choose_pg_port removed the OLD container to
 # reclaim its port, but the named VOLUME persisted and the new compose-up
 # re-attached it — so the install inherited a stale alembic_version whose
 # schema didn't match this checkout, exploding mid-migration with a cryptic
