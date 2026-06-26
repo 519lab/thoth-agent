@@ -102,10 +102,10 @@ Standard OpenAI Chat Completions format. Stateless — the full conversation is 
 
 Uploaded files (`file` / `input_file` / `file_id`) and non-image `data:` URLs return `400 unsupported_content_type`.
 
-**Streaming** (`"stream": true`): Returns Server-Sent Events (SSE) with token-by-token response chunks. For **Chat Completions**, the stream uses standard `chat.completion.chunk` events plus Thoth's custom `hermes.tool.progress` event for tool-start UX. For **Responses**, the stream uses OpenAI Responses event types such as `response.created`, `response.output_text.delta`, `response.output_item.added`, `response.output_item.done`, and `response.completed`.
+**Streaming** (`"stream": true`): Returns Server-Sent Events (SSE) with token-by-token response chunks. For **Chat Completions**, the stream uses standard `chat.completion.chunk` events plus Thoth's custom `thoth.tool.progress` event for tool-start UX. For **Responses**, the stream uses OpenAI Responses event types such as `response.created`, `response.output_text.delta`, `response.output_item.added`, `response.output_item.done`, and `response.completed`.
 
 **Tool progress in streams**:
-- **Chat Completions**: Thoth emits `event: hermes.tool.progress` for tool-start visibility without polluting persisted assistant text.
+- **Chat Completions**: Thoth emits `event: thoth.tool.progress` for tool-start visibility without polluting persisted assistant text.
 - **Responses**: Thoth emits spec-native `function_call` and `function_call_output` output items during the SSE stream, so clients can render structured tool UI in real time.
 
 ### POST /v1/responses
@@ -200,7 +200,7 @@ Returns a machine-readable description of the API server's stable surface for ex
 
 ```json
 {
-  "object": "hermes.api_server.capabilities",
+  "object": "thoth.api_server.capabilities",
   "platform": "thoth-agent",
   "model": "thoth-agent",
   "auth": {"type": "bearer", "required": true},
@@ -248,7 +248,7 @@ Poll the current run state. This is useful for dashboards that need status witho
 
 ```json
 {
-  "object": "hermes.run",
+  "object": "thoth.run",
   "run_id": "run_abc123",
   "status": "completed",
   "session_id": "space-session",

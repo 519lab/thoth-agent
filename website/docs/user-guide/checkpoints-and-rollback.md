@@ -63,7 +63,7 @@ At a high level:
 - Once per conversation turn (per directory), it:
   - Resolves a reasonable project root for the file.
   - Initialises or reuses the **single shared shadow store** at `~/.thoth/checkpoints/store/`.
-  - Stages into a per-project index, builds a tree, and commits to a per-project ref (`refs/hermes/<project-hash>`).
+  - Stages into a per-project index, builds a tree, and commits to a per-project ref (`refs/thoth/<project-hash>`).
 - These per-project refs form a checkpoint history that you can inspect and restore via `/rollback`.
 
 ```mermaid
@@ -216,7 +216,7 @@ Restore just one file from a checkpoint without affecting the rest of the direct
 ~/.thoth/checkpoints/
   ├── store/                 # single shared bare git repo
   │   ├── HEAD, objects/     # git internals (shared across projects)
-  │   ├── refs/hermes/<hash> # per-project branch tip
+  │   ├── refs/thoth/<hash> # per-project branch tip
   │   ├── indexes/<hash>     # per-project git index
   │   ├── projects/<hash>.json  # workdir + created_at + last_touch
   │   └── info/exclude

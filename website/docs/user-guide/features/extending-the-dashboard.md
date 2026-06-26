@@ -256,7 +256,7 @@ customCSS: |
   }
 ```
 
-The CSS is injected as a single scoped `<style data-hermes-theme-css>` tag on theme apply and cleaned up on theme switch. **Capped at 32 KiB per theme.**
+The CSS is injected as a single scoped `<style data-thoth-theme-css>` tag on theme apply and cleaned up on theme switch. **Capped at 32 KiB per theme.**
 
 ### Built-in themes
 
@@ -681,7 +681,7 @@ Key points:
 - Multiple plugins can claim the same page-scoped slot. They render stacked in registration order.
 - Zero footprint when no plugin registers: the built-in page renders exactly as before.
 
-A reference plugin (`example-dashboard` in `hermes-example-plugins`) ships a live demo that injects a banner into `sessions:top` — install it to see the pattern end-to-end.
+A reference plugin (`example-dashboard` in `thoth-example-plugins`) ships a live demo that injects a banner into `sessions:top` — install it to see the pattern end-to-end.
 
 ### Slot-only plugins (`tab.hidden`)
 
@@ -818,7 +818,7 @@ If a plugin's script fails to load (404, syntax error, exception during IIFE), t
 
 ## Combined theme + plugin demo
 
-The `strike-freedom-cockpit` plugin (companion repo `hermes-example-plugins`) is a complete reskin demo. It pairs a theme YAML with a slot-only plugin to produce a cockpit-style HUD without forking the dashboard.
+The `strike-freedom-cockpit` plugin (companion repo `thoth-example-plugins`) is a complete reskin demo. It pairs a theme YAML with a slot-only plugin to produce a cockpit-style HUD without forking the dashboard.
 
 **What it demonstrates:**
 
@@ -832,14 +832,14 @@ The `strike-freedom-cockpit` plugin (companion repo `hermes-example-plugins`) is
 **Install:**
 
 ```bash
-git clone <hermes-example-plugins-repo>   # companion repo of reference plugins
+git clone <thoth-example-plugins-repo>   # companion repo of reference plugins
 
 # Theme
-cp hermes-example-plugins/strike-freedom-cockpit/theme/strike-freedom.yaml \
+cp thoth-example-plugins/strike-freedom-cockpit/theme/strike-freedom.yaml \
    ~/.thoth/dashboard-themes/
 
 # Plugin
-cp -r hermes-example-plugins/strike-freedom-cockpit ~/.thoth/plugins/
+cp -r thoth-example-plugins/strike-freedom-cockpit ~/.thoth/plugins/
 ```
 
 Open the dashboard, pick **Strike Freedom** from the theme switcher. The cockpit sidebar appears, the crest shows in the header, the tagline replaces the footer. Switch back to **Thoth Teal** and the plugin remains installed but invisible (the `sidebar` slot only renders under the `cockpit` layout variant).
