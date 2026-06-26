@@ -92,7 +92,7 @@ See the [Messaging Gateway overview](/docs/user-guide/messaging) for the platfor
 
 ## Plugins
 
-- **[Plugin System](/docs/user-guide/features/plugins)** — Extend Thoth with custom tools, lifecycle hooks, and CLI commands without modifying core code. Plugins are discovered from `~/.thoth/plugins/`, project-local `.hermes/plugins/`, and pip-installed entry points.
+- **[Plugin System](/docs/user-guide/features/plugins)** — Extend Thoth with custom tools, lifecycle hooks, and CLI commands without modifying core code. Plugins are discovered from `~/.thoth/plugins/`, project-local `.thoth/plugins/`, and pip-installed entry points.
 - **[Build a Plugin](/docs/guides/build-a-thoth-plugin)** — Step-by-step guide for creating Thoth plugins with tools, hooks, and CLI commands.
 
 ## Training & Evaluation

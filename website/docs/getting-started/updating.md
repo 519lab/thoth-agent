@@ -69,16 +69,16 @@ updates:
 
 `--backup` was the always-on behavior in earlier builds, but it was adding minutes to every update on large homes, so it's now opt-in. The lightweight pairing-data snapshot above still runs unconditionally.
 
-### Windows: another `hermes.exe` is running
+### Windows: another `thoth.exe` is running
 
-On Windows, `thoth update` will refuse to run if it detects another `hermes.exe` process holding the venv's entry-point executable open — most commonly the Thoth Desktop app's spawned backend, an open `thoth` REPL in another terminal, or a running gateway:
+On Windows, `thoth update` will refuse to run if it detects another `thoth.exe` process holding the venv's entry-point executable open — most commonly the Thoth Desktop app's spawned backend, an open `thoth` REPL in another terminal, or a running gateway:
 
 ```
 $ thoth update
-✗ Another hermes.exe is running:
-    PID 12345  hermes.exe
+✗ Another thoth.exe is running:
+    PID 12345  thoth.exe
 
-  Updating now would fail to overwrite ...\venv\Scripts\hermes.exe because
+  Updating now would fail to overwrite ...\venv\Scripts\thoth.exe because
   Windows blocks REPLACE on a running executable.
 
   Close Thoth Desktop, exit any open `thoth` REPLs, and
@@ -157,7 +157,7 @@ This pulls the latest code, updates dependencies, and restarts running gateways.
 If you installed manually (not via the quick installer):
 
 ```bash
-cd /path/to/hermes-agent
+cd /path/to/thoth-agent
 export VIRTUAL_ENV="$(pwd)/venv"
 
 # Pull latest code
@@ -176,7 +176,7 @@ thoth config migrate   # Interactively add any missing options
 If an update introduces a problem, you can roll back to a previous version:
 
 ```bash
-cd /path/to/hermes-agent
+cd /path/to/thoth-agent
 
 # List recent versions
 git log --oneline -10
@@ -208,10 +208,10 @@ If you installed via Nix flake, updates are managed through the Nix package mana
 
 ```bash
 # Update the flake input
-nix flake update hermes-agent
+nix flake update thoth-agent
 
 # Or rebuild with the latest
-nix profile upgrade hermes-agent
+nix profile upgrade thoth-agent
 ```
 
 Nix installations are immutable — rollback is handled by Nix's generation system:
@@ -245,7 +245,7 @@ rm -rf ~/.thoth            # Optional — keep if you plan to reinstall
 
 ```bash
 rm -f ~/.local/bin/thoth
-rm -rf /path/to/hermes-agent
+rm -rf /path/to/thoth-agent
 rm -rf ~/.thoth            # Optional — keep if you plan to reinstall
 ```
 

@@ -9,11 +9,11 @@ sidebar_label: "Kanban"
 
 > **전체 흐름을 먼저 보고 싶다면?** [Kanban 튜토리얼](./kanban-tutorial)을 읽어보세요. 이 문서는 레퍼런스이고, 튜토리얼은 사용자 시나리오 중심 설명입니다.
 
-Thoth Kanban은 모든 Thoth 프로필이 함께 쓰는 **지속형 작업 보드**입니다. 취약한 in-process 서브에이전트 무리 대신, 이름 있는 여러 에이전트가 같은 작업을 협업할 수 있게 해줍니다. 모든 task는 `~/.hermes/kanban.db`의 한 row이고, 모든 handoff도 누구나 읽고 쓸 수 있는 row이며, 모든 worker는 자기 정체성을 가진 **독립 OS 프로세스**입니다.
+Thoth Kanban은 모든 Thoth 프로필이 함께 쓰는 **지속형 작업 보드**입니다. 취약한 in-process 서브에이전트 무리 대신, 이름 있는 여러 에이전트가 같은 작업을 협업할 수 있게 해줍니다. 모든 task는 `~/.thoth/kanban.db`의 한 row이고, 모든 handoff도 누구나 읽고 쓸 수 있는 row이며, 모든 worker는 자기 정체성을 가진 **독립 OS 프로세스**입니다.
 
 ### 두 개의 표면: 모델은 tool로 말하고, 사용자는 CLI로 다룹니다
 
-보드에는 두 개의 진입점이 있고, 둘 다 같은 `~/.hermes/kanban.db`를 사용합니다.
+보드에는 두 개의 진입점이 있고, 둘 다 같은 `~/.thoth/kanban.db`를 사용합니다.
 
 - **에이전트는 전용 `kanban_*` toolset으로 보드를 다룹니다.** `kanban_show`, `kanban_complete`, `kanban_block`, `kanban_heartbeat`, `kanban_comment`, `kanban_create`, `kanban_link`가 여기에 포함됩니다. dispatcher는 worker를 띄울 때 이 tool들을 스키마에 넣어주며, 모델은 `thoth kanban` CLI를 shell로 호출하지 않고 **직접 tool call**로 task를 읽고 넘깁니다. 아래의 [작업자는 보드와 어떻게 상호작용하나](#how-workers-interact-with-the-board)를 참고하세요.
 - **사람(그리고 스크립트, cron)은 `thoth kanban …` CLI, `/kanban …` 슬래시 명령, 혹은 dashboard로 보드를 다룹니다.** 이 표면은 tool-calling 모델이 없는 인간/자동화를 위한 인터페이스입니다.
@@ -68,7 +68,7 @@ Thoth Kanban은 모든 Thoth 프로필이 함께 쓰는 **지속형 작업 보�
 - **Link** — 부모 → 자식 의존성을 기록하는 `task_links` row. 부모가 모두 `done`이면 dispatcher가 `todo → ready`로 승격시킵니다.
 - **Comment** — 에이전트 간 프로토콜. agent와 사람이 comment를 붙이고, worker가 (재)실행될 때 전체 thread를 컨텍스트로 읽습니다.
 - **Workspace** — worker가 실제 작업을 수행하는 디렉터리.
-  - `scratch` (기본값) — `~/.hermes/kanban/workspaces/<id>/` 아래의 새 tmp 디렉터리 (non-default board는 board 경로 아래)
+  - `scratch` (기본값) — `~/.thoth/kanban/workspaces/<id>/` 아래의 새 tmp 디렉터리 (non-default board는 board 경로 아래)
   - `dir:<path>` — 기존 공유 디렉터리. **절대경로만 허용**됩니다.
   - `worktree` — 코딩 task를 위한 git worktree (`.worktrees/<id>/`)
 - **Dispatcher** — 주기적으로 stale claim 회수, crashed worker 정리, ready task 승격, atomic claim, assigned profile spawn을 수행하는 장기 실행 루프. 기본적으로 gateway 내부(`kanban.dispatch_in_gateway: true`)에서 동작합니다.
@@ -76,11 +76,11 @@ Thoth Kanban은 모든 Thoth 프로필이 함께 쓰는 **지속형 작업 보�
 
 ## Boards (멀티 프로젝트) {#boards-multi-project}
 
-board를 쓰면 서로 무관한 작업 흐름을 프로젝트/레포/도메인별로 완전히 분리할 수 있습니다. 새 설치에는 `default` board 하나만 존재하며, DB는 하위 호환 때문에 `~/.hermes/kanban.db`에 놓입니다. 작업 흐름이 하나뿐인 사용자는 board 개념을 몰라도 됩니다.
+board를 쓰면 서로 무관한 작업 흐름을 프로젝트/레포/도메인별로 완전히 분리할 수 있습니다. 새 설치에는 `default` board 하나만 존재하며, DB는 하위 호환 때문에 `~/.thoth/kanban.db`에 놓입니다. 작업 흐름이 하나뿐인 사용자는 board 개념을 몰라도 됩니다.
 
 board 단위 격리는 다음을 의미합니다.
 
-- board별 별도 SQLite DB (`~/.hermes/kanban/boards/<slug>/kanban.db`)
+- board별 별도 SQLite DB (`~/.thoth/kanban/boards/<slug>/kanban.db`)
 - 별도 `workspaces/` 및 `logs/`
 - worker는 자기 board task만 볼 수 있음 (`THOTH_KANBAN_BOARD` 고정)
 - board 간 task link는 불가
@@ -120,7 +120,7 @@ board 해석 우선순위는 다음과 같습니다.
 
 1. 명시적 `--board <slug>`
 2. `THOTH_KANBAN_BOARD` 환경변수
-3. `~/.hermes/kanban/current`
+3. `~/.thoth/kanban/current`
 4. `default`
 
 slug는 소문자 영숫자 + `-` + `_`, 길이 1–64로 제한되며, 대문자 입력은 자동 소문자화됩니다.
@@ -240,7 +240,7 @@ kanban_complete(summary="decomposed into 2 research tasks + 1 writer; linked dep
 
 ### 왜 `thoth kanban` shell 호출 대신 tool인가
 
-1. **백엔드 이식성** — terminal backend가 Docker / Modal / Singularity / SSH여도, kanban tool은 agent 자신의 Python 프로세스에서 돌아가므로 항상 `~/.hermes/kanban.db`에 도달합니다.
+1. **백엔드 이식성** — terminal backend가 Docker / Modal / Singularity / SSH여도, kanban tool은 agent 자신의 Python 프로세스에서 돌아가므로 항상 `~/.thoth/kanban.db`에 도달합니다.
 2. **shell quoting 취약성 제거** — `--metadata '{"files": [...]}'` 같은 문자열 인자 문제를 피합니다.
 3. **더 좋은 오류 처리** — stderr 파싱이 아니라 structured JSON 결과를 모델이 바로 읽습니다.
 
@@ -414,7 +414,7 @@ GUI는 철저히 **DB 읽기 + `kanban_db` 쓰기** 레이어입니다.
            │                                                  │
            ▼                                                  │
 ┌────────────────────────┐                                    │
-│  ~/.hermes/kanban.db   │ ───── append task_events ──────────┘
+│  ~/.thoth/kanban.db   │ ───── append task_events ──────────┘
 │  (WAL, shared)         │
 └────────────────────────┘
 ```
@@ -441,7 +441,7 @@ handler는 전부 얇은 wrapper이고, 실제 비즈니스 로직은 `kanban_db
 
 ### Dashboard 설정
 
-`~/.hermes/config.yaml`의 `dashboard.kanban` 아래 키로 기본 동작을 바꿀 수 있습니다.
+`~/.thoth/config.yaml`의 `dashboard.kanban` 아래 키로 기본 동작을 바꿀 수 있습니다.
 
 ```yaml
 dashboard:
@@ -540,7 +540,7 @@ thoth kanban gc [--event-retention-days N] [--log-retention-days N]
 
 ### 실행 중 사용: `/kanban`은 running-agent guard를 우회합니다
 
-일반적으로 gateway는 agent가 아직 응답 중이면 slash command와 user message를 queue에 쌓습니다. 그러나 **`/kanban`은 예외입니다.** board는 `~/.hermes/kanban.db`에 있고 실행 중인 agent의 내부 state에 묶여 있지 않기 때문입니다.
+일반적으로 gateway는 agent가 아직 응답 중이면 slash command와 user message를 queue에 쌓습니다. 그러나 **`/kanban`은 예외입니다.** board는 `~/.thoth/kanban.db`에 있고 실행 중인 agent의 내부 state에 묶여 있지 않기 때문입니다.
 
 예:
 
@@ -712,7 +712,7 @@ v1 kernel은 routing에는 쓰지 않지만, client가 기록하는 것은 허�
 
 ## 범위 밖
 
-Kanban은 의도적으로 **single-host** 설계입니다. `~/.hermes/kanban.db`는 로컬 SQLite 파일이고, dispatcher는 같은 머신에서 worker를 spawn합니다. 두 호스트가 하나의 board를 공유하는 구조는 지원하지 않습니다.
+Kanban은 의도적으로 **single-host** 설계입니다. `~/.thoth/kanban.db`는 로컬 SQLite 파일이고, dispatcher는 같은 머신에서 worker를 spawn합니다. 두 호스트가 하나의 board를 공유하는 구조는 지원하지 않습니다.
 
 멀티 호스트가 필요하다면 호스트별 독립 board를 두고, 그 사이를 `delegate_task`나 별도 message queue로 연결해야 합니다.
 

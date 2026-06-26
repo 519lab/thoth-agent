@@ -34,7 +34,7 @@ Open PowerShell and run:
 iex (irm https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.ps1)
 ```
 
-The installer handles **everything**: `uv`, Python 3.11, Node.js 22, `ripgrep`, `ffmpeg`, **and a portable Git Bash** (PortableGit — a self-contained Git-for-Windows distribution that ships `bash.exe` and the full POSIX toolchain Thoth uses for shell commands; on 32-bit Windows the installer falls back to MinGit, which lacks bash and disables terminal-tool / agent-browser features).  It clones the repo under `%LOCALAPPDATA%\thoth\hermes-agent`, creates a virtualenv, and adds `thoth` to your **User PATH**.  Restart your terminal (or open a new PowerShell window) after the install so PATH picks up.
+The installer handles **everything**: `uv`, Python 3.11, Node.js 22, `ripgrep`, `ffmpeg`, **and a portable Git Bash** (PortableGit — a self-contained Git-for-Windows distribution that ships `bash.exe` and the full POSIX toolchain Thoth uses for shell commands; on 32-bit Windows the installer falls back to MinGit, which lacks bash and disables terminal-tool / agent-browser features).  It clones the repo under `%LOCALAPPDATA%\thoth\thoth-agent`, creates a virtualenv, and adds `thoth` to your **User PATH**.  Restart your terminal (or open a new PowerShell window) after the install so PATH picks up.
 
 **How Git is handled:**
 1. If `git` is already on your PATH, the installer uses your existing install.
@@ -89,8 +89,8 @@ Where the installer puts things depends on whether you're installing as a normal
 | Installer | Code lives at | `thoth` binary | Data directory |
 |---|---|---|---|
 | pip install | Python site-packages | `~/.local/bin/thoth` (console_scripts) | `~/.thoth/` |
-| Per-user (git installer) | `~/.thoth/hermes-agent/` | `~/.local/bin/thoth` (symlink) | `~/.thoth/` |
-| Root-mode (`sudo curl … \| sudo bash`) | `/usr/local/lib/hermes-agent/` | `/usr/local/bin/thoth` | `/root/.thoth/` (or `$THOTH_HOME`) |
+| Per-user (git installer) | `~/.thoth/thoth-agent/` | `~/.local/bin/thoth` (symlink) | `~/.thoth/` |
+| Root-mode (`sudo curl … \| sudo bash`) | `/usr/local/lib/thoth-agent/` | `/usr/local/bin/thoth` | `/root/.thoth/` (or `$THOTH_HOME`) |
 
 The root-mode **FHS layout** (`/usr/local/lib/…`, `/usr/local/bin/thoth`) matches where other system-wide developer tools land on Linux. It's useful for shared-machine deployments where one system install should serve every user. Per-user config (auth, skills, sessions) still lives under each user's `~/.thoth/` or explicit `THOTH_HOME`.
 
@@ -171,10 +171,10 @@ Running Thoth as a dedicated unprivileged user (e.g. a `thoth` systemd service a
    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
    # Option B — symlink system-wide (run as an admin)
-   sudo ln -s /home/thoth/.thoth/hermes-agent/venv/bin/thoth /usr/local/bin/thoth
+   sudo ln -s /home/thoth/.thoth/thoth-agent/venv/bin/thoth /usr/local/bin/thoth
    ```
 
-4. **Verify:** `thoth doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `thoth` file (`~/.thoth/hermes-agent/thoth`) with system Python instead of the venv launcher (`~/.thoth/hermes-agent/venv/bin/thoth`) — fix step 3.
+4. **Verify:** `thoth doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `thoth` file (`~/.thoth/thoth-agent/thoth`) with system Python instead of the venv launcher (`~/.thoth/thoth-agent/venv/bin/thoth`) — fix step 3.
 
 The same pattern works on Arch (the installer uses pacman with the same sudo-detection logic), Fedora/RHEL, and openSUSE — those distros don't support `--with-deps` at all, so an administrator always installs the system libraries separately. The relevant `dnf`/`zypper` commands are printed by the installer.
 
@@ -192,7 +192,7 @@ For more diagnostics, run `thoth doctor` — it will tell you exactly what's mis
 
 ## Install method auto-detection
 
-Thoth auto-detects whether it was installed via `pip`, the git installer, Homebrew, or NixOS, and `thoth update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (Python site-packages, `~/.thoth/hermes-agent/`, Homebrew prefix, or Nix store path). `thoth doctor` also surfaces the detected method under its environment summary.
+Thoth auto-detects whether it was installed via `pip`, the git installer, Homebrew, or NixOS, and `thoth update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (Python site-packages, `~/.thoth/thoth-agent/`, Homebrew prefix, or Nix store path). `thoth doctor` also surfaces the detected method under its environment summary.
 
 ---
 
@@ -445,8 +445,8 @@ thoth config set terminal.backend ssh       # Remote server
 
 ```bash
 # From the Thoth install directory (the curl installer placed it at
-# ~/.thoth/hermes-agent on Linux/macOS or %LOCALAPPDATA%\thoth\hermes-agent on Windows):
-cd ~/.thoth/hermes-agent
+# ~/.thoth/thoth-agent on Linux/macOS or %LOCALAPPDATA%\thoth\thoth-agent on Windows):
+cd ~/.thoth/thoth-agent
 uv pip install -e ".[voice]"
 # Includes faster-whisper for free local speech-to-text
 ```
@@ -482,7 +482,7 @@ ACP support ships with the standard `[all]` extras, so the curl installer alread
 thoth acp
 ```
 
-(If you installed without `[all]`, run `cd ~/.thoth/hermes-agent && uv pip install -e ".[acp]"` first.)
+(If you installed without `[all]`, run `cd ~/.thoth/thoth-agent && uv pip install -e ".[acp]"` first.)
 
 See [ACP Editor Integration](../user-guide/features/acp.md).
 
@@ -764,16 +764,16 @@ updates:
 
 `--backup` was the always-on behavior in earlier builds, but it was adding minutes to every update on large homes, so it's now opt-in. The lightweight pairing-data snapshot above still runs unconditionally.
 
-### Windows: another `hermes.exe` is running
+### Windows: another `thoth.exe` is running
 
-On Windows, `thoth update` will refuse to run if it detects another `hermes.exe` process holding the venv's entry-point executable open — most commonly the Thoth Desktop app's spawned backend, an open `thoth` REPL in another terminal, or a running gateway:
+On Windows, `thoth update` will refuse to run if it detects another `thoth.exe` process holding the venv's entry-point executable open — most commonly the Thoth Desktop app's spawned backend, an open `thoth` REPL in another terminal, or a running gateway:
 
 ```
 $ thoth update
-✗ Another hermes.exe is running:
-    PID 12345  hermes.exe
+✗ Another thoth.exe is running:
+    PID 12345  thoth.exe
 
-  Updating now would fail to overwrite ...\venv\Scripts\hermes.exe because
+  Updating now would fail to overwrite ...\venv\Scripts\thoth.exe because
   Windows blocks REPLACE on a running executable.
 
   Close Thoth Desktop, exit any open `thoth` REPLs, and
@@ -852,7 +852,7 @@ This pulls the latest code, updates dependencies, and restarts running gateways.
 If you installed manually (not via the quick installer):
 
 ```bash
-cd /path/to/hermes-agent
+cd /path/to/thoth-agent
 export VIRTUAL_ENV="$(pwd)/venv"
 
 # Pull latest code
@@ -871,7 +871,7 @@ thoth config migrate   # Interactively add any missing options
 If an update introduces a problem, you can roll back to a previous version:
 
 ```bash
-cd /path/to/hermes-agent
+cd /path/to/thoth-agent
 
 # List recent versions
 git log --oneline -10
@@ -903,10 +903,10 @@ If you installed via Nix flake, updates are managed through the Nix package mana
 
 ```bash
 # Update the flake input
-nix flake update hermes-agent
+nix flake update thoth-agent
 
 # Or rebuild with the latest
-nix profile upgrade hermes-agent
+nix profile upgrade thoth-agent
 ```
 
 Nix installations are immutable — rollback is handled by Nix's generation system:
@@ -940,7 +940,7 @@ rm -rf ~/.thoth            # Optional — keep if you plan to reinstall
 
 ```bash
 rm -f ~/.local/bin/thoth
-rm -rf /path/to/hermes-agent
+rm -rf /path/to/thoth-agent
 rm -rf ~/.thoth            # Optional — keep if you plan to reinstall
 ```
 
@@ -1271,14 +1271,14 @@ This module requires NixOS. For non-NixOS systems (macOS, other Linux distros), 
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    hermes-agent.url = "github:519lab/thoth-agent";
+    thoth-agent.url = "github:519lab/thoth-agent";
   };
 
-  outputs = { nixpkgs, hermes-agent, ... }: {
+  outputs = { nixpkgs, thoth-agent, ... }: {
     nixosConfigurations.your-host = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        hermes-agent.nixosModules.default
+        thoth-agent.nixosModules.default
         ./configuration.nix
       ];
     };
@@ -1291,10 +1291,10 @@ This module requires NixOS. For non-NixOS systems (macOS, other Linux distros), 
 ```nix
 # configuration.nix
 { config, ... }: {
-  services.hermes-agent = {
+  services.thoth-agent = {
     enable = true;
     settings.model.default = "anthropic/claude-sonnet-4";
-    environmentFiles = [ config.sops.secrets."hermes-env".path ];
+    environmentFiles = [ config.sops.secrets."thoth-env".path ];
     addToSystemPackages = true;
   };
 }
@@ -1310,7 +1310,7 @@ echo "OPENROUTER_API_KEY=sk-or-your-key" | sudo install -m 0600 -o thoth /dev/st
 ```
 
 ```nix
-services.hermes-agent.environmentFiles = [ "/var/lib/thoth/env" ];
+services.thoth-agent.environmentFiles = [ "/var/lib/thoth/env" ];
 ```
 :::
 
@@ -1328,10 +1328,10 @@ When `container.enable = true` and `addToSystemPackages = true`, **every** `thot
 - If the container isn't running, the CLI retries briefly (5s with a spinner for interactive use, 10s silently for scripts) then fails with a clear error — no silent fallback
 - For developers working on the thoth codebase, set `THOTH_DEV=1` to bypass container routing and run the local checkout directly
 
-Set `container.hostUsers` to create a `~/.hermes` symlink to the service state directory, so the host CLI and the container share sessions, config, and memories:
+Set `container.hostUsers` to create a `~/.thoth` symlink to the service state directory, so the host CLI and the container share sessions, config, and memories:
 
 ```nix
-services.hermes-agent = {
+services.thoth-agent = {
   container.enable = true;
   container.hostUsers = [ "your-username" ];
   addToSystemPackages = true;
@@ -1361,10 +1361,10 @@ After `nixos-rebuild switch`, check that the service is running:
 
 ```bash
 # Check service status
-systemctl status hermes-agent
+systemctl status thoth-agent
 
 # Watch logs (Ctrl+C to stop)
-journalctl -u hermes-agent -f
+journalctl -u thoth-agent -f
 
 # If addToSystemPackages is true, test the CLI
 thoth version
@@ -1387,7 +1387,7 @@ To enable container mode, add one line:
 
 ```nix
 {
-  services.hermes-agent = {
+  services.thoth-agent = {
     enable = true;
     container.enable = true;
     # ... rest of config is identical
@@ -1409,14 +1409,14 @@ The `settings` option accepts an arbitrary attrset that is rendered as `config.y
 
 ```nix
 # base.nix
-services.hermes-agent.settings = {
+services.thoth-agent.settings = {
   model.default = "anthropic/claude-sonnet-4";
   toolsets = [ "all" ];
   terminal = { backend = "local"; timeout = 180; };
 };
 
 # personality.nix
-services.hermes-agent.settings = {
+services.thoth-agent.settings = {
   display = { compact = false; personality = "kawaii"; };
   memory = { memory_enabled = true; user_profile_enabled = true; };
 };
@@ -1437,7 +1437,7 @@ Run `nix build .#configKeys && cat result` to see every leaf config key extracte
 
 ```nix
 { config, ... }: {
-  services.hermes-agent = {
+  services.thoth-agent = {
     enable = true;
     container.enable = true;
 
@@ -1461,7 +1461,7 @@ Run `nix build .#configKeys && cat result` to see every leaf config key extracte
     };
 
     # ── Secrets ────────────────────────────────────────────────────────
-    environmentFiles = [ config.sops.secrets."hermes-env".path ];
+    environmentFiles = [ config.sops.secrets."thoth-env".path ];
 
     # ── Documents ──────────────────────────────────────────────────────
     documents = {
@@ -1499,7 +1499,7 @@ Run `nix build .#configKeys && cat result` to see every leaf config key extracte
 If you'd rather manage `config.yaml` entirely outside Nix, use `configFile`:
 
 ```nix
-services.hermes-agent.configFile = /etc/thoth/config.yaml;
+services.thoth-agent.configFile = /etc/thoth/config.yaml;
 ```
 
 This bypasses `settings` entirely — no merge, no generation. The file is copied as-is to `$THOTH_HOME/config.yaml` on each activation.
@@ -1512,8 +1512,8 @@ Quick reference for the most common things Nix users want to customize:
 |---|---|---|
 | Change the LLM model | `settings.model.default` | `"anthropic/claude-sonnet-4"` |
 | Use a different provider endpoint | `settings.model.base_url` | `"https://openrouter.ai/api/v1"` |
-| Add API keys | `environmentFiles` | `[ config.sops.secrets."hermes-env".path ]` |
-| Give the agent a personality | `${services.hermes-agent.stateDir}/.hermes/SOUL.md` | manage the file directly |
+| Add API keys | `environmentFiles` | `[ config.sops.secrets."thoth-env".path ]` |
+| Give the agent a personality | `${services.thoth-agent.stateDir}/.thoth/SOUL.md` | manage the file directly |
 | Add MCP tool servers | `mcpServers.<name>` | See [MCP Servers](#mcp-servers) |
 | Mount host directories into container | `container.extraVolumes` | `[ "/data:/data:rw" ]` |
 | Pass GPU access to container | `container.extraOptions` | `[ "--gpus" "all" ]` |
@@ -1521,7 +1521,7 @@ Quick reference for the most common things Nix users want to customize:
 | Share state between host CLI and container | `container.hostUsers` | `[ "sidbin" ]` |
 | Make extra tools available to the agent | `extraPackages` | `[ pkgs.pandoc pkgs.imagemagick ]` |
 | Use a custom base image | `container.image` | `"ubuntu:24.04"` |
-| Override the thoth package | `package` | `inputs.hermes-agent.packages.${system}.default.override { ... }` |
+| Override the thoth package | `package` | `inputs.thoth-agent.packages.${system}.default.override { ... }` |
 | Change state directory | `stateDir` | `"/opt/thoth"` |
 | Set the agent's working directory | `workingDirectory` | `"/home/user/projects"` |
 
@@ -1533,20 +1533,20 @@ Quick reference for the most common things Nix users want to customize:
 Values in Nix expressions end up in `/nix/store`, which is world-readable. Always use `environmentFiles` with a secrets manager.
 :::
 
-Both `environment` (non-secret vars) and `environmentFiles` (secret files) are merged into `$THOTH_HOME/.env` at activation time (`nixos-rebuild switch`). Thoth reads this file on every startup, so changes take effect with a `systemctl restart hermes-agent` — no container recreation needed.
+Both `environment` (non-secret vars) and `environmentFiles` (secret files) are merged into `$THOTH_HOME/.env` at activation time (`nixos-rebuild switch`). Thoth reads this file on every startup, so changes take effect with a `systemctl restart thoth-agent` — no container recreation needed.
 
 ### sops-nix
 
 ```nix
 {
   sops = {
-    defaultSopsFile = ./secrets/hermes.yaml;
+    defaultSopsFile = ./secrets/thoth.yaml;
     age.keyFile = "/home/user/.config/sops/age/keys.txt";
-    secrets."hermes-env" = { format = "yaml"; };
+    secrets."thoth-env" = { format = "yaml"; };
   };
 
-  services.hermes-agent.environmentFiles = [
-    config.sops.secrets."hermes-env".path
+  services.thoth-agent.environmentFiles = [
+    config.sops.secrets."thoth-env".path
   ];
 }
 ```
@@ -1554,8 +1554,8 @@ Both `environment` (non-secret vars) and `environmentFiles` (secret files) are m
 The secrets file contains key-value pairs:
 
 ```yaml
-# secrets/hermes.yaml (encrypted with sops)
-hermes-env: |
+# secrets/thoth.yaml (encrypted with sops)
+thoth-env: |
     OPENROUTER_API_KEY=sk-or-...
     TELEGRAM_BOT_TOKEN=123456:ABC...
     ANTHROPIC_API_KEY=sk-ant-...
@@ -1565,10 +1565,10 @@ hermes-env: |
 
 ```nix
 {
-  age.secrets.hermes-env.file = ./secrets/hermes-env.age;
+  age.secrets.thoth-env.file = ./secrets/thoth-env.age;
 
-  services.hermes-agent.environmentFiles = [
-    config.age.secrets.hermes-env.path
+  services.thoth-agent.environmentFiles = [
+    config.age.secrets.thoth-env.path
   ];
 }
 ```
@@ -1579,7 +1579,7 @@ For platforms requiring OAuth (e.g., Discord), use `authFile` to seed credential
 
 ```nix
 {
-  services.hermes-agent = {
+  services.thoth-agent = {
     authFile = config.sops.secrets."thoth/auth.json".path;
     # authFileForceOverwrite = true;  # overwrite on every activation
   };
@@ -1597,11 +1597,11 @@ The `documents` option installs files into the agent's working directory (the `w
 - **`USER.md`** — context about the user the agent is interacting with.
 - Any other files you place here are visible to the agent as workspace files.
 
-The agent identity file is separate: Thoth loads its primary `SOUL.md` from `$THOTH_HOME/SOUL.md`, which in the NixOS module is `${services.hermes-agent.stateDir}/.hermes/SOUL.md`. Putting `SOUL.md` in `documents` only creates a workspace file and will not replace the main persona file.
+The agent identity file is separate: Thoth loads its primary `SOUL.md` from `$THOTH_HOME/SOUL.md`, which in the NixOS module is `${services.thoth-agent.stateDir}/.thoth/SOUL.md`. Putting `SOUL.md` in `documents` only creates a workspace file and will not replace the main persona file.
 
 ```nix
 {
-  services.hermes-agent.documents = {
+  services.thoth-agent.documents = {
     "USER.md" = ./documents/USER.md;  # path reference, copied from Nix store
   };
 }
@@ -1619,7 +1619,7 @@ The `mcpServers` option declaratively configures [MCP (Model Context Protocol)](
 
 ```nix
 {
-  services.hermes-agent.mcpServers = {
+  services.thoth-agent.mcpServers = {
     filesystem = {
       command = "npx";
       args = [ "-y" "@modelcontextprotocol/server-filesystem" "/data/workspace" ];
@@ -1641,7 +1641,7 @@ Environment variables in `env` values are resolved from `$THOTH_HOME/.env` at ru
 
 ```nix
 {
-  services.hermes-agent.mcpServers.remote-api = {
+  services.thoth-agent.mcpServers.remote-api = {
     url = "https://mcp.example.com/v1/mcp";
     headers.Authorization = "Bearer \${MCP_REMOTE_API_KEY}";
     timeout = 180;
@@ -1655,7 +1655,7 @@ Set `auth = "oauth"` for servers using OAuth 2.1. Thoth implements the full PKCE
 
 ```nix
 {
-  services.hermes-agent.mcpServers.my-oauth-server = {
+  services.thoth-agent.mcpServers.my-oauth-server = {
     url = "https://mcp.example.com/mcp";
     auth = "oauth";
   };
@@ -1673,11 +1673,11 @@ The first OAuth authorization requires a browser-based consent flow. In a headle
 
 ```bash
 # Container mode
-docker exec -it hermes-agent \
+docker exec -it thoth-agent \
   thoth mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
 
 # Native mode
-sudo -u thoth THOTH_HOME=/var/lib/hermes/.hermes \
+sudo -u thoth THOTH_HOME=/var/lib/thoth/.thoth \
   thoth mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
 ```
 
@@ -1687,9 +1687,9 @@ The container uses `--network=host`, so the OAuth callback listener on `127.0.0.
 
 ```bash
 thoth mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
-scp ~/.hermes/mcp-tokens/my-oauth-server{,.client}.json \
-    server:/var/lib/hermes/.hermes/mcp-tokens/
-# Ensure: chown hermes:thoth, chmod 0600
+scp ~/.thoth/mcp-tokens/my-oauth-server{,.client}.json \
+    server:/var/lib/thoth/.thoth/mcp-tokens/
+# Ensure: chown thoth:thoth, chmod 0600
 ```
 
 </details>
@@ -1700,7 +1700,7 @@ Some MCP servers can request LLM completions from the agent:
 
 ```nix
 {
-  services.hermes-agent.mcpServers.analysis = {
+  services.thoth-agent.mcpServers.analysis = {
     command = "npx";
     args = [ "-y" "analysis-server" ];
     sampling = {
@@ -1731,7 +1731,7 @@ When thoth runs via the NixOS module, the following CLI commands are **blocked**
 This prevents drift between what Nix declares and what's on disk. Detection uses two signals:
 
 1. **`THOTH_MANAGED=true`** environment variable — set by the systemd service, visible to the gateway process
-2. **`.managed` marker file** in `THOTH_HOME` — set by the activation script, visible to interactive shells (e.g., `docker exec -it hermes-agent thoth config set ...` is also blocked)
+2. **`.managed` marker file** in `THOTH_HOME` — set by the activation script, visible to interactive shells (e.g., `docker exec -it thoth-agent thoth config set ...` is also blocked)
 
 To change configuration, edit your Nix config and run `sudo nixos-rebuild switch`.
 
@@ -1748,13 +1748,13 @@ When container mode is enabled, thoth runs inside a persistent Ubuntu container 
 ```
 Host                                    Container
 ────                                    ─────────
-/nix/store/...-hermes-agent-0.1.0  ──►  /nix/store/... (ro)
-~/.hermes -> /var/lib/hermes/.hermes       (symlink bridge, per hostUsers)
+/nix/store/...-thoth-agent-0.1.0  ──►  /nix/store/... (ro)
+~/.thoth -> /var/lib/thoth/.thoth       (symlink bridge, per hostUsers)
 /var/lib/thoth/                    ──►  /data/          (rw)
   ├── current-package -> /nix/store/...    (symlink, updated each rebuild)
   ├── .gc-root -> /nix/store/...           (prevents nix-collect-garbage)
   ├── .container-identity                  (sha256 hash, triggers recreation)
-  ├── .hermes/                             (THOTH_HOME)
+  ├── .thoth/                             (THOTH_HOME)
   │   ├── .env                             (merged from environment + environmentFiles)
   │   ├── config.yaml                      (Nix-generated, deep-merged by activation)
   │   ├── .managed                         (marker file)
@@ -1775,7 +1775,7 @@ The Nix-built binary works inside the Ubuntu container because `/nix/store` is b
 
 | Event | Container recreated? | `/data` (state) | `/home/thoth` | Writable layer (`apt`/`pip`/`npm`) |
 |---|---|---|---|---|
-| `systemctl restart hermes-agent` | No | Persists | Persists | Persists |
+| `systemctl restart thoth-agent` | No | Persists | Persists | Persists |
 | `nixos-rebuild switch` (code change) | No (symlink updated) | Persists | Persists | Persists |
 | Host reboot | No | Persists | Persists | Persists |
 | `nix-collect-garbage` | No (GC root) | Persists | Persists | Persists |
@@ -1806,7 +1806,7 @@ The NixOS module supports declarative plugin installation — no imperative `tho
 For plugins that are just a source tree with `plugin.yaml` + `__init__.py` (e.g., [hermes-lcm](https://github.com/stephenschoettler/hermes-lcm)):
 
 ```nix
-services.hermes-agent.extraPlugins = [
+services.thoth-agent.extraPlugins = [
   (pkgs.fetchFromGitHub {
     owner = "stephenschoettler";
     repo = "hermes-lcm";
@@ -1820,10 +1820,10 @@ Plugins are symlinked into `$THOTH_HOME/plugins/` at activation time. Thoth disc
 
 ### Entry-Point Plugins (`extraPythonPackages`)
 
-For pip-packaged plugins that register via `[project.entry-points."hermes_agent.plugins"]` (e.g., [rtk-hermes](https://github.com/ogallotti/rtk-hermes)):
+For pip-packaged plugins that register via `[project.entry-points."thoth_agent.plugins"]` (e.g., [rtk-hermes](https://github.com/ogallotti/rtk-hermes)):
 
 ```nix
-services.hermes-agent.extraPythonPackages = [
+services.thoth-agent.extraPythonPackages = [
   (pkgs.python312Packages.buildPythonPackage {
     pname = "rtk-hermes";
     version = "1.0.0";
@@ -1843,10 +1843,10 @@ The package's `site-packages` is added to PYTHONPATH in the thoth wrapper. `impo
 
 ### Optional Dependency Groups (`extraDependencyGroups`)
 
-For optional extras already declared in hermes-agent's `pyproject.toml` (e.g., memory providers like `hindsight` or `honcho`), use `extraDependencyGroups` to include them in the sealed venv at build time:
+For optional extras already declared in thoth-agent's `pyproject.toml` (e.g., memory providers like `hindsight` or `honcho`), use `extraDependencyGroups` to include them in the sealed venv at build time:
 
 ```nix
-services.hermes-agent = {
+services.thoth-agent = {
   extraDependencyGroups = [ "hindsight" ];
   settings.memory.provider = "hindsight";
 };
@@ -1868,7 +1868,7 @@ This is resolved by uv alongside core dependencies in a single pass — no PYTHO
 A directory plugin with third-party Python dependencies needs both options:
 
 ```nix
-services.hermes-agent = {
+services.thoth-agent = {
   extraPlugins = [ my-plugin-src ];          # plugin source
   extraPythonPackages = [ pkgs.python312Packages.redis ];  # its Python dep
   extraPackages = [ pkgs.redis ];            # system binary it needs
@@ -1881,12 +1881,12 @@ External flakes can override the package directly:
 
 ```nix
 {
-  inputs.hermes-agent.url = "github:519lab/thoth-agent";
-  outputs = { hermes-agent, nixpkgs, ... }: {
-    nixpkgs.overlays = [ hermes-agent.overlays.default ];
+  inputs.thoth-agent.url = "github:519lab/thoth-agent";
+  outputs = { thoth-agent, nixpkgs, ... }: {
+    nixpkgs.overlays = [ thoth-agent.overlays.default ];
     # Then:
-    #   pkgs.hermes-agent.override { extraPythonPackages = [...]; }
-    #   pkgs.hermes-agent.override { extraDependencyGroups = [ "hindsight" ]; }
+    #   pkgs.thoth-agent.override { extraPythonPackages = [...]; }
+    #   pkgs.thoth-agent.override { extraDependencyGroups = [ "hindsight" ]; }
   };
 }
 ```
@@ -1896,7 +1896,7 @@ External flakes can override the package directly:
 Plugins still need to be enabled in `config.yaml`. Add them via the declarative settings:
 
 ```nix
-services.hermes-agent.settings.plugins.enabled = [
+services.thoth-agent.settings.plugins.enabled = [
   "hermes-lcm"
   "rtk-rewrite"
 ];
@@ -1976,10 +1976,10 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `enable` | `bool` | `false` | Enable the hermes-agent service |
-| `package` | `package` | `hermes-agent` | The hermes-agent package to use |
-| `user` | `str` | `"hermes"` | System user |
-| `group` | `str` | `"hermes"` | System group |
+| `enable` | `bool` | `false` | Enable the thoth-agent service |
+| `package` | `package` | `thoth-agent` | The thoth-agent package to use |
+| `user` | `str` | `"thoth"` | System user |
+| `group` | `str` | `"thoth"` | System group |
 | `createUser` | `bool` | `true` | Auto-create user/group |
 | `stateDir` | `str` | `"/var/lib/thoth"` | State directory (`THOTH_HOME` parent) |
 | `workingDirectory` | `str` | `"${stateDir}/workspace"` | Agent working directory (`MESSAGING_CWD`) |
@@ -2045,7 +2045,7 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 | `container.image` | `str` | `"ubuntu:24.04"` | Base image (pulled at runtime) |
 | `container.extraVolumes` | `listOf str` | `[]` | Extra volume mounts (`host:container:mode`) |
 | `container.extraOptions` | `listOf str` | `[]` | Extra args passed to `docker create` |
-| `container.hostUsers` | `listOf str` | `[]` | Interactive users who get a `~/.hermes` symlink to the service stateDir and are auto-added to the `thoth` group |
+| `container.hostUsers` | `listOf str` | `[]` | Interactive users who get a `~/.thoth` symlink to the service stateDir and are auto-added to the `thoth` group |
 
 ---
 
@@ -2054,8 +2054,8 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 ### Native Mode
 
 ```
-/var/lib/thoth/                     # stateDir (owned by hermes:thoth, 0750)
-├── .hermes/                         # THOTH_HOME
+/var/lib/thoth/                     # stateDir (owned by thoth:thoth, 0750)
+├── .thoth/                         # THOTH_HOME
 │   ├── config.yaml                  # Nix-generated (deep-merged each rebuild)
 │   ├── .managed                     # Marker: CLI config mutation blocked
 │   ├── .env                         # Merged from environment + environmentFiles
@@ -2091,7 +2091,7 @@ Same layout, mounted into the container:
 
 ```bash
 # Update the flake input (run from the directory containing flake.nix)
-cd /etc/nixos && nix flake update hermes-agent
+cd /etc/nixos && nix flake update thoth-agent
 
 # Rebuild
 sudo nixos-rebuild switch
@@ -2111,21 +2111,21 @@ All `docker` commands below work the same with `podman`. Substitute accordingly 
 
 ```bash
 # Both modes use the same systemd unit
-journalctl -u hermes-agent -f
+journalctl -u thoth-agent -f
 
 # Container mode: also available directly
-docker logs -f hermes-agent
+docker logs -f thoth-agent
 ```
 
 ### Container Inspection
 
 ```bash
-systemctl status hermes-agent
-docker ps -a --filter name=hermes-agent
-docker inspect hermes-agent --format='{{.State.Status}}'
-docker exec -it hermes-agent bash
-docker exec hermes-agent readlink /data/current-package
-docker exec hermes-agent cat /data/.container-identity
+systemctl status thoth-agent
+docker ps -a --filter name=thoth-agent
+docker inspect thoth-agent --format='{{.State.Status}}'
+docker exec -it thoth-agent bash
+docker exec thoth-agent readlink /data/current-package
+docker exec thoth-agent cat /data/.container-identity
 ```
 
 ### Force Container Recreation
@@ -2133,10 +2133,10 @@ docker exec hermes-agent cat /data/.container-identity
 If you need to reset the writable layer (fresh Ubuntu):
 
 ```bash
-sudo systemctl stop hermes-agent
-docker rm -f hermes-agent
+sudo systemctl stop thoth-agent
+docker rm -f thoth-agent
 sudo rm /var/lib/thoth/.container-identity
-sudo systemctl start hermes-agent
+sudo systemctl start thoth-agent
 ```
 
 ### Verify Secrets Are Loaded
@@ -2145,16 +2145,16 @@ If the agent starts but can't authenticate with the LLM provider, check that the
 
 ```bash
 # Native mode
-sudo -u thoth cat /var/lib/hermes/.hermes/.env
+sudo -u thoth cat /var/lib/thoth/.thoth/.env
 
 # Container mode
-docker exec hermes-agent cat /data/.hermes/.env
+docker exec thoth-agent cat /data/.thoth/.env
 ```
 
 ### GC Root Verification
 
 ```bash
-nix-store --query --roots $(docker exec hermes-agent readlink /data/current-package)
+nix-store --query --roots $(docker exec thoth-agent readlink /data/current-package)
 ```
 
 ### Common Issues
@@ -2163,12 +2163,12 @@ nix-store --query --roots $(docker exec hermes-agent readlink /data/current-pack
 |---|---|---|
 | `Cannot save configuration: managed by NixOS` | CLI guards active | Edit `configuration.nix` and `nixos-rebuild switch` |
 | Container recreated unexpectedly | `extraVolumes`, `extraOptions`, or `image` changed | Expected — writable layer resets. Reinstall packages or use a custom image |
-| `thoth version` shows old version | Container not restarted | `systemctl restart hermes-agent` |
-| Permission denied on `/var/lib/thoth` | State dir is `0750 hermes:thoth` | Use `docker exec` or `sudo -u thoth` |
+| `thoth version` shows old version | Container not restarted | `systemctl restart thoth-agent` |
+| Permission denied on `/var/lib/thoth` | State dir is `0750 thoth:thoth` | Use `docker exec` or `sudo -u thoth` |
 | `nix-collect-garbage` removed thoth | GC root missing | Restart the service (preStart recreates the GC root) |
-| `no container with name or ID "hermes-agent"` (Podman) | Podman rootful container not visible to regular user | Add passwordless sudo for podman (see [Container Mode](#container-mode) section) |
+| `no container with name or ID "thoth-agent"` (Podman) | Podman rootful container not visible to regular user | Add passwordless sudo for podman (see [Container Mode](#container-mode) section) |
 | `unable to find user thoth` | Container still starting (entrypoint hasn't created user yet) | Wait a few seconds and retry — the CLI retries automatically |
-| Tool added via `extraPackages` not found in terminal | Requires `nixos-rebuild switch` to update the per-user profile | Rebuild and restart: `nixos-rebuild switch && systemctl restart hermes-agent` |
+| Tool added via `extraPackages` not found in terminal | Requires `nixos-rebuild switch` to update the per-user profile | Rebuild and restart: `nixos-rebuild switch && systemctl restart thoth-agent` |
 
 ---
 
@@ -3039,7 +3039,7 @@ terminal:
 
 **Container lifecycle:** Thoth reuses a single long-lived container (`docker run -d ... sleep 2h`) for every terminal and file-tool call, across sessions, `/new`, `/reset`, and `delegate_task` subagents, for the lifetime of the Thoth process. Commands run via `docker exec` with a login shell, so working-directory changes, installed packages, and files in `/workspace` all persist from one tool call to the next. The container is stopped and removed on Thoth shutdown (or when the idle-sweep reclaims it).
 
-Parallel subagents spawned via `delegate_task(tasks=[...])` share this one container — concurrent `cd`, env mutations, and writes to the same path will collide. If a subagent needs an isolated sandbox, it must register a per-task image override via `register_task_env_overrides()`, which RL and benchmark environments (TerminalBench2, HermesSweEnv, etc.) do automatically for their per-task Docker images.
+Parallel subagents spawned via `delegate_task(tasks=[...])` share this one container — concurrent `cd`, env mutations, and writes to the same path will collide. If a subagent needs an isolated sandbox, it must register a per-task image override via `register_task_env_overrides()`, which RL and benchmark environments (TerminalBench2, ThothSweEnv, etc.) do automatically for their per-task Docker images.
 
 **Security hardening:**
 - `--cap-drop ALL` with only `DAC_OVERRIDE`, `CHOWN`, `FOWNER` added back
@@ -3174,7 +3174,7 @@ terminal:
 
 **Image handling:** Docker URLs (`docker://...`) are automatically converted to SIF files and cached. Existing `.sif` files are used directly.
 
-**Scratch directory:** Resolved in order: `TERMINAL_SCRATCH_DIR` → `TERMINAL_SANDBOX_DIR/singularity` → `/scratch/$USER/hermes-agent` (HPC convention) → `~/.thoth/sandboxes/singularity`.
+**Scratch directory:** Resolved in order: `TERMINAL_SCRATCH_DIR` → `TERMINAL_SANDBOX_DIR/singularity` → `/scratch/$USER/thoth-agent` (HPC convention) → `~/.thoth/sandboxes/singularity`.
 
 **Isolation:** Uses `--containall --no-home` for full namespace isolation without mounting the host home directory.
 
@@ -4298,7 +4298,7 @@ quick_commands:
     command: df -h /
   update:
     type: exec
-    command: cd ~/.thoth/hermes-agent && git pull && pip install -e .
+    command: cd ~/.thoth/thoth-agent && git pull && pip install -e .
   gpu:
     type: exec
     command: nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total --format=csv,noheader
@@ -4801,28 +4801,28 @@ The dashboard uses three endpoints. Useful for scripting:
 
 ```bash
 # List authenticated providers + curated model lists
-curl -H "X-Hermes-Session-Token: $TOKEN" http://localhost:PORT/api/model/options
+curl -H "X-Thoth-Session-Token: $TOKEN" http://localhost:PORT/api/model/options
 
 # Read current main + auxiliary assignments
-curl -H "X-Hermes-Session-Token: $TOKEN" http://localhost:PORT/api/model/auxiliary
+curl -H "X-Thoth-Session-Token: $TOKEN" http://localhost:PORT/api/model/auxiliary
 
 # Set the main model
-curl -X POST -H "Content-Type: application/json" -H "X-Hermes-Session-Token: $TOKEN" \
+curl -X POST -H "Content-Type: application/json" -H "X-Thoth-Session-Token: $TOKEN" \
   -d '{"scope":"main","provider":"openrouter","model":"anthropic/claude-opus-4.7"}' \
   http://localhost:PORT/api/model/set
 
 # Override a single auxiliary task
-curl -X POST -H "Content-Type: application/json" -H "X-Hermes-Session-Token: $TOKEN" \
+curl -X POST -H "Content-Type: application/json" -H "X-Thoth-Session-Token: $TOKEN" \
   -d '{"scope":"auxiliary","task":"vision","provider":"openrouter","model":"google/gemini-2.5-flash"}' \
   http://localhost:PORT/api/model/set
 
 # Assign one model to every auxiliary task
-curl -X POST -H "Content-Type: application/json" -H "X-Hermes-Session-Token: $TOKEN" \
+curl -X POST -H "Content-Type: application/json" -H "X-Thoth-Session-Token: $TOKEN" \
   -d '{"scope":"auxiliary","task":"","provider":"openrouter","model":"google/gemini-2.5-flash"}' \
   http://localhost:PORT/api/model/set
 
 # Reset all auxiliary tasks to auto
-curl -X POST -H "Content-Type: application/json" -H "X-Hermes-Session-Token: $TOKEN" \
+curl -X POST -H "Content-Type: application/json" -H "X-Thoth-Session-Token: $TOKEN" \
   -d '{"scope":"auxiliary","task":"__reset__","provider":"","model":""}' \
   http://localhost:PORT/api/model/set
 ```
@@ -5835,7 +5835,7 @@ If this is your first time running Thoth Agent, create a data directory on the h
 mkdir -p ~/.thoth
 docker run -it --rm \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent setup
+  519lab/thoth-agent setup
 ```
 
 This drops you into the setup wizard, which will prompt you for your API keys and write them to `~/.thoth/.env`. You only need to do this once. It is highly recommended to set up a chat system for the gateway to work with at this point.
@@ -5850,7 +5850,7 @@ docker run -d \
   --restart unless-stopped \
   -v ~/.thoth:/opt/data \
   -p 8642:8642 \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 Port 8642 exposes the gateway's [OpenAI-compatible API server](./features/api-server.md) and health endpoint. It's optional if you only use chat platforms (Telegram, Discord, etc.), but required if you want the dashboard or external tools to reach the gateway.
@@ -5867,7 +5867,7 @@ docker run -d \
   -e API_SERVER_HOST=0.0.0.0 \
   -e API_SERVER_KEY=your_api_key_here \
   -e API_SERVER_CORS_ORIGINS='*' \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 Opening any port on an internet facing machine is a security risk. You should not do it unless you understand the risks.
@@ -5884,10 +5884,10 @@ docker run -d \
   -p 8642:8642 \
   -p 9119:9119 \
   -e THOTH_DASHBOARD=1 \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
-The entrypoint starts `thoth dashboard` in the background (running as the non-root `hermes` user) before `exec`-ing the main command. Dashboard output is prefixed with `[dashboard]` in `docker logs` so it's easy to separate from gateway logs.
+The entrypoint starts `thoth dashboard` in the background (running as the non-root `thoth` user) before `exec`-ing the main command. Dashboard output is prefixed with `[dashboard]` in `docker logs` so it's easy to separate from gateway logs.
 
 | Environment variable | Description | Default |
 |---------------------|-------------|---------|
@@ -5909,13 +5909,13 @@ To open an interactive chat session against a running data directory:
 ```sh
 docker run -it --rm \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent
+  519lab/thoth-agent
 ```
 
 Or if you have already opened a terminal in your running container (via Docker Desktop for instance), just run:
 
 ```sh
-/opt/hermes/.venv/bin/thoth
+/opt/thoth/.venv/bin/thoth
 ```
 
 ## Persistent volumes
@@ -5952,7 +5952,7 @@ docker run -d \
   --restart unless-stopped \
   -v ~/.thoth-work:/opt/data \
   -p 8642:8642 \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 
 # Personal profile
 docker run -d \
@@ -5960,7 +5960,7 @@ docker run -d \
   --restart unless-stopped \
   -v ~/.thoth-personal:/opt/data \
   -p 8643:8642 \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 Why separate containers over profiles in Docker:
@@ -5976,7 +5976,7 @@ In Docker Compose, this just means declaring one service per profile with distin
 ```yaml
 services:
   thoth-work:
-    image: nousresearch/hermes-agent:latest
+    image: 519lab/thoth-agent:latest
     container_name: thoth-work
     restart: unless-stopped
     command: gateway run
@@ -5986,7 +5986,7 @@ services:
       - ~/.thoth-work:/opt/data
 
   thoth-personal:
-    image: nousresearch/hermes-agent:latest
+    image: 519lab/thoth-agent:latest
     container_name: thoth-personal
     restart: unless-stopped
     command: gateway run
@@ -6005,7 +6005,7 @@ docker run -it --rm \
   -v ~/.thoth:/opt/data \
   -e ANTHROPIC_API_KEY="sk-ant-..." \
   -e OPENAI_API_KEY="sk-..." \
-  nousresearch/hermes-agent
+  519lab/thoth-agent
 ```
 
 Direct `-e` flags override values from `.env`. This is useful for CI/CD or secrets-manager integrations where you don't want keys on disk.
@@ -6021,7 +6021,7 @@ For persistent deployment with both the gateway and dashboard, a `docker-compose
 ```yaml
 services:
   thoth:
-    image: nousresearch/hermes-agent:latest
+    image: 519lab/thoth-agent:latest
     container_name: thoth
     restart: unless-stopped
     command: gateway run
@@ -6065,7 +6065,7 @@ docker run -d \
   --restart unless-stopped \
   --memory=4g --cpus=2 \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 ## What the Dockerfile does
@@ -6090,7 +6090,7 @@ The entrypoint script (`docker/entrypoint.sh`) bootstraps the data volume on fir
 - Then runs `thoth` with whatever arguments you pass
 
 :::warning
-Do not override the image entrypoint unless you keep `/opt/hermes/docker/entrypoint.sh` in the command chain. The entrypoint drops root privileges to the `hermes` user before gateway state files are created. Starting `thoth gateway run` as root inside the official image is refused by default because it can leave root-owned files in `/opt/data` and break later dashboard or gateway starts. Set `THOTH_ALLOW_ROOT_GATEWAY=1` only when you intentionally accept that risk.
+Do not override the image entrypoint unless you keep `/opt/thoth/docker/entrypoint.sh` in the command chain. The entrypoint drops root privileges to the `thoth` user before gateway state files are created. Starting `thoth gateway run` as root inside the official image is refused by default because it can leave root-owned files in `/opt/data` and break later dashboard or gateway starts. Set `THOTH_ALLOW_ROOT_GATEWAY=1` only when you intentionally accept that risk.
 :::
 
 ## Upgrading
@@ -6098,13 +6098,13 @@ Do not override the image entrypoint unless you keep `/opt/hermes/docker/entrypo
 Pull the latest image and recreate the container. Your data directory is untouched.
 
 ```sh
-docker pull nousresearch/hermes-agent:latest
+docker pull 519lab/thoth-agent:latest
 docker rm -f thoth
 docker run -d \
   --name thoth \
   --restart unless-stopped \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 Or with Docker Compose:
@@ -6149,7 +6149,7 @@ services:
             - capabilities: [gpu]
 
   thoth:
-    image: nousresearch/hermes-agent:latest
+    image: 519lab/thoth-agent:latest
     container_name: thoth
     restart: unless-stopped
     command: gateway run
@@ -6193,7 +6193,7 @@ docker run -d \
   --name thoth \
   -v ~/.thoth:/opt/data \
   -p 8642:8642 \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 ```yaml
@@ -6212,7 +6212,7 @@ docker run -d \
   --name thoth \
   --network host \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 ```yaml
@@ -6263,7 +6263,7 @@ Check logs: `docker logs thoth`. Common causes:
 
 ### "Permission denied" errors
 
-The container's entrypoint drops privileges to the non-root `hermes` user (UID 10000) via `gosu`. If your host `~/.thoth/` is owned by a different UID, set `THOTH_UID`/`THOTH_GID` to match your host user, or ensure the data directory is writable:
+The container's entrypoint drops privileges to the non-root `thoth` user (UID 10000) via `gosu`. If your host `~/.thoth/` is owned by a different UID, set `THOTH_UID`/`THOTH_GID` to match your host user, or ensure the data directory is writable:
 
 ```sh
 chmod -R 755 ~/.thoth
@@ -6278,7 +6278,7 @@ docker run -d \
   --name thoth \
   --shm-size=1g \
   -v ~/.thoth:/opt/data \
-  nousresearch/hermes-agent gateway run
+  519lab/thoth-agent gateway run
 ```
 
 ### Gateway not reconnecting after network issues
@@ -6293,7 +6293,7 @@ docker restart thoth
 
 ```sh
 docker logs --tail 50 thoth          # Recent logs
-docker run -it --rm nousresearch/hermes-agent:latest version     # Verify version
+docker run -it --rm 519lab/thoth-agent:latest version     # Verify version
 docker stats thoth                    # Resource usage
 ```
 
@@ -7024,7 +7024,7 @@ At a high level:
 - Once per conversation turn (per directory), it:
   - Resolves a reasonable project root for the file.
   - Initialises or reuses the **single shared shadow store** at `~/.thoth/checkpoints/store/`.
-  - Stages into a per-project index, builds a tree, and commits to a per-project ref (`refs/hermes/<project-hash>`).
+  - Stages into a per-project index, builds a tree, and commits to a per-project ref (`refs/thoth/<project-hash>`).
 - These per-project refs form a checkpoint history that you can inspect and restore via `/rollback`.
 
 ```mermaid
@@ -7177,7 +7177,7 @@ Restore just one file from a checkpoint without affecting the rest of the direct
 ~/.thoth/checkpoints/
   ├── store/                 # single shared bare git repo
   │   ├── HEAD, objects/     # git internals (shared across projects)
-  │   ├── refs/hermes/<hash> # per-project branch tip
+  │   ├── refs/thoth/<hash> # per-project branch tip
   │   ├── indexes/<hash>     # per-project git index
   │   ├── projects/<hash>.json  # workdir + created_at + last_touch
   │   └── info/exclude
@@ -7531,7 +7531,7 @@ description: Brief description of what this skill does
 version: 1.0.0
 platforms: [macos, linux]     # Optional — restrict to specific OS platforms
 metadata:
-  hermes:
+  thoth:
     tags: [python, automation]
     category: devops
     fallback_for_toolsets: [web]    # Optional — conditional activation (see below)
@@ -7611,7 +7611,7 @@ Skills can automatically show or hide themselves based on which tools are availa
 
 ```yaml
 metadata:
-  hermes:
+  thoth:
     fallback_for_toolsets: [web]      # Show ONLY when these toolsets are unavailable
     requires_toolsets: [terminal]     # Show ONLY when these toolsets are available
     fallback_for_tools: [web_search]  # Show ONLY when these specific tools are unavailable
@@ -7651,7 +7651,7 @@ Skills can also declare non-secret config settings (paths, preferences) stored i
 
 ```yaml
 metadata:
-  hermes:
+  thoth:
     config:
       - key: myplugin.path
         description: Path to the plugin data directory
@@ -8092,7 +8092,7 @@ owner/repo
 Rules:
 - Each skill lives in its own directory under the tap's root path (default `skills/`).
 - The directory name becomes the skill's install slug.
-- Each skill directory must contain a `SKILL.md` with standard [SKILL.md frontmatter](#skillmd-format) (`name`, `description`, plus optional `metadata.hermes.tags`, `version`, `author`, `platforms`, `metadata.hermes.config`).
+- Each skill directory must contain a `SKILL.md` with standard [SKILL.md frontmatter](#skillmd-format) (`name`, `description`, plus optional `metadata.thoth.tags`, `version`, `author`, `platforms`, `metadata.thoth.config`).
 - Subdirectories like `references/`, `templates/`, `scripts/`, `assets/` are downloaded alongside `SKILL.md` at install time.
 - Skills whose directory name starts with `.` or `_` are ignored.
 
@@ -8116,7 +8116,7 @@ description: Our deployment runbook — services, rollback, Slack channels
 version: 1.0.0
 author: My Org Platform Team
 metadata:
-  hermes:
+  thoth:
     tags: [deployment, runbook, internal]
 ---
 
@@ -8776,7 +8776,7 @@ thoth memory setup        # select "honcho" — runs the Honcho-specific post-se
 
 The legacy `thoth honcho setup` command still works (it now redirects to `thoth memory setup`), but is only registered after Honcho is selected as the active memory provider.
 
-**Config:** `$THOTH_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$THOTH_HOME/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/519lab/thoth-agent/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/hermes).
+**Config:** `$THOTH_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$THOTH_HOME/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/519lab/thoth-agent/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/thoth).
 
 <details>
 <summary>Full config reference</summary>
@@ -8813,11 +8813,11 @@ The legacy `thoth honcho setup` command still works (it now redirects to `thoth 
 {
   "apiKey": "your-key-from-app.honcho.dev",
   "hosts": {
-    "hermes": {
+    "thoth": {
       "enabled": true,
-      "aiPeer": "hermes",
+      "aiPeer": "thoth",
       "peerName": "your-name",
-      "workspace": "hermes"
+      "workspace": "thoth"
     }
   }
 }
@@ -8832,11 +8832,11 @@ The legacy `thoth honcho setup` command still works (it now redirects to `thoth 
 {
   "baseUrl": "http://localhost:8000",
   "hosts": {
-    "hermes": {
+    "thoth": {
       "enabled": true,
-      "aiPeer": "hermes",
+      "aiPeer": "thoth",
       "peerName": "your-name",
-      "workspace": "hermes"
+      "workspace": "thoth"
     }
   }
 }
@@ -8867,7 +8867,7 @@ The mapping:
 thoth profile create coder --clone
 ```
 
-`--clone` creates a `hermes.coder` host block in `honcho.json` with `aiPeer: "coder"`, shared `workspace`, inherited `peerName`, `recallMode`, `writeFrequency`, `observation`, etc. The AI peer is eagerly created in Honcho so it exists before the first message.
+`--clone` creates a `thoth.coder` host block in `honcho.json` with `aiPeer: "coder"`, shared `workspace`, inherited `peerName`, `recallMode`, `writeFrequency`, `observation`, etc. The AI peer is eagerly created in Honcho so it exists before the first message.
 
 ### Existing profiles, backfill Honcho peers
 
@@ -8882,7 +8882,7 @@ Scans every Thoth profile, creates host blocks for any profile without one, inhe
 Each host block can override the observation config independently. Example: a code-focused profile where the AI peer observes the user but doesn't self-model:
 
 ```json
-"hermes.coder": {
+"thoth.coder": {
   "aiPeer": "coder",
   "observation": {
     "user": { "observeMe": true, "observeOthers": true },
@@ -8913,13 +8913,13 @@ See the [Honcho page](./honcho.md#observation-directional-vs-unified) for the fu
 ```json
 {
   "apiKey": "your-key",
-  "workspace": "hermes",
+  "workspace": "thoth",
   "peerName": "eri",
   "hosts": {
-    "hermes": {
+    "thoth": {
       "enabled": true,
-      "aiPeer": "hermes",
-      "workspace": "hermes",
+      "aiPeer": "thoth",
+      "workspace": "thoth",
       "peerName": "eri",
       "recallMode": "hybrid",
       "writeFrequency": "async",
@@ -8937,10 +8937,10 @@ See the [Honcho page](./honcho.md#observation-directional-vs-unified) for the fu
       "messageMaxChars": 25000,
       "saveMessages": true
     },
-    "hermes.coder": {
+    "thoth.coder": {
       "enabled": true,
       "aiPeer": "coder",
-      "workspace": "hermes",
+      "workspace": "thoth",
       "peerName": "eri",
       "recallMode": "tools",
       "observation": {
@@ -8948,10 +8948,10 @@ See the [Honcho page](./honcho.md#observation-directional-vs-unified) for the fu
         "ai": { "observeMe": true, "observeOthers": true }
       }
     },
-    "hermes.writer": {
+    "thoth.writer": {
       "enabled": true,
       "aiPeer": "writer",
-      "workspace": "hermes",
+      "workspace": "thoth",
       "peerName": "eri"
     }
   },
@@ -8963,7 +8963,7 @@ See the [Honcho page](./honcho.md#observation-directional-vs-unified) for the fu
 
 </details>
 
-See the [config reference](https://github.com/519lab/thoth-agent/blob/main/plugins/memory/honcho/README.md) and [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/hermes).
+See the [config reference](https://github.com/519lab/thoth-agent/blob/main/plugins/memory/honcho/README.md) and [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/thoth).
 
 
 ---
@@ -9026,7 +9026,7 @@ echo "MEM0_API_KEY=your-key" >> ~/.thoth/.env
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `user_id` | `hermes-user` | User identifier |
+| `user_id` | `thoth-user` | User identifier |
 | `agent_id` | `thoth` | Agent identifier |
 
 ---
@@ -9098,7 +9098,7 @@ thoth memory setup    # select "holographic"
 thoth config set memory.provider holographic
 ```
 
-**Config:** `config.yaml` under `plugins.hermes-memory-store`
+**Config:** `config.yaml` under `plugins.thoth-memory-store`
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -9209,7 +9209,7 @@ echo 'SUPERMEMORY_API_KEY=***' >> ~/.thoth/.env
 - Session-end conversation ingest for richer graph-level knowledge building
 - Profile facts injected on first turn and at configurable intervals
 - Trivial message filtering (skips "ok", "thanks", etc.)
-- **Profile-scoped containers** — use `{identity}` in `container_tag` (e.g. `thoth-{identity}` → `hermes-coder`) to isolate memories per Thoth profile
+- **Profile-scoped containers** — use `{identity}` in `container_tag` (e.g. `thoth-{identity}` → `thoth-coder`) to isolate memories per Thoth profile
 - **Multi-container mode** — enable `enable_custom_container_tags` with a `custom_containers` list to let the agent read/write across named containers. Automatic operations (sync, prefetch) stay on the primary container.
 
 <details>
@@ -9217,7 +9217,7 @@ echo 'SUPERMEMORY_API_KEY=***' >> ~/.thoth/.env
 
 ```json
 {
-  "container_tag": "hermes",
+  "container_tag": "thoth",
   "enable_custom_container_tags": true,
   "custom_containers": ["project-alpha", "shared-knowledge"],
   "custom_container_instructions": "Use project-alpha for coding context."
@@ -9992,7 +9992,7 @@ Every `ctx.*` API below is available inside a plugin's `register(ctx)` function.
 | Ship data files | `Path(__file__).parent / "data" / "file.yaml"` |
 | Bundle skills | `ctx.register_skill(name, path)` — namespaced as `plugin:skill`, loaded via `skill_view("plugin:skill")` |
 | Gate on env vars | `requires_env: [API_KEY]` in plugin.yaml — prompted during `thoth plugins install` |
-| Distribute via pip | `[project.entry-points."hermes_agent.plugins"]` |
+| Distribute via pip | `[project.entry-points."thoth_agent.plugins"]` |
 | Register a gateway platform (Discord, Telegram, IRC, …) | `ctx.register_platform(name, label, adapter_factory, check_fn, ...)` — see [Adding Platform Adapters](/docs/developer-guide/adding-platform-adapters) |
 | Register an image-generation backend | `ctx.register_image_gen_provider(provider)` — see [Image Generation Provider Plugins](/docs/developer-guide/image-gen-provider-plugin) |
 | Register a video-generation backend | `ctx.register_video_gen_provider(provider)` — see [Video Generation Provider Plugins](/docs/developer-guide/video-gen-provider-plugin) |
@@ -10008,8 +10008,8 @@ Every `ctx.*` API below is available inside a plugin's `register(ctx)` function.
 | Bundled | `<repo>/plugins/` | Ships with Thoth — see [Built-in Plugins](/docs/user-guide/features/built-in-plugins) |
 | User | `~/.thoth/plugins/` | Personal plugins |
 | Project | `.thoth/plugins/` | Project-specific plugins (requires `THOTH_ENABLE_PROJECT_PLUGINS=true`) |
-| pip | `hermes_agent.plugins` entry_points | Distributed packages |
-| Nix | `services.hermes-agent.extraPlugins` / `extraPythonPackages` | NixOS declarative installs — see [Nix Setup](/docs/getting-started/nix-setup#plugins) |
+| pip | `thoth_agent.plugins` entry_points | Distributed packages |
+| Nix | `services.thoth-agent.extraPlugins` / `extraPythonPackages` | NixOS declarative installs — see [Nix Setup](/docs/getting-started/nix-setup#plugins) |
 
 Later sources override earlier ones on name collision, so a user plugin with the same name as a bundled plugin replaces it.
 
@@ -10136,7 +10136,7 @@ Not everything is a Python plugin. Some extension surfaces intentionally use **c
 On NixOS, plugins can be installed declaratively via the module options — no `thoth plugins install` needed. See the **[Nix Setup guide](/docs/getting-started/nix-setup#plugins)** for full details.
 
 ```nix
-services.hermes-agent = {
+services.thoth-agent = {
   # Directory plugin (source tree with plugin.yaml)
   extraPlugins = [ (pkgs.fetchFromGitHub { ... }) ];
   # Entry-point plugin (pip package)
@@ -10254,8 +10254,8 @@ The `PluginManager` scans four sources, in order:
 
 1. **Bundled** — `<repo>/plugins/<name>/` (what this page documents)
 2. **User** — `~/.thoth/plugins/<name>/`
-3. **Project** — `./.hermes/plugins/<name>/` (requires `THOTH_ENABLE_PROJECT_PLUGINS=1`)
-4. **Pip entry points** — `hermes_agent.plugins`
+3. **Project** — `./.thoth/plugins/<name>/` (requires `THOTH_ENABLE_PROJECT_PLUGINS=1`)
+4. **Pip entry points** — `thoth_agent.plugins`
 
 On name collision, later sources win — a user plugin named `disk-cleanup` would replace the bundled one.
 
@@ -10299,7 +10299,7 @@ The repo ships these bundled plugins under `plugins/`. All are opt-in — enable
 | `image_gen/openai` | image backend | OpenAI `gpt-image-2` image generation backend (alternative to FAL) |
 | `image_gen/openai-codex` | image backend | OpenAI image generation via Codex OAuth |
 | `image_gen/xai` | image backend | xAI `grok-2-image` backend |
-| `hermes-achievements` | dashboard tab | Steam-style collectible badges generated from your real Thoth session history |
+| `thoth-achievements` | dashboard tab | Steam-style collectible badges generated from your real Thoth session history |
 | `kanban/dashboard` | dashboard tab | Kanban board UI for the multi-agent dispatcher — tasks, comments, fan-out, board switching. See [Kanban Multi-Agent](./kanban.md). |
 
 Memory providers (`plugins/memory/*`) and context engines (`plugins/context_engine/*`) are listed separately on [Memory Providers](./memory-providers.md) — they're managed through `thoth memory` and `thoth plugins` respectively. The full per-plugin detail for the two long-running hooks-based plugins follows.
@@ -10437,7 +10437,7 @@ The agent kicks off the meeting join, streams the transcription back into its co
 
 **Disabling:** `thoth plugins disable google_meet`. Any cached transcripts and recordings stay in `~/.thoth/cache/google_meet/` until you remove them.
 
-### hermes-achievements
+### thoth-achievements
 
 Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, tiered badges generated from your real Thoth session history. Tool-chain feats, debugging patterns, vibe-coding streaks, skill/memory usage, model/provider variety, lifestyle quirks (weekend and night sessions). Originally authored by [@PCinkusz](https://github.com/PCinkusz) as an external plugin; brought in-tree so it stays in lockstep with Thoth feature changes.
 
@@ -10446,7 +10446,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 - Scans your entire `~/.thoth/state.db` session history on the dashboard backend
 - Per-session stats are cached by `(started_at, last_active)` fingerprint, so only new or changed sessions re-analyze on subsequent scans
 - First-ever scan runs in a background thread — the dashboard never blocks waiting for it, even on databases with thousands of sessions
-- Unlock state is persisted to `$THOTH_HOME/plugins/hermes-achievements/state.json`
+- Unlock state is persisted to `$THOTH_HOME/plugins/thoth-achievements/state.json`
 
 **Tier progression:** Copper → Silver → Gold → Diamond → Olympian. Each card exposes a "What counts" section listing the exact metric being tracked.
 
@@ -10458,7 +10458,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 | Discovered | Known achievement, progress visible, not yet earned |
 | Secret | Hidden until Thoth detects the first related signal in your history |
 
-**API** — routes mount under `/api/plugins/hermes-achievements/`:
+**API** — routes mount under `/api/plugins/thoth-achievements/`:
 
 | Endpoint | Purpose |
 |---|---|
@@ -10469,7 +10469,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 | `POST /rescan` | Manual synchronous rescan (blocks; use when the user clicks the rescan button) |
 | `POST /reset-state` | Clear unlock history and cached snapshot |
 
-**State files** — live under `$THOTH_HOME/plugins/hermes-achievements/`:
+**State files** — live under `$THOTH_HOME/plugins/thoth-achievements/`:
 
 | File | Contents |
 |---|---|
@@ -10484,9 +10484,9 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 - Warm rescan reuses per-session stats for every session whose `started_at` + `last_active` fingerprint matches the checkpoint — completes in seconds even on large histories.
 - The in-memory snapshot TTL is 120s; stale requests serve the old snapshot immediately and kick a background refresh. You never wait on a spinner just because TTL expired.
 
-**Enabling:** Nothing to enable — `hermes-achievements` is a dashboard-only plugin (no lifecycle hooks, no model-visible tools). It auto-registers as a tab in `thoth dashboard` on first launch. The `plugins.enabled` config only gates lifecycle/tool plugins; dashboard plugins are discovered purely via their `dashboard/manifest.json`.
+**Enabling:** Nothing to enable — `thoth-achievements` is a dashboard-only plugin (no lifecycle hooks, no model-visible tools). It auto-registers as a tab in `thoth dashboard` on first launch. The `plugins.enabled` config only gates lifecycle/tool plugins; dashboard plugins are discovered purely via their `dashboard/manifest.json`.
 
-**Opting out:** Delete or rename `plugins/hermes-achievements/dashboard/manifest.json`, or override it with a user plugin of the same name in `~/.thoth/plugins/hermes-achievements/` that ships no dashboard. The plugin's state files under `$THOTH_HOME/plugins/hermes-achievements/` survive — reinstalling preserves your unlock history.
+**Opting out:** Delete or rename `plugins/thoth-achievements/dashboard/manifest.json`, or override it with a user plugin of the same name in `~/.thoth/plugins/thoth-achievements/` that ships no dashboard. The plugin's state files under `$THOTH_HOME/plugins/thoth-achievements/` survive — reinstalling preserves your unlock history.
 
 ## Adding a bundled plugin
 
@@ -16914,7 +16914,7 @@ thoth gateway status                # Check status
 tail -f ~/.thoth/logs/gateway.log   # View logs
 ```
 
-The generated plist lives at `~/Library/LaunchAgents/ai.hermes.gateway.plist`. It includes three environment variables:
+The generated plist lives at `~/Library/LaunchAgents/ai.thoth.gateway.plist`. It includes three environment variables:
 
 - **PATH** — your full shell PATH at install time, with the venv `bin/` and `node_modules/.bin` prepended. This ensures user-installed tools (Node.js, ffmpeg, etc.) are available to gateway subprocesses like the WhatsApp bridge.
 - **VIRTUAL_ENV** — points to the Python virtualenv so tools can resolve packages correctly.
@@ -22490,7 +22490,7 @@ See the [Messaging Gateway overview](/docs/user-guide/messaging) for the platfor
 
 ## Plugins
 
-- **[Plugin System](/docs/user-guide/features/plugins)** — Extend Thoth with custom tools, lifecycle hooks, and CLI commands without modifying core code. Plugins are discovered from `~/.thoth/plugins/`, project-local `.hermes/plugins/`, and pip-installed entry points.
+- **[Plugin System](/docs/user-guide/features/plugins)** — Extend Thoth with custom tools, lifecycle hooks, and CLI commands without modifying core code. Plugins are discovered from `~/.thoth/plugins/`, project-local `.thoth/plugins/`, and pip-installed entry points.
 - **[Build a Plugin](/docs/guides/build-a-thoth-plugin)** — Step-by-step guide for creating Thoth plugins with tools, hooks, and CLI commands.
 
 ## Training & Evaluation
@@ -24968,10 +24968,10 @@ Standard OpenAI Chat Completions format. Stateless — the full conversation is 
 
 Uploaded files (`file` / `input_file` / `file_id`) and non-image `data:` URLs return `400 unsupported_content_type`.
 
-**Streaming** (`"stream": true`): Returns Server-Sent Events (SSE) with token-by-token response chunks. For **Chat Completions**, the stream uses standard `chat.completion.chunk` events plus Thoth's custom `hermes.tool.progress` event for tool-start UX. For **Responses**, the stream uses OpenAI Responses event types such as `response.created`, `response.output_text.delta`, `response.output_item.added`, `response.output_item.done`, and `response.completed`.
+**Streaming** (`"stream": true`): Returns Server-Sent Events (SSE) with token-by-token response chunks. For **Chat Completions**, the stream uses standard `chat.completion.chunk` events plus Thoth's custom `thoth.tool.progress` event for tool-start UX. For **Responses**, the stream uses OpenAI Responses event types such as `response.created`, `response.output_text.delta`, `response.output_item.added`, `response.output_item.done`, and `response.completed`.
 
 **Tool progress in streams**:
-- **Chat Completions**: Thoth emits `event: hermes.tool.progress` for tool-start visibility without polluting persisted assistant text.
+- **Chat Completions**: Thoth emits `event: thoth.tool.progress` for tool-start visibility without polluting persisted assistant text.
 - **Responses**: Thoth emits spec-native `function_call` and `function_call_output` output items during the SSE stream, so clients can render structured tool UI in real time.
 
 ### POST /v1/responses
@@ -25066,7 +25066,7 @@ Returns a machine-readable description of the API server's stable surface for ex
 
 ```json
 {
-  "object": "hermes.api_server.capabilities",
+  "object": "thoth.api_server.capabilities",
   "platform": "thoth-agent",
   "model": "thoth-agent",
   "auth": {"type": "bearer", "required": true},
@@ -25114,7 +25114,7 @@ Poll the current run state. This is useful for dashboards that need status witho
 
 ```json
 {
-  "object": "hermes.run",
+  "object": "thoth.run",
   "run_id": "run_abc123",
   "status": "completed",
   "session_id": "space-session",
@@ -26205,7 +26205,7 @@ openrouter (2 credentials):
   #2  backup-key           api_key manual
 
 anthropic (3 credentials):
-  #1  hermes_pkce          oauth   hermes_pkce ←
+  #1  thoth_pkce          oauth   thoth_pkce ←
   #2  claude_code          oauth   claude_code
   #3  ANTHROPIC_API_KEY    api_key env:ANTHROPIC_API_KEY
 ```
@@ -30183,7 +30183,7 @@ For sharing plugins publicly, add an entry point to your Python package:
 
 ```toml
 # pyproject.toml
-[project.entry-points."hermes_agent.plugins"]
+[project.entry-points."thoth_agent.plugins"]
 my-plugin = "my_plugin_package"
 ```
 
@@ -30199,7 +30199,7 @@ NixOS users can install your plugin declaratively if you provide a `pyproject.to
 **Entry-point plugins** (recommended for distribution):
 ```nix
 # User's configuration.nix
-services.hermes-agent.extraPythonPackages = [
+services.thoth-agent.extraPythonPackages = [
   (pkgs.python312Packages.buildPythonPackage {
     pname = "my-plugin";
     version = "1.0.0";
@@ -30217,7 +30217,7 @@ services.hermes-agent.extraPythonPackages = [
 
 **Directory plugins** (no `pyproject.toml` needed):
 ```nix
-services.hermes-agent.extraPlugins = [
+services.thoth-agent.extraPlugins = [
   (pkgs.fetchFromGitHub {
     owner = "you";
     repo = "thoth-my-plugin";
@@ -30690,7 +30690,7 @@ Some skills declare configuration they need in their frontmatter:
 
 ```yaml
 metadata:
-  hermes:
+  thoth:
     config:
       - key: tenor.api_key
         description: "Tenor API key for GIF search"
@@ -30730,7 +30730,7 @@ name: my-skill
 description: Brief description of what this skill does
 version: 1.0.0
 metadata:
-  hermes:
+  thoth:
     tags: [my-tag, automation]
     category: my-category
 ---
@@ -35066,7 +35066,7 @@ platforms: [macos, linux]          # Optional — restrict to specific OS platfo
                                    #   Valid: macos, linux, windows
                                    #   Omit to load on all platforms (default)
 metadata:
-  hermes:
+  thoth:
     tags: [Category, Subcategory, Keywords]
     related_skills: [other-skill-name]
     requires_toolsets: [web]            # Optional — only show when these toolsets are active
@@ -35123,7 +35123,7 @@ Skills can declare dependencies on specific tools or toolsets. This controls whe
 
 ```yaml
 metadata:
-  hermes:
+  thoth:
     requires_toolsets: [web]           # Hide if the web toolset is NOT active
     requires_tools: [web_search]       # Hide if web_search tool is NOT available
     fallback_for_toolsets: [browser]   # Hide if the browser toolset IS active
@@ -35196,7 +35196,7 @@ Skills can declare non-secret settings that are stored in `config.yaml` under th
 
 ```yaml
 metadata:
-  hermes:
+  thoth:
     config:
       - key: myplugin.path
         description: Path to the plugin data directory
@@ -36175,7 +36175,7 @@ Create a zip archive of your Thoth configuration, skills, sessions, and data. Th
 
 | Option | Description |
 |--------|-------------|
-| `-o`, `--output <path>` | Output path for the zip file (default: `~/hermes-backup-<timestamp>.zip`). |
+| `-o`, `--output <path>` | Output path for the zip file (default: `~/thoth-backup-<timestamp>.zip`). |
 | `-q`, `--quick` | Quick snapshot: only critical state files (config.yaml, state.db, .env, auth, cron jobs). Much faster than a full backup. |
 | `-l`, `--label <name>` | Label for the snapshot (only used with `--quick`). |
 
@@ -36190,8 +36190,8 @@ The backup uses SQLite's `backup()` API for safe copying, so it works correctly 
 ### Examples
 
 ```bash
-thoth backup                           # Full backup to ~/hermes-backup-*.zip
-thoth backup -o /tmp/hermes.zip        # Full backup to specific path
+thoth backup                           # Full backup to ~/thoth-backup-*.zip
+thoth backup -o /tmp/thoth.zip        # Full backup to specific path
 thoth backup --quick                   # Quick state-only snapshot
 thoth backup --quick --label "pre-upgrade"  # Quick snapshot with label
 ```
@@ -36252,8 +36252,8 @@ Stop the gateway before importing to avoid conflicts with running processes.
 
 ### Examples
 ```bash
-thoth import ~/hermes-backup-20260423.zip           # Prompts before overwriting existing config
-thoth import ~/hermes-backup-20260423.zip --force   # Overwrite without prompting
+thoth import ~/thoth-backup-20260423.zip           # Prompts before overwriting existing config
+thoth import ~/thoth-backup-20260423.zip --force   # Overwrite without prompting
 ```
 
 ## `thoth logs`
@@ -37503,7 +37503,7 @@ Every distribution has a `distribution.yaml` at the root of its repository:
 name: telemetry
 version: 0.1.0
 description: "Compliance monitoring harness"
-hermes_requires: ">=0.12.0"
+thoth_requires: ">=0.12.0"
 author: "Your Name"
 license: "MIT"
 env_requires:
@@ -37521,7 +37521,7 @@ distribution_owned:   # optional; defaults to SOUL.md, config.yaml,
   - cron/
 ```
 
-`hermes_requires` supports `>=`, `<=`, `==`, `!=`, `>`, `<`, or a bare
+`thoth_requires` supports `>=`, `<=`, `==`, `!=`, `>`, `<`, or a bare
 version (treated as `>=`). Install fails with a clear error if the current
 Thoth version doesn't satisfy the spec.
 
@@ -38142,7 +38142,7 @@ Advanced per-platform knobs for throttling the outbound message batcher. Most us
 | `THOTH_AGENT_NOTIFY_INTERVAL` | Gateway: interval in seconds between progress notifications on long-running agent turns. |
 | `THOTH_CHECKPOINT_TIMEOUT` | Timeout for filesystem checkpoint creation in seconds (default: `30`). |
 | `THOTH_EXEC_ASK` | Enable execution approval prompts in gateway mode (`true`/`false`) |
-| `THOTH_ENABLE_PROJECT_PLUGINS` | Enable auto-discovery of repo-local plugins from `./.hermes/plugins/` (`true`/`false`, default: `false`) |
+| `THOTH_ENABLE_PROJECT_PLUGINS` | Enable auto-discovery of repo-local plugins from `./.thoth/plugins/` (`true`/`false`, default: `false`) |
 | `THOTH_PLUGINS_DEBUG` | `1`/`true` to surface verbose plugin-discovery logs on stderr — directories scanned, manifests parsed, skip reasons, and full tracebacks on parse or `register()` failure. Aimed at plugin authors. |
 | `THOTH_BACKGROUND_NOTIFICATIONS` | Background process notification mode in gateway: `all` (default), `result`, `error`, `off` |
 | `THOTH_EPHEMERAL_SYSTEM_PROMPT` | Ephemeral system prompt injected at API-call time (never persisted to sessions) |
@@ -40198,15 +40198,15 @@ Skills with very long descriptions are truncated to 40 characters in the Telegra
    ```bash
    thoth backup
    ```
-   This creates a zip of your entire `~/.thoth/` directory — config, API keys, memories, skills, sessions, and profiles — saved to your home directory as `~/hermes-backup-<timestamp>.zip`.
+   This creates a zip of your entire `~/.thoth/` directory — config, API keys, memories, skills, sessions, and profiles — saved to your home directory as `~/thoth-backup-<timestamp>.zip`.
 
 3. Copy the zip to the new machine and import it:
    ```bash
    # On the source machine
-   scp ~/hermes-backup-<timestamp>.zip newmachine:~/
+   scp ~/thoth-backup-<timestamp>.zip newmachine:~/
 
    # On the new machine
-   thoth import ~/hermes-backup-<timestamp>.zip
+   thoth import ~/thoth-backup-<timestamp>.zip
    ```
 
 4. On the new machine, run `thoth setup` to verify API keys and provider config are working.
@@ -40448,7 +40448,7 @@ Instead it reuses Thoth's runtime resolver:
 - `acp_adapter/auth.py`
 - `thoth_cli/runtime_provider.py`
 
-So ACP advertises and uses the currently configured Thoth provider/credentials. It also always advertises a terminal setup auth method (`hermes-setup`, args `--setup`) so first-run registry clients can open Thoth's interactive model/provider configuration before starting a normal ACP session.
+So ACP advertises and uses the currently configured Thoth provider/credentials. It also always advertises a terminal setup auth method (`thoth-setup`, args `--setup`) so first-run registry clients can open Thoth's interactive model/provider configuration before starting a normal ACP session.
 
 ## Working directory binding
 
@@ -40528,7 +40528,7 @@ internally and auto-dismisses native dialogs within ~10ms, so
 supervisor injects a bridge script via
 `Page.addScriptToEvaluateOnNewDocument` that overrides
 `window.alert`/`confirm`/`prompt` with a synchronous XHR to a magic host
-(`hermes-dialog-bridge.invalid`). `Fetch.enable` intercepts those XHRs
+(`thoth-dialog-bridge.invalid`). `Fetch.enable` intercepts those XHRs
 before they touch the network — the dialog becomes a `Fetch.requestPaused`
 event the supervisor captures, and `respond_to_dialog` fulfills via
 `Fetch.fulfillRequest` with a JSON body the injected script decodes.
@@ -41151,7 +41151,7 @@ Thoth scans for image-gen backends in three places:
 
 1. **Bundled** — `<repo>/plugins/image_gen/<name>/` (auto-loaded with `kind: backend`, always available)
 2. **User** — `~/.thoth/plugins/image_gen/<name>/` (opt-in via `plugins.enabled`)
-3. **Pip** — packages declaring a `hermes_agent.plugins` entry point
+3. **Pip** — packages declaring a `thoth_agent.plugins` entry point
 
 Each plugin's `register(ctx)` function calls `ctx.register_image_gen_provider(...)` — that puts it into the registry in `agent/image_gen_registry.py`. The active provider is picked by `image_gen.provider` in `config.yaml`; `thoth tools` walks users through selection.
 
@@ -41408,7 +41408,7 @@ Or interactively: `thoth tools` → "Image Generation" → select `my-backend` �
 
 ```toml
 # pyproject.toml
-[project.entry-points."hermes_agent.plugins"]
+[project.entry-points."thoth_agent.plugins"]
 my-backend-imggen = "my_backend_imggen_package"
 ```
 
@@ -41528,7 +41528,7 @@ def get_config_schema(self):
         {
             "key": "project",
             "description": "Project identifier",
-            "default": "hermes",
+            "default": "thoth",
         },
     ]
 ```
@@ -41929,7 +41929,7 @@ The general `PluginManager` (the thing `thoth plugins` operates on) **sees** mod
 Like any Thoth plugin, model providers can ship as a pip package. Add an entry point to your `pyproject.toml`:
 
 ```toml
-[project.entry-points."hermes.plugins"]
+[project.entry-points."thoth_agent.plugins"]
 acme-inference = "acme_thoth_plugin:register"
 ```
 
@@ -42132,7 +42132,7 @@ def _paste_to_tasks(ctx, raw_args: str) -> str:
 ```
 
 A third worked example, this time with image input, lives as
-`plugin-llm-example` in a separate `hermes-example-plugins` companion
+`plugin-llm-example` in a separate `thoth-example-plugins` companion
 repo (reference plugins — not bundled with this project itself). For the
 async surface (`acomplete()` / `acomplete_structured()` with
 `asyncio.gather()`), see `plugin-llm-async-example` in the same repo.
@@ -43035,7 +43035,7 @@ Thoth scans for video-gen backends in three places:
 
 1. **Bundled** — `<repo>/plugins/video_gen/<name>/` (auto-loaded with `kind: backend`)
 2. **User** — `~/.thoth/plugins/video_gen/<name>/` (opt-in via `plugins.enabled`)
-3. **Pip** — packages declaring a `hermes_agent.plugins` entry point
+3. **Pip** — packages declaring a `thoth_agent.plugins` entry point
 
 Each plugin's `register(ctx)` function calls `ctx.register_video_gen_provider(...)`. The active provider is picked by `video_gen.provider` in `config.yaml`; `thoth tools` → Video Generation walks users through selection. Unlike `image_generate`, there is no in-tree legacy backend — every provider is a plugin.
 
@@ -43257,7 +43257,7 @@ Thoth scans for web-search backends in three places:
 
 1. **Bundled** — `<repo>/plugins/web/<name>/` (auto-loaded with `kind: backend`, always available)
 2. **User** — `~/.thoth/plugins/web/<name>/` (opt-in via `plugins.enabled` or `thoth plugins enable <name>`)
-3. **Pip** — packages declaring a `hermes_agent.plugins` entry point
+3. **Pip** — packages declaring a `thoth_agent.plugins` entry point
 
 Each plugin's `register(ctx)` function calls `ctx.register_web_search_provider(...)` — that puts the instance into the registry in `agent/web_search_registry.py`. The active provider for each capability is picked by config:
 
@@ -43491,7 +43491,7 @@ If your provider wraps a third-party SDK (like DDGS does with the `ddgs` package
 
 ```toml
 # pyproject.toml
-[project.entry-points."hermes_agent.plugins"]
+[project.entry-points."thoth_agent.plugins"]
 my-backend-web = "my_backend_web_package"
 ```
 
@@ -47991,7 +47991,7 @@ You can override the default in `~/.codex/config.toml` outside Thoth's managed b
 default_permissions = ":read-only"
 ```
 
-(Thoth will preserve your override on re-migration as long as it lives outside the `# managed by hermes-agent` markers.)
+(Thoth will preserve your override on re-migration as long as it lives outside the `# managed by thoth-agent` markers.)
 
 ## Auxiliary tasks and ChatGPT subscription token cost
 
@@ -48024,13 +48024,13 @@ The self-improvement review fork inherits the main runtime via `_current_main_ru
 Thoth wraps everything it manages between two marker comments:
 
 ```toml
-# managed by hermes-agent — `thoth codex-runtime migrate` regenerates this section
+# managed by thoth-agent — `thoth codex-runtime migrate` regenerates this section
 default_permissions = ":workspace"
 [mcp_servers.filesystem]
 ...
 [plugins."github@openai-curated"]
 ...
-# end hermes-agent managed section
+# end thoth-agent managed section
 ```
 
 Anything **outside** that block is yours. Re-running migration (via `/codex-runtime codex_app_server` or whenever you toggle the runtime on) replaces the managed block in place but preserves user content above and below it verbatim. This means you can:
@@ -48782,7 +48782,7 @@ customCSS: |
   }
 ```
 
-The CSS is injected as a single scoped `<style data-hermes-theme-css>` tag on theme apply and cleaned up on theme switch. **Capped at 32 KiB per theme.**
+The CSS is injected as a single scoped `<style data-thoth-theme-css>` tag on theme apply and cleaned up on theme switch. **Capped at 32 KiB per theme.**
 
 ### Built-in themes
 
@@ -49207,7 +49207,7 @@ Key points:
 - Multiple plugins can claim the same page-scoped slot. They render stacked in registration order.
 - Zero footprint when no plugin registers: the built-in page renders exactly as before.
 
-A reference plugin (`example-dashboard` in `hermes-example-plugins`) ships a live demo that injects a banner into `sessions:top` — install it to see the pattern end-to-end.
+A reference plugin (`example-dashboard` in `thoth-example-plugins`) ships a live demo that injects a banner into `sessions:top` — install it to see the pattern end-to-end.
 
 ### Slot-only plugins (`tab.hidden`)
 
@@ -49344,7 +49344,7 @@ If a plugin's script fails to load (404, syntax error, exception during IIFE), t
 
 ## Combined theme + plugin demo
 
-The `strike-freedom-cockpit` plugin (companion repo `hermes-example-plugins`) is a complete reskin demo. It pairs a theme YAML with a slot-only plugin to produce a cockpit-style HUD without forking the dashboard.
+The `strike-freedom-cockpit` plugin (companion repo `thoth-example-plugins`) is a complete reskin demo. It pairs a theme YAML with a slot-only plugin to produce a cockpit-style HUD without forking the dashboard.
 
 **What it demonstrates:**
 
@@ -49358,14 +49358,14 @@ The `strike-freedom-cockpit` plugin (companion repo `hermes-example-plugins`) is
 **Install:**
 
 ```bash
-git clone <hermes-example-plugins-repo>   # companion repo of reference plugins
+git clone <thoth-example-plugins-repo>   # companion repo of reference plugins
 
 # Theme
-cp hermes-example-plugins/strike-freedom-cockpit/theme/strike-freedom.yaml \
+cp thoth-example-plugins/strike-freedom-cockpit/theme/strike-freedom.yaml \
    ~/.thoth/dashboard-themes/
 
 # Plugin
-cp -r hermes-example-plugins/strike-freedom-cockpit ~/.thoth/plugins/
+cp -r thoth-example-plugins/strike-freedom-cockpit ~/.thoth/plugins/
 ```
 
 Open the dashboard, pick **Strike Freedom** from the theme switcher. The cockpit sidebar appears, the crest shows in the header, the tagline replaces the footer. Switch back to **Thoth Teal** and the plugin remains installed but invisible (the `sidebar` slot only renders under the `cockpit` layout variant).
@@ -55598,7 +55598,7 @@ Create `~/.thoth/profiles/research-bot/distribution.yaml`:
 name: research-bot
 version: 1.0.0
 description: "Autonomous research assistant with arXiv and web tools"
-hermes_requires: ">=0.12.0"
+thoth_requires: ">=0.12.0"
 author: "Your Name"
 license: "MIT"
 
@@ -55896,11 +55896,11 @@ cd ~/.thoth/profiles/polymarket-trader
 git init && git add . && git commit -m "v1.0"
 git tag v1.0.0
 # Publish to a public GitHub repo
-git remote add origin https://github.com/you/hermes-polymarket-trader.git
+git remote add origin https://github.com/you/thoth-polymarket-trader.git
 git push -u origin main --tags
 
 # Anyone
-thoth profile install github.com/you/hermes-polymarket-trader --alias
+thoth profile install github.com/you/thoth-polymarket-trader --alias
 ```
 
 Tweet the install command. People who try it send you issues and PRs. If someone wants to customize, they fork — same git workflow everyone already knows.
@@ -55914,7 +55914,7 @@ You built Thoth-on-top — maybe a compliance-monitoring harness, a customer-sup
 name: telemetry-harness
 version: 2.3.1
 description: "Compliance telemetry harness — monitors and reviews regulated workflows"
-hermes_requires: ">=0.13.0"
+thoth_requires: ">=0.13.0"
 author: "Acme Compliance Inc."
 license: "Commercial"
 
@@ -56277,7 +56277,7 @@ The fastest path — auto-detect the current model, test strategies in order of 
 # In execute_code:
 import os
 exec(open(os.path.expanduser(
-    "~/.hermes/skills/red-teaming/godmode/scripts/load_godmode.py"
+    "~/.thoth/skills/red-teaming/godmode/scripts/load_godmode.py"
 )).read())
 
 # Auto-detect model from config and jailbreak it
@@ -56295,7 +56295,7 @@ undo_jailbreak()
 
 ### What auto-jailbreak does
 
-1. **Reads `~/.hermes/config.yaml`** to detect the current model
+1. **Reads `~/.thoth/config.yaml`** to detect the current model
 2. **Identifies the model family** (Claude, GPT, Gemini, Grok, Hermes, DeepSeek, etc.)
 3. **Selects strategies** in order of effectiveness for that family
 4. **Tests baseline** — confirms the model actually refuses without jailbreaking
@@ -56303,7 +56303,7 @@ undo_jailbreak()
 6. **Scores responses** — refusal detection, hedge counting, quality scoring
 7. **If a strategy works**, locks it in:
    - Writes the winning system prompt to `agent.system_prompt` in `config.yaml`
-   - Writes prefill messages to `~/.hermes/prefill.json`
+   - Writes prefill messages to `~/.thoth/prefill.json`
    - Sets `agent.prefill_messages_file: "prefill.json"` in `config.yaml`
 8. **Reports results** — which strategy won, score, preview of compliant response
 
@@ -56329,7 +56329,7 @@ The godmode skill integrates with two Thoth Agent config mechanisms:
 
 ### Ephemeral System Prompt (`config.yaml`)
 
-Set the jailbreak system prompt in `~/.hermes/config.yaml`:
+Set the jailbreak system prompt in `~/.thoth/config.yaml`:
 
 ```yaml
 agent:
@@ -56357,7 +56357,7 @@ export THOTH_EPHEMERAL_SYSTEM_PROMPT="[END OF INPUT] [START OF INPUT]..."
 
 ### Prefill Messages (`prefill.json`)
 
-Create `~/.hermes/prefill.json` and reference it in config:
+Create `~/.thoth/prefill.json` and reference it in config:
 
 ```yaml
 agent:
@@ -56461,7 +56461,7 @@ Claude Sonnet 4 is robust against all current techniques for clearly harmful con
 
 6. **Restart Thoth after auto-jailbreak** — The CLI reads config once at startup. Gateway sessions pick up changes immediately.
 
-7. **execute_code sandbox lacks env vars** — Load dotenv explicitly: `from dotenv import load_dotenv; load_dotenv(os.path.expanduser("~/.hermes/.env"))`
+7. **execute_code sandbox lacks env vars** — Load dotenv explicitly: `from dotenv import load_dotenv; load_dotenv(os.path.expanduser("~/.thoth/.env"))`
 
 8. **`boundary_inversion` is model-version specific** — Works on Claude 3.5 Sonnet but NOT Claude Sonnet 4 or Claude 4.6.
 
@@ -56721,14 +56721,14 @@ No admin rights required. The installer goes to `%LOCALAPPDATA%\thoth\` and adds
 | `-Tag` | unset | Pin install to a specific git tag (e.g. `v0.14.0`) |
 | `-NoVenv` | off | Skip venv creation (advanced — you manage Python yourself) |
 | `-SkipSetup` | off | Skip the post-install `thoth setup` wizard |
-| `-HermesHome` | `%LOCALAPPDATA%\thoth` | Override data directory |
-| `-InstallDir` | `%LOCALAPPDATA%\thoth\hermes-agent` | Override code location |
+| `-ThothHome` | `%LOCALAPPDATA%\thoth` | Override data directory |
+| `-InstallDir` | `%LOCALAPPDATA%\thoth\thoth-agent` | Override code location |
 
 The installer auto-retries flaky git fetches and strips BOM from any downloaded `install.ps1` payload, so a UTF-8 BOM picked up during HTTP transit no longer breaks the `[scriptblock]::Create((irm ...))` form.
 
 ### Desktop installer (alternative)
 
-A thin GUI installer is also available — useful if you'd rather double-click an `.exe` than open PowerShell. Download Thoth Desktop, run the installer, and on first launch the GUI calls `install.ps1` under the hood to provision Python (via `uv`), Node, PortableGit, and the rest of the dependency bootstrap described below. After the first run, the desktop app and the PowerShell-installed `thoth` CLI share the same `%LOCALAPPDATA%\thoth\hermes-agent` install and `%USERPROFILE%\.thoth` data directory — switch between the GUI and the CLI freely.
+A thin GUI installer is also available — useful if you'd rather double-click an `.exe` than open PowerShell. Download Thoth Desktop, run the installer, and on first launch the GUI calls `install.ps1` under the hood to provision Python (via `uv`), Node, PortableGit, and the rest of the dependency bootstrap described below. After the first run, the desktop app and the PowerShell-installed `thoth` CLI share the same `%LOCALAPPDATA%\thoth\thoth-agent` install and `%USERPROFILE%\.thoth` data directory — switch between the GUI and the CLI freely.
 
 Use the desktop installer when you want a familiar Windows install experience or you're handing Thoth to a non-developer; use the PowerShell one-liner when you're already in a terminal.
 
@@ -56754,7 +56754,7 @@ Top-to-bottom, in order:
 2. **Installs Python 3.11** via `uv`. No existing Python needed.
 3. **Installs Node.js 22** (winget if available, else a portable Node tarball unpacked under `%LOCALAPPDATA%\thoth\node`). Used for the browser tool and the WhatsApp bridge.
 4. **Installs portable Git** — if `git` is already on PATH the installer uses it; otherwise it downloads a trimmed, self-contained **PortableGit** (~45 MB, from the official `git-for-windows` release) to `%LOCALAPPDATA%\thoth\git`. No admin, no Windows installer registry, no interference with anything else on the box.
-5. **Clones the repo** to `%LOCALAPPDATA%\thoth\hermes-agent` and creates a virtualenv inside it.
+5. **Clones the repo** to `%LOCALAPPDATA%\thoth\thoth-agent` and creates a virtualenv inside it.
 6. **Tiered `uv pip install`** — tries `.[all]` first, falls back to progressively smaller sets (`[messaging,dashboard,ext]` → `[messaging]` → `.`) if a `git+https` dep flakes on rate-limited GitHub. Prevents "single flake drops you to a bare install" failure mode.
 7. **Auto-installs messaging SDKs** keyed off `.env` — if `TELEGRAM_BOT_TOKEN` / `DISCORD_BOT_TOKEN` / `SLACK_BOT_TOKEN` / `SLACK_APP_TOKEN` / `WHATSAPP_ENABLED` are present, runs `python -m ensurepip --upgrade` and targeted `pip install` calls so each platform's SDK is actually importable.
 8. **Sets `THOTH_GIT_BASH_PATH`** to the resolved `bash.exe` so Thoth finds it deterministically in fresh shells.
@@ -56855,7 +56855,7 @@ thoth gateway install
 
 What happens under the hood:
 
-1. `schtasks /Create /SC ONLOGON /RL LIMITED /TN HermesGateway` — registers a task that runs at your login with standard (non-elevated) permissions. No UAC prompt.
+1. `schtasks /Create /SC ONLOGON /RL LIMITED /TN Thoth_Gateway` — registers a task that runs at your login with standard (non-elevated) permissions. No UAC prompt.
 2. If schtasks is blocked by group policy, falls back to writing a `start /min cmd.exe /d /c <wrapper>` shortcut into `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`. Same effect, slightly cruder.
 3. Spawns the gateway **detached via `pythonw.exe`** — not `python.exe`. `pythonw.exe` has no console attached, which immunizes it against `CTRL_C_EVENT` broadcasts from sibling processes (a real issue that used to kill the gateway when you Ctrl+C'd anything in the same process group).
 
@@ -56881,7 +56881,7 @@ Services require admin rights to install and tie the gateway's lifecycle to mach
 
 | Path | Contents |
 |---|---|
-| `%LOCALAPPDATA%\thoth\hermes-agent\` | Git checkout + venv. Safe to `Remove-Item -Recurse` and reinstall. |
+| `%LOCALAPPDATA%\thoth\thoth-agent\` | Git checkout + venv. Safe to `Remove-Item -Recurse` and reinstall. |
 | `%LOCALAPPDATA%\thoth\git\` | PortableGit (only if the installer provisioned it). |
 | `%LOCALAPPDATA%\thoth\node\` | Portable Node.js (only if the installer provisioned it). |
 | `%LOCALAPPDATA%\thoth\bin\` | `thoth.cmd` shim, added to User PATH. |
@@ -56941,7 +56941,7 @@ From PowerShell:
 thoth uninstall
 ```
 
-That's the clean path — removes the schtasks entry, Startup folder shortcut, `thoth.cmd` shim, deletes `%LOCALAPPDATA%\thoth\hermes-agent\`, and trims the User PATH. It leaves `%USERPROFILE%\.thoth\` alone (your config, auth, skills, sessions, logs) in case you're reinstalling.
+That's the clean path — removes the schtasks entry, Startup folder shortcut, `thoth.cmd` shim, deletes `%LOCALAPPDATA%\thoth\thoth-agent\`, and trims the User PATH. It leaves `%USERPROFILE%\.thoth\` alone (your config, auth, skills, sessions, logs) in case you're reinstalling.
 
 To nuke everything:
 
@@ -56975,7 +56975,7 @@ You hit a shebang-script invocation that bypassed the `.cmd` shim. Thoth resolve
 Your download of `install.ps1` picked up a UTF-8 BOM. The `irm | iex` form strips BOMs automatically; `[scriptblock]::Create((irm ...))` does not. Re-run with the simple `irm | iex` form, or download the script manually and save it without a BOM via `[IO.File]::WriteAllText($path, $text, (New-Object Text.UTF8Encoding $false))`.
 
 **Gateway won't stay running after restart.**
-Check `thoth gateway status` — it merges the schtasks entry, the Startup-folder shortcut (if used), and the live PID. If schtasks is registered but not running, group policy may be blocking `ONLOGON` triggers. Run `schtasks /Query /TN HermesGateway /V /FO LIST` to see the task's failure reason, or fall back to the Startup-folder path by uninstalling and reinstalling with `THOTH_GATEWAY_FORCE_STARTUP=1`.
+Check `thoth gateway status` — it merges the schtasks entry, the Startup-folder shortcut (if used), and the live PID. If schtasks is registered but not running, group policy may be blocking `ONLOGON` triggers. Run `schtasks /Query /TN Thoth_Gateway /V /FO LIST` to see the task's failure reason, or fall back to the Startup-folder path by uninstalling and reinstalling with `THOTH_GATEWAY_FORCE_STARTUP=1`.
 
 **`/edit` still does nothing after setting `$env:EDITOR`.**
 You set it in the current process only; close and reopen the shell, or set it at User scope in System Properties → Environment Variables. Verify with `echo $env:EDITOR` in a new PowerShell window.

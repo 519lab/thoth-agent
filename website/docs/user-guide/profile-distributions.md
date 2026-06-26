@@ -97,7 +97,7 @@ Create `~/.thoth/profiles/research-bot/distribution.yaml`:
 name: research-bot
 version: 1.0.0
 description: "Autonomous research assistant with arXiv and web tools"
-hermes_requires: ">=0.12.0"
+thoth_requires: ">=0.12.0"
 author: "Your Name"
 license: "MIT"
 
@@ -395,11 +395,11 @@ cd ~/.thoth/profiles/polymarket-trader
 git init && git add . && git commit -m "v1.0"
 git tag v1.0.0
 # Publish to a public GitHub repo
-git remote add origin https://github.com/you/hermes-polymarket-trader.git
+git remote add origin https://github.com/you/thoth-polymarket-trader.git
 git push -u origin main --tags
 
 # Anyone
-thoth profile install github.com/you/hermes-polymarket-trader --alias
+thoth profile install github.com/you/thoth-polymarket-trader --alias
 ```
 
 Tweet the install command. People who try it send you issues and PRs. If someone wants to customize, they fork — same git workflow everyone already knows.
@@ -413,7 +413,7 @@ You built Thoth-on-top — maybe a compliance-monitoring harness, a customer-sup
 name: telemetry-harness
 version: 2.3.1
 description: "Compliance telemetry harness — monitors and reviews regulated workflows"
-hermes_requires: ">=0.13.0"
+thoth_requires: ">=0.13.0"
 author: "Acme Compliance Inc."
 license: "Commercial"
 

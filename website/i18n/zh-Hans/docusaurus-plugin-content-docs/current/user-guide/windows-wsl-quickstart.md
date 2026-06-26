@@ -41,7 +41,7 @@ uv --version
 在 WSL 里 clone 本仓库（或你的 fork），进入目录后按 [安装说明](/getting-started/installation) 使用 `uv sync` / 文档中的推荐命令安装依赖。
 
 :::tip 路径与权限
-Thoth 默认配置目录为 `~/.hermes/`（在 WSL 内即 Linux 家目录）。请勿把 WSL 项目放在会被 Windows 杀毒实时深度扫描的极慢盘符上；推荐放在 WSL 文件系统（例如 `~/projects/...`）而非 `/mnt/c/...` 下的重度 IO 路径。
+Thoth 默认配置目录为 `~/.thoth/`（在 WSL 内即 Linux 家目录）。请勿把 WSL 项目放在会被 Windows 杀毒实时深度扫描的极慢盘符上；推荐放在 WSL 文件系统（例如 `~/projects/...`）而非 `/mnt/c/...` 下的重度 IO 路径。
 :::
 
 ## 4. 模型与 Tool Gateway

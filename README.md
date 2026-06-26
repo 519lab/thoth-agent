@@ -29,7 +29,7 @@ Use any model you want — [OpenRouter](https://openrouter.ai) (200+ models), [N
 <tr><td><b>Research-ready</b></td><td>Batch trajectory generation and trajectory compression for training the next generation of tool-calling models.</td></tr>
 </table>
 
-> **A note on the name:** the project is **Thoth**, and the command is now `thoth` — every example in this README uses it. The legacy `hermes` command still works as an alias, and installs keep their config under `~/.hermes` (the database stays named `hermes` too), so nothing breaks if you're upgrading. The remaining executable/namespace rename is in progress.
+> **A note on the name:** the project is **Thoth**, and the command is `thoth` — every example in this README uses it. Installs keep their config under `~/.thoth`, and the database is named `thoth`.
 
 ---
 
@@ -41,7 +41,7 @@ Use any model you want — [OpenRouter](https://openrouter.ai) (200+ models), [N
 curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | bash
 ```
 
-The installer brings up everything you need, including a `docker compose` PostgreSQL 17 service (port 5432, database `hermes`) and runs the schema migrations. Pass `--reset-db` if you want it to start from a clean database, or `--skip-postgres` to point at your own PostgreSQL.
+The installer brings up everything you need, including a `docker compose` PostgreSQL 17 service (port 5432, database `thoth`) and runs the schema migrations. Pass `--reset-db` if you want it to start from a clean database, or `--skip-postgres` to point at your own PostgreSQL.
 
 ### Windows (native, PowerShell) — Early Beta
 
@@ -51,11 +51,11 @@ The installer brings up everything you need, including a `docker compose` Postgr
 iex (irm https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.ps1)
 ```
 
-The installer handles everything: uv, Python 3.11, Node.js, ripgrep, ffmpeg, **and a portable Git Bash** (MinGit, unpacked to `%LOCALAPPDATA%\hermes\git` — no admin required, fully isolated from any system Git install) used to run shell commands. If you already have Git installed, it detects and uses that instead.
+The installer handles everything: uv, Python 3.11, Node.js, ripgrep, ffmpeg, **and a portable Git Bash** (MinGit, unpacked to `%LOCALAPPDATA%\thoth\git` — no admin required, fully isolated from any system Git install) used to run shell commands. If you already have Git installed, it detects and uses that instead.
 
 > **Android / Termux:** Termux installs a curated `.[termux]` extra because the full `.[all]` extra currently pulls Android-incompatible voice dependencies.
 >
-> **Windows paths:** Native Windows installs under `%LOCALAPPDATA%\hermes`; WSL2 installs under `~/.hermes` as on Linux. The only feature that currently needs WSL2 specifically is the browser-based dashboard chat pane (it uses a POSIX PTY — the classic CLI and gateway both run natively).
+> **Windows paths:** Native Windows installs under `%LOCALAPPDATA%\thoth`; WSL2 installs under `~/.thoth` as on Linux. The only feature that currently needs WSL2 specifically is the browser-based dashboard chat pane (it uses a POSIX PTY — the classic CLI and gateway both run natively).
 
 After installation:
 
@@ -74,16 +74,16 @@ Thoth uses **PostgreSQL 17** (with the `vector` and `pg_trgm` extensions) as the
 
 ```bash
 docker compose up -d postgres
-export THOTH_PG_DSN=postgresql://hermes:hermes@localhost:5432/hermes   # legacy THOTH_PG_DSN still works via the env bridge
+export THOTH_PG_DSN=postgresql://thoth:thoth@localhost:5432/thoth
 uv run alembic -c migrations/alembic.ini upgrade head
 ```
 
-**For production deploys:** point `THOTH_PG_DSN` (legacy `THOTH_PG_DSN` still honored via the env bridge) at any PostgreSQL 17+ instance with the `vector` and `pg_trgm` extensions installed, and run `alembic upgrade head` as part of your deploy.
+**For production deploys:** point `THOTH_PG_DSN` at any PostgreSQL 17+ instance with the `vector` and `pg_trgm` extensions installed, and run `alembic upgrade head` as part of your deploy.
 
 **Coming from an older SQLite-based install?** A one-shot importer is provided:
 
 ```bash
-uv run thoth db migrate-from-sqlite --sqlite-path ~/.hermes/state.db   # add --dry-run to preview
+uv run thoth db migrate-from-sqlite --sqlite-path ~/.thoth/state.db   # add --dry-run to preview
 ```
 
 ---

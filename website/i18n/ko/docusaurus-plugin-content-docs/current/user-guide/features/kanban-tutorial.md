@@ -10,7 +10,7 @@ thoth dashboard             # 브라우저에서 http://127.0.0.1:9119 열기
 # 왼쪽 네비게이션에서 Kanban 클릭
 ```
 
-dashboard는 시스템을 지켜보는 **사람인 당신**에게 가장 편한 인터페이스입니다. dispatcher가 spawn하는 agent worker는 dashboard나 CLI를 직접 보지 않습니다. 이들은 전용 `kanban_*` [toolset](./kanban#how-workers-interact-with-the-board) (`kanban_show`, `kanban_complete`, `kanban_block`, `kanban_heartbeat`, `kanban_comment`, `kanban_create`, `kanban_link`)으로 보드를 다룹니다. dashboard, CLI, worker tool은 모두 같은 board별 SQLite DB(기본 board는 `~/.hermes/kanban.db`, 이후 만든 board는 `~/.hermes/kanban/boards/<slug>/kanban.db`)를 통하므로, 어느 쪽에서 바꿔도 보드 상태는 일관됩니다.
+dashboard는 시스템을 지켜보는 **사람인 당신**에게 가장 편한 인터페이스입니다. dispatcher가 spawn하는 agent worker는 dashboard나 CLI를 직접 보지 않습니다. 이들은 전용 `kanban_*` [toolset](./kanban#how-workers-interact-with-the-board) (`kanban_show`, `kanban_complete`, `kanban_block`, `kanban_heartbeat`, `kanban_comment`, `kanban_create`, `kanban_link`)으로 보드를 다룹니다. dashboard, CLI, worker tool은 모두 같은 board별 SQLite DB(기본 board는 `~/.thoth/kanban.db`, 이후 만든 board는 `~/.thoth/kanban/boards/<slug>/kanban.db`)를 통하므로, 어느 쪽에서 바꿔도 보드 상태는 일관됩니다.
 
 이 튜토리얼은 계속 `default` board를 사용합니다. 프로젝트/레포/도메인별로 여러 개의 격리된 queue를 원한다면 개요 문서의 [Boards (멀티 프로젝트)](./kanban#boards-multi-project)를 보세요. CLI / dashboard / worker 흐름은 똑같고, worker는 물리적으로 다른 board의 task를 볼 수 없습니다.
 

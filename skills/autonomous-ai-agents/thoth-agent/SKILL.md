@@ -344,10 +344,10 @@ $THOTH_HOME/skills/        Installed skills
 
 **Substrate Edition (this fork) differences:** session + kanban + substrate
 state all live in **PostgreSQL** (DSN `THOTH_PG_DSN`; default
-`postgresql://hermes:hermes@localhost:5432/hermes`) rather than `state.db`.
+`postgresql://thoth:thoth@localhost:5432/thoth`) rather than `state.db`.
 The `state.db` SQLite file no longer exists in this fork. The installer's
 defaults place `THOTH_HOME` at `~/.thoth/` and the launcher at
-`thoth`; pass `--cli-name thoth-substrate --hermes-home ~/.thoth-substrate`
+`thoth`; pass `--cli-name thoth-substrate --thoth-home ~/.thoth-substrate`
 to coexist with an existing upstream install.
 
 Profiles use `~/.thoth/profiles/<name>/` with the same layout.

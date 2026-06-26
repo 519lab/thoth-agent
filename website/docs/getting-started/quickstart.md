@@ -250,8 +250,8 @@ thoth config set terminal.backend ssh       # Remote server
 
 ```bash
 # From the Thoth install directory (the curl installer placed it at
-# ~/.thoth/hermes-agent on Linux/macOS or %LOCALAPPDATA%\thoth\hermes-agent on Windows):
-cd ~/.thoth/hermes-agent
+# ~/.thoth/thoth-agent on Linux/macOS or %LOCALAPPDATA%\thoth\thoth-agent on Windows):
+cd ~/.thoth/thoth-agent
 uv pip install -e ".[voice]"
 # Includes faster-whisper for free local speech-to-text
 ```
@@ -287,7 +287,7 @@ ACP support ships with the standard `[all]` extras, so the curl installer alread
 thoth acp
 ```
 
-(If you installed without `[all]`, run `cd ~/.thoth/hermes-agent && uv pip install -e ".[acp]"` first.)
+(If you installed without `[all]`, run `cd ~/.thoth/thoth-agent && uv pip install -e ".[acp]"` first.)
 
 See [ACP Editor Integration](../user-guide/features/acp.md).
 
