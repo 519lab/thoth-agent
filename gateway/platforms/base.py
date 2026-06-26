@@ -477,7 +477,7 @@ from thoth_constants import get_thoth_dir
 
 GATEWAY_SECRET_CAPTURE_UNSUPPORTED_MESSAGE = (
     "Secure secret entry is not supported over messaging. "
-    "Load this skill in the local CLI to be prompted, or add the key to ~/.hermes/.env manually."
+    "Load this skill in the local CLI to be prompted, or add the key to ~/.thoth/.env manually."
 )
 
 
@@ -1028,10 +1028,10 @@ _PLAINTEXT_GATEWAY_RESTART_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"^(?:please\s+)?restart\s+(?:the\s+)?thoth\s+gateway[.!?\s]*$", re.IGNORECASE),
     re.compile(r"^(?:please\s+)?restart\s+thoth[.!?\s]*$", re.IGNORECASE),
     # Transition-window back-compat: users with muscle-memory for the pre-rename
-    # "hermes" phrasing still get a clean self-restart instead of falling through
+    # "thoth" phrasing still get a clean self-restart instead of falling through
     # to the LLM/tool path. Safe to drop once the rename has fully settled.
-    re.compile(r"^(?:please\s+)?restart\s+(?:the\s+)?hermes\s+gateway[.!?\s]*$", re.IGNORECASE),
-    re.compile(r"^(?:please\s+)?restart\s+hermes[.!?\s]*$", re.IGNORECASE),
+    re.compile(r"^(?:please\s+)?restart\s+(?:the\s+)?thoth\s+gateway[.!?\s]*$", re.IGNORECASE),
+    re.compile(r"^(?:please\s+)?restart\s+thoth[.!?\s]*$", re.IGNORECASE),
 )
 
 

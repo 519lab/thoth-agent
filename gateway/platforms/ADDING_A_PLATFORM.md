@@ -4,7 +4,7 @@ There are two ways to add a platform to the Thoth gateway:
 
 ## Plugin Path (Recommended for Community/Third-Party)
 
-Create a plugin directory in `~/.hermes/plugins/` (or under `plugins/platforms/`
+Create a plugin directory in `~/.thoth/plugins/` (or under `plugins/platforms/`
 for bundled plugins) with a `plugin.yaml` and `adapter.py`.  The adapter
 inherits from `BasePlatformAdapter` and registers via
 `ctx.register_platform()` in the `register(ctx)` entry point.  This requires
@@ -206,7 +206,7 @@ inappropriate formatting (e.g., markdown on platforms that don't render it).
 Add a named toolset for your platform:
 
 ```python
-"hermes-your-platform": {
+"thoth-your-platform": {
     "description": "Your Platform bot toolset",
     "tools": _THOTH_CORE_TOOLS,
     "includes": []
@@ -217,7 +217,7 @@ And add it to the `thoth-gateway` composite:
 
 ```python
 "thoth-gateway": {
-    "includes": [..., "hermes-your-platform"]
+    "includes": [..., "thoth-your-platform"]
 }
 ```
 

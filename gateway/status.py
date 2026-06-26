@@ -5,7 +5,7 @@ Provides PID-file based detection of whether the gateway daemon is running,
 used by send_message's check_fn to gate availability in the CLI.
 
 The PID file lives at ``{THOTH_HOME}/gateway.pid``.  THOTH_HOME defaults to
-``~/.hermes`` but can be overridden via the environment variable.  This means
+``~/.thoth`` but can be overridden via the environment variable.  This means
 separate THOTH_HOME directories naturally get separate PID files — a property
 that will be useful when we add named profiles (multiple agents running
 concurrently under distinct configurations).
@@ -66,7 +66,7 @@ def _get_lock_dir() -> Path:
     if override:
         return Path(override)
     state_home = Path(os.getenv("XDG_STATE_HOME", Path.home() / ".local" / "state"))
-    return state_home / "hermes" / _LOCKS_DIRNAME
+    return state_home / "thoth" / _LOCKS_DIRNAME
 
 
 def _utc_now_iso() -> str:
@@ -176,8 +176,8 @@ def _looks_like_gateway_process(pid: int) -> bool:
         "thoth_cli.main gateway",
         "thoth_cli/main.py gateway",
         "thoth gateway",
-        "hermes gateway",
-        "hermes-gateway",
+        "thoth gateway",
+        "thoth-gateway",
         "gateway/run.py",
     )
     return any(pattern in cmdline for pattern in patterns)
@@ -200,7 +200,7 @@ def _record_looks_like_gateway(record: dict[str, Any]) -> bool:
         "thoth_cli.main gateway",
         "thoth_cli/main.py gateway",
         "thoth gateway",
-        "hermes gateway",
+        "thoth gateway",
         "gateway/run.py",
     )
     return any(pattern in cmdline for pattern in patterns)
@@ -753,7 +753,7 @@ def release_all_scoped_locks(
 # unexpected kills — but that also means a --replace takeover target
 # exits 1, which tricks systemd into reviving it 30 seconds later,
 # starting a flap loop against the replacer when both services are
-# enabled in the user's systemd (e.g. ``hermes.service`` + ``hermes-
+# enabled in the user's systemd (e.g. ``thoth.service`` + ``thoth-
 # gateway.service``).
 #
 # The takeover marker breaks the loop: the replacer writes a short-lived

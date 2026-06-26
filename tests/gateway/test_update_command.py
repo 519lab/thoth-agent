@@ -81,7 +81,7 @@ class TestHandleUpdateCommand:
             # The handler does Path(__file__).parent.parent.resolve()
             # We need to make project_root / '.git' not exist.
             # Since Path(__file__) resolves to the real gateway/run.py,
-            # project_root will be the real hermes-agent dir (which HAS .git).
+            # project_root will be the real thoth-agent dir (which HAS .git).
             # Patch Path to control this.
             original_path = Path
 
@@ -205,7 +205,7 @@ class TestHandleUpdateCommand:
 
         with patch("gateway.run._thoth_home", thoth_home), \
              patch("gateway.run.__file__", fake_file), \
-             patch("shutil.which", side_effect=lambda x: "/usr/bin/thoth" if x == "hermes" else "/usr/bin/setsid"), \
+             patch("shutil.which", side_effect=lambda x: "/usr/bin/thoth" if x == "thoth" else "/usr/bin/setsid"), \
              patch("subprocess.Popen"):
             result = await runner._handle_update_command(event)
 
@@ -238,7 +238,7 @@ class TestHandleUpdateCommand:
 
         with patch("gateway.run._thoth_home", thoth_home), \
              patch("gateway.run.__file__", fake_file), \
-             patch("shutil.which", side_effect=lambda x: "/usr/bin/thoth" if x == "hermes" else "/usr/bin/setsid"), \
+             patch("shutil.which", side_effect=lambda x: "/usr/bin/thoth" if x == "thoth" else "/usr/bin/setsid"), \
              patch("subprocess.Popen"):
             await runner._handle_update_command(event)
 
@@ -292,7 +292,7 @@ class TestHandleUpdateCommand:
         mock_popen = MagicMock()
 
         def which_no_setsid(x):
-            if x == "hermes":
+            if x == "thoth":
                 return "/usr/bin/thoth"
             if x == "setsid":
                 return None

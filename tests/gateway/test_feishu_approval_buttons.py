@@ -123,7 +123,7 @@ class TestFeishuExecApproval:
         # Check buttons
         actions = card["elements"][1]["actions"]
         assert len(actions) == 4
-        action_names = [a["value"]["hermes_action"] for a in actions]
+        action_names = [a["value"]["thoth_action"] for a in actions]
         assert action_names == [
             "approve_once", "approve_session", "approve_always", "deny"
         ]
@@ -248,7 +248,7 @@ class TestFeishuUpdatePrompt:
         assert "Restore stashed changes after update?" in card["elements"][0]["content"]
         assert "Default: `y`" in card["elements"][0]["content"]
         actions = card["elements"][1]["actions"]
-        assert [a["value"]["hermes_update_prompt_action"] for a in actions] == ["y", "n"]
+        assert [a["value"]["thoth_update_prompt_action"] for a in actions] == ["y", "n"]
 
     @pytest.mark.asyncio
     async def test_stores_prompt_state(self):
@@ -435,7 +435,7 @@ class TestCardActionCallbackResponse:
     def test_drops_action_when_loop_not_ready(self, _patch_callback_card_types):
         adapter = _make_adapter()
         adapter._loop = None
-        data = _make_card_action_data({"hermes_action": "approve_once", "approval_id": 1})
+        data = _make_card_action_data({"thoth_action": "approve_once", "approval_id": 1})
 
         with patch("asyncio.run_coroutine_threadsafe") as mock_submit:
             response = adapter._on_card_action_trigger(data)
@@ -449,7 +449,7 @@ class TestCardActionCallbackResponse:
         adapter._loop = MagicMock()
         adapter._loop.is_closed = MagicMock(return_value=False)
         data = _make_card_action_data(
-            {"hermes_action": "approve_once", "approval_id": 1},
+            {"thoth_action": "approve_once", "approval_id": 1},
             open_id="ou_bob",
         )
         adapter._sender_name_cache["ou_bob"] = ("Bob", 9999999999)
@@ -470,7 +470,7 @@ class TestCardActionCallbackResponse:
         adapter._loop = MagicMock()
         adapter._loop.is_closed = MagicMock(return_value=False)
         data = _make_card_action_data(
-            {"hermes_action": "deny", "approval_id": 2},
+            {"thoth_action": "deny", "approval_id": 2},
         )
 
         with patch("asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro):
@@ -485,7 +485,7 @@ class TestCardActionCallbackResponse:
         adapter = _make_adapter()
         adapter._loop = MagicMock()
         adapter._loop.is_closed = MagicMock(return_value=False)
-        data = _make_card_action_data({"hermes_action": "approve_once"})
+        data = _make_card_action_data({"thoth_action": "approve_once"})
 
         with patch("asyncio.run_coroutine_threadsafe") as mock_submit:
             response = adapter._on_card_action_trigger(data)
@@ -511,7 +511,7 @@ class TestCardActionCallbackResponse:
         adapter._loop = MagicMock()
         adapter._loop.is_closed = MagicMock(return_value=False)
         data = _make_card_action_data(
-            {"hermes_action": "approve_session", "approval_id": 3},
+            {"thoth_action": "approve_session", "approval_id": 3},
             open_id="ou_unknown",
         )
 
@@ -526,7 +526,7 @@ class TestCardActionCallbackResponse:
         adapter._loop = MagicMock()
         adapter._loop.is_closed = MagicMock(return_value=False)
         data = _make_card_action_data(
-            {"hermes_action": "approve_once", "approval_id": 4},
+            {"thoth_action": "approve_once", "approval_id": 4},
             open_id="ou_expired",
         )
         adapter._sender_name_cache["ou_expired"] = ("Old Name", 1)
@@ -548,7 +548,7 @@ class TestCardActionCallbackResponse:
             "chat_id": "oc_12345",
         }
         data = _make_card_action_data(
-            {"hermes_update_prompt_action": "y", "update_prompt_id": 1},
+            {"thoth_update_prompt_action": "y", "update_prompt_id": 1},
             open_id="ou_bob",
         )
         adapter._sender_name_cache["ou_bob"] = ("Bob", 9999999999)
@@ -573,7 +573,7 @@ class TestCardActionCallbackResponse:
             "chat_id": "oc_12345",
         }
         data = _make_card_action_data(
-            {"hermes_update_prompt_action": "n", "update_prompt_id": 2},
+            {"thoth_update_prompt_action": "n", "update_prompt_id": 2},
         )
 
         with patch("asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro):
@@ -589,7 +589,7 @@ class TestCardActionCallbackResponse:
         adapter = _make_adapter()
         adapter._loop = MagicMock()
         adapter._loop.is_closed = MagicMock(return_value=False)
-        data = _make_card_action_data({"hermes_update_prompt_action": "y"})
+        data = _make_card_action_data({"thoth_update_prompt_action": "y"})
 
         with patch("asyncio.run_coroutine_threadsafe") as mock_submit:
             response = adapter._on_card_action_trigger(data)
@@ -603,7 +603,7 @@ class TestCardActionCallbackResponse:
         adapter._loop = MagicMock()
         adapter._loop.is_closed = MagicMock(return_value=False)
         data = _make_card_action_data(
-            {"hermes_update_prompt_action": "y", "update_prompt_id": 99},
+            {"thoth_update_prompt_action": "y", "update_prompt_id": 99},
         )
 
         with patch("asyncio.run_coroutine_threadsafe") as mock_submit:
@@ -623,7 +623,7 @@ class TestCardActionCallbackResponse:
             "chat_id": "oc_12345",
         }
         data = _make_card_action_data(
-            {"hermes_update_prompt_action": "y", "update_prompt_id": 1},
+            {"thoth_update_prompt_action": "y", "update_prompt_id": 1},
         )
 
         with patch("asyncio.run_coroutine_threadsafe", side_effect=RuntimeError("loop closed")):
@@ -643,7 +643,7 @@ class TestCardActionCallbackResponse:
         }
         adapter._allowed_group_users = {"ou_allowed"}
         data = _make_card_action_data(
-            {"hermes_update_prompt_action": "y", "update_prompt_id": 1},
+            {"thoth_update_prompt_action": "y", "update_prompt_id": 1},
             open_id="ou_intruder",
         )
 

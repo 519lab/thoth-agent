@@ -155,9 +155,9 @@ def _append_to_sqlite(session_id: str, message: dict) -> None:
     db = None
     try:
         from thoth_state import SessionDB
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         db = SessionDB()
-        _hermes_db.run_sync(db.append_message(
+        _thoth_db.run_sync(db.append_message(
             session_id=session_id,
             role=message.get("role", "assistant"),
             content=message.get("content"),

@@ -1,7 +1,7 @@
 """Tests for Discord thread participation persistence.
 
 Verifies that _threads (ThreadParticipationTracker) survives adapter restarts by
-being persisted to ~/.hermes/discord_threads.json.
+being persisted to ~/.thoth/discord_threads.json.
 """
 
 import json
