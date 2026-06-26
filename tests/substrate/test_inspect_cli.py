@@ -19,7 +19,7 @@ import pytest_asyncio
 
 from substrate import Substrate
 from substrate.cli import inspect as inspect_mod
-from substrate.events.hermes_hooks import on_user_message_async
+from substrate.events.thoth_hooks import on_user_message_async
 
 
 @pytest_asyncio.fixture

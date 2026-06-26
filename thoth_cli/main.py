@@ -10691,8 +10691,8 @@ def cmd_profile(args):
             print(f"Author:       {data['author']}")
         if data.get("license"):
             print(f"License:      {data['license']}")
-        if data.get("hermes_requires"):
-            print(f"Requires:     Thoth {data['hermes_requires']}")
+        if data.get("thoth_requires"):
+            print(f"Requires:     Thoth {data['thoth_requires']}")
         if data.get("source"):
             print(f"Source:       {data['source']}")
         if data.get("installed_at"):
@@ -10720,8 +10720,8 @@ def _render_distribution_plan(plan) -> None:
         print(f"  {mf.description}")
     if mf.author:
         print(f"  Author:   {mf.author}")
-    if mf.hermes_requires:
-        print(f"  Requires: Thoth {mf.hermes_requires}")
+    if mf.thoth_requires:
+        print(f"  Requires: Thoth {mf.thoth_requires}")
     print(f"  Source:   {plan.provenance}")
     print(f"  Target:   {plan.target_dir}")
     if plan.existing:
