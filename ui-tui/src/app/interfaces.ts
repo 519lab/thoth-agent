@@ -1,4 +1,4 @@
-import type { MouseTrackingMode, ScrollBoxHandle } from '@hermes/ink'
+import type { MouseTrackingMode, ScrollBoxHandle } from '@thoth/ink'
 import type { MutableRefObject, ReactNode, RefObject, SetStateAction } from 'react'
 
 import type { PasteEvent } from '../components/textInput.js'

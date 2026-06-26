@@ -278,7 +278,7 @@ Current color overrides:
 
 ```text
 ui-tui/
-  packages/hermes-ink/   forked Ink renderer (local dep)
+  packages/thoth-ink/   forked Ink renderer (local dep)
   src/
     entry.tsx            TTY gate + render()
     app.tsx              top-level Ink tree, composes src/app/*
@@ -330,7 +330,7 @@ ui-tui/
       text.ts            text helpers, ANSI detection, previews
 
     types/
-      hermes-ink.d.ts    type declarations for @hermes/ink
+      thoth-ink.d.ts    type declarations for @thoth/ink
 
     __tests__/           vitest suite
 ```

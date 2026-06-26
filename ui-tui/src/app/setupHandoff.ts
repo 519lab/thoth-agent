@@ -1,4 +1,4 @@
-import type { RunExternalProcess } from '@hermes/ink'
+import type { RunExternalProcess } from '@thoth/ink'
 
 import type { SetupStatusResponse } from '../gatewayTypes.js'
 import type { LaunchResult } from '../lib/externalCli.js'

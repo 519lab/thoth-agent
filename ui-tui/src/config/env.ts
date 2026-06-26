@@ -1,4 +1,4 @@
-import type { MouseTrackingMode } from '@hermes/ink'
+import type { MouseTrackingMode } from '@thoth/ink'
 import { isTermuxTuiMode } from '../lib/termux.js'
 
 const truthy = (v?: string) => /^(?:1|true|yes|on)$/i.test((v ?? '').trim())
