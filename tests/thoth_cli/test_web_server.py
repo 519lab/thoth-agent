@@ -951,13 +951,10 @@ class TestNewEndpoints:
         )
         assert resp.status_code == 400
 
-    @pytest.mark.skip(
-        reason="Phase 0 Task 23 TODO: analytics endpoint uses raw SQLite SQL "
-        "guarded by hasattr(db, '_conn') in web_server.py. Returns empty totals={} "
-        "on PG. Port raw SQL queries to asyncpg in a follow-up (Phase 0.5). "
-        "Task 28 cleanup."
-    )
     def test_analytics_usage(self):
+        # Phase 0 Task 23 (#244): analytics queries are now ported to PG, so
+        # the endpoint returns the real (here: empty-DB) shape with every
+        # ``totals`` key present rather than the old short-circuit stub.
         resp = self.client.get("/api/analytics/usage?days=7")
         assert resp.status_code == 200
         data = resp.json()
