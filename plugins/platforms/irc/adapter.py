@@ -637,7 +637,7 @@ def interactive_setup() -> None:
 
     from thoth_cli.cli_name import cli_name
     print()
-    print_success("IRC configuration saved to ~/.hermes/.env")
+    print_success("IRC configuration saved to ~/.thoth/.env")
     print_info(f"Restart the gateway for changes to take effect: {cli_name()} gateway restart")
 
 

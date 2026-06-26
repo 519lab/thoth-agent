@@ -29,7 +29,7 @@ def register_cli(subparser: argparse.ArgumentParser) -> None:
     run = sp.add_parser("run", help="Start a node server on this machine.")
     run.add_argument("--host", default="0.0.0.0")
     run.add_argument("--port", type=int, default=18789)
-    run.add_argument("--display-name", default="hermes-meet-node")
+    run.add_argument("--display-name", default="thoth-meet-node")
     run.set_defaults(func=node_command)
 
     lst = sp.add_parser("list", help="List approved remote nodes.")

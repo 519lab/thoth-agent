@@ -1,4 +1,4 @@
-"""hermes-memory-store — holographic memory plugin using MemoryProvider interface.
+"""thoth-memory-store — holographic memory plugin using MemoryProvider interface.
 
 Registers as a MemoryProvider plugin, giving the agent structured fact storage
 with entity resolution, trust scoring, and HRR-based compositional retrieval.
@@ -7,7 +7,7 @@ Original plugin by dusterbloom (PR #2351), adapted to the MemoryProvider ABC.
 
 Config in $THOTH_HOME/config.yaml (profile-scoped):
   plugins:
-    hermes-memory-store:
+    thoth-memory-store:
       db_path: $THOTH_HOME/memory_store.db   # omit to use the default
       auto_extract: false
       default_trust: 0.5
@@ -103,7 +103,7 @@ def _load_plugin_config() -> dict:
         import yaml
         with open(config_path, encoding="utf-8-sig") as f:
             all_config = yaml.safe_load(f) or {}
-        return cfg_get(all_config, "plugins", "hermes-memory-store", default={}) or {}
+        return cfg_get(all_config, "plugins", "thoth-memory-store", default={}) or {}
     except Exception:
         return {}
 
@@ -129,7 +129,7 @@ class HolographicMemoryProvider(MemoryProvider):
         return True  # SQLite is always available, numpy is optional
 
     def save_config(self, values, thoth_home):
-        """Write config to config.yaml under plugins.hermes-memory-store."""
+        """Write config to config.yaml under plugins.thoth-memory-store."""
         from pathlib import Path
         config_path = Path(thoth_home) / "config.yaml"
         try:
@@ -139,7 +139,7 @@ class HolographicMemoryProvider(MemoryProvider):
                 with open(config_path, encoding="utf-8-sig") as f:
                     existing = yaml.safe_load(f) or {}
             existing.setdefault("plugins", {})
-            existing["plugins"]["hermes-memory-store"] = values
+            existing["plugins"]["thoth-memory-store"] = values
             with open(config_path, "w", encoding="utf-8") as f:
                 yaml.dump(existing, f, default_flow_style=False)
         except Exception:
@@ -161,7 +161,7 @@ class HolographicMemoryProvider(MemoryProvider):
         _default_db = _thoth_home + "/memory_store.db"
         db_path = self._config.get("db_path", _default_db)
         # Expand $THOTH_HOME in user-supplied paths so config values like
-        # "$THOTH_HOME/memory_store.db" or "~/.hermes/memory_store.db" both
+        # "$THOTH_HOME/memory_store.db" or "~/.thoth/memory_store.db" both
         # resolve to the active profile's directory.
         if isinstance(db_path, str):
             db_path = db_path.replace("$THOTH_HOME", _thoth_home)

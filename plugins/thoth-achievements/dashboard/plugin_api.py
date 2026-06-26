@@ -1,6 +1,6 @@
 """Thoth Achievements dashboard plugin backend.
 
-Mounted at /api/plugins/hermes-achievements/ by Thoth dashboard.
+Mounted at /api/plugins/thoth-achievements/ by Thoth dashboard.
 """
 from __future__ import annotations
 
@@ -143,15 +143,15 @@ ACHIEVEMENTS: List[Dict[str, Any]] = [
 
 
 def state_path() -> Path:
-    return get_thoth_home() / "plugins" / "hermes-achievements" / "state.json"
+    return get_thoth_home() / "plugins" / "thoth-achievements" / "state.json"
 
 
 def snapshot_path() -> Path:
-    return get_thoth_home() / "plugins" / "hermes-achievements" / "scan_snapshot.json"
+    return get_thoth_home() / "plugins" / "thoth-achievements" / "scan_snapshot.json"
 
 
 def checkpoint_path() -> Path:
-    return get_thoth_home() / "plugins" / "hermes-achievements" / "scan_checkpoint.json"
+    return get_thoth_home() / "plugins" / "thoth-achievements" / "scan_checkpoint.json"
 
 
 def load_state() -> Dict[str, Any]:
@@ -934,7 +934,7 @@ def _start_background_scan() -> None:
         thread = threading.Thread(
             target=_run_scan_and_update_cache,
             kwargs={"publish_partial_snapshots": True},
-            name="hermes-achievements-scan",
+            name="thoth-achievements-scan",
             daemon=True,
         )
         _BACKGROUND_SCAN_THREAD = thread

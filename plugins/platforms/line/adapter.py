@@ -1565,7 +1565,7 @@ def interactive_setup() -> None:
     """Minimal stdin wizard for ``thoth setup line``.
 
     Mirrors the irc/teams style: prompts for the two required vars, plus
-    one optional public URL. Writes to ``~/.hermes/.env`` via ``thoth_cli.config``.
+    one optional public URL. Writes to ``~/.thoth/.env`` via ``thoth_cli.config``.
     """
     print()
     print("LINE Messaging API setup")
@@ -1577,7 +1577,7 @@ def interactive_setup() -> None:
     try:
         from thoth_cli.config import get_env_var, set_env_var
     except ImportError:
-        print("thoth_cli.config not available; set LINE_* vars manually in ~/.hermes/.env")
+        print("thoth_cli.config not available; set LINE_* vars manually in ~/.thoth/.env")
         return
 
     def _prompt(var: str, prompt: str, *, secret: bool = False) -> None:

@@ -16,7 +16,7 @@ thoth memory setup    # select "mem0"
 Or manually:
 ```bash
 thoth config set memory.provider mem0
-echo "MEM0_API_KEY=your-key" >> ~/.hermes/.env
+echo "MEM0_API_KEY=your-key" >> ~/.thoth/.env
 ```
 
 ## Config

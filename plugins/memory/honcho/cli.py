@@ -848,11 +848,11 @@ def cmd_peer(args) -> None:
     if user_name is None and ai_name is None and reasoning is None:
         # Show current values
         hosts = cfg.get("hosts", {})
-        hermes = hosts.get(_host_key(), {})
-        user = hermes.get('peerName') or cfg.get('peerName') or '(not set)'
-        ai = hermes.get('aiPeer') or cfg.get('aiPeer') or _host_key()
-        lvl = hermes.get("dialecticReasoningLevel") or cfg.get("dialecticReasoningLevel") or "low"
-        max_chars = hermes.get("dialecticMaxChars") or cfg.get("dialecticMaxChars") or 600
+        host_block = hosts.get(_host_key(), {})
+        user = host_block.get('peerName') or cfg.get('peerName') or '(not set)'
+        ai = host_block.get('aiPeer') or cfg.get('aiPeer') or _host_key()
+        lvl = host_block.get("dialecticReasoningLevel") or cfg.get("dialecticReasoningLevel") or "low"
+        max_chars = host_block.get("dialecticMaxChars") or cfg.get("dialecticMaxChars") or 600
         print("\nHoncho peers\n" + "─" * 40)
         print(f"  User peer:   {user}")
         print("    Your identity in Honcho. Messages you send build this peer's card.")
@@ -963,15 +963,15 @@ def cmd_tokens(args) -> None:
     """Show or set token budget settings."""
     cfg = _read_config()
     hosts = cfg.get("hosts", {})
-    hermes = hosts.get(_host_key(), {})
+    host_block = hosts.get(_host_key(), {})
 
     context = getattr(args, "context", None)
     dialectic = getattr(args, "dialectic", None)
 
     if context is None and dialectic is None:
-        ctx_tokens = hermes.get("contextTokens") or cfg.get("contextTokens") or "(Honcho default)"
-        d_chars = hermes.get("dialecticMaxChars") or cfg.get("dialecticMaxChars") or 600
-        d_level = hermes.get("dialecticReasoningLevel") or cfg.get("dialecticReasoningLevel") or "low"
+        ctx_tokens = host_block.get("contextTokens") or cfg.get("contextTokens") or "(Honcho default)"
+        d_chars = host_block.get("dialecticMaxChars") or cfg.get("dialecticMaxChars") or 600
+        d_level = host_block.get("dialecticReasoningLevel") or cfg.get("dialecticReasoningLevel") or "low"
         print("\nHoncho budgets\n" + "─" * 40)
         print()
         print(f"  Context     {ctx_tokens} tokens")

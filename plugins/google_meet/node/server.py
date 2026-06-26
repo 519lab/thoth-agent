@@ -46,7 +46,7 @@ class NodeServer:
         host: str = "127.0.0.1",
         port: int = 18789,
         token_path: Optional[Path] = None,
-        display_name: str = "hermes-meet-node",
+        display_name: str = "thoth-meet-node",
     ) -> None:
         self.host = host
         self.port = port
