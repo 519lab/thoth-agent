@@ -42,7 +42,7 @@ def _reset_caches():
 @pytest.fixture
 def thoth_home(tmp_path, monkeypatch):
     """Point Thoth at an isolated home directory."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     # Some modules cache get_thoth_home; clear if needed.
@@ -441,7 +441,7 @@ def test_apply_swallows_fetch_errors(monkeypatch, tmp_path):
 
 def test_env_loader_skips_when_disabled(tmp_path, monkeypatch):
     """No config.yaml present → no BSM call, no crash."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -452,7 +452,7 @@ def test_env_loader_skips_when_disabled(tmp_path, monkeypatch):
 
 
 def test_env_loader_calls_bsm_when_enabled(tmp_path, monkeypatch):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     (home / "config.yaml").write_text(
         "secrets:\n"

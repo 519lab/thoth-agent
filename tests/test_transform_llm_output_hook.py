@@ -50,7 +50,7 @@ def test_transform_llm_output_in_valid_hooks():
 
 def test_hook_receives_expected_kwargs(tmp_path, monkeypatch):
     """Hook callback should see response_text + session_id + model + platform."""
-    thoth_home = tmp_path / "hermes_test"
+    thoth_home = tmp_path / "thoth_test"
     thoth_home.mkdir(exist_ok=True)
     _make_enabled_plugin(
         thoth_home, "capture_hook",
@@ -111,7 +111,7 @@ def test_hook_exception_does_not_replace_response(tmp_path, monkeypatch):
     to the results list, and the walk in run_agent.py finds nothing to
     replace with.
     """
-    thoth_home = tmp_path / "hermes_test"
+    thoth_home = tmp_path / "thoth_test"
     thoth_home.mkdir(exist_ok=True)
     _make_enabled_plugin(
         thoth_home, "raising_hook",
