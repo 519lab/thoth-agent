@@ -1003,8 +1003,8 @@ class TestParseTargetRefMatrix:
 
     def test_matrix_user_mxid_is_explicit(self):
         """Matrix user MXIDs (@) are recognized as explicit targets."""
-        chat_id, thread_id, is_explicit = _parse_target_ref("matrix", "@hermes:matrix.org")
-        assert chat_id == "@hermes:matrix.org"
+        chat_id, thread_id, is_explicit = _parse_target_ref("matrix", "@thoth:matrix.org")
+        assert chat_id == "@thoth:matrix.org"
         assert thread_id is None
         assert is_explicit is True
 

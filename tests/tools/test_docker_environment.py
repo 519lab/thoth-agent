@@ -248,8 +248,8 @@ def _make_execute_only_env(forward_env=None):
     env._docker_exe = "/usr/bin/docker"
     # Base class attributes needed by unified execute()
     env._session_id = "test123"
-    env._snapshot_path = "/tmp/hermes-snap-test123.sh"
-    env._cwd_file = "/tmp/hermes-cwd-test123.txt"
+    env._snapshot_path = "/tmp/thoth-snap-test123.sh"
+    env._cwd_file = "/tmp/thoth-cwd-test123.txt"
     env._cwd_marker = "__THOTH_CWD_test123__"
     env._snapshot_ready = True
     env._last_sync_time = None

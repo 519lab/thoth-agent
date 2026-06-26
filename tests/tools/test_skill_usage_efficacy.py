@@ -26,7 +26,7 @@ def _write_skill(skills_dir: Path, name: str) -> None:
 @pytest.fixture
 def usage(tmp_path, monkeypatch):
     """Isolated THOTH_HOME with a fresh skill_usage module per test."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     (home / "skills").mkdir(parents=True)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     monkeypatch.setenv("THOTH_HOME", str(home))

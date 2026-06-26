@@ -19,7 +19,7 @@ for ``docker_run_as_host_user`` (gateway and CLI maps) and once for
 This test guards against future drift by extracting all three maps via source
 inspection and asserting they all bridge the same set of writable
 ``terminal.*`` keys.  Source inspection (rather than importing the live
-dicts) keeps the test independent of the user's ~/.hermes/config.yaml and
+dicts) keeps the test independent of the user's ~/.thoth/config.yaml and
 mirrors the pattern used in tests/thoth_cli/test_config_drift.py.
 """
 
