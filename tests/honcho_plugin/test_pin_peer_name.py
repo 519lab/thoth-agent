@@ -59,7 +59,7 @@ class TestPinPeerNameConfigParsing:
             "apiKey": "k",
             "peerName": "Igor",
             "hosts": {
-                "hermes": {"pinPeerName": True},
+                "thoth": {"pinPeerName": True},
             },
         }))
         monkeypatch.setenv("THOTH_HOME", str(tmp_path / "isolated"))
@@ -75,7 +75,7 @@ class TestPinPeerNameConfigParsing:
             "peerName": "Igor",
             "pinPeerName": True,
             "hosts": {
-                "hermes": {"pinPeerName": False},
+                "thoth": {"pinPeerName": False},
             },
         }))
         monkeypatch.setenv("THOTH_HOME", str(tmp_path / "isolated"))
@@ -216,7 +216,7 @@ class TestPeerResolutionOrder:
             api_key="k",
             peer_name="Igor",
             pin_peer_name=True,
-            ai_peer="hermes-assistant",
+            ai_peer="thoth-assistant",
             enabled=False,
             write_frequency="turn",
         )
@@ -229,7 +229,7 @@ class TestPeerResolutionOrder:
 
         session = mgr.get_or_create("telegram:86701400")
         assert session.user_peer_id == "Igor"
-        assert session.assistant_peer_id == "hermes-assistant"
+        assert session.assistant_peer_id == "thoth-assistant"
 
 
 class TestCrossPlatformMemoryUnification:

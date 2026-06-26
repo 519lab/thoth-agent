@@ -1070,7 +1070,7 @@ class TestDiskFailureMarker:
 # ---------------------------------------------------------------------------
 
 class TestThothHomeIsolation:
-    def test_thoth_bin_dir_respects_hermes_home(self):
+    def test_thoth_bin_dir_respects_thoth_home(self):
         """_thoth_bin_dir must use THOTH_HOME, not hardcoded ~/.thoth."""
         from tools.tirith_security import _thoth_bin_dir
         import tempfile

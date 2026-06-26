@@ -372,7 +372,7 @@ class HonchoMemoryProvider(MemoryProvider):
                 gateway_session_key=gateway_session_key,
             )
             or session_id
-            or "hermes-default"
+            or "thoth-default"
         )
         logger.debug("Honcho session key resolved: %s", self._session_key)
 
@@ -454,7 +454,7 @@ class HonchoMemoryProvider(MemoryProvider):
         try:
             self._do_session_init(
                 self._config,
-                self._lazy_init_session_id or "hermes-default",
+                self._lazy_init_session_id or "thoth-default",
                 **self._lazy_init_kwargs,
             )
             # Clear lazy refs

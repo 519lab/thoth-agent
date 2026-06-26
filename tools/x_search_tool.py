@@ -5,7 +5,7 @@ Authentication
 --------------
 The tool registers when **either** xAI credential path is available:
 
-* ``XAI_API_KEY`` is set in ``~/.hermes/.env`` or the process environment
+* ``XAI_API_KEY`` is set in ``~/.thoth/.env`` or the process environment
   (paid xAI API key), OR
 * The user is signed in via xAI Grok OAuth — SuperGrok subscription —
   i.e. ``thoth auth add xai-oauth`` has been run and the stored refresh

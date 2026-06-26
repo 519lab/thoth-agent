@@ -646,6 +646,3 @@ def build_oauth_auth(
         callback_handler=_wait_for_callback,
         timeout=float(cfg.get("timeout", 300)),
     )
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-HermesTokenStorage = ThothTokenStorage
