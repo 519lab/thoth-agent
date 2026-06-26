@@ -6,7 +6,7 @@ Connects to external MCP servers via stdio, HTTP/StreamableHTTP, or SSE
 transport, discovers their tools, and registers them into the thoth-agent
 tool registry so the agent can call them like any built-in tool.
 
-Configuration is read from ~/.hermes/config.yaml under the ``mcp_servers`` key.
+Configuration is read from ~/.thoth/config.yaml under the ``mcp_servers`` key.
 The ``mcp`` Python package is optional -- if not installed, this module is a
 no-op and logs a debug message.
 
@@ -108,7 +108,7 @@ logger = logging.getLogger(__name__)
 # corrupts the display and can hang the session.
 #
 # Instead we redirect every stdio MCP subprocess's stderr into a shared
-# per-profile log file (~/.hermes/logs/mcp-stderr.log), tagged with the
+# per-profile log file (~/.thoth/logs/mcp-stderr.log), tagged with the
 # server name so individual servers remain debuggable.
 #
 # Fallback is os.devnull if opening the log file fails for any reason.
@@ -416,7 +416,7 @@ def _resolve_stdio_command(command: str, env: dict) -> tuple[str, dict]:
         elif resolved_command in {"npx", "npm", "node"}:
             thoth_home = os.path.expanduser(
                 os.getenv(
-                    "THOTH_HOME", os.path.join(os.path.expanduser("~"), ".hermes")
+                    "THOTH_HOME", os.path.join(os.path.expanduser("~"), ".thoth")
                 )
             )
             candidates = [
@@ -1291,7 +1291,7 @@ class MCPServerTask:
         # Redirect subprocess stderr into a shared log file so MCP servers
         # (FastMCP banners, slack-mcp startup JSON, etc.) don't dump onto
         # the user's TTY and corrupt the TUI.  Preserves debuggability via
-        # ~/.hermes/logs/mcp-stderr.log.
+        # ~/.thoth/logs/mcp-stderr.log.
         _write_stderr_log_header(self.name)
         _errlog = _get_mcp_stderr_log()
         try:
@@ -1926,7 +1926,7 @@ def _handle_auth_error_and_retry(
         "error": (
             f"MCP server '{server_name}' requires re-authentication. "
             f"Run `thoth mcp login {server_name}` (or delete the tokens "
-            f"file under ~/.hermes/mcp-tokens/ and restart). Do NOT retry "
+            f"file under ~/.thoth/mcp-tokens/ and restart). Do NOT retry "
             f"this tool — ask the user to re-authenticate."
         ),
         "needs_reauth": True,
@@ -2243,7 +2243,7 @@ def _load_mcp_config() -> Dict[str, dict]:
     ``timeout``, ``connect_timeout``, and ``auth`` overrides.
 
     ``${ENV_VAR}`` placeholders in string values are resolved from
-    ``os.environ`` (which includes ``~/.hermes/.env`` loaded at startup).
+    ``os.environ`` (which includes ``~/.thoth/.env`` loaded at startup).
     """
     try:
         from thoth_cli.config import load_config

@@ -52,20 +52,20 @@ def _load_plugin_init():
     plugin_dir = repo_root / "plugins" / "disk-cleanup"
     # Use the PluginManager's module naming convention so relative imports work.
     spec = importlib.util.spec_from_file_location(
-        "hermes_plugins.disk_cleanup",
+        "thoth_plugins.disk_cleanup",
         plugin_dir / "__init__.py",
         submodule_search_locations=[str(plugin_dir)],
     )
     # Ensure parent namespace package exists for the relative `. import disk_cleanup`
     import types
-    if "hermes_plugins" not in sys.modules:
-        ns = types.ModuleType("hermes_plugins")
+    if "thoth_plugins" not in sys.modules:
+        ns = types.ModuleType("thoth_plugins")
         ns.__path__ = []
-        sys.modules["hermes_plugins"] = ns
+        sys.modules["thoth_plugins"] = ns
     mod = importlib.util.module_from_spec(spec)
-    mod.__package__ = "hermes_plugins.disk_cleanup"
+    mod.__package__ = "thoth_plugins.disk_cleanup"
     mod.__path__ = [str(plugin_dir)]
-    sys.modules["hermes_plugins.disk_cleanup"] = mod
+    sys.modules["thoth_plugins.disk_cleanup"] = mod
     spec.loader.exec_module(mod)
     return mod
 
@@ -88,7 +88,7 @@ class TestIsSafePath:
 
     def test_accepts_tmp_thoth_prefix(self, _isolate_env, tmp_path):
         dg = _load_lib()
-        assert dg.is_safe_path(Path("/tmp/hermes-abc/x.log")) is True
+        assert dg.is_safe_path(Path("/tmp/thoth-abc/x.log")) is True
 
     def test_rejects_plain_tmp(self, _isolate_env):
         dg = _load_lib()

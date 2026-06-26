@@ -15,8 +15,8 @@ Rules:
   - chrome-profile→ prompt after 14 days (deep only)
   - >500 MB files → prompt always (deep only)
 
-Scope: strictly THOTH_HOME and /tmp/hermes-* or /tmp/thoth-*
-Never touches: ~/.hermes/logs/ or any system directory.
+Scope: strictly THOTH_HOME and /tmp/thoth-* or /tmp/thoth-*
+Never touches: ~/.thoth/logs/ or any system directory.
 """
 
 from __future__ import annotations
@@ -64,7 +64,7 @@ def get_log_file() -> Path:
 # ---------------------------------------------------------------------------
 
 def is_safe_path(path: Path) -> bool:
-    """Accept only paths under THOTH_HOME or ``/tmp/hermes-*`` / ``/tmp/thoth-*``.
+    """Accept only paths under THOTH_HOME or ``/tmp/thoth-*`` / ``/tmp/thoth-*``.
 
     Rejects Windows mounts (``/mnt/c`` etc.) and any system directory.
     """
@@ -74,10 +74,10 @@ def is_safe_path(path: Path) -> bool:
         return True
     except (ValueError, OSError):
         pass
-    # Allow /tmp/hermes-* and /tmp/thoth-* explicitly
+    # Allow /tmp/thoth-* and /tmp/thoth-* explicitly
     parts = path.parts
     if len(parts) >= 3 and parts[1] == "tmp" and (
-        parts[2].startswith("hermes-") or parts[2].startswith("thoth-")
+        parts[2].startswith("thoth-") or parts[2].startswith("thoth-")
     ):
         return True
     return False
@@ -300,7 +300,7 @@ def quick() -> Dict[str, Any]:
     _PROTECTED_TOP_LEVEL = {
         "logs", "memories", "sessions", "cron", "cronjobs",
         "cache", "skills", "plugins", "disk-cleanup", "optional-skills",
-        "hermes-agent", "backups", "profiles", ".worktrees",
+        "thoth-agent", "backups", "profiles", ".worktrees",
     }
     empty_removed = 0
     try:
@@ -479,7 +479,7 @@ def guess_category(path: Path) -> Optional[str]:
         if top in {
             "disk-cleanup", "logs", "memories", "sessions", "config.yaml",
             "skills", "plugins", ".env", "USER.md", "MEMORY.md", "SOUL.md",
-            "auth.json", "hermes-agent",
+            "auth.json", "thoth-agent",
         }:
             return None
         if top == "cron" or top == "cronjobs":
@@ -487,7 +487,7 @@ def guess_category(path: Path) -> Optional[str]:
         if top == "cache":
             return "temp"
     except ValueError:
-        # Path isn't under THOTH_HOME (e.g. /tmp/hermes-* or /tmp/thoth-*) — fall through.
+        # Path isn't under THOTH_HOME (e.g. /tmp/thoth-* or /tmp/thoth-*) — fall through.
         pass
 
     name = path.name

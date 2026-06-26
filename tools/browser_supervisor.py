@@ -62,7 +62,7 @@ RECENT_DIALOGS_MAX = 20
 # Magic host the injected dialog bridge XHRs to.  Intercepted via the CDP
 # Fetch domain before any network resolution happens, so the hostname never
 # has to exist.  Keep this ASCII + URL-safe; we also gate Fetch patterns on it.
-DIALOG_BRIDGE_HOST = "hermes-dialog-bridge.invalid"
+DIALOG_BRIDGE_HOST = "thoth-dialog-bridge.invalid"
 DIALOG_BRIDGE_URL_PATTERN = f"http://{DIALOG_BRIDGE_HOST}/*"
 
 # Script injected into every frame via Page.addScriptToEvaluateOnNewDocument.
@@ -72,9 +72,9 @@ DIALOG_BRIDGE_URL_PATTERN = f"http://{DIALOG_BRIDGE_HOST}/*"
 # in the first place — the overrides take precedence.
 _DIALOG_BRIDGE_SCRIPT = r"""
 (() => {
-  if (window.__hermesDialogBridgeInstalled) return;
-  window.__hermesDialogBridgeInstalled = true;
-  const ENDPOINT = "http://hermes-dialog-bridge.invalid/";
+  if (window.__thothDialogBridgeInstalled) return;
+  window.__thothDialogBridgeInstalled = true;
+  const ENDPOINT = "http://thoth-dialog-bridge.invalid/";
   function ask(kind, message, defaultPrompt) {
     try {
       const xhr = new XMLHttpRequest();

@@ -40,7 +40,7 @@ SKILL.md Format (YAML Frontmatter, agentskills.io compatible):
       commands: [curl, jq]        #   Command checks remain advisory only.
     compatibility: Requires X     # Optional (agentskills.io)
     metadata:                     # Optional, arbitrary key-value (agentskills.io)
-      hermes:
+      thoth:
         tags: [fine-tuning, llm]
         related_skills: [peft, lora]
     ---
@@ -84,7 +84,7 @@ from agent.skill_utils import EXCLUDED_SKILL_DIRS as _EXCLUDED_SKILL_DIRS
 logger = logging.getLogger(__name__)
 
 
-# All skills live in ~/.hermes/skills/ (seeded from bundled skills/ on install).
+# All skills live in ~/.thoth/skills/ (seeded from bundled skills/ on install).
 # This is the single source of truth -- agent edits, hub installs, and bundled
 # skills all coexist here without polluting the git repo.
 THOTH_HOME = get_thoth_home()
@@ -448,7 +448,7 @@ def _get_category_from_path(skill_path: Path) -> Optional[str]:
     """
     Extract category from skill path based on directory structure.
 
-    For paths like: ~/.hermes/skills/mlops/axolotl/SKILL.md -> "mlops"
+    For paths like: ~/.thoth/skills/mlops/axolotl/SKILL.md -> "mlops"
     Also works for external skill dirs configured via skills.external_dirs.
     """
     # Try the module-level SKILLS_DIR first (respects monkeypatching in tests),
@@ -548,7 +548,7 @@ def _is_skill_disabled(name: str, platform: str = None) -> bool:
 
 
 def _find_all_skills(*, skip_disabled: bool = False) -> List[Dict[str, Any]]:
-    """Recursively find all skills in ~/.hermes/skills/ and external dirs.
+    """Recursively find all skills in ~/.thoth/skills/ and external dirs.
 
     Args:
         skip_disabled: If True, return ALL skills regardless of disabled
@@ -1083,7 +1083,7 @@ def skill_view(
         if _outside_skills_dir or _injection_detected:
             _warnings = []
             if _outside_skills_dir:
-                _warnings.append(f"skill file is outside the trusted skills directory (~/.hermes/skills/): {skill_md}")
+                _warnings.append(f"skill file is outside the trusted skills directory (~/.thoth/skills/): {skill_md}")
             if _injection_detected:
                 _warnings.append("skill content contains patterns that may indicate prompt injection")
             logging.getLogger(__name__).warning("Skill security warning for '%s': %s", name, "; ".join(_warnings))
@@ -1268,11 +1268,11 @@ def skill_view(
                     )
 
         # Read tags/related_skills with backward compat:
-        # Check metadata.hermes.* first (agentskills.io convention), fall back to top-level
+        # Check metadata.thoth.* first (agentskills.io convention), fall back to top-level
         thoth_meta = {}
         metadata = frontmatter.get("metadata")
         if isinstance(metadata, dict):
-            thoth_meta = metadata.get("hermes", {}) or {}
+            thoth_meta = metadata.get("thoth", {}) or {}
 
         tags = _parse_tags(thoth_meta.get("tags") or frontmatter.get("tags", ""))
         related_skills = _parse_tags(

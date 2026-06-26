@@ -46,12 +46,12 @@ DeleteFn = Callable[[list[str]], None]  # (remote_paths) -> raises on failure
 GetFilesFn = Callable[[], list[tuple[str, str]]]  # () -> [(host_path, remote_path), ...]
 
 
-def iter_sync_files(container_base: str = "/root/.hermes") -> list[tuple[str, str]]:
+def iter_sync_files(container_base: str = "/root/.thoth") -> list[tuple[str, str]]:
     """Enumerate all files that should be synced to a remote environment.
 
     Combines credentials, skills, and cache into a single flat list of
     (host_path, remote_path) pairs.  Credential paths are remapped from
-    the hardcoded /root/.hermes to *container_base* because the remote
+    the hardcoded /root/.thoth to *container_base* because the remote
     user's home may differ (e.g. /home/daytona, /home/user).
     """
     # Late import: credential_files imports agent modules that create
@@ -65,7 +65,7 @@ def iter_sync_files(container_base: str = "/root/.hermes") -> list[tuple[str, st
     files: list[tuple[str, str]] = []
     for entry in get_credential_file_mounts():
         remote = entry["container_path"].replace(
-            "/root/.hermes", container_base, 1
+            "/root/.thoth", container_base, 1
         )
         files.append((entry["host_path"], remote))
     for entry in iter_skills_files(container_base=container_base):
@@ -216,7 +216,7 @@ class FileSyncManager:
     def sync_back(self, thoth_home: Path | None = None) -> None:
         """Pull remote changes back to the host filesystem.
 
-        Downloads the remote ``.hermes/`` directory as a tar archive,
+        Downloads the remote ``.thoth/`` directory as a tar archive,
         unpacks it, and applies only files that differ from what was
         originally pushed (based on SHA-256 content hashes).
 
@@ -228,7 +228,7 @@ class FileSyncManager:
 
         # Nothing was ever committed through this manager — the initial
         # push failed or never ran. Skip sync_back to avoid retry storms
-        # against an uninitialized remote .hermes/ directory.
+        # against an uninitialized remote .thoth/ directory.
         if not self._pushed_hashes and not self._synced_files:
             logger.debug("sync_back: no prior push state — skipping")
             return
@@ -322,7 +322,7 @@ class FileSyncManager:
                 )
                 return
 
-            with tempfile.TemporaryDirectory(prefix="hermes-sync-back-") as staging:
+            with tempfile.TemporaryDirectory(prefix="thoth-sync-back-") as staging:
                 with tarfile.open(tf.name) as tar:
                     tar.extractall(staging, filter="data")
 
@@ -388,9 +388,9 @@ class FileSyncManager:
 
         Uses the existing file mapping to find a remote->host directory
         pair, then applies the same prefix substitution to the new file.
-        For example, if the mapping has ``/root/.hermes/skills/a.md`` →
-        ``~/.hermes/skills/a.md``, a new remote file at
-        ``/root/.hermes/skills/b.md`` maps to ``~/.hermes/skills/b.md``.
+        For example, if the mapping has ``/root/.thoth/skills/a.md`` →
+        ``~/.thoth/skills/a.md``, a new remote file at
+        ``/root/.thoth/skills/b.md`` maps to ``~/.thoth/skills/b.md``.
         """
         mapping = file_mapping if file_mapping is not None else []
         for host, remote in mapping:

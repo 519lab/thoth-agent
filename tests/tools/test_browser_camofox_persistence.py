@@ -76,7 +76,7 @@ class TestEphemeralMode:
         monkeypatch.setenv("CAMOFOX_URL", "http://localhost:9377")
 
         session = _get_session("task-1")
-        assert session["user_id"].startswith("hermes_")
+        assert session["user_id"].startswith("thoth_")
         assert session["managed"] is False
 
     def test_different_tasks_get_different_user_ids(self, tmp_path, monkeypatch):

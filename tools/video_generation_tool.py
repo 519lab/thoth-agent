@@ -65,7 +65,7 @@ VIDEO_GENERATE_SCHEMA: Dict[str, Any] = {
     # actual capabilities (which modalities / resolutions / duration
     # ranges the user's currently-selected model supports).
     # See _build_dynamic_video_schema() below and the dynamic-tool-schemas
-    # skill at github/hermes-agent-dev/references/dynamic-tool-schemas.md.
+    # skill at github/thoth-agent-dev/references/dynamic-tool-schemas.md.
     "description": "(rebuilt at get_definitions() time — see _build_dynamic_video_schema)",
     "parameters": {
         "type": "object",

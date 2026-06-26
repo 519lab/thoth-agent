@@ -826,10 +826,10 @@ class TeamsAdapter(BasePlatformAdapter):
 
         action = ctx.activity.value.action
         data = action.data or {}
-        hermes_action = data.get("hermes_action", "")
+        thoth_action = data.get("thoth_action", "")
         session_key = data.get("session_key", "")
 
-        if not hermes_action or not session_key:
+        if not thoth_action or not session_key:
             return InvokeResponse(
                 status=200,
                 body=AdaptiveCardActionMessageResponse(value="Unknown action."),
@@ -871,7 +871,7 @@ class TeamsAdapter(BasePlatformAdapter):
             "approve_always": "always",
             "deny": "deny",
         }
-        choice = choice_map.get(hermes_action)
+        choice = choice_map.get(thoth_action)
         if not choice:
             return InvokeResponse(
                 status=200,
@@ -944,24 +944,24 @@ class TeamsAdapter(BasePlatformAdapter):
             .with_actions([
                 ExecuteAction(
                     title="Allow Once",
-                    verb="hermes_approve",
-                    data={**btn_data_base, "hermes_action": "approve_once"},
+                    verb="thoth_approve",
+                    data={**btn_data_base, "thoth_action": "approve_once"},
                     style="positive",
                 ),
                 ExecuteAction(
                     title="Allow Session",
-                    verb="hermes_approve",
-                    data={**btn_data_base, "hermes_action": "approve_session"},
+                    verb="thoth_approve",
+                    data={**btn_data_base, "thoth_action": "approve_session"},
                 ),
                 ExecuteAction(
                     title="Always Allow",
-                    verb="hermes_approve",
-                    data={**btn_data_base, "hermes_action": "approve_always"},
+                    verb="thoth_approve",
+                    data={**btn_data_base, "thoth_action": "approve_always"},
                 ),
                 ExecuteAction(
                     title="Deny",
-                    verb="hermes_approve",
-                    data={**btn_data_base, "hermes_action": "deny"},
+                    verb="thoth_approve",
+                    data={**btn_data_base, "thoth_action": "deny"},
                     style="destructive",
                 ),
             ])

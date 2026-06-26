@@ -286,7 +286,7 @@ class TestFileSync:
             lambda: [
                 {
                     "host_path": str(src),
-                    "container_path": "/root/.hermes/credentials/token.txt",
+                    "container_path": "/root/.thoth/credentials/token.txt",
                 }
             ],
         )
@@ -298,7 +298,7 @@ class TestFileSync:
         uploaded = vercel_sdk.current.write_files_calls[0]
         assert uploaded == [
             {
-                "path": "/home/vercel/.hermes/credentials/token.txt",
+                "path": "/home/vercel/.thoth/credentials/token.txt",
                 "content": b"secret-token",
             }
         ]
@@ -313,7 +313,7 @@ class TestFileSync:
             lambda: [
                 {
                     "host_path": str(src),
-                    "container_path": "/root/.hermes/credentials/token.txt",
+                    "container_path": "/root/.thoth/credentials/token.txt",
                 }
             ],
         )
@@ -330,7 +330,7 @@ class TestFileSync:
         assert result == {"output": "hello\n", "returncode": 0}
         assert vercel_sdk.current.write_files_calls[-1] == [
             {
-                "path": "/home/vercel/.hermes/credentials/token.txt",
+                "path": "/home/vercel/.thoth/credentials/token.txt",
                 "content": b"updated-secret-token",
             }
         ]
@@ -347,7 +347,7 @@ class TestFileSync:
             lambda: [
                 {
                     "host_path": str(src),
-                    "container_path": "/root/.hermes/credentials/token.txt",
+                    "container_path": "/root/.thoth/credentials/token.txt",
                 }
             ],
         )
@@ -364,9 +364,9 @@ class TestFileSync:
         sandbox.snapshot_id = "snap_cleanup"
         vercel_sdk.current.download_file_content = _tar_bytes(
             {
-                "home/vercel/.hermes/credentials/token.txt": b"remote-token",
-                "home/vercel/.hermes/credentials/new.txt": b"new-remote",
-                "home/vercel/.hermes/unmapped/skip.txt": b"skip",
+                "home/vercel/.thoth/credentials/token.txt": b"remote-token",
+                "home/vercel/.thoth/credentials/new.txt": b"new-remote",
+                "home/vercel/.thoth/unmapped/skip.txt": b"skip",
             }
         )
 
@@ -391,7 +391,7 @@ class TestFileSync:
             lambda: [
                 {
                     "host_path": str(src),
-                    "container_path": "/root/.hermes/credentials/token.txt",
+                    "container_path": "/root/.thoth/credentials/token.txt",
                 }
             ],
         )

@@ -20,7 +20,7 @@ def has_xai_credentials() -> bool:
     Resolution order, fast-to-slow:
 
     1. ``XAI_API_KEY`` env var (cheapest; covers explicit-key users).
-    2. ``~/.hermes/auth.json`` has a non-empty ``providers.xai-oauth.tokens.access_token``
+    2. ``~/.thoth/auth.json`` has a non-empty ``providers.xai-oauth.tokens.access_token``
        (single file read, no expiry check, no refresh).
 
     Returns False on any exception so a corrupted auth store can't block
@@ -46,7 +46,7 @@ def has_xai_credentials() -> bool:
 
 
 def get_env_value(name: str, default=None):
-    """Read ``name`` from ``~/.hermes/.env`` first, then ``os.environ``.
+    """Read ``name`` from ``~/.thoth/.env`` first, then ``os.environ``.
 
     Wraps :func:`thoth_cli.config.get_env_value` so tests can patch
     ``tools.xai_http.get_env_value`` to inject dotenv-only secrets into the
@@ -77,7 +77,7 @@ def resolve_xai_http_credentials(*, force_refresh: bool = False) -> Dict[str, st
 
     Prefers Thoth-managed xAI OAuth credentials when available, then falls back
     to ``XAI_API_KEY`` resolved via ``thoth_cli.config.get_env_value`` so keys
-    stored in ``~/.hermes/.env`` (the standard Thoth location) are honored —
+    stored in ``~/.thoth/.env`` (the standard Thoth location) are honored —
     not just ones already exported into ``os.environ``. This keeps direct xAI
     endpoints (images, TTS, STT, etc.) aligned with the main runtime auth model
     and preserves the regression contract from PR #17140 / #17163.

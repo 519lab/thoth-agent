@@ -2,7 +2,7 @@
 
 Auto-tracks and cleans up ephemeral files created during Thoth Agent
 sessions — test scripts, temp outputs, cron logs, stale chrome profiles.
-Scoped strictly to `$THOTH_HOME` and `/tmp/hermes-*` / `/tmp/thoth-*`.
+Scoped strictly to `$THOTH_HOME` and `/tmp/thoth-*` / `/tmp/thoth-*`.
 
 Originally contributed by [@LVT382009](https://github.com/LVT382009) as a
 skill in PR #12212.  Ported to the plugin system so the behaviour runs
@@ -41,7 +41,7 @@ Deletion rules (same as the original PR):
 
 ## Safety
 
-- `is_safe_path()` rejects anything outside `THOTH_HOME` or `/tmp/hermes-*` / `/tmp/thoth-*`
+- `is_safe_path()` rejects anything outside `THOTH_HOME` or `/tmp/thoth-*` / `/tmp/thoth-*`
 - Windows mounts (`/mnt/c` etc.) are rejected
 - The state directory `$THOTH_HOME/disk-cleanup/` is itself excluded
 - `$THOTH_HOME/logs/`, `memories/`, `sessions/`, `skills/`, `plugins/`,

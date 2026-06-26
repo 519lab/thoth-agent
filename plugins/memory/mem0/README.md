@@ -25,8 +25,8 @@ Config file: `$THOTH_HOME/mem0.json`
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `user_id` | `hermes-user` | User identifier on Mem0 |
-| `agent_id` | `hermes` | Agent identifier |
+| `user_id` | `thoth-user` | User identifier on Mem0 |
+| `agent_id` | `thoth` | Agent identifier |
 | `rerank` | `true` | Enable reranking for recall |
 
 ## Tools
