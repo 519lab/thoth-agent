@@ -24,21 +24,50 @@ const config: Config = {
 
   i18n: {
     defaultLocale: 'en',
-    locales: ['en', 'zh-Hans', 'ko'],
+    // English-only until the docs are substantially translated — building all
+    // locales shipped ~650 untranslated English pages under /zh-Hans/ and /ko/
+    // (duplicate content + "pick 中文 → get English" UX). Re-add 'zh-Hans','ko'
+    // here (and the localeDropdown below) once website/i18n/ is populated; the
+    // localeConfigs are kept ready for that.
+    locales: ['en'],
     localeConfigs: {
+      // htmlLang is region-qualified so og:locale (language_TERRITORY) and the
+      // hreflang alternates are valid; the locale *key* still drives the URL
+      // path (/docs/zh-Hans/), so URLs are unchanged.
       en: {
         label: 'English',
+        htmlLang: 'en-US',
       },
       'zh-Hans': {
         label: '简体中文',
-        htmlLang: 'zh-Hans',
+        htmlLang: 'zh-CN',
       },
       ko: {
         label: '한국어',
-        htmlLang: 'ko',
+        htmlLang: 'ko-KR',
       },
     },
   },
+
+  headTags: [
+    {
+      tagName: 'script',
+      attributes: { type: 'application/ld+json' },
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'Thoth',
+        applicationCategory: 'DeveloperApplication',
+        operatingSystem: 'Linux, macOS, Windows (WSL2)',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        url: 'https://thoth.519lab.com/',
+        downloadUrl: 'https://github.com/519lab/thoth-agent',
+        license: 'https://opensource.org/licenses/MIT',
+        description:
+          'A self-improving, self-hostable AI agent with a cognitive memory substrate — it builds skills from experience and remembers across sessions.',
+      }),
+    },
+  ],
 
   themes: [
     '@docusaurus/theme-mermaid',
@@ -47,7 +76,10 @@ const config: Config = {
       /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
       ({
         hashed: true,
-        language: ['en', 'zh'],
+        // English-only site → only the English tokenizer is needed. Dropping
+        // 'zh' also removes the @node-rs/jieba native dependency. Re-add 'zh'
+        // alongside the locale when Chinese docs are translated.
+        language: ['en'],
         indexBlog: false,
         docsRouteBasePath: '/',
         // Disabled: appends ?_highlight=... to URLs (before the #anchor),
@@ -88,7 +120,14 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/thoth-banner.png',
+    image: 'img/og-card.png',
+    metadata: [
+      {
+        name: 'keywords',
+        content:
+          'AI agent, self-improving agent, autonomous agent, AI memory, cognitive substrate, pgvector, self-hostable, developer tool, open source',
+      },
+    ],
     colorMode: {
       defaultMode: 'dark',
       respectPrefersColorScheme: true,
@@ -119,10 +158,8 @@ const config: Config = {
           label: 'Skills',
           position: 'left',
         },
-        {
-          type: 'localeDropdown',
-          position: 'right',
-        },
+        // localeDropdown removed while the site is English-only — re-add when
+        // translations land (see the i18n note above).
         {
           href: 'https://thoth.519lab.com',
           label: 'Home',
