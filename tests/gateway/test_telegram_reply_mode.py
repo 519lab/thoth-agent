@@ -246,7 +246,7 @@ class TestTelegramYamlConfigLoading:
     """Tests for reply_to_mode loaded from config.yaml telegram section."""
 
     def _write_config(self, tmp_path, content: str):
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text(content, encoding="utf-8")
         return thoth_home

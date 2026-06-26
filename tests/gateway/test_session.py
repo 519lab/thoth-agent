@@ -322,10 +322,10 @@ class TestBuildSessionContextPrompt:
         )
         ctx = build_session_context(source, config)
 
-        with patch("thoth_constants.display_thoth_home", return_value="~/.hermes/profiles/coder"):
+        with patch("thoth_constants.display_thoth_home", return_value="~/.thoth/profiles/coder"):
             prompt = build_session_context_prompt(ctx)
 
-        assert "~/.hermes/profiles/coder/cron/output/" in prompt
+        assert "~/.thoth/profiles/coder/cron/output/" in prompt
 
     def test_whatsapp_prompt(self):
         config = GatewayConfig(
@@ -505,15 +505,15 @@ class TestSessionStoreRewriteTranscript:
 
     @pytest.fixture()
     def store(self, tmp_path, thoth_db_initialized_sync):
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         config = GatewayConfig()
         s = SessionStore(sessions_dir=tmp_path, config=config)
         return s
 
     def test_rewrite_replaces_transcript(self, store, tmp_path):
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         session_id = "test_session_1"
-        _hermes_db.run_sync(store._db.create_session(session_id=session_id, source="test"))
+        _thoth_db.run_sync(store._db.create_session(session_id=session_id, source="test"))
         # Write initial transcript
         for msg in [
             {"role": "user", "content": "hello"},
@@ -535,9 +535,9 @@ class TestSessionStoreRewriteTranscript:
         assert reloaded[1]["content"] == "hi"
 
     def test_rewrite_with_empty_list(self, store):
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         session_id = "test_session_2"
-        _hermes_db.run_sync(store._db.create_session(session_id=session_id, source="test"))
+        _thoth_db.run_sync(store._db.create_session(session_id=session_id, source="test"))
         store.append_to_transcript(session_id, {"role": "user", "content": "hi"})
 
         store.rewrite_transcript(session_id, [])
@@ -556,13 +556,13 @@ class TestLoadTranscriptDBOnly:
         assert result == []
 
     def test_db_only_returns_messages(self, tmp_path, thoth_db_initialized_sync):
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         config = GatewayConfig()
         store = SessionStore(sessions_dir=tmp_path, config=config)
         sid = "db_only_session"
-        _hermes_db.run_sync(store._db.create_session(session_id=sid, source="gateway", model="m"))
-        _hermes_db.run_sync(store._db.append_message(session_id=sid, role="user", content="db-q"))
-        _hermes_db.run_sync(store._db.append_message(session_id=sid, role="assistant", content="db-a"))
+        _thoth_db.run_sync(store._db.create_session(session_id=sid, source="gateway", model="m"))
+        _thoth_db.run_sync(store._db.append_message(session_id=sid, role="user", content="db-q"))
+        _thoth_db.run_sync(store._db.append_message(session_id=sid, role="assistant", content="db-a"))
 
         result = store.load_transcript(sid)
         assert len(result) == 2
@@ -574,7 +574,7 @@ class TestSessionStoreSwitchSession:
     """Regression coverage for gateway /resume session switching semantics."""
 
     def test_switch_session_reopens_target_session_in_db(self, tmp_path, thoth_db_initialized_sync):
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         from thoth_state import SessionDB
 
         config = GatewayConfig()
@@ -595,16 +595,16 @@ class TestSessionStoreSwitchSession:
         current_session_id = current_entry.session_id
 
         target_session_id = "old_session_abc"
-        _hermes_db.run_sync(db.create_session(target_session_id, source="feishu", user_id="user-1"))
-        _hermes_db.run_sync(db.end_session(target_session_id, end_reason="user_exit"))
-        assert _hermes_db.run_sync(db.get_session(target_session_id))["ended_at"] is not None
+        _thoth_db.run_sync(db.create_session(target_session_id, source="feishu", user_id="user-1"))
+        _thoth_db.run_sync(db.end_session(target_session_id, end_reason="user_exit"))
+        assert _thoth_db.run_sync(db.get_session(target_session_id))["ended_at"] is not None
 
         switched = store.switch_session(current_entry.session_key, target_session_id)
 
         assert switched is not None
         assert switched.session_id == target_session_id
-        assert _hermes_db.run_sync(db.get_session(current_session_id))["end_reason"] == "session_switch"
-        resumed = _hermes_db.run_sync(db.get_session(target_session_id))
+        assert _thoth_db.run_sync(db.get_session(current_session_id))["end_reason"] == "session_switch"
+        resumed = _thoth_db.run_sync(db.get_session(target_session_id))
         assert resumed["ended_at"] is None
         assert resumed["end_reason"] is None
         db.close()
@@ -634,7 +634,7 @@ class TestWhatsAppSessionKeyConsistency:
         assert key == "agent:main:whatsapp:dm:15551234567"
 
     def test_whatsapp_dm_aliases_share_one_session_key(self, tmp_path, monkeypatch):
-        tmp_home = tmp_path / "hermes-home"
+        tmp_home = tmp_path / "thoth-home"
         mapping_dir = tmp_home / "whatsapp" / "session"
         mapping_dir.mkdir(parents=True, exist_ok=True)
         (mapping_dir / "lid-mapping-999999999999999.json").write_text(
@@ -663,7 +663,7 @@ class TestWhatsAppSessionKeyConsistency:
         """With group_sessions_per_user, the same human flipping between
         phone-JID and LID inside a group must not produce two isolated
         per-user sessions."""
-        tmp_home = tmp_path / "hermes-home"
+        tmp_home = tmp_path / "thoth-home"
         mapping_dir = tmp_home / "whatsapp" / "session"
         mapping_dir.mkdir(parents=True, exist_ok=True)
         (mapping_dir / "lid-mapping-999999999999999.json").write_text(
@@ -1157,15 +1157,15 @@ class TestRewriteTranscriptPreservesReasoning:
     """rewrite_transcript must not drop reasoning fields (PG-backed)."""
 
     def test_reasoning_survives_rewrite(self, tmp_path, thoth_db_initialized_sync):
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         from thoth_state import SessionDB
 
         db = SessionDB()
         session_id = "reasoning-test"
-        _hermes_db.run_sync(db.create_session(session_id=session_id, source="cli"))
+        _thoth_db.run_sync(db.create_session(session_id=session_id, source="cli"))
 
         # Insert a message WITH all three reasoning fields
-        _hermes_db.run_sync(db.append_message(
+        _thoth_db.run_sync(db.append_message(
             session_id=session_id,
             role="assistant",
             content="The answer is 42.",
@@ -1176,7 +1176,7 @@ class TestRewriteTranscriptPreservesReasoning:
         ))
 
         # Verify all three were stored
-        before = _hermes_db.run_sync(db.get_messages_as_conversation(session_id))
+        before = _thoth_db.run_sync(db.get_messages_as_conversation(session_id))
         assert before[0].get("reasoning") == "I need to think step by step."
         assert before[0].get("reasoning_content") == "provider scratchpad"
         assert before[0].get("reasoning_details") == [{"type": "summary", "text": "step by step"}]
@@ -1193,7 +1193,7 @@ class TestRewriteTranscriptPreservesReasoning:
         store.rewrite_transcript(session_id, before)
 
         # Load again — all three reasoning fields must survive
-        after = _hermes_db.run_sync(db.get_messages_as_conversation(session_id))
+        after = _thoth_db.run_sync(db.get_messages_as_conversation(session_id))
         assert after[0].get("reasoning") == "I need to think step by step."
         assert after[0].get("reasoning_content") == "provider scratchpad"
         assert after[0].get("reasoning_details") == [{"type": "summary", "text": "step by step"}]

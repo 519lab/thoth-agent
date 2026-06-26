@@ -48,7 +48,7 @@ class TestVerboseCommand:
     @pytest.mark.asyncio
     async def test_disabled_by_default(self, tmp_path, monkeypatch):
         """When tool_progress_command is false, /verbose returns an info message."""
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         config_path = thoth_home / "config.yaml"
         config_path.write_text("display:\n  tool_progress: all\n", encoding="utf-8")
@@ -64,7 +64,7 @@ class TestVerboseCommand:
     @pytest.mark.asyncio
     async def test_enabled_cycles_mode(self, tmp_path, monkeypatch):
         """When enabled, /verbose cycles tool_progress mode per-platform."""
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         config_path = thoth_home / "config.yaml"
         config_path.write_text(
@@ -88,7 +88,7 @@ class TestVerboseCommand:
     @pytest.mark.asyncio
     async def test_quoted_false_keeps_command_disabled(self, tmp_path, monkeypatch):
         """Quoted false must not enable the /verbose gateway command."""
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         config_path = thoth_home / "config.yaml"
         config_path.write_text(
@@ -107,7 +107,7 @@ class TestVerboseCommand:
     @pytest.mark.asyncio
     async def test_cycles_through_all_modes(self, tmp_path, monkeypatch):
         """Calling /verbose repeatedly cycles through all four modes."""
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         config_path = thoth_home / "config.yaml"
         config_path.write_text(
@@ -130,7 +130,7 @@ class TestVerboseCommand:
     @pytest.mark.asyncio
     async def test_defaults_to_all_when_no_tool_progress_set(self, tmp_path, monkeypatch):
         """When tool_progress is not in config, defaults to platform default then cycles."""
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         config_path = thoth_home / "config.yaml"
         config_path.write_text(
@@ -155,7 +155,7 @@ class TestVerboseCommand:
         Without a global tool_progress, each platform uses its built-in
         default: Telegram = 'new' (overridden high tier), Slack = 'off' (quiet Slack default).
         """
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         config_path = thoth_home / "config.yaml"
         # No global tool_progress → built-in platform defaults apply
@@ -186,7 +186,7 @@ class TestVerboseCommand:
     @pytest.mark.asyncio
     async def test_no_config_file_returns_disabled(self, tmp_path, monkeypatch):
         """When config.yaml doesn't exist, command reports disabled."""
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         # No config.yaml
 
