@@ -84,8 +84,7 @@ def resolve_thoth_bin() -> Optional[str]:
     Priority:
       1. ``sys.argv[0]`` if it resolves to a real executable.
       2. ``shutil.which(cli_name())`` on PATH (the launcher name the user
-         actually invoked, e.g. ``hermes-substrate``), falling back to
-         ``thoth`` for compatibility.
+         actually invoked, e.g. ``thoth-substrate``).
       3. ``None`` → caller should fall back to ``python -m thoth_cli.main``.
 
     Windows note: ``os.access(path, os.X_OK)`` returns True for ``.py`` and
@@ -95,7 +94,7 @@ def resolve_thoth_bin() -> Optional[str]:
     directly — CreateProcessW needs a real .exe, not a script associated
     with the Python launcher.  On Windows we therefore skip the argv[0]
     fast-path when it points at a .py file and fall through to either
-    ``hermes.exe`` on PATH or the ``sys.executable -m thoth_cli.main``
+    ``thoth.exe`` on PATH or the ``sys.executable -m thoth_cli.main``
     fallback.
     """
     argv0 = sys.argv[0]
@@ -117,11 +116,9 @@ def resolve_thoth_bin() -> Optional[str]:
                 return abs_path
 
     # PATH lookup — honor the actual launcher name so a side-by-side install
-    # (e.g. hermes-substrate) re-execs itself, not whatever ``thoth`` resolves
+    # (e.g. thoth-substrate) re-execs itself, not whatever ``thoth`` resolves
     # to on PATH (which may be a different/upstream install).
     path_bin = shutil.which(cli_name())
-    if not path_bin and cli_name() != "hermes":
-        path_bin = shutil.which("hermes")
     if path_bin:
         return path_bin
 
@@ -175,7 +172,7 @@ def relaunch(
     Windows has no native exec semantics — ``os.execvp`` on Windows
     *emulates* exec by spawning the child and exiting the parent, but
     only works when the target is a real Win32 executable.  Our target
-    is usually ``hermes.exe`` (a Python console-script shim that wraps
+    is usually ``thoth.exe`` (a Python console-script shim that wraps
     ``python -m thoth_cli.main``) or a ``.cmd`` batch file, and both
     raise ``OSError(8, "Exec format error")`` on Windows' execvp.
 
