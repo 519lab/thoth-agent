@@ -596,7 +596,7 @@ Create a zip archive of your Thoth configuration, skills, sessions, and data. Th
 
 | Option | Description |
 |--------|-------------|
-| `-o`, `--output <path>` | Output path for the zip file (default: `~/hermes-backup-<timestamp>.zip`). |
+| `-o`, `--output <path>` | Output path for the zip file (default: `~/thoth-backup-<timestamp>.zip`). |
 | `-q`, `--quick` | Quick snapshot: only critical state files (config.yaml, state.db, .env, auth, cron jobs). Much faster than a full backup. |
 | `-l`, `--label <name>` | Label for the snapshot (only used with `--quick`). |
 
@@ -611,8 +611,8 @@ The backup uses SQLite's `backup()` API for safe copying, so it works correctly 
 ### Examples
 
 ```bash
-thoth backup                           # Full backup to ~/hermes-backup-*.zip
-thoth backup -o /tmp/hermes.zip        # Full backup to specific path
+thoth backup                           # Full backup to ~/thoth-backup-*.zip
+thoth backup -o /tmp/thoth.zip        # Full backup to specific path
 thoth backup --quick                   # Quick state-only snapshot
 thoth backup --quick --label "pre-upgrade"  # Quick snapshot with label
 ```
@@ -673,8 +673,8 @@ Stop the gateway before importing to avoid conflicts with running processes.
 
 ### Examples
 ```bash
-thoth import ~/hermes-backup-20260423.zip           # Prompts before overwriting existing config
-thoth import ~/hermes-backup-20260423.zip --force   # Overwrite without prompting
+thoth import ~/thoth-backup-20260423.zip           # Prompts before overwriting existing config
+thoth import ~/thoth-backup-20260423.zip --force   # Overwrite without prompting
 ```
 
 ## `thoth logs`

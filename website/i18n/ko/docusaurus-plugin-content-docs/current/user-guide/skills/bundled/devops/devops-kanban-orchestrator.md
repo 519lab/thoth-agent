@@ -23,7 +23,7 @@ Kanban을 통해 작업을 라우팅하는 orchestrator profile을 위한 작업
 ## Reference: full SKILL.md
 
 :::info
-아래 내용은 이 skill이 트리거될 때 Hermes가 실제로 로드하는 **전체 skill 정의**입니다. 즉, skill이 활성화되었을 때 agent가 실제 지침으로 보는 텍스트입니다.
+아래 내용은 이 skill이 트리거될 때 Thoth가 실제로 로드하는 **전체 skill 정의**입니다. 즉, skill이 활성화되었을 때 agent가 실제 지침으로 보는 텍스트입니다.
 :::
 
 # Kanban Orchestrator — 작업 분해 playbook
@@ -147,7 +147,7 @@ kanban_complete(
 > - **T3** (analyst): synthesizes T1 + T2 into a recommendation
 > - **T4** (writer): turns T3 into a CTO memo
 >
-> The dispatcher will pick up T1 and T2 now. T3 starts when both finish. You'll get a gateway ping when T4 completes. Use the dashboard or `hermes kanban tail <id>` to follow along.
+> The dispatcher will pick up T1 and T2 now. T3 starts when both finish. You'll get a gateway ping when T4 completes. Use the dashboard or `thoth kanban tail <id>` to follow along.
 
 ## 흔한 패턴
 

@@ -1,14 +1,14 @@
 ---
-title: "Kanban Worker — Hermes Kanban worker를 위한 pitfalls, examples, edge cases"
+title: "Kanban Worker — Thoth Kanban worker를 위한 pitfalls, examples, edge cases"
 sidebar_label: "Kanban Worker"
-description: "Hermes Kanban worker를 위한 pitfalls, examples, edge cases"
+description: "Thoth Kanban worker를 위한 pitfalls, examples, edge cases"
 ---
 
 {/* This page is auto-generated from the skill's SKILL.md by website/scripts/generate-skill-docs.py. Edit the source SKILL.md, not this page. */}
 
 # Kanban Worker
 
-Hermes Kanban worker를 위한 pitfalls, examples, edge cases 문서입니다. lifecycle 자체는 `KANBAN_GUIDANCE`로 모든 worker의 system prompt에 자동 주입되며(`agent/prompt_builder.py`), 이 skill은 **특정 시나리오에서 더 깊은 상세 지침이 필요할 때** 로드하는 자료입니다.
+Thoth Kanban worker를 위한 pitfalls, examples, edge cases 문서입니다. lifecycle 자체는 `KANBAN_GUIDANCE`로 모든 worker의 system prompt에 자동 주입되며(`agent/prompt_builder.py`), 이 skill은 **특정 시나리오에서 더 깊은 상세 지침이 필요할 때** 로드하는 자료입니다.
 
 ## Skill metadata
 
@@ -23,12 +23,12 @@ Hermes Kanban worker를 위한 pitfalls, examples, edge cases 문서입니다. l
 ## Reference: full SKILL.md
 
 :::info
-아래는 이 skill이 트리거될 때 Hermes가 실제로 로드하는 **전체 skill 정의**입니다. 즉, skill이 활성화되었을 때 agent가 실제 instruction으로 보는 내용입니다.
+아래는 이 skill이 트리거될 때 Thoth가 실제로 로드하는 **전체 skill 정의**입니다. 즉, skill이 활성화되었을 때 agent가 실제 instruction으로 보는 내용입니다.
 :::
 
 # Kanban Worker — Pitfalls and Examples
 
-> 이 skill이 보이는 이유는 Hermes Kanban dispatcher가 당신을 `--skills kanban-worker`와 함께 worker로 spawn했기 때문입니다. dispatched worker마다 자동으로 로드됩니다. **lifecycle**(6단계: orient → work → heartbeat → block/complete)은 system prompt에 자동 주입되는 `KANBAN_GUIDANCE` block에도 들어 있습니다. 이 skill은 그보다 더 구체적인 심화 설명입니다: 좋은 handoff 형태, retry 진단, edge case 등.
+> 이 skill이 보이는 이유는 Thoth Kanban dispatcher가 당신을 `--skills kanban-worker`와 함께 worker로 spawn했기 때문입니다. dispatched worker마다 자동으로 로드됩니다. **lifecycle**(6단계: orient → work → heartbeat → block/complete)은 system prompt에 자동 주입되는 `KANBAN_GUIDANCE` block에도 들어 있습니다. 이 skill은 그보다 더 구체적인 심화 설명입니다: 좋은 handoff 형태, retry 진단, edge case 등.
 
 ## Workspace handling
 
@@ -138,15 +138,15 @@ block message는 dashboard / gateway notifier에 그대로 나타나는 짧은 �
 
 **workspace에 stale artifact가 남아 있을 수 있습니다.** 특히 `dir:`와 `worktree` workspace는 이전 run의 파일이 남아 있을 수 있습니다. comment thread를 읽으세요. 대개 왜 다시 실행되는지, 현재 workspace 상태가 어떤지를 설명하고 있습니다.
 
-**guidance가 있는데 CLI에 의존하지 마세요.** `kanban_*` tool은 모든 terminal backend(Docker, Modal, SSH)에서 동작합니다. 반면 terminal tool 안에서 `hermes kanban <verb>`를 실행하면, containerized backend에서는 CLI가 설치돼 있지 않아 실패할 수 있습니다. 확신이 없을 때는 tool을 쓰세요.
+**guidance가 있는데 CLI에 의존하지 마세요.** `kanban_*` tool은 모든 terminal backend(Docker, Modal, SSH)에서 동작합니다. 반면 terminal tool 안에서 `thoth kanban <verb>`를 실행하면, containerized backend에서는 CLI가 설치돼 있지 않아 실패할 수 있습니다. 확신이 없을 때는 tool을 쓰세요.
 
 ## CLI fallback (스크립팅용)
 
 각 tool에는 사람/스크립트를 위한 CLI 대응물이 있습니다.
-- `kanban_show` ↔ `hermes kanban show <id> --json`
-- `kanban_complete` ↔ `hermes kanban complete <id> --summary "..." --metadata '{...}'`
-- `kanban_block` ↔ `hermes kanban block <id> "reason"`
-- `kanban_create` ↔ `hermes kanban create "title" --assignee <profile> [--parent <id>]`
+- `kanban_show` ↔ `thoth kanban show <id> --json`
+- `kanban_complete` ↔ `thoth kanban complete <id> --summary "..." --metadata '{...}'`
+- `kanban_block` ↔ `thoth kanban block <id> "reason"`
+- `kanban_create` ↔ `thoth kanban create "title" --assignee <profile> [--parent <id>]`
 - 등등
 
 agent 내부에서는 tool을 쓰고, CLI는 터미널 앞의 인간을 위한 인터페이스라고 생각하면 됩니다.
