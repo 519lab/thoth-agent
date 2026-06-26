@@ -232,7 +232,7 @@ def _routermint_headers() -> dict:
     from thoth_cli import __version__ as _THOTH_VERSION
 
     return {
-        "User-Agent": f"HermesAgent/{_THOTH_VERSION}",
+        "User-Agent": f"ThothAgent/{_THOTH_VERSION}",
     }
 
 
