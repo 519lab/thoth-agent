@@ -75,7 +75,7 @@ Run a Python script *before* the agent. The script's stdout becomes context. The
 ```bash
 thoth cron create "every 1h" \
   "If CHANGE DETECTED, summarize what changed. If NO_CHANGE, respond with [SILENT]." \
-  --script ~/.hermes/scripts/watch-site.py \
+  --script ~/.thoth/scripts/watch-site.py \
   --name "Pricing monitor" \
   --deliver telegram
 ```
@@ -127,7 +127,7 @@ A nightly backlog triage on Sonnet costs roughly $0.02-0.05. A monitoring check 
 Thoth Agent is open source and free. The automation infrastructure — cron scheduler, webhook platform, skill system, multi-platform delivery — is built in.
 
 ```bash
-pip install hermes-agent
+pip install thoth-agent
 thoth setup
 ```
 
