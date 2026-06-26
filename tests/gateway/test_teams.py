@@ -352,7 +352,7 @@ class TestTeamsInteractiveSetup:
         from thoth_cli.cli_output (not thoth_cli.config) and persist
         credentials to .env without crashing.
         """
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
         import thoth_cli.cli_output as cli_output_mod

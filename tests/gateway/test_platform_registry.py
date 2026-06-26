@@ -436,7 +436,7 @@ class TestApplyYamlConfigFnDispatch:
     """
 
     def _write_config(self, tmp_path, content: str):
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text(content, encoding="utf-8")
         return thoth_home
@@ -668,7 +668,7 @@ class TestPluginPlatformSharedKeyBridge:
     """
 
     def _write_config(self, tmp_path, content: str):
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text(content, encoding="utf-8")
         return thoth_home
