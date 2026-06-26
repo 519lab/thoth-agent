@@ -28,7 +28,7 @@ class TestGetSubprocessHome:
         assert get_subprocess_home() is None
 
     def test_returns_none_when_home_dir_missing(self, tmp_path, monkeypatch):
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         # No home/ subdirectory created
@@ -36,7 +36,7 @@ class TestGetSubprocessHome:
         assert get_subprocess_home() is None
 
     def test_returns_path_when_home_dir_exists(self, tmp_path, monkeypatch):
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         profile_home = thoth_home / "home"
         profile_home.mkdir()
@@ -46,7 +46,7 @@ class TestGetSubprocessHome:
 
     def test_returns_profile_specific_path(self, tmp_path, monkeypatch):
         """Named profiles get their own isolated HOME."""
-        profile_dir = tmp_path / ".hermes" / "profiles" / "coder"
+        profile_dir = tmp_path / ".thoth" / "profiles" / "coder"
         profile_dir.mkdir(parents=True)
         profile_home = profile_dir / "home"
         profile_home.mkdir()
@@ -55,7 +55,7 @@ class TestGetSubprocessHome:
         assert get_subprocess_home() == str(profile_home)
 
     def test_two_profiles_get_different_homes(self, tmp_path, monkeypatch):
-        base = tmp_path / ".hermes" / "profiles"
+        base = tmp_path / ".thoth" / "profiles"
         for name in ("alpha", "beta"):
             p = base / name
             p.mkdir(parents=True)
@@ -122,7 +122,7 @@ class TestMakeRunEnvHomeInjection:
     """Verify _make_run_env() injects HOME into subprocess envs."""
 
     def test_injects_home_when_profile_home_exists(self, tmp_path, monkeypatch):
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         (thoth_home / "home").mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -135,7 +135,7 @@ class TestMakeRunEnvHomeInjection:
         assert result["HOME"] == str(thoth_home / "home")
 
     def test_no_injection_when_home_dir_missing(self, tmp_path, monkeypatch):
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         # No home/ subdirectory
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -188,7 +188,7 @@ class TestSanitizeSubprocessEnvHomeInjection:
     """Verify _sanitize_subprocess_env() injects HOME for background procs."""
 
     def test_injects_home_when_profile_home_exists(self, tmp_path, monkeypatch):
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         (thoth_home / "home").mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -200,7 +200,7 @@ class TestSanitizeSubprocessEnvHomeInjection:
         assert result["HOME"] == str(thoth_home / "home")
 
     def test_no_injection_when_home_dir_missing(self, tmp_path, monkeypatch):
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -245,7 +245,7 @@ class TestProfileBootstrap:
 
     def test_create_profile_bootstraps_home_dir(self, tmp_path, monkeypatch):
         """create_profile() should create home/ inside the profile dir."""
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("THOTH_HOME", str(home))
@@ -265,7 +265,7 @@ class TestPythonProcessUnchanged:
     def test_path_home_unchanged_after_subprocess_home_resolved(
         self, tmp_path, monkeypatch
     ):
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         (thoth_home / "home").mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
