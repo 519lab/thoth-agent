@@ -85,7 +85,7 @@ Each slice carries (`substrate/storage/types.py`, `substrate/l0/`):
 `substrate.l0.api.commit_slice` (async) and `commit_slice_sync` (the
 `thoth_db.run_sync` bridge for cron/CLI) are the **only** public write
 surface. Thoth call sites emit perception through
-`substrate/events/hermes_hooks.py`, which `Substrate.boot()` binds so the
+`substrate/events/thoth_hooks.py`, which `Substrate.boot()` binds so the
 conversation loop, gateway, and ACP server can record without importing
 substrate internals. Read endpoints (the Sentinel batch tick, the force-reject
 sweep) are deliberately *not* exported from L0 — they are internal machinery.
@@ -134,7 +134,7 @@ Spawned directly by `Substrate.boot()` inside the Thoth process:
 ### Cognitive sub-agents (Phases D–G)
 
 These build L1–L4 and run in a separate **worker subprocess**
-(`hermes substrate worker run`, `substrate/cli/worker.py`). They are **ON by
+(`thoth substrate worker run`, `substrate/cli/worker.py`). They are **ON by
 default** but each is individually gated; setting its env var to `0` lets it
 register + heartbeat but skips the work. LLM-driven agents no-op silently when
 no auxiliary model is configured.
@@ -176,7 +176,7 @@ worklist scheduling, wake anticipation. And note the dimensions it steers on:
 See §8 for what that implies.
 
 Every sub-agent writes its decisions as `self_state` slices, so any decision can
-be replayed after the fact (`hermes substrate <agent> recent`).
+be replayed after the fact (`thoth substrate <agent> recent`).
 
 ---
 

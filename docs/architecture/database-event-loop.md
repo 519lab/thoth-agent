@@ -12,7 +12,7 @@ gateway.
 > from any other loop.**
 
 `thoth_db` owns a single, continuously-running event loop on a dedicated
-daemon thread (`hermes-db-loop`). The pool is bound to it. All access routes
+daemon thread (`thoth-db-loop`). The pool is bound to it. All access routes
 there:
 
 | You are…                                   | Use                                  |
@@ -60,7 +60,7 @@ the DB loop run continuously and route everything to it.
 ## How it works (`thoth_db.py`)
 
 - `_get_sync_loop()` lazily creates the DB loop and starts the
-  `hermes-db-loop` daemon thread running `loop.run_forever()`. Because the
+  `thoth-db-loop` daemon thread running `loop.run_forever()`. Because the
   loop runs continuously, **long-lived DB tasks survive** (e.g. the substrate
   writer's `RecallLogWriter._drain_loop`) instead of being orphaned when a
   one-shot `run_until_complete` returns.
@@ -110,7 +110,7 @@ owns its pool directly.
 
 - `run_on_pool_loop` raises if the pool is on an unexpected loop.
 - `run_sync` raises if called from inside the DB loop thread.
-- Regression tests in `tests/test_hermes_db.py`: continuous loop on its own
+- Regression tests in `tests/test_thoth_db.py`: continuous loop on its own
   thread, `run_sync` from inside another running loop, awaitable acceptance,
   long-lived-task survival after a routed boot, and the reentrant guard.
 

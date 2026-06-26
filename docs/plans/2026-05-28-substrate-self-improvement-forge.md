@@ -1,11 +1,11 @@
 # Substrate-Driven Self-Improvement (the Forge) — Design
 
-> **For Hermes:** This is a design spec, not yet a task-by-task plan. Build it
+> **For Thoth:** This is a design spec, not yet a task-by-task plan. Build it
 > phase-by-phase (Tier 1 first); split each phase into reviewed tasks with the
 > subagent-driven-development skill before implementing. The whole point of this
 > system is that it is *gated* — do not weaken or skip the gate to ship faster.
 
-**Goal:** Let Hermes propose improvements to *itself* — new skills, new tools,
+**Goal:** Let Thoth propose improvements to *itself* — new skills, new tools,
 and eventually edits to its own codebase — driven by needs it discovers in its
 own memory, without ever editing the code it is currently running and without
 being able to remove its own safety limits.
@@ -46,13 +46,13 @@ across multiple observations (not a one-off), and (c) no open proposal already
 covers it. This is the change-gate we built for the generators, applied to
 self-improvement so it doesn't thrash.
 
-**Signal integrity is step zero.** We watched Hermes draw a *wrong* self-conclusion
+**Signal integrity is step zero.** We watched Thoth draw a *wrong* self-conclusion
 from the broken `backlog_ratio` metric (issue #107). An agent that acts on a bad
 self-model improves itself in the wrong direction. So a proposal trigger must cite
 its grounding (which L1/L3 rows, which telemetry) and that grounding is part of
 what the evaluator checks. Issue #109 (L1-grounded re-derivation / contradiction
 resolution) is therefore a *prerequisite-class* improvement: it hardens the very
-signal this system depends on, and is the natural first thing for Hermes to fix
+signal this system depends on, and is the natural first thing for Thoth to fix
 about itself.
 
 ## 2. Tiers of self-improvement (build in this order)
@@ -62,7 +62,7 @@ about itself.
 | **0. Knowledge** | what it knows | Curator (L0–L4) | low | **done / live** |
 | **1. Skills** | what it can do (recipes) | author a bundled skill in `skills/` | low–med | **start here** |
 | **2. Tools** | what it can do (new code) | write a tool / MCP server in `tools/`+`plugins/` | med–high | after Tier 1 trusted |
-| **3. Self-code** | itself | edit the hermes-agent codebase via PR | high | last; strictest gate |
+| **3. Self-code** | itself | edit the thoth-agent codebase via PR | high | last; strictest gate |
 
 A **skill is a procedure** (markdown + prompt) that orchestrates tools the agent
 *already* has — far smaller blast radius than codegen, which is why Tier 1 is the
@@ -76,7 +76,7 @@ human-gated forever.
 The agent must never edit the code it is running. Topology mirrors what we already
 live (dev checkout vs. deploy clone), formalized as a third clone:
 
-- **Forge clone:** e.g. `~/.hermes/forge/hermes-agent`, tracking the same upstream.
+- **Forge clone:** e.g. `~/.thoth/forge/thoth-agent`, tracking the same upstream.
   The agent **`git pull`s before every task** (drift bit us this session — I worked
   37 commits behind main once); all work is on a branch.
 - **Per-task git worktree** (`--worktree`) inside the Forge so concurrent or failed
@@ -85,14 +85,14 @@ live (dev checkout vs. deploy clone), formalized as a third clone:
   `postgres-test` container (:5433) — **never prod (:5434)**. Getting this wrong is
   the easy, dangerous mistake.
 - **Scoped credentials.** The Forge can *open PRs but not merge* (bot-style token).
-  The only path to the live system is human merge + `hermes update`.
+  The only path to the live system is human merge + `thoth update`.
 
-**Provisioned at setup**, not improvised: `hermes setup` (or a `hermes forge init`
+**Provisioned at setup**, not improvised: `thoth setup` (or a `thoth forge init`
 subcommand) creates the clone, its own venv, the sandbox DB, and the scoped
 credentials. The Forge is a full sandboxed dev environment, not just a directory.
 
-Running install (`~/.hermes/hermes-agent`) and Forge **only ever meet through the
-gate**: agent writes in the Forge → PR → gate → merge → `hermes update` pulls it
+Running install (`~/.thoth/thoth-agent`) and Forge **only ever meet through the
+gate**: agent writes in the Forge → PR → gate → merge → `thoth update` pulls it
 live. They never touch directly.
 
 ## 4. The gate — plan → CI → evaluator → human
@@ -105,7 +105,7 @@ L3/L4/telemetry signal (gated, corroborated)
    → CI: deterministic (tests / lint / typecheck / migration check)   [hard gate]
    → frontier-model EVALUATOR (diff-vs-plan + guardrail rubric)        [judgment]
    → human approve                                                     [final]
-   → merge → hermes update → live
+   → merge → thoth update → live
    → telemetry tags the change (trigger, plan, verdict, approver) for audit
 ```
 
