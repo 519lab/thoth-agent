@@ -290,7 +290,7 @@ Document URLs look like:
 https://linear.app/<workspace>/document/<slug>-<hexSlugId>
 ```
 
-The trailing hex segment is the `slugId`. Example: `https://linear.app/519lab/document/rfc-hermes-permission-gateway-discord-38359beef67c` → `slugId` is `38359beef67c`.
+The trailing hex segment is the `slugId`. Example: `https://linear.app/519lab/document/rfc-thoth-permission-gateway-discord-38359beef67c` → `slugId` is `38359beef67c`.
 
 **Important schema detail:** the Markdown body is in the `content` field. The ProseMirror JSON is in `contentState` (not `contentData` — that field does not exist and the API returns 400).
 

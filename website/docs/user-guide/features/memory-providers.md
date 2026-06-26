@@ -390,7 +390,7 @@ thoth memory setup    # select "holographic"
 thoth config set memory.provider holographic
 ```
 
-**Config:** `config.yaml` under `plugins.hermes-memory-store`
+**Config:** `config.yaml` under `plugins.thoth-memory-store`
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -501,7 +501,7 @@ echo 'SUPERMEMORY_API_KEY=***' >> ~/.thoth/.env
 - Session-end conversation ingest for richer graph-level knowledge building
 - Profile facts injected on first turn and at configurable intervals
 - Trivial message filtering (skips "ok", "thanks", etc.)
-- **Profile-scoped containers** — use `{identity}` in `container_tag` (e.g. `thoth-{identity}` → `hermes-coder`) to isolate memories per Thoth profile
+- **Profile-scoped containers** — use `{identity}` in `container_tag` (e.g. `thoth-{identity}` → `thoth-coder`) to isolate memories per Thoth profile
 - **Multi-container mode** — enable `enable_custom_container_tags` with a `custom_containers` list to let the agent read/write across named containers. Automatic operations (sync, prefetch) stay on the primary container.
 
 <details>
@@ -509,7 +509,7 @@ echo 'SUPERMEMORY_API_KEY=***' >> ~/.thoth/.env
 
 ```json
 {
-  "container_tag": "hermes",
+  "container_tag": "thoth",
   "enable_custom_container_tags": true,
   "custom_containers": ["project-alpha", "shared-knowledge"],
   "custom_container_instructions": "Use project-alpha for coding context."
