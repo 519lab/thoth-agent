@@ -33,7 +33,7 @@ to suppress.
 
 Grep recipe::
 
-    tail -f ~/.hermes/logs/agent.log | rg 'lsp\\['
+    tail -f ~/.thoth/logs/agent.log | rg 'lsp\\['
 """
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ from typing import Tuple
 
 # Dedicated logger name so the documented grep recipe survives a
 # ``logging.getLogger(__name__)`` rename of any internal module.
-event_log = logging.getLogger("hermes.lint.lsp")
+event_log = logging.getLogger("thoth.lint.lsp")
 
 # ---------------------------------------------------------------------------
 # Once-per-X dedup sets

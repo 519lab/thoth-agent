@@ -210,7 +210,7 @@ class CodexAppServerSession:
                 codex_bin=self._codex_bin, codex_home=self._codex_home
             )
         self._client.initialize(
-            client_name="hermes",
+            client_name="thoth",
             client_title="Thoth Agent",
             client_version=_get_thoth_version(),
         )
