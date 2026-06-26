@@ -3,7 +3,7 @@
 // nudges chalk / supports-color before either package is initialized.
 import './lib/forceTruecolor.js'
 
-import type { FrameEvent } from '@hermes/ink'
+import type { FrameEvent } from '@thoth/ink'
 
 import { TERMUX_TUI_MODE } from './config/env.js'
 import { GatewayClient } from './gatewayClient.js'
@@ -74,7 +74,7 @@ if (process.env.THOTH_HEAPDUMP_ON_START === '1') {
 process.on('beforeExit', () => stopMemoryMonitor())
 
 const [ink, { App }, { logFrameEvent }, { trackFrame }] = await Promise.all([
-  import('@hermes/ink'),
+  import('@thoth/ink'),
   import('./app.js'),
   import('./lib/perfPane.js'),
   import('./lib/fpsStore.js')

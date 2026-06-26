@@ -17,7 +17,7 @@ import pytest
 import pytest_asyncio
 
 from substrate import Substrate
-from substrate.events import hermes_hooks
+from substrate.events import thoth_hooks
 from substrate.facade import _autoregister_specs
 
 
@@ -170,9 +170,9 @@ async def test_shutdown_unbinds_hooks(booted_with_subagents):
     """``shutdown()`` resets the module-global so subsequent hook calls
     are silent no-ops."""
     # Sanity: the binding is live while booted.
-    assert hermes_hooks._substrate is booted_with_subagents
+    assert thoth_hooks._substrate is booted_with_subagents
     await booted_with_subagents.shutdown()
-    assert hermes_hooks._substrate is None
+    assert thoth_hooks._substrate is None
 
 
 # ---------------------------------------------------------------------------
@@ -300,7 +300,7 @@ async def test_boot_writer_skips_subagents_keeps_hooks_and_recall(
         # Conductor instance exists (no tick, just state).
         assert sub._conductor is not None, "boot_writer should still hold a Conductor for inspect"
         # Hooks bound so perception emit works in this process.
-        assert hermes_hooks._substrate_for_tests() is sub, (
+        assert thoth_hooks._substrate_for_tests() is sub, (
             "boot_writer must bind perception hooks so gateway/CLI emits land"
         )
         # Recall log writer started so recall() can log calls.
@@ -324,7 +324,7 @@ async def test_boot_worker_starts_subagents_skips_hooks_and_recall(
     doesn't serve recall queries, so both subsystems stay off."""
     # Pre-condition: clear hook binding so we can assert worker mode
     # leaves it untouched even when it starts clean.
-    hermes_hooks._unbind()
+    thoth_hooks._unbind()
     sub = await Substrate.boot_worker()
     try:
         # Sub-agent tasks must be alive.
@@ -337,7 +337,7 @@ async def test_boot_worker_starts_subagents_skips_hooks_and_recall(
                 f"got {sorted(names)}"
             )
         # Hooks NOT bound — the writer process owns that binding.
-        assert hermes_hooks._substrate_for_tests() is None, (
+        assert thoth_hooks._substrate_for_tests() is None, (
             "boot_worker must NOT bind perception hooks; doing so would "
             "redirect Thoth hook emits to a process that doesn't have "
             "the chat/gateway loop. Only writer processes bind hooks."

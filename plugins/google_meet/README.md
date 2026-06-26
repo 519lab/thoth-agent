@@ -78,7 +78,7 @@ thoth meet join https://meet.google.com/abc-defg-hij    # transcribe
 Linux (preferred, most automated):
 ```bash
 thoth meet install --realtime                     # installs pulseaudio-utils
-echo 'OPENAI_API_KEY=sk-...' >> ~/.hermes/.env
+echo 'OPENAI_API_KEY=sk-...' >> ~/.thoth/.env
 thoth meet join https://meet.google.com/abc-defg-hij --mode realtime
 # then from the agent or CLI:
 thoth meet say "Good morning everyone, I'm the note-taker bot."
@@ -88,7 +88,7 @@ macOS:
 ```bash
 thoth meet install --realtime     # runs: brew install blackhole-2ch ffmpeg
 # then — manually! — open System Settings → Sound → Input → BlackHole 2ch
-echo 'OPENAI_API_KEY=sk-...' >> ~/.hermes/.env
+echo 'OPENAI_API_KEY=sk-...' >> ~/.thoth/.env
 thoth meet join https://meet.google.com/abc-defg-hij --mode realtime
 ```
 

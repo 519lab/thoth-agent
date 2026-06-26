@@ -56,7 +56,7 @@ Objective: Single source of truth for Achievements data that survives process re
 Acceptance:
 - One structure contains dataset consumed by `/achievements`.
 - Repeated requests do not recompute when cache is fresh.
-- Snapshot persisted at `~/.hermes/plugins/hermes-achievements/scan_snapshot.json`.
+- Snapshot persisted at `~/.thoth/plugins/thoth-achievements/scan_snapshot.json`.
 
 ### Task 2.2: Single-flight scan coordinator
 Objective: Prevent concurrent recomputes.
@@ -101,7 +101,7 @@ Acceptance:
 Objective: Track session-level changes, not just global scan time.
 
 Acceptance:
-- Checkpoint persisted at `~/.hermes/plugins/hermes-achievements/scan_checkpoint.json`.
+- Checkpoint persisted at `~/.thoth/plugins/thoth-achievements/scan_checkpoint.json`.
 - For each session: `session_id`, fingerprint (`updated_at`/message_count/hash), and cached contribution.
 
 ### Task 4.2: Incremental aggregation

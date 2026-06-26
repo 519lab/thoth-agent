@@ -126,6 +126,3 @@ def resolve_xai_http_credentials(*, force_refresh: bool = False) -> Dict[str, st
         "api_key": api_key,
         "base_url": base_url,
     }
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-hermes_xai_user_agent = thoth_xai_user_agent

@@ -19,7 +19,7 @@ The setup wizard will install dependencies automatically via `uv` and walk you t
 Or manually (cloud mode with defaults):
 ```bash
 thoth config set memory.provider hindsight
-echo "HINDSIGHT_API_KEY=your-key" >> ~/.hermes/.env
+echo "HINDSIGHT_API_KEY=your-key" >> ~/.thoth/.env
 ```
 
 ### Cloud
@@ -32,7 +32,7 @@ Thoth spins up a local Hindsight daemon with built-in PostgreSQL. Requires an LL
 
 Supports any OpenAI-compatible LLM endpoint (llama.cpp, vLLM, LM Studio, etc.) — pick `openai_compatible` as the provider and enter the base URL.
 
-Daemon startup logs: `~/.hermes/logs/hindsight-embed.log`
+Daemon startup logs: `~/.thoth/logs/hindsight-embed.log`
 Daemon runtime logs: `~/.hindsight/profiles/<profile>.log`
 
 To open the Hindsight web UI (local embedded mode only):
@@ -46,7 +46,7 @@ Points the plugin at an existing Hindsight instance you're already running (Dock
 
 ## Config
 
-Config file: `~/.hermes/hindsight/config.json`
+Config file: `~/.thoth/hindsight/config.json`
 
 ### Connection
 
@@ -109,7 +109,7 @@ Config file: `~/.hermes/hindsight/config.json`
 | `llm_model` | per-provider | Model name (e.g. `gpt-4o-mini`, `qwen/qwen3.5-9b`) |
 | `llm_base_url` | — | Endpoint URL for `openai_compatible` (e.g. `http://192.168.1.10:8080/v1`) |
 
-The LLM API key is stored in `~/.hermes/.env` as `HINDSIGHT_LLM_API_KEY`.
+The LLM API key is stored in `~/.thoth/.env` as `HINDSIGHT_LLM_API_KEY`.
 
 ## Tools
 

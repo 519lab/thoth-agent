@@ -1296,7 +1296,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
     # own try/except inside swallows any emission failure.
     try:
         from datetime import datetime, timezone
-        from substrate.events.hermes_hooks import on_cron_fire as _sub_cron_fire
+        from substrate.events.thoth_hooks import on_cron_fire as _sub_cron_fire
         from cron.jobs import _schedule_display_for_job
         _sub_cron_fire(
             str(job_id),

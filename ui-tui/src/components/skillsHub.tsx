@@ -1,4 +1,4 @@
-import { Box, Text, useInput, useStdout } from '@hermes/ink'
+import { Box, Text, useInput, useStdout } from '@thoth/ink'
 import { useEffect, useState } from 'react'
 
 import type { GatewayClient } from '../gatewayClient.js'

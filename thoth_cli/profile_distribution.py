@@ -31,7 +31,7 @@ Manifest format (``distribution.yaml`` at the profile root)::
     name: telemetry
     version: 0.1.0
     description: "Compliance monitoring harness"
-    hermes_requires: ">=0.12.0"
+    thoth_requires: ">=0.12.0"
     author: "..."
     license: "..."
     env_requires:
@@ -113,7 +113,7 @@ USER_OWNED_EXCLUDE: frozenset = frozenset({
     "browser_screenshots", "checkpoints", "sandboxes",
     "backups", "cache",
     # Infrastructure
-    "app", "hermes-agent", ".worktrees", "profiles", "bin", "node_modules",
+    "app", "thoth-agent", ".worktrees", "profiles", "bin", "node_modules",
     # User customization namespace
     "local",
 })
@@ -170,7 +170,7 @@ class DistributionManifest:
     name: str
     version: str = "0.1.0"
     description: str = ""
-    hermes_requires: str = ""
+    thoth_requires: str = ""
     author: str = ""
     license: str = ""
     env_requires: List[EnvRequirement] = field(default_factory=list)
@@ -203,7 +203,7 @@ class DistributionManifest:
             name=name,
             version=str(data.get("version") or "0.1.0"),
             description=str(data.get("description") or ""),
-            hermes_requires=str(data.get("hermes_requires") or ""),
+            thoth_requires=str(data.get("thoth_requires") or ""),
             author=str(data.get("author") or ""),
             license=str(data.get("license") or ""),
             env_requires=env_requires,
@@ -219,8 +219,8 @@ class DistributionManifest:
         }
         if self.description:
             out["description"] = self.description
-        if self.hermes_requires:
-            out["hermes_requires"] = self.hermes_requires
+        if self.thoth_requires:
+            out["thoth_requires"] = self.thoth_requires
         if self.author:
             out["author"] = self.author
         if self.license:
@@ -492,7 +492,7 @@ def plan_install(
         )
 
     # Version check up-front so we fail fast
-    check_thoth_requires(manifest.hermes_requires, thoth_version)
+    check_thoth_requires(manifest.thoth_requires, thoth_version)
 
     # Resolve target profile name
     target_name = override_name or manifest.name
@@ -501,7 +501,7 @@ def plan_install(
     if canon == "default":
         raise DistributionError(
             "Cannot install a distribution as 'default' — that is the built-in "
-            "root profile (~/.hermes).  Pass --name <name> to install under a "
+            "root profile (~/.thoth).  Pass --name <name> to install under a "
             "new profile."
         )
     manifest.name = canon
@@ -704,6 +704,3 @@ def describe_distribution(profile_name: str) -> Dict[str, Any]:
     if manifest is None:
         return {}
     return manifest.to_dict()
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-check_hermes_requires = check_thoth_requires

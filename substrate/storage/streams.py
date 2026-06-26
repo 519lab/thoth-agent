@@ -34,8 +34,8 @@ _MAX_CACHE_ENTRIES = 256
 #
 # The awareness loop (Sentinel → Parser → Curator → recall, and the
 # Conductor's backlog forecast that drives them) must only ever see
-# *perception*: exteroceptive input (``hermes.world.*``) and first-class
-# self-actions/-state (``hermes.self_action.*`` / ``hermes.self_state.*``).
+# *perception*: exteroceptive input (``thoth.world.*``) and first-class
+# self-actions/-state (``thoth.self_action.*`` / ``thoth.self_state.*``).
 #
 # The substrate also records its own *operational* decisions — Conductor
 # dials, Sentinel batch summaries, Curator releases/alarms, and the L1–L4

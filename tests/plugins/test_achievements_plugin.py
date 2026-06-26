@@ -1,4 +1,4 @@
-"""Tests for the bundled hermes-achievements dashboard plugin.
+"""Tests for the bundled thoth-achievements dashboard plugin.
 
 These target the two behaviors that matter for official integration:
 
@@ -10,7 +10,7 @@ These target the two behaviors that matter for official integration:
   takes minutes.
 
 The upstream repo ships its own unittest suite under
-``plugins/hermes-achievements/tests/`` covering the achievement engine
+``plugins/thoth-achievements/tests/`` covering the achievement engine
 internals (tier math, secret-state handling, catalog invariants). These
 tests live at the hermes-agent level and focus on the integration
 contract: the plugin scans ALL of your sessions, not the first 200.
@@ -29,7 +29,7 @@ import pytest
 PLUGIN_MODULE_PATH = (
     Path(__file__).resolve().parents[2]
     / "plugins"
-    / "hermes-achievements"
+    / "thoth-achievements"
     / "dashboard"
     / "plugin_api.py"
 )

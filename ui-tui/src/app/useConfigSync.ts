@@ -1,4 +1,4 @@
-import type { MouseTrackingMode } from '@hermes/ink'
+import type { MouseTrackingMode } from '@thoth/ink'
 import { useEffect, useRef } from 'react'
 
 import { resolveDetailsMode, resolveSections } from '../domain/details.js'

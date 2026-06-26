@@ -2,7 +2,7 @@
 
 Long sessions inject raw history; this keeps recent slices verbatim but
 folds *older* ones (per session) into a single dense summary slice in a
-paired ``hermes.self_action.summary`` stream, citing the originals via
+paired ``thoth.self_action.summary`` stream, citing the originals via
 ``summary_of`` (MVS §4.7 retrospective summarization). The summary is a
 fresh, high-salience perception that carries the originals' meaning
 forward; the originals are then faded so the substrate's past compresses

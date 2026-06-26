@@ -144,7 +144,7 @@ def test_provider_handles_substrate_not_booted(monkeypatch):
     # returns None. We monkeypatch to simulate this in case prior tests
     # left bound state.
     monkeypatch.setattr(
-        "substrate.events.hermes_hooks._substrate", None
+        "substrate.events.thoth_hooks._substrate", None
     )
     p = SubstrateMemoryProvider()
     p.initialize(session_id="test")

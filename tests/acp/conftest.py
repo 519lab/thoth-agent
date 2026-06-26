@@ -56,7 +56,7 @@ def _reset_substrate_state() -> None:
 
     Some acp tests (``test_entry``) invoke ``entry.main([])`` which calls
     ``bootstrap_substrate_sync``. That sets ``thoth_bootstrap._substrate_booted
-    = True`` and binds ``substrate.events.hermes_hooks._substrate`` to the
+    = True`` and binds ``substrate.events.thoth_hooks._substrate`` to the
     booted instance.
 
     After the per-test fixture closes the asyncpg pool, those module-level
@@ -81,8 +81,8 @@ def _reset_substrate_state() -> None:
     except Exception:
         pass
     try:
-        from substrate.events import hermes_hooks
-        hermes_hooks._unbind()
+        from substrate.events import thoth_hooks
+        thoth_hooks._unbind()
     except Exception:
         pass
 
@@ -104,7 +104,7 @@ def _isolate_acp_session_db(thoth_db_initialized_sync):
     Also resets substrate-module-level state in setup AND teardown so a
     prior test that booted the substrate (notably ``test_entry``) can't
     leak a stale ``thoth_bootstrap._substrate_handle`` or a bound
-    ``substrate.events.hermes_hooks._substrate`` into the next test.
+    ``substrate.events.thoth_hooks._substrate`` into the next test.
     """
     _reset_substrate_state()
     _truncate_session_tables()

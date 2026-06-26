@@ -1,4 +1,4 @@
-import { Box, Text } from '@hermes/ink'
+import { Box, Text } from '@thoth/ink'
 import { useStore } from '@nanostores/react'
 
 import { useGateway } from '../app/gatewayContext.js'

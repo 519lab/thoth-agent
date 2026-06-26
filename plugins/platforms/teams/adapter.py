@@ -1149,7 +1149,7 @@ def interactive_setup() -> None:
 
     from thoth_cli.cli_name import cli_name
     print()
-    print_success("Teams configuration saved to ~/.hermes/.env")
+    print_success("Teams configuration saved to ~/.thoth/.env")
     print_info("Install the app in Teams:  teams app install --id <teamsAppId>")
     print_info(f"Restart the gateway:       {cli_name()} gateway restart")
 

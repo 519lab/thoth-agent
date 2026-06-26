@@ -2177,7 +2177,7 @@ def test_dashboard_bulk_actions_include_reclaim_first():
     dist = (repo_root / "plugins" / "kanban" / "dashboard" / "dist" / "index.js").read_text()
 
     assert "reclaim_first: reclaimFirst" in dist
-    assert "hermes-kanban-bulk-reclaim-first" in dist
+    assert "thoth-kanban-bulk-reclaim-first" in dist
     assert '"→ todo"' in dist
     assert '"Block"' in dist
     assert '"Unblock"' in dist
@@ -2209,6 +2209,6 @@ def test_dashboard_failed_card_highlight_class_exists():
     js = (repo_root / "plugins" / "kanban" / "dashboard" / "dist" / "index.js").read_text()
     css = (repo_root / "plugins" / "kanban" / "dashboard" / "dist" / "style.css").read_text()
 
-    assert "hermes-kanban-card--failed" in js
-    assert "hermes-kanban-card--failed" in css
+    assert "thoth-kanban-card--failed" in js
+    assert "thoth-kanban-card--failed" in css
     assert "failedIds" in js

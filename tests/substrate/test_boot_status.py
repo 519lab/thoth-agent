@@ -100,7 +100,7 @@ async def test_record_boot_status_never_raises_without_db(monkeypatch):
 @pytest.mark.asyncio
 async def test_bootstrap_records_success(thoth_db_initialized, monkeypatch):
     import thoth_db
-    import substrate.events.hermes_hooks as hh
+    import substrate.events.thoth_hooks as hh
 
     sentinel = object()
 
@@ -274,7 +274,7 @@ async def test_summary_includes_last_boot_section(thoth_db_initialized):
 async def test_writer_boot_unbound_is_treated_as_failure(monkeypatch):
     """boot_writer returns but get_bound_substrate() is None → bootstrap
     returns None and records ok=False (loud failure, not silent success)."""
-    import substrate.events.hermes_hooks as hh
+    import substrate.events.thoth_hooks as hh
 
     async def _fake_boot_writer(log=None):
         return object()  # a "substrate", but hooks never bound
@@ -296,7 +296,7 @@ async def test_writer_boot_unbound_is_treated_as_failure(monkeypatch):
 async def test_writer_boot_bound_succeeds(monkeypatch):
     """boot_writer that leaves get_bound_substrate() non-None → bootstrap
     returns the handle and records ok=True (happy path still works)."""
-    import substrate.events.hermes_hooks as hh
+    import substrate.events.thoth_hooks as hh
 
     sentinel = object()
 
