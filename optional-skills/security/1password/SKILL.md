@@ -6,7 +6,7 @@ author: arceus77-7, enhanced by Thoth Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [security, secrets, 1password, op, cli]
     category: security
 setup:

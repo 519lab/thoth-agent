@@ -6,7 +6,7 @@ author: Thoth Agent + Teknium
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [thoth, setup, configuration, multi-agent, spawning, cli, gateway, development]
     homepage: https://github.com/519lab/thoth-agent
     related_skills: [claude-code, codex, opencode, substrate]

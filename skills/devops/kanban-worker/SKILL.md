@@ -4,7 +4,7 @@ description: Pitfalls, examples, and edge cases for Thoth Kanban workers. The li
 version: 2.0.0
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [kanban, multi-agent, collaboration, workflow, pitfalls]
     related_skills: [kanban-orchestrator]
 ---

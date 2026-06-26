@@ -344,14 +344,14 @@ def extract_skill_conditions(frontmatter: Dict[str, Any]) -> Dict[str, List]:
     # Handle cases where metadata is not a dict (e.g., a string from malformed YAML)
     if not isinstance(metadata, dict):
         metadata = {}
-    hermes = metadata.get("hermes") or {}
-    if not isinstance(hermes, dict):
-        hermes = {}
+    thoth_meta = metadata.get("thoth") or {}
+    if not isinstance(thoth_meta, dict):
+        thoth_meta = {}
     return {
-        "fallback_for_toolsets": hermes.get("fallback_for_toolsets", []),
-        "requires_toolsets": hermes.get("requires_toolsets", []),
-        "fallback_for_tools": hermes.get("fallback_for_tools", []),
-        "requires_tools": hermes.get("requires_tools", []),
+        "fallback_for_toolsets": thoth_meta.get("fallback_for_toolsets", []),
+        "requires_toolsets": thoth_meta.get("requires_toolsets", []),
+        "fallback_for_tools": thoth_meta.get("fallback_for_tools", []),
+        "requires_tools": thoth_meta.get("requires_tools", []),
     }
 
 
@@ -364,7 +364,7 @@ def extract_skill_config_vars(frontmatter: Dict[str, Any]) -> List[Dict[str, Any
     Skills declare config.yaml settings they need via::
 
         metadata:
-          hermes:
+          thoth:
             config:
               - key: wiki.path
                 description: Path to the LLM Wiki knowledge base directory
@@ -377,10 +377,10 @@ def extract_skill_config_vars(frontmatter: Dict[str, Any]) -> List[Dict[str, Any
     metadata = frontmatter.get("metadata")
     if not isinstance(metadata, dict):
         return []
-    hermes = metadata.get("hermes")
-    if not isinstance(hermes, dict):
+    thoth_meta = metadata.get("thoth")
+    if not isinstance(thoth_meta, dict):
         return []
-    raw = hermes.get("config")
+    raw = thoth_meta.get("config")
     if not raw:
         return []
     if isinstance(raw, dict):

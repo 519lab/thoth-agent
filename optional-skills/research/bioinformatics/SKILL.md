@@ -4,7 +4,7 @@ description: Gateway to 400+ bioinformatics skills from bioSkills and ClawBio. C
 version: 1.0.0
 platforms: [linux, macos]
 metadata:
-  hermes:
+  thoth:
     tags: [bioinformatics, genomics, sequencing, biology, research, science]
     category: research
 ---

@@ -6,7 +6,7 @@ author: Thoth Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [Migration, OpenClaw, Thoth, Memory, Persona, Import]
     related_skills: [thoth-agent]
 ---

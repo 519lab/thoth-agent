@@ -6,7 +6,7 @@ author: Thoth Substrate Edition (ggrace519)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [substrate, memory, perception, recall, postgres, operator]
     related_skills: [thoth-agent]
 ---

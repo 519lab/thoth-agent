@@ -11,7 +11,7 @@ version: 1.0.0
 author: Thoth Agent + 519lab
 license: MIT
 metadata:
-  hermes:
+  thoth:
     tags: [BCI, neurofeedback, health, focus, EEG, cognitive-state, biometrics, neuroskill]
     category: health
     related_skills: []

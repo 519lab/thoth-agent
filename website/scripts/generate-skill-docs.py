@@ -343,7 +343,7 @@ def render_skill_page(
     # Heuristic nicer title from name
     display_name = name.replace("-", " ").replace("_", " ").title()
 
-    thoth_meta = (fm.get("metadata") or {}).get("hermes") or {}
+    thoth_meta = (fm.get("metadata") or {}).get("thoth") or {}
     tags = thoth_meta.get("tags") or []
     related = thoth_meta.get("related_skills") or []
     platforms = fm.get("platforms")

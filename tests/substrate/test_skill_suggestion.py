@@ -22,7 +22,7 @@ def fake_skills(tmp_path, monkeypatch):
         tagline = ", ".join(tags)
         (d / "SKILL.md").write_text(
             f"---\nname: {name}\ndescription: {desc}\n"
-            f"metadata:\n  hermes:\n    tags: [{tagline}]\n---\nbody\n",
+            f"metadata:\n  thoth:\n    tags: [{tagline}]\n---\nbody\n",
             encoding="utf-8",
         )
 

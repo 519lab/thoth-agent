@@ -4,7 +4,7 @@ description: Decomposition playbook + anti-temptation rules for an orchestrator 
 version: 3.0.0
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [kanban, multi-agent, orchestration, routing]
     related_skills: [kanban-worker]
 ---

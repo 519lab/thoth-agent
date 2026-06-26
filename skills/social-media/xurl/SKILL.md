@@ -8,7 +8,7 @@ platforms: [linux, macos]
 prerequisites:
   commands: [xurl]
 metadata:
-  hermes:
+  thoth:
     tags: [twitter, x, social-media, xurl, official-api]
     homepage: https://github.com/xdevplatform/xurl
     upstream_skill: https://github.com/openclaw/openclaw/blob/main/skills/xurl/SKILL.md
