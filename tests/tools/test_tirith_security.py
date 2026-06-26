@@ -1071,7 +1071,7 @@ class TestDiskFailureMarker:
 
 class TestThothHomeIsolation:
     def test_thoth_bin_dir_respects_hermes_home(self):
-        """_thoth_bin_dir must use THOTH_HOME, not hardcoded ~/.hermes."""
+        """_thoth_bin_dir must use THOTH_HOME, not hardcoded ~/.thoth."""
         from tools.tirith_security import _thoth_bin_dir
         import tempfile
         tmpdir = tempfile.mkdtemp()
@@ -1081,7 +1081,7 @@ class TestThothHomeIsolation:
         assert os.path.isdir(result)
 
     def test_failure_marker_respects_thoth_home(self):
-        """_failure_marker_path must use THOTH_HOME, not hardcoded ~/.hermes."""
+        """_failure_marker_path must use THOTH_HOME, not hardcoded ~/.thoth."""
         from tools.tirith_security import _failure_marker_path
         with patch.dict(os.environ, {"THOTH_HOME": "/custom/thoth"}):
             result = _failure_marker_path()

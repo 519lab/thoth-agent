@@ -19,7 +19,7 @@ def _bump_view_many(thoth_home: str, skill_name: str, iterations: int) -> None:
 @pytest.fixture
 def skills_home(tmp_path, monkeypatch):
     """Isolated THOTH_HOME with a clean skills/ dir for each test."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     (home / "skills").mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)

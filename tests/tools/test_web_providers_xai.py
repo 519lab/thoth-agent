@@ -86,7 +86,7 @@ class TestXAIProviderIsAvailable:
         assert XAIWebSearchProvider().is_available() is True
 
     def test_available_via_auth_store(self, monkeypatch, tmp_path):
-        """Cheap probe should detect xai-oauth tokens in ~/.hermes/auth.json
+        """Cheap probe should detect xai-oauth tokens in ~/.thoth/auth.json
         without invoking the resolver (which can trigger refresh)."""
         monkeypatch.delenv("XAI_API_KEY", raising=False)
         monkeypatch.setenv("THOTH_HOME", str(tmp_path))
@@ -745,7 +745,7 @@ class TestXAIProviderOAuthPath:
             "api_mode": "codex_responses",
             "base_url": "https://api.x.ai/v1",
             "api_key": "ya29.fake-oauth-access-token",
-            "source": "hermes-auth-store",
+            "source": "thoth-auth-store",
         }
 
         captured: dict = {}

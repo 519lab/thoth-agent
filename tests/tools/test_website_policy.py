@@ -242,7 +242,7 @@ def test_load_website_blocklist_wraps_shared_file_read_errors(tmp_path, monkeypa
 
 
 def test_check_website_access_uses_dynamic_thoth_home(monkeypatch, tmp_path):
-    thoth_home = tmp_path / "hermes-home"
+    thoth_home = tmp_path / "thoth-home"
     thoth_home.mkdir()
     (thoth_home / "config.yaml").write_text(
         yaml.safe_dump(
