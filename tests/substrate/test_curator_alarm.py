@@ -115,7 +115,7 @@ async def test_alarm_fires_when_consolidation_window_passed(substrate):
         substrate.pool, "test-alarm-fires", window_seconds=60,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.alarm_fires",
+        name="thoth.test.alarm_fires",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -148,7 +148,7 @@ async def test_alarm_does_not_bump_salience(substrate):
         window_seconds=60, reinforcement_bump=0.25,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.alarm_no_bump",
+        name="thoth.test.alarm_no_bump",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -186,7 +186,7 @@ async def test_alarm_cooldown_suppresses_repeat_alarms(substrate):
         substrate.pool, "test-alarm-cooldown", window_seconds=60,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.alarm_cooldown",
+        name="thoth.test.alarm_cooldown",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -251,7 +251,7 @@ async def test_alarm_does_not_fire_for_consolidated(substrate):
         substrate.pool, "test-alarm-consolidated", window_seconds=60,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.alarm_consolidated",
+        name="thoth.test.alarm_consolidated",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -280,7 +280,7 @@ async def test_alarm_does_not_fire_within_window(substrate):
         substrate.pool, "test-alarm-young", window_seconds=600,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.alarm_young",
+        name="thoth.test.alarm_young",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -304,7 +304,7 @@ async def test_alarm_bounded_by_batch_limit(substrate):
         substrate.pool, "test-alarm-bounded", window_seconds=60,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.alarm_bounded",
+        name="thoth.test.alarm_bounded",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",

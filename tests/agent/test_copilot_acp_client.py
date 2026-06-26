@@ -53,13 +53,13 @@ class CopilotACPClientSafetyTests(unittest.TestCase):
     def test_read_text_file_blocks_internal_thoth_hub_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             home = Path(tmpdir) / "home"
-            blocked = home / ".hermes" / "skills" / ".hub" / "index-cache" / "entry.json"
+            blocked = home / ".thoth" / "skills" / ".hub" / "index-cache" / "entry.json"
             blocked.parent.mkdir(parents=True, exist_ok=True)
             blocked.write_text('{"token":"sk-test-secret-1234567890"}')
 
             with patch.dict(
                 os.environ,
-                {"HOME": str(home), "THOTH_HOME": str(home / ".hermes")},
+                {"HOME": str(home), "THOTH_HOME": str(home / ".thoth")},
                 clear=False,
             ):
                 response = self._dispatch(
@@ -175,7 +175,7 @@ def _fake_popen_capture(captured):
 
 
 def test_run_prompt_prefers_profile_home_when_available(monkeypatch, tmp_path):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     profile_home = thoth_home / "home"
     profile_home.mkdir(parents=True)
 

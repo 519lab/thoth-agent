@@ -161,7 +161,7 @@ async def test_bootstrap_records_failure(thoth_db_initialized, monkeypatch):
 def test_register_subparser_boot():
     import argparse
 
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
     ns = parser.parse_args(["substrate", "boot"])

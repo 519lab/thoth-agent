@@ -9,7 +9,7 @@ import pytest
 @pytest.fixture(autouse=True)
 def _isolate(tmp_path, monkeypatch):
     """Redirect THOTH_HOME and clear module caches."""
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     # Write a minimal config so load_config doesn't fail
@@ -19,7 +19,7 @@ def _isolate(tmp_path, monkeypatch):
 def _write_config(tmp_path, config_dict):
     """Write a config.yaml to the test THOTH_HOME."""
     import yaml
-    config_path = tmp_path / ".hermes" / "config.yaml"
+    config_path = tmp_path / ".thoth" / "config.yaml"
     config_path.write_text(yaml.dump(config_dict))
 
 

@@ -61,7 +61,7 @@ async def _seed_passed_slice(substrate, *, text: str) -> None:
 
 
 def test_register_subparser_recall_validate():
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
     ns = parser.parse_args(

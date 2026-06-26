@@ -90,7 +90,7 @@ async def _make_passed_slice(
 @pytest.mark.asyncio
 async def test_reinforce_bumps_by_profile_default(substrate):
     stream = await substrate.streams.register(
-        name="hermes.test.reinforce_default",
+        name="thoth.test.reinforce_default",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -116,7 +116,7 @@ async def test_reinforce_bumps_by_profile_default(substrate):
 @pytest.mark.asyncio
 async def test_reinforce_caps_at_1(substrate):
     stream = await substrate.streams.register(
-        name="hermes.test.reinforce_cap",
+        name="thoth.test.reinforce_cap",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -140,7 +140,7 @@ async def test_reinforce_caps_at_1(substrate):
 @pytest.mark.asyncio
 async def test_reinforce_explicit_bump_overrides_profile(substrate):
     stream = await substrate.streams.register(
-        name="hermes.test.reinforce_explicit",
+        name="thoth.test.reinforce_explicit",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -164,7 +164,7 @@ async def test_reinforce_explicit_bump_overrides_profile(substrate):
 @pytest.mark.asyncio
 async def test_reinforce_updates_salience_updated_at(substrate):
     stream = await substrate.streams.register(
-        name="hermes.test.reinforce_touches_ts",
+        name="thoth.test.reinforce_touches_ts",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -201,7 +201,7 @@ async def test_decay_halves_salience_after_one_half_life(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.decay_half_life",
+        name="thoth.test.decay_half_life",
         family=Family.EXTEROCEPTIVE,
         modality=Modality.TEXT,
         source="cli",
@@ -230,7 +230,7 @@ async def test_decay_does_not_touch_recently_updated(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.decay_recent_skip",
+        name="thoth.test.decay_recent_skip",
         family=Family.EXTEROCEPTIVE,
         modality=Modality.TEXT,
         source="cli",
@@ -257,7 +257,7 @@ async def test_decay_skips_released_slices(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.decay_released",
+        name="thoth.test.decay_released",
         family=Family.EXTEROCEPTIVE,
         modality=Modality.TEXT,
         source="cli",
@@ -299,7 +299,7 @@ async def test_decay_skips_pending_slices(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.decay_pending",
+        name="thoth.test.decay_pending",
         family=Family.EXTEROCEPTIVE,
         modality=Modality.TEXT,
         source="cli",
@@ -340,7 +340,7 @@ async def test_decay_skips_quarantined_slices(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.decay_quarantined",
+        name="thoth.test.decay_quarantined",
         family=Family.EXTEROCEPTIVE,
         modality=Modality.TEXT,
         source="cli",
