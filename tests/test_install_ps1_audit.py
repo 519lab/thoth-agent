@@ -17,7 +17,7 @@ The four issues:
   origin/$Branch`` + ``git clean -fd -e venv -e node_modules`` (no stash / no
   pull-replay), matching install.sh #210.
 * #225 — user-facing output must not print ``~/.hermes`` (the real dir is
-  %LOCALAPPDATA%\\thoth == $HermesHome).
+  %LOCALAPPDATA%\\thoth == $ThothHome).
 * #227 — stop pre-creating legacy image_cache/audio_cache dirs; ensure the
   workspace/ dir is created.
 """
@@ -84,12 +84,9 @@ def test_postgres_stage_registered_before_config_templates() -> None:
 
 def test_compose_project_pinned_not_derived_from_dir() -> None:
     body = _extract_function_body("Resolve-ComposeProject")
-    assert "_hermes_pg_data" in body, (
-        "Resolve-ComposeProject must detect an existing *_hermes_pg_data "
-        "volume and reuse its project so an upgrade re-attaches real data."
-    )
     assert '"thoth"' in body or "'thoth'" in body, (
-        "fresh installs must use the stable 'thoth' compose project."
+        "installs must use the stable 'thoth' compose project (no back-compat "
+        "legacy-volume detection)."
     )
     assert "COMPOSE_PROJECT_NAME" in body, (
         "Resolve-ComposeProject must set COMPOSE_PROJECT_NAME so every "
@@ -184,7 +181,7 @@ def test_update_backs_up_local_changes_first() -> None:
     backup = _extract_function_body("Backup-CodeDirChanges")
     assert ".install-backup" in backup and "diff HEAD" in backup, (
         "Backup-CodeDirChanges must save `git diff HEAD` under "
-        "$HermesHome\\.install-backup before the hard reset."
+        "$ThothHome\\.install-backup before the hard reset."
     )
 
 
@@ -206,7 +203,7 @@ def test_no_hermes_path_in_user_facing_output() -> None:
         if re.search(r"Write-(Success|Info|Host|Warn|Err)\b", line):
             offenders.append((lineno, line.strip()))
     assert not offenders, (
-        "user-facing output must use $HermesHome / ~/.thoth, not ~/.hermes: "
+        "user-facing output must use $ThothHome / ~/.thoth, not ~/.hermes: "
         + "; ".join(f"L{n}: {t}" for n, t in offenders)
     )
 
@@ -219,16 +216,16 @@ def test_no_hermes_path_in_user_facing_output() -> None:
 def test_no_legacy_cache_dirs_created() -> None:
     body = _extract_function_body("Copy-ConfigTemplates")
     assert "New-Item" in body  # sanity: we're looking at the dir-creation fn
-    assert 'Path "$HermesHome\\image_cache"' not in body, (
+    assert 'Path "$ThothHome\\image_cache"' not in body, (
         "must not pre-create the legacy image_cache dir (#227)."
     )
-    assert 'Path "$HermesHome\\audio_cache"' not in body, (
+    assert 'Path "$ThothHome\\audio_cache"' not in body, (
         "must not pre-create the legacy audio_cache dir (#227)."
     )
 
 
 def test_workspace_dir_created() -> None:
     body = _extract_function_body("Copy-ConfigTemplates")
-    assert 'Path "$HermesHome\\workspace"' in body, (
+    assert 'Path "$ThothHome\\workspace"' in body, (
         "Copy-ConfigTemplates must create the agent workspace/ dir (#227)."
     )
