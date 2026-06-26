@@ -103,7 +103,7 @@ def _thoth_home() -> Path:
 # Filesystem-safe key: lowercase, allow ``[a-z0-9._-@]``, replace anything
 # else with ``_``. ``ramon.fernandez@nttdata.com`` stays human-readable
 # (``ramon.fernandez@nttdata.com.json``) which makes admin debugging by
-# ``ls ~/.hermes/google_chat_user_tokens/`` trivial.
+# ``ls ~/.thoth/google_chat_user_tokens/`` trivial.
 _EMAIL_FS_RE = re.compile(r"[^a-z0-9._@-]+")
 
 

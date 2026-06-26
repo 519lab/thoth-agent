@@ -17,7 +17,7 @@ Or manually:
 
 ```bash
 thoth config set memory.provider supermemory
-echo 'SUPERMEMORY_API_KEY=***' >> ~/.hermes/.env
+echo 'SUPERMEMORY_API_KEY=***' >> ~/.thoth/.env
 ```
 
 ## Config

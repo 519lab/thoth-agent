@@ -8,7 +8,7 @@ observability/langfuse``, or by checking the box in the interactive
 ``thoth plugins`` UI). At runtime the plugin also requires the
 ``langfuse`` SDK and credentials; if either is missing the hooks are inert.
 
-Required env vars (set in ~/.hermes/.env):
+Required env vars (set in ~/.thoth/.env):
   THOTH_LANGFUSE_PUBLIC_KEY  - Langfuse project public key (pk-lf-...)
   THOTH_LANGFUSE_SECRET_KEY  - Langfuse project secret key (sk-lf-...)
   THOTH_LANGFUSE_BASE_URL    - Langfuse server URL (default: https://cloud.langfuse.com)
@@ -702,7 +702,7 @@ def on_pre_llm_call(*, task_id: str = "", session_id: str = "", platform: str = 
     if client is None:
         return
 
-    # messages is a list only for legacy Hermes branches that fired
+    # messages is a list only for legacy Thoth branches that fired
     # pre_llm_call with API messages directly. Current Thoth fires
     # pre_llm_call for context injection (conversation_history/user_message,
     # no messages list) — tracing that would create orphan traces.

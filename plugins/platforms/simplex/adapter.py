@@ -67,7 +67,7 @@ HEALTH_CHECK_INTERVAL = 30.0
 HEALTH_CHECK_STALE_THRESHOLD = 120.0
 
 # Correlation ID prefix for requests we send so we can ignore our own echoes.
-_CORR_PREFIX = "hermes-"
+_CORR_PREFIX = "thoth-"
 
 
 # ---------------------------------------------------------------------------
@@ -646,7 +646,7 @@ async def _standalone_send(
             cmd_str = f"@[{chat_id}] {message}"
 
         payload = {
-            "corrId": f"hermes-snd-{int(time.time() * 1000)}",
+            "corrId": f"thoth-snd-{int(time.time() * 1000)}",
             "cmd": cmd_str,
         }
 
@@ -664,7 +664,7 @@ def interactive_setup() -> None:
     """Minimal stdin wizard for ``thoth setup gateway`` → SimpleX.
 
     Prompts for the WebSocket URL and the optional allowlist / home channel.
-    Writes to ``~/.hermes/.env`` via ``thoth_cli.config``.
+    Writes to ``~/.thoth/.env`` via ``thoth_cli.config``.
     """
     print()
     print("SimpleX Chat setup")
@@ -677,7 +677,7 @@ def interactive_setup() -> None:
     try:
         from thoth_cli.config import get_env_value, save_env_value
     except ImportError:
-        print("thoth_cli.config not available; set SIMPLEX_* vars manually in ~/.hermes/.env")
+        print("thoth_cli.config not available; set SIMPLEX_* vars manually in ~/.thoth/.env")
         return
 
     def _prompt(var: str, prompt: str, *, secret: bool = False) -> None:

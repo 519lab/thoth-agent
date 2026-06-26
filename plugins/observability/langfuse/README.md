@@ -14,7 +14,7 @@ Or check the box in the interactive `thoth plugins` UI.
 
 ## Required credentials
 
-Set these in `~/.hermes/.env`:
+Set these in `~/.thoth/.env`:
 
 ```bash
 THOTH_LANGFUSE_PUBLIC_KEY=pk-lf-...

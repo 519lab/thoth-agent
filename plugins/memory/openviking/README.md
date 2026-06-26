@@ -17,7 +17,7 @@ thoth memory setup    # select "openviking"
 Or manually:
 ```bash
 thoth config set memory.provider openviking
-echo "OPENVIKING_ENDPOINT=http://localhost:1933" >> ~/.hermes/.env
+echo "OPENVIKING_ENDPOINT=http://localhost:1933" >> ~/.thoth/.env
 ```
 
 ## Config

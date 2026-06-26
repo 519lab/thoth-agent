@@ -16,7 +16,7 @@ thoth memory setup    # select "retaindb"
 Or manually:
 ```bash
 thoth config set memory.provider retaindb
-echo "RETAINDB_API_KEY=your-key" >> ~/.hermes/.env
+echo "RETAINDB_API_KEY=your-key" >> ~/.thoth/.env
 ```
 
 ## Config

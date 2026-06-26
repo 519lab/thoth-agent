@@ -19,7 +19,7 @@ thoth memory setup    # generic picker, also works
 Or manually:
 ```bash
 thoth config set memory.provider honcho
-echo "HONCHO_API_KEY=***" >> ~/.hermes/.env
+echo "HONCHO_API_KEY=***" >> ~/.thoth/.env
 ```
 
 ## Architecture Overview
@@ -106,7 +106,7 @@ Config is read from the first file that exists:
 | Priority | Path | Scope |
 |----------|------|-------|
 | 1 | `$THOTH_HOME/honcho.json` | Profile-local (isolated Thoth instances) |
-| 2 | `~/.hermes/honcho.json` | Default profile (shared host blocks) |
+| 2 | `~/.thoth/honcho.json` | Default profile (shared host blocks) |
 | 3 | `~/.honcho/config.json` | Global (cross-app interop) |
 
 Host key is derived from the active Thoth profile: `hermes` (default) or `hermes.<profile>`.

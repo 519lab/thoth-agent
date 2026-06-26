@@ -63,7 +63,7 @@ pip install playwright websockets && python -m playwright install chromium
 #   Linux:  sudo apt install pulseaudio-utils
 #   macOS:  brew install blackhole-2ch ffmpeg
 #           → System Settings → Sound → Input → BlackHole 2ch
-#   Then set OPENAI_API_KEY or THOTH_MEET_REALTIME_KEY in ~/.hermes/.env
+#   Then set OPENAI_API_KEY or THOTH_MEET_REALTIME_KEY in ~/.thoth/.env
 ```
 
 For a remote node:
@@ -125,7 +125,7 @@ Run `thoth meet setup` to preflight local prereqs.
 | `captioning` | Caption observer is installed. |
 | `transcriptLines` / `lastCaptionAt` | Transcript progress. |
 | `realtime` / `realtimeReady` | Realtime mode provisioned / WS connected. |
-| `realtimeDevice` | Audio device name the bot is feeding (e.g. `hermes_meet_src`). |
+| `realtimeDevice` | Audio device name the bot is feeding (e.g. `thoth_meet_src`). |
 | `audioBytesOut` / `lastAudioOutAt` | How much PCM the OpenAI session has produced. |
 | `lastBargeInAt` | Timestamp of the most recent `response.cancel` sent. |
 | `leaveReason` | `duration_expired`, `lobby_timeout`, `denied`, `page_closed`, or null. |

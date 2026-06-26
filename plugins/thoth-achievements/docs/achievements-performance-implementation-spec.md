@@ -48,7 +48,7 @@ Responsibilities:
 - expose age and staleness checks
 
 Storage path:
-- `~/.hermes/plugins/hermes-achievements/scan_snapshot.json`
+- `~/.thoth/plugins/thoth-achievements/scan_snapshot.json`
 
 Methods (conceptual):
 - `get()` -> snapshot | null
@@ -125,7 +125,7 @@ Compatibility guidance:
 - Add metadata keys without breaking old callers.
 
 Checkpoint file (new):
-- `~/.hermes/plugins/hermes-achievements/scan_checkpoint.json`
+- `~/.thoth/plugins/thoth-achievements/scan_checkpoint.json`
 
 Suggested checkpoint shape:
 ```json
@@ -204,9 +204,9 @@ Notes:
 - frontend request hygiene: `dashboard/dist/index.js` (or source if available)
 - plugin metadata: `dashboard/manifest.json`
 - persisted runtime files:
-  - `~/.hermes/plugins/hermes-achievements/state.json` (existing unlock state)
-  - `~/.hermes/plugins/hermes-achievements/scan_snapshot.json` (new)
-  - `~/.hermes/plugins/hermes-achievements/scan_checkpoint.json` (new)
+  - `~/.thoth/plugins/thoth-achievements/state.json` (existing unlock state)
+  - `~/.thoth/plugins/thoth-achievements/scan_snapshot.json` (new)
+  - `~/.thoth/plugins/thoth-achievements/scan_checkpoint.json` (new)
 
 ---
 

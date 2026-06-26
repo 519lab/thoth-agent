@@ -1,8 +1,8 @@
 (function () {
   "use strict";
-  // hermes-achievements dashboard plugin
+  // thoth-achievements dashboard plugin
   // Originally authored by @PCinkusz — https://github.com/PCinkusz/hermes-achievements (MIT).
-  // Bundled into hermes-agent. Upstream repo remains the staging ground for new
+  // Bundled into thoth-agent. Upstream repo remains the staging ground for new
   // badges and UI iteration; the in-progress scan banner below is a small addition
   // layered on top of the original dist bundle.
   const SDK = window.__THOTH_PLUGIN_SDK__;
@@ -49,7 +49,7 @@
   };
 
   async function api(path, options) {
-    const url = "/api/plugins/hermes-achievements" + path;
+    const url = "/api/plugins/thoth-achievements" + path;
     const token = window.__THOTH_SESSION_TOKEN__ || "";
     const headers = { ...((options && options.headers) || {}) };
     if (token) headers["X-Hermes-Session-Token"] = token;
@@ -312,7 +312,7 @@
       const url = URL.createObjectURL(blobRef.current);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "hermes-achievement-" + (achievement.id || "badge") + ".png";
+      a.download = "thoth-achievement-" + (achievement.id || "badge") + ".png";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -341,7 +341,7 @@
     // paste in the same flow.
     function tweetText() {
       const tierPart = achievement.tier ? (achievement.tier + " tier ") : "";
-      const tmpl = tx(t, "share.tweet_text", "Just unlocked {tier_part}\"{name}\" in Hermes Agent ☤", {
+      const tmpl = tx(t, "share.tweet_text", "Just unlocked {tier_part}\"{name}\" in Thoth Agent ☤", {
         tier_part: tierPart,
         name: achievement.name,
       });
@@ -449,8 +449,8 @@
       React.createElement("section", { className: "ha-hero ha-loading-hero" },
         React.createElement("div", null,
           React.createElement("div", { className: "ha-kicker" }, tx(t, "hero.kicker", "Agentic Gamerscore")),
-          React.createElement("h1", null, tx(t, "hero.title", "Hermes Achievements")),
-          React.createElement("p", null, tx(t, "hero.scan_subtitle", "Scanning Hermes session history. First scan can take 5–10 seconds on large histories."))
+          React.createElement("h1", null, tx(t, "hero.title", "Thoth Achievements")),
+          React.createElement("p", null, tx(t, "hero.scan_subtitle", "Scanning Thoth session history. First scan can take 5–10 seconds on large histories."))
         ),
         React.createElement("div", { className: "ha-scan-status", role: "status", "aria-live": "polite" },
           React.createElement("span", { className: "ha-scan-pulse", "aria-hidden": "true" }),
@@ -481,7 +481,7 @@
       React.createElement("section", { className: "ha-guide ha-loading-guide" },
         React.createElement("div", null,
           React.createElement("strong", null, tx(t, "guide.scan_status_header", "Scan status")),
-          React.createElement("p", null, tx(t, "guide.scan_status_body", "Hermes is scanning local history once, then cards will appear automatically. Nothing is stuck if this takes a few seconds."))
+          React.createElement("p", null, tx(t, "guide.scan_status_body", "Thoth is scanning local history once, then cards will appear automatically. Nothing is stuck if this takes a few seconds."))
         ),
         React.createElement("div", null,
           React.createElement("strong", null, tx(t, "guide.what_scanned_header", "What is scanned")),
@@ -672,8 +672,8 @@
       React.createElement("section", { className: "ha-hero" },
         React.createElement("div", null,
           React.createElement("div", { className: "ha-kicker" }, tx(t, "hero.kicker", "Agentic Gamerscore")),
-          React.createElement("h1", null, tx(t, "hero.title", "Hermes Achievements")),
-          React.createElement("p", null, tx(t, "hero.subtitle", "Collectible Hermes badges earned from real session history. Known unfinished achievements are shown as Discovered; Secret achievements stay hidden until the first matching behavior appears."))
+          React.createElement("h1", null, tx(t, "hero.title", "Thoth Achievements")),
+          React.createElement("p", null, tx(t, "hero.subtitle", "Collectible Thoth badges earned from real session history. Known unfinished achievements are shown as Discovered; Secret achievements stay hidden until the first matching behavior appears."))
         ),
         React.createElement(C.Button, { onClick: load, className: "ha-refresh" }, tx(t, "actions.rescan", "Rescan"))
       ),
@@ -684,7 +684,7 @@
         React.createElement(StatCard, { label: tx(t, "stats.discovered", "Discovered"), value: discovered.length, hint: tx(t, "stats.discovered_hint", "known, not earned yet") }),
         React.createElement(StatCard, { label: tx(t, "stats.secrets", "Secrets"), value: secret.length, hint: tx(t, "stats.secrets_hint", "hidden until first signal") }),
         React.createElement(StatCard, { label: tx(t, "stats.highest_tier", "Highest tier"), value: highest, hint: tx(t, "stats.highest_tier_hint", "Copper → Silver → Gold → Diamond → Olympian") }),
-        React.createElement(StatCard, { label: tx(t, "stats.latest", "Latest"), value: latest[0] ? latest[0].name : tx(t, "stats.none_yet", "None yet"), hint: latest[0] ? latest[0].category : tx(t, "stats.latest_hint_empty", "run Hermes more") })
+        React.createElement(StatCard, { label: tx(t, "stats.latest", "Latest"), value: latest[0] ? latest[0].name : tx(t, "stats.none_yet", "None yet"), hint: latest[0] ? latest[0].category : tx(t, "stats.latest_hint_empty", "run Thoth more") })
       ),
       React.createElement("section", { className: "ha-guide" },
         React.createElement("div", null,
@@ -693,7 +693,7 @@
         ),
         React.createElement("div", null,
           React.createElement("strong", null, tx(t, "guide.secret_header", "Secret achievements")),
-          React.createElement("p", null, tx(t, "guide.secret_body", "Secrets hide their exact trigger. Once Hermes sees a related signal, the card becomes Discovered and shows its requirement."))
+          React.createElement("p", null, tx(t, "guide.secret_body", "Secrets hide their exact trigger. Once Thoth sees a related signal, the card becomes Discovered and shows its requirement."))
         )
       ),
       React.createElement("div", { className: "ha-toolbar" },
@@ -728,5 +728,5 @@
     );
   }
 
-  window.__THOTH_PLUGINS__.register("hermes-achievements", AchievementsPage);
+  window.__THOTH_PLUGINS__.register("thoth-achievements", AchievementsPage);
 })();
