@@ -10,13 +10,13 @@
 #   - INSTALL_DIR:  ~/.thoth/app
 #   - THOTH_HOME:  ~/.thoth
 #   - CLI command:  thoth
-#   - PostgreSQL:   docker compose service on port 5432, db `hermes`
+#   - PostgreSQL:   docker compose service on port 5432, db `thoth`
 #
 # If you are installing on a machine that already has an upstream
 # 519lab/thoth-agent install and want to coexist without overwriting
 # it, override the defaults explicitly:
 #
-#   curl ... | bash -s -- --cli-name thoth-substrate --hermes-home ~/.thoth-substrate
+#   curl ... | bash -s -- --cli-name thoth-substrate --thoth-home ~/.thoth-substrate
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | bash
@@ -87,9 +87,9 @@ UV_MIN_VERSION="0.4.0"
 # Defaults match the docker-compose.yml shipped with this repo.
 PG_HOST_DEFAULT="localhost"
 PG_PORT_DEFAULT="5432"
-PG_USER_DEFAULT="hermes"
-PG_PASSWORD_DEFAULT="hermes"
-PG_DATABASE_DEFAULT="hermes"
+PG_USER_DEFAULT="thoth"
+PG_PASSWORD_DEFAULT="thoth"
+PG_DATABASE_DEFAULT="thoth"
 
 # ── FHS-style root install layout (set by resolve_install_layout) ──────────
 ROOT_FHS_LAYOUT=false
@@ -135,7 +135,7 @@ while [[ $# -gt 0 ]]; do
         --reset-db)        RESET_DB=true; shift ;;
         --branch)          BRANCH="$2"; shift 2 ;;
         --dir)             INSTALL_DIR="$2"; INSTALL_DIR_EXPLICIT=true; shift 2 ;;
-        --hermes-home)     THOTH_HOME="$2"; shift 2 ;;
+        --thoth-home)      THOTH_HOME="$2"; shift 2 ;;
         --cli-name)        CLI_NAME="$2"; shift 2 ;;
         --pg-dsn)          PG_DSN_OVERRIDE="$2"; shift 2 ;;
         --force-rewrite-config) FORCE_REWRITE_CONFIG=true; shift ;;
@@ -165,7 +165,7 @@ Options:
   --dir PATH          Installation directory
                         default (non-root): ~/.thoth/app
                         default (root, Linux): /usr/local/lib/thoth
-  --hermes-home PATH  Data directory
+  --thoth-home PATH   Data directory
                         default: ~/.thoth
                         (Override env: THOTH_HOME)
   --cli-name NAME     Name for the CLI shim
@@ -174,7 +174,7 @@ Options:
                         coexist with another Thoth install on the same machine.
                         (Override env: THOTH_CLI_NAME)
   --pg-dsn URL        PostgreSQL DSN to use
-                        default: postgresql://hermes:hermes@localhost:5432/hermes
+                        default: postgresql://thoth:thoth@localhost:5432/thoth
                         (matches the docker-compose service shipped with this repo)
   --force-rewrite-config
                       On updates, rewrite THOTH_PG_DSN and other installer-
@@ -184,8 +184,8 @@ Options:
                       user-customized values.
   -h, --help          Show this help
 
-Side-by-side install (coexist with an existing upstream Hermes):
-  curl ... | bash -s -- --cli-name thoth-substrate --hermes-home ~/.thoth-substrate
+Side-by-side install (coexist with another Thoth install):
+  curl ... | bash -s -- --cli-name thoth-substrate --thoth-home ~/.thoth-substrate
 
 Custom PostgreSQL (e.g. your own cluster, Neon, Supabase):
   curl ... | bash -s -- --skip-postgres --pg-dsn 'postgresql://user:pw@host:5432/db'
@@ -285,15 +285,13 @@ is_termux() {
 detect_install_mode() {
     # An "update" is when ANY of these markers exist from a prior install
     # against this $THOTH_HOME / $INSTALL_DIR pair:
-    #   - $THOTH_HOME/.install_log    — written at the end of every install
-    #   - $THOTH_HOME/.hermes_install — written by copy_config_templates
-    #   - $THOTH_HOME/.substrate_install — legacy marker (pre-2026-05-26)
-    #   - $INSTALL_DIR/.git            — repo is already cloned
+    #   - $THOTH_HOME/.install_log   — written at the end of every install
+    #   - $THOTH_HOME/.thoth_install — written by copy_config_templates
+    #   - $INSTALL_DIR/.git          — repo is already cloned
     # Any one of these indicates the user has run the installer before, so
     # we preserve their config/state and skip first-run wizards.
     if [ -f "$THOTH_HOME/.install_log" ] \
-       || [ -f "$THOTH_HOME/.hermes_install" ] \
-       || [ -f "$THOTH_HOME/.substrate_install" ] \
+       || [ -f "$THOTH_HOME/.thoth_install" ] \
        || [ -d "$INSTALL_DIR/.git" ]; then
         IS_UPDATE=true
         log_info "Existing installation detected — running in UPDATE mode."
@@ -314,18 +312,11 @@ resolve_install_layout() {
         return 0
     fi
 
-    # Root on Linux: FHS layout, unless a legacy install exists at THOTH_HOME.
-    # Prefer the current ``app`` checkout, but still adopt a legacy
-    # ``hermes-agent`` checkout so old installs upgrade in place.
+    # Root on Linux: FHS layout, unless an install already exists at THOTH_HOME.
     if [ "$OS" = "linux" ] && [ "$(id -u)" -eq 0 ]; then
         if [ -d "$THOTH_HOME/app/.git" ]; then
             INSTALL_DIR="$THOTH_HOME/app"
             log_info "Existing install detected at $INSTALL_DIR — keeping layout"
-            return 0
-        fi
-        if [ -d "$THOTH_HOME/hermes-agent/.git" ]; then
-            INSTALL_DIR="$THOTH_HOME/hermes-agent"
-            log_info "Existing legacy install detected at $INSTALL_DIR — keeping layout"
             return 0
         fi
         INSTALL_DIR="/usr/local/lib/thoth"
@@ -337,12 +328,7 @@ resolve_install_layout() {
         return 0
     fi
 
-    # Non-root default: prefer the current ``app`` checkout, but adopt a
-    # legacy ``hermes-agent`` checkout in place so old installs upgrade.
-    if [ -d "$THOTH_HOME/hermes-agent/.git" ] && [ ! -d "$THOTH_HOME/app/.git" ]; then
-        INSTALL_DIR="$THOTH_HOME/hermes-agent"
-        return 0
-    fi
+    # Non-root default: the ``app`` checkout under THOTH_HOME.
     INSTALL_DIR="$THOTH_HOME/app"
 }
 
@@ -366,7 +352,7 @@ get_command_link_display_dir() {
     fi
 }
 
-get_hermes_command_path() {
+get_thoth_command_path() {
     local link_dir
     link_dir="$(get_command_link_dir)"
     if [ -x "$link_dir/$CLI_NAME" ]; then
@@ -377,27 +363,18 @@ get_hermes_command_path() {
 }
 
 # Warn ONLY when we'd actually overwrite a foreign install, not on a
-# normal re-install of our own launcher. Two checks:
+# normal re-install of our own launcher. One check:
 #
-#   1. ``$THOTH_HOME`` already contains a directory that's NOT one of
-#      ours (no ``.hermes_install`` marker file).
-#   2. An existing ``thoth`` on PATH resolves to a different real file
-#      than the one we're about to write. ``command -v`` plus
-#      ``readlink -f`` canonicalize both sides so re-installing the
-#      same launcher from a path that includes ``~`` vs ``/home/user``
-#      vs a symlinked dir compares equal and the check stays quiet.
+#   * An existing ``thoth`` on PATH resolves to a different real file
+#     than the one we're about to write. ``command -v`` plus
+#     ``readlink -f`` canonicalize both sides so re-installing the
+#     same launcher from a path that includes ``~`` vs ``/home/user``
+#     vs a symlinked dir compares equal and the check stays quiet.
 #
-# When neither check fires (which is the common case — first-time install
-# OR a re-install of the same Thoth), the function exits silently.
+# When the check doesn't fire (the common case — first-time install OR a
+# re-install of the same Thoth), the function exits silently.
 warn_upstream_collision() {
-    local hermes_home_dir="$HOME/.hermes"
     local saw_collision=false
-
-    if [ "$THOTH_HOME" = "$hermes_home_dir" ] && [ -d "$hermes_home_dir" ] && [ ! -f "$hermes_home_dir/.hermes_install" ] && [ ! -f "$hermes_home_dir/.substrate_install" ]; then
-        log_warn "$hermes_home_dir already exists and wasn't created by this installer."
-        log_warn "  skills/config/SOUL.md in that directory will be SHARED with the existing install."
-        saw_collision=true
-    fi
 
     if [ "$CLI_NAME" = "thoth" ] && command -v thoth >/dev/null 2>&1; then
         local existing existing_canon target_link target_canon
@@ -420,11 +397,11 @@ warn_upstream_collision() {
     if [ "$saw_collision" = true ]; then
         if [ "$IS_INTERACTIVE" = true ] || [ -r /dev/tty ]; then
             if ! prompt_yes_no "Continue anyway?" "no"; then
-                echo "Aborted. Re-run with --hermes-home and/or --cli-name to install side-by-side."
+                echo "Aborted. Re-run with --thoth-home and/or --cli-name to install side-by-side."
                 exit 1
             fi
         else
-            log_warn "Non-interactive — proceeding (set --hermes-home and --cli-name explicitly if this is wrong)."
+            log_warn "Non-interactive — proceeding (set --thoth-home and --cli-name explicitly if this is wrong)."
         fi
     fi
 }
@@ -969,7 +946,7 @@ verify_core_deps() {
 
 # Detect a non-substrate PostgreSQL listening on the chosen port. If a native
 # pg server (apt-installed `postgresql` is common on Ubuntu) is bound to
-# 5432 *and* it doesn't accept our `hermes/hermes` creds, our docker
+# 5432 *and* it doesn't accept our `thoth/thoth` creds, our docker
 # container will silently fail to bind (or bind on a different interface)
 # and every connection from the host will hit the native one and bounce
 # with InvalidPasswordError. Probe first; if the port is taken by something
@@ -977,9 +954,9 @@ verify_core_deps() {
 # downstream to that port.
 # Inspect / optionally destroy the named postgres data volume that the
 # docker-compose `postgres` service mounts at /var/lib/postgresql/data
-# (declared as `hermes_pg_data` in docker-compose.yml; the actual docker
+# (declared as `thoth_pg_data` in docker-compose.yml; the actual docker
 # volume is prefixed with the compose project name, e.g.
-# `hermes-agent_hermes_pg_data`).
+# `thoth_thoth_pg_data`).
 #
 #   * Default (no --reset-db): NEVER deletes data. Logs LOUDLY that an
 #     existing database is being reused, and — when cheaply obtainable —
@@ -995,11 +972,11 @@ _warn_or_reset_pg_volume() {
     local probe_container="${1:-}"
     # Resolve the compose-prefixed volume name. `docker compose` knows the
     # project; ask it for the volume's full name. Fall back to the common
-    # `hermes-agent_hermes_pg_data` if the lookup yields nothing.
+    # `thoth_thoth_pg_data` if the lookup yields nothing.
     local vol_name=""
     if command -v docker >/dev/null 2>&1; then
         vol_name=$(docker volume ls --format '{{.Name}}' 2>/dev/null \
-            | grep -E '_hermes_pg_data$' | head -n1)
+            | grep -E '_thoth_pg_data$' | head -n1)
     fi
 
     if [ "$RESET_DB" = true ]; then
@@ -1020,7 +997,7 @@ _warn_or_reset_pg_volume() {
     fi
 
     # Reuse path — do NOT delete anything. Warn loudly.
-    log_warn "PostgreSQL: REUSING existing database data (named volume '${vol_name:-hermes_pg_data}')."
+    log_warn "PostgreSQL: REUSING existing database data (named volume '${vol_name:-thoth_pg_data}')."
     log_warn "  The new container re-attaches the OLD volume, so its schema, rows,"
     log_warn "  and alembic_version are inherited from the previous install."
     # Try to surface the inherited alembic_version cheaply. Best-effort: only
@@ -1029,7 +1006,7 @@ _warn_or_reset_pg_volume() {
     if [ -n "$probe_container" ] && command -v docker >/dev/null 2>&1; then
         local av
         av=$(docker exec "$probe_container" \
-            psql -U "${POSTGRES_USER:-hermes}" -d "${POSTGRES_DB:-hermes}" \
+            psql -U "${POSTGRES_USER:-thoth}" -d "${POSTGRES_DB:-thoth}" \
             -tAc 'SELECT version_num FROM alembic_version' 2>/dev/null | head -n1 | tr -d '[:space:]')
         if [ -n "$av" ]; then
             log_warn "  Inherited alembic_version: $av"
@@ -1075,22 +1052,18 @@ choose_pg_port() {
     }
 
     # Upgrade-aware path: if a prior Thoth Postgres container exists
-    # (running OR stopped, current OR legacy name), reclaim its port
-    # and remove the old container so the new compose-up can bind
-    # cleanly. Without this, the substrate→hermes rename last week
-    # left old containers on port 5432 unreferenceable by the new
-    # compose project, the next install bumped to 5433, and every
-    # subsequent re-install drifted further up the port range.
+    # (running OR stopped), reclaim its port and remove the old container
+    # so the new compose-up can bind cleanly. Without this, a container
+    # left on port 5432 but unreferenceable by the new compose project
+    # would push the next install to 5433, drifting further up the port
+    # range on every re-install.
     #
     # Container name candidates, in priority order. First match wins:
-    #   1. ``${COMPOSE_PROJECT_NAME}-postgres-1`` — the pinned project (thoth,
-    #      or a reused legacy project) resolved in resolve_compose_project
+    #   1. ``${COMPOSE_PROJECT_NAME}-postgres-1`` — the pinned project (thoth)
+    #      resolved in resolve_compose_project
     #   2. ``thoth-postgres-1`` — stable fresh-install name
-    #   3. ``hermes-agent-postgres-1`` — pre-rename code-dir project
-    #   4. ``hermes-substrate-postgres-1`` — legacy (pre-2026-05-26)
     local existing_container=""
-    for name in "${COMPOSE_PROJECT_NAME:-thoth}-postgres-1" thoth-postgres-1 \
-                hermes-agent-postgres-1 hermes-substrate-postgres-1; do
+    for name in "${COMPOSE_PROJECT_NAME:-thoth}-postgres-1" thoth-postgres-1; do
         if docker inspect "$name" >/dev/null 2>&1; then
             existing_container="$name"
             break
@@ -1115,7 +1088,7 @@ choose_pg_port() {
         if [ -n "$existing_port" ]; then
             log_info "PostgreSQL upgrade: found existing container '$existing_container' on port $existing_port"
             # CRITICAL: removing the container does NOT remove its named data
-            # volume (hermes_pg_data). The new compose-up re-attaches that same
+            # volume (thoth_pg_data). The new compose-up re-attaches that same
             # volume, so the "fresh" install inherits the OLD database — schema,
             # rows, and alembic_version included. If that alembic_version is
             # ahead of (or inconsistent with) the migrations in this checkout,
@@ -1147,7 +1120,7 @@ choose_pg_port() {
     if command -v docker >/dev/null 2>&1; then
         local orphan_vol
         orphan_vol=$(docker volume ls --format '{{.Name}}' 2>/dev/null \
-            | grep -E '_hermes_pg_data$' | head -n1)
+            | grep -E '_thoth_pg_data$' | head -n1)
         if [ -n "$orphan_vol" ]; then
             # Reuses (warns) by default; drops only under --reset-db.
             _warn_or_reset_pg_volume
@@ -1182,37 +1155,23 @@ choose_pg_port() {
 # Pin a STABLE docker-compose project name, decoupled from the install dir.
 # Compose otherwise derives the project (and thus the DB volume + container
 # names) from the code-dir basename — so `~/.thoth/app` yields project `app`
-# and volume `app_hermes_pg_data`. That couples the database's identity to a
-# directory name that we rename (hermes-agent → app), which would silently
-# point a "fresh" install at a NEW empty volume and orphan the real data.
+# and volume `app_thoth_pg_data`. That couples the database's identity to a
+# directory name, which would silently point a "fresh" install at a NEW empty
+# volume and orphan the real data.
 #
 # Resolution (exported so EVERY `docker compose` call below is consistent,
 # regardless of the `cd "$INSTALL_DIR"` the compose steps do):
 #   1. An explicit COMPOSE_PROJECT_NAME in the environment always wins.
-#   2. An existing `<project>_hermes_pg_data` volume → reuse <project> so an
-#      upgrading install re-attaches its real database (no data orphaned).
-#   3. Fresh install → the stable Thoth name `thoth`.
-# The internal db/user/password stay `hermes` (out of scope here); only the
-# OUTER compose project/volume/container naming is stabilized.
+#   2. Otherwise → the stable Thoth name `thoth`.
 resolve_compose_project() {
     if [ -n "${COMPOSE_PROJECT_NAME:-}" ]; then
         export COMPOSE_PROJECT_NAME
         log_info "PostgreSQL: compose project '$COMPOSE_PROJECT_NAME' (from environment)"
         return 0
     fi
-    local existing_vol=""
-    if command -v docker >/dev/null 2>&1; then
-        existing_vol=$(docker volume ls --format '{{.Name}}' 2>/dev/null \
-            | grep -E '_hermes_pg_data$' | head -n1)
-    fi
-    if [ -n "$existing_vol" ]; then
-        COMPOSE_PROJECT_NAME="${existing_vol%_hermes_pg_data}"
-        log_info "PostgreSQL: reusing existing compose project '$COMPOSE_PROJECT_NAME' (volume '$existing_vol')"
-    else
-        COMPOSE_PROJECT_NAME="thoth"
-        log_info "PostgreSQL: compose project '$COMPOSE_PROJECT_NAME' (fresh install)"
-    fi
+    COMPOSE_PROJECT_NAME="thoth"
     export COMPOSE_PROJECT_NAME
+    log_info "PostgreSQL: compose project '$COMPOSE_PROJECT_NAME'"
 }
 
 setup_postgres() {
@@ -1500,11 +1459,9 @@ SOUL_EOF
         log_success "Created $THOTH_HOME/SOUL.md"
     fi
 
-    # Marker so warn_upstream_collision can tell if THOTH_HOME has previously
-    # been used by this installer (avoid the warning on re-installs). The
-    # legacy filename ``.substrate_install`` is also still accepted on read so
-    # earlier installs aren't surprised by the warning.
-    touch "$THOTH_HOME/.hermes_install"
+    # Marker so detect_install_mode can tell if THOTH_HOME has previously
+    # been used by this installer (avoid first-run wizards on re-installs).
+    touch "$THOTH_HOME/.thoth_install"
 
     log_info "Syncing bundled skills..."
     if [ -x "$INSTALL_DIR/venv/bin/python" ] && [ -f "$INSTALL_DIR/tools/skills_sync.py" ]; then
@@ -1746,7 +1703,7 @@ setup_substrate_worker_service() {
     # Render the unit. We don't copy ``scripts/thoth-substrate-worker.service``
     # verbatim because that file uses ``%h`` (systemd home substitution)
     # which only works for ``--user`` units AND assumes the standard
-    # install layout — operators with custom ``--hermes-home`` /
+    # install layout — operators with custom ``--thoth-home`` /
     # ``--cli-name`` / system-mode installs need their actual paths
     # baked in. Template the values here so the unit is correct for
     # the install we just performed.
@@ -1899,8 +1856,8 @@ print_success() {
     echo ""
 
     if [ "$CLI_NAME" != "thoth" ]; then
-        echo -e "${BLUE}ℹ${NC}  Installed as ${BOLD}$CLI_NAME${NC} to avoid colliding with any existing upstream"
-        echo "    Hermes install. Pass ${BOLD}--cli-name thoth${NC} on a clean machine to use the natural name."
+        echo -e "${BLUE}ℹ${NC}  Installed as ${BOLD}$CLI_NAME${NC} to avoid colliding with another"
+        echo "    Thoth install. Pass ${BOLD}--cli-name thoth${NC} on a clean machine to use the natural name."
         echo ""
     fi
 
