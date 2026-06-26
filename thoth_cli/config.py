@@ -1,9 +1,9 @@
 """
 Configuration management for Thoth Agent.
 
-Config files are stored in ~/.hermes/ for easy access:
-- ~/.hermes/config.yaml  - All settings (model, toolsets, terminal, etc.)
-- ~/.hermes/.env         - API keys and secrets
+Config files are stored in ~/.thoth/ for easy access:
+- ~/.thoth/config.yaml  - All settings (model, toolsets, terminal, etc.)
+- ~/.thoth/.env         - API keys and secrets
 
 This module provides:
 - thoth config          - Show current configuration
@@ -37,7 +37,7 @@ _CONFIG_PARSE_WARNED: set = set()
 def _warn_config_parse_failure(config_path: Path, exc: Exception) -> None:
     """Surface a config.yaml parse failure to user, log, and stderr.
 
-    A YAML parse error in ``~/.hermes/config.yaml`` causes ``load_config()``
+    A YAML parse error in ``~/.thoth/config.yaml`` causes ``load_config()``
     to silently fall back to ``DEFAULT_CONFIG``, which means every user
     override (auxiliary providers, fallback chain, model overrides, etc.)
     is dropped. Before this helper that was a one-line ``print(...)`` that
@@ -206,7 +206,7 @@ def detect_install_method(project_root: Optional[Path] = None) -> str:
     """Detect how Thoth was installed: 'docker', 'nixos', 'homebrew', 'git', or 'pip'.
 
     Resolution order:
-    1. Stamped ``~/.hermes/.install_method`` file (written by installers)
+    1. Stamped ``~/.thoth/.install_method`` file (written by installers)
     2. THOTH_MANAGED env / .managed marker (NixOS, Homebrew)
     3. Container detection (/.dockerenv, /run/.containerenv, cgroup)
     4. .git directory presence -> 'git'
@@ -233,7 +233,7 @@ def detect_install_method(project_root: Optional[Path] = None) -> str:
 
 
 def stamp_install_method(method: str) -> None:
-    """Write the install method to ~/.hermes/.install_method."""
+    """Write the install method to ~/.thoth/.install_method."""
     stamp = get_thoth_home() / ".install_method"
     try:
         stamp.parent.mkdir(parents=True, exist_ok=True)
@@ -278,7 +278,7 @@ def format_managed_message(action: str = "modify this Thoth installation") -> st
         return (
             f"Cannot {action}: this Thoth installation is managed by NixOS "
             f"(THOTH_MANAGED={env_hint}).\n"
-            "Edit services.hermes-agent.settings in your configuration.nix and run:\n"
+            "Edit services.thoth-agent.settings in your configuration.nix and run:\n"
             "  sudo nixos-rebuild switch"
         )
 
@@ -339,12 +339,11 @@ def get_container_exec_info() -> Optional[dict]:
 
     backend = info.get("backend", "docker")
     # Default container name is Thoth-branded; the NixOS activation writes the
-    # actual name (now `thoth-agent`) explicitly, so this only applies to
-    # hand-rolled .container-mode files. exec_user defaults to `hermes` — the
-    # container image's OS user is still `hermes` (deferred), independent of the
-    # container name — so this stays correct even for a legacy hermes-agent name.
+    # actual name (`thoth-agent`) explicitly, so this only applies to
+    # hand-rolled .container-mode files. exec_user defaults to `thoth` — the
+    # container image's OS user.
     container_name = info.get("container_name", "thoth-agent")
-    exec_user = info.get("exec_user", "hermes")
+    exec_user = info.get("exec_user", "thoth")
     thoth_bin = info.get("thoth_bin", "/data/current-package/bin/thoth")
 
     return {
@@ -379,7 +378,7 @@ def _secure_dir(path):
     """Set directory to owner-only access (0700 by default). No-op on Windows.
 
     Skipped in managed mode — the NixOS module sets group-readable
-    permissions (0750) so interactive users in the hermes group can
+    permissions (0750) so interactive users in the thoth group can
     share state with the gateway service.
 
     The mode can be overridden via the THOTH_HOME_MODE environment variable
@@ -453,53 +452,13 @@ def _ensure_default_soul_md(home: Path) -> None:
     _secure_file(soul_path)
 
 
-def migrate_home_to_thoth(quiet: bool = False) -> bool:
-    """Create ~/.thoth → ~/.hermes symlink when upgrading from a pre-rename install.
-
-    Conditions (POSIX only): ~/.hermes exists (real dir) AND ~/.thoth does not
-    yet exist.  The symlink lets new code resolve data via ~/.thoth while the
-    on-disk layout stays at ~/.hermes until a future phase does the full rename.
-
-    Windows is skipped: symlinks require elevation or Developer Mode, and
-    Windows installs are env-driven (the installer sets THOTH_HOME/THOTH_HOME
-    explicitly) so _disk_default_home() is never the authoritative source there.
-
-    Returns True if the symlink was created, False if nothing was done.
-    """
-    if sys.platform == "win32":
-        return False
-
-    user_home = Path.home()
-    hermes_dir = user_home / ".hermes"
-    thoth_dir = user_home / ".thoth"
-
-    # Already migrated or fresh install — nothing to do.
-    if thoth_dir.exists() or thoth_dir.is_symlink():
-        return False
-    if not hermes_dir.is_dir():
-        return False
-
-    try:
-        thoth_dir.symlink_to(hermes_dir)
-        if not quiet:
-            print(f"  ✓ Created ~/.thoth → ~/.hermes (Thoth rename migration)")
-        return True
-    except OSError as exc:
-        if not quiet:
-            print(f"  ⚠ Could not create ~/.thoth symlink: {exc}")
-        return False
-
-
 def ensure_thoth_home():
-    """Ensure ~/.hermes directory structure exists with secure permissions.
+    """Ensure ~/.thoth directory structure exists with secure permissions.
 
     In managed mode (NixOS), dirs are created by the activation script with
     setgid + group-writable (2770). We skip mkdir and set umask(0o007) so
     any files created (e.g. SOUL.md) are group-writable (0660).
     """
-    # Silently create ~/.thoth → ~/.hermes symlink for existing installs upgrading
-    # to Thoth. Non-destructive: only runs when ~/.hermes exists but ~/.thoth doesn't.
-    migrate_home_to_thoth(quiet=True)
     home = get_thoth_home()
     if is_managed():
         old_umask = os.umask(0o007)
@@ -690,7 +649,7 @@ DEFAULT_CONFIG = {
         # Each entry is "host_path:container_path" (standard Docker -v syntax).
         # Example:
         # ["/home/user/projects:/workspace/projects",
-        #  "/home/user/.hermes/cache/documents:/output"]
+        #  "/home/user/.thoth/cache/documents:/output"]
         # For gateway MEDIA delivery, write inside Docker to /output/... and emit
         # the host-visible path in MEDIA:, not the container path.
         "docker_volumes": [],
@@ -704,7 +663,7 @@ DEFAULT_CONFIG = {
         # are owned by your host user instead of root, which avoids needing
         # `sudo chown` after container runs. Default off to preserve behavior
         # for images whose entrypoints expect to start as root (e.g. the
-        # bundled Thoth image, which drops to the `hermes` user via gosu).
+        # bundled Thoth image, which drops to the `thoth` user via gosu).
         # When on, SETUID/SETGID caps are omitted from the container since
         # no privilege drop is needed.
         "docker_run_as_host_user": False,
@@ -771,7 +730,7 @@ DEFAULT_CONFIG = {
         # limited the `/rollback` listing; v2 actually rewrites the ref and
         # garbage-collects older commits.
         "max_snapshots": 20,
-        # Hard ceiling on total ``~/.hermes/checkpoints/`` size (MB).  When
+        # Hard ceiling on total ``~/.thoth/checkpoints/`` size (MB).  When
         # exceeded, the oldest checkpoint per project is dropped in a
         # round-robin pass until total size falls under the cap.
         # 0 disables the size cap.
@@ -1183,7 +1142,7 @@ DEFAULT_CONFIG = {
             # use, OR an absolute path to a pre-downloaded .onnx file.
             # Full voice list: https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/VOICES.md
             "voice": "en_US-lessac-medium",
-            # "voices_dir": "",        # Override voice cache dir; default = ~/.hermes/cache/piper-voices/
+            # "voices_dir": "",        # Override voice cache dir; default = ~/.thoth/cache/piper-voices/
             # "use_cuda": False,       # Requires onnxruntime-gpu
             # "length_scale": 1.0,     # 2.0 = twice as slow
             # "noise_scale": 0.667,
@@ -1228,7 +1187,7 @@ DEFAULT_CONFIG = {
     # "compressor" = built-in lossy summarization (default).
     # Set to a plugin name to activate an alternative engine (e.g. "lcm"
     # for Lossless Context Management).  The engine must be installed as
-    # a plugin in plugins/context_engine/<name>/ or ~/.hermes/plugins/.
+    # a plugin in plugins/context_engine/<name>/ or ~/.thoth/plugins/.
     "context": {
         "engine": "compressor",
     },
@@ -1313,7 +1272,7 @@ DEFAULT_CONFIG = {
 
     # Skills — external skill directories for sharing skills across tools/agents.
     # Each path is expanded (~, ${VAR}) and resolved.  Read-only — skill creation
-    # always goes to ~/.hermes/skills/.
+    # always goes to ~/.thoth/skills/.
     "skills": {
         "external_dirs": [],   # e.g. ["~/.agents/skills", "/shared/team-skills"]
         # Substitute ${THOTH_SKILL_DIR} and ${THOTH_SESSION_ID} in SKILL.md
@@ -1365,8 +1324,8 @@ DEFAULT_CONFIG = {
         # without use. Archived skills are recoverable — no auto-deletion.
         "archive_after_days": 90,
         # Pre-run backup: before every real curator pass (dry-run is
-        # skipped), snapshot ~/.hermes/skills/ into
-        # ~/.hermes/skills/.curator_backups/<utc-iso>/skills.tar.gz so the
+        # skipped), snapshot ~/.thoth/skills/ into
+        # ~/.thoth/skills/.curator_backups/<utc-iso>/skills.tar.gz so the
         # user can roll back with `thoth curator rollback`.
         "backup": {
             "enabled": True,
@@ -1375,7 +1334,7 @@ DEFAULT_CONFIG = {
     },
 
     # Honcho AI-native memory -- reads ~/.honcho/config.json as single source of truth.
-    # This section is only needed for hermes-specific overrides; everything else
+    # This section is only needed for thoth-specific overrides; everything else
     # (apiKey, workspace, peerName, sessions, enabled) comes from the global config.
     "honcho": {},
 
@@ -1508,7 +1467,7 @@ DEFAULT_CONFIG = {
     # subagent_stop, etc.).  Each entry maps an event name to a list of
     # {matcher, command, timeout} dicts.  First registration of a new
     # command prompts the user for consent; subsequent runs reuse the
-    # stored approval from ~/.hermes/shell-hooks-allowlist.json.
+    # stored approval from ~/.thoth/shell-hooks-allowlist.json.
     # See `website/docs/user-guide/features/hooks.md` for schema + examples.
     "hooks": {},
 
@@ -1629,7 +1588,7 @@ DEFAULT_CONFIG = {
         "mode": "project",
     },
 
-    # Logging — controls file logging to ~/.hermes/logs/.
+    # Logging — controls file logging to ~/.thoth/logs/.
     # agent.log captures INFO+ (all agent activity); errors.log captures WARNING+.
     "logging": {
         "level": "INFO",       # Minimum level for agent.log: DEBUG, INFO, WARNING
@@ -1675,7 +1634,7 @@ DEFAULT_CONFIG = {
         "force_ipv4": False,
     },
 
-    # Session storage — controls automatic cleanup of ~/.hermes/state.db.
+    # Session storage — controls automatic cleanup of ~/.thoth/state.db.
     # state.db accumulates every session, message, tool call, and FTS5 index
     # entry forever.  Without auto-pruning, a heavy user (gateway + cron)
     # reports 384MB+ databases with 68K+ messages, which slows down FTS5
@@ -1702,7 +1661,7 @@ DEFAULT_CONFIG = {
         # state.db itself, so it's shared across all processes.
         "min_interval_hours": 24,
         # Legacy per-session JSON snapshot writer.  When true, the agent
-        # rewrites ``~/.hermes/sessions/session_{sid}.json`` on every turn
+        # rewrites ``~/.thoth/sessions/session_{sid}.json`` on every turn
         # boundary with the full message list.  state.db is canonical and
         # has every field the snapshot stored (plus per-message timestamps
         # and token counts), so this is off by default — the snapshots had
@@ -1804,7 +1763,7 @@ DEFAULT_CONFIG = {
     # External secret sources
     # =========================================================================
     # Pull credentials from external secret managers at process startup
-    # rather than storing them in ~/.hermes/.env.
+    # rather than storing them in ~/.thoth/.env.
     "secrets": {
         "bitwarden": {
             # Master switch.  When false, BSM is never contacted and the
@@ -1813,7 +1772,7 @@ DEFAULT_CONFIG = {
             "enabled": False,
             # Name of the env var that holds the Bitwarden machine-account
             # access token.  This is the one bootstrap secret; it lives
-            # in ~/.hermes/.env (or your shell) and never in config.yaml.
+            # in ~/.thoth/.env (or your shell) and never in config.yaml.
             "access_token_env": "BWS_ACCESS_TOKEN",
             # UUID of the BSM project to sync from.
             "project_id": "",
@@ -1825,7 +1784,7 @@ DEFAULT_CONFIG = {
             # take effect until you also cleared the matching .env line.
             "override_existing": True,
             # When True, the bws binary is auto-downloaded into
-            # ~/.hermes/bin/ on first use.  When False you must install
+            # ~/.thoth/bin/ on first use.  When False you must install
             # bws yourself and have it on PATH.
             "auto_install": True,
         },
@@ -2617,7 +2576,7 @@ OPTIONAL_ENV_VARS = {
         "category": "messaging",
     },
     "MATRIX_USER_ID": {
-        "description": "Matrix user ID (e.g. @hermes:example.org)",
+        "description": "Matrix user ID (e.g. @thoth:example.org)",
         "prompt": "Matrix user ID (@user:server)",
         "url": None,
         "password": False,
@@ -2761,7 +2720,7 @@ OPTIONAL_ENV_VARS = {
         "category": "messaging",
     },
     "IRC_NICKNAME": {
-        "description": "Bot nickname on IRC (default: hermes-bot)",
+        "description": "Bot nickname on IRC (default: thoth-bot)",
         "prompt": "IRC nickname",
         "url": None,
         "password": False,
@@ -2824,7 +2783,7 @@ OPTIONAL_ENV_VARS = {
         "advanced": True,
     },
     "API_SERVER_MODEL_NAME": {
-        "description": "Model name advertised on /v1/models. Defaults to the profile name (or 'hermes-agent' for the default profile). Useful for multi-user setups with OpenWebUI.",
+        "description": "Model name advertised on /v1/models. Defaults to the profile name (or 'thoth-agent' for the default profile). Useful for multi-user setups with OpenWebUI.",
         "prompt": "API server model name",
         "url": None,
         "password": False,
@@ -3949,7 +3908,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
     #   2. Writes the `auxiliary.curator` aux-task slot (provider, model,
     #      base_url, api_key, timeout, extra_body) — canonical slot for
     #      routing the curator fork to a cheaper aux model.
-    #   3. Creates `~/.hermes/logs/curator/` if missing (belt-and-suspenders
+    #   3. Creates `~/.thoth/logs/curator/` if missing (belt-and-suspenders
     #      on top of ensure_thoth_home() — old profiles that predate this
     #      migration still benefit).
     if current_ver < 23:
@@ -4445,7 +4404,7 @@ def cfg_get(cfg: Optional[Dict[str, Any]], *keys: str, default: Any = None) -> A
 
 
 def read_raw_config() -> Dict[str, Any]:
-    """Read ~/.hermes/config.yaml as-is, without merging defaults or migrating.
+    """Read ~/.thoth/config.yaml as-is, without merging defaults or migrating.
 
     Returns the raw YAML dict, or ``{}`` if the file doesn't exist or can't
     be parsed.  Use this for lightweight config reads where you just need a
@@ -4483,7 +4442,7 @@ def read_raw_config() -> Dict[str, Any]:
 
 
 def load_config() -> Dict[str, Any]:
-    """Load configuration from ~/.hermes/config.yaml.
+    """Load configuration from ~/.thoth/config.yaml.
 
     Cached on the config file's (mtime_ns, size). Returns a deepcopy of
     the cached value when unchanged, since most call sites mutate the
@@ -4659,7 +4618,7 @@ _COMMENTED_SECTIONS = """
 
 
 def save_config(config: Dict[str, Any]):
-    """Save configuration to ~/.hermes/config.yaml."""
+    """Save configuration to ~/.thoth/config.yaml."""
     with _CONFIG_LOCK:
         if is_managed():
             managed_error("save configuration")
@@ -4707,7 +4666,7 @@ def save_config(config: Dict[str, Any]):
 
 
 def load_env() -> Dict[str, str]:
-    """Load environment variables from ~/.hermes/.env.
+    """Load environment variables from ~/.thoth/.env.
 
     Sanitizes lines before parsing so that corrupted files (e.g.
     concatenated KEY=VALUE pairs on a single line) are handled
@@ -4798,12 +4757,6 @@ def _sanitize_env_lines(lines: list) -> list:
     # Build the known keys set lazily from OPTIONAL_ENV_VARS + extras.
     # Done inside the function so OPTIONAL_ENV_VARS is guaranteed to be defined.
     known_keys = set(OPTIONAL_ENV_VARS.keys()) | _EXTRA_ENV_KEYS
-    # hermes→thoth (rename Phase 2): recognize the THOTH_ alias of every known
-    # THOTH_ key so corrupted .env lines using the new spelling are repaired
-    # the same way as the legacy spelling.
-    known_keys |= {
-        "THOTH_" + k[len("THOTH_"):] for k in known_keys if k.startswith("THOTH_")
-    }
 
     sanitized: list[str] = []
     for line in lines:
@@ -4850,7 +4803,7 @@ def _sanitize_env_lines(lines: list) -> list:
 
 
 def sanitize_env_file() -> int:
-    """Read, sanitize, and rewrite ~/.hermes/.env in place.
+    """Read, sanitize, and rewrite ~/.thoth/.env in place.
 
     Returns the number of lines that were fixed (concatenation splits +
     placeholder removals).  Returns 0 when no changes are needed.
@@ -4936,7 +4889,7 @@ def _check_non_ascii_credential(key: str, value: str) -> str:
 
 
 def save_env_value(key: str, value: str):
-    """Save or update a value in ~/.hermes/.env."""
+    """Save or update a value in ~/.thoth/.env."""
     if is_managed():
         managed_error(f"set {key}")
         return
@@ -5007,7 +4960,7 @@ def save_env_value(key: str, value: str):
 
 
 def remove_env_value(key: str) -> bool:
-    """Remove a key from ~/.hermes/.env and os.environ.
+    """Remove a key from ~/.thoth/.env and os.environ.
 
     Returns True if the key was found and removed, False otherwise.
     """
@@ -5095,7 +5048,7 @@ def save_env_value_secure(key: str, value: str) -> Dict[str, Any]:
 
 
 def reload_env() -> int:
-    """Re-read ~/.hermes/.env into os.environ. Returns count of vars updated.
+    """Re-read ~/.thoth/.env into os.environ. Returns count of vars updated.
 
     Adds/updates vars that changed and removes vars that were deleted from
     the .env file (but only vars known to Thoth — OPTIONAL_ENV_VARS and
@@ -5117,7 +5070,7 @@ def reload_env() -> int:
 
 
 def get_env_value(key: str) -> Optional[str]:
-    """Get a value from ~/.hermes/.env or environment."""
+    """Get a value from ~/.thoth/.env or environment."""
     # Check environment first
     if key in os.environ:
         return os.environ[key]
@@ -5716,6 +5669,3 @@ def _inject_platform_plugin_env_vars() -> None:
 
 # Eagerly inject so that platform plugin env vars show up in the setup wizard.
 _inject_platform_plugin_env_vars()
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-ensure_hermes_home = ensure_thoth_home

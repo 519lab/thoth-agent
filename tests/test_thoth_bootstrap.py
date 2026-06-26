@@ -1,7 +1,7 @@
 """Tests for thoth_bootstrap — Windows UTF-8 stdio shim.
 
 The bootstrap module is imported at the top of every Thoth entry point
-(thoth, hermes-agent, hermes-acp, gateway, batch_runner, cli.py).  It
+(thoth, thoth-agent, thoth-acp, gateway, batch_runner, cli.py).  It
 fixes Python's Windows UTF-8 defaults so print("café") doesn't crash and
 subprocess children inherit UTF-8 mode.
 
@@ -242,8 +242,8 @@ class TestEntryPointsImportBootstrap:
     # import thoth_bootstrap before doing any file I/O or stdout writes.
     ENTRY_POINTS = [
         "thoth_cli/main.py",   # thoth CLI (console_script)
-        "run_agent.py",          # hermes-agent (console_script)
-        "acp_adapter/entry.py",  # hermes-acp (console_script)
+        "run_agent.py",          # thoth-agent (console_script)
+        "acp_adapter/entry.py",  # thoth-acp (console_script)
         "gateway/run.py",        # gateway
         "batch_runner.py",       # batch mode
         "cli.py",                # legacy direct-launch CLI
@@ -267,8 +267,8 @@ class TestEntryPointsImportBootstrap:
         first top-level node is such a guarded-import block, we peek
         inside it to verify bootstrap is the imported module.
         """
-        # Resolve relative to the hermes-agent repo root.  Tests live
-        # at tests/test_hermes_bootstrap.py, so go up one dir.
+        # Resolve relative to the thoth-agent repo root.  Tests live
+        # at tests/test_thoth_bootstrap.py, so go up one dir.
         import pathlib
         here = pathlib.Path(__file__).resolve()
         repo_root = here.parent.parent  # tests/ -> repo root

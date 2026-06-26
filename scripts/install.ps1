@@ -23,7 +23,7 @@ param(
     # exact ref.  Precedence: Commit > Tag > Branch.
     [string]$Commit = "",
     [string]$Tag = "",
-    [string]$HermesHome = "$env:LOCALAPPDATA\thoth",
+    [string]$ThothHome = "$env:LOCALAPPDATA\thoth",
     [string]$InstallDir = "$env:LOCALAPPDATA\thoth\app",
 
     # --- PostgreSQL (substrate / headline memory) ---
@@ -160,10 +160,10 @@ function Find-SystemBrowser {
 
 function Write-BrowserEnv {
     param([string]$BrowserPath)
-    if (-not (Test-Path $HermesHome)) {
-        New-Item -ItemType Directory -Force -Path $HermesHome | Out-Null
+    if (-not (Test-Path $ThothHome)) {
+        New-Item -ItemType Directory -Force -Path $ThothHome | Out-Null
     }
-    $envFile = Join-Path $HermesHome ".env"
+    $envFile = Join-Path $ThothHome ".env"
     if (-not (Test-Path $envFile)) {
         Set-Content -Path $envFile -Value "AGENT_BROWSER_EXECUTABLE_PATH=$BrowserPath" -Encoding UTF8
         return
@@ -182,7 +182,7 @@ function Install-AgentBrowser {
     }
 
     Write-Info "Installing agent-browser via npm -g --prefix..."
-    $prefixDir = Join-Path $HermesHome "node"
+    $prefixDir = Join-Path $ThothHome "node"
     if (-not (Test-Path $prefixDir)) {
         New-Item -ItemType Directory -Path $prefixDir -Force | Out-Null
     }
@@ -498,7 +498,7 @@ function Install-Git {
       1. Existing ``git`` on PATH -- use it as-is (the common fast path).
       2. Download **PortableGit** from the official git-for-windows GitHub
          release (self-extracting 7z.exe) and unpack it to
-         ``%LOCALAPPDATA%\hermes\git`` -- never touches system Git, never
+         ``%LOCALAPPDATA%\thoth\git`` -- never touches system Git, never
          requires admin, works even on locked-down machines and machines
          with a broken system Git install.
 
@@ -512,11 +512,11 @@ function Install-Git {
     We deliberately skip winget because it fails badly when the system Git
     install is in a half-installed state (partially registered, or uninstall-
     blocked).  Owning the Thoth copy of Git ourselves is predictable and
-    recoverable: if it ever breaks, ``Remove-Item %LOCALAPPDATA%\hermes\git``
+    recoverable: if it ever breaks, ``Remove-Item %LOCALAPPDATA%\thoth\git``
     and re-running this installer fully recovers.
 
     After install we locate ``bash.exe`` and persist the path in
-    ``THOTH_GIT_BASH_PATH`` (User scope) so Hermes can find it in a fresh
+    ``THOTH_GIT_BASH_PATH`` (User scope) so Thoth can find it in a fresh
     shell without a second PATH refresh.
     #>
     Write-Info "Checking Git..."
@@ -528,10 +528,10 @@ function Install-Git {
         return $true
     }
 
-    # Download PortableGit into $HermesHome\git.  Always works as long as
+    # Download PortableGit into $ThothHome\git.  Always works as long as
     # we can reach github.com -- no admin, no winget, no reliance on the
     # user's possibly-broken system Git install.
-    Write-Info "Git not found -- downloading PortableGit to $HermesHome\git\ ..."
+    Write-Info "Git not found -- downloading PortableGit to $ThothHome\git\ ..."
     Write-Info "(no admin rights required; isolated from any system Git install)"
 
     try {
@@ -574,7 +574,7 @@ function Install-Git {
         $downloadUrl = "https://github.com/git-for-windows/git/releases/download/$gitTag/$assetName"
         $downloadExt = if ($downloadIsZip) { "zip" } else { "7z.exe" }
         $tmpFile = "$env:TEMP\$assetName"
-        $gitDir = "$HermesHome\git"
+        $gitDir = "$ThothHome\git"
 
         Write-Info "Downloading $assetName (Git for Windows $gitVerTag)..."
         Invoke-WebRequest -Uri $downloadUrl -OutFile $tmpFile -UseBasicParsing
@@ -650,7 +650,7 @@ function Set-GitBashEnvVar {
     <#
     .SYNOPSIS
     Locate ``bash.exe`` from an already-installed Git and persist the path in
-    ``THOTH_GIT_BASH_PATH`` (User env scope) so Hermes can find it even before
+    ``THOTH_GIT_BASH_PATH`` (User env scope) so Thoth can find it even before
     PATH propagation completes in a newly-spawned shell.
     #>
     $candidates = @()
@@ -661,10 +661,10 @@ function Set-GitBashEnvVar {
     # this with a system-Git-only installation anyway.
     #
     # Layouts:
-    #   PortableGit (our default): $HermesHome\git\bin\bash.exe
-    #   MinGit (32-bit fallback):  $HermesHome\git\usr\bin\bash.exe
-    $candidates += "$HermesHome\git\bin\bash.exe"       # PortableGit layout (primary)
-    $candidates += "$HermesHome\git\usr\bin\bash.exe"   # MinGit / PortableGit usr\bin fallback
+    #   PortableGit (our default): $ThothHome\git\bin\bash.exe
+    #   MinGit (32-bit fallback):  $ThothHome\git\usr\bin\bash.exe
+    $candidates += "$ThothHome\git\bin\bash.exe"       # PortableGit layout (primary)
+    $candidates += "$ThothHome\git\usr\bin\bash.exe"   # MinGit / PortableGit usr\bin fallback
 
     # git.exe on PATH can tell us where the install root is
     $gitCmd = Get-Command git -ErrorAction SilentlyContinue
@@ -709,10 +709,10 @@ function Test-Node {
     }
 
     # Check our own managed install from a previous run
-    $managedNode = "$HermesHome\node\node.exe"
+    $managedNode = "$ThothHome\node\node.exe"
     if (Test-Path $managedNode) {
         $version = & $managedNode --version
-        $env:Path = "$HermesHome\node;$env:Path"
+        $env:Path = "$ThothHome\node;$env:Path"
         Write-Success "Node.js $version found (Thoth-managed)"
         $script:HasNode = $true
         return $true
@@ -724,11 +724,11 @@ function Test-Node {
     # winget install OpenJS.NodeJS.LTS triggers a system-wide MSI install
     # which prompts UAC (the dialog often appears minimized in the taskbar
     # and the install silently waits for consent, looking like a hang).
-    # The portable zip path drops node.exe + npm into $HermesHome\node\
+    # The portable zip path drops node.exe + npm into $ThothHome\node\
     # which is user-scoped and identical to how Install-Git handles
     # PortableGit.  Same UX guarantee: works on locked-down enterprise
     # machines with no admin rights.
-    Write-Info "Downloading portable Node.js $NodeVersion to $HermesHome\node\ ..."
+    Write-Info "Downloading portable Node.js $NodeVersion to $ThothHome\node\ ..."
     Write-Info "(no admin rights required; isolated from any system Node install)"
     try {
         $arch = if ([Environment]::Is64BitOperatingSystem) { "x64" } else { "x86" }
@@ -739,7 +739,7 @@ function Test-Node {
         if ($zipName) {
             $downloadUrl = "${indexUrl}${zipName}"
             $tmpZip = "$env:TEMP\$zipName"
-            $tmpDir = "$env:TEMP\hermes-node-extract"
+            $tmpDir = "$env:TEMP\thoth-node-extract"
 
             Invoke-WebRequest -Uri $downloadUrl -OutFile $tmpZip -UseBasicParsing
             if (Test-Path $tmpDir) { Remove-Item -Recurse -Force $tmpDir }
@@ -747,16 +747,16 @@ function Test-Node {
 
             $extractedDir = Get-ChildItem $tmpDir -Directory | Select-Object -First 1
             if ($extractedDir) {
-                if (Test-Path "$HermesHome\node") { Remove-Item -Recurse -Force "$HermesHome\node" }
-                Move-Item $extractedDir.FullName "$HermesHome\node"
+                if (Test-Path "$ThothHome\node") { Remove-Item -Recurse -Force "$ThothHome\node" }
+                Move-Item $extractedDir.FullName "$ThothHome\node"
 
                 # Session PATH so the rest of this run sees node/npm.
-                $env:Path = "$HermesHome\node;$env:Path"
+                $env:Path = "$ThothHome\node;$env:Path"
 
                 # Persist to User PATH so fresh shells (and future stages
                 # in cross-process driver mode) see it.  Matches the
                 # pattern Install-Git uses for PortableGit.
-                $nodeDir = "$HermesHome\node"
+                $nodeDir = "$ThothHome\node"
                 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
                 $userPathItems = if ($userPath) { $userPath -split ";" } else { @() }
                 if ($userPathItems -notcontains $nodeDir) {
@@ -764,8 +764,8 @@ function Test-Node {
                     [Environment]::SetEnvironmentVariable("Path", ($userPathItems -join ";"), "User")
                 }
 
-                $version = & "$HermesHome\node\node.exe" --version
-                Write-Success "Node.js $version installed to $HermesHome\node\ (portable, user-scoped)"
+                $version = & "$ThothHome\node\node.exe" --version
+                Write-Success "Node.js $version installed to $ThothHome\node\ (portable, user-scoped)"
                 $script:HasNode = $true
 
                 Remove-Item -Force $tmpZip -ErrorAction SilentlyContinue
@@ -938,7 +938,7 @@ function Install-SystemPackages {
 # diff backup). These let destructive update/rewrite paths be recoverable.
 # ============================================================================
 
-# Back up $HermesHome\.env before any in-place mutation. Backup name embeds a
+# Back up $ThothHome\.env before any in-place mutation. Backup name embeds a
 # UTC timestamp + a short reason tag so users can tell which rewrite produced
 # each file. No-op if .env doesn't exist yet. Mirrors install.sh
 # _backup_env_file.
@@ -948,7 +948,7 @@ function Backup-EnvFile {
         [string]$Reason = "rewrite"
     )
     if (-not (Test-Path $EnvPath)) { return }
-    $backupDir = Join-Path $HermesHome ".install-backup"
+    $backupDir = Join-Path $ThothHome ".install-backup"
     New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
     $ts = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
     $backupPath = Join-Path $backupDir ".env.$ts.$Reason"
@@ -958,12 +958,12 @@ function Backup-EnvFile {
 
 # Back up local changes in the (disposable) code dir before a hard reset.
 # Mirrors install.sh clone_repo #210: save `git diff HEAD` to a .patch and the
-# `git status --porcelain` listing under $HermesHome\.install-backup, then warn.
+# `git status --porcelain` listing under $ThothHome\.install-backup, then warn.
 # Assumes the caller has Push-Location'd into $InstallDir (a git repo).
 function Backup-CodeDirChanges {
     $dirty = git -c windows.appendAtomically=false status --porcelain 2>$null
     if (-not $dirty) { return }
-    $backupDir = Join-Path $HermesHome ".install-backup"
+    $backupDir = Join-Path $ThothHome ".install-backup"
     New-Item -ItemType Directory -Force -Path $backupDir -ErrorAction SilentlyContinue | Out-Null
     $ts = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
     $patchFile = Join-Path $backupDir "code-local-changes-$ts.patch"
@@ -974,7 +974,7 @@ function Backup-CodeDirChanges {
     } catch {}
     Write-Warn "Local changes in the code dir detected -- resetting to a clean"
     Write-Warn "  upstream copy (the code dir is managed; your config + data in"
-    Write-Warn "  $HermesHome are untouched)."
+    Write-Warn "  $ThothHome are untouched)."
     if ((Test-Path $patchFile) -and ((Get-Item $patchFile).Length -gt 0)) {
         Write-Warn "  Saved a diff of your changes to: $patchFile"
     }
@@ -1038,35 +1038,23 @@ function Invoke-DockerCompose {
 # Pin a STABLE docker-compose project name, decoupled from the install dir.
 # Compose otherwise derives the project (and thus the DB volume + container
 # names) from the code-dir basename -- so $InstallDir\app yields project `app`
-# and volume `app_hermes_pg_data`, which would orphan the real data when the
+# and volume `app_thoth_pg_data`, which would orphan the real data when the
 # code dir is renamed. Resolution (parity with install.sh resolve_compose_project):
 #   1. An explicit COMPOSE_PROJECT_NAME in the environment always wins.
-#   2. An existing `<project>_hermes_pg_data` volume -> reuse <project> so an
-#      upgrading install re-attaches its real database (no data orphaned).
-#   3. Fresh install -> the stable Thoth name `thoth`.
+#   2. Otherwise -> the stable Thoth name `thoth`.
 # Exports COMPOSE_PROJECT_NAME so every subsequent docker compose call agrees.
 function Resolve-ComposeProject {
     if ($env:COMPOSE_PROJECT_NAME) {
         Write-Info "PostgreSQL: compose project '$($env:COMPOSE_PROJECT_NAME)' (from environment)"
         return $env:COMPOSE_PROJECT_NAME
     }
-    $existingVol = $null
-    try {
-        $existingVol = (& docker volume ls --format '{{.Name}}' 2>$null) |
-            Where-Object { $_ -match '_hermes_pg_data$' } | Select-Object -First 1
-    } catch {}
-    if ($existingVol) {
-        $proj = $existingVol -replace '_hermes_pg_data$', ''
-        Write-Info "PostgreSQL: reusing existing compose project '$proj' (volume '$existingVol')"
-    } else {
-        $proj = "thoth"
-        Write-Info "PostgreSQL: compose project '$proj' (fresh install)"
-    }
+    $proj = "thoth"
+    Write-Info "PostgreSQL: compose project '$proj'"
     $env:COMPOSE_PROJECT_NAME = $proj
     return $proj
 }
 
-# Inspect an existing Thoth/Hermes postgres container's published host port for
+# Inspect an existing Thoth postgres container's published host port for
 # container port 5432. Returns the port string, or $null. Mirrors the dual-stack
 # handling in install.sh choose_pg_port (IPv4 + IPv6 bindings emit two HostPort
 # entries; whitespace-separate and take the first).
@@ -1081,7 +1069,7 @@ function Get-ContainerPgPort {
 }
 
 # Decide the host port the bundled postgres should bind. Reuse an existing
-# Thoth/Hermes container's port (removing the old container so compose-up
+# Thoth container's port (removing the old container so compose-up
 # rebinds the same port; the named data volume persists); otherwise default
 # 5432, bumping to 5433-5450 if it is already taken. Parity with
 # install.sh choose_pg_port.
@@ -1090,9 +1078,7 @@ function Resolve-PostgresPort {
     $default = 5432
     $candidates = @(
         "$Project-postgres-1",
-        "thoth-postgres-1",
-        "hermes-agent-postgres-1",
-        "hermes-substrate-postgres-1"
+        "thoth-postgres-1"
     )
     foreach ($name in $candidates) {
         if (-not $name) { continue }
@@ -1166,13 +1152,13 @@ function Resolve-RunningPgDsn {
     if ($PgDsn) { return $PgDsn }
     if ($SkipPostgres) { return $null }
     if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { return $null }
-    $names = @("$($env:COMPOSE_PROJECT_NAME)-postgres-1", "thoth-postgres-1", "hermes-agent-postgres-1")
+    $names = @("$($env:COMPOSE_PROJECT_NAME)-postgres-1", "thoth-postgres-1")
     foreach ($name in $names) {
         if (-not $name -or $name -eq "-postgres-1") { continue }
         $found = & docker ps --filter "name=^/$name$" --format '{{.Names}}' 2>$null
         if ($found -ne $name) { continue }
         $port = Get-ContainerPgPort -ContainerName $name
-        if ($port) { return "postgresql://hermes:hermes@localhost:$port/hermes" }
+        if ($port) { return "postgresql://thoth:thoth@localhost:$port/thoth" }
     }
     return $null
 }
@@ -1284,7 +1270,7 @@ function Install-Postgres {
         Pop-Location
     }
 
-    $dsn = "postgresql://hermes:hermes@localhost:$port/hermes"
+    $dsn = "postgresql://thoth:thoth@localhost:$port/thoth"
     $script:ResolvedPgDsn = $dsn
     Invoke-AlembicUpgrade -Dsn $dsn
 }
@@ -1340,7 +1326,7 @@ function Install-Repository {
                 git -c windows.appendAtomically=false fetch origin
                 if ($LASTEXITCODE -ne 0) { throw "git fetch failed (exit $LASTEXITCODE)" }
                 # The code dir is managed and DISPOSABLE -- config + state live in
-                # $HermesHome, never in this checkout. If it has diverged (hand-
+                # $ThothHome, never in this checkout. If it has diverged (hand-
                 # edits from debugging, partially-deleted files, force-pushed
                 # upstream, etc.), do NOT stash/pull-replay: that produces
                 # catastrophic modify/delete conflicts that wedge the update
@@ -1761,38 +1747,38 @@ function Set-PathVariable {
     Write-Info "Setting up thoth command..."
     
     if ($NoVenv) {
-        $hermesBin = "$InstallDir"
+        $thothBin = "$InstallDir"
     } else {
-        $hermesBin = "$InstallDir\venv\Scripts"
+        $thothBin = "$InstallDir\venv\Scripts"
     }
-    
+
     # Add the venv Scripts dir to user PATH so thoth is globally available
     # On Windows, the thoth.exe in venv\Scripts\ has the venv Python baked in
     $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
-    
-    if ($currentPath -notlike "*$hermesBin*") {
+
+    if ($currentPath -notlike "*$thothBin*") {
         [Environment]::SetEnvironmentVariable(
             "Path",
-            "$hermesBin;$currentPath",
+            "$thothBin;$currentPath",
             "User"
         )
-        Write-Success "Added to user PATH: $hermesBin"
+        Write-Success "Added to user PATH: $thothBin"
     } else {
         Write-Info "PATH already configured"
     }
     
     # Set THOTH_HOME so the Python code finds config/data in the right place.
-    # Only needed on Windows where we install to %LOCALAPPDATA%\hermes instead
-    # of the Unix default ~/.hermes
-    $currentHermesHome = [Environment]::GetEnvironmentVariable("THOTH_HOME", "User")
-    if (-not $currentHermesHome -or $currentHermesHome -ne $HermesHome) {
-        [Environment]::SetEnvironmentVariable("THOTH_HOME", $HermesHome, "User")
-        Write-Success "Set THOTH_HOME=$HermesHome"
+    # Only needed on Windows where we install to %LOCALAPPDATA%\thoth instead
+    # of the Unix default ~/.thoth
+    $currentThothHome = [Environment]::GetEnvironmentVariable("THOTH_HOME", "User")
+    if (-not $currentThothHome -or $currentThothHome -ne $ThothHome) {
+        [Environment]::SetEnvironmentVariable("THOTH_HOME", $ThothHome, "User")
+        Write-Success "Set THOTH_HOME=$ThothHome"
     }
-    $env:THOTH_HOME = $HermesHome
+    $env:THOTH_HOME = $ThothHome
     
     # Update current session
-    $env:Path = "$hermesBin;$env:Path"
+    $env:Path = "$thothBin;$env:Path"
     
     Write-Success "thoth command ready"
 }
@@ -1800,34 +1786,34 @@ function Set-PathVariable {
 function Copy-ConfigTemplates {
     Write-Info "Setting up configuration files..."
     
-    # Create the Thoth home directory structure ($HermesHome = %LOCALAPPDATA%\thoth).
+    # Create the Thoth home directory structure ($ThothHome = %LOCALAPPDATA%\thoth).
     # NOTE: do NOT pre-create the legacy image_cache/audio_cache dirs -- those
     # names are obsolete; the agent creates whatever cache dirs it actually needs
     # on demand. The agent workspace/ dir IS required up front (it is the
     # write/command sandbox root the runtime expects to exist).
-    New-Item -ItemType Directory -Force -Path "$HermesHome\cron" | Out-Null
-    New-Item -ItemType Directory -Force -Path "$HermesHome\sessions" | Out-Null
-    New-Item -ItemType Directory -Force -Path "$HermesHome\logs" | Out-Null
-    New-Item -ItemType Directory -Force -Path "$HermesHome\pairing" | Out-Null
-    New-Item -ItemType Directory -Force -Path "$HermesHome\hooks" | Out-Null
-    New-Item -ItemType Directory -Force -Path "$HermesHome\memories" | Out-Null
-    New-Item -ItemType Directory -Force -Path "$HermesHome\skills" | Out-Null
-    New-Item -ItemType Directory -Force -Path "$HermesHome\workspace" | Out-Null
+    New-Item -ItemType Directory -Force -Path "$ThothHome\cron" | Out-Null
+    New-Item -ItemType Directory -Force -Path "$ThothHome\sessions" | Out-Null
+    New-Item -ItemType Directory -Force -Path "$ThothHome\logs" | Out-Null
+    New-Item -ItemType Directory -Force -Path "$ThothHome\pairing" | Out-Null
+    New-Item -ItemType Directory -Force -Path "$ThothHome\hooks" | Out-Null
+    New-Item -ItemType Directory -Force -Path "$ThothHome\memories" | Out-Null
+    New-Item -ItemType Directory -Force -Path "$ThothHome\skills" | Out-Null
+    New-Item -ItemType Directory -Force -Path "$ThothHome\workspace" | Out-Null
 
 
     # Create .env
-    $envPath = "$HermesHome\.env"
+    $envPath = "$ThothHome\.env"
     if (-not (Test-Path $envPath)) {
         $examplePath = "$InstallDir\.env.example"
         if (Test-Path $examplePath) {
             Copy-Item $examplePath $envPath
-            Write-Success "Created $HermesHome\.env from template"
+            Write-Success "Created $ThothHome\.env from template"
         } else {
             New-Item -ItemType File -Force -Path $envPath | Out-Null
-            Write-Success "Created $HermesHome\.env"
+            Write-Success "Created $ThothHome\.env"
         }
     } else {
-        Write-Info "$HermesHome\.env already exists, keeping it"
+        Write-Info "$ThothHome\.env already exists, keeping it"
     }
 
     # Point THOTH_PG_DSN at the PostgreSQL this install actually provisioned
@@ -1839,15 +1825,15 @@ function Copy-ConfigTemplates {
     Update-EnvPgDsn -EnvPath $envPath -Dsn (Resolve-RunningPgDsn)
 
     # Create config.yaml
-    $configPath = "$HermesHome\config.yaml"
+    $configPath = "$ThothHome\config.yaml"
     if (-not (Test-Path $configPath)) {
         $examplePath = "$InstallDir\cli-config.yaml.example"
         if (Test-Path $examplePath) {
             Copy-Item $examplePath $configPath
-            Write-Success "Created $HermesHome\config.yaml from template"
+            Write-Success "Created $ThothHome\config.yaml from template"
         }
     } else {
-        Write-Info "$HermesHome\config.yaml already exists, keeping it"
+        Write-Info "$ThothHome\config.yaml already exists, keeping it"
     }
     
     # Create SOUL.md if it doesn't exist (global persona file).
@@ -1859,7 +1845,7 @@ function Copy-ConfigTemplates {
     # don't control which PowerShell version the user has.  Go direct
     # to .NET with an explicit UTF8Encoding($false) -- BOM-free on every
     # PowerShell version.
-    $soulPath = "$HermesHome\SOUL.md"
+    $soulPath = "$ThothHome\SOUL.md"
     if (-not (Test-Path $soulPath)) {
         $soulContent = @"
 # Thoth Agent Persona
@@ -1880,25 +1866,25 @@ Delete the contents (or this file) to use the default personality.
 "@
         $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
         [System.IO.File]::WriteAllText($soulPath, $soulContent, $utf8NoBom)
-        Write-Success "Created $HermesHome\SOUL.md (edit to customize personality)"
+        Write-Success "Created $ThothHome\SOUL.md (edit to customize personality)"
     }
 
-    Write-Success "Configuration directory ready: $HermesHome"
+    Write-Success "Configuration directory ready: $ThothHome"
 
-    # Seed bundled skills into $HermesHome\skills\ (manifest-based, one-time per skill)
-    Write-Info "Syncing bundled skills to $HermesHome\skills\ ..."
+    # Seed bundled skills into $ThothHome\skills\ (manifest-based, one-time per skill)
+    Write-Info "Syncing bundled skills to $ThothHome\skills\ ..."
     $pythonExe = "$InstallDir\venv\Scripts\python.exe"
     if (Test-Path $pythonExe) {
         try {
             & $pythonExe "$InstallDir\tools\skills_sync.py" 2>$null
-            Write-Success "Skills synced to $HermesHome\skills\"
+            Write-Success "Skills synced to $ThothHome\skills\"
         } catch {
             # Fallback: simple directory copy
             $bundledSkills = "$InstallDir\skills"
-            $userSkills = "$HermesHome\skills"
+            $userSkills = "$ThothHome\skills"
             if ((Test-Path $bundledSkills) -and -not (Get-ChildItem $userSkills -Exclude '.bundled_manifest' -ErrorAction SilentlyContinue)) {
                 Copy-Item -Path "$bundledSkills\*" -Destination $userSkills -Recurse -Force -ErrorAction SilentlyContinue
-                Write-Success "Skills copied to $HermesHome\skills\"
+                Write-Success "Skills copied to $ThothHome\skills\"
             }
         }
     }
@@ -2012,7 +1998,7 @@ function Install-NodeDeps {
     # Browser tools
     if (Test-Path "$InstallDir\package.json") {
         Write-Info "Installing Node.js dependencies (browser tools)..."
-        $browserLog = "$env:TEMP\hermes-npm-browser-$(Get-Random).log"
+        $browserLog = "$env:TEMP\thoth-npm-browser-$(Get-Random).log"
         $browserNpmOk = _Run-NpmInstall "Browser tools" $InstallDir $browserLog $npmExe
 
         # Install Playwright Chromium (mirrors scripts/install.sh behaviour for
@@ -2039,7 +2025,7 @@ function Install-NodeDeps {
                 Write-Warn "npx not found -- cannot install Playwright Chromium."
                 Write-Info "Run manually later: cd `"$InstallDir`"; npx playwright install chromium"
             } else {
-                $pwLog = "$env:TEMP\hermes-playwright-install-$(Get-Random).log"
+                $pwLog = "$env:TEMP\thoth-playwright-install-$(Get-Random).log"
                 Push-Location $InstallDir
                 # Capture EAP outside the try block so the catch's restore call
                 # always has a meaningful value (see Install-Uv for the full
@@ -2116,14 +2102,14 @@ function Install-NodeDeps {
     $tuiDir = "$InstallDir\ui-tui"
     if (Test-Path "$tuiDir\package.json") {
         Write-Info "Installing TUI dependencies..."
-        $tuiLog = "$env:TEMP\hermes-npm-tui-$(Get-Random).log"
+        $tuiLog = "$env:TEMP\thoth-npm-tui-$(Get-Random).log"
         [void](_Run-NpmInstall "TUI" $tuiDir $tuiLog $npmExe)
     }
 }
 
 function Install-PlatformSdks {
     # Ensure messaging-platform SDKs matching tokens the user added to
-    # ~/.hermes/.env are importable.  Two problems this solves:
+    # ~/.thoth/.env are importable.  Two problems this solves:
     #
     # 1. The tiered `uv pip install` cascade above can fall through to a
     #    lower tier when the first fails (common when RL git deps choke),
@@ -2148,7 +2134,7 @@ function Install-PlatformSdks {
         return
     }
 
-    $envPath = "$HermesHome\.env"
+    $envPath = "$ThothHome\.env"
     if (-not (Test-Path $envPath)) { return }
     $envLines = Get-Content $envPath -ErrorAction SilentlyContinue
 
@@ -2261,7 +2247,7 @@ function Invoke-SetupWizard {
 }
 
 function Start-GatewayIfConfigured {
-    $envPath = "$HermesHome\.env"
+    $envPath = "$ThothHome\.env"
     if (-not (Test-Path $envPath)) { return }
 
     $hasMessaging = $false
@@ -2273,14 +2259,14 @@ function Start-GatewayIfConfigured {
 
     if (-not $hasMessaging) { return }
 
-    $hermesCmd = "$InstallDir\venv\Scripts\thoth.exe"
-    if (-not (Test-Path $hermesCmd)) {
-        $hermesCmd = "thoth"
+    $thothCmd = "$InstallDir\venv\Scripts\thoth.exe"
+    if (-not (Test-Path $thothCmd)) {
+        $thothCmd = "thoth"
     }
 
     # If WhatsApp is enabled but not yet paired, run foreground for QR scan
     $whatsappEnabled = $content | Where-Object { $_ -match "^WHATSAPP_ENABLED=true" }
-    $whatsappSession = "$HermesHome\whatsapp\session\creds.json"
+    $whatsappSession = "$ThothHome\whatsapp\session\creds.json"
     if ($whatsappEnabled -and -not (Test-Path $whatsappSession)) {
         Write-Host ""
         Write-Info "WhatsApp is enabled but not yet paired."
@@ -2293,7 +2279,7 @@ function Start-GatewayIfConfigured {
             $response = Read-Host "Pair WhatsApp now? [Y/n]"
             if ($response -eq "" -or $response -match "^[Yy]") {
                 try {
-                    & $hermesCmd whatsapp
+                    & $thothCmd whatsapp
                 } catch {
                     # Expected after pairing completes
                 }
@@ -2322,10 +2308,10 @@ function Start-GatewayIfConfigured {
     if ($response -eq "" -or $response -match "^[Yy]") {
         Write-Info "Starting gateway in background..."
         try {
-            $logFile = "$HermesHome\logs\gateway.log"
-            Start-Process -FilePath $hermesCmd -ArgumentList "gateway" `
+            $logFile = "$ThothHome\logs\gateway.log"
+            Start-Process -FilePath $thothCmd -ArgumentList "gateway" `
                 -RedirectStandardOutput $logFile `
-                -RedirectStandardError "$HermesHome\logs\gateway-error.log" `
+                -RedirectStandardError "$ThothHome\logs\gateway-error.log" `
                 -WindowStyle Hidden
             Write-Success "Gateway started! Your bot is now online."
             Write-Info "Logs: $logFile"
@@ -2349,13 +2335,13 @@ function Write-Completion {
     Write-Host "* Your files:" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "   Config:    " -NoNewline -ForegroundColor Yellow
-    Write-Host "$HermesHome\config.yaml"
+    Write-Host "$ThothHome\config.yaml"
     Write-Host "   API Keys:  " -NoNewline -ForegroundColor Yellow
-    Write-Host "$HermesHome\.env"
+    Write-Host "$ThothHome\.env"
     Write-Host "   Data:      " -NoNewline -ForegroundColor Yellow
-    Write-Host "$HermesHome\cron\, sessions\, logs\"
+    Write-Host "$ThothHome\cron\, sessions\, logs\"
     Write-Host "   Code:      " -NoNewline -ForegroundColor Yellow
-    Write-Host "$HermesHome\app\"
+    Write-Host "$ThothHome\app\"
     Write-Host ""
 
     # Substrate / memory status: be explicit about whether PostgreSQL was

@@ -139,12 +139,12 @@ def test_ssl_kwarg_skips_ssl_for_local_dsns():
     Python traceback. Local compose PG has no SSL anyway; this is just
     skipping a no-op handshake."""
     for dsn in (
-        "postgresql://hermes:thoth@localhost:5432/thoth",
-        "postgresql://hermes:thoth@127.0.0.1:5433/thoth",
-        "postgresql://hermes:thoth@[::1]:5432/thoth",
-        "postgresql://hermes:thoth@postgres:5432/thoth",
-        "postgresql://hermes:thoth@postgres-test:5432/thoth",
-        "postgresql://hermes:thoth@db:5432/myapp",
+        "postgresql://thoth:thoth@localhost:5432/thoth",
+        "postgresql://thoth:thoth@127.0.0.1:5433/thoth",
+        "postgresql://thoth:thoth@[::1]:5432/thoth",
+        "postgresql://thoth:thoth@postgres:5432/thoth",
+        "postgresql://thoth:thoth@postgres-test:5432/thoth",
+        "postgresql://thoth:thoth@db:5432/myapp",
     ):
         assert thoth_db._ssl_kwarg_for_dsn(dsn) == {"ssl": False}, dsn
 
@@ -154,7 +154,7 @@ def test_ssl_kwarg_respects_explicit_sslmode_in_dsn():
     choice — never override it. Without the explicit-sslmode bail, our
     local-host heuristic could downgrade a deliberately-configured TLS
     connection."""
-    dsn = "postgresql://hermes:thoth@localhost:5432/thoth?sslmode=require"
+    dsn = "postgresql://thoth:thoth@localhost:5432/thoth?sslmode=require"
     assert thoth_db._ssl_kwarg_for_dsn(dsn) == {}
 
 

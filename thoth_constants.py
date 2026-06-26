@@ -41,45 +41,28 @@ def get_thoth_home_override() -> str | None:
 
 
 def _disk_default_home() -> Path:
-    """Default home from on-disk presence, with NO env input (rename Phase 3).
+    """Default home with NO env input.
 
-    Order: ``~/.thoth`` if it exists (real dir OR a symlink to ``~/.hermes``)
-    → ``~/.hermes`` if it exists → ``~/.thoth`` (the new-install canonical
-    name). Import-safe: only ``stat()``s, never mutates/creates anything (the
-    accessor is called at module scope in 30+ files). On Windows the home is
-    env-driven (the installer sets THOTH_HOME), so the env branch
-    in the callers wins before this probe runs.
+    Always ``~/.thoth`` — the single canonical data/state home. Import-safe:
+    never mutates/creates anything (the accessor is called at module scope in
+    30+ files). On Windows the home is env-driven (the installer sets
+    THOTH_HOME), so the env branch in the callers wins before this probe runs.
     """
-    home = Path.home()
-    thoth = home / ".thoth"
-    try:
-        if thoth.exists():
-            return thoth
-    except OSError:
-        pass
-    hermes = home / ".hermes"
-    try:
-        if hermes.exists():
-            return hermes
-    except OSError:
-        pass
-    return thoth
+    return Path.home() / ".thoth"
 
 
 def get_thoth_home() -> Path:
-    """Return the Thoth/Thoth home directory.
+    """Return the Thoth home directory.
 
-    Resolution: context override → ``THOTH_HOME`` env → ``~/.thoth`` if
-    present → ``~/.hermes`` if present → ``~/.thoth`` (new-install default).
-    ``THOTH_HOME`` is the single canonical env spelling; fresh installs rely
-    on the importer to carry any legacy ``~/.hermes`` home over.
+    Resolution: context override → ``THOTH_HOME`` env → ``~/.thoth``.
+    ``THOTH_HOME`` is the single canonical env spelling.
     This is the single source of truth — all other copies should import this.
 
     When ``THOTH_HOME`` is unset but an ``active_profile`` file indicates
     a non-default profile is active, logs a loud one-shot warning to
     ``errors.log`` so cross-profile data corruption is diagnosable instead
     of silent.  Behavior is unchanged otherwise — we still return
-    ``~/.hermes`` — because raising here would brick 30+ module-level
+    ``~/.thoth`` — because raising here would brick 30+ module-level
     callers that import this at load time.  Subprocess spawners are
     expected to propagate ``THOTH_HOME`` explicitly (see the systemd
     template in ``thoth_cli/gateway.py`` and the kanban dispatcher in
@@ -89,8 +72,7 @@ def get_thoth_home() -> Path:
     if override:
         return Path(override)
 
-    # THOTH_HOME is the single canonical spelling (fresh-install: the importer
-    # carries any legacy ~/.hermes home over).
+    # THOTH_HOME is the single canonical spelling.
     val = os.environ.get("THOTH_HOME", "").strip()
     if val:
         return Path(val)
@@ -117,7 +99,7 @@ def get_thoth_home() -> Path:
             import sys
             msg = (
                 f"[THOTH_HOME fallback] THOTH_HOME is unset but active "
-                f"profile is {active!r}. Falling back to ~/.hermes, which "
+                f"profile is {active!r}. Falling back to ~/.thoth, which "
                 f"is the DEFAULT profile — not {active!r}. Any data this "
                 f"process writes will land in the wrong profile. The "
                 f"subprocess spawner should pass THOTH_HOME explicitly "
@@ -135,15 +117,15 @@ def get_thoth_home() -> Path:
 def get_default_thoth_root() -> Path:
     """Return the root Thoth directory for profile-level operations.
 
-    In standard deployments this is ``~/.hermes``.
+    In standard deployments this is ``~/.thoth``.
 
     In Docker or custom deployments where ``THOTH_HOME`` points outside
-    ``~/.hermes`` (e.g. ``/opt/data``), returns ``THOTH_HOME`` directly
+    ``~/.thoth`` (e.g. ``/opt/data``), returns ``THOTH_HOME`` directly
     — that IS the root.
 
     In profile mode where ``THOTH_HOME`` is ``<root>/profiles/<name>``,
     returns ``<root>`` so that ``profile list`` can see all profiles.
-    Works both for standard (``~/.hermes/profiles/coder``) and Docker
+    Works both for standard (``~/.thoth/profiles/coder``) and Docker
     (``/opt/data/profiles/coder``) layouts.
 
     Import-safe — no dependencies beyond stdlib.
@@ -153,15 +135,11 @@ def get_default_thoth_root() -> Path:
     if not env_home:
         return native_home
     env_path = Path(env_home)
-    # Recognize either native spelling — ~/.thoth may be a symlink to
-    # ~/.hermes, so both resolve to the same inode. Report the canonical
-    # disk-default name for stability across processes.
-    for native in (native_home, Path.home() / ".hermes", Path.home() / ".thoth"):
-        try:
-            env_path.resolve().relative_to(native.resolve())
-            return native_home
-        except (ValueError, OSError):
-            continue
+    try:
+        env_path.resolve().relative_to(native_home.resolve())
+        return native_home
+    except (ValueError, OSError):
+        pass
 
     # Docker / custom deployment.
     # Check if this is a profile path: <root>/profiles/<name>
@@ -254,12 +232,12 @@ def display_thoth_home() -> str:
 
     Uses ``~/`` shorthand for readability::
 
-        default:  ``~/.hermes``
-        profile:  ``~/.hermes/profiles/coder``
-        custom:   ``/opt/hermes-custom``
+        default:  ``~/.thoth``
+        profile:  ``~/.thoth/profiles/coder``
+        custom:   ``/opt/thoth-custom``
 
     Use this in **user-facing** print/log messages instead of hardcoding
-    ``~/.hermes``.  For code that needs a real ``Path``, use
+    ``~/.thoth``.  For code that needs a real ``Path``, use
     :func:`get_thoth_home` instead.
     """
     home = get_thoth_home()
@@ -497,14 +475,3 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODELS_URL = f"{OPENROUTER_BASE_URL}/models"
 
 AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1"
-
-# --- Back-compat aliases (Hermes→Thoth rename). Kept for the hermes_constants shim
-# and any external importer of the old names. Remove in a later cleanup phase.
-get_hermes_home = get_thoth_home
-get_hermes_home_override = get_thoth_home_override
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-get_default_hermes_root = get_default_thoth_root
-reset_hermes_home_override = reset_thoth_home_override
-get_hermes_dir = get_thoth_dir
-set_hermes_home_override = set_thoth_home_override

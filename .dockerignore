@@ -27,5 +27,5 @@ ui-tui/packages/hermes-ink/dist/
 data/
 
 # Compose/profile runtime state (bind-mounted; avoid ownership/secret issues)
-hermes-config/
+thoth-config/
 runtime/

@@ -1,9 +1,9 @@
-# nix/hermes-agent.nix — Overridable Thoth Agent package
+# nix/thoth-agent.nix — Overridable Thoth Agent package
 #
 # callPackage auto-wires nixpkgs args; flake inputs are passed explicitly.
 # Users override via:
-#   pkgs.hermes-agent.override { extraPythonPackages = [...]; }
-#   pkgs.hermes-agent.override { extraDependencyGroups = [ "hindsight" ]; }
+#   pkgs.thoth-agent.override { extraPythonPackages = [...]; }
+#   pkgs.thoth-agent.override { extraDependencyGroups = [ "hindsight" ]; }
 {
   lib,
   stdenv,
@@ -36,21 +36,21 @@
 }:
 let
   nodejs = nodejs_22;
-  hermesVenv = callPackage ./python.nix {
+  thothVenv = callPackage ./python.nix {
     inherit uv2nix pyproject-nix pyproject-build-systems;
     dependency-groups = [ "all" ] ++ extraDependencyGroups;
   };
 
-  hermesNpmLib = callPackage ./lib.nix {
+  thothNpmLib = callPackage ./lib.nix {
     inherit npm-lockfile-fix nodejs;
   };
 
-  hermesTui = callPackage ./tui.nix {
-    inherit hermesNpmLib;
+  thothTui = callPackage ./tui.nix {
+    inherit thothNpmLib;
   };
 
-  hermesWeb = callPackage ./web.nix {
-    inherit hermesNpmLib;
+  thothWeb = callPackage ./web.nix {
+    inherit thothNpmLib;
   };
 
   bundledSkills = lib.cleanSourceWith {
@@ -104,7 +104,7 @@ let
 
     # Collect core venv package names
     core = set()
-    venv_sp = pathlib.Path('${hermesVenv}/${sitePackagesPath}')
+    venv_sp = pathlib.Path('${thothVenv}/${sitePackagesPath}')
     for di in venv_sp.glob('*.dist-info'):
         meta = di / 'METADATA'
         if meta.exists():
@@ -127,7 +127,7 @@ let
                 if line.startswith('Name:'):
                     pkg = canonical(line.split(':', 1)[1].strip())
                     if pkg in core:
-                        print(f'ERROR: plugin package \"{pkg}\" collides with a package in hermes sealed venv', file=sys.stderr)
+                        print(f'ERROR: plugin package \"{pkg}\" collides with a package in thoth sealed venv', file=sys.stderr)
                         print(f'  from: {di}', file=sys.stderr)
                         print(f'  Remove this dependency from extraPythonPackages.', file=sys.stderr)
                         sys.exit(1)
@@ -137,7 +137,7 @@ let
   '';
 in
 stdenv.mkDerivation {
-  pname = "hermes-agent";
+  pname = "thoth-agent";
   version = (fromTOML (builtins.readFile ../pyproject.toml)).project.version;
 
   dontUnpack = true;
@@ -147,23 +147,23 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
 
-    mkdir -p $out/share/hermes-agent $out/bin
-    cp -r ${bundledSkills} $out/share/hermes-agent/skills
-    cp -r ${bundledPlugins} $out/share/hermes-agent/plugins
-    cp -r ${hermesWeb} $out/share/hermes-agent/web_dist
+    mkdir -p $out/share/thoth-agent $out/bin
+    cp -r ${bundledSkills} $out/share/thoth-agent/skills
+    cp -r ${bundledPlugins} $out/share/thoth-agent/plugins
+    cp -r ${thothWeb} $out/share/thoth-agent/web_dist
 
     mkdir -p $out/ui-tui
-    cp -r ${hermesTui}/lib/hermes-tui/* $out/ui-tui/
+    cp -r ${thothTui}/lib/thoth-tui/* $out/ui-tui/
 
     ${lib.concatMapStringsSep "\n"
       (name: ''
-        makeWrapper ${hermesVenv}/bin/${name} $out/bin/${name} \
+        makeWrapper ${thothVenv}/bin/${name} $out/bin/${name} \
           --suffix PATH : "${runtimePath}" \
-          --set THOTH_BUNDLED_SKILLS $out/share/hermes-agent/skills \
-          --set THOTH_BUNDLED_PLUGINS $out/share/hermes-agent/plugins \
-          --set THOTH_WEB_DIST $out/share/hermes-agent/web_dist \
+          --set THOTH_BUNDLED_SKILLS $out/share/thoth-agent/skills \
+          --set THOTH_BUNDLED_PLUGINS $out/share/thoth-agent/plugins \
+          --set THOTH_WEB_DIST $out/share/thoth-agent/web_dist \
           --set THOTH_TUI_DIR $out/ui-tui \
-          --set THOTH_PYTHON ${hermesVenv}/bin/python3 \
+          --set THOTH_PYTHON ${thothVenv}/bin/python3 \
           --set THOTH_NODE ${lib.getExe nodejs} \
           ${lib.optionalString (rev != null) ''--set THOTH_REVISION ${rev} \''}
           ${lib.optionalString (extraPythonPackages != [ ]) ''--suffix PYTHONPATH : "${pythonPath}"''}
@@ -179,7 +179,7 @@ stdenv.mkDerivation {
 
     ${lib.optionalString (extraPythonPackages != [ ]) ''
       echo "=== Checking for plugin/core package collisions ==="
-      ${hermesVenv}/bin/python3 -c "${checkPackageCollisions}"
+      ${thothVenv}/bin/python3 -c "${checkPackageCollisions}"
       echo "=== No collisions ==="
     ''}
 
@@ -188,17 +188,17 @@ stdenv.mkDerivation {
 
   passthru = {
     inherit
-      hermesTui
-      hermesWeb
-      hermesNpmLib
-      hermesVenv
+      thothTui
+      thothWeb
+      thothNpmLib
+      thothVenv
       ;
 
     devShellHook = ''
-      STAMP=".nix-stamps/hermes-agent"
+      STAMP=".nix-stamps/thoth-agent"
       STAMP_VALUE="${pyprojectHash}:${uvLockHash}"
       if [ ! -f "$STAMP" ] || [ "$(cat "$STAMP")" != "$STAMP_VALUE" ]; then
-        echo "hermes-agent: installing Python dependencies..."
+        echo "thoth-agent: installing Python dependencies..."
         uv venv .venv --python ${python312}/bin/python3 2>/dev/null || true
         source .venv/bin/activate
         uv pip install -e ".[all]"
@@ -207,7 +207,7 @@ stdenv.mkDerivation {
         echo "$STAMP_VALUE" > "$STAMP"
       else
         source .venv/bin/activate
-        export THOTH_PYTHON=${hermesVenv}/bin/python3
+        export THOTH_PYTHON=${thothVenv}/bin/python3
       fi
     '';
   };

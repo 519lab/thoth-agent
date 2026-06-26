@@ -6,8 +6,8 @@ only ``thoth``/``thoth-agent``/``thoth-acp``). The entrypoint must therefore
 ("hermes: command not found") and crash-loops. And the app venv's bin must be
 on PATH or even ``thoth`` won't resolve.
 
-These assert the *CLI invocations* only; the container's ``hermes`` OS user and
-the ``/opt/hermes`` install path are intentionally left alone (deferred).
+The de-hermes rename also moved the container's OS user to ``thoth`` and the
+install path to ``/opt/thoth``.
 """
 
 from __future__ import annotations
@@ -40,8 +40,7 @@ def test_entrypoint_execs_thoth_not_hermes(entrypoint_text):
         "entrypoint must `exec thoth \"$@\"` — the `hermes` console script "
         "no longer exists, so `exec hermes` exits 127 and crash-loops (#213)."
     )
-    # No `hermes` CLI invocations (the OS-user `hermes` / `/opt/hermes` path
-    # are fine — they don't run the deleted console script).
+    # No `hermes` CLI invocations anywhere.
     assert "exec hermes" not in entrypoint_text
     assert "hermes dashboard" not in entrypoint_text
     assert "hermes setup" not in entrypoint_text
@@ -49,7 +48,7 @@ def test_entrypoint_execs_thoth_not_hermes(entrypoint_text):
 
 
 def test_dockerfile_puts_app_venv_on_path(dockerfile_text):
-    """`thoth` lives in /opt/hermes/.venv/bin; that must be on PATH or the
+    """`thoth` lives in /opt/thoth/.venv/bin; that must be on PATH or the
     entrypoint's bare `exec thoth` can't resolve it (#213)."""
     path_lines = [
         ln.strip()
@@ -57,8 +56,8 @@ def test_dockerfile_puts_app_venv_on_path(dockerfile_text):
         if ln.strip().startswith("ENV PATH") or ln.strip().startswith('ENV PATH=')
     ]
     assert path_lines, "Dockerfile must set PATH"
-    assert any("/opt/hermes/.venv/bin" in ln for ln in path_lines), (
-        "the app venv bin (/opt/hermes/.venv/bin) must be on PATH so the "
+    assert any("/opt/thoth/.venv/bin" in ln for ln in path_lines), (
+        "the app venv bin (/opt/thoth/.venv/bin) must be on PATH so the "
         "entrypoint's `exec thoth` resolves the console script (#213)."
     )
 
