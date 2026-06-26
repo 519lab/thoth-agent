@@ -5,7 +5,7 @@ Implements ``thoth mcp add/remove/list/test/configure`` for interactive
 MCP server lifecycle management (issue #690 Phase 2).
 
 Relies on tools/mcp_tool.py for connection/discovery and keeps
-configuration in ~/.hermes/config.yaml under the ``mcp_servers`` key.
+configuration in ~/.thoth/config.yaml under the ``mcp_servers`` key.
 """
 
 import asyncio

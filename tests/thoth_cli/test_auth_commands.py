@@ -90,9 +90,9 @@ def test_auth_add_anthropic_oauth_persists_pool_entry(tmp_path, monkeypatch):
 
     payload = json.loads((tmp_path / "thoth" / "auth.json").read_text())
     entries = payload["credential_pool"]["anthropic"]
-    entry = next(item for item in entries if item["source"] == "manual:hermes_pkce")
+    entry = next(item for item in entries if item["source"] == "manual:thoth_pkce")
     assert entry["label"] == "claude@example.com"
-    assert entry["source"] == "manual:hermes_pkce"
+    assert entry["source"] == "manual:thoth_pkce"
     assert entry["refresh_token"] == "refresh-token"
     assert entry["expires_at_ms"] == 1711234567000
 
@@ -521,7 +521,7 @@ def test_clear_provider_auth_removes_provider_pool_entries(tmp_path, monkeypatch
                         "label": "primary",
                         "auth_type": "oauth",
                         "priority": 0,
-                        "source": "manual:hermes_pkce",
+                        "source": "manual:thoth_pkce",
                         "access_token": "pool-token",
                     }
                 ],
@@ -1463,8 +1463,14 @@ def test_seed_from_singletons_respects_qwen_suppression(tmp_path, monkeypatch):
     assert active == set()
 
 
-def test_seed_from_singletons_respects_thoth_pkce_suppression(tmp_path, monkeypatch):
-    """anthropic hermes_pkce must not re-seed from ~/.thoth/.anthropic_oauth.json when suppressed."""
+def test_seed_from_singletons_respects_hermes_pkce_suppression(tmp_path, monkeypatch):
+    """anthropic hermes_pkce must not re-seed from ~/.hermes/.anthropic_oauth.json when suppressed.
+
+    NOTE: the ``hermes_pkce`` source id and ``~/.hermes/.anthropic_oauth.json`` path
+    here are owned by out-of-scope ``agent/credential_pool.py`` +
+    ``agent/credential_sources.py``; they must be renamed to ``thoth_pkce`` /
+    ``~/.thoth`` in lockstep by the agent-scope de-Hermes wave.
+    """
     thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1546,6 +1552,8 @@ def test_credential_sources_registry_has_expected_steps():
         "gh auth token / COPILOT_GITHUB_TOKEN / GH_TOKEN",
         "Any env-seeded credential (XAI_API_KEY, DEEPSEEK_API_KEY, etc.)",
         "~/.claude/.credentials.json",
+        # NOTE: owned by out-of-scope agent/credential_sources.py (still ~/.hermes);
+        # rename to ~/.thoth in lockstep with the agent-scope de-Hermes wave.
         "~/.hermes/.anthropic_oauth.json",
         "auth.json providers.nous",
         "auth.json providers.openai-codex + ~/.codex/auth.json",

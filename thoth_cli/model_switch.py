@@ -1273,14 +1273,14 @@ def list_authenticated_providers(
     # Build reverse mapping: models.dev ID → Thoth provider ID.
     # THOTH_OVERLAYS keys may be models.dev IDs (e.g. "github-copilot")
     # while _PROVIDER_MODELS and config.yaml use Thoth IDs ("copilot").
-    _mdev_to_hermes = {v: k for k, v in PROVIDER_TO_MODELS_DEV.items()}
+    _mdev_to_thoth = {v: k for k, v in PROVIDER_TO_MODELS_DEV.items()}
 
     for pid, overlay in THOTH_OVERLAYS.items():
         if pid.lower() in seen_slugs:
             continue
 
         # Resolve Thoth slug — e.g. "github-copilot" → "copilot"
-        thoth_slug = _mdev_to_hermes.get(pid, pid)
+        thoth_slug = _mdev_to_thoth.get(pid, pid)
         if thoth_slug.lower() in seen_slugs:
             continue
 
@@ -1380,7 +1380,7 @@ def list_authenticated_providers(
             "is_user_defined": False,
             "models": top,
             "total_models": total,
-            "source": "hermes",
+            "source": "thoth",
         })
         seen_slugs.add(pid.lower())
         seen_slugs.add(thoth_slug.lower())

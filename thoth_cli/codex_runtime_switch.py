@@ -50,7 +50,7 @@ def parse_args(arg_string: str) -> tuple[Optional[str], list[str]]:
     # Accept human-friendly synonyms
     if raw in {"on", "codex", "enable"}:
         return "codex_app_server", []
-    if raw in {"off", "default", "disable", "hermes"}:
+    if raw in {"off", "default", "disable", "thoth"}:
         return "auto", []
     if raw in VALID_RUNTIMES:
         return raw, []
@@ -200,10 +200,10 @@ def apply(
         try:
             from thoth_cli.codex_runtime_plugin_migration import migrate
             mig_report = migrate(config)
-            # Tools/MCP servers (excluding the hermes-tools callback,
+            # Tools/MCP servers (excluding the thoth-tools callback,
             # which is internal plumbing — surface separately).
             user_servers = [
-                s for s in mig_report.migrated if s != "hermes-tools"
+                s for s in mig_report.migrated if s != "thoth-tools"
             ]
             if user_servers:
                 msg_lines.append(
@@ -228,7 +228,7 @@ def apply(
                     f"Default sandbox: {mig_report.wrote_permissions_default} "
                     f"(no approval prompt on every write)"
                 )
-            if "hermes-tools" in mig_report.migrated:
+            if "thoth-tools" in mig_report.migrated:
                 msg_lines.append(
                     "Thoth tool callback registered: codex can now use "
                     "web_search, web_extract, browser_*, vision_analyze, "

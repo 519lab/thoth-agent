@@ -48,10 +48,10 @@ logger = logging.getLogger(__name__)
 # Marker comments wrapping the managed section so re-runs can detect
 # what's ours and what's user-edited. Both must appear or strip is a no-op.
 MIGRATION_MARKER = (
-    "# managed by hermes-agent — `thoth codex-runtime migrate` regenerates this section"
+    "# managed by thoth-agent — `thoth codex-runtime migrate` regenerates this section"
 )
 MIGRATION_END_MARKER = (
-    "# end hermes-agent managed section"
+    "# end thoth-agent managed section"
 )
 
 
@@ -471,7 +471,7 @@ def _query_codex_plugins(
         with CodexAppServerClient(
             codex_home=str(codex_home) if codex_home else None
         ) as client:
-            client.initialize(client_name="hermes-migration")
+            client.initialize(client_name="thoth-migration")
             resp = client.request("plugin/list", {}, timeout=timeout)
     except Exception as exc:
         return [], f"plugin/list query failed: {exc}"
@@ -536,10 +536,10 @@ def _looks_like_test_tempdir(path: str) -> bool:
     macOS routes ``/tmp`` through ``/private/var/folders/<…>/T`` which is
     what pytest's tempdir factory uses by default. If a THOTH_HOME pointing
     at one of those paths is burned into ``~/.codex/config.toml``, every
-    codex-routed hermes-tools call fails silently once the directory is GC'd.
+    codex-routed thoth-tools call fails silently once the directory is GC'd.
 
     We err on the side of refusing — losing a (very unlikely) real
-    ``~/.hermes`` symlink that happens to live under ``/private/var/folders``
+    ``~/.thoth`` symlink that happens to live under ``/private/var/folders``
     is much less harmful than silently bricking codex's tool surface.
     """
     if not path:
@@ -613,13 +613,13 @@ def migrate(
     dry_run: bool = False,
     discover_plugins: bool = True,
     default_permission_profile: Optional[str] = ":workspace",
-    expose_hermes_tools: bool = True,
+    expose_thoth_tools: bool = True,
 ) -> MigrationReport:
     """Translate Thoth mcp_servers config + Codex curated plugins into
     ~/.codex/config.toml.
 
     Args:
-        thoth_config: full ~/.hermes/config.yaml dict
+        thoth_config: full ~/.thoth/config.yaml dict
         codex_home: override CODEX_HOME (defaults to ~/.codex)
         dry_run: skip the actual write; report what would happen
         discover_plugins: when True (default), query `plugin/list` against
@@ -635,7 +635,7 @@ def migrate(
             configured in their own [permissions.<name>] table. Set None
             to leave permissions unset and let codex use its compiled-in
             default (which is read-only).
-        expose_hermes_tools: when True (default), register Thoth's own
+        expose_thoth_tools: when True (default), register Thoth's own
             tool surface (web_search, browser_*, delegate_task, vision,
             memory, skills, etc.) as an MCP server in ~/.codex/config.toml
             so the codex subprocess can call back into Thoth for tools
@@ -693,10 +693,10 @@ def migrate(
     # memory, skills, session_search, image_generate, text_to_speech.
     # The server itself is agent/transports/hermes_tools_mcp_server.py
     # and is launched on demand by codex (stdio MCP).
-    if expose_hermes_tools:
-        translated["hermes-tools"] = _build_thoth_tools_mcp_entry()
-        if "hermes-tools" not in report.migrated:
-            report.migrated.append("hermes-tools")
+    if expose_thoth_tools:
+        translated["thoth-tools"] = _build_thoth_tools_mcp_entry()
+        if "thoth-tools" not in report.migrated:
+            report.migrated.append("thoth-tools")
 
     # Build the new managed block
     managed_block = render_codex_toml_section(

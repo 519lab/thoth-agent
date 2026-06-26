@@ -3,7 +3,7 @@ Thoth Agent Uninstaller.
 
 Provides options for:
 - Full uninstall: Remove everything including configs and data
-- Keep data: Remove code but keep ~/.hermes/ (configs, sessions, logs)
+- Keep data: Remove code but keep ~/.thoth/ (configs, sessions, logs)
 """
 
 import os
@@ -441,8 +441,8 @@ def run_uninstall(args):
     Run the uninstall process.
     
     Options:
-    - Full uninstall: removes code + ~/.hermes/ (configs, data, logs)
-    - Keep data: removes code but keeps ~/.hermes/ for future reinstall
+    - Full uninstall: removes code + ~/.thoth/ (configs, data, logs)
+    - Keep data: removes code but keeps ~/.thoth/ for future reinstall
     """
     project_root = get_project_root()
     thoth_home = get_thoth_home()
@@ -632,7 +632,7 @@ def run_uninstall(args):
         else:
             log_info("No Windows installer artifacts to remove")
     
-    # 5. Optionally remove ~/.hermes/ data directory (and named profiles)
+    # 5. Optionally remove ~/.thoth/ data directory (and named profiles)
     if full_uninstall:
         # 5a. Stop and remove each named profile's gateway service and
         #     alias wrapper. The profile THOTH_HOME dirs live under
