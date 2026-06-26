@@ -117,7 +117,7 @@ class TestFromGlobalConfig:
                 }
             }
         }))
-        # Isolate from real ~/.hermes/honcho.json
+        # Isolate from real ~/.thoth/honcho.json
         monkeypatch.setenv("THOTH_HOME", str(tmp_path / "isolated"))
 
         config = HonchoClientConfig.from_global_config(config_path=config_file)
@@ -308,10 +308,10 @@ class TestResolveSessionName:
     def test_per_repo_uses_git_root(self):
         config = HonchoClientConfig(session_strategy="per-repo")
         with patch.object(
-            HonchoClientConfig, "_git_repo_name", return_value="hermes-agent"
+            HonchoClientConfig, "_git_repo_name", return_value="thoth-agent"
         ):
-            result = config.resolve_session_name("/home/user/hermes-agent/subdir")
-        assert result == "hermes-agent"
+            result = config.resolve_session_name("/home/user/thoth-agent/subdir")
+        assert result == "thoth-agent"
 
     def test_per_repo_with_peer_prefix(self):
         config = HonchoClientConfig(
@@ -342,7 +342,7 @@ class TestResolveSessionName:
 
 class TestResolveConfigPath:
     def test_prefers_thoth_home_when_exists(self, tmp_path):
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         local_cfg = thoth_home / "honcho.json"
         local_cfg.write_text('{"apiKey": "local"}')
@@ -352,12 +352,12 @@ class TestResolveConfigPath:
         assert result == local_cfg
 
     def test_falls_back_to_default_profile_when_no_local(self, tmp_path, monkeypatch):
-        # Profile mode: THOTH_HOME points at ~/.hermes/profiles/<name>, so
-        # _get_default_thoth_home() must resolve back to ~/.hermes — that's
+        # Profile mode: THOTH_HOME points at ~/.thoth/profiles/<name>, so
+        # _get_default_thoth_home() must resolve back to ~/.thoth — that's
         # the bug the HOME-anchored helper fixes (vs. blindly using Path.home()).
         fake_home = tmp_path / "fakehome"
         fake_home.mkdir()
-        default_home = fake_home / ".hermes"
+        default_home = fake_home / ".thoth"
         profile_home = default_home / "profiles" / "work"
         profile_home.mkdir(parents=True)
         default_cfg = default_home / "honcho.json"
@@ -384,7 +384,7 @@ class TestResolveConfigPath:
     def test_global_fallback_uses_home_at_call_time(self, tmp_path):
         fake_home = tmp_path / "fakehome"
         fake_home.mkdir()
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
 
         with patch.dict(os.environ, {"THOTH_HOME": str(thoth_home)}), \
@@ -394,10 +394,10 @@ class TestResolveConfigPath:
 
     def test_from_global_config_uses_default_profile_fallback(self, tmp_path, monkeypatch):
         # Profile mode: from_global_config() reads the default-profile honcho.json
-        # via the HOME-anchored helper, not Path.home() / ".hermes".
+        # via the HOME-anchored helper, not Path.home() / ".thoth".
         fake_home = tmp_path / "fakehome"
         fake_home.mkdir()
-        default_home = fake_home / ".hermes"
+        default_home = fake_home / ".thoth"
         profile_home = default_home / "profiles" / "work"
         profile_home.mkdir(parents=True)
         default_cfg = default_home / "honcho.json"
@@ -415,7 +415,7 @@ class TestResolveConfigPath:
         assert config.workspace_id == "default-ws"
 
     def test_from_global_config_uses_local_path(self, tmp_path):
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir()
         local_cfg = thoth_home / "honcho.json"
         local_cfg.write_text(json.dumps({

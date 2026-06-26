@@ -559,7 +559,7 @@ def _(home, kb):
 def _(home, kb):
     """THOTH_HOME with non-ASCII chars."""
     # Pre-create directly since tempfile doesn't love unicode prefixes
-    weird = f"/tmp/hermes_héllo_émöji_{os.getpid()}"
+    weird = f"/tmp/thoth_héllo_émöji_{os.getpid()}"
     os.makedirs(weird, exist_ok=True)
     os.environ["THOTH_HOME"] = weird
     os.environ["HOME"] = weird

@@ -50,7 +50,7 @@ def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     Phase 0 moved kanban_db from SQLite to PG; the table lives in the
     per-test PG database now.
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -726,7 +726,7 @@ def test_board_auto_initializes_missing_db(tmp_path, monkeypatch, thoth_db_initi
     well-formed empty board and that ``init_db`` is now idempotent on
     the PG side (calling it a second time must not raise).
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.delenv("THOTH_KANBAN_BOARD", raising=False)
@@ -754,7 +754,7 @@ def test_board_auto_initializes_missing_db(tmp_path, monkeypatch, thoth_db_initi
 def test_ws_events_rejects_when_token_required(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """When _SESSION_TOKEN is set (normal dashboard context), a missing or
     wrong ?token= query param must be rejected with policy-violation."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -799,7 +799,7 @@ def test_ws_events_board_query_param_default_overrides_current_board_pointer(tmp
     selects Default, the websocket must not subscribe to the CLI's current
     non-default board.
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -855,7 +855,7 @@ def test_ws_events_swallows_cancellation_on_shutdown(tmp_path, monkeypatch, thot
     import types
     import sys as _sys
 
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)

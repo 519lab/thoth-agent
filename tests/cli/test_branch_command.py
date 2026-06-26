@@ -34,8 +34,8 @@ def session_db(tmp_path, thoth_db_initialized_sync):
     Same underlying PG database; two different facades for the two
     different call-site shapes.
     """
-    os.environ["THOTH_HOME"] = str(tmp_path / ".hermes")
-    os.makedirs(tmp_path / ".hermes", exist_ok=True)
+    os.environ["THOTH_HOME"] = str(tmp_path / ".thoth")
+    os.makedirs(tmp_path / ".thoth", exist_ok=True)
     from thoth_state import _AsyncSessionDB
 
     from tests._helpers.sync_session_db import SyncSessionDB

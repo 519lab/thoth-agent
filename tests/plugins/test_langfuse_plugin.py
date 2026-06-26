@@ -52,7 +52,7 @@ class TestDiscovery:
         from thoth_cli import plugins as plugins_mod
 
         # Isolated THOTH_HOME so we don't read the developer's config.yaml.
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
