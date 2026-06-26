@@ -4,7 +4,7 @@ let
   src = ../ui-tui;
   npmDeps = pkgs.fetchNpmDeps {
     inherit src;
-    hash = "sha256-UhR343cgTBMg3ieklzqt90xv0ArFlMHsoxM88GLm50s=";
+    hash = "sha256-XqWod2yAmQc3O1MIAa75k1nsPPlrNnnXwyynQazJpog=";
   };
 
   npm = thothNpmLib.mkNpmPassthru { folder = "ui-tui"; attr = "tui"; pname = "thoth-tui"; };
