@@ -83,7 +83,7 @@ class _BackgroundLoop:
             return
         self._thread = threading.Thread(
             target=self._run_forever,
-            name="hermes-lsp-loop",
+            name="thoth-lsp-loop",
             daemon=True,
         )
         self._thread.start()

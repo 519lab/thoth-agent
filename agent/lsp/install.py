@@ -114,7 +114,7 @@ def thoth_lsp_bin_dir() -> Path:
     """Return the Thoth-owned bin staging dir for LSP servers."""
     home = os.environ.get("THOTH_HOME")
     if home is None:
-        home = os.path.join(os.path.expanduser("~"), ".hermes")
+        home = os.path.join(os.path.expanduser("~"), ".thoth")
     p = Path(home) / "lsp" / "bin"
     p.mkdir(parents=True, exist_ok=True)
     return p

@@ -9,7 +9,7 @@ Defines the pluggable-backend interface for cloud browser providers
 ``browser_*`` tool call.
 
 Providers live in ``<repo>/plugins/browser/<name>/`` (built-in, auto-loaded as
-``kind: backend``) or ``~/.hermes/plugins/browser/<name>/`` (user, opt-in via
+``kind: backend``) or ``~/.thoth/plugins/browser/<name>/`` (user, opt-in via
 ``plugins.enabled``).
 
 This ABC mirrors :class:`agent.web_search_provider.WebSearchProvider` (PR
