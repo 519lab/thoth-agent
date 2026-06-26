@@ -151,7 +151,7 @@ class TestSetupLogging:
     def test_writes_to_agent_log(self, thoth_home):
         thoth_logging.setup_logging(thoth_home=thoth_home)
 
-        test_logger = logging.getLogger("test_hermes_logging.write_test")
+        test_logger = logging.getLogger("test_thoth_logging.write_test")
         test_logger.info("test message for agent.log")
 
         # Flush handlers
@@ -166,7 +166,7 @@ class TestSetupLogging:
     def test_warnings_appear_in_both_logs(self, thoth_home):
         thoth_logging.setup_logging(thoth_home=thoth_home)
 
-        test_logger = logging.getLogger("test_hermes_logging.warning_test")
+        test_logger = logging.getLogger("test_thoth_logging.warning_test")
         test_logger.warning("this is a warning")
 
         for h in logging.getLogger().handlers:
@@ -180,7 +180,7 @@ class TestSetupLogging:
     def test_info_not_in_errors_log(self, thoth_home):
         thoth_logging.setup_logging(thoth_home=thoth_home)
 
-        test_logger = logging.getLogger("test_hermes_logging.info_test")
+        test_logger = logging.getLogger("test_thoth_logging.info_test")
         test_logger.info("info only message")
 
         for h in logging.getLogger().handlers:
