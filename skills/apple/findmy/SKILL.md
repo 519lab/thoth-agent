@@ -6,7 +6,7 @@ author: Thoth Agent
 license: MIT
 platforms: [macos]
 metadata:
-  hermes:
+  thoth:
     tags: [FindMy, AirTag, location, tracking, macOS, Apple]
 ---
 

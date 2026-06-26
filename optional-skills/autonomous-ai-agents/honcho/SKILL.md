@@ -6,7 +6,7 @@ author: Thoth Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [Honcho, Memory, Profiles, Observation, Dialectic, User-Modeling, Session-Summary]
     homepage: https://docs.honcho.dev
     related_skills: [thoth-agent]

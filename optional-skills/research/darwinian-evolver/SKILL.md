@@ -6,7 +6,7 @@ author: Bihruze (Asahi0x), Thoth Agent
 license: MIT
 platforms: [linux, macos]
 metadata:
-  hermes:
+  thoth:
     tags: [evolution, optimization, prompt-engineering, research]
     related_skills: [arxiv, jupyter-live-kernel]
 ---

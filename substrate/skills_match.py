@@ -3,7 +3,7 @@
 Suggest bundled skills relevant to the substrate's current context —
 useful when working in a domain with established procedures. Skills are
 self-describing (``skills/**/SKILL.md`` with ``name`` / ``description`` /
-``metadata.hermes.tags`` frontmatter); this scans them once (cached) and
+``metadata.thoth_meta.tags`` frontmatter); this scans them once (cached) and
 ranks them against a context string (the recall query + whatever entities/
 patterns the caller folds in) by keyword overlap.
 
@@ -54,9 +54,9 @@ def _parse_frontmatter(path: Path) -> dict:
     tags = []
     meta = data.get("metadata")
     if isinstance(meta, dict):
-        hermes = meta.get("hermes")
-        if isinstance(hermes, dict) and isinstance(hermes.get("tags"), list):
-            tags = [str(t) for t in hermes["tags"]]
+        thoth_meta = meta.get("thoth")
+        if isinstance(thoth_meta, dict) and isinstance(thoth_meta.get("tags"), list):
+            tags = [str(t) for t in thoth_meta["tags"]]
     return {
         "name": str(data.get("name") or "").strip(),
         "description": str(data.get("description") or "").strip(),

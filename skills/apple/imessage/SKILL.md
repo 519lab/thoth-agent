@@ -6,7 +6,7 @@ author: Thoth Agent
 license: MIT
 platforms: [macos]
 metadata:
-  hermes:
+  thoth:
     tags: [iMessage, SMS, messaging, macOS, Apple]
 prerequisites:
   commands: [imsg]

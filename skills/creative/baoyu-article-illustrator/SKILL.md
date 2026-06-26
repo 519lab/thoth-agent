@@ -6,7 +6,7 @@ author: 宝玉 (JimLiu)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [article-illustration, creative, image-generation]
     category: creative
     homepage: https://github.com/JimLiu/baoyu-skills#baoyu-article-illustrator

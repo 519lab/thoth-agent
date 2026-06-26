@@ -6,7 +6,7 @@ author: Thoth Agent (adapted from gsd-build/get-shit-done)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [spike, prototype, experiment, feasibility, throwaway, exploration, research, planning, mvp, proof-of-concept]
     related_skills: [sketch, writing-plans, subagent-driven-development, plan]
 ---

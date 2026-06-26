@@ -6,7 +6,7 @@ author: Thoth Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [MCP, Tools, Integrations]
     related_skills: [mcporter]
 ---

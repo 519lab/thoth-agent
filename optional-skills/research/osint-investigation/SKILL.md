@@ -5,7 +5,7 @@ version: 0.1.0
 platforms: [linux, macos, windows]
 author: Thoth Agent (adapted from ShinMegamiBoson/OpenPlanter, MIT)
 metadata:
-  hermes:
+  thoth:
     tags: [osint, investigation, public-records, sec, sanctions, corporate-registry, property, courts, due-diligence, journalism]
     category: research
     related_skills: [domain-intel, arxiv]

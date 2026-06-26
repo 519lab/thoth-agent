@@ -6,7 +6,7 @@ author: Deniz Alagoz (gizdusum), enhanced by Thoth Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [Solana, Blockchain, Crypto, Web3, RPC, DeFi, NFT]
     related_skills: []
 ---

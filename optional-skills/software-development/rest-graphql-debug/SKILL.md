@@ -5,7 +5,7 @@ version: 1.2.0
 author: eren-karakus0
 license: MIT
 metadata:
-  hermes:
+  thoth:
     tags: [api, rest, graphql, http, debugging, testing, curl, integration]
     category: software-development
     related_skills: [systematic-debugging, test-driven-development]
