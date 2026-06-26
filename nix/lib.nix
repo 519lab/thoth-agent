@@ -18,14 +18,14 @@
   # trailing newline so both sides always match.
   #
   # Usage:
-  #   npm = hermesNpmLib.mkNpmPassthru { folder = "ui-tui"; attr = "tui"; pname = "hermes-tui"; };
+  #   npm = thothNpmLib.mkNpmPassthru { folder = "ui-tui"; attr = "tui"; pname = "thoth-tui"; };
   #   pkgs.buildNpmPackage (npm // { ... } # or:
   #   pkgs.buildNpmPackage ({ ... } // npm)
   mkNpmPassthru =
     {
       folder, # repo-relative folder with package.json, e.g. "ui-tui"
       attr, # flake package attr, e.g. "tui"
-      pname, # e.g. "hermes-tui"
+      pname, # e.g. "thoth-tui"
       nixFile ? "nix/${attr}.nix", # defaults to nix/<attr>.nix
     }:
     {
@@ -81,12 +81,12 @@
         devShellHook = pkgs.writeShellScript "npm-dev-hook-${pname}" ''
           REPO_ROOT=$(git rev-parse --show-toplevel)
 
-          _hermes_npm_stamp() {
+          _thoth_npm_stamp() {
             sha256sum "${folder}/package.json" "${folder}/package-lock.json" \
               2>/dev/null | sha256sum | awk '{print $1}'
           }
           STAMP=".nix-stamps/${pname}"
-          STAMP_VALUE="$(_hermes_npm_stamp)"
+          STAMP_VALUE="$(_thoth_npm_stamp)"
           if [ ! -f "$STAMP" ] || [ "$(cat "$STAMP")" != "$STAMP_VALUE" ]; then
             echo "${pname}: installing npm dependencies..."
             ( cd ${folder} && CI=true ${pkgs.lib.getExe' nodejs "npm"} install --silent --no-fund --no-audit 2>/dev/null )
@@ -102,9 +102,9 @@
             fi
 
             mkdir -p .nix-stamps
-            _hermes_npm_stamp > "$STAMP"
+            _thoth_npm_stamp > "$STAMP"
           fi
-          unset -f _hermes_npm_stamp
+          unset -f _thoth_npm_stamp
         '';
 
         npmLockfile = {
