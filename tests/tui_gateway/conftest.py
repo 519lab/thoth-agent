@@ -3,7 +3,7 @@
 Two Phase-0 patches both apply to every test in this subdirectory:
 
 1.  ``tui_gateway.server`` wraps every SessionDB method with
-    ``_hermes_db.run_sync(db.<method>(...))`` because
+    ``_thoth_db.run_sync(db.<method>(...))`` because
     ``_AsyncSessionDB`` methods are coroutines. The ``FakeDB`` classes
     used by ``test_protocol.py`` and friends are sync — their methods
     return plain values, not coroutines — so the real ``run_sync``

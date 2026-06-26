@@ -1,4 +1,4 @@
-# Hermes Agent CLI Configuration
+# Thoth Agent CLI Configuration
 # Copy this file to cli-config.yaml and customize as needed.
 # This file configures the CLI behavior. Environment variables in .env take precedence.
 
@@ -13,10 +13,10 @@ model:
   # Inference provider selection:
   #   "auto"         - Auto-detect from credentials (default)
   #   "openrouter"   - OpenRouter (requires: OPENROUTER_API_KEY or OPENAI_API_KEY)
-  #   "nous"         - Nous Portal OAuth (requires: hermes login)
+  #   "nous"         - Nous Portal OAuth (requires: thoth login)
   #   "nous-api"     - Nous Portal API key (requires: NOUS_API_KEY)
   #   "anthropic"    - Direct Anthropic API (requires: ANTHROPIC_API_KEY)
-  #   "openai-codex" - OpenAI Codex (requires: hermes auth)
+  #   "openai-codex" - OpenAI Codex (requires: thoth auth)
   #   "copilot"      - GitHub Copilot / GitHub Models (requires: GITHUB_TOKEN)
   #   "gemini"      - Use Google AI Studio direct (requires: GOOGLE_API_KEY or GEMINI_API_KEY)
   #   "zai"         - Use z.ai / ZhipuAI GLM models (requires: GLM_API_KEY)
@@ -39,7 +39,7 @@ model:
   #   LM Studio is first-class and uses provider: "lmstudio".
   #   It works with both no-auth and auth-enabled server modes.
   #
-  # Can also be overridden with --provider flag or HERMES_INFERENCE_PROVIDER env var.
+  # Can also be overridden with --provider flag or THOTH_INFERENCE_PROVIDER env var.
   provider: "auto"
   
   # API configuration (falls back to OPENROUTER_API_KEY env var)
@@ -57,8 +57,8 @@ model:
   # ── Token limits — two settings, easy to confuse ──────────────────────────
   #
   # context_length: TOTAL context window (input + output tokens combined).
-  #   Controls when Hermes compresses history and validates requests.
-  #   Leave unset — Hermes auto-detects the correct value from the provider.
+  #   Controls when Thoth compresses history and validates requests.
+  #   Leave unset — Thoth auto-detects the correct value from the provider.
   #   Set manually only when auto-detection is wrong (e.g. a local server with
   #   a custom num_ctx, or a proxy that doesn't expose /v1/models).
   #
@@ -81,11 +81,11 @@ model:
 # client rebuilds during credential rotation.  For OpenAI-wire chat
 # completions (streaming and non-streaming) the configured value is also
 # used as the per-request ``timeout=`` kwarg so it wins over the legacy
-# HERMES_API_TIMEOUT env var (which still applies when no config is set).
+# THOTH_API_TIMEOUT env var (which still applies when no config is set).
 # ``stale_timeout_seconds`` controls the non-streaming stale-call detector and
-# wins over the legacy HERMES_API_CALL_STALE_TIMEOUT env var. Leaving these
-# unset keeps the legacy defaults (HERMES_API_TIMEOUT=1800s,
-# HERMES_API_CALL_STALE_TIMEOUT=300s, native Anthropic 900s).
+# wins over the legacy THOTH_API_CALL_STALE_TIMEOUT env var. Leaving these
+# unset keeps the legacy defaults (THOTH_API_TIMEOUT=1800s,
+# THOTH_API_CALL_STALE_TIMEOUT=300s, native Anthropic 900s).
 #
 # Not currently wired for AWS Bedrock (bedrock_converse + AnthropicBedrock
 # SDK paths) — those use boto3 with its own timeout configuration.
@@ -163,7 +163,7 @@ model:
 # Commands run directly on your machine in the current directory
 # -----------------------------------------------------------------------------
 # Working directory behavior:
-#   - CLI (`hermes` command): Uses "." (current directory where you run hermes)
+#   - CLI (`thoth` command): Uses "." (current directory where you run thoth)
 #   - Messaging (Telegram/Discord): Uses MESSAGING_CWD from .env (default: home)
 terminal:
   backend: "local"
@@ -207,7 +207,7 @@ terminal:
 #   # chosen docker_image expects to start as root.
 #   docker_run_as_host_user: true
 #   # Optional: explicitly forward selected env vars into Docker.
-#   # These values come from your current shell first, then ~/.hermes/.env.
+#   # These values come from your current shell first, then ~/.thoth/.env.
 #   # Warning: anything forwarded here is visible to commands run in the container.
 #   docker_forward_env:
 #     - "GITHUB_TOKEN"
@@ -282,7 +282,7 @@ terminal:
 # - Password is cached for the session
 #
 # EMPTY PASSWORDS: Setting sudo_password to an explicit empty string is different
-# from leaving it unset. Hermes will try an empty password via `sudo -S` and
+# from leaving it unset. Thoth will try an empty password via `sudo -S` and
 # will not open the interactive prompt. This is useful for passwordless sudo,
 # Touch ID sudo setups, and environments where prompting is just noise.
 #
@@ -401,7 +401,7 @@ prompt_caching:
 # =============================================================================
 # Auxiliary Models (Advanced — Experimental)
 # =============================================================================
-# Hermes uses lightweight "auxiliary" models for side tasks: image analysis,
+# Thoth uses lightweight "auxiliary" models for side tasks: image analysis,
 # browser screenshot analysis, web page summarization, and context compression.
 #
 # By default these use Gemini Flash via OpenRouter or Nous Portal and are
@@ -420,10 +420,10 @@ prompt_caching:
 # Provider options:
 #   "auto"       - Best available: OpenRouter → Nous Portal → main endpoint (default)
 #   "openrouter" - Force OpenRouter (requires OPENROUTER_API_KEY)
-#   "nous"       - Force Nous Portal (requires: hermes login)
+#   "nous"       - Force Nous Portal (requires: thoth login)
 #   "gemini"      - Force Google AI Studio direct (requires: GOOGLE_API_KEY or GEMINI_API_KEY)
 #   "ollama-cloud" - Ollama Cloud (requires: OLLAMA_API_KEY)
-#   "codex"       - Force Codex OAuth (requires: hermes model → Codex).
+#   "codex"       - Force Codex OAuth (requires: thoth model → Codex).
 #                  Uses gpt-5.3-codex which supports vision.
 #   "main"       - Use your custom endpoint (OPENAI_BASE_URL + OPENAI_API_KEY).
 #                  Works with OpenAI API, local models, or any OpenAI-compatible
@@ -563,9 +563,9 @@ skills:
   creation_nudge_interval: 15
 
   # External skill directories — share skills across tools/agents without
-  # copying them into ~/.hermes/skills/.  Each path is expanded (~ and ${VAR})
+  # copying them into ~/.thoth/skills/.  Each path is expanded (~ and ${VAR})
   # and resolved to an absolute path.  External dirs are read-only: skill
-  # creation always writes to ~/.hermes/skills/.  Local skills take precedence
+  # creation always writes to ~/.thoth/skills/.  Local skills take precedence
   # when names collide.
   # external_dirs:
   #   - ~/.agents/skills
@@ -600,7 +600,7 @@ agent:
   # timeouts, 5xx, etc.) before the agent surfaces the failure. Lower this
   # to 1 if you use fallback providers and want fast failover on flaky
   # primaries (default 3). The OpenAI SDK does its own low-level retries
-  # underneath this wrapper — this is the Hermes-level loop.
+  # underneath this wrapper — this is the Thoth-level loop.
   # api_max_retries: 3
   
   # Enable verbose logging
@@ -620,10 +620,10 @@ agent:
     teacher: "You are a patient teacher. Explain concepts clearly with examples."
     kawaii: "You are a kawaii assistant! Use cute expressions like (◕‿◕), ★, ♪, and ~! Add sparkles and be super enthusiastic about everything! Every response should feel warm and adorable desu~! ヽ(>∀<☆)ノ"
     catgirl: "You are Neko-chan, an anime catgirl AI assistant, nya~! Add 'nya' and cat-like expressions to your speech. Use kaomoji like (=^･ω･^=) and ฅ^•ﻌ•^ฅ. Be playful and curious like a cat, nya~!"
-    pirate: "Arrr! Ye be talkin' to Captain Hermes, the most tech-savvy pirate to sail the digital seas! Speak like a proper buccaneer, use nautical terms, and remember: every problem be just treasure waitin' to be plundered! Yo ho ho!"
+    pirate: "Arrr! Ye be talkin' to Captain Thoth, the most tech-savvy pirate to sail the digital seas! Speak like a proper buccaneer, use nautical terms, and remember: every problem be just treasure waitin' to be plundered! Yo ho ho!"
     shakespeare: "Hark! Thou speakest with an assistant most versed in the bardic arts. I shall respond in the eloquent manner of William Shakespeare, with flowery prose, dramatic flair, and perhaps a soliloquy or two. What light through yonder terminal breaks?"
     surfer: "Duuude! You're chatting with the chillest AI on the web, bro! Everything's gonna be totally rad. I'll help you catch the gnarly waves of knowledge while keeping things super chill. Cowabunga! 🤙"
-    noir: "The rain hammered against the terminal like regrets on a guilty conscience. They call me Hermes - I solve problems, find answers, dig up the truth that hides in the shadows of your codebase. In this city of silicon and secrets, everyone's got something to hide. What's your story, pal?"
+    noir: "The rain hammered against the terminal like regrets on a guilty conscience. They call me Thoth - I solve problems, find answers, dig up the truth that hides in the shadows of your codebase. In this city of silicon and secrets, everyone's got something to hide. What's your story, pal?"
     uwu: "hewwo! i'm your fwiendwy assistant uwu~ i wiww twy my best to hewp you! *nuzzles your code* OwO what's this? wet me take a wook! i pwomise to be vewy hewpful >w<"
     philosopher: "Greetings, seeker of wisdom. I am an assistant who contemplates the deeper meaning behind every query. Let us examine not just the 'how' but the 'why' of your questions. Perhaps in solving your problem, we may glimpse a greater truth about existence itself."
     hype: "YOOO LET'S GOOOO!!! 🔥🔥🔥 I am SO PUMPED to help you today! Every question is AMAZING and we're gonna CRUSH IT together! This is gonna be LEGENDARY! ARE YOU READY?! LET'S DO THIS! 💪😤🚀"
@@ -632,7 +632,7 @@ agent:
 # Toolsets
 # =============================================================================
 # Control which tools the agent has access to.
-# Use `hermes tools` to interactively enable/disable tools per platform.
+# Use `thoth tools` to interactively enable/disable tools per platform.
 
 # =============================================================================
 # Platform Toolsets (per-platform tool configuration)
@@ -674,8 +674,8 @@ agent:
 #   signal:        thoth-signal         (same as telegram)
 #   homeassistant: thoth-homeassistant  (same as telegram)
 #   qqbot:            thoth-qqbot            (same as telegram)
-#   teams:            hermes-teams            (same as telegram)
-#   google_chat:      hermes-google_chat      (same as telegram)
+#   teams:            thoth-teams            (same as telegram)
+#   google_chat:      thoth-google_chat      (same as telegram)
 #
 platform_toolsets:
   cli: [thoth-cli]
@@ -687,8 +687,8 @@ platform_toolsets:
   homeassistant: [thoth-homeassistant]
   qqbot: [thoth-qqbot]
   yuanbao: [thoth-yuanbao]
-  teams: [hermes-teams]
-  google_chat: [hermes-google_chat]
+  teams: [thoth-teams]
+  google_chat: [thoth-google_chat]
 
 # =============================================================================
 # Gateway Platform Settings
@@ -719,8 +719,8 @@ platform_toolsets:
 # ─────────────────────────────────────────────────────────────────────────────
 # Available toolsets (use these names in platform_toolsets or the toolsets list)
 #
-# Run `hermes chat --list-toolsets` to see all toolsets and their tools.
-# Run `hermes chat --list-tools` to see every individual tool with descriptions.
+# Run `thoth chat --list-toolsets` to see all toolsets and their tools.
+# Run `thoth chat --list-tools` to see every individual tool with descriptions.
 # ─────────────────────────────────────────────────────────────────────────────
 #
 # INDIVIDUAL TOOLSETS (compose your own):
@@ -774,9 +774,9 @@ platform_toolsets:
 
 # NOTE: The top-level "toolsets" key is deprecated and ignored.
 # Tool configuration is managed per-platform via platform_toolsets above.
-# Use `hermes tools` to configure interactively, or edit platform_toolsets directly.
+# Use `thoth tools` to configure interactively, or edit platform_toolsets directly.
 #
-# CLI override: hermes chat --toolsets terminal,web,file
+# CLI override: thoth chat --toolsets terminal,web,file
 
 # =============================================================================
 # MCP (Model Context Protocol) Servers
@@ -872,7 +872,7 @@ stt:
 # =============================================================================
 # Code Execution Sandbox (Programmatic Tool Calling)
 # =============================================================================
-# The execute_code tool runs Python scripts that call Hermes tools via RPC.
+# The execute_code tool runs Python scripts that call Thoth tools via RPC.
 # Intermediate tool results stay out of the LLM's context window.
 code_execution:
   timeout: 300         # Max seconds per script before kill (default: 300 = 5 min)
@@ -910,9 +910,9 @@ delegation:
 #
 # Requires: pip install honcho-ai
 # Config: ~/.honcho/config.json (shared with Claude Code, Cursor, etc.)
-# API key: HONCHO_API_KEY in ~/.hermes/.env or ~/.honcho/config.json
+# API key: HONCHO_API_KEY in ~/.thoth/.env or ~/.honcho/config.json
 #
-# Hermes-specific overrides (optional — most config comes from ~/.honcho/config.json):
+# Thoth-specific overrides (optional — most config comes from ~/.honcho/config.json):
 # honcho: {}
 
 # =============================================================================
@@ -955,8 +955,8 @@ display:
   #   false: Only send the final response
   interim_assistant_messages: true
 
-  # What Enter does when Hermes is already busy (CLI and gateway platforms).
-  #   interrupt: Interrupt the current run and redirect Hermes (default)
+  # What Enter does when Thoth is already busy (CLI and gateway platforms).
+  #   interrupt: Interrupt the current run and redirect Thoth (default)
   #   queue:     Queue your message for the next turn
   #   steer:     Inject your message mid-run via /steer, arriving at the agent
   #              after the next tool call — no interrupt, no role violation.
@@ -1007,7 +1007,7 @@ display:
   # response box label, and branding text. Change at runtime with /skin <name>.
   #
   # Built-in skins:
-  #   default        — Classic Hermes gold/kawaii
+  #   default        — Classic Thoth gold/kawaii
   #   ares           — Crimson/bronze war-god theme with spinner wings
   #   mono           — Clean grayscale monochrome
   #   slate          — Cool blue developer-focused
@@ -1017,7 +1017,7 @@ display:
   #   sisyphus       — Earthy stone-and-moss theme
   #   charizard      — Fiery orange dragon theme
   #
-  # Custom skins: drop a YAML file in ~/.hermes/skins/<name>.yaml
+  # Custom skins: drop a YAML file in ~/.thoth/skins/<name>.yaml
   # Schema (all fields optional, missing values inherit from default):
   #
   #   name: my-theme
@@ -1092,8 +1092,8 @@ display:
 #   on_session_finalize, on_session_reset, subagent_stop
 #
 # First-use consent: each (event, command) pair prompts once on a TTY, then
-# is persisted to ~/.hermes/shell-hooks-allowlist.json.  Non-interactive
-# runs (gateway, cron) need --accept-hooks, HERMES_ACCEPT_HOOKS=1, or the
+# is persisted to ~/.thoth/shell-hooks-allowlist.json.  Non-interactive
+# runs (gateway, cron) need --accept-hooks, THOTH_ACCEPT_HOOKS=1, or the
 # hooks_auto_accept key below.
 #
 # See website/docs/user-guide/features/hooks.md for the full JSON wire
@@ -1102,14 +1102,14 @@ display:
 # hooks:
 #   pre_tool_call:
 #     - matcher: "terminal"
-#       command: "~/.hermes/agent-hooks/block-rm-rf.sh"
+#       command: "~/.thoth/agent-hooks/block-rm-rf.sh"
 #       timeout: 10
 #   post_tool_call:
 #     - matcher: "write_file|patch"
-#       command: "~/.hermes/agent-hooks/auto-format.sh"
+#       command: "~/.thoth/agent-hooks/auto-format.sh"
 #   pre_llm_call:
-#     - command: "~/.hermes/agent-hooks/inject-cwd-context.sh"
+#     - command: "~/.thoth/agent-hooks/inject-cwd-context.sh"
 #   subagent_stop:
-#     - command: "~/.hermes/agent-hooks/log-orchestration.sh"
+#     - command: "~/.thoth/agent-hooks/log-orchestration.sh"
 #
 # hooks_auto_accept: false

@@ -1,5 +1,5 @@
 {
-  "id": "hermes-agent",
+  "id": "thoth-agent",
   "name": "Thoth Agent",
   "version": "0.14.0",
   "description": "Self-improving open-source AI agent by Nous Research with ACP editor integration, persistent memory, skills, and rich tool support.",
@@ -9,8 +9,8 @@
   "license": "MIT",
   "distribution": {
     "uvx": {
-      "package": "hermes-agent[acp]==0.14.0",
-      "args": ["hermes-acp"]
+      "package": "thoth-agent[acp]==0.14.0",
+      "args": ["thoth-acp"]
     }
   }
 }
