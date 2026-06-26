@@ -39,7 +39,7 @@ internally and auto-dismisses native dialogs within ~10ms, so
 supervisor injects a bridge script via
 `Page.addScriptToEvaluateOnNewDocument` that overrides
 `window.alert`/`confirm`/`prompt` with a synchronous XHR to a magic host
-(`hermes-dialog-bridge.invalid`). `Fetch.enable` intercepts those XHRs
+(`thoth-dialog-bridge.invalid`). `Fetch.enable` intercepts those XHRs
 before they touch the network — the dialog becomes a `Fetch.requestPaused`
 event the supervisor captures, and `respond_to_dialog` fulfills via
 `Fetch.fulfillRequest` with a JSON body the injected script decodes.
