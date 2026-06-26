@@ -3495,7 +3495,7 @@ def _chromium_search_roots() -> List[str]:
     Order mirrors what agent-browser and Playwright actually probe:
 
     1. ``PLAYWRIGHT_BROWSERS_PATH`` when set (Docker image sets this to
-       ``/opt/hermes/.playwright``).
+       ``/opt/thoth/.playwright``).
     2. ``~/.cache/ms-playwright`` — Playwright's default on Linux/macOS.
     3. ``~/Library/Caches/ms-playwright`` — Playwright's default on macOS.
     4. ``%USERPROFILE%\\AppData\\Local\\ms-playwright`` — Playwright's default

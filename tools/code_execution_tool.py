@@ -1781,6 +1781,3 @@ registry.register(
     emoji="🐍",
     max_result_size_chars=100_000,
 )
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-generate_hermes_tools_module = generate_thoth_tools_module

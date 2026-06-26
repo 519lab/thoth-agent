@@ -17,7 +17,7 @@ Public surface (grows as Phase A tasks land):
         await sub.shutdown()
         await thoth_db.close()
 
-Hooks live in ``substrate.events.hermes_hooks`` and are bound to the
+Hooks live in ``substrate.events.thoth_hooks`` and are bound to the
 booted Substrate instance via ``Substrate.boot()`` (binding lands in
 Task 14 of the Phase A plan).
 """
@@ -37,7 +37,7 @@ def get_bound_substrate():
     """
     # Late import so the hooks module isn't loaded just by importing
     # the substrate package.
-    from substrate.events.hermes_hooks import _substrate
+    from substrate.events.thoth_hooks import _substrate
 
     return _substrate
 

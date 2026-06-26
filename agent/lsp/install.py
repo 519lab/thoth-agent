@@ -374,6 +374,3 @@ __all__ = [
     "detect_status",
     "thoth_lsp_bin_dir",
 ]
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-hermes_lsp_bin_dir = thoth_lsp_bin_dir

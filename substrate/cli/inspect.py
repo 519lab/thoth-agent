@@ -91,7 +91,7 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
     slices_p.add_argument(
         "--stream",
         required=True,
-        help="Stream name (e.g. hermes.world.user_message.cli)",
+        help="Stream name (e.g. thoth.world.user_message.cli)",
     )
     slices_p.add_argument(
         "--limit",

@@ -62,6 +62,3 @@ def nous_portal_tags() -> List[str]:
     (e.g. ``merged_extra.setdefault("tags", []).extend(nous_portal_tags())``).
     """
     return ["product=hermes-agent", thoth_client_tag()]
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-hermes_client_tag = thoth_client_tag
