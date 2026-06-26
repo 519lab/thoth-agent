@@ -125,7 +125,7 @@ async def test_release_thin_policy_nulls_payload_and_marks_released(substrate):
         release_after_consolidation=False,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.release_thin",
+        name="thoth.test.release_thin",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -168,7 +168,7 @@ async def test_release_full_policy_keeps_salience(substrate):
         release_after_consolidation=False,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.release_full",
+        name="thoth.test.release_full",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -203,7 +203,7 @@ async def test_release_none_policy_deletes_row(substrate):
         justification="ephemeral test stream",
     )
     stream = await substrate.streams.register(
-        name="hermes.test.release_none",
+        name="thoth.test.release_none",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -236,7 +236,7 @@ async def test_release_respects_release_after_consolidation(substrate):
         release_after_consolidation=True,  # the gate
     )
     stream = await substrate.streams.register(
-        name="hermes.test.release_gate",
+        name="thoth.test.release_gate",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -274,7 +274,7 @@ async def test_release_passes_when_consolidated(substrate):
         release_after_consolidation=True,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.release_gate_consol",
+        name="thoth.test.release_gate_consol",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -302,7 +302,7 @@ async def test_release_skips_already_released(substrate):
         release_after_consolidation=False,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.already_released",
+        name="thoth.test.already_released",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -330,7 +330,7 @@ async def test_release_bounded_by_batch_limit(substrate):
         release_after_consolidation=False,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.bounded",
+        name="thoth.test.bounded",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -358,7 +358,7 @@ async def test_release_concurrent_curators_no_double_release(substrate):
         release_after_consolidation=False,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.concurrent",
+        name="thoth.test.concurrent",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",

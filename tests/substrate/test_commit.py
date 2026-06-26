@@ -55,7 +55,7 @@ def _now_utc() -> datetime:
 @pytest.mark.asyncio
 async def test_commit_creates_pending_slice(substrate):
     stream = await substrate.streams.register(
-        name="hermes.test.commit_pending",
+        name="thoth.test.commit_pending",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -117,7 +117,7 @@ async def test_commit_born_consolidated_skips_parse_backlog(substrate):
     event (e.g. cron dispatch) never sits in the parse backlog. It is
     still a normal passed/pending perceptual slice otherwise."""
     stream = await substrate.streams.register(
-        name="hermes.test.commit_born_consolidated",
+        name="thoth.test.commit_born_consolidated",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -153,7 +153,7 @@ async def test_commit_text_wraps_payload_uniformly(substrate):
     """TEXT modality wraps str → ``{"text": "..."}`` so retrieval is
     uniform across modalities."""
     stream = await substrate.streams.register(
-        name="hermes.test.text_wrap",
+        name="thoth.test.text_wrap",
         family=Family.EXTEROCEPTIVE,
         modality=Modality.TEXT,
         source="cli",
@@ -197,7 +197,7 @@ async def test_commit_rejects_inactive_stream(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.paused",
+        name="thoth.test.paused",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -228,7 +228,7 @@ async def test_commit_rejects_inactive_stream(substrate):
 @pytest.mark.asyncio
 async def test_commit_text_rejects_dict_payload(substrate):
     stream = await substrate.streams.register(
-        name="hermes.test.text_only",
+        name="thoth.test.text_only",
         family=Family.EXTEROCEPTIVE,
         modality=Modality.TEXT,
         source="cli",
@@ -247,7 +247,7 @@ async def test_commit_text_rejects_dict_payload(substrate):
 @pytest.mark.asyncio
 async def test_commit_structured_rejects_str_payload(substrate):
     stream = await substrate.streams.register(
-        name="hermes.test.structured_only",
+        name="thoth.test.structured_only",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -271,7 +271,7 @@ async def test_commit_structured_rejects_str_payload(substrate):
 @pytest.mark.asyncio
 async def test_commit_rejects_naive_event_time(substrate):
     stream = await substrate.streams.register(
-        name="hermes.test.naive_time",
+        name="thoth.test.naive_time",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -290,7 +290,7 @@ async def test_commit_rejects_naive_event_time(substrate):
 @pytest.mark.asyncio
 async def test_commit_rejects_clock_skew(substrate):
     stream = await substrate.streams.register(
-        name="hermes.test.clock_skew",
+        name="thoth.test.clock_skew",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -318,7 +318,7 @@ async def test_commit_with_conn_rolls_back_on_outer_failure(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.shared_txn",
+        name="thoth.test.shared_txn",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -383,7 +383,7 @@ def test_commit_slice_sync_works_from_sync_context(thoth_db_dsn):
 
         async def _setup():
             return await substrate.streams.register(
-                name="hermes.test.sync_facade",
+                name="thoth.test.sync_facade",
                 family=Family.SELF_STATE,
                 modality=Modality.TEXT,
                 source="test",
@@ -426,7 +426,7 @@ async def test_commit_slice_sync_inside_event_loop_does_not_deadlock(substrate):
     rather than spinning the loop.
     """
     stream = await substrate.streams.register(
-        name="hermes.test.sync_in_async",
+        name="thoth.test.sync_in_async",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",

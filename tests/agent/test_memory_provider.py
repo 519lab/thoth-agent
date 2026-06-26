@@ -754,7 +754,7 @@ class TestSetupFieldFiltering:
     def test_when_clause_no_condition_always_shown(self):
         """Fields without 'when' are always included."""
         schema = [
-            {"key": "bank_id", "default": "hermes"},
+            {"key": "bank_id", "default": "thoth"},
             {"key": "budget", "default": "mid"},
         ]
         fields = self._filter_fields(schema, {"mode": "cloud"})
