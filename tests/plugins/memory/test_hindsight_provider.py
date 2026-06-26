@@ -302,7 +302,7 @@ class TestConfig:
 
 class TestPostSetup:
     def test_local_embedded_setup_materializes_profile_env(self, tmp_path, monkeypatch):
-        thoth_home = tmp_path / "hermes-home"
+        thoth_home = tmp_path / "thoth-home"
         user_home = tmp_path / "user-home"
         user_home.mkdir()
         monkeypatch.setenv("HOME", str(user_home))
@@ -336,7 +336,7 @@ class TestPostSetup:
         )
 
     def test_local_embedded_setup_respects_existing_profile_name(self, tmp_path, monkeypatch):
-        thoth_home = tmp_path / "hermes-home"
+        thoth_home = tmp_path / "thoth-home"
         user_home = tmp_path / "user-home"
         user_home.mkdir()
         monkeypatch.setenv("HOME", str(user_home))
@@ -359,7 +359,7 @@ class TestPostSetup:
         assert not thoth_env.exists()
 
     def test_local_embedded_setup_preserves_existing_key_when_input_left_blank(self, tmp_path, monkeypatch):
-        thoth_home = tmp_path / "hermes-home"
+        thoth_home = tmp_path / "thoth-home"
         user_home = tmp_path / "user-home"
         user_home.mkdir()
         monkeypatch.setenv("HOME", str(user_home))
@@ -386,7 +386,7 @@ class TestPostSetup:
 
     def test_local_embedded_setup_blank_inputs_preserve_existing_config(self, tmp_path, monkeypatch):
         """Pressing Enter through setup should keep existing Hindsight values."""
-        thoth_home = tmp_path / "hermes-home"
+        thoth_home = tmp_path / "thoth-home"
         user_home = tmp_path / "user-home"
         user_home.mkdir()
         monkeypatch.setenv("HOME", str(user_home))

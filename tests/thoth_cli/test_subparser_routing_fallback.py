@@ -18,7 +18,7 @@ import pytest
 
 def _build_parser():
     """Build a minimal replica of the thoth top-level parser."""
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     parser.add_argument("--version", "-V", action="store_true")
     parser.add_argument("--resume", "-r", metavar="SESSION", default=None)
     parser.add_argument(

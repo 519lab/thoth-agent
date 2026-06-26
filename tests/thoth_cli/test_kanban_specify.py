@@ -28,7 +28,7 @@ def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     binds to the container-default DSN and INSERTs land in a database
     where Alembic never ran.
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)

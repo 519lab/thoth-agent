@@ -146,7 +146,7 @@ async def test_critic_rate_limited(booted, monkeypatch):
 
 
 def test_register_subparser_l4():
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
     assert callable(parser.parse_args(["substrate", "l4", "observations"]).func)

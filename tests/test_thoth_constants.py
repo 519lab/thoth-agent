@@ -28,16 +28,16 @@ class TestGetDefaultThothRoot:
         assert get_default_thoth_root() == tmp_path / ".thoth"
 
     def test_thoth_home_is_native(self, tmp_path, monkeypatch):
-        """When THOTH_HOME = ~/.hermes, returns ~/.hermes."""
-        native = tmp_path / ".hermes"
+        """When THOTH_HOME = ~/.thoth, returns ~/.thoth."""
+        native = tmp_path / ".thoth"
         native.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("THOTH_HOME", str(native))
         assert get_default_thoth_root() == native
 
     def test_thoth_home_is_profile(self, tmp_path, monkeypatch):
-        """When THOTH_HOME is a profile under ~/.hermes, returns ~/.hermes."""
-        native = tmp_path / ".hermes"
+        """When THOTH_HOME is a profile under ~/.thoth, returns ~/.thoth."""
+        native = tmp_path / ".thoth"
         profile = native / "profiles" / "coder"
         profile.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -45,7 +45,7 @@ class TestGetDefaultThothRoot:
         assert get_default_thoth_root() == native
 
     def test_thoth_home_is_docker(self, tmp_path, monkeypatch):
-        """When THOTH_HOME points outside ~/.hermes (Docker), returns THOTH_HOME."""
+        """When THOTH_HOME points outside ~/.thoth (Docker), returns THOTH_HOME."""
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -53,8 +53,8 @@ class TestGetDefaultThothRoot:
         assert get_default_thoth_root() == docker_home
 
     def test_thoth_home_is_custom_path(self, tmp_path, monkeypatch):
-        """Any THOTH_HOME outside ~/.hermes is treated as the root."""
-        custom = tmp_path / "my-hermes-data"
+        """Any THOTH_HOME outside ~/.thoth is treated as the root."""
+        custom = tmp_path / "my-thoth-data"
         custom.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("THOTH_HOME", str(custom))
@@ -180,7 +180,7 @@ class TestSecureParentDir:
 
     def test_safe_path_calls_chmod(self, tmp_path, monkeypatch):
         """Normal nested path (depth >= 3) should call os.chmod."""
-        safe_dir = tmp_path / "home" / "user" / ".hermes"
+        safe_dir = tmp_path / "home" / "user" / ".thoth"
         safe_dir.mkdir(parents=True)
         target = safe_dir / "auth.json"
         target.touch()

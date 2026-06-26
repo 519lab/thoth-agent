@@ -52,7 +52,7 @@ def _install_fake_tools_package(*, credential_mounts=None):
     thoth_cli.__path__ = []  # type: ignore[attr-defined]
     sys.modules["thoth_cli"] = thoth_cli
     sys.modules["thoth_cli.config"] = types.SimpleNamespace(
-        get_thoth_home=lambda: Path(tempfile.gettempdir()) / "hermes-home",
+        get_thoth_home=lambda: Path(tempfile.gettempdir()) / "thoth-home",
     )
 
     tools_package = types.ModuleType("tools")

@@ -65,7 +65,7 @@ async def test_release_emits_telemetry(substrate):
 
     profile_id = await _register_profile(substrate.pool, "test-emit-rel")
     stream = await substrate.streams.register(
-        name="hermes.test.emit_release",
+        name="thoth.test.emit_release",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -125,7 +125,7 @@ async def test_alarm_emits_telemetry(substrate):
         window_seconds=60, reinforcement_bump=0.3,
     )
     stream = await substrate.streams.register(
-        name="hermes.test.emit_alarm",
+        name="thoth.test.emit_alarm",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -230,7 +230,7 @@ async def test_curator_embed_omits_model_kwarg_when_config_default(
     # Seed one passed slice on a stream so list_unembedded returns it.
     profile_id = await _register_profile(substrate.pool, "embed_kwarg_test")
     stream = await substrate.streams.register(
-        name="hermes.test.embed_kwarg",
+        name="thoth.test.embed_kwarg",
         family=Family.EXTEROCEPTIVE,
         modality=Modality.TEXT,
         source="test",
@@ -278,7 +278,7 @@ async def _seed_passed_slice(substrate, name: str) -> UUID:
 
     profile_id = await _register_profile(substrate.pool, name)
     stream = await substrate.streams.register(
-        name=f"hermes.test.{name}",
+        name=f"thoth.test.{name}",
         family=Family.EXTEROCEPTIVE,
         modality=Modality.TEXT,
         source="test",

@@ -24,7 +24,7 @@ def _suppress_concurrent_thoth_gate(request, monkeypatch):
     """Default ``_detect_concurrent_thoth_instances`` to ``[]`` for every test.
 
     The Windows update path now refuses to proceed when another
-    ``hermes.exe`` is detected (issue #26670). On a developer's Windows
+    ``thoth.exe`` is detected (issue #26670). On a developer's Windows
     machine running the test suite via ``thoth`` itself, this would
     flag the running agent as a concurrent instance and abort every
     ``cmd_update`` test. Tests that want to exercise the gate explicitly

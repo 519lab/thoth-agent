@@ -273,6 +273,3 @@ def test_handle_close_healthy_releases_conn(install_fake_thoth_db):
 
     assert healthy.terminated is False
     assert healthy in pool.released
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-install_fake_hermes_db = install_fake_thoth_db

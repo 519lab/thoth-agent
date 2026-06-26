@@ -112,13 +112,13 @@ class TestIsWriteDenied:
         """Under a profile, BOTH <profile>/X and <root>/X must be denied (#15981 shape).
 
         Without the root-level pass, a profile-mode session leaves the
-        global ~/.hermes/{auth.json,config.yaml,webhook_subscriptions.json}
+        global ~/.thoth/{auth.json,config.yaml,webhook_subscriptions.json}
         writable — the same gap PR #15981 fixed for .env.
         """
         # Simulate a profile-mode THOTH_HOME layout:
         #   <root>/profiles/coder/{auth.json,config.yaml,...}
         #   <root>/{auth.json,config.yaml,...}        ← must also be denied
-        root = tmp_path / "hermes"
+        root = tmp_path / "thoth"
         profile = root / "profiles" / "coder"
         profile.mkdir(parents=True)
         monkeypatch.setenv("THOTH_HOME", str(profile))
@@ -130,7 +130,7 @@ class TestIsWriteDenied:
 
     def test_mcp_tokens_dir_protected_in_profile_mode(self, tmp_path, monkeypatch):
         """mcp-tokens/ under profile AND under root must both be denied."""
-        root = tmp_path / "hermes"
+        root = tmp_path / "thoth"
         profile = root / "profiles" / "coder"
         profile.mkdir(parents=True)
         monkeypatch.setenv("THOTH_HOME", str(profile))
@@ -491,7 +491,7 @@ class TestSearchFilesFallbackHiddenPaths:
 
     def test_hidden_root_with_hidden_ancestor_includes_files(self, tmp_path, monkeypatch):
         """Fallback find should include visible files when path is inside hidden root."""
-        root = tmp_path / ".hermes" / "logs"
+        root = tmp_path / ".thoth" / "logs"
         root.mkdir(parents=True)
         visible_file = root / "agent.log"
         hidden_dir_file = root / ".hidden" / "secret.log"

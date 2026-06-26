@@ -17,7 +17,7 @@ def test_gateway_config_stt_disabled_from_dict_nested():
 
 
 def test_load_gateway_config_bridges_stt_enabled_from_config_yaml(tmp_path, monkeypatch):
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / "config.yaml").write_text(
         yaml.dump({"stt": {"enabled": False}}),

@@ -44,7 +44,7 @@ def thoth_home(monkeypatch):
     module-level ``THOTH_HOME`` / ``SKILLS_DIR`` constants in place so the
     isolation is local to this fixture's scope.
     """
-    td = tempfile.mkdtemp(prefix="hermes-reload-skills-")
+    td = tempfile.mkdtemp(prefix="thoth-reload-skills-")
     monkeypatch.setenv("THOTH_HOME", td)
     home = Path(td)
     (home / "skills").mkdir(parents=True, exist_ok=True)

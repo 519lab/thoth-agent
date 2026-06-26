@@ -66,7 +66,7 @@ def test_all_34_profiles_register():
 def test_user_plugin_overrides_bundled(tmp_path, monkeypatch):
     """A user plugin with the same name must override the bundled profile."""
     # Point THOTH_HOME at a fresh temp dir
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     # get_thoth_home() may be module-cached depending on codebase; ensure the
@@ -114,7 +114,7 @@ def test_general_plugin_manager_skips_model_provider_kind(tmp_path, monkeypatch)
     (providers/__init__.py handles them). It records the manifest only."""
     from thoth_cli import plugins as plugin_mod
 
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 

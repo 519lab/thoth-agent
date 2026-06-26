@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 @pytest.fixture
 def cron_env(tmp_path, monkeypatch):
     """Isolated cron environment with temp THOTH_HOME."""
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / "cron").mkdir()
     (thoth_home / "cron" / "output").mkdir()
@@ -296,7 +296,7 @@ class TestScriptPathContainment:
     """
 
     def test_absolute_path_outside_scripts_dir_blocked(self, cron_env):
-        """Absolute paths outside ~/.hermes/scripts/ must be rejected."""
+        """Absolute paths outside ~/.thoth/scripts/ must be rejected."""
         from cron.scheduler import _run_job_script
 
         # Create a script outside the scripts dir

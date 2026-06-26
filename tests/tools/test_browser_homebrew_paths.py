@@ -263,7 +263,7 @@ class TestRunBrowserCommandPathConstruction:
         }
         fake_json = json.dumps({"success": True})
         browser_path = "/Users/test/Library/Application Support/thoth/node_modules/.bin/agent-browser"
-        thoth_home = str(tmp_path / "hermes-home")
+        thoth_home = str(tmp_path / "thoth-home")
 
         with patch("tools.browser_tool._find_agent_browser", return_value=browser_path), \
  patch("tools.browser_tool._chromium_installed", return_value=True), \
@@ -315,7 +315,7 @@ class TestRunBrowserCommandPathConstruction:
             "cdp_url": None,
         }
         fake_json = json.dumps({"success": True})
-        thoth_home = str(tmp_path / "hermes-home")
+        thoth_home = str(tmp_path / "thoth-home")
 
         with patch("tools.browser_tool._find_agent_browser", return_value="npx agent-browser"), \
  patch("tools.browser_tool._chromium_installed", return_value=True), \

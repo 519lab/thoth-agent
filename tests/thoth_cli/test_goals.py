@@ -26,7 +26,7 @@ def thoth_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """
     from pathlib import Path
 
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     monkeypatch.setenv("THOTH_HOME", str(home))

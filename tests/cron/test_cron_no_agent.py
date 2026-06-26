@@ -21,7 +21,7 @@ import pytest
 @pytest.fixture
 def thoth_env(tmp_path, monkeypatch):
     """Isolate THOTH_HOME for each test so jobs/scripts don't leak."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     (home / "scripts").mkdir()
     (home / "cron").mkdir()

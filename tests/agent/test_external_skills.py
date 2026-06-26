@@ -23,7 +23,7 @@ def external_skills_dir(tmp_path):
 @pytest.fixture
 def thoth_home(tmp_path):
     """Create a minimal THOTH_HOME with config."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     (home / "skills").mkdir()
     return home
@@ -155,6 +155,3 @@ class TestExternalSkillView:
             result = json.loads(skill_view("my-external-skill"))
         assert result["success"] is True
         assert "external things" in result["content"]
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-hermes_home = thoth_home

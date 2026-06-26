@@ -20,10 +20,10 @@ def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     Depends on ``thoth_db_initialized_sync`` so the PG pool is bound
     to the persistent sync loop AND the schema is migrated before
     ``kb.init_db()`` runs. Phase 0 moved kanban_db from SQLite to PG;
-    the test used to point at ~/.hermes/kanban.db (a per-test tempdir)
+    the test used to point at ~/.thoth/kanban.db (a per-test tempdir)
     but the table lives in the per-test PG database now.
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -77,7 +77,7 @@ def test_init_creates_expected_tables(kanban_home):
 )
 def test_connect_rejects_tls_record_in_sqlite_header(tmp_path, monkeypatch):
     """Kanban should classify TLS-looking page-0 clobbers before WAL setup."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.delenv("THOTH_KANBAN_DB", raising=False)
@@ -1115,7 +1115,7 @@ def test_has_spawnable_ready_true_when_real_profile_present(kanban_home, monkeyp
     )
     with kb.connect() as conn:
         kb.create_task(conn, title="terminal-task", assignee="orion-cc")
-        kb.create_task(conn, title="hermes-task", assignee="daily")
+        kb.create_task(conn, title="thoth-task", assignee="daily")
         assert kb.has_spawnable_ready(conn) is True
 
 
@@ -1694,8 +1694,8 @@ class TestSharedBoardPaths:
     def test_default_install_anchors_at_home_dot_hermes(
         self, tmp_path, monkeypatch
     ):
-        # Standard install: THOTH_HOME == ~/.hermes, no profile active.
-        default_home = tmp_path / ".hermes"
+        # Standard install: THOTH_HOME == ~/.thoth, no profile active.
+        default_home = tmp_path / ".thoth"
         default_home.mkdir()
         self._set_home(monkeypatch, tmp_path, default_home)
 
@@ -1710,11 +1710,11 @@ class TestSharedBoardPaths:
     def test_profile_worker_resolves_to_shared_root(
         self, tmp_path, monkeypatch
     ):
-        # Reproduces the bug: dispatcher uses ~/.hermes/kanban.db,
+        # Reproduces the bug: dispatcher uses ~/.thoth/kanban.db,
         # worker spawned with -p <profile> previously resolved to
-        # ~/.hermes/profiles/<profile>/kanban.db. After the fix both
-        # converge on ~/.hermes/kanban.db.
-        default_home = tmp_path / ".hermes"
+        # ~/.thoth/profiles/<profile>/kanban.db. After the fix both
+        # converge on ~/.thoth/kanban.db.
+        default_home = tmp_path / ".thoth"
         default_home.mkdir()
         profile_home = default_home / "profiles" / "nehemiahkanban"
         profile_home.mkdir(parents=True)
@@ -1740,7 +1740,7 @@ class TestSharedBoardPaths:
         # End-to-end convergence: resolve the path under each side's
         # THOTH_HOME and confirm equality. This is the property the
         # dispatcher/worker handoff actually depends on.
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         default_home.mkdir()
         profile_home = default_home / "profiles" / "coder"
         profile_home.mkdir(parents=True)
@@ -1764,11 +1764,11 @@ class TestSharedBoardPaths:
     def test_docker_custom_thoth_home_uses_env_path_directly(
         self, tmp_path, monkeypatch
     ):
-        # Docker / custom deployment: THOTH_HOME points outside ~/.hermes.
+        # Docker / custom deployment: THOTH_HOME points outside ~/.thoth.
         # `get_default_thoth_root()` returns env_home directly when it
         # is not a `<root>/profiles/<name>` shape and not under
-        # `Path.home() / ".hermes"`.
-        custom_root = tmp_path / "opt" / "hermes"
+        # `Path.home() / ".thoth"`.
+        custom_root = tmp_path / "opt" / "thoth"
         custom_root.mkdir(parents=True)
         self._set_home(monkeypatch, tmp_path, custom_root)
 
@@ -1778,10 +1778,10 @@ class TestSharedBoardPaths:
     def test_docker_profile_layout_uses_grandparent(
         self, tmp_path, monkeypatch
     ):
-        # Docker profile shape: THOTH_HOME=/opt/hermes/profiles/coder;
-        # `get_default_thoth_root()` walks up to /opt/hermes because
+        # Docker profile shape: THOTH_HOME=/opt/thoth/profiles/coder;
+        # `get_default_thoth_root()` walks up to /opt/thoth because
         # the immediate parent dir is named "profiles".
-        custom_root = tmp_path / "opt" / "hermes"
+        custom_root = tmp_path / "opt" / "thoth"
         profile = custom_root / "profiles" / "coder"
         profile.mkdir(parents=True)
         self._set_home(monkeypatch, tmp_path, profile)
@@ -1794,7 +1794,7 @@ class TestSharedBoardPaths:
     ):
         # Explicit override: THOTH_KANBAN_HOME beats every other
         # resolution rule.
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         profile_home = default_home / "profiles" / "any"
         profile_home.mkdir(parents=True)
         override = tmp_path / "shared-board"
@@ -1810,7 +1810,7 @@ class TestSharedBoardPaths:
 
     def test_empty_override_falls_through(self, tmp_path, monkeypatch):
         # Empty/whitespace override is treated as unset.
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         default_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("THOTH_HOME", str(default_home))
@@ -1839,7 +1839,7 @@ class TestSharedBoardPaths:
         # (b) writes its row into the wrong DB and poisons the next
         # test that calls ``ensure_pool_sync`` (which short-circuits
         # on ``_pool is not None``).
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         default_home.mkdir()
         profile_home = default_home / "profiles" / "nehemiahkanban"
         profile_home.mkdir(parents=True)
@@ -1863,7 +1863,7 @@ class TestSharedBoardPaths:
         # THOTH_KANBAN_DB pins the file path directly and beats both
         # THOTH_KANBAN_HOME and the `get_default_thoth_root()` path.
         # This is the env the dispatcher injects into workers.
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         default_home.mkdir()
         umbrella = tmp_path / "umbrella"
         umbrella.mkdir()
@@ -1884,7 +1884,7 @@ class TestSharedBoardPaths:
         self, tmp_path, monkeypatch
     ):
         # THOTH_KANBAN_WORKSPACES_ROOT pins the workspaces root directly.
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         default_home.mkdir()
         umbrella = tmp_path / "umbrella"
         umbrella.mkdir()
@@ -1905,7 +1905,7 @@ class TestSharedBoardPaths:
     ):
         # Empty/whitespace pins are treated as unset, same as
         # THOTH_KANBAN_HOME.
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         default_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.setenv("THOTH_HOME", str(default_home))
@@ -1922,7 +1922,7 @@ class TestSharedBoardPaths:
         # and THOTH_KANBAN_WORKSPACES_ROOT into the worker env so the
         # worker converges on the dispatcher's paths even when the
         # `-p <profile>` flag rewrites THOTH_HOME.
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         default_home.mkdir()
         self._set_home(monkeypatch, tmp_path, default_home)
 
@@ -2561,7 +2561,7 @@ def test_task_dict_survives_corrupt_created_at(tmp_path, monkeypatch):
     corrupt row doesn't turn the whole board response into an error.
     """
     # Set up an isolated kanban home so we can write a corrupt created_at.
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)

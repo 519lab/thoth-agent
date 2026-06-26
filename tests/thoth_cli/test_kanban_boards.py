@@ -47,7 +47,7 @@ def fresh_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     to the persistent sync loop AND the kanban schema is migrated
     before any ``kb.*`` call. Phase 0 moved kanban_db from SQLite to
     PG; the table lives in the per-test PG database now (not
-    ``~/.hermes/kanban.db``).
+    ``~/.thoth/kanban.db``).
     """
     home = tmp_path / "thoth_home"
     home.mkdir()
@@ -76,7 +76,7 @@ def fresh_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
 
 class TestSlugValidation:
     @pytest.mark.parametrize("good", [
-        "default", "atm10-server", "hermes-agent", "proj_1", "a",
+        "default", "atm10-server", "thoth-agent", "proj_1", "a",
         "very-long-but-still-ok-slug-with-hyphens-and-numbers-1234",
     ])
     def test_accepts_valid(self, good):

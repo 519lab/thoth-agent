@@ -24,7 +24,7 @@ The contract:
 
 If a future PR re-adds Camofox (or any other binary-postinstall package)
 to root ``dependencies``, this test fails — read the lazy-install
-guidance in the ``hermes-agent-dev`` skill before changing the
+guidance in the ``thoth-agent-dev`` skill before changing the
 expectations.
 """
 

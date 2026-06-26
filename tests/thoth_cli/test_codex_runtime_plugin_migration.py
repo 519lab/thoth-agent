@@ -797,7 +797,7 @@ class TestStripUnmanagedPluginTables:
 # ---- Bug C: THOTH_HOME tempdir leak into ~/.codex/config.toml ----
 
 
-class TestHermesHomeLeakGuard:
+class TestThothHomeLeakGuard:
     """Regression tests for issue #26250 Bug C.
 
     Previously ``_build_thoth_tools_mcp_entry()`` read ``THOTH_HOME``
@@ -808,7 +808,7 @@ class TestHermesHomeLeakGuard:
 
     def test_tempdir_detector_recognizes_pytest_paths(self):
         assert _looks_like_test_tempdir(
-            "/private/var/folders/abc/pytest-of-kshitij/pytest-137/popen-gw2/test_X/hermes_test"
+            "/private/var/folders/abc/pytest-of-kshitij/pytest-137/popen-gw2/test_X/thoth_test"
         )
         assert _looks_like_test_tempdir(
             "/tmp/pytest-of-user/pytest-12/test_X/thoth"
@@ -818,8 +818,8 @@ class TestHermesHomeLeakGuard:
         )
 
     def test_tempdir_detector_accepts_real_thoth_home(self):
-        assert not _looks_like_test_tempdir("/Users/alice/.hermes")
-        assert not _looks_like_test_tempdir("/home/bob/.hermes")
+        assert not _looks_like_test_tempdir("/Users/alice/.thoth")
+        assert not _looks_like_test_tempdir("/home/bob/.thoth")
         assert not _looks_like_test_tempdir("/opt/thoth")
         assert not _looks_like_test_tempdir("")
 
@@ -828,7 +828,7 @@ class TestHermesHomeLeakGuard:
         tempdir, _build_thoth_tools_mcp_entry() must NOT propagate it."""
         monkeypatch.setenv(
             "THOTH_HOME",
-            "/private/var/folders/xx/pytest-of-user/pytest-99/test_x/hermes_test",
+            "/private/var/folders/xx/pytest-of-user/pytest-99/test_x/thoth_test",
         )
         entry = _build_thoth_tools_mcp_entry()
         env = entry.get("env", {})
@@ -844,7 +844,7 @@ class TestHermesHomeLeakGuard:
         # We can't easily create one in the test, so just use a stable path
         # outside any tempdir-detector needle. The detector checks for tempdir
         # markers, not for path existence.
-        real_path = "/Users/alice/.hermes"
+        real_path = "/Users/alice/.thoth"
         monkeypatch.setenv("THOTH_HOME", real_path)
         entry = _build_thoth_tools_mcp_entry()
         env = entry.get("env", {})

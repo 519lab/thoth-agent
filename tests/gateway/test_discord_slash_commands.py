@@ -761,7 +761,7 @@ def test_discord_auto_thread_config_bridge(monkeypatch, tmp_path):
     from pathlib import Path
 
     # Write a config.yaml the loader will find
-    thoth_dir = tmp_path / ".hermes"
+    thoth_dir = tmp_path / ".thoth"
     thoth_dir.mkdir()
     config_path = thoth_dir / "config.yaml"
     config_path.write_text(yaml.dump({

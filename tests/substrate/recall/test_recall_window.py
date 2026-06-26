@@ -59,7 +59,7 @@ async def test_recall_window_orders_by_salience_then_recency(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.recall_order",
+        name="thoth.test.recall_order",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -104,7 +104,7 @@ async def test_recall_window_unwraps_text_payload(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.recall_unwrap",
+        name="thoth.test.recall_unwrap",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -135,7 +135,7 @@ async def test_recall_window_preserves_structured_payload(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.recall_structured",
+        name="thoth.test.recall_structured",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -167,7 +167,7 @@ async def test_recall_window_respects_time_window(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.recall_window_filter",
+        name="thoth.test.recall_window_filter",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -206,7 +206,7 @@ async def test_recall_window_excludes_released_and_pending(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.recall_state_filter",
+        name="thoth.test.recall_state_filter",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -263,7 +263,7 @@ async def test_recall_window_respects_min_salience(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.recall_minsal",
+        name="thoth.test.recall_minsal",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -301,7 +301,7 @@ async def test_recall_window_excludes_named_session(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.recall_session_filter",
+        name="thoth.test.recall_session_filter",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -361,7 +361,7 @@ async def test_recall_window_returns_embedding_when_present(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.recall_embedding",
+        name="thoth.test.recall_embedding",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -405,7 +405,7 @@ async def test_set_embedding_idempotent_under_concurrent_writers(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.set_embed_idempotent",
+        name="thoth.test.set_embed_idempotent",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",
@@ -442,7 +442,7 @@ async def test_list_unembedded_orders_newest_first(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.list_unembedded",
+        name="thoth.test.list_unembedded",
         family=Family.SELF_STATE,
         modality=Modality.TEXT,
         source="test",

@@ -18,7 +18,7 @@ from thoth_cli.completion import _walk, generate_bash, generate_zsh, generate_fi
 
 def _make_parser() -> argparse.ArgumentParser:
     """Build a minimal parser that mirrors the real thoth structure."""
-    p = argparse.ArgumentParser(prog="hermes")
+    p = argparse.ArgumentParser(prog="thoth")
     p.add_argument("--version", "-V", action="store_true")
     p.add_argument("-p", "--profile", help="Profile name")
     sub = p.add_subparsers(dest="command")

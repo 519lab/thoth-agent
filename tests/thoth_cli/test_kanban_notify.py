@@ -20,7 +20,7 @@ def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     offloads to a worker thread when invoked from inside a running
     asyncio loop (added in this PR's thoth_db change).
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)

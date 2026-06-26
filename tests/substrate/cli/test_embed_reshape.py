@@ -34,7 +34,7 @@ async def seeded_substrate(thoth_db_initialized):
 
     sub = Substrate.from_pool(thoth_db.pool())
     stream = await sub.streams.register(
-        name="hermes.test.embed_reshape",
+        name="thoth.test.embed_reshape",
         family=Family.EXTEROCEPTIVE,
         modality=Modality.TEXT,
         source="test",
@@ -119,7 +119,7 @@ async def test_reshape_changes_column_dim_and_clears(seeded_substrate, monkeypat
             "SELECT embedding FROM substrate_slices "
             "WHERE stream_id IN "
             "  (SELECT stream_id FROM substrate_streams "
-            "   WHERE name = 'hermes.test.embed_reshape')"
+            "   WHERE name = 'thoth.test.embed_reshape')"
         )
     assert len(rows) == 5
     assert all(r["embedding"] is not None for r in rows)
@@ -145,7 +145,7 @@ async def test_reshape_no_reembed_leaves_nulls(seeded_substrate):
             "SELECT embedding FROM substrate_slices "
             "WHERE stream_id IN "
             "  (SELECT stream_id FROM substrate_streams "
-            "   WHERE name = 'hermes.test.embed_reshape')"
+            "   WHERE name = 'thoth.test.embed_reshape')"
         )
     assert len(rows) == 5
     assert all(r["embedding"] is None for r in rows)

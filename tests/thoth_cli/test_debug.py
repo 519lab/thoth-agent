@@ -15,7 +15,7 @@ import pytest
 @pytest.fixture
 def thoth_home(tmp_path, monkeypatch):
     """Set up an isolated THOTH_HOME with minimal logs."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
 
@@ -149,7 +149,7 @@ class TestCaptureLogSnapshot:
         assert "session started" in snap.tail_text
 
     def test_returns_none_for_missing(self, tmp_path, monkeypatch):
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(home))
 
@@ -288,7 +288,7 @@ class TestCaptureLogSnapshotRedaction:
     @pytest.fixture
     def thoth_home_with_secret(self, tmp_path, monkeypatch):
         """Isolated THOTH_HOME whose agent.log contains a vendor-prefixed token."""
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(home))
         # Baseline fixture: no explicit env-var opinion. With the post-#17691
@@ -421,7 +421,7 @@ class TestCollectDebugReport:
         assert "--- gateway.log" in report
 
     def test_missing_logs_handled(self, tmp_path, monkeypatch):
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(home))
 
@@ -586,7 +586,7 @@ class TestRunDebugShare:
 
     def test_share_skips_missing_logs(self, tmp_path, monkeypatch, capsys):
         """Only uploads logs that exist."""
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(home))
 
@@ -668,7 +668,7 @@ class TestRunDebugShareRedaction:
     @pytest.fixture
     def thoth_home_with_secret(self, tmp_path, monkeypatch):
         """Isolated THOTH_HOME whose agent.log contains a vendor-prefixed token."""
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(home))
         monkeypatch.delenv("THOTH_REDACT_SECRETS", raising=False)
@@ -869,7 +869,7 @@ class TestScheduleAutoDelete:
     were observed in production.
 
     The new implementation is stateless: it records pending deletions to
-    ``~/.hermes/pastes/pending.json`` and lets ``_sweep_expired_pastes``
+    ``~/.thoth/pastes/pending.json`` and lets ``_sweep_expired_pastes``
     handle the DELETE requests synchronously on the next ``thoth debug``
     invocation.
     """

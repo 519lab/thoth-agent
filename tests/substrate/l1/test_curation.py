@@ -23,9 +23,9 @@ async def test_merge_repoints_relationships_and_citations(thoth_db_initialized):
 
     greg1, _ = await store.upsert_entity("Greg", "person", aliases=["g"])
     greg2, _ = await store.upsert_entity("Greg Grace", "person")
-    hermes, _ = await store.upsert_entity("Thoth", "project")
+    thoth, _ = await store.upsert_entity("Thoth", "project")
     # greg2 works_on thoth; greg2 cited by a slice.
-    await store.upsert_relationship(greg2, "works_on", hermes)
+    await store.upsert_relationship(greg2, "works_on", thoth)
     sid = uuid4()
     await store.add_citation(entity_id=greg2, slice_id=sid)
 
@@ -34,7 +34,7 @@ async def test_merge_repoints_relationships_and_citations(thoth_db_initialized):
     # greg2 gone; relationship + citation now point at greg1.
     assert await store.get_entity_by_id(greg2) is None
     rels = await store.list_relationships_for_entity(greg1, direction="out")
-    assert any(r.predicate == "works_on" and r.object_id == hermes for r in rels)
+    assert any(r.predicate == "works_on" and r.object_id == thoth for r in rels)
     cites = await store.list_citations_for_entity(greg1)
     assert any(c.slice_id == sid for c in cites)
     # alias union absorbed the old name.
@@ -117,7 +117,7 @@ async def test_duplicate_candidates_suggests_similar(thoth_db_initialized):
 
 
 def test_register_subparser_l1_curation():
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
     assert callable(parser.parse_args(["substrate", "l1", "dupes"]).func)

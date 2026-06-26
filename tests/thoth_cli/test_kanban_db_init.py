@@ -16,7 +16,7 @@ from thoth_cli import kanban_db as kb
     "is also sqlite-specific; the PG _PgConnection raises on unknown PRAGMA."
 )
 def test_connect_initialization_is_thread_safe(tmp_path, monkeypatch):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)

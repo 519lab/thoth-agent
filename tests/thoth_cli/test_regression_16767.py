@@ -33,7 +33,7 @@ def test_chat_provider_argparse_acceptance(monkeypatch):
         recorded["provider"] = args.provider
 
     monkeypatch.setattr("thoth_cli.main.cmd_chat", mock_cmd_chat)
-    monkeypatch.setattr(sys, "argv", ["hermes", "chat", "--provider", "my-custom-key"])
+    monkeypatch.setattr(sys, "argv", ["thoth", "chat", "--provider", "my-custom-key"])
 
     from thoth_cli.main import main
     main()

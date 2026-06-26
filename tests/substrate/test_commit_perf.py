@@ -89,7 +89,7 @@ async def warm_substrate(thoth_db_initialized):
 async def test_commit_slice_p99_under_5ms(warm_substrate):
     """1000 commits, p99 < 5 ms. See module docstring for the rationale."""
     stream = await warm_substrate.streams.register(
-        name="hermes.test.perf_warm_commit",
+        name="thoth.test.perf_warm_commit",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="perftest",

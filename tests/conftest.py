@@ -1,4 +1,4 @@
-"""Shared fixtures for the hermes-agent test suite.
+"""Shared fixtures for the thoth-agent test suite.
 
 Hermetic-test invariants enforced here (see AGENTS.md for rationale):
 
@@ -6,9 +6,9 @@ Hermetic-test invariants enforced here (see AGENTS.md for rationale):
    (ending in _API_KEY, _TOKEN, _SECRET, _PASSWORD, _CREDENTIALS, etc.)
    are unset before every test. Local developer keys cannot leak in.
 2. **Isolated THOTH_HOME.** THOTH_HOME points to a per-test tempdir so
-   code reading ``~/.hermes/*`` via ``get_thoth_home()`` can't see the
+   code reading ``~/.thoth/*`` via ``get_thoth_home()`` can't see the
    real one. (We do NOT also redirect HOME — that broke subprocesses in
-   CI. Code using ``Path.home() / ".hermes"`` instead of the canonical
+   CI. Code using ``Path.home() / ".thoth"`` instead of the canonical
    ``get_thoth_home()`` is a bug to fix at the callsite.)
 3. **Deterministic runtime.** TZ=UTC, LANG=C.UTF-8, PYTHONHASHSEED=0.
 4. **No THOTH_SESSION_* inheritance** — the agent's current gateway
@@ -211,7 +211,7 @@ _THOTH_BEHAVIORAL_VARS = frozenset({
     "THOTH_CLI_NAME",
     # Kanban path/board pins must never leak from a developer shell or
     # dispatched worker into tests; otherwise tests can write fake tasks to
-    # the real ~/.hermes/kanban.db instead of the per-test THOTH_HOME.
+    # the real ~/.thoth/kanban.db instead of the per-test THOTH_HOME.
     "THOTH_KANBAN_DB",
     "THOTH_KANBAN_BOARD",
     "THOTH_KANBAN_HOME",
@@ -321,7 +321,7 @@ def _hermetic_environment(tmp_path, monkeypatch):
     """Blank out all credential/behavioral env vars so local and CI match.
 
     Also redirects HOME and THOTH_HOME to per-test tempdirs so code that
-    reads ``~/.hermes/*`` can't touch the real one, and pins TZ/LANG so
+    reads ``~/.thoth/*`` can't touch the real one, and pins TZ/LANG so
     datetime/locale-sensitive tests are deterministic.
     """
     # 1. Blank every credential-shaped env var that's currently set.
@@ -345,16 +345,16 @@ def _hermetic_environment(tmp_path, monkeypatch):
             monkeypatch.delenv(name, raising=False)
 
     # 3. Redirect THOTH_HOME to a per-test tempdir. Code that reads
-    #    ``~/.hermes/*`` via ``get_thoth_home()`` now gets the tempdir.
+    #    ``~/.thoth/*`` via ``get_thoth_home()`` now gets the tempdir.
     #
     #    NOTE: We do NOT also redirect HOME. Doing so broke CI because
     #    some tests (and their transitive deps) spawn subprocesses that
     #    inherit HOME and expect it to be stable. If a test genuinely
     #    needs HOME isolated, it should set it explicitly in its own
-    #    fixture. Any code in the codebase reading ``~/.hermes/*`` via
-    #    ``Path.home() / ".hermes"`` instead of ``get_thoth_home()``
+    #    fixture. Any code in the codebase reading ``~/.thoth/*`` via
+    #    ``Path.home() / ".thoth"`` instead of ``get_thoth_home()``
     #    is a bug to fix at the callsite.
-    fake_thoth_home = tmp_path / "hermes_test"
+    fake_thoth_home = tmp_path / "thoth_test"
     fake_thoth_home.mkdir()
     (fake_thoth_home / "sessions").mkdir()
     (fake_thoth_home / "cron").mkdir()
@@ -379,7 +379,7 @@ def _hermetic_environment(tmp_path, monkeypatch):
     monkeypatch.setenv("AWS_METADATA_SERVICE_NUM_ATTEMPTS", "1")
 
     # 5. Reset plugin singleton so tests don't leak plugins from
-    #    ~/.hermes/plugins/ (which, per step 3, is now empty — but the
+    #    ~/.thoth/plugins/ (which, per step 3, is now empty — but the
     #    singleton might still be cached from a previous test).
     try:
         import thoth_cli.plugins as _plugins_mod
@@ -906,17 +906,17 @@ _TEST_PG_HOST = (
 postgresql_noproc = pg_factories.postgresql_noproc(
     host=_TEST_PG_HOST,
     port=_TEST_PG_PORT,
-    user=os.environ.get("POSTGRES_USER", "hermes"),
-    password=os.environ.get("POSTGRES_PASSWORD", "hermes"),
+    user=os.environ.get("POSTGRES_USER", "thoth"),
+    password=os.environ.get("POSTGRES_PASSWORD", "thoth"),
     dbname="thoth",
 )
-# Note: we deliberately don't pass ``dbname="hermes_test"`` here. The
+# Note: we deliberately don't pass ``dbname="thoth_test"`` here. The
 # ``postgresql`` factory uses ``proc_fixture.dbname`` when ``dbname`` is
 # absent, and that name has already been xdistified by pytest-postgresql
-# to include the per-subprocess worker id (e.g. ``hermesrun_42``). Hard-
-# coding ``hermes_test`` would route every concurrent subprocess onto
+# to include the per-subprocess worker id (e.g. ``thothrun_42``). Hard-
+# coding ``thoth_test`` would route every concurrent subprocess onto
 # the same per-test DB name and surface as
-# ``DuplicateDatabase: database "hermes_test" already exists`` when two
+# ``DuplicateDatabase: database "thoth_test" already exists`` when two
 # subprocesses race to create it. Letting the factory inherit the
 # xdistified name keeps each subprocess on its own per-test DB.
 postgresql = pg_factories.postgresql("postgresql_noproc")
@@ -1026,7 +1026,3 @@ def thoth_db_initialized_sync(thoth_db_dsn):
     finally:
         # Close on the same loop the pool was opened on.
         thoth_db.run_sync(thoth_db.close())
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-hermes_db_dsn = thoth_db_dsn
-hermes_db_initialized_sync = thoth_db_initialized_sync

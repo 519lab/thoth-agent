@@ -28,7 +28,7 @@ def _isolate_env(tmp_path, monkeypatch):
     but we want the plugin to work with a predictable subpath. We reset
     THOTH_HOME here for clarity.
     """
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     yield thoth_home

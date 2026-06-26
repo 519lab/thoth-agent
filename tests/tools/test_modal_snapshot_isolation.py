@@ -62,7 +62,7 @@ def _install_modal_test_modules(
     thoth_cli = types.ModuleType("thoth_cli")
     thoth_cli.__path__ = []  # type: ignore[attr-defined]
     sys.modules["thoth_cli"] = thoth_cli
-    thoth_home = tmp_path / "hermes-home"
+    thoth_home = tmp_path / "thoth-home"
     os.environ["THOTH_HOME"] = str(thoth_home)
     sys.modules["thoth_cli.config"] = types.SimpleNamespace(
         get_thoth_home=lambda: thoth_home,
@@ -144,7 +144,7 @@ def _install_modal_test_modules(
             return {"kind": "registry", "image": image}
 
     async def _lookup_aio(_name: str, create_if_missing: bool = False):
-        return types.SimpleNamespace(name="hermes-agent", create_if_missing=create_if_missing)
+        return types.SimpleNamespace(name="thoth-agent", create_if_missing=create_if_missing)
 
     class _FakeSandboxInstance:
         def __init__(self, image):

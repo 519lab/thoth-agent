@@ -29,7 +29,7 @@ def match_env(tmp_path, monkeypatch):
     """Temp bundled-skills root + temp THOTH_HOME for the verdict sidecar."""
     skills_root = tmp_path / "bundled_skills"
     skills_root.mkdir()
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     (home / "skills").mkdir(parents=True)
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)

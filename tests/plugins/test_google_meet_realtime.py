@@ -18,7 +18,7 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate_home(tmp_path, monkeypatch):
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     yield thoth_home

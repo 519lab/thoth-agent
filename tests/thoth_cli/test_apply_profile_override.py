@@ -51,7 +51,7 @@ def _run_apply_profile_override(
     return os.environ.get("THOTH_HOME")
 
 
-class TestApplyProfileOverrideHermesHomeGuard:
+class TestApplyProfileOverrideThothHomeGuard:
     """Regression guard for issue #22502.
 
     Verifies that THOTH_HOME pointing to the thoth root does NOT suppress

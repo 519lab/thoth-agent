@@ -258,7 +258,7 @@ class TestExchangeAuthCode:
         assert not setup_module.PENDING_AUTH_PATH.exists()
 
 
-class TestHermesConstantsFallback:
+class TestThothConstantsFallback:
     """Tests for _thoth_home.py fallback when thoth_constants is unavailable."""
 
     HELPER_PATH = (
@@ -301,15 +301,15 @@ class TestHermesConstantsFallback:
 
     def test_fallback_display_thoth_home_profile_path(self, monkeypatch):
         """Fallback display_thoth_home() handles profile paths under ~/."""
-        monkeypatch.setenv("THOTH_HOME", str(Path.home() / ".hermes/profiles/coder"))
+        monkeypatch.setenv("THOTH_HOME", str(Path.home() / ".thoth/profiles/coder"))
         module = self._load_helper(monkeypatch)
-        assert module.display_thoth_home() == "~/.hermes/profiles/coder"
+        assert module.display_thoth_home() == "~/.thoth/profiles/coder"
 
     def test_fallback_display_thoth_home_custom_path(self, monkeypatch):
         """Fallback display_thoth_home() returns full path for non-home locations."""
-        monkeypatch.setenv("THOTH_HOME", "/opt/hermes-custom")
+        monkeypatch.setenv("THOTH_HOME", "/opt/thoth-custom")
         module = self._load_helper(monkeypatch)
-        assert module.display_thoth_home() == "/opt/hermes-custom"
+        assert module.display_thoth_home() == "/opt/thoth-custom"
 
     def test_delegates_to_thoth_constants_when_available(self):
         """When thoth_constants IS importable, _thoth_home delegates to it."""

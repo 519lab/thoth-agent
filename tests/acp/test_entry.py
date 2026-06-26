@@ -30,7 +30,7 @@ def test_main_version_prints_without_starting_server(monkeypatch, capsys):
 
     output = capsys.readouterr().out.strip()
     assert output
-    assert "Starting hermes-agent ACP adapter" not in output
+    assert "Starting thoth-agent ACP adapter" not in output
 
 
 def test_main_check_prints_ok_without_starting_server(monkeypatch, capsys):

@@ -60,7 +60,7 @@ async def test_sentinel_transitions_pending_to_passed(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.sentinel_pass",
+        name="thoth.test.sentinel_pass",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -104,7 +104,7 @@ async def test_sentinel_emits_batch_summary(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.sentinel_audit",
+        name="thoth.test.sentinel_audit",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -151,7 +151,7 @@ async def test_sentinel_audit_is_telemetry_not_a_slice(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.sentinel_no_reentry",
+        name="thoth.test.sentinel_no_reentry",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -233,7 +233,7 @@ async def test_sentinel_concurrent_ticks_no_double_decide(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.sentinel_concurrent",
+        name="thoth.test.sentinel_concurrent",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -284,7 +284,7 @@ async def test_force_reject_deletes_expired_pending(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.force_reject",
+        name="thoth.test.force_reject",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -341,7 +341,7 @@ async def test_force_reject_leaves_unexpired_pending(substrate):
     import thoth_db
 
     stream = await substrate.streams.register(
-        name="hermes.test.force_reject_healthy",
+        name="thoth.test.force_reject_healthy",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",

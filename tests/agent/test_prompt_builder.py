@@ -617,7 +617,7 @@ class TestBuildContextFilesPrompt:
         result = build_context_files_prompt(cwd=str(tmp_path))
         assert "BLOCKED" in result
 
-    def test_hermes_md_beats_agents_md(self, tmp_path):
+    def test_thoth_md_beats_agents_md(self, tmp_path):
         """When both exist, .thoth.md wins and AGENTS.md is not loaded."""
         (tmp_path / "AGENTS.md").write_text("Agent guidelines here.")
         (tmp_path / ".thoth.md").write_text("Thoth project rules.")
