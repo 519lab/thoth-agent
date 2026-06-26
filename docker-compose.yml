@@ -4,13 +4,9 @@
 # Usage:
 #   THOTH_UID=$(id -u) THOTH_GID=$(id -g) docker compose up -d
 #
-# Upgrading from a pre-rename deploy (services were named `hermes`/`hermes-dashboard`)?
-# Add --remove-orphans once so the old explicitly-named containers are swept:
-#   THOTH_UID=$(id -u) THOTH_GID=$(id -g) docker compose up -d --remove-orphans
-#
 # Set THOTH_UID / THOTH_GID to the host user that owns ~/.thoth so
 # files created inside the container stay readable/writable on the host.
-# The entrypoint remaps the internal `hermes` user to these values via
+# The entrypoint remaps the internal `thoth` user to these values via
 # usermod/groupmod + gosu.
 #
 # Security notes:
@@ -21,8 +17,8 @@
 #     without auth is unsafe. To reach it from another host, change the
 #     published address deliberately AND put it behind a reverse proxy that
 #     adds authentication, or use an SSH tunnel (`ssh -L 9119:localhost:9119`).
-#   - If you override entrypoint, keep /opt/hermes/docker/entrypoint.sh in
-#     the command chain. It drops root to the hermes user before gateway
+#   - If you override entrypoint, keep /opt/thoth/docker/entrypoint.sh in
+#     the command chain. It drops root to the thoth user before gateway
 #     files such as gateway.lock are created.
 #   - The gateway's API server is off unless you uncomment API_SERVER_KEY
 #     and API_SERVER_HOST. See docs/user-guide/api-server.md before doing
@@ -44,7 +40,7 @@ services:
       # Reach Postgres by its compose service name on the default network.
       # On Docker Desktop (Mac/Win) `network_mode: host` is silently ignored,
       # so a localhost DSN can't see the DB — always use the service name.
-      - THOTH_PG_DSN=postgresql://${POSTGRES_USER:-hermes}:${POSTGRES_PASSWORD:-hermes}@postgres:5432/${POSTGRES_DB:-hermes}
+      - THOTH_PG_DSN=postgresql://${POSTGRES_USER:-thoth}:${POSTGRES_PASSWORD:-thoth}@postgres:5432/${POSTGRES_DB:-thoth}
       # To expose the OpenAI-compatible API server beyond localhost,
       # uncomment BOTH lines (API_SERVER_KEY is mandatory for auth):
       # - API_SERVER_HOST=0.0.0.0
@@ -89,7 +85,7 @@ services:
       - THOTH_UID=${THOTH_UID:-10000}
       - THOTH_GID=${THOTH_GID:-10000}
       # Same as the gateway: talk to Postgres by service name, not localhost.
-      - THOTH_PG_DSN=postgresql://${POSTGRES_USER:-hermes}:${POSTGRES_PASSWORD:-hermes}@postgres:5432/${POSTGRES_DB:-hermes}
+      - THOTH_PG_DSN=postgresql://${POSTGRES_USER:-thoth}:${POSTGRES_PASSWORD:-thoth}@postgres:5432/${POSTGRES_DB:-thoth}
     # Published only to the host loopback — unreachable from the LAN. For
     # remote access, tunnel via `ssh -L 9119:localhost:9119`.
     ports:
@@ -104,13 +100,13 @@ services:
     image: pgvector/pgvector:pg17
     restart: unless-stopped
     environment:
-      POSTGRES_USER:     ${POSTGRES_USER:-hermes}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hermes}
-      POSTGRES_DB:       ${POSTGRES_DB:-hermes}
+      POSTGRES_USER:     ${POSTGRES_USER:-thoth}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-thoth}
+      POSTGRES_DB:       ${POSTGRES_DB:-thoth}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - hermes_pg_data:/var/lib/postgresql/data
+      - thoth_pg_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 2s
@@ -119,7 +115,7 @@ services:
 
   # Dedicated PostgreSQL instance for the test suite. Runs on a different
   # port (5433 by default) and a different docker volume so pytest can
-  # never collide with the real `hermes` DB. The pytest-postgresql
+  # never collide with the real `thoth` DB. The pytest-postgresql
   # fixtures in tests/conftest.py honour POSTGRES_PORT — set it to 5433
   # (or whatever THOTH_TEST_POSTGRES_PORT resolves to) before running
   # tests, e.g.::
@@ -134,13 +130,13 @@ services:
     profiles: ["test"]
     image: pgvector/pgvector:pg17
     environment:
-      POSTGRES_USER:     ${POSTGRES_USER:-hermes}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hermes}
-      POSTGRES_DB:       ${POSTGRES_DB:-hermes}
+      POSTGRES_USER:     ${POSTGRES_USER:-thoth}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-thoth}
+      POSTGRES_DB:       ${POSTGRES_DB:-thoth}
     ports:
       - "${THOTH_TEST_POSTGRES_PORT:-5433}:5432"
     volumes:
-      - hermes_pg_test_data:/var/lib/postgresql/data
+      - thoth_pg_test_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 2s
@@ -177,11 +173,11 @@ services:
     environment:
       # Inside the compose network, the test PG is reachable by service
       # name on its container-side port 5432 (not the host-mapped 5433).
-      THOTH_PG_DSN: postgresql://hermes:hermes@postgres-test:5432/hermes
+      THOTH_PG_DSN: postgresql://thoth:thoth@postgres-test:5432/thoth
       THOTH_TEST_POSTGRES_HOST: postgres-test
       THOTH_TEST_POSTGRES_PORT: "5432"
-      POSTGRES_USER: hermes
-      POSTGRES_PASSWORD: hermes
+      POSTGRES_USER: thoth
+      POSTGRES_PASSWORD: thoth
       # CI parity — set so the perf microbenches honour the CI ceilings.
       CI: "true"
       # Deterministic runtime.
@@ -196,9 +192,9 @@ services:
       - .:/work
       # Persist uv cache between runs to speed up dep installs. Lives
       # outside /work for the same reason as the venv.
-      - hermes_test_uv_cache:/opt/uv-cache
+      - thoth_test_uv_cache:/opt/uv-cache
 
 volumes:
-  hermes_pg_data:
-  hermes_pg_test_data:
-  hermes_test_uv_cache:
+  thoth_pg_data:
+  thoth_pg_test_data:
+  thoth_test_uv_cache:

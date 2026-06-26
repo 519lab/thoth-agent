@@ -388,10 +388,10 @@ def test_normalize_env_dict_rejects_complex_values():
 def test_security_args_include_setuid_setgid_for_gosu_drop(monkeypatch):
     """The default (run_as_host_user=False) invocation must include SETUID and
     SETGID caps so the image entrypoint can drop from root to the non-root
-    `hermes` user via gosu.
+    `thoth` user via gosu.
 
     Without these caps gosu exits with
-    ``error: failed switching to 'hermes': operation not permitted``
+    ``error: failed switching to 'thoth': operation not permitted``
     and the container exits immediately (exit 1) before running any work.
 
     `no-new-privileges` is kept, so gosu still cannot escalate back to root
