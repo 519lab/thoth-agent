@@ -74,7 +74,7 @@ _VOICE_RESERVED_CTRL_CHARS = frozenset({"c", "d", "l"})
 
 # On macOS the classic CLI's prompt_toolkit bindings for copy / exit /
 # clear also claim ``a-c`` / ``a-d`` / ``a-l`` via the action-modifier
-# lookup, and hermes-ink reports Alt as ``key.meta`` on many terminals.
+# lookup, and thoth-ink reports Alt as ``key.meta`` on many terminals.
 # Mirror the TUI parser's darwin-only reservation so ``option+c`` etc.
 # don't bind Alt+C in the CLI while the TUI silently falls back to
 # Ctrl+B (Copilot round-14 on #19835).
@@ -133,7 +133,7 @@ def normalize_voice_record_key_for_prompt_toolkit(raw: Any) -> str:
         return _DEFAULT_PT_KEY
 
     # Multi-modifier chords like ``ctrl+alt+r`` bind different shortcuts
-    # in prompt_toolkit (a-c-r form) and hermes-ink rejects them; collapse
+    # in prompt_toolkit (a-c-r form) and thoth-ink rejects them; collapse
     # to the documented default instead of silently diverging.
     if len(parts) > 2:
         return _DEFAULT_PT_KEY

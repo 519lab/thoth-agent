@@ -9,7 +9,7 @@ Pipeline
 --------
 1. ``get_catalog()`` — returns a parsed manifest dict.
    - Checks in-process cache (invalidated by TTL).
-   - Reads disk cache at ``~/.hermes/cache/model_catalog.json``.
+   - Reads disk cache at ``~/.thoth/cache/model_catalog.json``.
    - Fetches the master URL if disk cache is stale or missing.
    - On any fetch failure, keeps using the stale cache (or empty dict).
 
@@ -68,7 +68,7 @@ DEFAULT_TTL_HOURS = 24
 DEFAULT_FETCH_TIMEOUT = 8.0
 SUPPORTED_SCHEMA_VERSION = 1
 
-_THOTH_USER_AGENT = f"hermes-cli/{_THOTH_VERSION}"
+_THOTH_USER_AGENT = f"thoth-cli/{_THOTH_VERSION}"
 
 # In-process cache to avoid repeated disk + parse work across multiple
 # calls within the same session. Invalidated by TTL against the disk file's

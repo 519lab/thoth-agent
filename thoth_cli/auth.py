@@ -3,7 +3,7 @@ Multi-provider authentication system for Thoth Agent.
 
 Supports OAuth device code flows (Nous Portal, future: OpenAI Codex) and
 traditional API key providers (OpenRouter, custom endpoints). Auth state
-is persisted in ~/.hermes/auth.json with cross-process file locking.
+is persisted in ~/.thoth/auth.json with cross-process file locking.
 
 Architecture:
 - ProviderConfig registry defines known OAuth providers
@@ -594,7 +594,7 @@ def _resolve_api_key_provider_secret(
 
     from thoth_cli.config import get_env_value
     for env_var in pconfig.api_key_env_vars:
-        # Check both os.environ and ~/.hermes/.env file
+        # Check both os.environ and ~/.thoth/.env file
         val = (get_env_value(env_var) or "").strip()
         if has_usable_secret(val):
             return val, env_var
@@ -796,7 +796,7 @@ def _oauth_trace(event: str, *, sequence_id: Optional[str] = None, **fields: Any
 
 
 # =============================================================================
-# Auth Store — persistence layer for ~/.hermes/auth.json
+# Auth Store — persistence layer for ~/.thoth/auth.json
 # =============================================================================
 
 def _auth_file_path() -> Path:
@@ -859,7 +859,7 @@ def _load_global_auth_store() -> Dict[str, Any]:
     or the global auth.json is absent). Never raises on missing file.
 
     Seat belt: under pytest, refuses to read the real user's
-    ``~/.hermes/auth.json`` even when THOTH_HOME is set to a profile
+    ``~/.thoth/auth.json`` even when THOTH_HOME is set to a profile
     path. The hermetic conftest does not redirect ``HOME``, so
     ``get_default_thoth_root()`` for a profile-shaped THOTH_HOME can
     still resolve to the real user's home on a dev machine. That would
@@ -1512,7 +1512,7 @@ def resolve_provider(
     raise AuthError(
         "No inference provider configured. Run 'thoth model' to choose a "
         "provider and model, or set an API key (OPENROUTER_API_KEY, "
-        "OPENAI_API_KEY, etc.) in ~/.hermes/.env.",
+        "OPENAI_API_KEY, etc.) in ~/.thoth/.env.",
         code="no_provider_configured",
     )
 
@@ -2024,7 +2024,7 @@ def get_qwen_auth_status() -> Dict[str, Any]:
 # =============================================================================
 # Google Gemini OAuth (google-gemini-cli) — PKCE flow + Cloud Code Assist.
 #
-# Tokens live in ~/.hermes/auth/google_oauth.json (managed by agent.google_oauth).
+# Tokens live in ~/.thoth/auth/google_oauth.json (managed by agent.google_oauth).
 # The `base_url` here is the marker "cloudcode-pa://google" that run_agent.py
 # uses to construct a GeminiCloudCodeClient instead of the default OpenAI SDK.
 # Actual HTTP traffic goes to https://cloudcode-pa.googleapis.com/v1internal:*.
@@ -2095,7 +2095,7 @@ def get_gemini_oauth_auth_status() -> Dict[str, Any]:
         "email": creds.email,
         "project_id": creds.project_id,
     }
-# Spotify auth — PKCE tokens stored in ~/.hermes/auth.json
+# Spotify auth — PKCE tokens stored in ~/.thoth/auth.json
 # =============================================================================
 
 
@@ -2733,7 +2733,7 @@ def get_spotify_auth_status() -> Dict[str, Any]:
 
 def _spotify_interactive_setup(redirect_uri_hint: str) -> str:
     """Walk the user through creating a Spotify developer app, persist the
-    resulting client_id to ~/.hermes/.env, and return it.
+    resulting client_id to ~/.thoth/.env, and return it.
 
     Raises SystemExit if the user aborts or submits an empty value.
     """
@@ -2787,7 +2787,7 @@ def _spotify_interactive_setup(redirect_uri_hint: str) -> str:
         save_env_value("THOTH_SPOTIFY_REDIRECT_URI", redirect_uri_hint)
 
     print()
-    print("Saved THOTH_SPOTIFY_CLIENT_ID to ~/.hermes/.env")
+    print("Saved THOTH_SPOTIFY_CLIENT_ID to ~/.thoth/.env")
     print()
     return raw
 
@@ -3056,7 +3056,7 @@ def _print_loopback_ssh_hint(redirect_uri: str, *, docs_url: str | None = None) 
 
 
 # =============================================================================
-# OpenAI Codex auth — tokens stored in ~/.hermes/auth.json (not ~/.codex/)
+# OpenAI Codex auth — tokens stored in ~/.thoth/auth.json (not ~/.codex/)
 #
 # Thoth maintains its own Codex OAuth session separate from the Codex CLI
 # and VS Code extension. This prevents refresh token rotation conflicts
@@ -3064,7 +3064,7 @@ def _print_loopback_ssh_hint(redirect_uri: str, *, docs_url: str | None = None) 
 # =============================================================================
 
 def _read_codex_tokens(*, _lock: bool = True) -> Dict[str, Any]:
-    """Read Codex OAuth tokens from Thoth auth store (~/.hermes/auth.json).
+    """Read Codex OAuth tokens from Thoth auth store (~/.thoth/auth.json).
     
     Returns dict with 'tokens' (access_token, refresh_token) and 'last_refresh'.
     Raises AuthError if no Codex tokens are stored.
@@ -3113,7 +3113,7 @@ def _read_codex_tokens(*, _lock: bool = True) -> Dict[str, Any]:
 
 
 def _save_codex_tokens(tokens: Dict[str, str], last_refresh: str = None) -> None:
-    """Save Codex OAuth tokens to Thoth auth store (~/.hermes/auth.json)."""
+    """Save Codex OAuth tokens to Thoth auth store (~/.thoth/auth.json)."""
     if last_refresh is None:
         last_refresh = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     with _auth_store_lock():
@@ -3324,14 +3324,14 @@ def resolve_codex_runtime_credentials(
         "provider": "openai-codex",
         "base_url": base_url,
         "api_key": access_token,
-        "source": "hermes-auth-store",
+        "source": "thoth-auth-store",
         "last_refresh": data.get("last_refresh"),
         "auth_mode": "chatgpt",
     }
 
 
 # =============================================================================
-# xAI Grok OAuth — tokens stored in ~/.hermes/auth.json
+# xAI Grok OAuth — tokens stored in ~/.thoth/auth.json
 # =============================================================================
 
 def _read_xai_oauth_tokens(*, _lock: bool = True) -> Dict[str, Any]:
@@ -3425,7 +3425,7 @@ def _xai_validate_oauth_endpoint(url: str, *, field: str) -> str:
     """Refuse any OIDC discovery endpoint that isn't HTTPS on the xAI origin.
 
     The OIDC discovery response is a long-lived, low-frequency request whose
-    output is cached in ``~/.hermes/auth.json``. A single MITM during initial
+    output is cached in ``~/.thoth/auth.json``. A single MITM during initial
     login could substitute a malicious ``token_endpoint``; that URL would
     then receive the refresh_token on every subsequent refresh — a permanent
     credential leak from a one-time MITM. Validating scheme + host pins the
@@ -3772,7 +3772,7 @@ def resolve_xai_oauth_runtime_credentials(
         "provider": "xai-oauth",
         "base_url": base_url,
         "api_key": access_token,
-        "source": "hermes-auth-store",
+        "source": "thoth-auth-store",
         "last_refresh": data.get("last_refresh"),
         "auth_mode": "oauth_pkce",
     }
@@ -4004,11 +4004,11 @@ def _poll_for_token(
 # import instead of running the full device-code flow every time.
 #
 # File lives at ${THOTH_SHARED_AUTH_DIR}/nous_auth.json, defaulting to
-# ``<hermes-root>/shared/nous_auth.json`` where ``<hermes-root>`` is what
+# ``<thoth-root>/shared/nous_auth.json`` where ``<thoth-root>`` is what
 # ``get_default_thoth_root()`` returns — ``~/.thoth`` on Linux/macOS,
 # ``%LOCALAPPDATA%\thoth`` on native Windows, or the Docker/custom root.
 # It is OUTSIDE any named profile's THOTH_HOME so named profiles (which
-# typically live under ``<hermes-root>/profiles/<name>/``) all see the
+# typically live under ``<thoth-root>/profiles/<name>/``) all see the
 # same file.
 #
 # Written on successful login and on every runtime refresh so the stored
@@ -4026,9 +4026,9 @@ def _nous_shared_auth_dir() -> Path:
 
     Honors ``THOTH_SHARED_AUTH_DIR`` so tests can redirect it to a tmp
     path without touching the real user's home. Defaults to
-    ``<hermes-root>/shared/``, where ``<hermes-root>`` is what
+    ``<thoth-root>/shared/``, where ``<thoth-root>`` is what
     :func:`thoth_constants.get_default_thoth_root` returns — so
-    Linux/macOS classic installs land at ``~/.hermes/shared/``, native
+    Linux/macOS classic installs land at ``~/.thoth/shared/``, native
     Windows installs at ``%LOCALAPPDATA%\\thoth\\shared\\``, and
     Docker / custom ``THOTH_HOME`` deployments at
     ``<THOTH_HOME>/shared/``. Sits outside any named profile so all
@@ -4477,7 +4477,7 @@ def _refresh_access_token(
             "Nous Portal detected refresh-token reuse and revoked this session.\n"
             "This usually means an external process (monitoring script, "
             "custom self-heal hook, or another Thoth install sharing "
-            "~/.hermes/auth.json) called POST /api/oauth/token with Thoth's "
+            "~/.thoth/auth.json) called POST /api/oauth/token with Thoth's "
             "refresh token without persisting the rotated token back.\n"
             "Nous refresh tokens are single-use — only Thoth may call the "
             "refresh endpoint. For health checks, use `thoth auth status` "
@@ -6175,7 +6175,7 @@ def _login_openai_codex(
     *,
     force_new_login: bool = False,
 ) -> None:
-    """OpenAI Codex login via device code flow. Tokens stored in ~/.hermes/auth.json."""
+    """OpenAI Codex login via device code flow. Tokens stored in ~/.thoth/auth.json."""
 
     del args, pconfig  # kept for parity with other provider login helpers
 
@@ -6890,7 +6890,7 @@ def _minimax_poll_token(
 
 
 def _minimax_save_auth_state(auth_state: Dict[str, Any]) -> None:
-    """Persist MiniMax OAuth state to Thoth auth store (~/.hermes/auth.json)."""
+    """Persist MiniMax OAuth state to Thoth auth store (~/.thoth/auth.json)."""
     with _auth_store_lock():
         auth_store = _load_auth_store()
         _save_provider_state(auth_store, "minimax-oauth", auth_state)

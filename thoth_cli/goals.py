@@ -244,8 +244,8 @@ def load_goal(session_id: str) -> Optional[GoalState]:
     if db is None:
         return None
     try:
-        import thoth_db as _hermes_db
-        raw = _hermes_db.run_sync(db.get_meta(_meta_key(session_id)))
+        import thoth_db as _thoth_db
+        raw = _thoth_db.run_sync(db.get_meta(_meta_key(session_id)))
     except Exception as exc:
         logger.debug("GoalManager: get_meta failed: %s", exc)
         return None
@@ -266,8 +266,8 @@ def save_goal(session_id: str, state: GoalState) -> None:
     if db is None:
         return
     try:
-        import thoth_db as _hermes_db
-        _hermes_db.run_sync(db.set_meta(_meta_key(session_id), state.to_json()))
+        import thoth_db as _thoth_db
+        _thoth_db.run_sync(db.set_meta(_meta_key(session_id), state.to_json()))
     except Exception as exc:
         logger.debug("GoalManager: set_meta failed: %s", exc)
 
@@ -701,7 +701,7 @@ class GoalManager:
                 "message": (
                     f"⏸ Goal paused — the judge model ({state.consecutive_parse_failures} turns) "
                     "isn't returning the required JSON verdict. Route the judge to a stricter "
-                    "model in ~/.hermes/config.yaml:\n"
+                    "model in ~/.thoth/config.yaml:\n"
                     "  auxiliary:\n"
                     "    goal_judge:\n"
                     "      provider: openrouter\n"

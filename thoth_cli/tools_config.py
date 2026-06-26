@@ -5,7 +5,7 @@ Unified tool configuration for Thoth Agent.
 Select a platform → toggle toolsets on/off → for newly enabled tools
 that need API keys, run through provider-aware configuration.
 
-Saves per-platform tool configuration to ~/.hermes/config.yaml under
+Saves per-platform tool configuration to ~/.thoth/config.yaml under
 the `platform_toolsets` key.
 """
 
@@ -937,7 +937,7 @@ def _run_post_setup(post_setup_key: str):
                 return
         _print_info("    Default voice: en_US-lessac-medium (downloaded on first TTS call)")
         _print_info("    Full voice list: https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/VOICES.md")
-        _print_info("    Switch voices by setting tts.piper.voice in ~/.hermes/config.yaml")
+        _print_info("    Switch voices by setting tts.piper.voice in ~/.thoth/config.yaml")
 
     elif post_setup_key == "ddgs":
         try:
@@ -965,7 +965,7 @@ def _run_post_setup(post_setup_key: str):
         # Run the full `thoth auth spotify` flow — if the user has no
         # client_id yet, this drops them into the interactive wizard
         # (opens the Spotify dashboard, prompts for client_id, persists
-        # to ~/.hermes/.env), then continues straight into PKCE. If they
+        # to ~/.thoth/.env), then continues straight into PKCE. If they
         # already have an app, it skips the wizard and just does OAuth.
         from types import SimpleNamespace
         try:
@@ -2980,7 +2980,7 @@ def tools_command(args=None, first_install: bool = False, config: dict = None):
     print()
     from thoth_constants import display_thoth_home
     print(color(f"  Tool configuration saved to {display_thoth_home()}/config.yaml", Colors.DIM))
-    print(color("  Changes take effect on next 'hermes' or gateway restart.", Colors.DIM))
+    print(color("  Changes take effect on next 'thoth' or gateway restart.", Colors.DIM))
     print()
 
 

@@ -2,7 +2,7 @@
 
 Supports tailing, following, session filtering, level filtering,
 component filtering, and relative time ranges.  All log files live
-under ``~/.hermes/logs/``.
+under ``~/.thoth/logs/``.
 
 Usage examples::
 

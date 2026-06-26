@@ -141,10 +141,10 @@ def run_backup(args) -> None:
         # If user gave a directory, put the zip inside it
         if out_path.is_dir():
             stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-            out_path = out_path / f"hermes-backup-{stamp}.zip"
+            out_path = out_path / f"thoth-backup-{stamp}.zip"
     else:
         stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        out_path = Path.home() / f"hermes-backup-{stamp}.zip"
+        out_path = Path.home() / f"thoth-backup-{stamp}.zip"
 
     # Ensure the suffix is .zip
     if out_path.suffix.lower() != ".zip":
@@ -285,7 +285,7 @@ def _validate_backup_zip(zf: zipfile.ZipFile) -> tuple[bool, str]:
 def _detect_prefix(zf: zipfile.ZipFile) -> str:
     """Detect if the zip has a common directory prefix wrapping all entries.
 
-    Some tools zip as `.hermes/config.yaml` instead of `config.yaml`.
+    Some tools zip as `.thoth/config.yaml` instead of `config.yaml`.
     Returns the prefix to strip (empty string if none).
     """
     names = [n for n in zf.namelist() if not n.endswith("/")]
@@ -299,8 +299,8 @@ def _detect_prefix(zf: zipfile.ZipFile) -> str:
     first_parts = {p[0] for p in parts_list if len(p) > 1}
     if len(first_parts) == 1:
         prefix = first_parts.pop()
-        # Only strip if it looks like a hermes dir name
-        if prefix in {".hermes", "hermes"}:
+        # Only strip if it looks like a thoth dir name
+        if prefix in {".thoth", "thoth"}:
             return prefix + "/"
 
     return ""

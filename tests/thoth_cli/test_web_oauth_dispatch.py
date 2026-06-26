@@ -30,7 +30,7 @@ from fastapi.testclient import TestClient
 from thoth_cli.web_server import _SESSION_TOKEN, app
 
 client = TestClient(app)
-HEADERS = {"X-Hermes-Session-Token": _SESSION_TOKEN}
+HEADERS = {"X-Thoth-Session-Token": _SESSION_TOKEN}
 
 
 def _fake_nous_device_data():

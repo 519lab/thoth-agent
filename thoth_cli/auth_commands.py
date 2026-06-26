@@ -236,7 +236,7 @@ def auth_add_command(args) -> None:
             label=label,
             auth_type=AUTH_TYPE_OAUTH,
             priority=0,
-            source=f"{SOURCE_MANUAL}:hermes_pkce",
+            source=f"{SOURCE_MANUAL}:thoth_pkce",
             access_token=creds["access_token"],
             refresh_token=creds.get("refresh_token"),
             expires_at_ms=creds.get("expires_at_ms"),
@@ -248,7 +248,7 @@ def auth_add_command(args) -> None:
 
     if provider == "nous":
         # Codex-style auto-import: if a shared Nous credential lives at
-        # <hermes-root>/shared/nous_auth.json (written by any previous
+        # <thoth-root>/shared/nous_auth.json (written by any previous
         # successful login), offer to import it instead of running the
         # full device-code flow. This makes `thoth --profile <name>
         # auth add nous --type oauth` a one-tap operation for users who

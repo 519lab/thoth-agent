@@ -101,7 +101,7 @@ class TestIRCFreshInstallDiscovery:
         try:
             monkeypatch.setenv("IRC_SERVER", "irc.libera.chat")
             monkeypatch.setenv("IRC_CHANNEL", "#thoth")
-            monkeypatch.setenv("IRC_NICKNAME", "hermes-bot")
+            monkeypatch.setenv("IRC_NICKNAME", "thoth-bot")
 
             status = gateway_mod._platform_status(plat)
             assert status == "configured"
@@ -228,7 +228,7 @@ class TestIRCGatewaySetupFreshInstall:
         try:
             monkeypatch.setenv("IRC_SERVER", "irc.libera.chat")
             monkeypatch.setenv("IRC_CHANNEL", "#thoth")
-            monkeypatch.setenv("IRC_NICKNAME", "hermes-bot")
+            monkeypatch.setenv("IRC_NICKNAME", "thoth-bot")
 
             monkeypatch.setattr(setup_mod, "prompt_yes_no", lambda *a, **kw: False)
             monkeypatch.setattr(setup_mod, "prompt_choice", lambda *a, **kw: 0)

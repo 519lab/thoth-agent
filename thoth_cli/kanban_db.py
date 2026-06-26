@@ -617,7 +617,7 @@ class _PgConnectionHandle:
     def __init__(self, board_slug: str) -> None:
         import thoth_db
 
-        self._hermes_db = thoth_db
+        self._thoth_db = thoth_db
         self._raw_conn = thoth_db.run_sync(thoth_db.pool().acquire())
         self._inner = _PgConnection(self._raw_conn, board_slug)
         self._closed = False
@@ -656,16 +656,16 @@ class _PgConnectionHandle:
             fresh = getattr(self._inner, "_fresh_after_loss", None)
             if fresh is not None and fresh is not self._raw_conn:
                 try:
-                    self._hermes_db.run_sync(
-                        self._hermes_db.pool().release(fresh)
+                    self._thoth_db.run_sync(
+                        self._thoth_db.pool().release(fresh)
                     )
                 except Exception:
                     pass
             return
 
         try:
-            self._hermes_db.run_sync(
-                self._hermes_db.pool().release(self._raw_conn)
+            self._thoth_db.run_sync(
+                self._thoth_db.pool().release(self._raw_conn)
             )
         except Exception:
             # Pool may already be closed (e.g. test teardown order); the
@@ -755,7 +755,7 @@ DEFAULT_BOARD = "default"
 
 # Slug validator: lowercase alphanumerics, digits, hyphens; 1–64 chars.
 # Strict enough to stop traversal (`..`) and embedded path separators, loose
-# enough that kebab-case names like ``atm10-server`` or ``hermes-agent``
+# enough that kebab-case names like ``atm10-server`` or ``thoth-agent``
 # pass without fuss. Board names with display formatting (spaces, emoji)
 # live in ``board.json``; the slug is just the directory name.
 _BOARD_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9\-_]{0,63}$")
@@ -5812,9 +5812,9 @@ def _resolve_thoth_argv() -> list[str]:
     1. ``$THOTH_BIN`` — explicit operator override. Path-like values are
        normalized to absolute paths; bare command names keep normal PATH
        semantics and never prefer a same-directory file before ``PATH``.
-    2. ``shutil.which("hermes")`` — the console-script shim, normalized to
+    2. ``shutil.which("thoth")`` — the console-script shim, normalized to
        an absolute path. On Windows, ``which`` can return a relative
-       ``.\\hermes.CMD`` when the current directory is on ``PATH``; directly
+       ``.\\thoth.CMD`` when the current directory is on ``PATH``; directly
        launching batch shims is also unsafe with task-derived argv. The
        dispatcher therefore falls back to the interpreter-bound module form
        for implicit ``.cmd`` / ``.bat`` shims.
@@ -5839,7 +5839,7 @@ def _resolve_thoth_argv() -> list[str]:
             return _thoth_path_argv(resolved_env_bin)
         return _module_thoth_argv()
 
-    thoth_bin = _safe_which_no_cwd("hermes") if _IS_WINDOWS else shutil.which("hermes")
+    thoth_bin = _safe_which_no_cwd("thoth") if _IS_WINDOWS else shutil.which("thoth")
     if thoth_bin:
         return _thoth_path_argv(thoth_bin)
     return _module_thoth_argv()
@@ -6329,7 +6329,7 @@ def build_worker_context(conn: _PgConnection, task_id: str) -> str:
         for c in shown_c:
             ts = time.strftime("%Y-%m-%d %H:%M", time.localtime(c.created_at))
             # Render author with explicit "comment from worker" framing so
-            # operator-controlled THOTH_PROFILE values like "hermes-system"
+            # operator-controlled THOTH_PROFILE values like "thoth-system"
             # or "operator" can't be misread by the next worker as a system
             # directive above the (attacker-influenceable) comment body.
             # Defense-in-depth — the LLM-controlled author-forgery surface

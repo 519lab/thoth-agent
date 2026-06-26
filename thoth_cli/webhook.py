@@ -6,7 +6,7 @@ Usage:
     thoth webhook remove <name>
     thoth webhook test <name> [--payload '{"key": "value"}']
 
-Subscriptions persist to ~/.hermes/webhook_subscriptions.json and are
+Subscriptions persist to ~/.thoth/webhook_subscriptions.json and are
 hot-reloaded by the webhook adapter without a gateway restart.
 """
 

@@ -102,7 +102,7 @@ def generate_bash(parser: argparse.ArgumentParser) -> str:
 #   eval "$(thoth completion bash)"
 
 _thoth_profiles() {{
-    local profiles_dir="$HOME/.hermes/profiles"
+    local profiles_dir="$HOME/.thoth/profiles"
     local profiles="default"
     if [ -d "$profiles_dir" ]; then
         profiles="$profiles $(ls "$profiles_dir" 2>/dev/null)"
@@ -205,13 +205,13 @@ def generate_zsh(parser: argparse.ArgumentParser) -> str:
 _thoth_profiles() {{
     local -a profiles
     profiles=(default)
-    if [[ -d "$HOME/.hermes/profiles" ]]; then
-        profiles+=("${{(@f)$(ls $HOME/.hermes/profiles 2>/dev/null)}}")
+    if [[ -d "$HOME/.thoth/profiles" ]]; then
+        profiles+=("${{(@f)$(ls $HOME/.thoth/profiles 2>/dev/null)}}")
     fi
     _describe 'profile' profiles
 }}
 
-_hermes() {{
+_thoth() {{
     local context state line
     typeset -A opt_args
 
@@ -238,7 +238,7 @@ _hermes() {{
     esac
 }}
 
-compdef _hermes thoth
+compdef _thoth thoth
 """
 
 
@@ -259,8 +259,8 @@ def generate_fish(parser: argparse.ArgumentParser) -> str:
         "# Helper: list available profiles",
         "function __thoth_profiles",
         "    echo default",
-        "    if test -d $HOME/.hermes/profiles",
-        "        ls $HOME/.hermes/profiles 2>/dev/null",
+        "    if test -d $HOME/.thoth/profiles",
+        "        ls $HOME/.thoth/profiles 2>/dev/null",
         "    end",
         "end",
         "",
