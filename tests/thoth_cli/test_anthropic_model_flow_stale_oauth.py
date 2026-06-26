@@ -1,7 +1,7 @@
 """Tests for Bug #12905 fix — stale OAuth token detection in thoth model flow.
 
 Bug 3: `thoth model` with `provider=anthropic` skips OAuth re-authentication
-when a stale ANTHROPIC_TOKEN exists in ~/.hermes/.env but no valid
+when a stale ANTHROPIC_TOKEN exists in ~/.thoth/.env but no valid
 Claude Code credentials are available. The fast-path silently proceeds to
 model selection with a broken token instead of offering re-auth.
 """

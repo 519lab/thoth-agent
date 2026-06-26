@@ -64,7 +64,7 @@ class TestResolveVerifyFallback:
     def test_missing_thoth_ca_bundle_env_falls_back(self, monkeypatch):
         from thoth_cli.auth import _resolve_verify
 
-        monkeypatch.setenv("THOTH_CA_BUNDLE", "/nonexistent/hermes-ca.pem")
+        monkeypatch.setenv("THOTH_CA_BUNDLE", "/nonexistent/thoth-ca.pem")
         monkeypatch.delenv("SSL_CERT_FILE", raising=False)
         result = _resolve_verify(auth_state={"tls": {}})
         assert result is True
@@ -198,7 +198,7 @@ def test_resolve_nous_runtime_credentials_prefers_invoke_jwt_and_mirrors(
 ):
     import thoth_cli.auth as auth_mod
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     token = _invoke_jwt(seconds=3600)
     _setup_nous_auth(
         thoth_home,
@@ -237,7 +237,7 @@ def test_resolve_nous_runtime_credentials_invoke_jwt_is_idempotent(
 ):
     import thoth_cli.auth as auth_mod
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     exp = int(time.time() + 3600)
     expires_at = datetime.fromtimestamp(exp, tz=timezone.utc).isoformat()
@@ -314,7 +314,7 @@ def test_resolve_nous_runtime_credentials_trusts_invoke_jwt_exp_over_stale_metad
 ):
     import thoth_cli.auth as auth_mod
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     token = _invoke_jwt(seconds=3600)
     _setup_nous_auth(
         thoth_home,
@@ -353,7 +353,7 @@ def test_resolve_nous_runtime_credentials_does_not_apply_legacy_ttl_to_invoke_jw
 ):
     import thoth_cli.auth as auth_mod
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     token = _invoke_jwt(seconds=900)
     _setup_nous_auth(
         thoth_home,
@@ -381,7 +381,7 @@ def test_resolve_nous_runtime_credentials_does_not_apply_legacy_ttl_to_invoke_jw
 def test_legacy_auth_mode_bypasses_usable_invoke_jwt(tmp_path, monkeypatch):
     import thoth_cli.auth as auth_mod
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     token = _invoke_jwt(seconds=3600)
     _setup_nous_auth(
         thoth_home,
@@ -419,7 +419,7 @@ def test_resolve_nous_runtime_credentials_falls_back_when_invoke_scope_missing(
 ):
     import thoth_cli.auth as auth_mod
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     token = _jwt_with_claims({
         "sub": "test-user",
         "scope": "inference:mint_agent_key",
@@ -516,7 +516,7 @@ def test_nous_device_code_login_retries_legacy_scope_when_invoke_refused(monkeyp
 def test_forced_legacy_env_skips_invoke_scope_and_jwt_storage(tmp_path, monkeypatch):
     import thoth_cli.auth as auth_mod
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     token = _invoke_jwt(seconds=3600)
     _setup_nous_auth(
         thoth_home,
@@ -595,7 +595,7 @@ def test_nous_inference_auth_logs_do_not_include_secret_values(
 ):
     import thoth_cli.auth as auth_mod
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     token = _jwt_with_claims({
         "sub": "secret-user",
         "scope": "inference:mint_agent_key",
@@ -637,7 +637,7 @@ def test_get_nous_auth_status_checks_credential_pool(tmp_path, monkeypatch):
     """
     from thoth_cli.auth import get_nous_auth_status
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     # Empty auth store — no Nous provider entry
     (thoth_home / "auth.json").write_text(json.dumps({
@@ -673,7 +673,7 @@ def test_get_nous_auth_status_auth_store_fallback(tmp_path, monkeypatch):
     """
     from thoth_cli.auth import get_nous_auth_status
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _setup_nous_auth(thoth_home, access_token="at-123")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.setattr(
@@ -695,7 +695,7 @@ def test_get_nous_auth_status_prefers_runtime_auth_store_over_stale_pool(tmp_pat
     from thoth_cli.auth import get_nous_auth_status
     from agent.credential_pool import PooledCredential, load_pool
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _setup_nous_auth(thoth_home, access_token="at-fresh")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -736,7 +736,7 @@ def test_get_nous_auth_status_prefers_runtime_auth_store_over_stale_pool(tmp_pat
 def test_get_nous_auth_status_reports_revoked_refresh_session(tmp_path, monkeypatch):
     from thoth_cli.auth import get_nous_auth_status
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _setup_nous_auth(thoth_home, access_token="at-123")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -758,7 +758,7 @@ def test_get_nous_auth_status_empty_returns_not_logged_in(tmp_path, monkeypatch)
     """
     from thoth_cli.auth import get_nous_auth_status
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
@@ -770,7 +770,7 @@ def test_get_nous_auth_status_empty_returns_not_logged_in(tmp_path, monkeypatch)
 
 
 def test_refresh_token_persisted_when_mint_returns_insufficient_credits(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _setup_nous_auth(thoth_home, refresh_token="refresh-old")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -811,7 +811,7 @@ def test_refresh_token_persisted_when_mint_returns_insufficient_credits(tmp_path
 
 
 def test_refresh_token_persisted_when_mint_times_out(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _setup_nous_auth(thoth_home, refresh_token="refresh-old")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -844,7 +844,7 @@ def test_terminal_refresh_failure_quarantines_tokens(
     """A revoked/invalid Nous refresh token must not be replayed forever."""
     from thoth_cli import auth as auth_mod
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _setup_nous_auth(thoth_home, refresh_token="refresh-old")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     from agent.credential_pool import load_pool
@@ -894,7 +894,7 @@ def test_managed_access_token_refresh_failure_quarantines_tokens(
 ):
     from thoth_cli import auth as auth_mod
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _setup_nous_auth(thoth_home, refresh_token="refresh-old")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     from agent.credential_pool import load_pool
@@ -932,7 +932,7 @@ def test_managed_access_token_refresh_failure_quarantines_tokens(
 
 
 def test_mint_retry_uses_latest_rotated_refresh_token(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _setup_nous_auth(thoth_home, refresh_token="refresh-old")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -980,7 +980,7 @@ class TestLoginNousSkipKeepsCurrent:
 
     def _setup_home_with_openrouter(self, tmp_path, monkeypatch):
         import yaml
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir(parents=True, exist_ok=True)
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -1094,7 +1094,7 @@ class TestLoginNousSkipKeepsCurrent:
         import yaml
         from thoth_cli.auth import PROVIDER_REGISTRY, _login_nous
 
-        thoth_home = tmp_path / "hermes"
+        thoth_home = tmp_path / "thoth"
         thoth_home.mkdir(parents=True, exist_ok=True)
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -1159,7 +1159,7 @@ def test_persist_nous_credentials_writes_both_pool_and_providers(tmp_path, monke
     """
     from thoth_cli.auth import persist_nous_credentials, NOUS_DEVICE_CODE_SOURCE
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
@@ -1204,7 +1204,7 @@ def test_persist_nous_credentials_allows_recovery_from_401(tmp_path, monkeypatch
         resolve_nous_runtime_credentials,
     )
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
@@ -1249,7 +1249,7 @@ def test_persist_nous_credentials_idempotent_no_duplicate_pool_entries(tmp_path,
     """
     from thoth_cli.auth import persist_nous_credentials, NOUS_DEVICE_CODE_SOURCE
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
@@ -1288,7 +1288,7 @@ def test_persist_nous_credentials_reloads_pool_after_singleton_write(tmp_path, m
     """
     from thoth_cli.auth import persist_nous_credentials, NOUS_DEVICE_CODE_SOURCE
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
@@ -1314,7 +1314,7 @@ def test_persist_nous_credentials_embeds_custom_label(tmp_path, monkeypatch):
     """
     from thoth_cli.auth import persist_nous_credentials, NOUS_DEVICE_CODE_SOURCE
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
@@ -1339,7 +1339,7 @@ def test_persist_nous_credentials_custom_label_survives_reseed(tmp_path, monkeyp
     from thoth_cli.auth import persist_nous_credentials
     from agent.credential_pool import load_pool
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
@@ -1362,7 +1362,7 @@ def test_persist_nous_credentials_no_label_uses_auto_derived(tmp_path, monkeypat
     """
     from thoth_cli.auth import persist_nous_credentials
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1, "providers": {},
@@ -1556,7 +1556,7 @@ def test_shared_store_seat_belt_refuses_real_home_under_pytest(monkeypatch):
 
     Mirrors the existing ``_auth_file_path`` seat belt: forgetting to
     redirect this store in a test must fail loudly instead of silently
-    writing to the user's real ``~/.hermes/shared/`` across CI runs.
+    writing to the user's real ``~/.thoth/shared/`` across CI runs.
     """
     from thoth_cli.auth import _nous_shared_store_path
 
@@ -1660,7 +1660,7 @@ def test_persist_nous_credentials_mirrors_to_shared_store(
         persist_nous_credentials,
     )
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(
         json.dumps({"version": 1, "providers": {}})

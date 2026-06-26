@@ -22,7 +22,7 @@ def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     ``thoth_db_initialized_sync``) so the INSERT into kanban_boards
     lands somewhere Alembic has migrated.
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)

@@ -74,7 +74,7 @@ class TestNonInteractiveSetup:
         with (
             patch("thoth_cli.setup.ensure_thoth_home"),
             patch("thoth_cli.setup.load_config", return_value={}),
-            patch("thoth_cli.setup.get_thoth_home", return_value="/tmp/.hermes"),
+            patch("thoth_cli.setup.get_thoth_home", return_value="/tmp/.thoth"),
             patch("thoth_cli.auth.get_active_provider", side_effect=AssertionError("wizard continued")),
             patch("builtins.input", side_effect=AssertionError("input should not be called")),
         ):
@@ -92,7 +92,7 @@ class TestNonInteractiveSetup:
         with (
             patch("thoth_cli.setup.ensure_thoth_home"),
             patch("thoth_cli.setup.load_config", return_value={}),
-            patch("thoth_cli.setup.get_thoth_home", return_value="/tmp/.hermes"),
+            patch("thoth_cli.setup.get_thoth_home", return_value="/tmp/.thoth"),
             patch("thoth_cli.auth.get_active_provider", side_effect=AssertionError("wizard continued")),
             patch("sys.stdin") as mock_stdin,
             patch("builtins.input", side_effect=AssertionError("input should not be called")),
@@ -154,7 +154,7 @@ class TestNonInteractiveSetup:
             received["section"] = args.section
 
         monkeypatch.setattr(main_mod, "cmd_setup", fake_cmd_setup)
-        monkeypatch.setattr("sys.argv", ["hermes", "setup", "tts"])
+        monkeypatch.setattr("sys.argv", ["thoth", "setup", "tts"])
 
         main_mod.main()
 

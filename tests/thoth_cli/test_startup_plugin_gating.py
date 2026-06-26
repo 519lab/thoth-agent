@@ -48,7 +48,7 @@ def _live_subcommand_names() -> set[str]:
     from thoth_cli import main as _main
 
     argv_backup = sys.argv[:]
-    sys.argv = ["hermes", "--help"]
+    sys.argv = ["thoth", "--help"]
     buf = io.StringIO()
     try:
         with patch.object(_main, "_plugin_cli_discovery_needed", return_value=False):
@@ -71,32 +71,32 @@ def _live_subcommand_names() -> set[str]:
 @pytest.mark.parametrize(
     "argv,expected",
     [
-        (["hermes"], None),
-        (["hermes", "--help"], None),
-        (["hermes", "-h"], None),
-        (["hermes", "--version"], None),
-        (["hermes", "-w"], None),
+        (["thoth"], None),
+        (["thoth", "--help"], None),
+        (["thoth", "-h"], None),
+        (["thoth", "--version"], None),
+        (["thoth", "-w"], None),
         # -p / --profile is stripped from sys.argv by
         # _apply_profile_override() at import time, so it never reaches
         # _first_positional_argv. We test with just -w / --tui here.
-        (["hermes", "-w", "--tui"], None),
-        (["hermes", "version"], "version"),
-        (["hermes", "--tui", "chat"], "chat"),
-        (["hermes", "-w", "logs"], "logs"),
-        (["hermes", "chat", "hello world"], "chat"),
-        (["hermes", "gateway", "run"], "gateway"),
+        (["thoth", "-w", "--tui"], None),
+        (["thoth", "version"], "version"),
+        (["thoth", "--tui", "chat"], "chat"),
+        (["thoth", "-w", "logs"], "logs"),
+        (["thoth", "chat", "hello world"], "chat"),
+        (["thoth", "gateway", "run"], "gateway"),
         # Top-level value-taking flags: the value should be skipped.
-        (["hermes", "-m", "gpt5", "chat"], "chat"),
-        (["hermes", "--model", "gpt5", "chat", "hi"], "chat"),
-        (["hermes", "-m", "gpt5", "--provider", "openai", "chat"], "chat"),
-        (["hermes", "-z", "hello world"], None),
-        (["hermes", "-z", "hello", "chat"], "chat"),
-        (["hermes", "--model=gpt5", "chat"], "chat"),     # inline form
-        (["hermes", "--", "chat"], "chat"),               # -- terminator
-        (["hermes", "-w", "--"], None),
+        (["thoth", "-m", "gpt5", "chat"], "chat"),
+        (["thoth", "--model", "gpt5", "chat", "hi"], "chat"),
+        (["thoth", "-m", "gpt5", "--provider", "openai", "chat"], "chat"),
+        (["thoth", "-z", "hello world"], None),
+        (["thoth", "-z", "hello", "chat"], "chat"),
+        (["thoth", "--model=gpt5", "chat"], "chat"),     # inline form
+        (["thoth", "--", "chat"], "chat"),               # -- terminator
+        (["thoth", "-w", "--"], None),
         # Unknown positional after skipped flags → plugin-cmd candidate.
-        (["hermes", "some-plugin-cmd"], "some-plugin-cmd"),
-        (["hermes", "-m", "gpt5", "some-plugin-cmd"], "some-plugin-cmd"),
+        (["thoth", "some-plugin-cmd"], "some-plugin-cmd"),
+        (["thoth", "-m", "gpt5", "some-plugin-cmd"], "some-plugin-cmd"),
     ],
 )
 def test_first_positional_argv(argv, expected):
@@ -110,17 +110,17 @@ def test_first_positional_argv(argv, expected):
 @pytest.mark.parametrize(
     "argv",
     [
-        ["hermes"],                          # bare → chat
-        ["hermes", "--help"],                # top-level help
-        ["hermes", "-h"],
-        ["hermes", "version"],               # known built-in
-        ["hermes", "logs"],
-        ["hermes", "gateway", "run"],
-        ["hermes", "--tui"],
-        ["hermes", "-w", "--tui"],
-        ["hermes", "chat", "hi"],
-        ["hermes", "help"],                  # accepted built-in-ish
-        ["hermes", "-m", "gpt5", "chat"],    # flag-value-skipping
+        ["thoth"],                          # bare → chat
+        ["thoth", "--help"],                # top-level help
+        ["thoth", "-h"],
+        ["thoth", "version"],               # known built-in
+        ["thoth", "logs"],
+        ["thoth", "gateway", "run"],
+        ["thoth", "--tui"],
+        ["thoth", "-w", "--tui"],
+        ["thoth", "chat", "hi"],
+        ["thoth", "help"],                  # accepted built-in-ish
+        ["thoth", "-m", "gpt5", "chat"],    # flag-value-skipping
     ],
 )
 def test_discovery_skipped_for_builtins(argv):
@@ -131,9 +131,9 @@ def test_discovery_skipped_for_builtins(argv):
 @pytest.mark.parametrize(
     "argv",
     [
-        ["hermes", "meet", "join"],          # potential google_meet plugin
-        ["hermes", "honcho", "status"],      # potential memory plugin
-        ["hermes", "unknown-subcmd"],
+        ["thoth", "meet", "join"],          # potential google_meet plugin
+        ["thoth", "honcho", "status"],      # potential memory plugin
+        ["thoth", "unknown-subcmd"],
     ],
 )
 def test_discovery_runs_for_unknown_positional(argv):

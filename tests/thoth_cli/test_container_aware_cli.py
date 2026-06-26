@@ -24,7 +24,7 @@ from thoth_cli.config import (
 @pytest.fixture
 def container_env(tmp_path, monkeypatch):
     """Set up a fake THOTH_HOME with .container-mode file."""
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.delenv("THOTH_DEV", raising=False)
@@ -33,8 +33,8 @@ def container_env(tmp_path, monkeypatch):
     container_mode.write_text(
         "# Written by NixOS activation script. Do not edit manually.\n"
         "backend=podman\n"
-        "container_name=hermes-agent\n"
-        "exec_user=hermes\n"
+        "container_name=thoth-agent\n"
+        "exec_user=thoth\n"
         "thoth_bin=/data/current-package/bin/thoth\n"
     )
     return thoth_home
@@ -47,8 +47,8 @@ def test_get_container_exec_info_returns_metadata(container_env):
 
     assert info is not None
     assert info["backend"] == "podman"
-    assert info["container_name"] == "hermes-agent"
-    assert info["exec_user"] == "hermes"
+    assert info["container_name"] == "thoth-agent"
+    assert info["exec_user"] == "thoth"
     assert info["thoth_bin"] == "/data/current-package/bin/thoth"
 
 
@@ -62,7 +62,7 @@ def test_get_container_exec_info_none_inside_container(container_env):
 
 def test_get_container_exec_info_none_without_file(tmp_path, monkeypatch):
     """Returns None when .container-mode doesn't exist (native mode)."""
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.delenv("THOTH_DEV", raising=False)
@@ -98,7 +98,7 @@ def test_get_container_exec_info_defaults():
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        thoth_home = Path(tmpdir) / ".hermes"
+        thoth_home = Path(tmpdir) / ".thoth"
         thoth_home.mkdir()
         (thoth_home / ".container-mode").write_text(
             "# minimal file with no keys\n"
@@ -113,10 +113,10 @@ def test_get_container_exec_info_defaults():
         assert info is not None
         assert info["backend"] == "docker"
         # Thoth-branded default container name (NixOS writes the real name
-        # explicitly; this is the hand-rolled fallback). exec_user stays `hermes`
+        # explicitly; this is the hand-rolled fallback). exec_user stays `thoth`
         # — the image's OS user is unchanged, independent of the container name.
         assert info["container_name"] == "thoth-agent"
-        assert info["exec_user"] == "hermes"
+        assert info["exec_user"] == "thoth"
         assert info["thoth_bin"] == "/data/current-package/bin/thoth"
 
 
@@ -124,7 +124,7 @@ def test_get_container_exec_info_docker_backend(container_env):
     """Correctly reads docker backend with custom exec_user."""
     (container_env / ".container-mode").write_text(
         "backend=docker\n"
-        "container_name=hermes-custom\n"
+        "container_name=thoth-custom\n"
         "exec_user=myuser\n"
         "thoth_bin=/opt/thoth/bin/thoth\n"
     )
@@ -133,7 +133,7 @@ def test_get_container_exec_info_docker_backend(container_env):
         info = get_container_exec_info()
 
     assert info["backend"] == "docker"
-    assert info["container_name"] == "hermes-custom"
+    assert info["container_name"] == "thoth-custom"
     assert info["exec_user"] == "myuser"
     assert info["thoth_bin"] == "/opt/thoth/bin/thoth"
 
@@ -155,8 +155,8 @@ def test_get_container_exec_info_crashes_on_permission_error(container_env):
 def docker_container_info():
     return {
         "backend": "docker",
-        "container_name": "hermes-agent",
-        "exec_user": "hermes",
+        "container_name": "thoth-agent",
+        "exec_user": "thoth",
         "thoth_bin": "/data/current-package/bin/thoth",
     }
 
@@ -165,8 +165,8 @@ def docker_container_info():
 def podman_container_info():
     return {
         "backend": "podman",
-        "container_name": "hermes-agent",
-        "exec_user": "hermes",
+        "container_name": "thoth-agent",
+        "exec_user": "thoth",
         "thoth_bin": "/data/current-package/bin/thoth",
     }
 
@@ -193,12 +193,12 @@ def test_exec_in_container_calls_execvp(docker_container_info):
     assert cmd[1] == "exec"
     assert "-it" in cmd
     idx_u = cmd.index("-u")
-    assert cmd[idx_u + 1] == "hermes"
+    assert cmd[idx_u + 1] == "thoth"
     e_indices = [i for i, v in enumerate(cmd) if v == "-e"]
     e_values = [cmd[i + 1] for i in e_indices]
     assert "TERM=xterm-256color" in e_values
     assert "LANG=en_US.UTF-8" in e_values
-    assert "hermes-agent" in cmd
+    assert "thoth-agent" in cmd
     assert "/data/current-package/bin/thoth" in cmd
     assert "chat" in cmd
 

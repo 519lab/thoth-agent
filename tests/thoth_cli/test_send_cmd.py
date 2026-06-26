@@ -25,7 +25,7 @@ def _parse(argv):
     """Build the top-level parser and return the parsed args for ``argv``."""
     import argparse
 
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     subparsers = parser.add_subparsers(dest="command")
     send_cmd.register_send_subparser(subparsers)
     return parser.parse_args(["send", *argv])
@@ -343,7 +343,7 @@ def test_load_thoth_env_bridges_config_yaml_scalars(tmp_path, monkeypatch):
     """
     import os
 
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / ".env").write_text("SOME_TOKEN=abc123\n")
     (thoth_home / "config.yaml").write_text(
@@ -370,7 +370,7 @@ def test_load_thoth_env_does_not_override_existing(tmp_path, monkeypatch):
     """Existing env vars must not be clobbered by config.yaml values."""
     import os
 
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / "config.yaml").write_text("TELEGRAM_HOME_CHANNEL: yaml_value\n")
 
@@ -388,7 +388,7 @@ def test_load_thoth_env_does_not_override_existing(tmp_path, monkeypatch):
 
 def test_load_thoth_env_handles_missing_files(tmp_path, monkeypatch):
     """No .env or config.yaml should be a silent no-op, not an exception."""
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
