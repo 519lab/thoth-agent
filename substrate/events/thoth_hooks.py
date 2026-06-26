@@ -39,7 +39,7 @@ _log = logging.getLogger("substrate.hooks")
 # spec §9. Kept here so call sites import hook functions, not stream names.
 # ---------------------------------------------------------------------------
 
-# Per-source user-message streams. ``hermes.world.user_message.<source>``
+# Per-source user-message streams. ``thoth.world.user_message.<source>``
 # allows downstream consumers to filter by gateway (CLI vs Discord vs ACP).
 NAME_USER_MESSAGE_PREFIX = "thoth.world.user_message"
 NAME_ASSISTANT_RESPONSE = "thoth.self_action.assistant_response"
@@ -184,7 +184,7 @@ async def on_user_message_async(
 ) -> None:
     """Called from async user-message intake sites (gateway, conversation
     loop, ACP). Emits one TEXT slice on
-    ``hermes.world.user_message.<source>``.
+    ``thoth.world.user_message.<source>``.
     """
     from substrate.l0 import commit_slice
 
@@ -236,7 +236,7 @@ async def on_assistant_response_async(
     text: str,
     t_event: datetime,
 ) -> None:
-    """Emit a TEXT slice on ``hermes.self_action.assistant_response``."""
+    """Emit a TEXT slice on ``thoth.self_action.assistant_response``."""
     from substrate.l0 import commit_slice
 
     stream = await _substrate.streams.get_by_name(NAME_ASSISTANT_RESPONSE)
@@ -285,7 +285,7 @@ async def on_tool_call_async(
     args: dict,
     t_event: datetime,
 ) -> None:
-    """Emit a STRUCTURED_EVENT slice on ``hermes.self_action.tool_call``."""
+    """Emit a STRUCTURED_EVENT slice on ``thoth.self_action.tool_call``."""
     from substrate.l0 import commit_slice
 
     stream = await _substrate.streams.get_by_name(NAME_TOOL_CALL)
@@ -330,7 +330,7 @@ async def on_tool_result_async(
     error: Any,
     t_event: datetime,
 ) -> None:
-    """Emit a STRUCTURED_EVENT slice on ``hermes.self_state.tool_result``.
+    """Emit a STRUCTURED_EVENT slice on ``thoth.self_state.tool_result``.
 
     ``result`` and ``error`` are passed through :func:`_summarize` so
     large strings/bytes don't bloat the JSONB row.
@@ -387,7 +387,7 @@ async def on_subagent_spawn_async(
     t_event: datetime,
 ) -> None:
     """Emit a STRUCTURED_EVENT slice on
-    ``hermes.self_action.subagent_spawn``."""
+    ``thoth.self_action.subagent_spawn``."""
     from substrate.l0 import commit_slice
 
     stream = await _substrate.streams.get_by_name(NAME_SUBAGENT_SPAWN)
@@ -439,7 +439,7 @@ async def on_subagent_return_async(
     t_event: datetime,
 ) -> None:
     """Emit a STRUCTURED_EVENT slice on
-    ``hermes.self_state.subagent_return``."""
+    ``thoth.self_state.subagent_return``."""
     from substrate.l0 import commit_slice
 
     stream = await _substrate.streams.get_by_name(NAME_SUBAGENT_RETURN)
@@ -499,7 +499,7 @@ async def on_session_start_async(
     conn: "Optional[asyncpg.Connection]" = None,
 ) -> None:
     """Emit a STRUCTURED_EVENT slice on
-    ``hermes.self_state.session_lifecycle``.
+    ``thoth.self_state.session_lifecycle``.
 
     If ``conn`` is passed, the substrate INSERT joins the caller's
     transaction so the session row + the substrate slice commit
@@ -558,7 +558,7 @@ async def on_session_end_async(
     t_event: datetime,
 ) -> None:
     """Emit a STRUCTURED_EVENT slice on
-    ``hermes.self_state.session_lifecycle``."""
+    ``thoth.self_state.session_lifecycle``."""
     from substrate.l0 import commit_slice
 
     stream = await _substrate.streams.get_by_name(NAME_SESSION_LIFECYCLE)
@@ -654,7 +654,7 @@ async def on_cron_fire_async(
     schedule: Optional[str] = None,
 ) -> None:
     """Emit a STRUCTURED_EVENT slice on
-    ``hermes.self_state.cron_dispatch``.
+    ``thoth.self_state.cron_dispatch``.
 
     ``job_name`` and ``schedule`` (human-readable, e.g. "every 30 min")
     make the perception meaningful — the bare ``job_id`` is an opaque hex

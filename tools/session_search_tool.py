@@ -59,8 +59,8 @@ class _SyncDB:
 
     def __init__(self, async_db):
         self._async_db = async_db
-        import thoth_db as _hermes_db
-        self._run_sync = _hermes_db.run_sync
+        import thoth_db as _thoth_db
+        self._run_sync = _thoth_db.run_sync
 
     def __getattr__(self, name):
         if name in self._DELEGATED:
