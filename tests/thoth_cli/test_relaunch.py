@@ -7,7 +7,7 @@ import pytest
 from thoth_cli import relaunch as relaunch_mod
 
 
-class TestResolveHermesBin:
+class TestResolveThothBin:
     def test_prefers_absolute_argv0_when_executable(self, monkeypatch):
         fake = "/nix/store/abc/bin/thoth"
         monkeypatch.setattr(sys, "argv", [fake])
@@ -16,19 +16,19 @@ class TestResolveHermesBin:
         assert relaunch_mod.resolve_thoth_bin() == fake
 
     def test_resolves_relative_argv0(self, monkeypatch, tmp_path):
-        fake = tmp_path / "hermes"
+        fake = tmp_path / "thoth"
         fake.write_text("#!/bin/sh\n")
         fake.chmod(0o755)
         monkeypatch.setattr(sys, "argv", [str(fake.name)])
         monkeypatch.chdir(tmp_path)
-        # Ensure we don't accidentally match a real 'hermes' on PATH
+        # Ensure we don't accidentally match a real 'thoth' on PATH
         monkeypatch.setattr(relaunch_mod.shutil, "which", lambda _name: None)
         assert relaunch_mod.resolve_thoth_bin() == str(fake)
 
     def test_falls_back_to_path_which(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["-c"])  # not a real path
         monkeypatch.setattr(
-            relaunch_mod.shutil, "which", lambda name: "/usr/bin/thoth" if name == "hermes" else None
+            relaunch_mod.shutil, "which", lambda _name: "/usr/bin/thoth"
         )
         assert relaunch_mod.resolve_thoth_bin() == "/usr/bin/thoth"
 
@@ -162,7 +162,7 @@ class TestRelaunch:
         thoth).  relaunch() must detect win32 and use subprocess.run +
         sys.exit instead."""
         monkeypatch.setattr(relaunch_mod.sys, "platform", "win32")
-        monkeypatch.setattr(relaunch_mod, "resolve_thoth_bin", lambda: r"C:\Users\test\hermes.exe")
+        monkeypatch.setattr(relaunch_mod, "resolve_thoth_bin", lambda: r"C:\Users\test\thoth.exe")
 
         import subprocess as _subprocess
 
@@ -190,12 +190,12 @@ class TestRelaunch:
 
         assert exc_info.value.code == 0
         assert execvp_calls == []
-        assert captured_argv == [[r"C:\Users\test\hermes.exe", "chat"]]
+        assert captured_argv == [[r"C:\Users\test\thoth.exe", "chat"]]
 
     def test_windows_propagates_child_exit_code(self, monkeypatch):
         """A non-zero exit from the child should flow through to sys.exit."""
         monkeypatch.setattr(relaunch_mod.sys, "platform", "win32")
-        monkeypatch.setattr(relaunch_mod, "resolve_thoth_bin", lambda: r"C:\hermes.exe")
+        monkeypatch.setattr(relaunch_mod, "resolve_thoth_bin", lambda: r"C:\thoth.exe")
 
         import subprocess as _subprocess
 
@@ -234,7 +234,7 @@ class TestRelaunch:
         assert "open a new terminal" in err.lower() or "path" in err.lower()
 
 
-class TestResolveHermesBinWindowsPyGuard:
+class TestResolveThothBinWindowsPyGuard:
     """On Windows, resolve_thoth_bin MUST NOT return a .py path.
     os.access(x, os.X_OK) returns True for .py files on Windows because
     PATHEXT includes .py when the Python launcher is installed — but
@@ -251,16 +251,16 @@ class TestResolveHermesBinWindowsPyGuard:
 
         monkeypatch.setattr(relaunch_mod.sys, "platform", "win32")
         monkeypatch.setattr(relaunch_mod.sys, "argv", [str(script), "chat"])
-        # Force PATH lookup to return a hermes.exe so the test doesn't
+        # Force PATH lookup to return a thoth.exe so the test doesn't
         # exercise the None-fallback path (that's a separate test).
         monkeypatch.setattr(
             relaunch_mod.shutil, "which",
-            lambda name: r"C:\venv\Scripts\hermes.exe" if name == "hermes" else None,
+            lambda _name: r"C:\venv\Scripts\thoth.exe",
         )
 
         bin_path = relaunch_mod.resolve_thoth_bin()
-        # Must NOT be the .py — must be the hermes.exe PATH entry.
-        assert bin_path == r"C:\venv\Scripts\hermes.exe"
+        # Must NOT be the .py — must be the thoth.exe PATH entry.
+        assert bin_path == r"C:\venv\Scripts\thoth.exe"
 
     def test_posix_still_accepts_py_argv0(self, monkeypatch, tmp_path):
         """POSIX behaviour unchanged: argv[0] pointing at an executable
@@ -268,14 +268,14 @@ class TestResolveHermesBinWindowsPyGuard:
         because POSIX exec can route through the shebang line."""
         if sys.platform == "win32":
             pytest.skip("POSIX semantics")
-        script = tmp_path / "hermes"
+        script = tmp_path / "thoth"
         script.write_text("#!/usr/bin/env python3\n")
         script.chmod(0o755)
         monkeypatch.setattr(relaunch_mod.sys, "argv", [str(script), "chat"])
         assert relaunch_mod.resolve_thoth_bin() == str(script)
 
     def test_windows_py_argv0_with_no_thoth_on_path_returns_none(self, monkeypatch, tmp_path):
-        """Bulletproof fallback: if argv0 is .py on Windows AND hermes.exe
+        """Bulletproof fallback: if argv0 is .py on Windows AND thoth.exe
         isn't on PATH, return None so the caller falls back to
         python -m thoth_cli.main."""
         script = tmp_path / "main.py"

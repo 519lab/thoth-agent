@@ -78,13 +78,13 @@ def test_managed_install_refuses_and_does_not_set_pending_relaunch(capsys):
         patch("thoth_cli.config.is_managed", return_value=True),
         patch(
             "thoth_cli.config.format_managed_message",
-            return_value="Use `brew upgrade hermes-agent` to update.",
+            return_value="Use `brew upgrade thoth-agent` to update.",
         ),
     ):
         result = _call(self_)
 
     out = capsys.readouterr().out
-    assert "brew upgrade hermes-agent" in out
+    assert "brew upgrade thoth-agent" in out
     assert self_._pending_relaunch is None
     assert not result
 
@@ -157,8 +157,7 @@ def test_unrecognized_or_cancel_input_cancels(answer, capsys):
 # ===========================================================================
 #
 # ``thoth update`` must restart thoth-substrate* units (notably
-# thoth-substrate-worker.service) — and the legacy hermes-substrate* units on
-# installs that predate the worker rename — so substrate sub-agents pick up new
+# thoth-substrate-worker.service) so substrate sub-agents pick up new
 # code. These tests MOCK every ``systemctl`` subprocess call — they never shell
 # out to a real service manager.
 
@@ -202,7 +201,7 @@ def _systemctl_runner(active_units):
 
 class TestRestartSubstrateWorkers:
     """``_restart_substrate_workers`` discovers + restarts thoth-substrate*
-    (and legacy hermes-substrate*) units."""
+    units."""
 
     def test_discovers_and_restarts_active_worker(self):
         runner = _systemctl_runner({"thoth-substrate-worker"})
@@ -216,12 +215,10 @@ class TestRestartSubstrateWorkers:
             restarted = hmain._restart_substrate_workers()
 
         assert restarted == ["thoth-substrate-worker"]
-        # The list-units discovery globs the canonical thoth-substrate* AND the
-        # legacy hermes-substrate* pattern.
+        # The list-units discovery globs the canonical thoth-substrate* pattern.
         assert any(
             "list-units" in c
             and "thoth-substrate*" in c
-            and "hermes-substrate*" in c
             for c in runner.calls
         )
         # An actual restart of the worker was issued.
@@ -229,26 +226,8 @@ class TestRestartSubstrateWorkers:
             "restart" in c and "thoth-substrate-worker" in c for c in runner.calls
         )
 
-    def test_discovers_and_restarts_legacy_hermes_worker(self):
-        """Installs predating the rename still expose hermes-substrate-worker;
-        ``thoth update`` must restart it too."""
-        runner = _systemctl_runner({"hermes-substrate-worker"})
-        with (
-            patch(
-                "thoth_cli.gateway.supports_systemd_services", return_value=True
-            ),
-            patch("thoth_cli.gateway._ensure_user_systemd_env", lambda: None),
-            patch.object(hmain.subprocess, "run", runner),
-        ):
-            restarted = hmain._restart_substrate_workers()
-
-        assert restarted == ["hermes-substrate-worker"]
-        assert any(
-            "restart" in c and "hermes-substrate-worker" in c for c in runner.calls
-        )
-
     def test_handles_both_user_and_system_scope(self):
-        runner = _systemctl_runner({"hermes-substrate-worker"})
+        runner = _systemctl_runner({"thoth-substrate-worker"})
         with (
             patch(
                 "thoth_cli.gateway.supports_systemd_services", return_value=True
@@ -287,7 +266,7 @@ class TestRestartSubstrateWorkers:
                 return SimpleNamespace(returncode=0, stdout=s, stderr="")
 
             if "list-units" in cmd and "--user" in cmd:
-                return out("hermes-substrate-worker.service loaded active running x")
+                return out("thoth-substrate-worker.service loaded active running x")
             if "list-units" in cmd:
                 return out("")
             if "is-active" in cmd:
@@ -312,7 +291,7 @@ class TestRestartSubstrateWorkers:
                 return SimpleNamespace(returncode=rc, stdout=s, stderr=err)
 
             if "list-units" in cmd and "--user" in cmd:
-                return out("hermes-substrate-worker.service loaded active running x")
+                return out("thoth-substrate-worker.service loaded active running x")
             if "list-units" in cmd:
                 return out("")
             if "is-active" in cmd:
@@ -332,7 +311,7 @@ class TestRestartSubstrateWorkers:
 
         assert restarted == []  # failed restart not counted as restarted
         out = capsys.readouterr().out
-        assert "Failed to restart hermes-substrate-worker" in out
+        assert "Failed to restart thoth-substrate-worker" in out
 
 
 # ===========================================================================
