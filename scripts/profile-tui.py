@@ -5,7 +5,7 @@ Usage:
   scripts/profile-tui.py [--session SID] [--hold KEY] [--seconds N] [--rate HZ]
 
 Defaults: picks the session with the most messages, holds PageUp for 8s at
-~30 Hz (matching xterm key-repeat), summarizes ~/.hermes/perf.log on exit.
+~30 Hz (matching xterm key-repeat), summarizes ~/.thoth/perf.log on exit.
 
 The --tui build must exist (run `npm run build` in ui-tui first). This script
 launches `node dist/entry.js` directly with THOTH_TUI_RESUME set so it
@@ -13,7 +13,7 @@ bypasses the thoth_cli wrapper — we want repeatable timing, not the CLI's
 session-picker flow.
 
 Environment overrides:
-  THOTH_PERF_LOG     (default ~/.hermes/perf.log)
+  THOTH_PERF_LOG     (default ~/.thoth/perf.log)
   THOTH_PERF_NODE    (default node from $PATH)
   THOTH_TUI_DIR      (default: <repo>/ui-tui relative to this script)
 
@@ -536,7 +536,7 @@ def loop_mode(args: argparse.Namespace) -> int:
 
     tui_dir = Path(args.tui_dir).resolve()
     src_root = tui_dir / "src"
-    pkg_root = tui_dir / "packages" / "hermes-ink" / "src"
+    pkg_root = tui_dir / "packages" / "thoth-ink" / "src"
 
     def collect_mtimes() -> dict[str, float]:
         mtimes: dict[str, float] = {}

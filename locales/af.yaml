@@ -292,7 +292,7 @@ gateway:
   update:
     platform_not_messaging:  "✗ /update is slegs beskikbaar vanaf boodskapplatforms. Voer `thoth update` vanaf die terminale uit."
     not_git_repo:            "✗ Nie 'n git-bewaarplek nie — kan nie opdateer nie."
-    hermes_cmd_not_found:    "✗ Kon nie die `thoth`-opdrag vind nie. Thoth loop, maar die opdateeropdrag kon nie die uitvoerbare lêer op PATH of via die huidige Python-vertolker vind nie. Probeer `thoth update` met die hand in jou terminale uitvoer."
+    thoth_cmd_not_found:    "✗ Kon nie die `thoth`-opdrag vind nie. Thoth loop, maar die opdateeropdrag kon nie die uitvoerbare lêer op PATH of via die huidige Python-vertolker vind nie. Probeer `thoth update` met die hand in jou terminale uitvoer."
     start_failed:            "✗ Kon nie opdatering begin nie: {error}"
     starting:                "⚕ Begin Thoth-opdatering… Ek sal vordering hier stroom."
 

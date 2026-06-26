@@ -215,7 +215,7 @@ TIPS = [
     # --- Context & Compression ---
     "Context auto-compresses when it reaches the threshold — memories are flushed and history summarized.",
     "The status bar turns yellow, then orange, then red as context fills up.",
-    "SOUL.md at ~/.hermes/SOUL.md is the agent's primary identity — customize it to shape behavior.",
+    "SOUL.md at ~/.thoth/SOUL.md is the agent's primary identity — customize it to shape behavior.",
     "Thoth loads project context from .thoth.md, AGENTS.md, CLAUDE.md, or .cursorrules (first match).",
     "Subdirectory AGENTS.md files are discovered progressively as the agent navigates into folders.",
     "Context files are capped at 20,000 characters with smart head/tail truncation.",
@@ -236,7 +236,7 @@ TIPS = [
     "Checkpoints have zero overhead when no files are modified — enabled by default.",
     "A pre-rollback snapshot is saved automatically so you can undo the undo.",
     "/rollback also undoes the conversation turn, so the agent doesn't remember rolled-back changes.",
-    "Checkpoints use shadow repos in ~/.hermes/checkpoints/ — your project's .git is never touched.",
+    "Checkpoints use shadow repos in ~/.thoth/checkpoints/ — your project's .git is never touched.",
 
     # --- Batch & Data ---
     "batch_runner.py processes hundreds of prompts in parallel for training data generation.",
@@ -267,10 +267,10 @@ TIPS = [
 
     # --- Hidden Gems & Power-User Tricks ---
     "Cron jobs can attach a Python script (--script) whose stdout is injected into the prompt as context.",
-    "Cron scripts live in ~/.hermes/scripts/ and run before the agent — perfect for data collection pipelines.",
+    "Cron scripts live in ~/.thoth/scripts/ and run before the agent — perfect for data collection pipelines.",
     "prefill_messages_file in config.yaml injects few-shot examples into every API call, never saved to history.",
     "SOUL.md completely replaces the agent's default identity — rewrite it to make Thoth your own.",
-    "SOUL.md is auto-seeded with a default personality on first run. Edit ~/.hermes/SOUL.md to customize.",
+    "SOUL.md is auto-seeded with a default personality on first run. Edit ~/.thoth/SOUL.md to customize.",
     "/compress <focus topic> allocates 60-70% of the summary budget to your topic and aggressively trims the rest.",
     "On second+ compression, the compressor updates the previous summary instead of starting from scratch.",
     "Before a gateway session reset, Thoth auto-flushes important facts to memory in the background.",
@@ -293,13 +293,13 @@ TIPS = [
     "agent.api_max_retries (default 3) controls how many times the agent retries a failed API call before surfacing the error — lower it for fast fallback.",
     "The gateway caches AIAgent instances per session — destroying this cache breaks Anthropic prompt caching.",
     "Any website can expose skills via /.well-known/skills/index.json — the skills hub discovers them automatically.",
-    "The skills audit log at ~/.hermes/skills/.hub/audit.log tracks every install and removal operation.",
+    "The skills audit log at ~/.thoth/skills/.hub/audit.log tracks every install and removal operation.",
     "Stale git worktrees are auto-cleaned: 24-72h old with no unpushed commits get pruned on startup.",
     "Each profile gets its own subprocess HOME at THOTH_HOME/home/ — isolated git, ssh, npm, gh configs.",
     "THOTH_HOME_MODE env var (octal, e.g. 0701) sets custom directory permissions for web server traversal.",
     "Container mode: place .container-mode in THOTH_HOME and the host CLI auto-execs into the container.",
     "Ctrl+C has 5 priority tiers: cancel recording → cancel prompts → cancel picker → interrupt agent → exit.",
-    "Every interrupt during an agent run is logged to ~/.hermes/interrupt_debug.log with timestamps.",
+    "Every interrupt during an agent run is logged to ~/.thoth/interrupt_debug.log with timestamps.",
     "BROWSER_CDP_URL connects browser tools to any running Chromium-family browser — accepts WebSocket, HTTP, or host:port.",
     "BROWSERBASE_ADVANCED_STEALTH=true enables advanced anti-detection with custom Chromium (Scale Plan).",
     "The CLI auto-switches to compact mode in terminals narrower than 80 columns.",
@@ -331,9 +331,9 @@ TIPS = [
     "In interrupt mode, slash commands typed during agent execution bypass interrupt logic and run immediately.",
     "THOTH_DEV=1 bypasses container mode detection for local development.",
     "Each MCP server gets its own toolset (mcp-servername) that can be toggled independently via thoth tools.",
-    "MCP ${ENV_VAR} placeholders in config are resolved at server spawn — including vars from ~/.hermes/.env.",
+    "MCP ${ENV_VAR} placeholders in config are resolved at server spawn — including vars from ~/.thoth/.env.",
     "Skills from trusted repos (519lab) get a 'trusted' security level; community skills get extra scanning.",
-    "The skills quarantine at ~/.hermes/skills/.hub/quarantine/ holds skills pending security review.",
+    "The skills quarantine at ~/.thoth/skills/.hub/quarantine/ holds skills pending security review.",
 
     # --- Advanced Slash Commands ---
     '/steer <prompt> injects a note after the next tool call — nudge direction mid-task without interrupting.',
@@ -348,7 +348,7 @@ TIPS = [
     '/approve session|always runs a pending dangerous command with your chosen trust scope; /deny rejects it.',
     '/restart gracefully restarts the gateway after draining active runs, then pings the requester when back up.',
     '/kanban boards switch <slug> changes the active multi-project Kanban board from inside chat.',
-    '/reload reloads ~/.hermes/.env into the running session — pick up new API keys without restarting.',
+    '/reload reloads ~/.thoth/.env into the running session — pick up new API keys without restarting.',
 
     # --- Cron (no-agent & scripts) ---
     'cronjob with no_agent=True runs a script on schedule and sends its stdout directly — zero tokens, zero LLM.',
@@ -356,9 +356,9 @@ TIPS = [
     "THOTH_CRON_MAX_PARALLEL (default 4) caps how many cron jobs run per tick so bursts don't saturate your keys.",
 
     # --- Gateway Hooks ---
-    'Gateway hooks live under ~/.hermes/hooks/<name>/ with HOOK.yaml + handler.py — handler must be named `handle`.',
+    'Gateway hooks live under ~/.thoth/hooks/<name>/ with HOOK.yaml + handler.py — handler must be named `handle`.',
     'Hook events include gateway:startup, session:start, agent:step, and command:* wildcard subscriptions.',
-    'Drop a ~/.hermes/BOOT.md checklist and a gateway:startup hook runs it as a one-shot agent every boot.',
+    'Drop a ~/.thoth/BOOT.md checklist and a gateway:startup hook runs it as a one-shot agent every boot.',
 
     # --- Curator ---
     'thoth curator run --dry-run previews what the curator would archive or consolidate without mutating anything.',
@@ -379,8 +379,8 @@ TIPS = [
     'The TUI renders LaTeX inline — $E=mc^2$ becomes Unicode math instead of raw TeX.',
     'thoth dashboard launches a local web UI at 127.0.0.1:9119 — zero data leaves localhost.',
     'thoth dashboard --tui embeds the full Thoth TUI in your browser via xterm.js and a WebSocket PTY.',
-    'Drop a YAML in ~/.hermes/dashboard-themes/ with two palette colors to reskin the entire dashboard.',
-    'Dashboard plugins are drop-in: manifest.json + JS bundle in ~/.hermes/dashboard-plugins/ — no npm build required.',
+    'Drop a YAML in ~/.thoth/dashboard-themes/ with two palette colors to reskin the entire dashboard.',
+    'Dashboard plugins are drop-in: manifest.json + JS bundle in ~/.thoth/dashboard-plugins/ — no npm build required.',
     'layoutVariant: cockpit in a dashboard theme adds a 260px left rail that plugins can populate via the sidebar slot.',
 
     # --- Env Vars & Config Gates ---
@@ -393,7 +393,7 @@ TIPS = [
     'Checkpoints skip directories with more than 50,000 files to avoid slow git operations on massive monorepos.',
 
     # --- TTS ---
-    'tts.provider: piper runs 44-language local TTS on CPU — voices auto-download to ~/.hermes/cache/piper-voices/.',
+    'tts.provider: piper runs 44-language local TTS on CPU — voices auto-download to ~/.thoth/cache/piper-voices/.',
     'tts.providers.<name>.type: command wires any CLI TTS engine with {input_path} and {output_path} placeholders.',
 
     # --- API Server & Proxy ---
@@ -419,7 +419,7 @@ TIPS = [
     '/toolsets lists every available toolset so you know what -t/--toolsets accepts.',
     '/gquota shows Google Gemini Code Assist quota usage with progress bars when that provider is active.',
     '/voice tts toggles TTS-only mode — agent replies out loud but you still type your prompts.',
-    '/reload-skills re-scans ~/.hermes/skills/ so drop-in skills appear without restarting the session.',
+    '/reload-skills re-scans ~/.thoth/skills/ so drop-in skills appear without restarting the session.',
     '/indicator kaomoji|emoji|unicode|ascii picks the TUI busy-indicator style shown during agent runs.',
     '/debug uploads a support bundle (system info + logs) and returns shareable links — works in chat too.',
 
@@ -427,7 +427,7 @@ TIPS = [
     'thoth -z "<prompt>" is the purest one-shot: final answer on stdout, nothing else — ideal for piping in scripts.',
     'thoth chat --pass-session-id injects the session ID into the system prompt so the agent can self-reference it.',
     'thoth chat --image path/to/pic.png attaches a local image to a single -q query without a separate upload step.',
-    'thoth chat --ignore-user-config skips ~/.hermes/config.yaml — reproducible bug reports and CI runs.',
+    'thoth chat --ignore-user-config skips ~/.thoth/config.yaml — reproducible bug reports and CI runs.',
     "thoth chat --source tool tags programmatic chats so they don't clutter thoth sessions list.",
     'thoth dump --show-keys includes redacted API key fingerprints for deeper support debugging.',
     'thoth sessions rename <ID> "new title" renames any past session; thoth sessions delete <ID> removes one.',
@@ -439,7 +439,7 @@ TIPS = [
 
     # --- Agent Behavior Env Vars ---
     'THOTH_AGENT_TIMEOUT=0 disables the gateway inactivity kill for a running agent — use for long research runs.',
-    'THOTH_ENABLE_PROJECT_PLUGINS=1 auto-loads repo-local plugins from ./.hermes/plugins/ — trust-gated by design.',
+    'THOTH_ENABLE_PROJECT_PLUGINS=1 auto-loads repo-local plugins from ./.thoth/plugins/ — trust-gated by design.',
     "THOTH_DISABLE_FILE_STATE_GUARD=1 turns off the 'file changed since you read it' guard on patch and write_file.",
     'THOTH_ALLOW_PRIVATE_URLS=true lets web tools hit localhost and private networks — off by default in gateway mode.',
     'THOTH_OPTIONAL_SKILLS=name1,name2 auto-installs extra optional-catalog skills on first run per profile.',
@@ -469,7 +469,7 @@ TIPS = [
 
     # --- Misc ---
     'API_SERVER_MODEL_NAME customizes the model name on /v1/models — essential for multi-profile Open WebUI setups.',
-    'Dashboard plugins are served from /dashboard-plugins/<name>/ — drop files into ~/.hermes/dashboard-plugins/.',
+    'Dashboard plugins are served from /dashboard-plugins/<name>/ — drop files into ~/.thoth/dashboard-plugins/.',
 ]
 
 

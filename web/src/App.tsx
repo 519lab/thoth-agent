@@ -722,8 +722,8 @@ function SidebarSystemActions({ onNavigate }: { onNavigate: () => void }) {
     {
       action: "update",
       icon: Download,
-      label: t.status.updateHermes,
-      runningLabel: t.status.updatingHermes,
+      label: t.status.updateThoth,
+      runningLabel: t.status.updatingThoth,
       spin: false,
     },
   ];

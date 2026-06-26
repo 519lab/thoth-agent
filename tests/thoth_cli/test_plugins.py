@@ -90,7 +90,7 @@ class TestPluginDiscovery:
     """Tests for plugin discovery from directories and entry points."""
 
     def test_discover_user_plugins(self, tmp_path, monkeypatch):
-        """Plugins in ~/.hermes/plugins/ are discovered."""
+        """Plugins in ~/.thoth/plugins/ are discovered."""
         plugins_dir = tmp_path / "thoth_test" / "plugins"
         _make_plugin_dir(plugins_dir, "hello_plugin")
         monkeypatch.setenv("THOTH_HOME", str(tmp_path / "thoth_test"))
@@ -102,12 +102,12 @@ class TestPluginDiscovery:
         assert mgr._plugins["hello_plugin"].enabled
 
     def test_discover_project_plugins(self, tmp_path, monkeypatch):
-        """Plugins in ./.hermes/plugins/ are discovered."""
+        """Plugins in ./.thoth/plugins/ are discovered."""
         project_dir = tmp_path / "project"
         project_dir.mkdir()
         monkeypatch.chdir(project_dir)
         monkeypatch.setenv("THOTH_ENABLE_PROJECT_PLUGINS", "true")
-        plugins_dir = project_dir / ".hermes" / "plugins"
+        plugins_dir = project_dir / ".thoth" / "plugins"
         _make_plugin_dir(plugins_dir, "proj_plugin")
 
         mgr = PluginManager()
@@ -121,7 +121,7 @@ class TestPluginDiscovery:
         project_dir = tmp_path / "project"
         project_dir.mkdir()
         monkeypatch.chdir(project_dir)
-        plugins_dir = project_dir / ".hermes" / "plugins"
+        plugins_dir = project_dir / ".thoth" / "plugins"
         _make_plugin_dir(plugins_dir, "proj_plugin")
 
         mgr = PluginManager()
@@ -238,18 +238,18 @@ class TestPluginLoading:
         assert "no register()" in mgr._plugins["no_reg"].error
 
     def test_load_registers_namespace_module(self, tmp_path, monkeypatch):
-        """Directory plugins are importable under hermes_plugins.<name>."""
+        """Directory plugins are importable under thoth_plugins.<name>."""
         plugins_dir = tmp_path / "thoth_test" / "plugins"
         _make_plugin_dir(plugins_dir, "ns_plugin")
         monkeypatch.setenv("THOTH_HOME", str(tmp_path / "thoth_test"))
 
         # Clean up any prior namespace module
-        sys.modules.pop("hermes_plugins.ns_plugin", None)
+        sys.modules.pop("thoth_plugins.ns_plugin", None)
 
         mgr = PluginManager()
         mgr.discover_and_load()
 
-        assert "hermes_plugins.ns_plugin" in sys.modules
+        assert "thoth_plugins.ns_plugin" in sys.modules
 
     def test_user_memory_plugin_auto_coerced_to_exclusive(self, tmp_path, monkeypatch):
         """User-installed memory plugins must NOT be loaded by the general

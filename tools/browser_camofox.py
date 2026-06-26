@@ -17,7 +17,7 @@ Setup::
     # Option 2: Docker
     docker run -p 9377:9377 -e CAMOFOX_PORT=9377 jo-inc/camofox-browser
 
-Then set ``CAMOFOX_URL=http://localhost:9377`` in ``~/.hermes/.env``.
+Then set ``CAMOFOX_URL=http://localhost:9377`` in ``~/.thoth/.env``.
 """
 
 from __future__ import annotations
@@ -238,7 +238,7 @@ def _get_session(task_id: Optional[str]) -> Dict[str, Any]:
             }
         else:
             session = {
-                "user_id": f"hermes_{uuid.uuid4().hex[:10]}",
+                "user_id": f"thoth_{uuid.uuid4().hex[:10]}",
                 "tab_id": None,
                 "session_key": f"task_{task_id[:16]}",
                 "managed": False,

@@ -2,7 +2,7 @@ import os
 import sys
 
 # Guard against a local utils/ (or other package) in CWD shadowing installed
-# hermes modules.  thoth_cli sets THOTH_PYTHON_SRC_ROOT before spawning this
+# thoth modules.  thoth_cli sets THOTH_PYTHON_SRC_ROOT before spawning this
 # subprocess; inserting it first ensures the installed packages win.
 _src_root = os.environ.get("THOTH_PYTHON_SRC_ROOT", "")
 if _src_root and _src_root not in sys.path:

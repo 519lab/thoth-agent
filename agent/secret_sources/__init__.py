@@ -1,7 +1,7 @@
 """External secret source integrations.
 
 A secret source is anything that can supply environment-variable-shaped
-credentials at process startup, _after_ ~/.hermes/.env has loaded.  By
+credentials at process startup, _after_ ~/.thoth/.env has loaded.  By
 default sources are non-destructive: they only set values for env vars
 that aren't already present, so .env and shell exports continue to win.
 

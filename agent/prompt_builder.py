@@ -188,7 +188,7 @@ SKILLS_GUIDANCE = (
 KANBAN_GUIDANCE = (
     "# Kanban task execution protocol\n"
     "You have been assigned ONE task from "
-    "the shared board at `~/.hermes/kanban.db`. Your task id is in "
+    "the shared board at `~/.thoth/kanban.db`. Your task id is in "
     "`$THOTH_KANBAN_TASK`; your workspace is `$THOTH_KANBAN_WORKSPACE`. "
     "The `kanban_*` tools in your schema are your primary coordination surface — "
     "they write directly to the shared SQLite DB and work regardless of terminal "
@@ -1008,7 +1008,7 @@ def build_skills_system_prompt(
     Falls back to a full filesystem scan when both layers miss.
 
     External skill directories (``skills.external_dirs`` in config.yaml) are
-    scanned alongside the local ``~/.hermes/skills/`` directory.  External dirs
+    scanned alongside the local ``~/.thoth/skills/`` directory.  External dirs
     are read-only — they appear in the index but new skills are always created
     in the local dir.  Local skills take precedence when names collide.
     """
@@ -1463,6 +1463,3 @@ def build_context_files_prompt(cwd: Optional[str] = None, skip_soul: bool = Fals
     if not sections:
         return ""
     return "# Project Context\n\nThe following project context files have been loaded and should be followed:\n\n" + "\n".join(sections)
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-THOTH_AGENT_HELP_GUIDANCE = THOTH_AGENT_HELP_GUIDANCE

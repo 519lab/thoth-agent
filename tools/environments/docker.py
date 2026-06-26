@@ -89,7 +89,7 @@ def _normalize_env_dict(env: dict | None) -> dict[str, str]:
 
 
 def _load_thoth_env_vars() -> dict[str, str]:
-    """Load ~/.hermes/.env values without failing Docker command execution."""
+    """Load ~/.thoth/.env values without failing Docker command execution."""
     try:
         from thoth_cli.config import load_env
 
@@ -148,7 +148,7 @@ def find_docker() -> Optional[str]:
 # We drop all capabilities then add back the minimum needed:
 #   DAC_OVERRIDE - root can write to bind-mounted dirs owned by host user
 #   CHOWN/FOWNER - package managers (pip, npm, apt) need to set file ownership
-#   SETUID/SETGID - the image entrypoint drops from root to the 'hermes'
+#   SETUID/SETGID - the image entrypoint drops from root to the 'thoth'
 #       user via `gosu`, which requires these caps. Combined with
 #       `no-new-privileges`, gosu still cannot escalate back to root after
 #       the drop, so the security posture is preserved. Omitted entirely
@@ -337,7 +337,7 @@ class DockerEnvironment(BaseEnvironment):
             resource_args.append("--network=none")
 
         # Persistent workspace via bind mounts from a configurable host directory
-        # (TERMINAL_SANDBOX_DIR, default ~/.hermes/sandboxes/). Non-persistent
+        # (TERMINAL_SANDBOX_DIR, default ~/.thoth/sandboxes/). Non-persistent
         # mode uses tmpfs (ephemeral, fast, gone on cleanup).
         from tools.environments.base import get_sandbox_dir
 

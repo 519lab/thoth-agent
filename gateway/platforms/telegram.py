@@ -3242,7 +3242,7 @@ class TelegramAdapter(BasePlatformAdapter):
             logger.error("Failed to write update response from callback: %s", exc)
 
     # Maps `gt:<verb>` -> (script-name, extra-args, success-label, is_state).
-    # Scripts live in ~/.hermes/scripts/gmail-triage/. `arg` from the callback
+    # Scripts live in ~/.thoth/scripts/gmail-triage/. `arg` from the callback
     # data is always passed as the first positional arg.
     # is_state=True means the verb is a sticky sender-rule change (mute, trust,
     # vip) that should leave the keyboard tappable for follow-on actions.
@@ -3295,7 +3295,7 @@ class TelegramAdapter(BasePlatformAdapter):
             return
         script_name, extra_args, success_label, is_state_verb = entry
 
-        script_path = _Path.home() / ".hermes" / "scripts" / "gmail-triage" / script_name
+        script_path = _Path.home() / ".thoth" / "scripts" / "gmail-triage" / script_name
         if not script_path.exists():
             await query.answer(text=f"❌ {script_name} missing")
             logger.error("[%s] gmail-triage script missing: %s", self.name, script_path)
@@ -4418,7 +4418,7 @@ class TelegramAdapter(BasePlatformAdapter):
         # Telegram parses mentions server-side and emits MessageEntity objects
         # (type=mention for @username, type=text_mention for @FirstName targeting
         # a user without a public username). Those entities are authoritative:
-        # raw substring matches like "foo@hermes_bot.example" are not mentions
+        # raw substring matches like "foo@thoth_bot.example" are not mentions
         # (bug #12545). Entities also correctly handle @handles inside URLs, code
         # blocks, and quoted text, where a regex scan would over-match.
         for source_text, entities in _iter_sources():

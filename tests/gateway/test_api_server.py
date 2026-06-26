@@ -543,7 +543,7 @@ class TestModelsEndpoint:
             assert data["object"] == "list"
             assert len(data["data"]) == 1
             assert data["data"][0]["id"] == "thoth-agent"
-            assert data["data"][0]["owned_by"] == "hermes"
+            assert data["data"][0]["owned_by"] == "thoth"
 
     @pytest.mark.asyncio
     async def test_models_returns_profile_name(self):
@@ -610,7 +610,7 @@ class TestCapabilitiesEndpoint:
             resp = await cli.get("/v1/capabilities")
             assert resp.status == 200
             data = await resp.json()
-            assert data["object"] == "hermes.api_server.capabilities"
+            assert data["object"] == "thoth.api_server.capabilities"
             assert data["platform"] == "thoth-agent"
             assert data["model"] == "thoth-agent"
             assert data["auth"]["type"] == "bearer"
@@ -912,7 +912,7 @@ class TestChatCompletionsEndpoint:
                 # Tool progress must appear as a custom SSE event, not in
                 # delta.content — prevents model from learning to imitate
                 # markers instead of calling tools (#6972).
-                assert "event: hermes.tool.progress" in body
+                assert "event: thoth.tool.progress" in body
                 assert '"tool": "terminal"' in body
                 # ``label`` is now derived by ``build_tool_preview`` from the
                 # tool args rather than passed by the caller, so we assert
@@ -971,7 +971,7 @@ class TestChatCompletionsEndpoint:
                 assert "some internal state" not in body
                 assert "call_internal_1" not in body
                 # Real tool progress should appear as custom SSE event
-                assert "event: hermes.tool.progress" in body
+                assert "event: thoth.tool.progress" in body
                 assert '"tool": "web_search"' in body
                 # Label is derived from the args dict by build_tool_preview;
                 # asserting on the structural fact (label exists, call id
@@ -985,14 +985,14 @@ class TestChatCompletionsEndpoint:
         """Regression for #16588.
 
         ``/v1/chat/completions`` streaming previously emitted only a
-        ``tool.started``-style ``hermes.tool.progress`` event; clients
+        ``tool.started``-style ``thoth.tool.progress`` event; clients
         rendering tool lifecycle UI had no way to mark a tool as finished
         because no matching ``status: completed`` event was emitted, and
         no ``toolCallId`` was carried for correlation.
 
         The fix adds ``tool_start_callback`` / ``tool_complete_callback``
         to the chat completions agent invocation and writes both halves
-        of the lifecycle pair on the same ``event: hermes.tool.progress``
+        of the lifecycle pair on the same ``event: thoth.tool.progress``
         SSE line, with stable ``toolCallId`` and ``status``.
         """
         import asyncio
@@ -1038,7 +1038,7 @@ class TestChatCompletionsEndpoint:
             pairs: list[tuple[str | None, str | None]] = []
             lines = body.splitlines()
             for i, line in enumerate(lines):
-                if line.strip() != "event: hermes.tool.progress":
+                if line.strip() != "event: thoth.tool.progress":
                     continue
                 for follow in lines[i + 1: i + 4]:
                     if follow.startswith("data: "):
@@ -2664,9 +2664,9 @@ class TestChatCompletionsAgentIncomplete:
             data = await resp.json()
             assert data["choices"][0]["finish_reason"] == "length"
             assert data["choices"][0]["message"]["content"] == "Here is part one of the answer"
-            assert data["hermes"]["partial"] is True
-            assert data["hermes"]["completed"] is False
-            assert data["hermes"]["error_code"] == "output_truncated"
+            assert data["thoth"]["partial"] is True
+            assert data["thoth"]["completed"] is False
+            assert data["thoth"]["error_code"] == "output_truncated"
             assert resp.headers.get("X-Thoth-Completed") == "false"
             assert resp.headers.get("X-Thoth-Partial") == "true"
 
@@ -2700,8 +2700,8 @@ class TestChatCompletionsAgentIncomplete:
             data = await resp.json()
             assert data["error"]["code"] == "agent_incomplete"
             assert "truncated" in data["error"]["message"].lower()
-            assert data["error"]["hermes"]["partial"] is True
-            assert data["error"]["hermes"]["failed"] is True
+            assert data["error"]["thoth"]["partial"] is True
+            assert data["error"]["thoth"]["failed"] is True
             assert resp.headers.get("X-Thoth-Completed") == "false"
 
     @pytest.mark.asyncio
@@ -2728,7 +2728,7 @@ class TestChatCompletionsAgentIncomplete:
             data = await resp.json()
             assert data["choices"][0]["finish_reason"] == "stop"
             assert data["choices"][0]["message"]["content"] == "All good."
-            assert "hermes" not in data
+            assert "thoth" not in data
             assert "X-Thoth-Completed" not in resp.headers
 
 

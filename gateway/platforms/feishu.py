@@ -1853,7 +1853,7 @@ class FeishuAdapter(BasePlatformAdapter):
     ) -> SendResult:
         """Send an interactive card with approval buttons.
 
-        The buttons carry ``hermes_action`` in their value dict so that
+        The buttons carry ``thoth_action`` in their value dict so that
         ``_handle_card_action_event`` can intercept them and call
         ``resolve_gateway_approval()`` to unblock the waiting agent thread.
         """
@@ -1869,7 +1869,7 @@ class FeishuAdapter(BasePlatformAdapter):
                     "tag": "button",
                     "text": {"tag": "plain_text", "content": label},
                     "type": btn_type,
-                    "value": {"hermes_action": action_name, "approval_id": approval_id},
+                    "value": {"thoth_action": action_name, "approval_id": approval_id},
                 }
 
             card = {
@@ -1926,7 +1926,7 @@ class FeishuAdapter(BasePlatformAdapter):
                 "text": {"tag": "plain_text", "content": label},
                 "type": btn_type,
                 "value": {
-                    "hermes_update_prompt_action": answer,
+                    "thoth_update_prompt_action": answer,
                     "update_prompt_id": prompt_id,
                 },
             }
@@ -2508,13 +2508,13 @@ class FeishuAdapter(BasePlatformAdapter):
         event = getattr(data, "event", None)
         action = getattr(event, "action", None)
         action_value = getattr(action, "value", {}) or {}
-        hermes_action = action_value.get("hermes_action") if isinstance(action_value, dict) else None
+        thoth_action = action_value.get("thoth_action") if isinstance(action_value, dict) else None
         update_prompt_action = (
-            action_value.get("hermes_update_prompt_action")
+            action_value.get("thoth_update_prompt_action")
             if isinstance(action_value, dict) else None
         )
 
-        if hermes_action:
+        if thoth_action:
             return self._handle_approval_card_action(event=event, action_value=action_value, loop=loop)
         if update_prompt_action:
             return self._handle_update_prompt_card_action(
@@ -2563,7 +2563,7 @@ class FeishuAdapter(BasePlatformAdapter):
         if approval_id is None:
             logger.debug("[Feishu] Card action missing approval_id, ignoring")
             return P2CardActionTriggerResponse() if P2CardActionTriggerResponse else None
-        choice = _APPROVAL_CHOICE_MAP.get(action_value.get("hermes_action"), "deny")
+        choice = _APPROVAL_CHOICE_MAP.get(action_value.get("thoth_action"), "deny")
 
         operator = getattr(event, "operator", None)
         open_id = str(getattr(operator, "open_id", "") or "")
@@ -2592,7 +2592,7 @@ class FeishuAdapter(BasePlatformAdapter):
             logger.debug("[Feishu] Update prompt %s already resolved or unknown", prompt_id)
             return P2CardActionTriggerResponse() if P2CardActionTriggerResponse else None
 
-        answer = str(action_value.get("hermes_update_prompt_action", "") or "").strip().lower()
+        answer = str(action_value.get("thoth_update_prompt_action", "") or "").strip().lower()
         if answer not in {"y", "n"}:
             logger.debug("[Feishu] Card action has invalid update prompt answer=%r", answer)
             return P2CardActionTriggerResponse() if P2CardActionTriggerResponse else None

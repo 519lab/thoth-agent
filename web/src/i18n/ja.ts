@@ -120,8 +120,8 @@ export const ja: Translations = {
     starting: "起動中",
     startedInBackground: "バックグラウンドで起動しました — 進行状況はログをご確認ください",
     stopped: "停止",
-    updateHermes: "Thoth を更新",
-    updatingHermes: "Thoth を更新しています…",
+    updateThoth: "Thoth を更新",
+    updatingThoth: "Thoth を更新しています…",
     waitingForOutput: "出力を待機しています…",
   },
 
@@ -283,8 +283,8 @@ export const ja: Translations = {
     providersHint:
       "memory.provider (空 = 組み込み) と context.engine を config.yaml に書き込みます。次のセッションで有効になります。",
     refreshDashboard: "ダッシュボード拡張を再スキャン",
-    removeConfirm: "このプラグインを ~/.hermes/plugins/ から削除しますか？",
-    removeHint: "削除できるのは ~/.hermes/plugins 配下のユーザーがインストールしたプラグインのみです。",
+    removeConfirm: "このプラグインを ~/.thoth/plugins/ から削除しますか？",
+    removeHint: "削除できるのは ~/.thoth/plugins 配下のユーザーがインストールしたプラグインのみです。",
     rescanHeading: "SPA プラグインレジストリ",
     rescanHint: "ディスクにファイルを追加した後に再スキャンすると、ダッシュボードのサイドバーが新しいマニフェストを認識します。",
     runtimeHeading: "ゲートウェイランタイム (YAML プラグイン)",
@@ -306,7 +306,7 @@ export const ja: Translations = {
     all: "すべて",
     categories: "カテゴリ",
     filters: "フィルター",
-    noSkills: "スキルが見つかりません。スキルは ~/.hermes/skills/ から読み込まれます",
+    noSkills: "スキルが見つかりません。スキルは ~/.thoth/skills/ から読み込まれます",
     noSkillsMatch: "検索またはフィルターに一致するスキルはありません。",
     skillCount: "{count} スキル{s}",
     resultCount: "{count} 件の結果{s}",
@@ -320,7 +320,7 @@ export const ja: Translations = {
   },
 
   config: {
-    configPath: "~/.hermes/config.yaml",
+    configPath: "~/.thoth/config.yaml",
     filters: "フィルター",
     sections: "セクション",
     exportConfig: "設定を JSON としてエクスポート",

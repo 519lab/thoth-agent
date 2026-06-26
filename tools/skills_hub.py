@@ -2333,7 +2333,7 @@ class LobeHubSource(SkillSource):
             f"name: {identifier}",
             f"description: {description[:500]}",
             "metadata:",
-            "  hermes:",
+            "  thoth:",
             f"    tags: [{', '.join(str(t) for t in tag_list)}]",
             "  lobehub:",
             "    source: lobehub",
@@ -2538,7 +2538,7 @@ class OptionalSkillSource(SkillSource):
 
     These skills are official (maintained by 519lab) but not activated
     by default — they don't appear in the system prompt and aren't copied to
-    ~/.hermes/skills/ during setup.  They are discoverable via the Skills Hub
+    ~/.thoth/skills/ during setup.  They are discoverable via the Skills Hub
     (search / install / inspect) and labelled "official" with "builtin" trust.
     """
 
@@ -3090,7 +3090,7 @@ def check_for_skill_updates(
 # ---------------------------------------------------------------------------
 
 THOTH_INDEX_URL = "https://thoth.519lab.com/docs/api/skills-index.json"
-THOTH_INDEX_CACHE_FILE = INDEX_CACHE_DIR / "hermes-index.json"
+THOTH_INDEX_CACHE_FILE = INDEX_CACHE_DIR / "thoth-index.json"
 THOTH_INDEX_TTL = 6 * 3600  # 6 hours
 
 
@@ -3177,7 +3177,7 @@ class ThothIndexSource(SkillSource):
         return self._github
 
     def source_id(self) -> str:
-        return "hermes-index"
+        return "thoth-index"
 
     @property
     def is_available(self) -> bool:
@@ -3231,7 +3231,7 @@ class ThothIndexSource(SkillSource):
         if resolved:
             bundle = self._get_github().fetch(resolved)
             if bundle:
-                bundle.source = entry.get("source", "hermes-index")
+                bundle.source = entry.get("source", "thoth-index")
                 bundle.identifier = identifier
                 return bundle
 
@@ -3242,7 +3242,7 @@ class ThothIndexSource(SkillSource):
             github_id = f"{repo}/{path}"
             bundle = self._get_github().fetch(github_id)
             if bundle:
-                bundle.source = entry.get("source", "hermes-index")
+                bundle.source = entry.get("source", "thoth-index")
                 bundle.identifier = identifier
                 return bundle
 
@@ -3291,7 +3291,7 @@ class ThothIndexSource(SkillSource):
         return SkillMeta(
             name=entry.get("name", ""),
             description=entry.get("description", ""),
-            source=entry.get("source", "hermes-index"),
+            source=entry.get("source", "thoth-index"),
             identifier=entry.get("identifier", ""),
             trust_level=entry.get("trust_level", "community"),
             repo=entry.get("repo"),
@@ -3368,7 +3368,7 @@ def parallel_search_sources(
                                   "claude-marketplace", "lobehub", "well-known"})
     if source_filter == "all":
         for src in sources:
-            if (src.source_id() == "hermes-index"
+            if (src.source_id() == "thoth-index"
                     and getattr(src, "is_available", False)):
                 _index_available = True
                 break
@@ -3443,11 +3443,3 @@ def unified_search(query: str, sources: List[SkillSource],
     deduped = list(seen.values())
 
     return deduped[:limit]
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-HermesIndexSource = ThothIndexSource
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-THOTH_INDEX_CACHE_FILE = THOTH_INDEX_CACHE_FILE
-THOTH_INDEX_TTL = THOTH_INDEX_TTL
-THOTH_INDEX_URL = THOTH_INDEX_URL

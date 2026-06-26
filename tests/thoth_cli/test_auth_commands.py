@@ -90,9 +90,9 @@ def test_auth_add_anthropic_oauth_persists_pool_entry(tmp_path, monkeypatch):
 
     payload = json.loads((tmp_path / "thoth" / "auth.json").read_text())
     entries = payload["credential_pool"]["anthropic"]
-    entry = next(item for item in entries if item["source"] == "manual:hermes_pkce")
+    entry = next(item for item in entries if item["source"] == "manual:thoth_pkce")
     assert entry["label"] == "claude@example.com"
-    assert entry["source"] == "manual:hermes_pkce"
+    assert entry["source"] == "manual:thoth_pkce"
     assert entry["refresh_token"] == "refresh-token"
     assert entry["expires_at_ms"] == 1711234567000
 
@@ -521,7 +521,7 @@ def test_clear_provider_auth_removes_provider_pool_entries(tmp_path, monkeypatch
                         "label": "primary",
                         "auth_type": "oauth",
                         "priority": 0,
-                        "source": "manual:hermes_pkce",
+                        "source": "manual:thoth_pkce",
                         "access_token": "pool-token",
                     }
                 ],
@@ -1464,7 +1464,11 @@ def test_seed_from_singletons_respects_qwen_suppression(tmp_path, monkeypatch):
 
 
 def test_seed_from_singletons_respects_thoth_pkce_suppression(tmp_path, monkeypatch):
-    """anthropic hermes_pkce must not re-seed from ~/.thoth/.anthropic_oauth.json when suppressed."""
+    """anthropic thoth_pkce must not re-seed from ~/.thoth/.anthropic_oauth.json when suppressed.
+
+    The ``thoth_pkce`` source id and ``~/.thoth/.anthropic_oauth.json`` path are
+    owned by ``agent/credential_pool.py`` + ``agent/credential_sources.py``.
+    """
     thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1474,10 +1478,10 @@ def test_seed_from_singletons_respects_thoth_pkce_suppression(tmp_path, monkeypa
     (thoth_home / "auth.json").write_text(json.dumps({
         "version": 1,
         "providers": {},
-        "suppressed_sources": {"anthropic": ["hermes_pkce"]},
+        "suppressed_sources": {"anthropic": ["thoth_pkce"]},
     }))
 
-    # Stub the readers so only hermes_pkce is "available"; claude_code returns None
+    # Stub the readers so only thoth_pkce is "available"; claude_code returns None
     import agent.anthropic_adapter as aa
     monkeypatch.setattr(aa, "read_thoth_oauth_credentials", lambda: {
         "accessToken": "tok", "refreshToken": "r", "expiresAt": 9999999999000,
@@ -1487,9 +1491,9 @@ def test_seed_from_singletons_respects_thoth_pkce_suppression(tmp_path, monkeypa
     from agent.credential_pool import _seed_from_singletons
     entries = []
     changed, active = _seed_from_singletons("anthropic", entries)
-    # hermes_pkce suppressed, claude_code returns None → nothing should be seeded
+    # thoth_pkce suppressed, claude_code returns None → nothing should be seeded
     assert entries == []
-    assert "hermes_pkce" not in active
+    assert "thoth_pkce" not in active
 
 
 def test_seed_custom_pool_respects_config_suppression(tmp_path, monkeypatch):
@@ -1546,7 +1550,8 @@ def test_credential_sources_registry_has_expected_steps():
         "gh auth token / COPILOT_GITHUB_TOKEN / GH_TOKEN",
         "Any env-seeded credential (XAI_API_KEY, DEEPSEEK_API_KEY, etc.)",
         "~/.claude/.credentials.json",
-        "~/.hermes/.anthropic_oauth.json",
+        # Owned by agent/credential_sources.py (thoth_pkce source).
+        "~/.thoth/.anthropic_oauth.json",
         "auth.json providers.nous",
         "auth.json providers.openai-codex + ~/.codex/auth.json",
         "auth.json providers.minimax-oauth",

@@ -59,11 +59,11 @@ def main():
     sys.path.insert(0, WT)
     from thoth_cli import kanban_db as kb
 
-    # Point the `hermes` CLI child processes will run at the worktree
+    # Point the `thoth` CLI child processes will run at the worktree
     # thoth_cli.main. We do this by putting a shim on PATH.
     shim_dir = os.path.join(home, "bin")
     os.makedirs(shim_dir, exist_ok=True)
-    shim_path = os.path.join(shim_dir, "hermes")
+    shim_path = os.path.join(shim_dir, "thoth")
     with open(shim_path, "w") as f:
         f.write(f"""#!/bin/sh
 exec {PY} -m thoth_cli.main "$@"

@@ -67,7 +67,7 @@ def prompt_for_secret(cli, var_name: str, prompt: str, metadata=None) -> dict:
     """Prompt for a secret value through the TUI (e.g. API keys for skills).
 
     Returns a dict with keys: success, stored_as, validated, skipped, message.
-    The secret is stored in ~/.hermes/.env and never exposed to the model.
+    The secret is stored in ~/.thoth/.env and never exposed to the model.
     """
     if not getattr(cli, "_app", None):
         if not hasattr(cli, "_secret_state"):

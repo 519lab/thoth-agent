@@ -1,6 +1,6 @@
 """ACP session manager — maps ACP sessions to Thoth AIAgent instances.
 
-Sessions are persisted to the shared SessionDB (``~/.hermes/state.db``) so they
+Sessions are persisted to the shared SessionDB (``~/.thoth/state.db``) so they
 survive process restarts and appear in ``session_search``.  When the editor
 reconnects after idle/restart, the ``load_session`` / ``resume_session`` calls
 find the persisted session in the database and restore the full conversation
@@ -205,7 +205,7 @@ class SessionManager:
                            Used by tests. When omitted, a real AIAgent is created
                            using the current Thoth runtime provider configuration.
             db:            Optional SessionDB instance. When omitted, the default
-                           SessionDB (``~/.hermes/state.db``) is lazily created.
+                           SessionDB (``~/.thoth/state.db``) is lazily created.
         """
         self._sessions: Dict[str, SessionState] = {}
         self._lock = Lock()

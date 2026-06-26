@@ -5,7 +5,7 @@ Tests for the code execution sandbox (programmatic tool calling).
 
 These tests monkeypatch handle_function_call so they don't require API keys
 or a running terminal backend. They verify the core sandbox mechanics:
-UDS socket lifecycle, hermes_tools generation, timeout enforcement,
+UDS socket lifecycle, thoth_tools generation, timeout enforcement,
 output capping, tool call counting, and error propagation.
 
 Run with:  python -m pytest tests/test_code_execution.py -v
@@ -119,8 +119,8 @@ class TestThothToolsGeneration(unittest.TestCase):
     def test_file_transport_uses_tempfile_fallback_for_rpc_dir(self):
         src = generate_thoth_tools_module(["terminal"], transport="file")
         self.assertIn("import json, os, shlex, tempfile, threading, time", src)
-        self.assertIn("os.path.join(tempfile.gettempdir(), \"hermes_rpc\")", src)
-        self.assertNotIn('os.environ.get("THOTH_RPC_DIR", "/tmp/hermes_rpc")', src)
+        self.assertIn("os.path.join(tempfile.gettempdir(), \"thoth_rpc\")", src)
+        self.assertNotIn('os.environ.get("THOTH_RPC_DIR", "/tmp/thoth_rpc")', src)
 
     def test_uds_transport_serializes_concurrent_calls(self):
         """Regression: UDS _call() must hold a lock across send+recv so that
@@ -209,7 +209,7 @@ class TestExecuteCode(unittest.TestCase):
     def test_single_tool_call(self):
         """Script calls terminal and prints the result."""
         code = """
-from hermes_tools import terminal
+from thoth_tools import terminal
 result = terminal("echo hello")
 print(result.get("output", ""))
 """
@@ -221,7 +221,7 @@ print(result.get("output", ""))
     def test_multi_tool_chain(self):
         """Script calls multiple tools sequentially."""
         code = """
-from hermes_tools import terminal, read_file
+from thoth_tools import terminal, read_file
 r1 = terminal("ls")
 r2 = read_file("test.py")
 print(f"terminal: {r1['output'][:20]}")
@@ -259,7 +259,7 @@ print(f"file lines: {r2['total_lines']}")
         code = '''
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from hermes_tools import terminal
+from thoth_tools import terminal
 
 N = 10
 
@@ -303,13 +303,13 @@ else:
     def test_excluded_tool_returns_error(self):
         """Script calling a tool not in the allow-list gets an error from RPC."""
         code = """
-from hermes_tools import terminal
+from thoth_tools import terminal
 result = terminal("echo hi")
 print(result)
 """
         # Only enable web_search -- terminal should be excluded
         result = self._run(code, enabled_tools=["web_search"])
-        # terminal won't be in hermes_tools.py, so import fails
+        # terminal won't be in thoth_tools.py, so import fails
         self.assertEqual(result["status"], "error")
 
     def test_empty_code(self):
@@ -361,7 +361,7 @@ raise RuntimeError("deliberate crash")
     def test_web_search_tool(self):
         """Script calls web_search and processes results."""
         code = """
-from hermes_tools import web_search
+from thoth_tools import web_search
 results = web_search("test query")
 print(f"Found {len(results.get('results', []))} results")
 """
@@ -372,7 +372,7 @@ print(f"Found {len(results.get('results', []))} results")
     def test_json_parse_helper(self):
         """json_parse handles control characters that json.loads(strict=True) rejects."""
         code = r"""
-from hermes_tools import json_parse
+from thoth_tools import json_parse
 # This JSON has a literal tab character which strict mode rejects
 text = '{"body": "line1\tline2\nline3"}'
 result = json_parse(text)
@@ -385,7 +385,7 @@ print(result["body"])
     def test_shell_quote_helper(self):
         """shell_quote properly escapes dangerous characters."""
         code = """
-from hermes_tools import shell_quote
+from thoth_tools import shell_quote
 # String with backticks, quotes, and special chars
 dangerous = '`rm -rf /` && $(whoami) "hello"'
 escaped = shell_quote(dangerous)
@@ -400,7 +400,7 @@ assert escaped.startswith("'")
     def test_retry_helper_success(self):
         """retry returns on first success."""
         code = """
-from hermes_tools import retry
+from thoth_tools import retry
 counter = [0]
 def flaky():
     counter[0] += 1
@@ -415,7 +415,7 @@ print(result)
     def test_retry_helper_eventual_success(self):
         """retry retries on failure and succeeds eventually."""
         code = """
-from hermes_tools import retry
+from thoth_tools import retry
 counter = [0]
 def flaky():
     counter[0] += 1
@@ -432,7 +432,7 @@ print(result)
     def test_retry_helper_all_fail(self):
         """retry raises the last error when all attempts fail."""
         code = """
-from hermes_tools import retry
+from thoth_tools import retry
 def always_fail():
     raise ValueError("nope")
 try:
@@ -524,12 +524,12 @@ class TestStubSchemaDrift(unittest.TestCase):
                          "search_files stub docstring still uses obsolete 'find' target value")
 
     def test_generated_module_accepts_all_params(self):
-        """The generated hermes_tools.py module should accept all current params
+        """The generated thoth_tools.py module should accept all current params
         without TypeError when called with keyword arguments."""
         src = generate_thoth_tools_module(list(SANDBOX_ALLOWED_TOOLS))
 
         # Compile the generated module to check for syntax errors
-        compile(src, "hermes_tools.py", "exec")
+        compile(src, "thoth_tools.py", "exec")
 
         # Verify specific parameter signatures are in the source
         # search_files must accept context, offset, output_mode
@@ -795,7 +795,7 @@ class TestExecuteCodeEdgeCases(unittest.TestCase):
     def test_none_enabled_tools_uses_all(self):
         """When enabled_tools is None, all sandbox tools should be available."""
         code = (
-            "from hermes_tools import terminal, web_search, read_file\n"
+            "from thoth_tools import terminal, web_search, read_file\n"
             "print('all imports ok')\n"
         )
         with patch("model_tools.handle_function_call",
@@ -809,7 +809,7 @@ class TestExecuteCodeEdgeCases(unittest.TestCase):
     def test_empty_enabled_tools_uses_all(self):
         """When enabled_tools is [] (empty), all sandbox tools should be available."""
         code = (
-            "from hermes_tools import terminal, web_search\n"
+            "from thoth_tools import terminal, web_search\n"
             "print('imports ok')\n"
         )
         with patch("model_tools.handle_function_call",
@@ -824,7 +824,7 @@ class TestExecuteCodeEdgeCases(unittest.TestCase):
         """When enabled_tools has no overlap with SANDBOX_ALLOWED_TOOLS,
         should fall back to all allowed tools."""
         code = (
-            "from hermes_tools import terminal\n"
+            "from thoth_tools import terminal\n"
             "print('fallback ok')\n"
         )
         with patch("model_tools.handle_function_call",

@@ -185,7 +185,7 @@ def load_thoth_dotenv(
     """Load Thoth environment files with user config taking precedence.
 
     Behavior:
-    - `~/.hermes/.env` overrides stale shell-exported values when present.
+    - `~/.thoth/.env` overrides stale shell-exported values when present.
     - project `.env` acts as a dev fallback and only fills missing values when
       the user env exists.
     - if no user env exists, the project `.env` also overrides stale shell vars.
@@ -302,6 +302,3 @@ def _load_secrets_config(home_path: Path) -> dict:
     except Exception:  # noqa: BLE001
         return {}
     return data.get("secrets") or {}
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-load_hermes_dotenv = load_thoth_dotenv

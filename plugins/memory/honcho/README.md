@@ -2,7 +2,7 @@
 
 AI-native cross-session user modeling with multi-pass dialectic reasoning, session summaries, bidirectional peer tools, and persistent conclusions.
 
-> **Honcho docs:** <https://docs.honcho.dev/v3/guides/integrations/hermes>
+> **Honcho docs:** <https://docs.honcho.dev/v3/guides/integrations/thoth>
 
 ## Requirements
 
@@ -109,7 +109,7 @@ Config is read from the first file that exists:
 | 2 | `~/.thoth/honcho.json` | Default profile (shared host blocks) |
 | 3 | `~/.honcho/config.json` | Global (cross-app interop) |
 
-Host key is derived from the active Thoth profile: `hermes` (default) or `hermes.<profile>`.
+Host key is derived from the active Thoth profile: `thoth` (default) or `thoth.<profile>`.
 
 For every key, resolution order is: **host block > root > env var > default**.
 
@@ -160,13 +160,13 @@ The Honcho session name determines which conversation bucket memory lands in. Re
 | 2 | `/title` command (mid-session rename) | `"refactor-auth"` |
 | 3 | Gateway session key (Telegram, Discord, etc.) | `"agent-main-telegram-dm-8439114563"` |
 | 4 | `per-session` strategy | Thoth session ID (`20260415_a3f2b1`) |
-| 5 | `per-repo` strategy | Git root directory name (`hermes-agent`) |
+| 5 | `per-repo` strategy | Git root directory name (`thoth-agent`) |
 | 6 | `per-directory` strategy | Current directory basename (`src`) |
-| 7 | `global` strategy | Workspace name (`hermes`) |
+| 7 | `global` strategy | Workspace name (`thoth`) |
 
 Gateway platforms always resolve via priority 3 (per-chat isolation) regardless of `sessionStrategy`. The strategy setting only affects CLI sessions.
 
-If `sessionPeerPrefix` is `true`, the peer name is prepended: `eri-hermes-agent`.
+If `sessionPeerPrefix` is `true`, the peer name is prepended: `eri-thoth-agent`.
 
 #### What each strategy produces
 
@@ -182,15 +182,15 @@ Multiple Thoth profiles can share one workspace while maintaining separate AI id
 ```json
 {
   "apiKey": "***",
-  "workspace": "hermes",
+  "workspace": "thoth",
   "peerName": "yourname",
   "hosts": {
-    "hermes": {
-      "aiPeer": "hermes",
+    "thoth": {
+      "aiPeer": "thoth",
       "recallMode": "hybrid",
       "sessionStrategy": "per-directory"
     },
-    "hermes.coder": {
+    "thoth.coder": {
       "aiPeer": "coder",
       "recallMode": "tools",
       "sessionStrategy": "per-repo"
@@ -199,9 +199,9 @@ Multiple Thoth profiles can share one workspace while maintaining separate AI id
 }
 ```
 
-Both profiles see the same user (`yourname`) in the same shared environment (`hermes`), but each AI peer builds its own observations, conclusions, and behavior patterns. The coder's memory stays code-oriented; the main agent's stays broad.
+Both profiles see the same user (`yourname`) in the same shared environment (`thoth`), but each AI peer builds its own observations, conclusions, and behavior patterns. The coder's memory stays code-oriented; the main agent's stays broad.
 
-Host key is derived from the active Thoth profile: `hermes` (default) or `hermes.<profile>` (e.g. `thoth -p coder` → host key `hermes.coder`).
+Host key is derived from the active Thoth profile: `thoth` (default) or `thoth.<profile>` (e.g. `thoth -p coder` → host key `thoth.coder`).
 
 ### Dialectic & Reasoning
 
@@ -288,15 +288,15 @@ Presets:
 ```json
 {
   "apiKey": "***",
-  "workspace": "hermes",
+  "workspace": "thoth",
   "peerName": "username",
   "contextCadence": 2,
   "dialecticCadence": 3,
   "dialecticDepth": 2,
   "hosts": {
-    "hermes": {
+    "thoth": {
       "enabled": true,
-      "aiPeer": "hermes",
+      "aiPeer": "thoth",
       "recallMode": "hybrid",
       "observation": {
         "user": { "observeMe": true, "observeOthers": true },
@@ -309,7 +309,7 @@ Presets:
       "dialecticMaxChars": 600,
       "saveMessages": true
     },
-    "hermes.coder": {
+    "thoth.coder": {
       "enabled": true,
       "aiPeer": "coder",
       "sessionStrategy": "per-repo",

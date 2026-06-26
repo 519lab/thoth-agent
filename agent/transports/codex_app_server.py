@@ -141,7 +141,7 @@ class CodexAppServerClient:
 
     def initialize(
         self,
-        client_name: str = "hermes",
+        client_name: str = "thoth",
         client_title: str = "Thoth Agent",
         client_version: str = "0.1",
         capabilities: Optional[dict] = None,

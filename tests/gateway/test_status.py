@@ -459,7 +459,7 @@ class TestScopedLocks:
             "pid": 873,
             "start_time": None,
             "kind": "thoth-gateway",
-            "argv": ["/Users/user/.hermes/hermes-agent/thoth_cli/main.py", "gateway", "run", "--replace"],
+            "argv": ["/Users/user/.thoth/thoth-agent/thoth_cli/main.py", "gateway", "run", "--replace"],
         }))
 
         # Post-#21561 the liveness probe routes through
@@ -519,7 +519,7 @@ class TestScopedLocks:
             "pid": 99999,
             "start_time": None,
             "kind": "thoth-gateway",
-            "argv": ["/Users/user/.hermes/hermes-agent/thoth_cli/main.py", "gateway", "run", "--replace"],
+            "argv": ["/Users/user/.thoth/thoth-agent/thoth_cli/main.py", "gateway", "run", "--replace"],
         }))
 
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)

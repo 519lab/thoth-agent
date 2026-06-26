@@ -232,7 +232,7 @@ class _AsyncSessionDB:
     async def create_session(self, session_id: str, source: str, **kwargs) -> str:
         """Insert a session row; silently ignores conflicts (idempotent).
 
-        Emits a ``hermes.self_state.session_lifecycle`` perception slice
+        Emits a ``thoth.self_state.session_lifecycle`` perception slice
         in the same transaction (Phase A §7 — atomic with the session
         INSERT so the substrate's view of session-start can never disagree
         with the session row). Hook failure is logged + swallowed and
@@ -279,7 +279,7 @@ class _AsyncSessionDB:
     async def end_session(self, session_id: str, end_reason: str) -> None:
         """Mark session ended. No-op if already ended (first end_reason wins).
 
-        Emits a ``hermes.self_state.session_lifecycle`` perception slice
+        Emits a ``thoth.self_state.session_lifecycle`` perception slice
         IFF the UPDATE actually flipped a row from ``ended_at IS NULL``
         to ended. This avoids emitting on every redundant end_session
         call (e.g. retry paths that double-end). Hook failures are

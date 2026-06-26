@@ -96,7 +96,7 @@ def cmd_enable(args) -> None:
     """Enable Honcho for the active profile."""
     cfg = _read_config()
     host = _host_key()
-    label = f"[{host}] " if host != "hermes" else ""
+    label = f"[{host}] " if host != "thoth" else ""
     block = cfg.setdefault("hosts", {}).setdefault(host, {})
 
     if block.get("enabled") is True:
@@ -139,7 +139,7 @@ def cmd_disable(args) -> None:
     """Disable Honcho for the active profile."""
     cfg = _read_config()
     host = _host_key()
-    label = f"[{host}] " if host != "hermes" else ""
+    label = f"[{host}] " if host != "thoth" else ""
     block = cfg_get(cfg, "hosts", host, default={})
 
     if not block or block.get("enabled") is False:
@@ -184,7 +184,7 @@ def cmd_sync(args) -> None:
         if p.name == "default":
             continue
         if clone_honcho_for_profile(p.name):
-            print(f"  + {p.name} -> hermes.{p.name}")
+            print(f"  + {p.name} -> thoth.{p.name}")
             created += 1
         else:
             skipped += 1
@@ -425,12 +425,12 @@ def cmd_setup(args) -> None:
     if new_peer:
         thoth_host["peerName"] = new_peer
 
-    current_ai = thoth_host.get("aiPeer") or cfg.get("aiPeer", "hermes")
+    current_ai = thoth_host.get("aiPeer") or cfg.get("aiPeer", "thoth")
     new_ai = _prompt("AI peer name", default=current_ai)
     if new_ai:
         thoth_host["aiPeer"] = new_ai
 
-    current_workspace = thoth_host.get("workspace") or cfg.get("workspace", "hermes")
+    current_workspace = thoth_host.get("workspace") or cfg.get("workspace", "thoth")
     new_workspace = _prompt("Workspace ID", default=current_workspace)
     if new_workspace:
         thoth_host["workspace"] = new_workspace
@@ -865,7 +865,7 @@ def cmd_peer(args) -> None:
         return
 
     host = _host_key()
-    label = f"[{host}] " if host != "hermes" else ""
+    label = f"[{host}] " if host != "thoth" else ""
 
     if user_name is not None:
         cfg.setdefault("hosts", {}).setdefault(host, {})["peerName"] = user_name.strip()
@@ -918,7 +918,7 @@ def cmd_mode(args) -> None:
         return
 
     host = _host_key()
-    label = f"[{host}] " if host != "hermes" else ""
+    label = f"[{host}] " if host != "thoth" else ""
     cfg.setdefault("hosts", {}).setdefault(host, {})["recallMode"] = mode_arg
     _write_config(cfg)
     print(f"  {label}Recall mode -> {mode_arg}  ({MODES[mode_arg]})\n")
@@ -953,7 +953,7 @@ def cmd_strategy(args) -> None:
         return
 
     host = _host_key()
-    label = f"[{host}] " if host != "hermes" else ""
+    label = f"[{host}] " if host != "thoth" else ""
     cfg.setdefault("hosts", {}).setdefault(host, {})["sessionStrategy"] = strat_arg
     _write_config(cfg)
     print(f"  {label}Session strategy -> {strat_arg}  ({STRATEGIES[strat_arg]})\n")
@@ -987,7 +987,7 @@ def cmd_tokens(args) -> None:
         return
 
     host = _host_key()
-    label = f"[{host}] " if host != "hermes" else ""
+    label = f"[{host}] " if host != "thoth" else ""
     changed = False
     if context is not None:
         cfg.setdefault("hosts", {}).setdefault(host, {})["contextTokens"] = context

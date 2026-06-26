@@ -1,7 +1,7 @@
 """`thoth checkpoints` CLI subcommand.
 
 Gives users direct visibility and control over the filesystem checkpoint
-store at ``~/.hermes/checkpoints/``.  Actions:
+store at ``~/.thoth/checkpoints/``.  Actions:
 
     thoth checkpoints               # same as `status`
     thoth checkpoints status        # total size, project count, breakdown

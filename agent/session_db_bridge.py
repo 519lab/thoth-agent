@@ -26,6 +26,6 @@ def resolve_maybe_awaitable(value: Any) -> Any:
     if not inspect.isawaitable(value):
         return value
 
-    import thoth_db as _hermes_db
+    import thoth_db as _thoth_db
 
-    return _hermes_db.run_sync(value)
+    return _thoth_db.run_sync(value)

@@ -21,7 +21,7 @@ class TestHonchoSession:
         return HonchoSession(
             key="telegram:12345",
             user_peer_id="user-telegram-12345",
-            assistant_peer_id="hermes-assistant",
+            assistant_peer_id="thoth-assistant",
             honcho_session_id="telegram-12345",
         )
 
@@ -197,7 +197,7 @@ class TestPeerLookupHelpers:
         session = HonchoSession(
             key="telegram:123",
             user_peer_id="robert",
-            assistant_peer_id="hermes",
+            assistant_peer_id="thoth",
             honcho_session_id="telegram-123",
         )
         mgr._cache[session.key] = session
@@ -424,11 +424,11 @@ class TestConcludeToolDispatch:
 
         result = provider.handle_tool_call(
             "honcho_profile",
-            {"peer": "hermes"},
+            {"peer": "thoth"},
         )
 
         assert "Role: Assistant" in result
-        provider._manager.get_peer_card.assert_called_once_with("telegram:123", peer="hermes")
+        provider._manager.get_peer_card.assert_called_once_with("telegram:123", peer="thoth")
 
     def test_honcho_search_can_target_explicit_peer_id(self):
         provider = HonchoMemoryProvider()
@@ -439,7 +439,7 @@ class TestConcludeToolDispatch:
 
         result = provider.handle_tool_call(
             "honcho_search",
-            {"query": "assistant", "peer": "hermes"},
+            {"query": "assistant", "peer": "thoth"},
         )
 
         assert "Assistant self context" in result
@@ -447,7 +447,7 @@ class TestConcludeToolDispatch:
             "telegram:123",
             "assistant",
             max_tokens=800,
-            peer="hermes",
+            peer="thoth",
         )
 
     def test_honcho_reasoning_can_target_explicit_peer_id(self):
@@ -459,7 +459,7 @@ class TestConcludeToolDispatch:
 
         result = provider.handle_tool_call(
             "honcho_reasoning",
-            {"query": "who are you", "peer": "hermes"},
+            {"query": "who are you", "peer": "thoth"},
         )
 
         assert "Assistant answer" in result
@@ -467,7 +467,7 @@ class TestConcludeToolDispatch:
             "telegram:123",
             "who are you",
             reasoning_level=None,
-            peer="hermes",
+            peer="thoth",
         )
 
     def test_honcho_conclude_missing_both_params_returns_error(self):

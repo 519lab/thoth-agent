@@ -598,7 +598,7 @@ from thoth_constants import get_thoth_home
 from utils import atomic_json_write, atomic_yaml_write, base_url_host_matches, is_truthy_value
 _thoth_home = get_thoth_home()
 
-# Load environment variables from ~/.hermes/.env first.
+# Load environment variables from ~/.thoth/.env first.
 # User-managed env files should override stale shell exports on restart.
 from dotenv import load_dotenv  # backward-compat for tests that monkeypatch this symbol
 from thoth_cli.env_loader import load_thoth_dotenv
@@ -609,7 +609,7 @@ load_thoth_dotenv(thoth_home=_thoth_home, project_env=Path(__file__).resolve().p
 def _reload_runtime_env_preserving_config_authority() -> None:
     """Reload .env for fresh credentials without letting stale .env override config.
 
-    Gateway processes are long-lived, so per-turn code reloads ~/.hermes/.env to
+    Gateway processes are long-lived, so per-turn code reloads ~/.thoth/.env to
     pick up rotated API keys. config.yaml remains authoritative for agent budget
     settings such as agent.max_turns; otherwise a stale THOTH_MAX_ITERATIONS in
     .env can replace the startup bridge on later turns.
@@ -1226,7 +1226,7 @@ def _teams_pipeline_plugin_enabled() -> bool:
 
 
 def _load_gateway_config() -> dict:
-    """Load and parse ~/.hermes/config.yaml, returning {} on any error.
+    """Load and parse ~/.thoth/config.yaml, returning {} on any error.
 
     Uses the module-level ``_thoth_home`` (so tests that monkeypatch it
     still see their fixture) and shares the mtime-keyed raw-yaml cache
@@ -1274,7 +1274,7 @@ def _resolve_thoth_bin() -> Optional[list[str]]:
     """Resolve the Thoth update command as argv parts.
 
     Tries in order:
-    1. ``shutil.which("hermes")`` — standard PATH lookup
+    1. ``shutil.which("thoth")`` — standard PATH lookup
     2. ``sys.executable -m thoth_cli.main`` — fallback when Thoth is running
        from a venv/module invocation and the ``thoth`` shim is not on PATH
 
@@ -1282,7 +1282,7 @@ def _resolve_thoth_bin() -> Optional[list[str]]:
     """
     import shutil
 
-    thoth_bin = shutil.which("hermes")
+    thoth_bin = shutil.which("thoth")
     if thoth_bin:
         return [thoth_bin]
 
@@ -1647,7 +1647,7 @@ class GatewayRunner:
                 logger.debug("state.db auto-maintenance skipped: %s", exc)
 
         # Opportunistic shadow-repo cleanup — deletes orphan/stale
-        # checkpoint repos under ~/.hermes/checkpoints/.  Opt-in via
+        # checkpoint repos under ~/.thoth/checkpoints/.  Opt-in via
         # checkpoints.auto_prune, idempotent via .last_prune marker.
         try:
             from thoth_cli.config import load_config as _load_full_config
@@ -1755,7 +1755,7 @@ class GatewayRunner:
 
         logger.warning(
             "Docker backend is enabled for the messaging gateway but no explicit host-visible "
-            "output mount (for example '/home/user/.hermes/cache/documents:/output') is configured. "
+            "output mount (for example '/home/user/.thoth/cache/documents:/output') is configured. "
             "This is fine if the model already emits host-visible paths, but MEDIA file delivery can fail "
             "for container-local paths like '/workspace/...' or '/output/...'."
         )
@@ -1765,10 +1765,10 @@ class GatewayRunner:
     # -- Setup skill availability ----------------------------------------
 
     def _has_setup_skill(self) -> bool:
-        """Check if the hermes-agent-setup skill is installed."""
+        """Check if the thoth-agent-setup skill is installed."""
         try:
             from tools.skill_manager_tool import _find_skill
-            return _find_skill("hermes-agent-setup") is not None
+            return _find_skill("thoth-agent-setup") is not None
         except Exception:
             return False
 
@@ -2003,8 +2003,8 @@ class GatewayRunner:
         if session_db is None:
             return False
         try:
-            import thoth_db as _hermes_db
-            raw = _hermes_db.run_sync(session_db.is_telegram_topic_mode_enabled(
+            import thoth_db as _thoth_db
+            raw = _thoth_db.run_sync(session_db.is_telegram_topic_mode_enabled(
                 chat_id=str(source.chat_id),
                 user_id=str(source.user_id),
             ))
@@ -2100,8 +2100,8 @@ class GatewayRunner:
         session_db = getattr(self, "_session_db", None)
         if session_db is None or not source.chat_id or not source.thread_id:
             return
-        import thoth_db as _hermes_db
-        _hermes_db.run_sync(session_db.bind_telegram_topic(
+        import thoth_db as _thoth_db
+        _thoth_db.run_sync(session_db.bind_telegram_topic(
             chat_id=str(source.chat_id),
             thread_id=str(source.thread_id),
             user_id=str(source.user_id or ""),
@@ -2135,8 +2135,8 @@ class GatewayRunner:
         if session_db is None:
             return None
         try:
-            import thoth_db as _hermes_db
-            bindings = _hermes_db.run_sync(session_db.list_telegram_topic_bindings_for_chat(
+            import thoth_db as _thoth_db
+            bindings = _thoth_db.run_sync(session_db.list_telegram_topic_bindings_for_chat(
                 chat_id=str(source.chat_id),
             ))
         except Exception:
@@ -2597,8 +2597,8 @@ class GatewayRunner:
         """Load ephemeral prefill messages from config or env var.
         
         Checks THOTH_PREFILL_MESSAGES_FILE env var first, then falls back to
-        the prefill_messages_file key in ~/.hermes/config.yaml.
-        Relative paths are resolved from ~/.hermes/.
+        the prefill_messages_file key in ~/.thoth/config.yaml.
+        Relative paths are resolved from ~/.thoth/.
         """
         file_path = os.getenv("THOTH_PREFILL_MESSAGES_FILE", "")
         if not file_path:
@@ -2635,7 +2635,7 @@ class GatewayRunner:
         """Load ephemeral system prompt from config or env var.
         
         Checks THOTH_EPHEMERAL_SYSTEM_PROMPT env var first, then falls back to
-        agent.system_prompt in ~/.hermes/config.yaml.
+        agent.system_prompt in ~/.thoth/config.yaml.
         """
         prompt = os.getenv("THOTH_EPHEMERAL_SYSTEM_PROMPT", "")
         if prompt:
@@ -3805,7 +3805,7 @@ class GatewayRunner:
         if not _any_allowlist and not _allow_all:
             logger.warning(
                 "No user allowlists configured. All unauthorized users will be denied. "
-                "Set GATEWAY_ALLOW_ALL_USERS=true in ~/.hermes/.env to allow open access, "
+                "Set GATEWAY_ALLOW_ALL_USERS=true in ~/.thoth/.env to allow open access, "
                 "or configure platform allowlists (e.g., TELEGRAM_ALLOWED_USERS=your_id)."
             )
         
@@ -7732,7 +7732,7 @@ class GatewayRunner:
                                 "then /restart the gateway."
                             )
                             if self._has_setup_skill():
-                                _stt_msg += "\n\nFor full setup instructions, type: `/skill hermes-agent-setup`"
+                                _stt_msg += "\n\nFor full setup instructions, type: `/skill thoth-agent-setup`"
                             await _stt_adapter.send(
                                 source.chat_id,
                                 _stt_msg,
@@ -7781,7 +7781,7 @@ class GatewayRunner:
 
                 # Translate host cache path to in-container path if running under Docker backend.
                 # This ensures the agent receives a path it can open inside its sandbox, as the
-                # cache directories are auto-mounted at /root/.hermes/cache/* by get_cache_directory_mounts().
+                # cache directories are auto-mounted at /root/.thoth/cache/* by get_cache_directory_mounts().
                 agent_path = to_agent_visible_cache_path(path)
 
                 if mtype.startswith("text/"):
@@ -12356,8 +12356,8 @@ class GatewayRunner:
             return "Could not determine chat ID."
         # No-op if never enabled.
         try:
-            import thoth_db as _hermes_db
-            currently_enabled = _hermes_db.run_sync(self._session_db.is_telegram_topic_mode_enabled(
+            import thoth_db as _thoth_db
+            currently_enabled = _thoth_db.run_sync(self._session_db.is_telegram_topic_mode_enabled(
                 chat_id=chat_id,
                 user_id=str(source.user_id or ""),
             ))
@@ -12366,8 +12366,8 @@ class GatewayRunner:
         if not currently_enabled:
             return "Multi-session topic mode is not currently enabled for this chat."
         try:
-            import thoth_db as _hermes_db
-            _hermes_db.run_sync(self._session_db.disable_telegram_topic_mode(chat_id=chat_id))
+            import thoth_db as _thoth_db
+            _thoth_db.run_sync(self._session_db.disable_telegram_topic_mode(chat_id=chat_id))
         except Exception as exc:
             logger.exception("Failed to disable Telegram topic mode")
             return f"Failed to disable topic mode: {exc}"
@@ -12483,8 +12483,8 @@ class GatewayRunner:
             "",
         ]
         try:
-            import thoth_db as _hermes_db
-            sessions = _hermes_db.run_sync(self._session_db.list_unlinked_telegram_sessions_for_user(
+            import thoth_db as _thoth_db
+            sessions = _thoth_db.run_sync(self._session_db.list_unlinked_telegram_sessions_for_user(
                 chat_id=str(source.chat_id),
                 user_id=str(source.user_id),
                 limit=10,
@@ -13656,7 +13656,7 @@ class GatewayRunner:
 
         thoth_cmd = _resolve_thoth_bin()
         if not thoth_cmd:
-            return t("gateway.update.hermes_cmd_not_found")
+            return t("gateway.update.thoth_cmd_not_found")
 
         pending_path = _thoth_home / ".update_pending.json"
         output_path = _thoth_home / ".update_output.txt"
@@ -14392,7 +14392,7 @@ class GatewayRunner:
                         )
                         if self._has_setup_skill():
                             _no_stt_note += (
-                                " You have a skill called hermes-agent-setup "
+                                " You have a skill called thoth-agent-setup "
                                 "that can help users configure Thoth features "
                                 "including voice, tools, and more."
                             )
@@ -16943,8 +16943,8 @@ class GatewayRunner:
                     and self._session_db is not None
                 ):
                     try:
-                        import thoth_db as _hermes_db
-                        _binding = _hermes_db.run_sync(self._session_db.get_telegram_topic_binding_by_session(
+                        import thoth_db as _thoth_db
+                        _binding = _thoth_db.run_sync(self._session_db.get_telegram_topic_binding_by_session(
                             session_id=agent.session_id,
                         ))
                         if _binding and _binding.get("thread_id"):
@@ -17838,7 +17838,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     """
     # Phase 0: initialise PG pool (pure-async entry point — await directly).
     import os as _os
-    import thoth_db as _hermes_db
+    import thoth_db as _thoth_db
     _pg_dsn = _os.environ.get("THOTH_PG_DSN")
     if _pg_dsn:
         try:
@@ -17846,7 +17846,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
             # this gateway loop. main()'s ensure_pool_sync() has usually
             # created the pool on the DB loop already, making this a no-op;
             # routing keeps the binding correct even on a fresh start.
-            await _hermes_db.run_on_pool_loop(_hermes_db.init(_pg_dsn))
+            await _thoth_db.run_on_pool_loop(_thoth_db.init(_pg_dsn))
         except Exception as _e:
             logger.warning("PG pool init failed, continuing: %s", _e)
 
@@ -17868,7 +17868,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
         # AND orphans the writer's long-lived recall-log task. run_on_pool_loop
         # runs the whole boot on the always-running DB loop so those tasks
         # survive. (Was the recurring startup ConnectionDoesNotExistError.)
-        await _hermes_db.run_on_pool_loop(
+        await _thoth_db.run_on_pool_loop(
             _bootstrap_substrate(log=logger, mode="writer")
         )
     except Exception as _se:  # noqa: BLE001 — defensive
@@ -17892,7 +17892,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
                 "Retrying boot once."
             )
             try:
-                await _hermes_db.run_on_pool_loop(
+                await _thoth_db.run_on_pool_loop(
                     _bootstrap_substrate(log=logger, mode="writer")
                 )
             except Exception as _se2:  # noqa: BLE001 — defensive
@@ -18090,7 +18090,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
         # before sending SIGTERM. If present, treat the signal as a
         # planned shutdown and exit 0 so systemd's Restart=on-failure
         # doesn't revive us (which would flap-fight the replacer when
-        # both services are enabled, e.g. hermes.service + thoth-
+        # both services are enabled, e.g. thoth.service + thoth-
         # gateway.service from pre-rename installs).
         planned_takeover = False
         try:

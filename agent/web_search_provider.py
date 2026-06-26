@@ -9,7 +9,7 @@ the active one (selected via ``web.search_backend`` / ``web.extract_backend`` /
 ``web_extract`` tool call.
 
 Providers live in ``<repo>/plugins/web/<name>/`` (built-in, auto-loaded as
-``kind: backend``) or ``~/.hermes/plugins/web/<name>/`` (user, opt-in via
+``kind: backend``) or ``~/.thoth/plugins/web/<name>/`` (user, opt-in via
 ``plugins.enabled``).
 
 This ABC is the SINGLE plugin-facing surface for web providers — every

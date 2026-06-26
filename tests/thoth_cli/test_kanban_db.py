@@ -1691,7 +1691,7 @@ class TestSharedBoardPaths:
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.delenv("THOTH_KANBAN_HOME", raising=False)
 
-    def test_default_install_anchors_at_home_dot_hermes(
+    def test_default_install_anchors_at_home_dot_thoth(
         self, tmp_path, monkeypatch
     ):
         # Standard install: THOTH_HOME == ~/.thoth, no profile active.
@@ -2062,7 +2062,7 @@ def test_connect_falls_back_to_delete_on_locking_protocol(kanban_home, caplog):
     Without this fallback, the gateway's kanban dispatcher crashes every
     60s and the kanban migration (``consecutive_failures`` ADD COLUMN) is
     retried forever — which is what the real-world user report shows
-    (see hermes-agent issue #22032).
+    (see thoth-agent issue #22032).
     """
     import sqlite3 as _sqlite3
     from unittest.mock import patch as _patch
@@ -2289,10 +2289,10 @@ def test_resolve_thoth_argv_absolutizes_relative_exe_shim(monkeypatch, tmp_path)
     import thoth_cli.kanban_db as kb
 
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("THOTH_BIN", ".\\hermes.exe")
+    monkeypatch.setenv("THOTH_BIN", ".\\thoth.exe")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
-    assert kb._resolve_thoth_argv() == [os.path.abspath(".\\hermes.exe")]
+    assert kb._resolve_thoth_argv() == [os.path.abspath(".\\thoth.exe")]
 
 
 def test_resolve_thoth_argv_avoids_implicit_windows_batch_shim(monkeypatch, tmp_path):
@@ -2302,7 +2302,7 @@ def test_resolve_thoth_argv_avoids_implicit_windows_batch_shim(monkeypatch, tmp_
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
-    (bin_dir / "hermes.CMD").write_text("@echo off\n", encoding="utf-8")
+    (bin_dir / "thoth.CMD").write_text("@echo off\n", encoding="utf-8")
     monkeypatch.delenv("THOTH_BIN", raising=False)
     monkeypatch.setenv("PATH", str(bin_dir))
     monkeypatch.setenv("PATHEXT", ".CMD")
@@ -2314,12 +2314,12 @@ def test_resolve_thoth_argv_avoids_implicit_windows_batch_shim(monkeypatch, tmp_
     assert len(argv) == 3
 
 
-def test_resolve_thoth_argv_honors_hermes_bin_path_override(monkeypatch, tmp_path):
+def test_resolve_thoth_argv_honors_thoth_bin_path_override(monkeypatch, tmp_path):
     """An explicit path-like THOTH_BIN lets service managers pin the executable."""
     import shutil
     import thoth_cli.kanban_db as kb
 
-    shim = tmp_path / "bin" / "hermes"
+    shim = tmp_path / "bin" / "thoth"
     shim.parent.mkdir()
     shim.write_text("#!/bin/sh\n", encoding="utf-8")
     monkeypatch.setenv("THOTH_BIN", str(shim))
@@ -2328,34 +2328,34 @@ def test_resolve_thoth_argv_honors_hermes_bin_path_override(monkeypatch, tmp_pat
     assert kb._resolve_thoth_argv() == [str(shim)]
 
 
-def test_resolve_thoth_argv_hermes_bin_bare_name_uses_path(monkeypatch, tmp_path):
+def test_resolve_thoth_argv_thoth_bin_bare_name_uses_path(monkeypatch, tmp_path):
     """Bare THOTH_BIN values keep PATH semantics instead of cwd shadowing."""
     import stat
     import thoth_cli.kanban_db as kb
 
-    cwd_hermes = tmp_path / "hermes"
-    cwd_hermes.write_text("wrong\n", encoding="utf-8")
-    cwd_hermes.chmod(cwd_hermes.stat().st_mode | stat.S_IXUSR)
-    path_hermes = tmp_path / "bin" / "hermes"
-    path_hermes.parent.mkdir()
-    path_hermes.write_text("right\n", encoding="utf-8")
-    path_hermes.chmod(path_hermes.stat().st_mode | stat.S_IXUSR)
+    cwd_thoth = tmp_path / "thoth"
+    cwd_thoth.write_text("wrong\n", encoding="utf-8")
+    cwd_thoth.chmod(cwd_thoth.stat().st_mode | stat.S_IXUSR)
+    path_thoth = tmp_path / "bin" / "thoth"
+    path_thoth.parent.mkdir()
+    path_thoth.write_text("right\n", encoding="utf-8")
+    path_thoth.chmod(path_thoth.stat().st_mode | stat.S_IXUSR)
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("PATH", str(path_hermes.parent))
-    monkeypatch.setenv("THOTH_BIN", "hermes")
+    monkeypatch.setenv("PATH", str(path_thoth.parent))
+    monkeypatch.setenv("THOTH_BIN", "thoth")
 
-    assert kb._resolve_thoth_argv() == [str(path_hermes)]
+    assert kb._resolve_thoth_argv() == [str(path_thoth)]
 
 
-def test_resolve_thoth_argv_hermes_bin_bare_name_ignores_cwd(monkeypatch, tmp_path):
+def test_resolve_thoth_argv_thoth_bin_bare_name_ignores_cwd(monkeypatch, tmp_path):
     """Bare THOTH_BIN does not accept current-directory shadow executables."""
     import sys
     import thoth_cli.kanban_db as kb
 
-    (tmp_path / "hermes.exe").write_text("wrong\n", encoding="utf-8")
+    (tmp_path / "thoth.exe").write_text("wrong\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("PATH", "")
-    monkeypatch.setenv("THOTH_BIN", "hermes")
+    monkeypatch.setenv("THOTH_BIN", "thoth")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
     argv = kb._resolve_thoth_argv()
@@ -2364,17 +2364,17 @@ def test_resolve_thoth_argv_hermes_bin_bare_name_ignores_cwd(monkeypatch, tmp_pa
     assert len(argv) == 3
 
 
-def test_resolve_thoth_argv_hermes_bin_bare_cmd_uses_module_fallback(monkeypatch, tmp_path):
+def test_resolve_thoth_argv_thoth_bin_bare_cmd_uses_module_fallback(monkeypatch, tmp_path):
     """A PATH-resolved THOTH_BIN batch shim is not used as worker argv[0]."""
     import sys
     import thoth_cli.kanban_db as kb
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
-    (bin_dir / "hermes.CMD").write_text("@echo off\n", encoding="utf-8")
+    (bin_dir / "thoth.CMD").write_text("@echo off\n", encoding="utf-8")
     monkeypatch.setenv("PATH", str(bin_dir))
     monkeypatch.setenv("PATHEXT", ".CMD")
-    monkeypatch.setenv("THOTH_BIN", "hermes")
+    monkeypatch.setenv("THOTH_BIN", "thoth")
     monkeypatch.setattr(kb, "_IS_WINDOWS", True)
 
     argv = kb._resolve_thoth_argv()
@@ -2383,13 +2383,13 @@ def test_resolve_thoth_argv_hermes_bin_bare_cmd_uses_module_fallback(monkeypatch
     assert len(argv) == 3
 
 
-def test_resolve_thoth_argv_hermes_bin_unresolved_bare_name_falls_back(monkeypatch):
+def test_resolve_thoth_argv_thoth_bin_unresolved_bare_name_falls_back(monkeypatch):
     """Unresolved THOTH_BIN command names do not delegate cwd search to Popen."""
     import sys
     import thoth_cli.kanban_db as kb
 
     monkeypatch.setenv("PATH", "")
-    monkeypatch.setenv("THOTH_BIN", "hermes")
+    monkeypatch.setenv("THOTH_BIN", "thoth")
 
     argv = kb._resolve_thoth_argv()
     assert argv[:2] == [sys.executable, "-m"]
@@ -2400,9 +2400,9 @@ def test_resolve_thoth_argv_hermes_bin_unresolved_bare_name_falls_back(monkeypat
 def test_resolve_thoth_argv_falls_back_to_module_form_when_no_path_shim(monkeypatch):
     """When the shim is not on PATH, fall back to `python -m thoth_cli.main`.
 
-    Pins the correct module name (NOT `hermes` — there is no top-level
-    `hermes` package). Regression for #23198: the original PR shipped
-    `python -m hermes` which fails with `No module named hermes` on every
+    Pins the correct module name (NOT `thoth` — there is no top-level
+    `thoth` package). Regression for #23198: the original PR shipped
+    `python -m thoth` which fails with `No module named thoth` on every
     invocation.
     """
     import shutil

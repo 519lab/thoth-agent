@@ -112,7 +112,7 @@ ADVISORIES: tuple[Advisory, ...] = (
         ),
         remediation=(
             "Run: pip uninstall -y mistralai  (or: uv pip uninstall mistralai)",
-            "Rotate API keys in ~/.hermes/.env (OpenRouter, Anthropic, OpenAI, "
+            "Rotate API keys in ~/.thoth/.env (OpenRouter, Anthropic, OpenAI, "
             "Nous, GitHub, AWS, Google, Mistral, etc.).",
             "Audit ~/.npmrc, ~/.pypirc, ~/.aws/credentials, ~/.config/gh/hosts.yml, "
             "and any other credential files for tokens that may have been read.",
@@ -310,7 +310,7 @@ def full_remediation_text(hit: AdvisoryHit) -> list[str]:
 #
 # We do NOT want to hammer the user with the banner on every command. Once
 # they've seen it inside a 24h window we cache that fact in
-# ``~/.hermes/cache/advisory_banner_seen`` (a single line per advisory ID:
+# ``~/.thoth/cache/advisory_banner_seen`` (a single line per advisory ID:
 # ``<id> <iso8601_timestamp>``).
 #
 # Acked advisories never re-banner. Cached-but-not-acked advisories

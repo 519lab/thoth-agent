@@ -92,7 +92,7 @@ def _cmd_approve(store, platform: str, code: str):
         print(f"  Lockout clears in ~{mins} minute(s).")
         print(
             "  To reset sooner, delete the '_lockout:{0}' entry from "
-            "~/.hermes/platforms/pairing/_rate_limits.json\n".format(platform)
+            "~/.thoth/platforms/pairing/_rate_limits.json\n".format(platform)
         )
     else:
         print(f"\n  Code '{code}' not found or expired for platform '{platform}'.")

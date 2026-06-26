@@ -174,14 +174,14 @@ def test_codex_tokens_not_written_to_shared_file(tmp_path, monkeypatch):
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
     monkeypatch.setenv("CODEX_HOME", str(codex_home))
 
-    _save_codex_tokens({"access_token": "hermes-at", "refresh_token": "hermes-rt"})
+    _save_codex_tokens({"access_token": "thoth-at", "refresh_token": "thoth-rt"})
 
     # ~/.codex/auth.json should NOT exist — _save_codex_tokens only touches Thoth store
     assert not (codex_home / "auth.json").exists()
 
     # Thoth auth store should have the tokens
     data = _read_codex_tokens()
-    assert data["tokens"]["access_token"] == "hermes-at"
+    assert data["tokens"]["access_token"] == "thoth-at"
 
 
 def test_resolve_returns_thoth_auth_store_source(tmp_path, monkeypatch):
@@ -190,7 +190,7 @@ def test_resolve_returns_thoth_auth_store_source(tmp_path, monkeypatch):
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     creds = resolve_codex_runtime_credentials()
-    assert creds["source"] == "hermes-auth-store"
+    assert creds["source"] == "thoth-auth-store"
     assert creds["provider"] == "openai-codex"
     assert creds["base_url"] == DEFAULT_CODEX_BASE_URL
 

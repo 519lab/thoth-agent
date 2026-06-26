@@ -270,20 +270,20 @@ def test_identity_template_resolved_in_container_tag(monkeypatch, tmp_path):
     """container_tag with {identity} resolves to profile-scoped tag."""
     monkeypatch.setenv("SUPERMEMORY_API_KEY", "test-key")
     monkeypatch.setattr("plugins.memory.supermemory._SupermemoryClient", FakeClient)
-    _save_supermemory_config({"container_tag": "hermes-{identity}"}, str(tmp_path))
+    _save_supermemory_config({"container_tag": "thoth-{identity}"}, str(tmp_path))
     p = SupermemoryMemoryProvider()
     p.initialize("s1", thoth_home=str(tmp_path), platform="cli", agent_identity="coder")
-    assert p._container_tag == "hermes_coder"
+    assert p._container_tag == "thoth_coder"
 
 
 def test_identity_template_default_profile(monkeypatch, tmp_path):
     """Without agent_identity kwarg, {identity} resolves to 'default'."""
     monkeypatch.setenv("SUPERMEMORY_API_KEY", "test-key")
     monkeypatch.setattr("plugins.memory.supermemory._SupermemoryClient", FakeClient)
-    _save_supermemory_config({"container_tag": "hermes-{identity}"}, str(tmp_path))
+    _save_supermemory_config({"container_tag": "thoth-{identity}"}, str(tmp_path))
     p = SupermemoryMemoryProvider()
     p.initialize("s1", thoth_home=str(tmp_path), platform="cli")
-    assert p._container_tag == "hermes_default"
+    assert p._container_tag == "thoth_default"
 
 
 def test_container_tag_env_var_override(monkeypatch, tmp_path):
@@ -342,7 +342,7 @@ def test_multi_container_enabled_adds_schema_param(monkeypatch, tmp_path):
     p = SupermemoryMemoryProvider()
     p.initialize("s1", thoth_home=str(tmp_path), platform="cli")
     assert p._enable_custom_containers is True
-    assert p._allowed_containers == ["hermes", "project_alpha", "shared"]
+    assert p._allowed_containers == ["thoth", "project_alpha", "shared"]
     schemas = p.get_tool_schemas()
     for s in schemas:
         assert "container_tag" in s["parameters"]["properties"]

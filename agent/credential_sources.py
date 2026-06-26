@@ -2,9 +2,9 @@
 
 Thoth seeds its credential pool from many places:
 
-    env:<VAR>     — os.environ / ~/.hermes/.env
+    env:<VAR>     — os.environ / ~/.thoth/.env
     claude_code   — ~/.claude/.credentials.json
-    hermes_pkce   — ~/.hermes/.anthropic_oauth.json
+    thoth_pkce   — ~/.thoth/.anthropic_oauth.json
     device_code   — auth.json providers.<provider> (nous, openai-codex, ...)
     qwen-cli      — ~/.qwen/oauth_creds.json
     gh_cli        — gh auth token
@@ -21,7 +21,7 @@ unify here is **removal**:
 Before this module, every source had an ad-hoc removal branch in
 ``auth_remove_command``, and several sources had no branch at all — so
 ``auth remove`` silently reverted on the next ``load_pool()`` call for
-qwen-cli, nous device_code (partial), hermes_pkce, copilot gh_cli, and
+qwen-cli, nous device_code (partial), thoth_pkce, copilot gh_cli, and
 custom-config sources.
 
 Now every source registers a ``RemovalStep`` that does exactly three things
@@ -144,7 +144,7 @@ def _remove_env_source(provider: str, removed) -> RemovalResult:
     """env:<VAR> — the most common case.
 
     Handles three user situations:
-      1. Var lives only in ~/.hermes/.env  → clear it
+      1. Var lives only in ~/.thoth/.env  → clear it
       2. Var lives only in the user's shell (shell profile, systemd
          EnvironmentFile, launchd plist) → hint them where to unset it
       3. Var lives in both → clear from .env, hint about shell
@@ -177,7 +177,7 @@ def _remove_env_source(provider: str, removed) -> RemovalResult:
     if shell_exported:
         result.hints.extend([
             f"Note: {env_var} is still set in your shell environment "
-            f"(not in ~/.hermes/.env).",
+            f"(not in ~/.thoth/.env).",
             "  Unset it there (shell profile, systemd EnvironmentFile, "
             "launchd plist, etc.) or it will keep being visible to Thoth.",
             f"  The pool entry is now suppressed — Thoth will ignore "
@@ -205,7 +205,7 @@ def _remove_claude_code(provider: str, removed) -> RemovalResult:
 
 
 def _remove_thoth_pkce(provider: str, removed) -> RemovalResult:
-    """~/.hermes/.anthropic_oauth.json is ours — delete it outright."""
+    """~/.thoth/.anthropic_oauth.json is ours — delete it outright."""
     from thoth_constants import get_thoth_home
 
     result = RemovalResult()
@@ -407,9 +407,9 @@ def _register_all_sources() -> None:
         description="~/.claude/.credentials.json",
     ))
     register(RemovalStep(
-        provider="anthropic", source_id="hermes_pkce",
+        provider="anthropic", source_id="thoth_pkce",
         remove_fn=_remove_thoth_pkce,
-        description="~/.hermes/.anthropic_oauth.json",
+        description="~/.thoth/.anthropic_oauth.json",
     ))
     register(RemovalStep(
         provider="nous", source_id="device_code",

@@ -114,7 +114,7 @@ class TestValidateProfileName:
         with pytest.raises(ValueError):
             validate_profile_name("")
 
-    @pytest.mark.parametrize("name", ["hermes", "test", "tmp", "root", "sudo"])
+    @pytest.mark.parametrize("name", ["thoth", "test", "tmp", "root", "sudo"])
     def test_reserved_names_rejected(self, name):
         """Reserved names collide with the Thoth install itself or with
         common system binaries — reject them at validate time so
@@ -587,7 +587,7 @@ class TestAliasCollision:
         assert result is None
 
     def test_reserved_name_returns_message(self, profile_env):
-        result = check_alias_collision("hermes")
+        result = check_alias_collision("thoth")
         assert result is not None
         assert "reserved" in result.lower()
 
@@ -1012,7 +1012,7 @@ class TestProfileIsolation:
 
 
 # ===================================================================
-# TestGetProfilesRoot / TestGetDefaultHermesHome (internal helpers)
+# TestGetProfilesRoot / TestGetDefaultThothHome (internal helpers)
 # ===================================================================
 
 class TestInternalHelpers:

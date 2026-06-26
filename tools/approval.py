@@ -119,8 +119,8 @@ def _is_gateway_approval_context() -> bool:
 # via shell expansions like $HOME or $THOTH_HOME.
 _SSH_SENSITIVE_PATH = r'(?:~|\$home|\$\{home\})/\.ssh(?:/|$)'
 _THOTH_ENV_PATH = (
-    r'(?:~\/\.hermes/|'
-    r'(?:\$home|\$\{home\})/\.hermes/|'
+    r'(?:~\/\.thoth/|'
+    r'(?:\$home|\$\{home\})/\.thoth/|'
     r'(?:\$thoth_home|\$\{thoth_home\})/)'
     r'\.env\b'
 )
@@ -361,15 +361,15 @@ DANGEROUS_PATTERNS = [
     # Gateway lifecycle protection: prevent the agent from killing its own
     # gateway process.  These commands trigger a gateway restart/stop that
     # terminates all running agents mid-work.
-    (r'\b(hermes|thoth)\s+gateway\s+(stop|restart)\b', "stop/restart thoth gateway (kills running agents)"),
-    (r'\b(hermes|thoth)\s+update\b', "thoth update (restarts gateway, kills running agents)"),
+    (r'\b(thoth|thoth)\s+gateway\s+(stop|restart)\b', "stop/restart thoth gateway (kills running agents)"),
+    (r'\b(thoth|thoth)\s+update\b', "thoth update (restarts gateway, kills running agents)"),
     # Gateway protection: never start gateway outside systemd management
     (r'gateway\s+run\b.*(&\s*$|&\s*;|\bdisown\b|\bsetsid\b)', "start gateway outside systemd (use 'systemctl --user restart thoth-gateway')"),
     (r'\bnohup\b.*gateway\s+run\b', "start gateway outside systemd (use 'systemctl --user restart thoth-gateway')"),
     # Self-termination protection: prevent agent from killing its own process
-    (r'\b(pkill|killall)\b.*\b(hermes|thoth|gateway|cli\.py)\b', "kill thoth/gateway process (self-termination)"),
+    (r'\b(pkill|killall)\b.*\b(thoth|thoth|gateway|cli\.py)\b', "kill thoth/gateway process (self-termination)"),
     # Self-termination via kill + command substitution (pgrep/pidof).
-    # The name-based pattern above catches `pkill hermes` / `pkill thoth` but not
+    # The name-based pattern above catches `pkill thoth` / `pkill thoth` but not
     # `kill -9 $(pgrep -f thoth)` because the substitution is opaque
     # to regex at detection time. Catch the structural pattern instead.
     (r'\bkill\b.*\$\(\s*pgrep\b', "kill process via pgrep expansion (self-termination)"),

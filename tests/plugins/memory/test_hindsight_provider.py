@@ -140,15 +140,15 @@ def provider_with_config(tmp_path, monkeypatch):
 
 
 def test_normalize_retain_tags_accepts_csv_and_dedupes():
-    assert _normalize_retain_tags("agent:fakeassistantname, source_system:hermes-agent, agent:fakeassistantname") == [
+    assert _normalize_retain_tags("agent:fakeassistantname, source_system:thoth-agent, agent:fakeassistantname") == [
         "agent:fakeassistantname",
-        "source_system:hermes-agent",
+        "source_system:thoth-agent",
     ]
 
 
 def test_normalize_retain_tags_accepts_json_array_string():
-    value = json.dumps(["agent:fakeassistantname", "source_system:hermes-agent"])
-    assert _normalize_retain_tags(value) == ["agent:fakeassistantname", "source_system:hermes-agent"]
+    value = json.dumps(["agent:fakeassistantname", "source_system:thoth-agent"])
+    assert _normalize_retain_tags(value) == ["agent:fakeassistantname", "source_system:thoth-agent"]
 
 
 # ---------------------------------------------------------------------------
@@ -204,7 +204,7 @@ class TestConfig:
     def test_custom_config_values(self, provider_with_config):
         p = provider_with_config(
             retain_tags=["tag1", "tag2"],
-            retain_source="hermes",
+            retain_source="thoth",
             retain_user_prefix="User (fakeusername)",
             retain_assistant_prefix="Assistant (fakeassistantname)",
             recall_tags=["recall-tag"],
@@ -222,7 +222,7 @@ class TestConfig:
         )
         assert p._tags == ["tag1", "tag2"]
         assert p._retain_tags == ["tag1", "tag2"]
-        assert p._retain_source == "hermes"
+        assert p._retain_source == "thoth"
         assert p._retain_user_prefix == "User (fakeusername)"
         assert p._retain_assistant_prefix == "Assistant (fakeassistantname)"
         assert p._recall_tags == ["recall-tag"]
@@ -251,8 +251,8 @@ class TestConfig:
 
         cfg = _load_config()
         assert cfg["apiKey"] == "env-key"
-        assert cfg["banks"]["hermes"]["bankId"] == "env-bank"
-        assert cfg["banks"]["hermes"]["budget"] == "high"
+        assert cfg["banks"]["thoth"]["bankId"] == "env-bank"
+        assert cfg["banks"]["thoth"]["budget"] == "high"
 
     def test_embedded_profile_env_includes_idle_timeout_from_config(self):
         env = _build_embedded_profile_env({
@@ -286,7 +286,7 @@ class TestConfig:
         p = HindsightMemoryProvider()
         p._mode = "local_embedded"
         p._config = {
-            "profile": "hermes",
+            "profile": "thoth",
             "llm_provider": "openai_compatible",
             "llm_api_key": "test-key",
             "llm_model": "test-model",
@@ -325,7 +325,7 @@ class TestPostSetup:
         assert "HINDSIGHT_TIMEOUT=120\n" in env_text
         assert "HINDSIGHT_IDLE_TIMEOUT=300\n" in env_text
 
-        profile_env = user_home / ".hindsight" / "profiles" / "hermes.env"
+        profile_env = user_home / ".hindsight" / "profiles" / "thoth.env"
         assert profile_env.exists()
         assert profile_env.read_text() == (
             "HINDSIGHT_API_LLM_PROVIDER=openai\n"
@@ -354,7 +354,7 @@ class TestPostSetup:
         provider.post_setup(str(thoth_home), {"memory": {}})
 
         coder_env = user_home / ".hindsight" / "profiles" / "coder.env"
-        thoth_env = user_home / ".hindsight" / "profiles" / "hermes.env"
+        thoth_env = user_home / ".hindsight" / "profiles" / "thoth.env"
         assert coder_env.exists()
         assert not thoth_env.exists()
 
@@ -379,7 +379,7 @@ class TestPostSetup:
         provider = HindsightMemoryProvider()
         provider.post_setup(str(thoth_home), {"memory": {}})
 
-        profile_env = user_home / ".hindsight" / "profiles" / "hermes.env"
+        profile_env = user_home / ".hindsight" / "profiles" / "thoth.env"
         assert profile_env.exists()
         assert "HINDSIGHT_API_LLM_API_KEY=existing-key\n" in profile_env.read_text()
 
@@ -398,7 +398,7 @@ class TestPostSetup:
             "llm_base_url": "http://192.168.1.161:8060/v1",
             "llm_api_key": "9913",
             "llm_model": "gemma-4-26B-A4B-it-heretic-oQ4",
-            "bank_id": "hermes",
+            "bank_id": "thoth",
             "recall_budget": "mid",
             "idle_timeout": 0,
             "HINDSIGHT_EMBED_DAEMON_IDLE_TIMEOUT": "0",
@@ -651,7 +651,7 @@ class TestSyncTurn:
     def test_sync_turn_retains_metadata_rich_turn(self, provider_with_config):
         p = provider_with_config(
             retain_tags=["conv", "session1"],
-            retain_source="hermes",
+            retain_source="thoth",
             retain_user_prefix="User (fakeusername)",
             retain_assistant_prefix="Assistant (fakeassistantname)",
         )
@@ -686,7 +686,7 @@ class TestSyncTurn:
         assert content[0][0]["content"] == "User (fakeusername): hello"
         assert content[0][1]["role"] == "assistant"
         assert content[0][1]["content"] == "Assistant (fakeassistantname): hi there"
-        assert item["metadata"]["source"] == "hermes"
+        assert item["metadata"]["source"] == "thoth"
         assert item["metadata"]["session_id"] == "session-1"
         assert item["metadata"]["platform"] == "discord"
         assert item["metadata"]["user_id"] == "fakeusername-123"
@@ -1232,7 +1232,7 @@ class TestConfigSchema:
 
 class TestBankIdTemplate:
     def test_sanitize_bank_segment_passthrough(self):
-        assert _sanitize_bank_segment("hermes") == "hermes"
+        assert _sanitize_bank_segment("thoth") == "thoth"
         assert _sanitize_bank_segment("my-agent_1") == "my-agent_1"
 
     def test_sanitize_bank_segment_strips_unsafe(self):
@@ -1246,33 +1246,33 @@ class TestBankIdTemplate:
 
     def test_resolve_empty_template_uses_fallback(self):
         result = _resolve_bank_id_template(
-            "", fallback="hermes", profile="coder"
+            "", fallback="thoth", profile="coder"
         )
-        assert result == "hermes"
+        assert result == "thoth"
 
     def test_resolve_with_profile(self):
         result = _resolve_bank_id_template(
-            "hermes-{profile}", fallback="hermes",
+            "thoth-{profile}", fallback="thoth",
             profile="coder", workspace="", platform="", user="", session="",
         )
-        assert result == "hermes-coder"
+        assert result == "thoth-coder"
 
     def test_resolve_with_multiple_placeholders(self):
         result = _resolve_bank_id_template(
             "{workspace}-{profile}-{platform}",
-            fallback="hermes",
+            fallback="thoth",
             profile="coder", workspace="myorg", platform="cli",
             user="", session="",
         )
         assert result == "myorg-coder-cli"
 
     def test_resolve_collapses_empty_placeholders(self):
-        # When user is empty, "hermes-{user}" becomes "hermes-" -> trimmed to "hermes"
+        # When user is empty, "thoth-{user}" becomes "thoth-" -> trimmed to "thoth"
         result = _resolve_bank_id_template(
-            "hermes-{user}", fallback="default",
+            "thoth-{user}", fallback="default",
             profile="", workspace="", platform="", user="", session="",
         )
-        assert result == "hermes"
+        assert result == "thoth"
 
     def test_resolve_collapses_double_dashes(self):
         # Two empty placeholders with a dash between them should collapse
@@ -1291,7 +1291,7 @@ class TestBankIdTemplate:
 
     def test_resolve_sanitizes_placeholder_values(self):
         result = _resolve_bank_id_template(
-            "user-{user}", fallback="hermes",
+            "user-{user}", fallback="thoth",
             profile="", workspace="", platform="",
             user="josh@example.com", session="",
         )
@@ -1300,10 +1300,10 @@ class TestBankIdTemplate:
     def test_resolve_invalid_template_returns_fallback(self):
         # Unknown placeholder should fall back without raising
         result = _resolve_bank_id_template(
-            "thoth-{unknown}", fallback="hermes",
+            "thoth-{unknown}", fallback="thoth",
             profile="", workspace="", platform="", user="", session="",
         )
-        assert result == "hermes"
+        assert result == "thoth"
 
     def test_provider_uses_bank_id_template_from_config(self, tmp_path, monkeypatch):
         config = {
@@ -1311,7 +1311,7 @@ class TestBankIdTemplate:
             "apiKey": "k",
             "api_url": "http://x",
             "bank_id": "fallback-bank",
-            "bank_id_template": "hermes-{profile}",
+            "bank_id_template": "thoth-{profile}",
         }
         config_path = tmp_path / "hindsight" / "config.json"
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1324,10 +1324,10 @@ class TestBankIdTemplate:
             thoth_home=str(tmp_path),
             platform="cli",
             agent_identity="coder",
-            agent_workspace="hermes",
+            agent_workspace="thoth",
         )
-        assert p._bank_id == "hermes-coder"
-        assert p._bank_id_template == "hermes-{profile}"
+        assert p._bank_id == "thoth-coder"
+        assert p._bank_id_template == "thoth-{profile}"
 
     def test_provider_without_template_uses_static_bank_id(self, tmp_path, monkeypatch):
         config = {
@@ -1355,8 +1355,8 @@ class TestBankIdTemplate:
             "mode": "cloud",
             "apiKey": "k",
             "api_url": "http://x",
-            "bank_id": "hermes-fallback",
-            "bank_id_template": "hermes-{profile}",
+            "bank_id": "thoth-fallback",
+            "bank_id_template": "thoth-{profile}",
         }
         config_path = tmp_path / "hindsight" / "config.json"
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1364,9 +1364,9 @@ class TestBankIdTemplate:
         monkeypatch.setattr("plugins.memory.hindsight.get_thoth_home", lambda: tmp_path)
 
         p = HindsightMemoryProvider()
-        # No agent_identity passed — template renders to "hermes-" which collapses to "hermes"
+        # No agent_identity passed — template renders to "thoth-" which collapses to "thoth"
         p.initialize(session_id="s1", thoth_home=str(tmp_path), platform="cli")
-        assert p._bank_id == "hermes"
+        assert p._bank_id == "thoth"
 
 
 # ---------------------------------------------------------------------------

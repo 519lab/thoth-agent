@@ -28,7 +28,7 @@ declare global {
   }
 }
 let _sessionToken: string | null = null;
-const SESSION_HEADER = "X-Hermes-Session-Token";
+const SESSION_HEADER = "X-Thoth-Session-Token";
 
 function setSessionHeader(headers: Headers, token: string): void {
   if (!headers.has(SESSION_HEADER)) {
@@ -269,8 +269,8 @@ export const api = {
   // Gateway / update actions
   restartGateway: () =>
     fetchJSON<ActionResponse>("/api/gateway/restart", { method: "POST" }),
-  updateHermes: () =>
-    fetchJSON<ActionResponse>("/api/hermes/update", { method: "POST" }),
+  updateThoth: () =>
+    fetchJSON<ActionResponse>("/api/thoth/update", { method: "POST" }),
   getActionStatus: (name: string, lines = 200) =>
     fetchJSON<ActionStatusResponse>(
       `/api/actions/${encodeURIComponent(name)}/status?lines=${lines}`,

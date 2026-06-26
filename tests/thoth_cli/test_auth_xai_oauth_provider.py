@@ -486,7 +486,7 @@ def test_resolve_xai_runtime_credentials_returns_singleton_state(tmp_path, monke
     assert creds["provider"] == "xai-oauth"
     assert creds["api_key"] == fresh
     assert creds["base_url"] == DEFAULT_XAI_OAUTH_BASE_URL
-    assert creds["source"] == "hermes-auth-store"
+    assert creds["source"] == "thoth-auth-store"
     assert creds["auth_mode"] == "oauth_pkce"
 
 

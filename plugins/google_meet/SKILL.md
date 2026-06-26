@@ -6,7 +6,7 @@ platforms:
   - linux
   - macos
 metadata:
-  hermes:
+  thoth:
     tags: [meetings, google-meet, transcription, realtime-voice]
 ---
 

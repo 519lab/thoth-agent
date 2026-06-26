@@ -66,7 +66,7 @@ class MemoryProvider(ABC):
 
         kwargs always include:
           - thoth_home (str): The active THOTH_HOME directory path. Use this
-            for profile-scoped storage instead of hardcoding ``~/.hermes``.
+            for profile-scoped storage instead of hardcoding ``~/.thoth``.
           - platform (str): "cli", "telegram", "discord", "cron", etc.
 
         kwargs may also include:
@@ -75,7 +75,7 @@ class MemoryProvider(ABC):
             prompts would corrupt user representations).
           - agent_identity (str): Profile name (e.g. "coder"). Use for
             per-profile provider identity scoping.
-          - agent_workspace (str): Shared workspace name (e.g. "hermes").
+          - agent_workspace (str): Shared workspace name (e.g. "thoth").
           - parent_session_id (str): For subagents, the parent's session_id.
           - user_id (str): Platform user identifier (gateway sessions).
         """

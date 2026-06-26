@@ -65,7 +65,7 @@ export function usePlugins() {
       }
 
       const script = document.createElement("script");
-      script.setAttribute("data-hermes-plugin", manifest.name);
+      script.setAttribute("data-thoth-plugin", manifest.name);
       script.src = scriptSrc;
       script.async = true;
       // SRI integrity verification — defense against compromised plugin

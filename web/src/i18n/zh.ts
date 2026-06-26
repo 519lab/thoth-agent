@@ -119,8 +119,8 @@ export const zh: Translations = {
     starting: "启动中",
     startedInBackground: "已在后台启动 — 请查看日志",
     stopped: "已停止",
-    updateHermes: "更新 Thoth",
-    updatingHermes: "正在更新 Thoth…",
+    updateThoth: "更新 Thoth",
+    updatingThoth: "正在更新 Thoth…",
     waitingForOutput: "等待输出…",
   },
 
@@ -279,8 +279,8 @@ export const zh: Translations = {
     providersHint:
       "写入 config.yaml：memory.provider（留空为内置）、context.engine。下次会话生效。",
     refreshDashboard: "重新扫描仪表盘扩展",
-    removeConfirm: "从 ~/.hermes/plugins/ 删除此插件？",
-    removeHint: "仅可移除用户安装在 ~/.hermes/plugins 下的插件。",
+    removeConfirm: "从 ~/.thoth/plugins/ 删除此插件？",
+    removeHint: "仅可移除用户安装在 ~/.thoth/plugins 下的插件。",
     rescanHeading: "SPA 插件注册表",
     rescanHint: "在磁盘新增文件后扫描，使侧边栏载入新 manifest。",
     runtimeHeading: "网关运行时（YAML 插件）",
@@ -302,7 +302,7 @@ export const zh: Translations = {
     all: "全部",
     categories: "分类",
     filters: "筛选",
-    noSkills: "未找到技能。技能从 ~/.hermes/skills/ 加载",
+    noSkills: "未找到技能。技能从 ~/.thoth/skills/ 加载",
     noSkillsMatch: "没有匹配的技能。",
     skillCount: "{count} 个技能",
     resultCount: "{count} 个结果",
@@ -316,7 +316,7 @@ export const zh: Translations = {
   },
 
   config: {
-    configPath: "~/.hermes/config.yaml",
+    configPath: "~/.thoth/config.yaml",
     filters: "筛选",
     sections: "分类",
     exportConfig: "导出配置为 JSON",

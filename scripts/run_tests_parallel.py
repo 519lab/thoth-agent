@@ -55,12 +55,12 @@ from typing import Dict, List, Tuple
 # ``{dbname}_tmpl`` template) so concurrent workers each get an isolated
 # database. We don't use pytest-xdist (we use one subprocess per file via
 # this runner instead), so the env var is unset by default — every
-# subprocess would then race on the shared ``hermes_tmpl`` template DB and
-# explode with ``InvalidCatalogName: database "hermes_tmpl" does not exist``
+# subprocess would then race on the shared ``thoth_tmpl`` template DB and
+# explode with ``InvalidCatalogName: database "thoth_tmpl" does not exist``
 # as one subprocess's session-end teardown drops the template while
 # another is mid-clone. Synthesising a unique id per subprocess routes
-# pytest-postgresql onto a per-worker template (``hermes_tmplrun_N``,
-# ``hermes_run_N``) and removes the race entirely.
+# pytest-postgresql onto a per-worker template (``thoth_tmplrun_N``,
+# ``thoth_run_N``) and removes the race entirely.
 _worker_counter = itertools.count()
 _worker_counter_lock = threading.Lock()
 
@@ -284,7 +284,7 @@ def _run_one_file(
         cmd = [sys.executable, "-m", "pytest", str(file), *pytest_args]
     # Inject a unique PYTEST_XDIST_WORKER per subprocess so pytest-postgresql
     # routes each one onto its own template / test DB (e.g.
-    # ``thoth_tmplrun_42``) instead of racing on the shared ``hermes_tmpl``.
+    # ``thoth_tmplrun_42``) instead of racing on the shared ``thoth_tmpl``.
     # See the module-level _worker_counter doc for the rationale.
     env = os.environ.copy()
     env["PYTEST_XDIST_WORKER"] = _next_worker_id()

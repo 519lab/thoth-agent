@@ -18,9 +18,9 @@ from thoth_constants import display_thoth_home
 
 PROJECT_ROOT = get_project_root()
 THOTH_HOME = get_thoth_home()
-_DHH = display_thoth_home()  # user-facing display path (e.g. ~/.hermes or ~/.hermes/profiles/coder)
+_DHH = display_thoth_home()  # user-facing display path (e.g. ~/.thoth or ~/.thoth/profiles/coder)
 
-# Load environment variables from ~/.hermes/.env so API key checks work
+# Load environment variables from ~/.thoth/.env so API key checks work
 _env_path = get_env_path()
 load_thoth_dotenv(thoth_home=_env_path.parent, project_env=PROJECT_ROOT / ".env")
 
@@ -102,7 +102,7 @@ def _termux_install_all_fallback_notes() -> list[str]:
 
 
 def _has_provider_env_config(content: str) -> bool:
-    """Return True when ~/.hermes/.env contains provider auth/base URL settings."""
+    """Return True when ~/.thoth/.env contains provider auth/base URL settings."""
     return any(key in content for key in _PROVIDER_ENV_HINTS)
 
 
@@ -369,7 +369,7 @@ def run_doctor(args):
         else:
             print(color(
                 f"  ✗ Failed to persist ack for {ack_target}. "
-                f"Check ~/.hermes/config.yaml is writable.",
+                f"Check ~/.thoth/config.yaml is writable.",
                 Colors.RED,
             ))
             sys.exit(1)
@@ -484,7 +484,7 @@ def run_doctor(args):
             check_warn(name, "(optional, not installed)")
     
     _section("Configuration Files")
-    # Check ~/.hermes/.env (primary location for user config)
+    # Check ~/.thoth/.env (primary location for user config)
     env_path = THOTH_HOME / '.env'
     if env_path.exists():
         check_ok(f"{_DHH}/.env file exists")
@@ -516,7 +516,7 @@ def run_doctor(args):
                 check_info("Run 'thoth setup' to create one")
                 issues.append("Run 'thoth setup' to create .env")
     
-    # Check ~/.hermes/config.yaml (primary) or project cli-config.yaml (fallback)
+    # Check ~/.thoth/config.yaml (primary) or project cli-config.yaml (fallback)
     config_path = THOTH_HOME / 'config.yaml'
     if config_path.exists():
         check_ok(f"{_DHH}/config.yaml exists")
@@ -675,7 +675,7 @@ def run_doctor(args):
                     if not configured:
                         _fail_and_issue(
                             f"model.provider '{runtime_provider}' is set but no API key is configured",
-                            "(check ~/.hermes/.env or run 'thoth setup')",
+                            "(check ~/.thoth/.env or run 'thoth setup')",
                             (
                                 f"No credentials found for provider '{runtime_provider}'. "
                                 f"Run 'thoth setup' or set the provider's API key in {_DHH}/.env, "
@@ -991,7 +991,7 @@ def run_doctor(args):
         # Determine the venv entry point location
         _venv_bin = None
         for _venv_name in ("venv", ".venv"):
-            _candidate = PROJECT_ROOT / _venv_name / "bin" / "hermes"
+            _candidate = PROJECT_ROOT / _venv_name / "bin" / "thoth"
             if _candidate.exists():
                 _venv_bin = _candidate
                 break
@@ -1005,7 +1005,7 @@ def run_doctor(args):
         else:
             _cmd_link_dir = Path.home() / ".local" / "bin"
             _cmd_link_display = "~/.local/bin"
-        _cmd_link = _cmd_link_dir / "hermes"
+        _cmd_link = _cmd_link_dir / "thoth"
 
         if _venv_bin is None:
             check_warn(

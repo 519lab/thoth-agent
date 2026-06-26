@@ -86,7 +86,7 @@ def adapter():
 
 @pytest.fixture(autouse=True)
 def _redirect_cache(tmp_path, monkeypatch):
-    """Point document cache to tmp_path so tests don't touch ~/.hermes."""
+    """Point document cache to tmp_path so tests don't touch ~/.thoth."""
     monkeypatch.setattr(
         "gateway.platforms.base.DOCUMENT_CACHE_DIR", tmp_path / "doc_cache"
     )
@@ -2374,15 +2374,15 @@ class TestSlashCommands:
         assert msg.text == "/model anthropic/claude-sonnet-4"
 
     @pytest.mark.asyncio
-    async def test_legacy_hermes_prefix_still_works(self, adapter):
-        """Backward compat: /hermes btw foo must still route to /btw foo.
+    async def test_legacy_thoth_prefix_still_works(self, adapter):
+        """Backward compat: /thoth btw foo must still route to /btw foo.
 
-        Old workspace manifests only declared /hermes as the single slash.
+        Old workspace manifests only declared /thoth as the single slash.
         After users refresh their manifest they get /btw natively, but the
         legacy form must keep working during the transition.
         """
         command = {
-            "command": "/hermes",
+            "command": "/thoth",
             "text": "btw run the tests",
             "user_id": "U1",
             "channel_id": "C1",
@@ -2392,10 +2392,10 @@ class TestSlashCommands:
         assert msg.text == "/btw run the tests"
 
     @pytest.mark.asyncio
-    async def test_legacy_hermes_freeform_question(self, adapter):
-        """/hermes <free-form text> must stay as the raw text (non-command)."""
+    async def test_legacy_thoth_freeform_question(self, adapter):
+        """/thoth <free-form text> must stay as the raw text (non-command)."""
         command = {
-            "command": "/hermes",
+            "command": "/thoth",
             "text": "what's the weather today?",
             "user_id": "U1",
             "channel_id": "C1",
@@ -3085,10 +3085,10 @@ class TestSlashEphemeralAck:
         assert ("C_Q", "U_Q") in adapter._slash_command_contexts
 
     @pytest.mark.asyncio
-    async def test_legacy_hermes_slash_stashes_context(self, adapter):
-        """Legacy /hermes <subcommand> also stashes context."""
+    async def test_legacy_thoth_slash_stashes_context(self, adapter):
+        """Legacy /thoth <subcommand> also stashes context."""
         command = {
-            "command": "/hermes",
+            "command": "/thoth",
             "text": "help",
             "user_id": "U_H",
             "channel_id": "C_H",
@@ -3101,9 +3101,9 @@ class TestSlashEphemeralAck:
 
     @pytest.mark.asyncio
     async def test_freeform_thoth_question_does_not_stash_context(self, adapter):
-        """Free-form /hermes <question> must NOT route agent reply ephemeral."""
+        """Free-form /thoth <question> must NOT route agent reply ephemeral."""
         command = {
-            "command": "/hermes",
+            "command": "/thoth",
             "text": "what's the weather",
             "user_id": "U_FREE",
             "channel_id": "C_FREE",

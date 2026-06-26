@@ -248,7 +248,7 @@ def init_agent(
         skip_context_files (bool): If True, skip auto-injection of SOUL.md, AGENTS.md, and .cursorrules
             into the system prompt. Use this for batch processing and data generation to avoid
             polluting trajectories with user-specific persona or project instructions.
-        load_soul_identity (bool): If True, still use ~/.hermes/SOUL.md as the primary
+        load_soul_identity (bool): If True, still use ~/.thoth/SOUL.md as the primary
             identity even when skip_context_files=True. Project context files from the cwd
             remain skipped.
     """
@@ -514,7 +514,7 @@ def init_agent(
     agent._or_cache_hits: int = 0
 
     # Centralized logging — agent.log (INFO+) and errors.log (WARNING+)
-    # both live under ~/.hermes/logs/.  Idempotent, so gateway mode
+    # both live under ~/.thoth/logs/.  Idempotent, so gateway mode
     # (which creates a new AIAgent per message) won't duplicate handlers.
     from thoth_logging import setup_logging, setup_verbose_logging
     setup_logging(thoth_home=_ra()._thoth_home)
@@ -963,11 +963,11 @@ def init_agent(
     except Exception:
         pass  # CLI/test mode — ContextVar not needed
 
-    # Session logs go into ~/.hermes/sessions/ alongside gateway sessions
+    # Session logs go into ~/.thoth/sessions/ alongside gateway sessions
     thoth_home = get_thoth_home()
     agent.logs_dir = thoth_home / "sessions"
     agent.logs_dir.mkdir(parents=True, exist_ok=True)
-    # Per-session JSON snapshot writer (~/.hermes/sessions/session_{sid}.json)
+    # Per-session JSON snapshot writer (~/.thoth/sessions/session_{sid}.json)
     # is opt-in via sessions.write_json_snapshots (default False).  state.db
     # is canonical — the snapshot is only useful for external tooling that
     # reads the JSON files directly.  See run_agent._save_session_log.
@@ -1157,7 +1157,7 @@ def init_agent(
                         from thoth_cli.profiles import get_active_profile_name
                         _profile = get_active_profile_name()
                         _init_kwargs["agent_identity"] = _profile
-                        _init_kwargs["agent_workspace"] = "hermes"
+                        _init_kwargs["agent_workspace"] = "thoth"
                     except Exception:
                         pass
                     agent._memory_manager.initialize_all(**_init_kwargs)

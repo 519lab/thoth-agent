@@ -1078,7 +1078,7 @@ def _tui_need_npm_install(root: Path) -> bool:
     if entry.is_file() and not lock.is_file():
         return False
 
-    ink = root / "node_modules" / "@hermes" / "ink" / "package.json"
+    ink = root / "node_modules" / "@thoth" / "ink" / "package.json"
     if not ink.is_file():
         return True
     if not lock.is_file():
