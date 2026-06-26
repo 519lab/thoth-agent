@@ -24,7 +24,12 @@ const config: Config = {
 
   i18n: {
     defaultLocale: 'en',
-    locales: ['en', 'zh-Hans', 'ko'],
+    // English-only until the docs are substantially translated — building all
+    // locales shipped ~650 untranslated English pages under /zh-Hans/ and /ko/
+    // (duplicate content + "pick 中文 → get English" UX). Re-add 'zh-Hans','ko'
+    // here (and the localeDropdown below) once website/i18n/ is populated; the
+    // localeConfigs are kept ready for that.
+    locales: ['en'],
     localeConfigs: {
       // htmlLang is region-qualified so og:locale (language_TERRITORY) and the
       // hreflang alternates are valid; the locale *key* still drives the URL
@@ -71,7 +76,10 @@ const config: Config = {
       /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
       ({
         hashed: true,
-        language: ['en', 'zh'],
+        // English-only site → only the English tokenizer is needed. Dropping
+        // 'zh' also removes the @node-rs/jieba native dependency. Re-add 'zh'
+        // alongside the locale when Chinese docs are translated.
+        language: ['en'],
         indexBlog: false,
         docsRouteBasePath: '/',
         // Disabled: appends ?_highlight=... to URLs (before the #anchor),
@@ -150,10 +158,8 @@ const config: Config = {
           label: 'Skills',
           position: 'left',
         },
-        {
-          type: 'localeDropdown',
-          position: 'right',
-        },
+        // localeDropdown removed while the site is English-only — re-add when
+        // translations land (see the i18n note above).
         {
           href: 'https://thoth.519lab.com',
           label: 'Home',
