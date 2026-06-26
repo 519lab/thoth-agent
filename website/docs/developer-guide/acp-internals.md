@@ -149,7 +149,7 @@ Instead it reuses Thoth's runtime resolver:
 - `acp_adapter/auth.py`
 - `thoth_cli/runtime_provider.py`
 
-So ACP advertises and uses the currently configured Thoth provider/credentials. It also always advertises a terminal setup auth method (`hermes-setup`, args `--setup`) so first-run registry clients can open Thoth's interactive model/provider configuration before starting a normal ACP session.
+So ACP advertises and uses the currently configured Thoth provider/credentials. It also always advertises a terminal setup auth method (`thoth-setup`, args `--setup`) so first-run registry clients can open Thoth's interactive model/provider configuration before starting a normal ACP session.
 
 ## Working directory binding
 
