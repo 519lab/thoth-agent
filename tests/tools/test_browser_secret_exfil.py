@@ -29,9 +29,21 @@ class TestBrowserSecretExfil:
         assert parsed["success"] is False
 
     def test_allows_normal_url(self):
-        """Normal URLs pass the secret check (may fail for other reasons)."""
+        """Normal URLs pass the secret check.
+
+        The actual navigation is mocked at the ``_run_browser_command``
+        seam — without it this test launched a real browser against a
+        live URL and flaked on CI with 30s timeouts.
+        """
         from tools.browser_tool import browser_navigate
-        result = browser_navigate("https://github.com/519lab/thoth-agent")
+        with (
+            patch("tools.browser_tool._is_camofox_mode", return_value=False),
+            patch(
+                "tools.browser_tool._run_browser_command",
+                return_value={"success": True, "data": {}},
+            ),
+        ):
+            result = browser_navigate("https://github.com/519lab/thoth-agent")
         parsed = json.loads(result)
         # Should NOT be blocked by secret detection
         assert "API key or token" not in parsed.get("error", "")
