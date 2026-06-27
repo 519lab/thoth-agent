@@ -299,7 +299,7 @@ export function ModelPicker({ gw, onCancel, onSelect, sessionId, t }: ModelPicke
         </Text>
 
         <Text color={t.color.muted} wrap="truncate-end">
-          Paste your API key below (saved to ~/.hermes/.env)
+          Paste your API key below (saved to ~/.thoth/.env)
         </Text>
 
         <Text color={t.color.muted} wrap="truncate-end"> </Text>
