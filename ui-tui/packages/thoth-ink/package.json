@@ -50,5 +50,8 @@
   },
   "devDependencies": {
     "esbuild": "^0.25.0"
+  },
+  "overrides": {
+    "ws": "^8.21.0"
   }
 }
