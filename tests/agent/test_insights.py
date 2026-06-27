@@ -17,6 +17,38 @@ from agent.insights import (
 from tests._helpers.sync_session_db import SyncSessionDB, set_session_meta_sync
 
 
+def _iso(ago_seconds: float) -> str:
+    """ISO-8601 UTC timestamp for ``ago_seconds`` before now."""
+    return datetime.fromtimestamp(time.time() - ago_seconds, timezone.utc).isoformat()
+
+
+def _seed_skill_usage(records: dict) -> None:
+    """Write skill records into the ``~/.thoth/skills/.usage.json`` sidecar that
+    ``InsightsEngine._get_skill_usage`` now reads.
+
+    The autouse ``_hermetic_environment`` fixture points ``THOTH_HOME`` at a
+    per-test tempdir, so this only ever writes the isolated sidecar — never a
+    real one.
+    """
+    import json
+    from thoth_constants import get_thoth_home
+
+    skills_dir = get_thoth_home() / "skills"
+    skills_dir.mkdir(parents=True, exist_ok=True)
+    (skills_dir / ".usage.json").write_text(json.dumps(records), encoding="utf-8")
+
+
+# Skill usage is sourced from the ~/.thoth/skills/.usage.json sidecar
+# (loads = view_count + use_count, edits = patch_count), windowed by last
+# activity. ``populated_db`` seeds these so generate()/formatters see skills;
+# the breakdown tests assert against these exact counts/timestamps.
+_SKILL_RECORDS = {
+    "github-pr-workflow": {"view_count": 2, "last_viewed_at": _iso(1 * 86400)},
+    "systematic-debugging": {"view_count": 1, "last_viewed_at": _iso(10 * 86400)},
+    "github-code-review": {"patch_count": 1, "last_patched_at": _iso(1 * 86400)},
+}
+
+
 def _epoch_to_dt(epoch: float) -> datetime:
     """Convert a unix epoch float to a tz-aware UTC datetime.
 
@@ -149,6 +181,9 @@ def populated_db(db):
     db.update_token_counts("s_old", input_tokens=5000, output_tokens=2000)
     db.append_message("s_old", role="user", content="old message")
     db.append_message("s_old", role="assistant", content="old reply")
+
+    # Skill usage now comes from the .usage.json sidecar, not message tool_calls.
+    _seed_skill_usage(_SKILL_RECORDS)
 
     return db
 
@@ -369,6 +404,7 @@ class TestInsightsPopulated:
         assert total_pct == pytest.approx(100.0, abs=0.1)
 
     def test_skill_breakdown(self, populated_db):
+        # populated_db seeds the .usage.json sidecar (_SKILL_RECORDS).
         engine = InsightsEngine(populated_db)
         report = engine.generate(days=30)
         skills = report["skills"]
@@ -390,6 +426,8 @@ class TestInsightsPopulated:
         report = engine.generate(days=3)
         skills = report["skills"]
 
+        # systematic-debugging's last activity is 10 days ago → outside the
+        # 3-day window; the other two (1 day ago) remain.
         assert skills["summary"]["distinct_skills_used"] == 2
         assert skills["summary"]["total_skill_loads"] == 2
         assert skills["summary"]["total_skill_edits"] == 1

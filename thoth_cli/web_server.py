@@ -3153,42 +3153,128 @@ async def update_config_raw(body: RawConfigUpdate):
 
 @app.get("/api/analytics/usage")
 async def get_usage_analytics(days: int = 30):
-    # NOTE: Phase 0 Task 23 will port these raw SQLite queries to PG.
-    # Until then, return an empty response on PG so the dashboard doesn't 500.
     from thoth_state import SessionDB
     from agent.insights import InsightsEngine
 
+    def _empty_skills():
+        return {
+            "summary": {
+                "total_skill_loads": 0,
+                "total_skill_edits": 0,
+                "total_skill_actions": 0,
+                "distinct_skills_used": 0,
+            },
+            "top_skills": [],
+        }
+
     db = SessionDB()
     if not hasattr(db, "_conn"):
-        # Running against PG (_AsyncSessionDB) — raw SQL path not yet ported.
-        # Return an empty-but-complete shape so the Analytics page renders
-        # cleanly: ``totals`` zeroed (was {} → NaN reads) and ``skills`` the
-        # {summary, top_skills} object the page expects (was [] → crash on
-        # ``skills.top_skills``).
-        return {
-            "daily": [],
-            "by_model": [],
-            "totals": {
-                "total_input": 0,
-                "total_output": 0,
-                "total_cache_read": 0,
-                "total_reasoning": 0,
-                "total_estimated_cost": 0,
-                "total_actual_cost": 0,
-                "total_sessions": 0,
-                "total_api_calls": 0,
-            },
-            "period_days": days,
-            "skills": {
-                "summary": {
-                    "total_skill_loads": 0,
-                    "total_skill_edits": 0,
-                    "total_skill_actions": 0,
-                    "distinct_skills_used": 0,
+        # Postgres backend (_AsyncSessionDB). Same aggregates as the SQLite
+        # branch below, ported to PG dialect (Phase 0 Task 23, issue #244):
+        #   * ``started_at`` is TIMESTAMPTZ, so we bind a tz-aware ``datetime``
+        #     cutoff (asyncpg → timestamptz) instead of an epoch float, and
+        #     bucket days with ``to_char(... AT TIME ZONE 'UTC', 'YYYY-MM-DD')``
+        #     to match SQLite's ``date(started_at, 'unixepoch')`` (UTC).
+        #   * the asyncpg pool is loop-bound → route via ``run_on_pool_loop``.
+        #   * skills come from the already-PG-ported InsightsEngine.
+        # On any failure we fall back to the zeroed shape so the page never 500s.
+        import thoth_db
+        from datetime import datetime, timezone, timedelta
+
+        cutoff_dt = datetime.now(timezone.utc) - timedelta(days=days)
+
+        async def _pg_usage():
+            async with thoth_db.connection() as conn:
+                daily_rows = await conn.fetch(
+                    """
+                    SELECT to_char(started_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day,
+                           COALESCE(SUM(input_tokens), 0) AS input_tokens,
+                           COALESCE(SUM(output_tokens), 0) AS output_tokens,
+                           COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+                           COALESCE(SUM(reasoning_tokens), 0) AS reasoning_tokens,
+                           COALESCE(SUM(estimated_cost_usd), 0) AS estimated_cost,
+                           COALESCE(SUM(actual_cost_usd), 0) AS actual_cost,
+                           COUNT(*) AS sessions,
+                           COALESCE(SUM(api_call_count), 0) AS api_calls
+                    FROM sessions WHERE started_at > $1
+                    GROUP BY day ORDER BY day
+                    """,
+                    cutoff_dt,
+                )
+                by_model_rows = await conn.fetch(
+                    """
+                    SELECT model,
+                           COALESCE(SUM(input_tokens), 0) AS input_tokens,
+                           COALESCE(SUM(output_tokens), 0) AS output_tokens,
+                           COALESCE(SUM(estimated_cost_usd), 0) AS estimated_cost,
+                           COUNT(*) AS sessions,
+                           COALESCE(SUM(api_call_count), 0) AS api_calls
+                    FROM sessions WHERE started_at > $1 AND model IS NOT NULL
+                    GROUP BY model
+                    ORDER BY SUM(input_tokens) + SUM(output_tokens) DESC NULLS LAST
+                    """,
+                    cutoff_dt,
+                )
+                totals_row = await conn.fetchrow(
+                    """
+                    SELECT COALESCE(SUM(input_tokens), 0) AS total_input,
+                           COALESCE(SUM(output_tokens), 0) AS total_output,
+                           COALESCE(SUM(cache_read_tokens), 0) AS total_cache_read,
+                           COALESCE(SUM(reasoning_tokens), 0) AS total_reasoning,
+                           COALESCE(SUM(estimated_cost_usd), 0) AS total_estimated_cost,
+                           COALESCE(SUM(actual_cost_usd), 0) AS total_actual_cost,
+                           COUNT(*) AS total_sessions,
+                           COALESCE(SUM(api_call_count), 0) AS total_api_calls
+                    FROM sessions WHERE started_at > $1
+                    """,
+                    cutoff_dt,
+                )
+            return (
+                [dict(r) for r in daily_rows],
+                [dict(r) for r in by_model_rows],
+                dict(totals_row) if totals_row is not None else {},
+            )
+
+        try:
+            daily, by_model, totals = await thoth_db.run_on_pool_loop(_pg_usage())
+            try:
+                skills = InsightsEngine(db).generate(days=days).get(
+                    "skills", _empty_skills()
+                )
+            except Exception:
+                _log.warning(
+                    "analytics/usage: insights skills generation failed",
+                    exc_info=True,
+                )
+                skills = _empty_skills()
+            return {
+                "daily": daily,
+                "by_model": by_model,
+                "totals": totals,
+                "period_days": days,
+                "skills": skills,
+            }
+        except Exception:
+            _log.warning(
+                "analytics/usage PG query failed; returning empty shape",
+                exc_info=True,
+            )
+            return {
+                "daily": [],
+                "by_model": [],
+                "totals": {
+                    "total_input": 0,
+                    "total_output": 0,
+                    "total_cache_read": 0,
+                    "total_reasoning": 0,
+                    "total_estimated_cost": 0,
+                    "total_actual_cost": 0,
+                    "total_sessions": 0,
+                    "total_api_calls": 0,
                 },
-                "top_skills": [],
-            },
-        }
+                "period_days": days,
+                "skills": _empty_skills(),
+            }
     try:
         cutoff = time.time() - (days * 86400)
         cur = db._conn.execute("""
@@ -3259,30 +3345,135 @@ async def get_models_analytics(days: int = 30):
     Returns token/cost/session breakdown per model plus capability metadata
     from models.dev (context window, vision, tools, reasoning, etc.).
     """
-    # NOTE: Phase 0 Task 23 will port these raw SQLite queries to PG.
-    # Until then, return an empty response on PG so the dashboard doesn't 500.
     from thoth_state import SessionDB
+
+    def _empty_models_totals():
+        return {
+            "distinct_models": 0,
+            "total_input": 0,
+            "total_output": 0,
+            "total_cache_read": 0,
+            "total_reasoning": 0,
+            "total_estimated_cost": 0,
+            "total_actual_cost": 0,
+            "total_sessions": 0,
+            "total_api_calls": 0,
+        }
 
     db = SessionDB()
     if not hasattr(db, "_conn"):
-        # Running against PG (_AsyncSessionDB) — raw SQL path not yet ported.
-        # Return an empty-but-complete shape (incl. a zeroed ``totals``) so the
-        # Models page renders cleanly instead of crashing on ``totals.*``.
-        return {
-            "models": [],
-            "totals": {
-                "distinct_models": 0,
-                "total_input": 0,
-                "total_output": 0,
-                "total_cache_read": 0,
-                "total_reasoning": 0,
-                "total_estimated_cost": 0,
-                "total_actual_cost": 0,
-                "total_sessions": 0,
-                "total_api_calls": 0,
-            },
-            "period_days": days,
-        }
+        # Postgres backend (_AsyncSessionDB): PG-dialect port of the SQLite
+        # branch below (Phase 0 Task 23, issue #244). ``started_at`` is
+        # TIMESTAMPTZ so we bind a tz-aware ``datetime`` cutoff and route via
+        # ``run_on_pool_loop``; ``MAX(started_at)`` / ``AVG(...)`` are cast to
+        # ``double precision`` so asyncpg decodes them as floats (not Decimal)
+        # — matching the SQLite contract the frontend expects. Falls back to a
+        # zeroed shape on error so the page never 500s.
+        import thoth_db
+        from datetime import datetime, timezone, timedelta
+
+        cutoff_dt = datetime.now(timezone.utc) - timedelta(days=days)
+
+        async def _pg_models():
+            async with thoth_db.connection() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT model,
+                           billing_provider,
+                           COALESCE(SUM(input_tokens), 0) AS input_tokens,
+                           COALESCE(SUM(output_tokens), 0) AS output_tokens,
+                           COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens,
+                           COALESCE(SUM(reasoning_tokens), 0) AS reasoning_tokens,
+                           COALESCE(SUM(estimated_cost_usd), 0) AS estimated_cost,
+                           COALESCE(SUM(actual_cost_usd), 0) AS actual_cost,
+                           COUNT(*) AS sessions,
+                           COALESCE(SUM(api_call_count), 0) AS api_calls,
+                           COALESCE(SUM(tool_call_count), 0) AS tool_calls,
+                           EXTRACT(EPOCH FROM MAX(started_at))::double precision
+                               AS last_used_at,
+                           AVG(input_tokens + output_tokens)::double precision
+                               AS avg_tokens_per_session
+                    FROM sessions
+                    WHERE started_at > $1 AND model IS NOT NULL AND model != ''
+                    GROUP BY model, billing_provider
+                    ORDER BY SUM(input_tokens) + SUM(output_tokens) DESC NULLS LAST
+                    """,
+                    cutoff_dt,
+                )
+                totals_row = await conn.fetchrow(
+                    """
+                    SELECT COUNT(DISTINCT model) AS distinct_models,
+                           COALESCE(SUM(input_tokens), 0) AS total_input,
+                           COALESCE(SUM(output_tokens), 0) AS total_output,
+                           COALESCE(SUM(cache_read_tokens), 0) AS total_cache_read,
+                           COALESCE(SUM(reasoning_tokens), 0) AS total_reasoning,
+                           COALESCE(SUM(estimated_cost_usd), 0) AS total_estimated_cost,
+                           COALESCE(SUM(actual_cost_usd), 0) AS total_actual_cost,
+                           COUNT(*) AS total_sessions,
+                           COALESCE(SUM(api_call_count), 0) AS total_api_calls
+                    FROM sessions
+                    WHERE started_at > $1 AND model IS NOT NULL AND model != ''
+                    """,
+                    cutoff_dt,
+                )
+            return (
+                [dict(r) for r in rows],
+                dict(totals_row) if totals_row is not None else {},
+            )
+
+        try:
+            rows, totals = await thoth_db.run_on_pool_loop(_pg_models())
+            models = []
+            for row in rows:
+                provider = row.get("billing_provider") or ""
+                model_name = row["model"]
+                caps = {}
+                try:
+                    from agent.models_dev import get_model_capabilities
+                    mc = get_model_capabilities(provider=provider, model=model_name)
+                    if mc is not None:
+                        caps = {
+                            "supports_tools": mc.supports_tools,
+                            "supports_vision": mc.supports_vision,
+                            "supports_reasoning": mc.supports_reasoning,
+                            "context_window": mc.context_window,
+                            "max_output_tokens": mc.max_output_tokens,
+                            "model_family": mc.model_family,
+                        }
+                except Exception:
+                    pass
+
+                models.append({
+                    "model": model_name,
+                    "provider": provider,
+                    "input_tokens": row["input_tokens"],
+                    "output_tokens": row["output_tokens"],
+                    "cache_read_tokens": row["cache_read_tokens"],
+                    "reasoning_tokens": row["reasoning_tokens"],
+                    "estimated_cost": row["estimated_cost"],
+                    "actual_cost": row["actual_cost"],
+                    "sessions": row["sessions"],
+                    "api_calls": row["api_calls"],
+                    "tool_calls": row["tool_calls"],
+                    "last_used_at": row["last_used_at"],
+                    "avg_tokens_per_session": row["avg_tokens_per_session"],
+                    "capabilities": caps,
+                })
+            return {
+                "models": models,
+                "totals": totals,
+                "period_days": days,
+            }
+        except Exception:
+            _log.warning(
+                "analytics/models PG query failed; returning empty shape",
+                exc_info=True,
+            )
+            return {
+                "models": [],
+                "totals": _empty_models_totals(),
+                "period_days": days,
+            }
     try:
         cutoff = time.time() - (days * 86400)
 

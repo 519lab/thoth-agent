@@ -355,87 +355,71 @@ class InsightsEngine:
         ]
 
     def _get_skill_usage(self, cutoff: float, source: str = None) -> List[Dict]:
-        """Extract per-skill usage from assistant tool calls."""
+        """Per-skill usage within the window, from the canonical usage sidecar.
+
+        Skills are sourced from ``~/.thoth/skills/.usage.json`` (see
+        ``tools/skill_usage``), which is bumped from *every* skill-load path —
+        the ``skill_view`` / ``skill_manage`` tools, prompt-path injection, and
+        the recall footer — so it captures usage that never surfaces as an
+        explicit ``skill_view`` tool call (e.g. skills loaded inside delegated
+        sub-agents or suggested by recall). The previous implementation scraped
+        assistant ``tool_calls`` for ``skill_view`` / ``skill_manage`` and so
+        reported zero on installs that load skills indirectly.
+
+        The sidecar keeps cumulative counters plus last-activity timestamps (no
+        per-event history), so we window by *last activity*: a skill is included
+        when its most recent view/use/patch falls within ``cutoff``; its counts
+        are lifetime totals. ``source`` does not apply — skill telemetry is
+        global, not per-platform — and is ignored.
+
+        Returns dicts shaped for ``_compute_skill_breakdown``:
+        ``{skill, view_count, manage_count, last_used_at}`` where ``view_count``
+        is loads (explicit views + prompt/recall uses) and ``manage_count`` is
+        edits (patches); ``last_used_at`` is an epoch float.
+        """
         from datetime import datetime, timezone
+
+        try:
+            from tools.skill_usage import load_usage, latest_activity_at
+        except Exception:
+            import logging
+            logging.getLogger(__name__).debug(
+                "skill usage sidecar unavailable", exc_info=True
+            )
+            return []
+
         cutoff_dt = datetime.fromtimestamp(cutoff, timezone.utc)
-        skill_counts: Dict[str, Dict[str, Any]] = {}
-
-        if source:
-            rows = self._fetchall(
-                """SELECT m.tool_calls, m.timestamp
-                   FROM messages m
-                   JOIN sessions s ON s.id = m.session_id
-                   WHERE s.started_at >= ? AND s.source = ?
-                     AND m.role = 'assistant' AND m.tool_calls IS NOT NULL""",
-                (cutoff_dt, source),
-            )
-        else:
-            rows = self._fetchall(
-                """SELECT m.tool_calls, m.timestamp
-                   FROM messages m
-                   JOIN sessions s ON s.id = m.session_id
-                   WHERE s.started_at >= ?
-                     AND m.role = 'assistant' AND m.tool_calls IS NOT NULL""",
-                (cutoff_dt,),
-            )
-
-        for row in rows:
+        out: List[Dict] = []
+        for name, rec in load_usage().items():
+            if not isinstance(rec, dict):
+                continue
             try:
-                calls = row["tool_calls"]
-                if isinstance(calls, str):
-                    calls = json.loads(calls)
-                if not isinstance(calls, list):
-                    continue
-            except (json.JSONDecodeError, TypeError):
+                loads = int(rec.get("view_count") or 0) + int(rec.get("use_count") or 0)
+                edits = int(rec.get("patch_count") or 0)
+            except (TypeError, ValueError):
+                continue
+            if loads == 0 and edits == 0:
                 continue
 
-            # messages.timestamp is TIMESTAMPTZ in PG; normalise to epoch
-            # float so the entry["last_used_at"] comparisons stay numeric.
-            timestamp = row["timestamp"]
-            from datetime import datetime as _dt
-            if isinstance(timestamp, _dt):
-                timestamp = timestamp.timestamp()
-            for call in calls:
-                if not isinstance(call, dict):
-                    continue
-                func = call.get("function", {})
-                tool_name = func.get("name")
-                if tool_name not in {"skill_view", "skill_manage"}:
-                    continue
+            last_raw = latest_activity_at(rec)
+            last_dt = None
+            if last_raw:
+                try:
+                    last_dt = datetime.fromisoformat(str(last_raw))
+                    if last_dt.tzinfo is None:
+                        last_dt = last_dt.replace(tzinfo=timezone.utc)
+                except (TypeError, ValueError):
+                    last_dt = None
+            if last_dt is None or last_dt < cutoff_dt:
+                continue
 
-                args = func.get("arguments")
-                if isinstance(args, str):
-                    try:
-                        args = json.loads(args)
-                    except (json.JSONDecodeError, TypeError):
-                        continue
-                if not isinstance(args, dict):
-                    continue
-
-                skill_name = args.get("name")
-                if not isinstance(skill_name, str) or not skill_name.strip():
-                    continue
-
-                entry = skill_counts.setdefault(
-                    skill_name,
-                    {
-                        "skill": skill_name,
-                        "view_count": 0,
-                        "manage_count": 0,
-                        "last_used_at": None,
-                    },
-                )
-                if tool_name == "skill_view":
-                    entry["view_count"] += 1
-                else:
-                    entry["manage_count"] += 1
-
-                if timestamp is not None and (
-                    entry["last_used_at"] is None or timestamp > entry["last_used_at"]
-                ):
-                    entry["last_used_at"] = timestamp
-
-        return list(skill_counts.values())
+            out.append({
+                "skill": name,
+                "view_count": loads,
+                "manage_count": edits,
+                "last_used_at": last_dt.timestamp(),
+            })
+        return out
 
     def _get_message_stats(self, cutoff: float, source: str = None) -> Dict:
         """Get aggregate message statistics."""
