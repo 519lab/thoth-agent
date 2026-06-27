@@ -170,7 +170,7 @@ Notes:
 - Completion requests are debounced by 60 ms. Input starting with `/` uses `complete.slash`. A trailing token that starts with `./`, `../`, `~/`, `/`, or `@` uses `complete.path`.
 - Text pastes are inserted inline directly into the draft. Nothing is newline-flattened.
 - `Cmd/Ctrl+G` (or `Alt+G` in VSCode/Cursor, which intercept the primary keystroke for Find Next) writes the current draft, including any multiline buffer, to a temp file, suspends Ink, launches `$EDITOR`, then restores the TUI and submits the saved text if the editor exits cleanly.
-- Input history is stored in `~/.hermes/.hermes_history` or under `THOTH_HOME`.
+- Input history is stored in `~/.thoth/.thoth_history` or under `THOTH_HOME`.
 
 ## Rendering
 
@@ -342,5 +342,5 @@ tui_gateway/
   entry.py               stdio entrypoint
   server.py              RPC handlers and session logic
   render.py              optional rich/ANSI bridge
-  slash_worker.py        persistent HermesCLI subprocess for slash commands
+  slash_worker.py        persistent ThothCLI subprocess for slash commands
 ```
