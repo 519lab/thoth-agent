@@ -256,7 +256,7 @@ class QQAdapter(BasePlatformAdapter):
 
         # Default interaction dispatcher: routes approval-button clicks to
         # tools.approval.resolve_gateway_approval() and update-prompt clicks
-        # to ~/.hermes/.update_response. Set here so the cross-adapter gateway
+        # to ~/.thoth/.update_response. Set here so the cross-adapter gateway
         # contract (send_exec_approval / send_update_prompt) works out of the
         # box; callers can override with set_interaction_callback(None) or
         # register a custom handler.
@@ -1017,7 +1017,7 @@ class QQAdapter(BasePlatformAdapter):
           :func:`tools.approval.resolve_gateway_approval`
           (unblocks the agent thread waiting on a dangerous-command approval).
         - ``update_prompt:<answer>`` →
-          writes the answer to ``~/.hermes/.update_response`` for the
+          writes the answer to ``~/.thoth/.update_response`` for the
           detached ``thoth update --gateway`` process to consume.
         - Anything else is logged at DEBUG and ignored.
 
@@ -2578,7 +2578,7 @@ class QQAdapter(BasePlatformAdapter):
         clicks surface as ``INTERACTION_CREATE`` with
         ``button_data = 'update_prompt:y'`` or ``'update_prompt:n'``;
         the adapter's interaction callback writes the answer to
-        ``~/.hermes/.update_response`` so the detached update process
+        ``~/.thoth/.update_response`` so the detached update process
         can read it.
         """
         del session_key, metadata  # present for contract parity only.

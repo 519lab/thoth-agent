@@ -75,14 +75,14 @@ This module requires NixOS. For non-NixOS systems (macOS, other Linux distros), 
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    hermes-agent.url = "github:519lab/thoth-agent";
+    thoth-agent.url = "github:519lab/thoth-agent";
   };
 
-  outputs = { nixpkgs, hermes-agent, ... }: {
+  outputs = { nixpkgs, thoth-agent, ... }: {
     nixosConfigurations.your-host = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        hermes-agent.nixosModules.default
+        thoth-agent.nixosModules.default
         ./configuration.nix
       ];
     };
@@ -95,10 +95,10 @@ This module requires NixOS. For non-NixOS systems (macOS, other Linux distros), 
 ```nix
 # configuration.nix
 { config, ... }: {
-  services.hermes-agent = {
+  services.thoth-agent = {
     enable = true;
     settings.model.default = "anthropic/claude-sonnet-4";
-    environmentFiles = [ config.sops.secrets."hermes-env".path ];
+    environmentFiles = [ config.sops.secrets."thoth-env".path ];
     addToSystemPackages = true;
   };
 }
@@ -114,7 +114,7 @@ echo "OPENROUTER_API_KEY=sk-or-your-key" | sudo install -m 0600 -o thoth /dev/st
 ```
 
 ```nix
-services.hermes-agent.environmentFiles = [ "/var/lib/thoth/env" ];
+services.thoth-agent.environmentFiles = [ "/var/lib/thoth/env" ];
 ```
 :::
 
@@ -132,10 +132,10 @@ When `container.enable = true` and `addToSystemPackages = true`, **every** `thot
 - If the container isn't running, the CLI retries briefly (5s with a spinner for interactive use, 10s silently for scripts) then fails with a clear error — no silent fallback
 - For developers working on the thoth codebase, set `THOTH_DEV=1` to bypass container routing and run the local checkout directly
 
-Set `container.hostUsers` to create a `~/.hermes` symlink to the service state directory, so the host CLI and the container share sessions, config, and memories:
+Set `container.hostUsers` to create a `~/.thoth` symlink to the service state directory, so the host CLI and the container share sessions, config, and memories:
 
 ```nix
-services.hermes-agent = {
+services.thoth-agent = {
   container.enable = true;
   container.hostUsers = [ "your-username" ];
   addToSystemPackages = true;
@@ -165,10 +165,10 @@ After `nixos-rebuild switch`, check that the service is running:
 
 ```bash
 # Check service status
-systemctl status hermes-agent
+systemctl status thoth-agent
 
 # Watch logs (Ctrl+C to stop)
-journalctl -u hermes-agent -f
+journalctl -u thoth-agent -f
 
 # If addToSystemPackages is true, test the CLI
 thoth version
@@ -191,7 +191,7 @@ To enable container mode, add one line:
 
 ```nix
 {
-  services.hermes-agent = {
+  services.thoth-agent = {
     enable = true;
     container.enable = true;
     # ... rest of config is identical
@@ -213,14 +213,14 @@ The `settings` option accepts an arbitrary attrset that is rendered as `config.y
 
 ```nix
 # base.nix
-services.hermes-agent.settings = {
+services.thoth-agent.settings = {
   model.default = "anthropic/claude-sonnet-4";
   toolsets = [ "all" ];
   terminal = { backend = "local"; timeout = 180; };
 };
 
 # personality.nix
-services.hermes-agent.settings = {
+services.thoth-agent.settings = {
   display = { compact = false; personality = "kawaii"; };
   memory = { memory_enabled = true; user_profile_enabled = true; };
 };
@@ -241,7 +241,7 @@ Run `nix build .#configKeys && cat result` to see every leaf config key extracte
 
 ```nix
 { config, ... }: {
-  services.hermes-agent = {
+  services.thoth-agent = {
     enable = true;
     container.enable = true;
 
@@ -265,7 +265,7 @@ Run `nix build .#configKeys && cat result` to see every leaf config key extracte
     };
 
     # ── Secrets ────────────────────────────────────────────────────────
-    environmentFiles = [ config.sops.secrets."hermes-env".path ];
+    environmentFiles = [ config.sops.secrets."thoth-env".path ];
 
     # ── Documents ──────────────────────────────────────────────────────
     documents = {
@@ -303,7 +303,7 @@ Run `nix build .#configKeys && cat result` to see every leaf config key extracte
 If you'd rather manage `config.yaml` entirely outside Nix, use `configFile`:
 
 ```nix
-services.hermes-agent.configFile = /etc/thoth/config.yaml;
+services.thoth-agent.configFile = /etc/thoth/config.yaml;
 ```
 
 This bypasses `settings` entirely — no merge, no generation. The file is copied as-is to `$THOTH_HOME/config.yaml` on each activation.
@@ -316,8 +316,8 @@ Quick reference for the most common things Nix users want to customize:
 |---|---|---|
 | Change the LLM model | `settings.model.default` | `"anthropic/claude-sonnet-4"` |
 | Use a different provider endpoint | `settings.model.base_url` | `"https://openrouter.ai/api/v1"` |
-| Add API keys | `environmentFiles` | `[ config.sops.secrets."hermes-env".path ]` |
-| Give the agent a personality | `${services.hermes-agent.stateDir}/.hermes/SOUL.md` | manage the file directly |
+| Add API keys | `environmentFiles` | `[ config.sops.secrets."thoth-env".path ]` |
+| Give the agent a personality | `${services.thoth-agent.stateDir}/.thoth/SOUL.md` | manage the file directly |
 | Add MCP tool servers | `mcpServers.<name>` | See [MCP Servers](#mcp-servers) |
 | Mount host directories into container | `container.extraVolumes` | `[ "/data:/data:rw" ]` |
 | Pass GPU access to container | `container.extraOptions` | `[ "--gpus" "all" ]` |
@@ -325,7 +325,7 @@ Quick reference for the most common things Nix users want to customize:
 | Share state between host CLI and container | `container.hostUsers` | `[ "sidbin" ]` |
 | Make extra tools available to the agent | `extraPackages` | `[ pkgs.pandoc pkgs.imagemagick ]` |
 | Use a custom base image | `container.image` | `"ubuntu:24.04"` |
-| Override the thoth package | `package` | `inputs.hermes-agent.packages.${system}.default.override { ... }` |
+| Override the thoth package | `package` | `inputs.thoth-agent.packages.${system}.default.override { ... }` |
 | Change state directory | `stateDir` | `"/opt/thoth"` |
 | Set the agent's working directory | `workingDirectory` | `"/home/user/projects"` |
 
@@ -337,20 +337,20 @@ Quick reference for the most common things Nix users want to customize:
 Values in Nix expressions end up in `/nix/store`, which is world-readable. Always use `environmentFiles` with a secrets manager.
 :::
 
-Both `environment` (non-secret vars) and `environmentFiles` (secret files) are merged into `$THOTH_HOME/.env` at activation time (`nixos-rebuild switch`). Thoth reads this file on every startup, so changes take effect with a `systemctl restart hermes-agent` — no container recreation needed.
+Both `environment` (non-secret vars) and `environmentFiles` (secret files) are merged into `$THOTH_HOME/.env` at activation time (`nixos-rebuild switch`). Thoth reads this file on every startup, so changes take effect with a `systemctl restart thoth-agent` — no container recreation needed.
 
 ### sops-nix
 
 ```nix
 {
   sops = {
-    defaultSopsFile = ./secrets/hermes.yaml;
+    defaultSopsFile = ./secrets/thoth.yaml;
     age.keyFile = "/home/user/.config/sops/age/keys.txt";
-    secrets."hermes-env" = { format = "yaml"; };
+    secrets."thoth-env" = { format = "yaml"; };
   };
 
-  services.hermes-agent.environmentFiles = [
-    config.sops.secrets."hermes-env".path
+  services.thoth-agent.environmentFiles = [
+    config.sops.secrets."thoth-env".path
   ];
 }
 ```
@@ -358,8 +358,8 @@ Both `environment` (non-secret vars) and `environmentFiles` (secret files) are m
 The secrets file contains key-value pairs:
 
 ```yaml
-# secrets/hermes.yaml (encrypted with sops)
-hermes-env: |
+# secrets/thoth.yaml (encrypted with sops)
+thoth-env: |
     OPENROUTER_API_KEY=sk-or-...
     TELEGRAM_BOT_TOKEN=123456:ABC...
     ANTHROPIC_API_KEY=sk-ant-...
@@ -369,10 +369,10 @@ hermes-env: |
 
 ```nix
 {
-  age.secrets.hermes-env.file = ./secrets/hermes-env.age;
+  age.secrets.thoth-env.file = ./secrets/thoth-env.age;
 
-  services.hermes-agent.environmentFiles = [
-    config.age.secrets.hermes-env.path
+  services.thoth-agent.environmentFiles = [
+    config.age.secrets.thoth-env.path
   ];
 }
 ```
@@ -383,7 +383,7 @@ For platforms requiring OAuth (e.g., Discord), use `authFile` to seed credential
 
 ```nix
 {
-  services.hermes-agent = {
+  services.thoth-agent = {
     authFile = config.sops.secrets."thoth/auth.json".path;
     # authFileForceOverwrite = true;  # overwrite on every activation
   };
@@ -401,11 +401,11 @@ The `documents` option installs files into the agent's working directory (the `w
 - **`USER.md`** — context about the user the agent is interacting with.
 - Any other files you place here are visible to the agent as workspace files.
 
-The agent identity file is separate: Thoth loads its primary `SOUL.md` from `$THOTH_HOME/SOUL.md`, which in the NixOS module is `${services.hermes-agent.stateDir}/.hermes/SOUL.md`. Putting `SOUL.md` in `documents` only creates a workspace file and will not replace the main persona file.
+The agent identity file is separate: Thoth loads its primary `SOUL.md` from `$THOTH_HOME/SOUL.md`, which in the NixOS module is `${services.thoth-agent.stateDir}/.thoth/SOUL.md`. Putting `SOUL.md` in `documents` only creates a workspace file and will not replace the main persona file.
 
 ```nix
 {
-  services.hermes-agent.documents = {
+  services.thoth-agent.documents = {
     "USER.md" = ./documents/USER.md;  # path reference, copied from Nix store
   };
 }
@@ -423,7 +423,7 @@ The `mcpServers` option declaratively configures [MCP (Model Context Protocol)](
 
 ```nix
 {
-  services.hermes-agent.mcpServers = {
+  services.thoth-agent.mcpServers = {
     filesystem = {
       command = "npx";
       args = [ "-y" "@modelcontextprotocol/server-filesystem" "/data/workspace" ];
@@ -445,7 +445,7 @@ Environment variables in `env` values are resolved from `$THOTH_HOME/.env` at ru
 
 ```nix
 {
-  services.hermes-agent.mcpServers.remote-api = {
+  services.thoth-agent.mcpServers.remote-api = {
     url = "https://mcp.example.com/v1/mcp";
     headers.Authorization = "Bearer \${MCP_REMOTE_API_KEY}";
     timeout = 180;
@@ -459,7 +459,7 @@ Set `auth = "oauth"` for servers using OAuth 2.1. Thoth implements the full PKCE
 
 ```nix
 {
-  services.hermes-agent.mcpServers.my-oauth-server = {
+  services.thoth-agent.mcpServers.my-oauth-server = {
     url = "https://mcp.example.com/mcp";
     auth = "oauth";
   };
@@ -477,11 +477,11 @@ The first OAuth authorization requires a browser-based consent flow. In a headle
 
 ```bash
 # Container mode
-docker exec -it hermes-agent \
+docker exec -it thoth-agent \
   thoth mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
 
 # Native mode
-sudo -u thoth THOTH_HOME=/var/lib/hermes/.hermes \
+sudo -u thoth THOTH_HOME=/var/lib/thoth/.thoth \
   thoth mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
 ```
 
@@ -491,9 +491,9 @@ The container uses `--network=host`, so the OAuth callback listener on `127.0.0.
 
 ```bash
 thoth mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
-scp ~/.hermes/mcp-tokens/my-oauth-server{,.client}.json \
-    server:/var/lib/hermes/.hermes/mcp-tokens/
-# Ensure: chown hermes:thoth, chmod 0600
+scp ~/.thoth/mcp-tokens/my-oauth-server{,.client}.json \
+    server:/var/lib/thoth/.thoth/mcp-tokens/
+# Ensure: chown thoth:thoth, chmod 0600
 ```
 
 </details>
@@ -504,7 +504,7 @@ Some MCP servers can request LLM completions from the agent:
 
 ```nix
 {
-  services.hermes-agent.mcpServers.analysis = {
+  services.thoth-agent.mcpServers.analysis = {
     command = "npx";
     args = [ "-y" "analysis-server" ];
     sampling = {
@@ -535,7 +535,7 @@ When thoth runs via the NixOS module, the following CLI commands are **blocked**
 This prevents drift between what Nix declares and what's on disk. Detection uses two signals:
 
 1. **`THOTH_MANAGED=true`** environment variable — set by the systemd service, visible to the gateway process
-2. **`.managed` marker file** in `THOTH_HOME` — set by the activation script, visible to interactive shells (e.g., `docker exec -it hermes-agent thoth config set ...` is also blocked)
+2. **`.managed` marker file** in `THOTH_HOME` — set by the activation script, visible to interactive shells (e.g., `docker exec -it thoth-agent thoth config set ...` is also blocked)
 
 To change configuration, edit your Nix config and run `sudo nixos-rebuild switch`.
 
@@ -552,13 +552,13 @@ When container mode is enabled, thoth runs inside a persistent Ubuntu container 
 ```
 Host                                    Container
 ────                                    ─────────
-/nix/store/...-hermes-agent-0.1.0  ──►  /nix/store/... (ro)
-~/.hermes -> /var/lib/hermes/.hermes       (symlink bridge, per hostUsers)
+/nix/store/...-thoth-agent-0.1.0  ──►  /nix/store/... (ro)
+~/.thoth -> /var/lib/thoth/.thoth       (symlink bridge, per hostUsers)
 /var/lib/thoth/                    ──►  /data/          (rw)
   ├── current-package -> /nix/store/...    (symlink, updated each rebuild)
   ├── .gc-root -> /nix/store/...           (prevents nix-collect-garbage)
   ├── .container-identity                  (sha256 hash, triggers recreation)
-  ├── .hermes/                             (THOTH_HOME)
+  ├── .thoth/                             (THOTH_HOME)
   │   ├── .env                             (merged from environment + environmentFiles)
   │   ├── config.yaml                      (Nix-generated, deep-merged by activation)
   │   ├── .managed                         (marker file)
@@ -579,7 +579,7 @@ The Nix-built binary works inside the Ubuntu container because `/nix/store` is b
 
 | Event | Container recreated? | `/data` (state) | `/home/thoth` | Writable layer (`apt`/`pip`/`npm`) |
 |---|---|---|---|---|
-| `systemctl restart hermes-agent` | No | Persists | Persists | Persists |
+| `systemctl restart thoth-agent` | No | Persists | Persists | Persists |
 | `nixos-rebuild switch` (code change) | No (symlink updated) | Persists | Persists | Persists |
 | Host reboot | No | Persists | Persists | Persists |
 | `nix-collect-garbage` | No (GC root) | Persists | Persists | Persists |
@@ -610,7 +610,7 @@ The NixOS module supports declarative plugin installation — no imperative `tho
 For plugins that are just a source tree with `plugin.yaml` + `__init__.py` (e.g., [hermes-lcm](https://github.com/stephenschoettler/hermes-lcm)):
 
 ```nix
-services.hermes-agent.extraPlugins = [
+services.thoth-agent.extraPlugins = [
   (pkgs.fetchFromGitHub {
     owner = "stephenschoettler";
     repo = "hermes-lcm";
@@ -624,10 +624,10 @@ Plugins are symlinked into `$THOTH_HOME/plugins/` at activation time. Thoth disc
 
 ### Entry-Point Plugins (`extraPythonPackages`)
 
-For pip-packaged plugins that register via `[project.entry-points."hermes_agent.plugins"]` (e.g., [rtk-hermes](https://github.com/ogallotti/rtk-hermes)):
+For pip-packaged plugins that register via `[project.entry-points."thoth_agent.plugins"]` (e.g., [rtk-hermes](https://github.com/ogallotti/rtk-hermes)):
 
 ```nix
-services.hermes-agent.extraPythonPackages = [
+services.thoth-agent.extraPythonPackages = [
   (pkgs.python312Packages.buildPythonPackage {
     pname = "rtk-hermes";
     version = "1.0.0";
@@ -647,10 +647,10 @@ The package's `site-packages` is added to PYTHONPATH in the thoth wrapper. `impo
 
 ### Optional Dependency Groups (`extraDependencyGroups`)
 
-For optional extras already declared in hermes-agent's `pyproject.toml` (e.g., memory providers like `hindsight` or `honcho`), use `extraDependencyGroups` to include them in the sealed venv at build time:
+For optional extras already declared in thoth-agent's `pyproject.toml` (e.g., memory providers like `hindsight` or `honcho`), use `extraDependencyGroups` to include them in the sealed venv at build time:
 
 ```nix
-services.hermes-agent = {
+services.thoth-agent = {
   extraDependencyGroups = [ "hindsight" ];
   settings.memory.provider = "hindsight";
 };
@@ -672,7 +672,7 @@ This is resolved by uv alongside core dependencies in a single pass — no PYTHO
 A directory plugin with third-party Python dependencies needs both options:
 
 ```nix
-services.hermes-agent = {
+services.thoth-agent = {
   extraPlugins = [ my-plugin-src ];          # plugin source
   extraPythonPackages = [ pkgs.python312Packages.redis ];  # its Python dep
   extraPackages = [ pkgs.redis ];            # system binary it needs
@@ -685,12 +685,12 @@ External flakes can override the package directly:
 
 ```nix
 {
-  inputs.hermes-agent.url = "github:519lab/thoth-agent";
-  outputs = { hermes-agent, nixpkgs, ... }: {
-    nixpkgs.overlays = [ hermes-agent.overlays.default ];
+  inputs.thoth-agent.url = "github:519lab/thoth-agent";
+  outputs = { thoth-agent, nixpkgs, ... }: {
+    nixpkgs.overlays = [ thoth-agent.overlays.default ];
     # Then:
-    #   pkgs.hermes-agent.override { extraPythonPackages = [...]; }
-    #   pkgs.hermes-agent.override { extraDependencyGroups = [ "hindsight" ]; }
+    #   pkgs.thoth-agent.override { extraPythonPackages = [...]; }
+    #   pkgs.thoth-agent.override { extraDependencyGroups = [ "hindsight" ]; }
   };
 }
 ```
@@ -700,7 +700,7 @@ External flakes can override the package directly:
 Plugins still need to be enabled in `config.yaml`. Add them via the declarative settings:
 
 ```nix
-services.hermes-agent.settings.plugins.enabled = [
+services.thoth-agent.settings.plugins.enabled = [
   "hermes-lcm"
   "rtk-rewrite"
 ];
@@ -780,10 +780,10 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `enable` | `bool` | `false` | Enable the hermes-agent service |
-| `package` | `package` | `hermes-agent` | The hermes-agent package to use |
-| `user` | `str` | `"hermes"` | System user |
-| `group` | `str` | `"hermes"` | System group |
+| `enable` | `bool` | `false` | Enable the thoth-agent service |
+| `package` | `package` | `thoth-agent` | The thoth-agent package to use |
+| `user` | `str` | `"thoth"` | System user |
+| `group` | `str` | `"thoth"` | System group |
 | `createUser` | `bool` | `true` | Auto-create user/group |
 | `stateDir` | `str` | `"/var/lib/thoth"` | State directory (`THOTH_HOME` parent) |
 | `workingDirectory` | `str` | `"${stateDir}/workspace"` | Agent working directory (`MESSAGING_CWD`) |
@@ -849,7 +849,7 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 | `container.image` | `str` | `"ubuntu:24.04"` | Base image (pulled at runtime) |
 | `container.extraVolumes` | `listOf str` | `[]` | Extra volume mounts (`host:container:mode`) |
 | `container.extraOptions` | `listOf str` | `[]` | Extra args passed to `docker create` |
-| `container.hostUsers` | `listOf str` | `[]` | Interactive users who get a `~/.hermes` symlink to the service stateDir and are auto-added to the `thoth` group |
+| `container.hostUsers` | `listOf str` | `[]` | Interactive users who get a `~/.thoth` symlink to the service stateDir and are auto-added to the `thoth` group |
 
 ---
 
@@ -858,8 +858,8 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 ### Native Mode
 
 ```
-/var/lib/thoth/                     # stateDir (owned by hermes:thoth, 0750)
-├── .hermes/                         # THOTH_HOME
+/var/lib/thoth/                     # stateDir (owned by thoth:thoth, 0750)
+├── .thoth/                         # THOTH_HOME
 │   ├── config.yaml                  # Nix-generated (deep-merged each rebuild)
 │   ├── .managed                     # Marker: CLI config mutation blocked
 │   ├── .env                         # Merged from environment + environmentFiles
@@ -895,7 +895,7 @@ Same layout, mounted into the container:
 
 ```bash
 # Update the flake input (run from the directory containing flake.nix)
-cd /etc/nixos && nix flake update hermes-agent
+cd /etc/nixos && nix flake update thoth-agent
 
 # Rebuild
 sudo nixos-rebuild switch
@@ -915,21 +915,21 @@ All `docker` commands below work the same with `podman`. Substitute accordingly 
 
 ```bash
 # Both modes use the same systemd unit
-journalctl -u hermes-agent -f
+journalctl -u thoth-agent -f
 
 # Container mode: also available directly
-docker logs -f hermes-agent
+docker logs -f thoth-agent
 ```
 
 ### Container Inspection
 
 ```bash
-systemctl status hermes-agent
-docker ps -a --filter name=hermes-agent
-docker inspect hermes-agent --format='{{.State.Status}}'
-docker exec -it hermes-agent bash
-docker exec hermes-agent readlink /data/current-package
-docker exec hermes-agent cat /data/.container-identity
+systemctl status thoth-agent
+docker ps -a --filter name=thoth-agent
+docker inspect thoth-agent --format='{{.State.Status}}'
+docker exec -it thoth-agent bash
+docker exec thoth-agent readlink /data/current-package
+docker exec thoth-agent cat /data/.container-identity
 ```
 
 ### Force Container Recreation
@@ -937,10 +937,10 @@ docker exec hermes-agent cat /data/.container-identity
 If you need to reset the writable layer (fresh Ubuntu):
 
 ```bash
-sudo systemctl stop hermes-agent
-docker rm -f hermes-agent
+sudo systemctl stop thoth-agent
+docker rm -f thoth-agent
 sudo rm /var/lib/thoth/.container-identity
-sudo systemctl start hermes-agent
+sudo systemctl start thoth-agent
 ```
 
 ### Verify Secrets Are Loaded
@@ -949,16 +949,16 @@ If the agent starts but can't authenticate with the LLM provider, check that the
 
 ```bash
 # Native mode
-sudo -u thoth cat /var/lib/hermes/.hermes/.env
+sudo -u thoth cat /var/lib/thoth/.thoth/.env
 
 # Container mode
-docker exec hermes-agent cat /data/.hermes/.env
+docker exec thoth-agent cat /data/.thoth/.env
 ```
 
 ### GC Root Verification
 
 ```bash
-nix-store --query --roots $(docker exec hermes-agent readlink /data/current-package)
+nix-store --query --roots $(docker exec thoth-agent readlink /data/current-package)
 ```
 
 ### Common Issues
@@ -967,9 +967,9 @@ nix-store --query --roots $(docker exec hermes-agent readlink /data/current-pack
 |---|---|---|
 | `Cannot save configuration: managed by NixOS` | CLI guards active | Edit `configuration.nix` and `nixos-rebuild switch` |
 | Container recreated unexpectedly | `extraVolumes`, `extraOptions`, or `image` changed | Expected — writable layer resets. Reinstall packages or use a custom image |
-| `thoth version` shows old version | Container not restarted | `systemctl restart hermes-agent` |
-| Permission denied on `/var/lib/thoth` | State dir is `0750 hermes:thoth` | Use `docker exec` or `sudo -u thoth` |
+| `thoth version` shows old version | Container not restarted | `systemctl restart thoth-agent` |
+| Permission denied on `/var/lib/thoth` | State dir is `0750 thoth:thoth` | Use `docker exec` or `sudo -u thoth` |
 | `nix-collect-garbage` removed thoth | GC root missing | Restart the service (preStart recreates the GC root) |
-| `no container with name or ID "hermes-agent"` (Podman) | Podman rootful container not visible to regular user | Add passwordless sudo for podman (see [Container Mode](#container-mode) section) |
+| `no container with name or ID "thoth-agent"` (Podman) | Podman rootful container not visible to regular user | Add passwordless sudo for podman (see [Container Mode](#container-mode) section) |
 | `unable to find user thoth` | Container still starting (entrypoint hasn't created user yet) | Wait a few seconds and retry — the CLI retries automatically |
-| Tool added via `extraPackages` not found in terminal | Requires `nixos-rebuild switch` to update the per-user profile | Rebuild and restart: `nixos-rebuild switch && systemctl restart hermes-agent` |
+| Tool added via `extraPackages` not found in terminal | Requires `nixos-rebuild switch` to update the per-user profile | Rebuild and restart: `nixos-rebuild switch && systemctl restart thoth-agent` |

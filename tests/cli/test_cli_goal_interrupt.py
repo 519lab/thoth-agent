@@ -28,7 +28,7 @@ import pytest
 @pytest.fixture
 def thoth_home(tmp_path, monkeypatch):
     """Isolated THOTH_HOME so SessionDB.state_meta writes stay hermetic."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     monkeypatch.setenv("THOTH_HOME", str(home))

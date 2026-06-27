@@ -121,7 +121,7 @@ async def test_forget_drops_salience_and_unpins(booted):
 
 
 def test_register_subparser_pin_forget():
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
     for cmd in (["substrate", "pin", "x"], ["substrate", "unpin", "x"], ["substrate", "forget", "x"]):

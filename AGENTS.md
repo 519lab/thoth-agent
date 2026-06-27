@@ -10,7 +10,7 @@ source .venv/bin/activate   # or: source venv/bin/activate
 ```
 
 `scripts/run_tests.sh` probes `.venv` first, then `venv`, then
-`$HOME/.hermes/hermes-agent/venv` (for worktrees that share a venv with the
+`$HOME/.thoth/app/venv` (for worktrees that share a venv with the
 main checkout).
 
 ## Project Structure
@@ -24,7 +24,7 @@ thoth-agent/
 ├── run_agent.py          # AIAgent class — core conversation loop (~12k LOC)
 ├── model_tools.py        # Tool orchestration, discover_builtin_tools(), handle_function_call()
 ├── toolsets.py           # Toolset definitions, _THOTH_CORE_TOOLS list
-├── cli.py                # HermesCLI class — interactive CLI orchestrator (~11k LOC)
+├── cli.py                # ThothCLI class — interactive CLI orchestrator (~11k LOC)
 ├── thoth_state.py       # SessionDB — async PG-backed session store (PostgreSQL, no SQLite)
 ├── substrate/            # Cognitive substrate (perception sink + Curator + recall)
 ├── thoth_constants.py   # get_thoth_home(), display_thoth_home() — profile-aware paths
@@ -45,7 +45,7 @@ thoth-agent/
 │   ├── context_engine/   # Context-engine plugins
 │   ├── model-providers/  # Inference backend plugins (openrouter, anthropic, gmi, ...)
 │   ├── kanban/           # Multi-agent board dispatcher + worker plugin
-│   ├── hermes-achievements/  # Gamified achievement tracking
+│   ├── thoth-achievements/  # Gamified achievement tracking
 │   ├── observability/    # Metrics / traces / logs plugin
 │   ├── image_gen/        # Image-generation providers
 │   └── <others>/         # disk-cleanup, example-dashboard, google_meet, platforms,
@@ -62,8 +62,8 @@ thoth-agent/
 └── tests/                # Pytest suite (~17k tests across ~900 files as of May 2026)
 ```
 
-**User config:** `~/.hermes/config.yaml` (settings), `~/.hermes/.env` (API keys only).
-**Logs:** `~/.hermes/logs/` — `agent.log` (INFO+), `errors.log` (WARNING+),
+**User config:** `~/.thoth/config.yaml` (settings), `~/.thoth/.env` (API keys only).
+**Logs:** `~/.thoth/logs/` — `agent.log` (INFO+), `errors.log` (WARNING+),
 `gateway.log` when running the gateway. Profile-aware via `get_thoth_home()`.
 Browse with `thoth logs [--follow] [--level ...] [--session ...]`.
 
@@ -147,8 +147,8 @@ Reasoning content is stored in `assistant_msg["reasoning"]`.
 - **KawaiiSpinner** (`agent/display.py`) — animated faces during API calls, `┊` activity feed for tool results
 - `load_cli_config()` in cli.py merges hardcoded defaults + user config YAML
 - **Skin engine** (`thoth_cli/skin_engine.py`) — data-driven CLI theming; initialized from `display.skin` config key at startup; skins customize banner colors, spinner faces/verbs/wings, tool prefix, response box, branding text
-- `process_command()` is a method on `HermesCLI` — dispatches on canonical command name resolved via `resolve_command()` from the central registry
-- Skill slash commands: `agent/skill_commands.py` scans `~/.hermes/skills/`, injects as **user message** (not system prompt) to preserve prompt caching
+- `process_command()` is a method on `ThothCLI` — dispatches on canonical command name resolved via `resolve_command()` from the central registry
+- Skill slash commands: `agent/skill_commands.py` scans `~/.thoth/skills/`, injects as **user message** (not system prompt) to preserve prompt caching
 
 ### Slash Command Registry (`thoth_cli/commands.py`)
 
@@ -158,7 +158,7 @@ All slash commands are defined in a central `COMMAND_REGISTRY` list of `CommandD
 - **Gateway** — `GATEWAY_KNOWN_COMMANDS` frozenset for hook emission, `resolve_command()` for dispatch
 - **Gateway help** — `gateway_help_lines()` generates `/help` output
 - **Telegram** — `telegram_bot_commands()` generates the BotCommand menu
-- **Slack** — `slack_subcommand_map()` generates `/hermes` subcommand routing
+- **Slack** — `slack_subcommand_map()` generates `/thoth` subcommand routing
 - **Autocomplete** — `COMMANDS` flat dict feeds `SlashCommandCompleter`
 - **CLI help** — `COMMANDS_BY_CATEGORY` dict feeds `show_help()`
 
@@ -169,7 +169,7 @@ All slash commands are defined in a central `COMMAND_REGISTRY` list of `CommandD
 CommandDef("mycommand", "Description of what it does", "Session",
            aliases=("mc",), args_hint="[arg]"),
 ```
-2. Add handler in `HermesCLI.process_command()` in `cli.py`:
+2. Add handler in `ThothCLI.process_command()` in `cli.py`:
 ```python
 elif canonical == "mycommand":
     self._handle_mycommand(cmd_original)
@@ -237,9 +237,9 @@ Newline-delimited JSON-RPC over stdio. Requests from Ink, events from Python. Se
 ```bash
 cd ui-tui
 npm install       # first time
-npm run dev       # watch mode (rebuilds hermes-ink + tsx --watch)
+npm run dev       # watch mode (rebuilds thoth-ink + tsx --watch)
 npm start         # production
-npm run build     # full build (hermes-ink + tsc)
+npm run build     # full build (thoth-ink + tsc)
 npm run type-check # typecheck only (tsc --noEmit)
 npm run lint      # eslint
 npm run fmt       # prettier
@@ -264,8 +264,8 @@ The dashboard embeds the real `thoth --tui` — **not** a rewrite.  See `thoth_c
 ## Adding New Tools
 
 For most custom or local-only tools, do **not** edit Thoth core. Use the plugin
-route instead: create `~/.hermes/plugins/<name>/plugin.yaml` and
-`~/.hermes/plugins/<name>/__init__.py`, then register tools with
+route instead: create `~/.thoth/plugins/<name>/plugin.yaml` and
+`~/.thoth/plugins/<name>/__init__.py`, then register tools with
 `ctx.register_tool(...)`. Plugin toolsets are discovered automatically and can be
 enabled or disabled without touching `tools/` or `toolsets.py`.
 
@@ -303,7 +303,7 @@ The registry handles schema collection, dispatch, availability checking, and err
 
 **Path references in tool schemas**: If the schema description mentions file paths (e.g. default output directories), use `display_thoth_home()` to make them profile-aware. The schema is generated at import time, which is after `_apply_profile_override()` sets `THOTH_HOME`.
 
-**State files**: If a tool stores persistent state (caches, logs, checkpoints), use `get_thoth_home()` for the base directory — never `Path.home() / ".hermes"`. This ensures each profile gets its own state.
+**State files**: If a tool stores persistent state (caches, logs, checkpoints), use `get_thoth_home()` for the base directory — never `Path.home() / ".thoth"`. This ensures each profile gets its own state.
 
 **Agent-level tools** (todo, memory): intercepted by `run_agent.py` before `handle_function_call()`. See `tools/todo_tool.py` for the pattern.
 
@@ -404,7 +404,7 @@ The skin engine (`thoth_cli/skin_engine.py`) provides data-driven CLI visual cus
 
 ```
 thoth_cli/skin_engine.py    # SkinConfig dataclass, built-in skins, YAML loader
-~/.hermes/skins/*.yaml       # User-installed custom skins (drop-in)
+~/.thoth/skins/*.yaml       # User-installed custom skins (drop-in)
 ```
 
 - `init_skin_from_config()` — called at CLI startup, reads `display.skin` from config
@@ -458,7 +458,7 @@ Add to `_BUILTIN_SKINS` dict in `thoth_cli/skin_engine.py`:
 
 ### User skins (YAML)
 
-Users create `~/.hermes/skins/<name>.yaml`:
+Users create `~/.thoth/skins/<name>.yaml`:
 
 ```yaml
 name: cyberpunk
@@ -489,11 +489,11 @@ Activate with `/skin cyberpunk` or `display.skin: cyberpunk` in config.yaml.
 
 Thoth has two plugin surfaces. Both live under `plugins/` in the repo so
 repo-shipped plugins can be discovered alongside user-installed ones in
-`~/.hermes/plugins/` and pip-installed entry points.
+`~/.thoth/plugins/` and pip-installed entry points.
 
 ### General plugins (`thoth_cli/plugins.py` + `plugins/<name>/`)
 
-`PluginManager` discovers plugins from `~/.hermes/plugins/`, `./.hermes/plugins/`,
+`PluginManager` discovers plugins from `~/.thoth/plugins/`, `./.thoth/plugins/`,
 and pip entry points. Each plugin exposes a `register(ctx)` function that
 can:
 
@@ -520,7 +520,7 @@ holographic, openviking, retaindb**.
 Each provider implements the `MemoryProvider` ABC (see `agent/memory_provider.py`)
 and is orchestrated by `agent/memory_manager.py`. Lifecycle hooks include
 `sync_turn(turn_messages)`, `prefetch(query)`, `shutdown()`, and optional
-`post_setup(hermes_home, config)` for setup-wizard integration.
+`post_setup(thoth_home, config)` for setup-wizard integration.
 
 **CLI commands via `plugins/memory/<name>/cli.py`:** if a memory plugin
 defines `register_cli(subparser)`, `discover_plugin_cli_commands()` finds
@@ -539,7 +539,7 @@ honcho argparse from `main.py` for exactly this reason.
 **No new in-tree memory providers (policy, May 2026):** the set of
 built-in memory providers under `plugins/memory/` is closed. New memory
 backends must ship as **standalone plugin repos** that users install
-into `~/.hermes/plugins/` (or via pip entry points) — they implement
+into `~/.thoth/plugins/` (or via pip entry points) — they implement
 the same `MemoryProvider` ABC, register through the same discovery
 path, and integrate via `thoth memory setup` / `post_setup()` without
 landing in this tree. PRs that add a new directory under
@@ -579,7 +579,7 @@ pattern (ABC + orchestrator + per-plugin directory). Context engines
 plug into `agent/context_engine.py`; image-gen providers into
 `agent/image_gen_provider.py`. Reference / docs-companion plugins
 (`example-dashboard`, `strike-freedom-cockpit`, `plugin-llm-example`,
-`plugin-llm-async-example`) live in a separate `hermes-example-plugins`
+`plugin-llm-async-example`) live in a separate `thoth-example-plugins`
 companion repo, not in this tree.
 
 ---
@@ -605,13 +605,13 @@ niche skills belong in `optional-skills/`.
 
 Standard fields: `name`, `description`, `version`, `author`, `license`,
 `platforms` (OS-gating list: `[macos]`, `[linux, macos]`, ...),
-`metadata.hermes.tags`, `metadata.hermes.category`,
-`metadata.hermes.related_skills`, `metadata.hermes.config` (config.yaml
+`metadata.thoth.tags`, `metadata.thoth.category`,
+`metadata.thoth.related_skills`, `metadata.thoth.config` (config.yaml
 settings the skill needs — stored under `skills.config.<key>`, prompted
 during setup, injected at load time).
 
 Top-level `tags:` and `category:` are also accepted and mirrored from
-`metadata.hermes.*` by the loader.
+`metadata.thoth.*` by the loader.
 
 ### Skill authoring standards (HARDLINE)
 
@@ -689,7 +689,7 @@ violate them.
    skill's own block must be dropped during salvage.
 
 The full salvage / modernization checklist for external skill PRs
-lives in the `hermes-agent-dev` skill at
+lives in the `thoth-agent-dev` skill at
 `references/new-skill-pr-salvage.md` — load it before polishing
 contributor skill PRs.
 
@@ -751,7 +751,7 @@ work that must outlive the current turn, use `cronjob` or
 
 Background skill-maintenance system that tracks usage on agent-created
 skills and auto-archives stale ones. Users never lose skills; archives
-go to `~/.hermes/skills/.archive/` and are restorable.
+go to `~/.thoth/skills/.archive/` and are restorable.
 
 - **Core:** `agent/curator.py` (review loop, auto-transitions, LLM review
   prompt) + `agent/curator_backup.py` (pre-run tar.gz snapshots).
@@ -759,7 +759,7 @@ go to `~/.hermes/skills/.archive/` and are restorable.
   verbs are: `status`, `run`, `pause`, `resume`, `pin`, `unpin`,
   `archive`, `restore`, `prune`, `backup`, `rollback`.
 - **Telemetry:** `tools/skill_usage.py` owns the sidecar
-  `~/.hermes/skills/.usage.json` — per-skill `use_count`, `view_count`,
+  `~/.thoth/skills/.usage.json` — per-skill `use_count`, `view_count`,
   `patch_count`, `last_activity_at`, `state` (active / stale /
   archived), `pinned`.
 
@@ -806,7 +806,7 @@ Hardening invariants:
   cannot monopolize the scheduler.
 - Catchup window: half the job's period, clamped to 120s–2h.
 - Grace window: 120s for one-shot jobs whose fire time was missed.
-- File lock at `~/.hermes/cron/.tick.lock` prevents duplicate ticks
+- File lock at `~/.thoth/cron/.tick.lock` prevents duplicate ticks
   across processes.
 - Cron sessions pass `skip_memory=True` by default; memory providers
   intentionally do not run during cron.
@@ -840,7 +840,7 @@ kanban task.
   assigned profiles. Runs **inside the gateway** by default via
   `kanban.dispatch_in_gateway: true`.
 - **Plugin assets:** `plugins/kanban/dashboard/` (web UI) +
-  `plugins/kanban/systemd/` (`hermes-kanban-dispatcher.service` for
+  `plugins/kanban/systemd/` (`thoth-kanban-dispatcher.service` for
   standalone dispatcher deployment).
 
 Isolation model:
@@ -883,7 +883,7 @@ alongside the conversation loop. Phases A–C are shipped:
 **Discipline:**
 
 - **Substrate failures must be non-fatal.** Hooks under
-  `substrate/events/hermes_hooks.py` and the recall API wrap all I/O in
+  `substrate/events/thoth_hooks.py` and the recall API wrap all I/O in
   try/except — slice writes and recall calls never propagate to the
   conversation loop. Recall returns an empty `RecallProjection` with
   `empty_reason` set rather than raising.
@@ -892,7 +892,7 @@ alongside the conversation loop. Phases A–C are shipped:
   `thoth_state.SessionDB` class is the async PG-backed store; the old
   `state.db` SQLite path is gone.
 - **All substrate tests run against `postgres-test` (port 5433), never the
-  real `hermes` DB on 5432.** The test runner uses `pytest-postgresql` with
+  real `thoth` DB on 5432.** The test runner uses `pytest-postgresql` with
   per-worker DB names derived from `PYTEST_XDIST_WORKER`. Direct `pytest`
   invocations must set `PYTEST_XDIST_WORKER=run_<unique-id>` and point at
   the test container. See `tests/conftest.py:_TEST_PG_PORT`.
@@ -960,36 +960,36 @@ automatically scope to the active profile.
 ### Rules for profile-safe code
 
 1. **Use `get_thoth_home()` for all THOTH_HOME paths.** Import from `thoth_constants`.
-   NEVER hardcode `~/.hermes` or `Path.home() / ".hermes"` in code that reads/writes state.
+   NEVER hardcode `~/.thoth` or `Path.home() / ".thoth"` in code that reads/writes state.
    ```python
    # GOOD
    from thoth_constants import get_thoth_home
    config_path = get_thoth_home() / "config.yaml"
 
    # BAD — breaks profiles
-   config_path = Path.home() / ".hermes" / "config.yaml"
+   config_path = Path.home() / ".thoth" / "config.yaml"
    ```
 
 2. **Use `display_thoth_home()` for user-facing messages.** Import from `thoth_constants`.
-   This returns `~/.hermes` for default or `~/.hermes/profiles/<name>` for profiles.
+   This returns `~/.thoth` for default or `~/.thoth/profiles/<name>` for profiles.
    ```python
    # GOOD
    from thoth_constants import display_thoth_home
    print(f"Config saved to {display_thoth_home()}/config.yaml")
 
    # BAD — shows wrong path for profiles
-   print("Config saved to ~/.hermes/config.yaml")
+   print("Config saved to ~/.thoth/config.yaml")
    ```
 
 3. **Module-level constants are fine** — they cache `get_thoth_home()` at import time,
    which is AFTER `_apply_profile_override()` sets the env var. Just use `get_thoth_home()`,
-   not `Path.home() / ".hermes"`.
+   not `Path.home() / ".thoth"`.
 
 4. **Tests that mock `Path.home()` must also set `THOTH_HOME`** — since code now uses
-   `get_thoth_home()` (reads env var), not `Path.home() / ".hermes"`:
+   `get_thoth_home()` (reads env var), not `Path.home() / ".thoth"`:
    ```python
    with patch.object(Path, "home", return_value=tmp_path), \
-        patch.dict(os.environ, {"THOTH_HOME": str(tmp_path / ".hermes")}):
+        patch.dict(os.environ, {"THOTH_HOME": str(tmp_path / ".thoth")}):
        ...
    ```
 
@@ -1000,15 +1000,15 @@ automatically scope to the active profile.
    See `gateway/platforms/telegram.py` for the canonical pattern.
 
 6. **Profile operations are HOME-anchored, not THOTH_HOME-anchored** — `_get_profiles_root()`
-   returns `Path.home() / ".hermes" / "profiles"`, NOT `get_thoth_home() / "profiles"`.
+   returns `Path.home() / ".thoth" / "profiles"`, NOT `get_thoth_home() / "profiles"`.
    This is intentional — it lets `thoth -p coder profile list` see all profiles regardless
    of which one is active.
 
 ## Known Pitfalls
 
-### DO NOT hardcode `~/.hermes` paths
+### DO NOT hardcode `~/.thoth` paths
 Use `get_thoth_home()` from `thoth_constants` for code paths. Use `display_thoth_home()`
-for user-facing print/log messages. Hardcoding `~/.hermes` breaks profiles — each profile
+for user-facing print/log messages. Hardcoding `~/.thoth` breaks profiles — each profile
 has its own `THOTH_HOME` directory. This was the source of 5 bugs fixed in PR #3575.
 
 ### DO NOT introduce new `simple_term_menu` usage
@@ -1051,16 +1051,16 @@ Unused code that was never shipped was dead for a reason. Before wiring an
 unused module into a live code path, E2E test the real resolution chain
 with actual imports (not mocks) against a temp `THOTH_HOME`.
 
-### Tests must not write to `~/.hermes/`
-The `_isolate_hermes_home` autouse fixture in `tests/conftest.py` redirects `THOTH_HOME` to a temp dir. Never hardcode `~/.hermes/` paths in tests.
+### Tests must not write to `~/.thoth/`
+The `_isolate_thoth_home` autouse fixture in `tests/conftest.py` redirects `THOTH_HOME` to a temp dir. Never hardcode `~/.thoth/` paths in tests.
 
 **Profile tests**: When testing profile features, also mock `Path.home()` so that
-`_get_profiles_root()` and `_get_default_hermes_home()` resolve within the temp dir.
+`_get_profiles_root()` and `_get_default_thoth_home()` resolve within the temp dir.
 Use the pattern from `tests/thoth_cli/test_profiles.py`:
 ```python
 @pytest.fixture
 def profile_env(tmp_path, monkeypatch):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     monkeypatch.setenv("THOTH_HOME", str(home))
@@ -1113,7 +1113,7 @@ Five real sources of local-vs-CI drift the script closes:
 | | Without wrapper | With wrapper |
 |---|---|---|
 | Provider API keys | Whatever is in your env (auto-detects pool) | All `*_API_KEY`/`*_TOKEN`/etc. unset |
-| HOME / `~/.hermes/` | Your real config+auth.json | Temp dir per test |
+| HOME / `~/.thoth/` | Your real config+auth.json | Temp dir per test |
 | Timezone | Local TZ (PDT etc.) | UTC |
 | Locale | Whatever is set | C.UTF-8 |
 | xdist workers | `-n auto` = all cores | `-n auto` (safe — subprocess isolation prevents cross-worker flakes) |

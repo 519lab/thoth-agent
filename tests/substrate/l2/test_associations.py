@@ -69,7 +69,7 @@ async def test_densest_edges_ordered(thoth_db_initialized):
 
 
 def test_register_subparser_l2():
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
     assert callable(parser.parse_args(["substrate", "l2", "associations", "--limit", "3"]).func)

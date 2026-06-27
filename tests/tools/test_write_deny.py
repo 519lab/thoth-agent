@@ -36,7 +36,7 @@ class TestWriteDenyExactPaths:
 
     def test_thoth_env(self):
         # ``.env`` under the active THOTH_HOME (profile-aware, not just
-        # ``~/.hermes``) must be write-denied. The hermetic test conftest
+        # ``~/.thoth``) must be write-denied. The hermetic test conftest
         # points THOTH_HOME at a tempdir — resolve via get_thoth_home()
         # to match the denylist.
         from thoth_constants import get_thoth_home
@@ -49,7 +49,7 @@ class TestWriteDenyExactPaths:
 
         Before the fix, ``build_write_denied_paths`` only added
         ``<active_profile>/.env`` to the deny list, so the global
-        ``~/.hermes/.env`` (whose credentials are inherited by every profile)
+        ``~/.thoth/.env`` (whose credentials are inherited by every profile)
         could be silently overwritten by ``write_file`` while a profile was
         active.
         """
@@ -125,5 +125,5 @@ class TestWriteAllowed:
         assert _is_write_denied("/home/user/project/main.py") is False
 
     def test_thoth_config_not_env(self):
-        path = os.path.join(str(Path.home()), ".hermes", "config.yaml")
+        path = os.path.join(str(Path.home()), ".thoth", "config.yaml")
         assert _is_write_denied(path) is False

@@ -161,7 +161,7 @@ def adapter(tmp_path):
 
     Redirects the persistent thread-count store to a tmp file so tests
     don't pollute (or read state from) the developer's real
-    ~/.hermes/google_chat_thread_counts.json.
+    ~/.thoth/google_chat_thread_counts.json.
     """
     from plugins.platforms.google_chat.adapter import _ThreadCountStore
     a = GoogleChatAdapter(_base_config())
@@ -173,7 +173,7 @@ def adapter(tmp_path):
     a._subscription_path = "projects/test-project/subscriptions/test-sub"
     a._new_authed_http = MagicMock(return_value=MagicMock())
     a.handle_message = AsyncMock()
-    # Replace the production store (which would write to ~/.hermes/...)
+    # Replace the production store (which would write to ~/.thoth/...)
     # with a tmp-path one so tests can roundtrip without side effects.
     a._thread_count_store = _ThreadCountStore(
         tmp_path / "google_chat_thread_counts.json"
@@ -501,7 +501,7 @@ class TestOnPubsubMessage:
         envelope = {
             "event_type": "MESSAGE",
             "sender_email": "bot@bots.example.com",
-            "sender_display_name": "HermesBot",
+            "sender_display_name": "ThothBot",
             "sender_type": "BOT",
             "text": "reply from bot",
             "space_name": "spaces/RELAY",
@@ -663,7 +663,7 @@ class TestExtractMessagePayload:
         envelope = {
             "event_type": "MESSAGE",
             "sender_email": "bot@bots.example.com",
-            "sender_display_name": "HermesBot",
+            "sender_display_name": "ThothBot",
             "sender_type": "BOT",
             "text": "reply from bot",
             "space_name": "spaces/RELAY",
@@ -2484,7 +2484,7 @@ class TestGoogleChatInteractiveSetup:
         answers = {
             "GCP project ID (e.g. my-project)": "demo-project",
             "Pub/Sub subscription (projects/<proj>/subscriptions/<sub>)": (
-                "projects/demo-project/subscriptions/hermes-chat"
+                "projects/demo-project/subscriptions/thoth-chat"
             ),
             "Path to Service Account JSON (or inline JSON)": "/tmp/sa.json",
             "Allowed user emails (comma-separated)": "alice@example.com, bob@example.com",
@@ -2523,7 +2523,7 @@ class TestGoogleChatInteractiveSetup:
         assert saved["GOOGLE_CHAT_PROJECT_ID"] == "demo-project"
         assert (
             saved["GOOGLE_CHAT_SUBSCRIPTION_NAME"]
-            == "projects/demo-project/subscriptions/hermes-chat"
+            == "projects/demo-project/subscriptions/thoth-chat"
         )
         assert saved["GOOGLE_CHAT_SERVICE_ACCOUNT_JSON"] == "/tmp/sa.json"
         assert saved["GOOGLE_CHAT_ALLOWED_USERS"] == "alice@example.com,bob@example.com"

@@ -19,7 +19,7 @@ required_environment_variables:
     prompt: Shopify API version (default 2026-01)
     help: "Stable quarterly version. Override if you need an older one."
 metadata:
-  hermes:
+  thoth:
     tags: [Shopify, E-commerce, Commerce, API, GraphQL]
     related_skills: [airtable, xurl]
     homepage: https://shopify.dev/docs/api/admin-graphql

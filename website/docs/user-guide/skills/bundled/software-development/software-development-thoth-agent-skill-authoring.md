@@ -65,7 +65,7 @@ version: 1.0.0
 author: Thoth Agent
 license: MIT
 metadata:
-  hermes:
+  thoth:
     tags: [short, descriptive, tags]
     related_skills: [other-skill, another-skill]
 ---
@@ -145,7 +145,7 @@ Pick the closest existing category. Don't invent new top-level categories casual
 
 ## Cross-Referencing Other Skills
 
-`metadata.hermes.related_skills` unions both trees (`skills/` in-repo and `~/.thoth/skills/`) at load time. You CAN reference a user-local skill from an in-repo skill, but it won't resolve for other users who clone the repo fresh. Prefer referencing only in-repo skills from in-repo skills. If a frequently-referenced skill lives only in `~/.thoth/skills/`, consider promoting it to the repo.
+`metadata.thoth.related_skills` unions both trees (`skills/` in-repo and `~/.thoth/skills/`) at load time. You CAN reference a user-local skill from an in-repo skill, but it won't resolve for other users who clone the repo fresh. Prefer referencing only in-repo skills from in-repo skills. If a frequently-referenced skill lives only in `~/.thoth/skills/`, consider promoting it to the repo.
 
 ## Editing Existing In-Repo Skills
 
@@ -174,7 +174,7 @@ Pick the closest existing category. Don't invent new top-level categories casual
 
 - [ ] File is at `skills/<category>/<name>/SKILL.md` (not in `~/.thoth/skills/`)
 - [ ] Frontmatter starts at byte 0 with `---`, closes with `\n---\n`
-- [ ] `name`, `description`, `version`, `author`, `license`, `metadata.hermes.{tags, related_skills}` all present
+- [ ] `name`, `description`, `version`, `author`, `license`, `metadata.thoth.{tags, related_skills}` all present
 - [ ] Name ≤ 64 chars, lowercase + hyphens
 - [ ] Description ≤ 1024 chars and starts with "Use when ..."
 - [ ] Total file ≤ 100,000 chars (aim for 8-15k)

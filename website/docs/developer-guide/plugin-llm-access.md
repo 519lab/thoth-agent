@@ -186,7 +186,7 @@ def _paste_to_tasks(ctx, raw_args: str) -> str:
 ```
 
 A third worked example, this time with image input, lives as
-`plugin-llm-example` in a separate `hermes-example-plugins` companion
+`plugin-llm-example` in a separate `thoth-example-plugins` companion
 repo (reference plugins — not bundled with this project itself). For the
 async surface (`acomplete()` / `acomplete_structured()` with
 `asyncio.gather()`), see `plugin-llm-async-example` in the same repo.

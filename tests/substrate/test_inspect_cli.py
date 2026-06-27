@@ -19,7 +19,7 @@ import pytest_asyncio
 
 from substrate import Substrate
 from substrate.cli import inspect as inspect_mod
-from substrate.events.hermes_hooks import on_user_message_async
+from substrate.events.thoth_hooks import on_user_message_async
 
 
 @pytest_asyncio.fixture
@@ -47,7 +47,7 @@ def test_register_subparser_adds_inspect_tree():
     addable to a fresh top-level parser without errors. Post-flatten
     (PR #100) the commands sit directly under ``substrate`` rather than
     under a redundant ``inspect`` verb."""
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
 
@@ -58,7 +58,7 @@ def test_register_subparser_adds_inspect_tree():
 
 
 def test_register_subparser_slices_requires_stream_arg():
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
 
@@ -159,7 +159,7 @@ async def test_print_slices_unknown_stream(booted_substrate):
     async with thoth_db.connection() as conn:
         with redirect_stdout(buf):
             await inspect_mod._print_slices(
-                conn, stream_name="hermes.does.not.exist", limit=5
+                conn, stream_name="thoth.does.not.exist", limit=5
             )
     out = buf.getvalue()
     assert "no slices" in out
@@ -215,7 +215,7 @@ async def test_print_profiles_lists_4_seeded(booted_substrate):
 
 def test_register_subparser_agents():
     """The ``substrate agents`` subcommand parses cleanly."""
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
     ns = parser.parse_args(["substrate", "agents"])
@@ -323,7 +323,7 @@ def test_classify_agent_boundaries():
 def test_register_subparser_recall_subtree():
     """The recall subparser tree parses cleanly. Post-flatten
     (PR #100) ``recall`` sits directly under ``substrate``."""
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
 

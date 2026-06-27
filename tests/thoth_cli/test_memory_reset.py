@@ -17,14 +17,14 @@ from pathlib import Path
 @pytest.fixture
 def memory_env(tmp_path, monkeypatch):
     """Set up a fake THOTH_HOME with memory files."""
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     memories = thoth_home / "memories"
     memories.mkdir(parents=True)
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
     # Create sample memory files
     (memories / "MEMORY.md").write_text(
-        "§\nThoth repo is at ~/.hermes/hermes-agent\n§\nUser prefers dark themes",
+        "§\nThoth repo is at ~/.thoth/app\n§\nUser prefers dark themes",
         encoding="utf-8",
     )
     (memories / "USER.md").write_text(
@@ -96,7 +96,7 @@ class TestMemoryReset:
 
     def test_reset_no_files_exist(self, tmp_path, monkeypatch):
         """Should return 'nothing' when no memory files exist."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         (thoth_home / "memories").mkdir(parents=True)
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -147,7 +147,7 @@ class TestMemoryReset:
 
     def test_reset_empty_memories_dir(self, tmp_path, monkeypatch):
         """No memories dir at all should report nothing."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir(parents=True)
         # No memories dir
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))

@@ -16,9 +16,9 @@
 #   systemctl --user enable --now thoth-substrate-worker
 #
 # Path placeholders below assume the standard install layout:
-#   THOTH_HOME = ~/.hermes
-#   INSTALL_DIR = ~/.hermes/hermes-agent
-#   .env at     = ~/.hermes/.env
+#   THOTH_HOME = ~/.thoth
+#   INSTALL_DIR = ~/.thoth/app
+#   .env at     = ~/.thoth/.env
 #
 # Operators with a custom install dir need to edit the ExecStart /
 # WorkingDirectory / EnvironmentFile paths to match. The install
@@ -42,13 +42,13 @@ Type=simple
 
 # WorkingDirectory must be the install root so relative imports + the
 # bundled ``alembic.ini`` resolve correctly.
-WorkingDirectory=%h/.hermes/hermes-agent
+WorkingDirectory=%h/.thoth/app
 
 # Load .env (THOTH_PG_DSN, THOTH_EMBEDDING_DIM, etc.) before exec.
-EnvironmentFile=%h/.hermes/.env
+EnvironmentFile=%h/.thoth/.env
 
 # Single foreground process; systemd captures stdout/stderr to journal.
-ExecStart=%h/.hermes/hermes-agent/venv/bin/python -m thoth_cli.main substrate worker run
+ExecStart=%h/.thoth/app/venv/bin/python -m thoth_cli.main substrate worker run
 
 # Graceful shutdown sequence:
 #   1. SIGTERM → ``substrate worker run`` trips its stop_event
@@ -80,7 +80,7 @@ CPUWeight=50
 # add isolation, but PrivateTmp does and is cheap).
 PrivateTmp=true
 ProtectSystem=strict
-ReadWritePaths=%h/.hermes
+ReadWritePaths=%h/.thoth
 
 [Install]
 # Start on user login (when systemd --user becomes active).

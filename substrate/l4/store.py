@@ -74,6 +74,68 @@ async def list_observations(
     return [_row(r) for r in rows]
 
 
+async def get_observations_for_query(
+    query: str,
+    *,
+    limit: int = 3,
+    query_embedding: Optional[list[float]] = None,
+    conn=None,
+) -> list[Observation]:
+    """Self-model observations most relevant to ``query``, excluding the
+    ``coherence`` vital sign (that's a singleton surfaced separately, not
+    recall content).
+
+    When ``query_embedding`` is provided, rank by cosine distance over the
+    backfilled ``embedding`` column (``embedding <=> $vec``, mirroring
+    :func:`find_near_duplicates`), restricted to embedded rows — the semantic
+    path used by the recall L4 header when ``RECALL_L3L4_SEMANTIC`` is on.
+    Otherwise fall back to the trigram-similarity + salience path.
+
+    Mirrors :func:`substrate.l3.store.get_patterns_for_query`. ``l4_observations``
+    has no trigram GIN index on ``statement`` (unlike ``l3_patterns``), but the
+    table is tiny — a sequential scan with the ``%`` operator from the
+    globally-enabled ``pg_trgm`` extension is well within budget. Used by the
+    recall L4 header (substrate/recall/api.py)."""
+    if not (query or "").strip():
+        return []
+    async with _acquire(conn) as c:
+        if query_embedding is not None:
+            # Exact nearest-neighbour scan — see the matching note in
+            # substrate.l3.store.get_patterns_for_query. The ivfflat index on
+            # ``embedding`` is approximate (default ``ivfflat.probes = 1``) and
+            # can MISS the true nearest row on this small table, dropping the L4
+            # header. ``SET LOCAL`` forces an exact scan for this transaction
+            # only. (innovation #3)
+            async with c.transaction():
+                await c.execute("SET LOCAL enable_indexscan = off")
+                await c.execute("SET LOCAL enable_indexonlyscan = off")
+                rows = await c.fetch(
+                    """
+                    SELECT * FROM l4_observations
+                     WHERE kind <> 'coherence'
+                       AND embedding IS NOT NULL
+                     ORDER BY embedding <=> $1::vector
+                     LIMIT $2
+                    """,
+                    query_embedding,
+                    limit,
+                )
+        else:
+            rows = await c.fetch(
+                """
+                SELECT * FROM l4_observations
+                 WHERE kind <> 'coherence'
+                   AND statement % $1
+                 ORDER BY (similarity(statement, $1) + salience_score) DESC,
+                          last_seen_at DESC
+                 LIMIT $2
+                """,
+                query,
+                limit,
+            )
+    return [_row(r) for r in rows]
+
+
 async def upsert_coherence(
     statement: str, *, score: float, metadata: Optional[dict] = None, conn=None
 ) -> None:
@@ -269,6 +331,7 @@ async def latest_coherence(*, conn=None) -> Optional[Observation]:
 __all__ = [
     "record_observation",
     "list_observations",
+    "get_observations_for_query",
     "latest_coherence",
     "upsert_coherence",
     "set_embedding",

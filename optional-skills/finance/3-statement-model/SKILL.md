@@ -6,7 +6,7 @@ author: Anthropic (adapted by 519lab)
 license: Apache-2.0
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [finance, three-statement, income-statement, balance-sheet, cash-flow, excel, openpyxl, modeling]
     related_skills: [excel-author, pptx-author, dcf-model, lbo-model]
 ---

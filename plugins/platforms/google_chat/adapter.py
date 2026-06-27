@@ -144,7 +144,7 @@ from gateway.platforms.base import (
 # Pin the logger name to the legacy module path so operator log filters,
 # grep aliases, and the gateway's bundled log views keep matching after
 # the in-tree → plugin migration. ``__name__`` resolves to
-# ``hermes_plugins.platforms__google_chat.adapter`` once the plugin
+# ``thoth_plugins.platforms__google_chat.adapter`` once the plugin
 # loader namespaces this module, which would silently break every
 # downstream log-monitor that greps for ``gateway.platforms.google_chat``.
 logger = logging.getLogger("gateway.platforms.google_chat")
@@ -3028,7 +3028,7 @@ def interactive_setup() -> None:
     The setup wizard at ``thoth_cli/gateway.py`` calls this for plugin
     platforms instead of using the in-tree ``_PLATFORMS`` data block. The
     flow mirrors the in-tree built-ins: print the GCP setup instructions,
-    prompt for env vars, persist them to ``~/.hermes/.env`` so the next
+    prompt for env vars, persist them to ``~/.thoth/.env`` so the next
     gateway restart picks them up.
     """
     from thoth_cli.cli_output import (
@@ -3111,7 +3111,7 @@ def interactive_setup() -> None:
 
     from thoth_cli.cli_name import cli_name
     print()
-    print_success("Google Chat configuration saved to ~/.hermes/.env")
+    print_success("Google Chat configuration saved to ~/.thoth/.env")
     print_info(f"Restart the gateway: {cli_name()} gateway restart")
 
 

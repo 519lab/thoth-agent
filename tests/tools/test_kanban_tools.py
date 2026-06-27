@@ -22,7 +22,7 @@ def test_kanban_tools_hidden_without_env_var(monkeypatch, tmp_path):
     """Normal `thoth chat` sessions (no THOTH_KANBAN_TASK) must have
     zero kanban_* tools in their schema."""
     monkeypatch.delenv("THOTH_KANBAN_TASK", raising=False)
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
 
@@ -42,7 +42,7 @@ def test_kanban_tools_hidden_without_env_var(monkeypatch, tmp_path):
 def test_kanban_tools_visible_with_env_var(monkeypatch, tmp_path):
     """Worker sessions get task lifecycle tools, not board-routing tools."""
     monkeypatch.setenv("THOTH_KANBAN_TASK", "t_fake")
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
 
@@ -66,7 +66,7 @@ def test_kanban_worker_env_overrides_profile_toolset_filter(monkeypatch, tmp_pat
     assignee profile restricts enabled toolsets and does not list kanban.
     """
     monkeypatch.setenv("THOTH_KANBAN_TASK", "t_fake")
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
 
@@ -95,7 +95,7 @@ def test_worker_with_kanban_toolset_still_hides_board_routing(monkeypatch, tmp_p
     worker and must not see kanban_list / kanban_unblock.
     """
     monkeypatch.setenv("THOTH_KANBAN_TASK", "t_fake")
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     (home / "config.yaml").write_text("toolsets:\n  - kanban\n")
     monkeypatch.setenv("THOTH_HOME", str(home))
@@ -120,7 +120,7 @@ def test_worker_with_kanban_toolset_still_hides_board_routing(monkeypatch, tmp_p
 def test_kanban_tools_visible_with_toolset_config(monkeypatch, tmp_path):
     """Orchestrator profiles with toolsets: [kanban] see all kanban tools."""
     monkeypatch.delenv("THOTH_KANBAN_TASK", raising=False)
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     (home / "config.yaml").write_text("toolsets:\n  - kanban\n")
     monkeypatch.setenv("THOTH_HOME", str(home))
@@ -156,7 +156,7 @@ def worker_env(monkeypatch, tmp_path, thoth_db_initialized_sync):
     kanban_boards. Without it the pool stays bound to the container
     default DSN and rows land where Alembic never ran.
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setenv("THOTH_PROFILE", "test-worker")
@@ -722,14 +722,14 @@ def test_comment_rejects_empty_body(worker_env):
 def test_comment_ignores_caller_supplied_author(worker_env):
     """``args["author"]`` is no longer honored — the author is always
     derived from ``THOTH_PROFILE`` so a worker can't forge a comment
-    under an authoritative-looking name like ``hermes-system`` and
+    under an authoritative-looking name like ``thoth-system`` and
     poison the next worker's prompt context. Cross-task commenting
     itself remains unrestricted (see #19713); only the author override
     is removed.
     """
     from tools import kanban_tools as kt
     out = kt._handle_comment({
-        "task_id": worker_env, "body": "hi", "author": "hermes-system",
+        "task_id": worker_env, "body": "hi", "author": "thoth-system",
     })
     assert json.loads(out)["ok"]
     from thoth_cli import kanban_db as kb
@@ -737,7 +737,7 @@ def test_comment_ignores_caller_supplied_author(worker_env):
     try:
         comments = kb.list_comments(conn, worker_env)
         # Author comes from THOTH_PROFILE in the fixture, not the
-        # caller-supplied "hermes-system" override.
+        # caller-supplied "thoth-system" override.
         assert comments[0].author == "test-worker"
     finally:
         conn.close()
@@ -1093,7 +1093,7 @@ def test_kanban_guidance_not_in_normal_prompt(monkeypatch, tmp_path):
     """A normal chat session (no THOTH_KANBAN_TASK) must NOT have
     KANBAN_GUIDANCE in its system prompt."""
     monkeypatch.delenv("THOTH_KANBAN_TASK", raising=False)
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     from pathlib import Path as _P
@@ -1121,7 +1121,7 @@ def test_kanban_guidance_in_worker_prompt(monkeypatch, tmp_path):
     """A worker session (THOTH_KANBAN_TASK set) MUST have the full
     lifecycle guidance in its system prompt."""
     monkeypatch.setenv("THOTH_KANBAN_TASK", "t_fake")
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     from pathlib import Path as _P
@@ -1156,7 +1156,7 @@ def test_kanban_guidance_prompt_size_bounded(monkeypatch, tmp_path):
     """Sanity: the guidance block is under 4 KB so it doesn't blow
     up the cached prompt."""
     monkeypatch.setenv("THOTH_KANBAN_TASK", "t_fake")
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     from pathlib import Path as _P
@@ -1369,7 +1369,7 @@ def test_orchestrator_complete_any_task_allowed(monkeypatch, tmp_path, thoth_db_
     """Orchestrator profiles (no THOTH_KANBAN_TASK) can still complete
     any task via explicit task_id. The check only applies to workers."""
     monkeypatch.delenv("THOTH_KANBAN_TASK", raising=False)
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     from pathlib import Path as _P
@@ -1417,7 +1417,7 @@ def multi_board_env(monkeypatch, tmp_path, thoth_db_initialized_sync):
     PG database is migrated and the asyncpg pool bound before
     ``kb.init_db()`` / ``kb.create_board()`` writes.
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     # Make sure neither THOTH_KANBAN_DB nor THOTH_KANBAN_BOARD pin a
@@ -1633,7 +1633,7 @@ def test_board_param_routes_heartbeat_to_alt_board(monkeypatch, tmp_path, thoth_
     """kanban_heartbeat targets the alt board's DB. Worker-scoped, so we
     use the worker-env style fixture inline (pinning THOTH_KANBAN_TASK
     to a task that exists in the alt board)."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setenv("THOTH_PROFILE", "alt-worker")

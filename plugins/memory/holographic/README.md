@@ -19,7 +19,7 @@ thoth config set memory.provider holographic
 
 ## Config
 
-Config in `config.yaml` under `plugins.hermes-memory-store`:
+Config in `config.yaml` under `plugins.thoth-memory-store`:
 
 | Key | Default | Description |
 |-----|---------|-------------|

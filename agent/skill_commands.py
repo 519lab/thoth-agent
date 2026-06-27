@@ -71,7 +71,7 @@ def _load_skill_payload(skill_identifier: str, task_id: str | None = None) -> tu
 
             # Prefer the lexical path under a trusted skill root before
             # resolving symlinks.  Slash-command discovery can legitimately
-            # find a skill via ~/.hermes/skills/<name> where <name> is a
+            # find a skill via ~/.thoth/skills/<name> where <name> is a
             # symlink to a checked-out skill elsewhere.  Resolving first turns
             # that trusted visible path into an arbitrary absolute path that
             # skill_view() refuses to load.
@@ -121,7 +121,7 @@ def _load_skill_payload(skill_identifier: str, task_id: str | None = None) -> tu
 def _inject_skill_config(loaded_skill: dict[str, Any], parts: list[str]) -> None:
     """Resolve and inject skill-declared config values into the message parts.
 
-    If the loaded skill's frontmatter declares ``metadata.hermes.config``
+    If the loaded skill's frontmatter declares ``metadata.thoth.config``
     entries, their current values (from config.yaml or defaults) are appended
     as a ``[Skill config: ...]`` block so the agent knows the configured values
     without needing to read config.yaml itself.
@@ -261,7 +261,7 @@ def _build_skill_message(
 
 
 def scan_skill_commands() -> Dict[str, Dict[str, Any]]:
-    """Scan ~/.hermes/skills/ and return a mapping of /command -> skill info.
+    """Scan ~/.thoth/skills/ and return a mapping of /command -> skill info.
 
     Returns:
         Dict mapping "/skill-name" to {name, description, skill_md_path, skill_dir}.
@@ -344,7 +344,7 @@ def get_skill_commands() -> Dict[str, Dict[str, Any]]:
 def reload_skills() -> Dict[str, Any]:
     """Re-scan the skills directory and return a diff of what changed.
 
-    Rescans ``~/.hermes/skills/`` and any ``skills.external_dirs`` so the
+    Rescans ``~/.thoth/skills/`` and any ``skills.external_dirs`` so the
     slash-command map (``agent.skill_commands._skill_commands``) reflects
     skills added or removed on disk.
 

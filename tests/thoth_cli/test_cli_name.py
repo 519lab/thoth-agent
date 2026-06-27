@@ -24,19 +24,19 @@ class TestCliName:
         monkeypatch.setenv("THOTH_CLI_NAME", "thoth-substrate")
         assert cli_name() == "thoth-substrate"
 
-    def test_hermes_env_var_fallback(self, monkeypatch):
+    def test_thoth_env_var_fallback(self, monkeypatch):
         """Legacy THOTH_CLI_NAME is still honored as a fallback (back-compat)
         when THOTH_CLI_NAME is unset — older shims export only THOTH_CLI_NAME."""
         monkeypatch.setattr(sys, "argv", ["/opt/venv/bin/thoth", "--resume", "x"])
         monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
-        monkeypatch.setenv("THOTH_CLI_NAME", "hermes-substrate")
-        assert cli_name() == "hermes-substrate"
+        monkeypatch.setenv("THOTH_CLI_NAME", "thoth-substrate")
+        assert cli_name() == "thoth-substrate"
 
     def test_thoth_env_wins_when_both_set(self, monkeypatch):
         """When both are exported (current shim), the canonical THOTH_CLI_NAME
         takes precedence over the legacy THOTH_CLI_NAME."""
         monkeypatch.setattr(sys, "argv", ["/opt/venv/bin/thoth", "--resume", "x"])
-        monkeypatch.setenv("THOTH_CLI_NAME", "hermes-legacy")
+        monkeypatch.setenv("THOTH_CLI_NAME", "thoth-legacy")
         monkeypatch.setenv("THOTH_CLI_NAME", "thoth-substrate")
         assert cli_name() == "thoth-substrate"
 

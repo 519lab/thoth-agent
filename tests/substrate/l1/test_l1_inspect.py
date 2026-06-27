@@ -13,7 +13,7 @@ from substrate.l1 import store
 
 
 def test_register_subparser_l1_and_parser():
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
     assert callable(parser.parse_args(["substrate", "l1", "entities", "--limit", "3"]).func)

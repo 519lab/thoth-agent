@@ -292,7 +292,7 @@ gateway:
   update:
     platform_not_messaging:  "✗ /update yalnızca mesajlaşma platformlarında kullanılabilir. Terminalden `thoth update` komutunu çalıştırın."
     not_git_repo:            "✗ Git deposu değil — güncellenemiyor."
-    hermes_cmd_not_found:    "✗ `thoth` komutu bulunamadı. Thoth çalışıyor, ancak güncelleme komutu yürütülebilir dosyayı PATH'te veya mevcut Python yorumlayıcısı aracılığıyla bulamadı. Terminalde `thoth update` komutunu manuel olarak çalıştırmayı deneyin."
+    thoth_cmd_not_found:    "✗ `thoth` komutu bulunamadı. Thoth çalışıyor, ancak güncelleme komutu yürütülebilir dosyayı PATH'te veya mevcut Python yorumlayıcısı aracılığıyla bulamadı. Terminalde `thoth update` komutunu manuel olarak çalıştırmayı deneyin."
     start_failed:            "✗ Güncelleme başlatılamadı: {error}"
     starting:                "⚕ Thoth güncellemesi başlatılıyor… İlerlemeyi buraya akıtacağım."
 

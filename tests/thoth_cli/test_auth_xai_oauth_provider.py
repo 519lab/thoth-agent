@@ -1,4 +1,4 @@
-"""Tests for xAI Grok OAuth — tokens stored in Thoth auth store (~/.hermes/auth.json)."""
+"""Tests for xAI Grok OAuth — tokens stored in Thoth auth store (~/.thoth/auth.json)."""
 
 import base64
 import json
@@ -412,7 +412,7 @@ def test_xai_callback_handler_records_error_callback():
 
 
 def test_save_and_read_xai_oauth_tokens_roundtrip(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -436,7 +436,7 @@ def test_save_and_read_xai_oauth_tokens_roundtrip(tmp_path, monkeypatch):
 
 
 def test_read_xai_oauth_tokens_missing(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -448,7 +448,7 @@ def test_read_xai_oauth_tokens_missing(tmp_path, monkeypatch):
 
 
 def test_read_xai_oauth_tokens_missing_access_token(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _setup_thoth_auth(thoth_home, access_token="")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -459,7 +459,7 @@ def test_read_xai_oauth_tokens_missing_access_token(tmp_path, monkeypatch):
 
 
 def test_read_xai_oauth_tokens_missing_refresh_token(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _setup_thoth_auth(thoth_home, refresh_token="")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -475,7 +475,7 @@ def test_read_xai_oauth_tokens_missing_refresh_token(tmp_path, monkeypatch):
 
 
 def test_resolve_xai_runtime_credentials_returns_singleton_state(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     fresh = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=fresh)
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -486,12 +486,12 @@ def test_resolve_xai_runtime_credentials_returns_singleton_state(tmp_path, monke
     assert creds["provider"] == "xai-oauth"
     assert creds["api_key"] == fresh
     assert creds["base_url"] == DEFAULT_XAI_OAUTH_BASE_URL
-    assert creds["source"] == "hermes-auth-store"
+    assert creds["source"] == "thoth-auth-store"
     assert creds["auth_mode"] == "oauth_pkce"
 
 
 def test_resolve_xai_runtime_credentials_refreshes_expiring_token(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     expiring = _jwt_with_exp(int(time.time()) - 10)
     _setup_thoth_auth(
         thoth_home,
@@ -519,7 +519,7 @@ def test_resolve_xai_runtime_credentials_refreshes_expiring_token(tmp_path, monk
 
 
 def test_resolve_xai_runtime_credentials_force_refresh(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     fresh = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(
         thoth_home,
@@ -545,7 +545,7 @@ def test_resolve_xai_runtime_credentials_force_refresh(tmp_path, monkeypatch):
 
 
 def test_resolve_xai_runtime_credentials_honours_env_base_url(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     fresh = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=fresh)
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -668,7 +668,7 @@ def test_resolve_xai_runtime_credentials_rejects_off_origin_env_base_url(tmp_pat
     # The end-to-end guarantee: if the env var points at an attacker host,
     # the resolver MUST silently fall back to the default rather than ship
     # the OAuth bearer to the attacker.
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     fresh = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=fresh)
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -723,7 +723,7 @@ def test_resolve_credentials_quarantines_dead_tokens_on_terminal_refresh_failure
     last_auth_error marker so subsequent calls fail fast without a network retry.
     Mirrors the credential_pool.py quarantine for the singleton/direct resolve path.
     """
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _seed_xai_oauth_state(thoth_home, dict(_STALE_XAI_OAUTH_STATE), active_provider="nous")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -773,7 +773,7 @@ def test_resolve_credentials_does_not_quarantine_on_transient_refresh_failure(
     """Transient refresh failure (relogin_required=False, e.g. 429 / 5xx) must
     NOT trigger the quarantine path — tokens stay on disk for the next attempt.
     """
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     _seed_xai_oauth_state(thoth_home, dict(_STALE_XAI_OAUTH_STATE))
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -806,7 +806,7 @@ def test_resolve_credentials_does_not_quarantine_on_transient_refresh_failure(
 
 
 def test_get_xai_oauth_auth_status_logged_in_via_singleton(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     fresh = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=fresh)
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -818,7 +818,7 @@ def test_get_xai_oauth_auth_status_logged_in_via_singleton(tmp_path, monkeypatch
 
 
 def test_get_xai_oauth_auth_status_logged_out(tmp_path, monkeypatch):
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1171,7 +1171,7 @@ def test_credential_pool_seeds_xai_oauth_from_singleton(tmp_path, monkeypatch):
     refreshes route through the pool consistently with codex."""
     from agent.credential_pool import load_pool
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     fresh = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=fresh, refresh_token="rt-1")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1190,7 +1190,7 @@ def test_credential_pool_seeds_xai_oauth_from_singleton(tmp_path, monkeypatch):
 def test_credential_pool_does_not_seed_when_singleton_missing_access_token(tmp_path, monkeypatch):
     from agent.credential_pool import load_pool
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     auth_store = {
         "version": 1,
@@ -1213,7 +1213,7 @@ def test_credential_pool_seed_respects_suppression(tmp_path, monkeypatch):
     further re-seeding so the removal is stable across load_pool calls."""
     from agent.credential_pool import load_pool
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     fresh = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=fresh)
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1245,7 +1245,7 @@ def test_auth_remove_xai_oauth_clears_singleton_and_sticks(tmp_path, monkeypatch
     from thoth_cli.auth_commands import auth_remove_command
     from types import SimpleNamespace
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     fresh = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=fresh, refresh_token="rt-1")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1289,7 +1289,7 @@ def test_pool_sync_back_writes_to_singleton(tmp_path, monkeypatch):
     doesn't keep using the consumed refresh token."""
     from agent.credential_pool import load_pool
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     expired = _jwt_with_exp(int(time.time()) - 10)
     _setup_thoth_auth(thoth_home, access_token=expired, refresh_token="rt-old")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1333,7 +1333,7 @@ def test_pool_sync_back_writes_to_singleton(tmp_path, monkeypatch):
 def test_runtime_provider_uses_pool_entry_for_xai_oauth(tmp_path, monkeypatch):
     from thoth_cli.runtime_provider import resolve_runtime_provider
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     fresh = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=fresh)
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1353,7 +1353,7 @@ def test_runtime_provider_default_base_url_when_pool_entry_missing_url(tmp_path,
     from agent.credential_pool import load_pool, AUTH_TYPE_OAUTH, PooledCredential
     import uuid
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1399,7 +1399,7 @@ def test_pool_entry_needs_refresh_when_jwt_within_skew(tmp_path, monkeypatch):
     from thoth_cli.auth import XAI_ACCESS_TOKEN_REFRESH_SKEW_SECONDS
     import uuid
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1428,7 +1428,7 @@ def test_pool_entry_no_refresh_for_fresh_jwt(tmp_path, monkeypatch):
     from agent.credential_pool import load_pool, AUTH_TYPE_OAUTH, PooledCredential
     import uuid
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1457,7 +1457,7 @@ def test_pool_select_proactively_refreshes_expiring_token(tmp_path, monkeypatch)
     from agent.credential_pool import load_pool, AUTH_TYPE_OAUTH, PooledCredential
     import uuid
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1511,7 +1511,7 @@ def test_pool_try_refresh_current_handles_xai_oauth(tmp_path, monkeypatch):
     from agent.credential_pool import load_pool, AUTH_TYPE_OAUTH, PooledCredential
     import uuid
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1566,7 +1566,7 @@ def test_pool_refresh_marks_entry_exhausted_on_failure(tmp_path, monkeypatch):
     from thoth_cli.auth import AuthError
     import uuid
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1604,7 +1604,7 @@ def test_pool_seeded_entry_sync_back_after_refresh(tmp_path, monkeypatch):
     fresh process load doesn't re-seed the now-consumed refresh token."""
     from agent.credential_pool import load_pool
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     near_expiry = _jwt_with_exp(int(time.time()) + 30)
     _setup_thoth_auth(thoth_home, access_token=near_expiry, refresh_token="rt-singleton")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1648,7 +1648,7 @@ def test_pool_refresh_adopts_singleton_tokens_when_consumed_elsewhere(tmp_path, 
     profiles + Thoth processes."""
     from agent.credential_pool import load_pool
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     in_memory_at = _jwt_with_exp(int(time.time()) + 30)  # near-expiry
     _setup_thoth_auth(thoth_home, access_token=in_memory_at, refresh_token="rt-stale")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1701,7 +1701,7 @@ def test_pool_refresh_recovers_when_other_process_already_refreshed(tmp_path, mo
     entry exhausted."""
     from agent.credential_pool import load_pool
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     in_memory_at = _jwt_with_exp(int(time.time()) + 30)
     _setup_thoth_auth(thoth_home, access_token=in_memory_at, refresh_token="rt-shared")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1749,7 +1749,7 @@ def test_pool_exhausted_xai_entry_recovers_after_singleton_refresh(tmp_path, mon
     from agent.credential_pool import load_pool, STATUS_EXHAUSTED
     from dataclasses import replace
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     stale_at = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=stale_at, refresh_token="rt-stale")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1803,7 +1803,7 @@ def test_pool_manual_xai_entry_not_synced_from_singleton(tmp_path, monkeypatch):
     from agent.credential_pool import load_pool, AUTH_TYPE_OAUTH, PooledCredential
     import uuid
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     singleton_at = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=singleton_at, refresh_token="rt-singleton")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1840,7 +1840,7 @@ def test_pool_manual_entry_does_not_sync_back_to_singleton(tmp_path, monkeypatch
     from agent.credential_pool import load_pool, AUTH_TYPE_OAUTH, PooledCredential
     import uuid
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     # Singleton has its own tokens (separate login).
     singleton_at = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=singleton_at, refresh_token="rt-singleton")
@@ -1910,7 +1910,7 @@ def test_auxiliary_client_routes_xai_oauth_through_responses_api(tmp_path, monke
         resolve_provider_client,
     )
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     fresh = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=fresh)
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1938,7 +1938,7 @@ def test_auxiliary_client_xai_oauth_returns_none_when_unauthenticated(tmp_path, 
     misconfigured client."""
     from agent.auxiliary_client import resolve_provider_client
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     thoth_home.mkdir(parents=True, exist_ok=True)
     (thoth_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1954,7 +1954,7 @@ def test_auxiliary_client_xai_oauth_requires_explicit_model(tmp_path, monkeypatc
     must pass an explicit model (auxiliary.<task>.model in config.yaml)."""
     from agent.auxiliary_client import resolve_provider_client
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     fresh = _jwt_with_exp(int(time.time()) + 3600)
     _setup_thoth_auth(thoth_home, access_token=fresh)
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -1979,7 +1979,7 @@ def test_pool_sync_back_preserves_active_provider(tmp_path, monkeypatch):
     no future refactor regresses to the legacy semantic."""
     from agent.credential_pool import load_pool
 
-    thoth_home = tmp_path / "hermes"
+    thoth_home = tmp_path / "thoth"
     near_expiry = _jwt_with_exp(int(time.time()) + 30)
     _setup_thoth_auth(thoth_home, access_token=near_expiry, refresh_token="rt-xai")
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))

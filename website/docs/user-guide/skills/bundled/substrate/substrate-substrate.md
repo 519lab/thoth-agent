@@ -393,7 +393,7 @@ restart Thoth.
 
 ## Pitfalls
 
-- **Never run pytest against the real `hermes` PG on port 5432.** The test
+- **Never run pytest against the real `thoth` PG on port 5432.** The test
   suite uses a dedicated `postgres-test` container on port 5433 (or whatever
   `THOTH_TEST_POSTGRES_PORT` is set to). `PYTEST_XDIST_WORKER` must be set
   when running pytest directly — `pytest-postgresql` uses it to derive

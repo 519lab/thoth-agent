@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 prerequisites:
   env_vars: [CANVAS_API_TOKEN, CANVAS_BASE_URL]
 metadata:
-  hermes:
+  thoth:
     tags: [Canvas, LMS, Education, Courses, Assignments]
 ---
 

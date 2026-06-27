@@ -74,7 +74,7 @@ async def _emit_substrate_message_hook(
     try:
         from datetime import datetime, timezone
 
-        from substrate.events import hermes_hooks
+        from substrate.events import thoth_hooks
     except Exception as _imp_exc:  # pragma: no cover — substrate import failure
         # Was a silent return. Surface it so operators can spot a broken
         # install (missing substrate package, partial site-packages, etc.)
@@ -87,14 +87,14 @@ async def _emit_substrate_message_hook(
 
     # No-op when substrate isn't booted (CLI subcommands that touch
     # SessionDB without going through bootstrap_substrate).
-    if hermes_hooks._substrate is None:
+    if thoth_hooks._substrate is None:
         # Was also silent. Single log per process via a module-level
         # flag so we don't spam every append_message call.
         global _SUBSTRATE_UNBOUND_WARNED
         if not _SUBSTRATE_UNBOUND_WARNED:
             _SUBSTRATE_UNBOUND_WARNED = True
             logger.warning(
-                "substrate hooks NOT firing — hermes_hooks._substrate is None "
+                "substrate hooks NOT firing — thoth_hooks._substrate is None "
                 "(substrate boot probably skipped or failed; user/tool/assistant "
                 "stream coverage will be 0). First append_message at "
                 "session=%s role=%s; further occurrences suppressed.",
@@ -132,7 +132,7 @@ async def _emit_substrate_message_hook(
     try:
         if role == "user":
             if content:
-                await hermes_hooks.on_user_message_async(
+                await thoth_hooks.on_user_message_async(
                     session_id, source, content, t_event
                 )
         elif role == "assistant":
@@ -140,7 +140,7 @@ async def _emit_substrate_message_hook(
             # Emit the response slice for the text portion (when present)
             # and a tool_call slice per scheduled call.
             if content:
-                await hermes_hooks.on_assistant_response_async(
+                await thoth_hooks.on_assistant_response_async(
                     session_id, model, content, t_event
                 )
             if tool_calls:
@@ -149,7 +149,7 @@ async def _emit_substrate_message_hook(
                     name, args = _extract_tool_call(call)
                     if name is None:
                         continue
-                    await hermes_hooks.on_tool_call_async(
+                    await thoth_hooks.on_tool_call_async(
                         session_id, name, args, t_event
                     )
         elif role == "tool":
@@ -157,7 +157,7 @@ async def _emit_substrate_message_hook(
             # error field here; the conversation loop passes failure text
             # in ``content`` for the model to consume — pass it through as
             # ``result`` and leave ``error=None``.
-            await hermes_hooks.on_tool_result_async(
+            await thoth_hooks.on_tool_result_async(
                 session_id,
                 tool_name or "unknown",
                 content,
@@ -232,7 +232,7 @@ class _AsyncSessionDB:
     async def create_session(self, session_id: str, source: str, **kwargs) -> str:
         """Insert a session row; silently ignores conflicts (idempotent).
 
-        Emits a ``hermes.self_state.session_lifecycle`` perception slice
+        Emits a ``thoth.self_state.session_lifecycle`` perception slice
         in the same transaction (Phase A §7 — atomic with the session
         INSERT so the substrate's view of session-start can never disagree
         with the session row). Hook failure is logged + swallowed and
@@ -264,7 +264,7 @@ class _AsyncSessionDB:
             # is a no-op when substrate hasn't been booted; failures inside
             # the hook are logged but never re-raised to here.
             try:
-                from substrate.events.hermes_hooks import on_session_start_async
+                from substrate.events.thoth_hooks import on_session_start_async
                 await on_session_start_async(
                     session_id, source, model or "",
                     t_event, conn=conn,
@@ -279,7 +279,7 @@ class _AsyncSessionDB:
     async def end_session(self, session_id: str, end_reason: str) -> None:
         """Mark session ended. No-op if already ended (first end_reason wins).
 
-        Emits a ``hermes.self_state.session_lifecycle`` perception slice
+        Emits a ``thoth.self_state.session_lifecycle`` perception slice
         IFF the UPDATE actually flipped a row from ``ended_at IS NULL``
         to ended. This avoids emitting on every redundant end_session
         call (e.g. retry paths that double-end). Hook failures are
@@ -297,7 +297,7 @@ class _AsyncSessionDB:
             # ``UPDATE 1`` / ``UPDATE 0`` tag tells us which.
             if tag.endswith(" 1"):
                 try:
-                    from substrate.events.hermes_hooks import on_session_end_async
+                    from substrate.events.thoth_hooks import on_session_end_async
                     await on_session_end_async(
                         session_id, end_reason, datetime.now(timezone.utc)
                     )

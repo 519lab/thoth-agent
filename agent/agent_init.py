@@ -248,7 +248,7 @@ def init_agent(
         skip_context_files (bool): If True, skip auto-injection of SOUL.md, AGENTS.md, and .cursorrules
             into the system prompt. Use this for batch processing and data generation to avoid
             polluting trajectories with user-specific persona or project instructions.
-        load_soul_identity (bool): If True, still use ~/.hermes/SOUL.md as the primary
+        load_soul_identity (bool): If True, still use ~/.thoth/SOUL.md as the primary
             identity even when skip_context_files=True. Project context files from the cwd
             remain skipped.
     """
@@ -514,7 +514,7 @@ def init_agent(
     agent._or_cache_hits: int = 0
 
     # Centralized logging — agent.log (INFO+) and errors.log (WARNING+)
-    # both live under ~/.hermes/logs/.  Idempotent, so gateway mode
+    # both live under ~/.thoth/logs/.  Idempotent, so gateway mode
     # (which creates a new AIAgent per message) won't duplicate handlers.
     from thoth_logging import setup_logging, setup_verbose_logging
     setup_logging(thoth_home=_ra()._thoth_home)
@@ -963,11 +963,11 @@ def init_agent(
     except Exception:
         pass  # CLI/test mode — ContextVar not needed
 
-    # Session logs go into ~/.hermes/sessions/ alongside gateway sessions
+    # Session logs go into ~/.thoth/sessions/ alongside gateway sessions
     thoth_home = get_thoth_home()
     agent.logs_dir = thoth_home / "sessions"
     agent.logs_dir.mkdir(parents=True, exist_ok=True)
-    # Per-session JSON snapshot writer (~/.hermes/sessions/session_{sid}.json)
+    # Per-session JSON snapshot writer (~/.thoth/sessions/session_{sid}.json)
     # is opt-in via sessions.write_json_snapshots (default False).  state.db
     # is canonical — the snapshot is only useful for external tooling that
     # reads the JSON files directly.  See run_agent._save_session_log.
@@ -1039,6 +1039,17 @@ def init_agent(
     agent._memory_nudge_interval = 10
     agent._turns_since_memory = 0
     agent._iters_since_skill = 0
+    # Per-turn tool-call tallies feeding the recall outcome proxy
+    # (innovation #1). Reset at the top of each turn in run_conversation;
+    # incremented in agent/tool_executor.py as tool results land.
+    agent._turn_tool_calls = 0
+    agent._turn_tool_failures = 0
+    # Signal-based skill-review trigger (innovation #8): a turn sets this
+    # when something happened worth reviewing (a tool error, or a failed
+    # turn post-hoc).  The conversation/codex loops fire a background
+    # review on the signal OR a raised interval fallback, instead of the
+    # old fixed-cadence nudge that churned out low-value skill edits.
+    agent._skill_review_signal = False
     if not skip_memory:
         try:
             mem_config = _agent_cfg.get("memory", {})
@@ -1146,7 +1157,7 @@ def init_agent(
                         from thoth_cli.profiles import get_active_profile_name
                         _profile = get_active_profile_name()
                         _init_kwargs["agent_identity"] = _profile
-                        _init_kwargs["agent_workspace"] = "hermes"
+                        _init_kwargs["agent_workspace"] = "thoth"
                     except Exception:
                         pass
                     agent._memory_manager.initialize_all(**_init_kwargs)
@@ -1204,6 +1215,21 @@ def init_agent(
         agent._skill_nudge_interval = int(skills_config.get("creation_nudge_interval", 10))
     except Exception:
         pass
+
+    # Signal-based skill review (innovation #8): default ON.  When on, the
+    # background skill review fires on an in-turn signal (tool error /
+    # failed turn) OR-ed with a RAISED interval fallback so long, uneventful
+    # sessions still get an occasional review.  THOTH_SKILL_REVIEW_SIGNAL_MODE=off
+    # restores the pure fixed-interval cadence (creation_nudge_interval).
+    agent._skill_review_signal_mode = os.getenv(
+        "THOTH_SKILL_REVIEW_SIGNAL_MODE", "true"
+    ).strip().lower() in {"1", "true", "yes", "on"}
+    # Fallback ceiling: when in signal mode, a signal-less session only
+    # reviews once it has run this many tool iterations — deliberately
+    # higher than creation_nudge_interval so quiet sessions stop churning.
+    agent._skill_review_fallback_interval = max(
+        agent._skill_nudge_interval * 3, agent._skill_nudge_interval
+    )
 
     # Tool-use enforcement config: "auto" (default — matches hardcoded
     # model list), true (always), false (never), or list of substrings.

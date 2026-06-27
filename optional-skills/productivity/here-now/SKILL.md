@@ -8,7 +8,7 @@ prerequisites:
   commands: [curl, file, jq]
 platforms: [macos, linux]
 metadata:
-  hermes:
+  thoth:
     tags: [here.now, herenow, publish, deploy, hosting, static-site, web, share, URL, drive, storage]
     homepage: https://here.now
     requires_toolsets: [terminal]

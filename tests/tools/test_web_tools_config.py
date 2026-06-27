@@ -138,11 +138,11 @@ class TestFirecrawlClientConfig:
                 )
 
     def test_nous_auth_token_respects_thoth_home_override(self, tmp_path):
-        """Auth lookup should read from THOTH_HOME/auth.json, not ~/.hermes/auth.json."""
+        """Auth lookup should read from THOTH_HOME/auth.json, not ~/.thoth/auth.json."""
         real_home = tmp_path / "real-home"
-        (real_home / ".hermes").mkdir(parents=True)
+        (real_home / ".thoth").mkdir(parents=True)
 
-        thoth_home = tmp_path / "hermes-home"
+        thoth_home = tmp_path / "thoth-home"
         thoth_home.mkdir()
         (thoth_home / "auth.json").write_text(json.dumps({
             "providers": {

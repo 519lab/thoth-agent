@@ -100,7 +100,7 @@ async def _run_worker_async() -> int:
     if not dsn:
         log.error(
             "THOTH_PG_DSN not set; the substrate worker requires PG. "
-            "Set it in ~/.hermes/.env or the systemd unit's EnvironmentFile."
+            "Set it in ~/.thoth/.env or the systemd unit's EnvironmentFile."
         )
         return 1
 

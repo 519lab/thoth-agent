@@ -16,11 +16,11 @@ requires_env:
     prompt: "IRC server"
     password: false
   - name: IRC_CHANNEL
-    description: "Channel to join (e.g. #hermes — comma-separate for multiple)"
+    description: "Channel to join (e.g. #thoth — comma-separate for multiple)"
     prompt: "IRC channel"
     password: false
   - name: IRC_NICKNAME
-    description: "Bot nickname on IRC (default: hermes-bot)"
+    description: "Bot nickname on IRC (default: thoth-bot)"
     prompt: "Bot nickname"
     password: false
 optional_env:

@@ -25,6 +25,124 @@ def _thoth_root_path() -> Path:
         return Path(os.path.expanduser("~/.thoth"))
 
 
+_CWD_PLACEHOLDERS = {"", ".", "auto", "cwd"}
+
+
+def resolve_active_root(
+    explicit_cwd: Optional[str],
+    launch_cwd: Optional[str],
+    is_gateway: bool,
+) -> Path:
+    """Resolve the agent's *active root* — the directory it may freely operate in.
+
+    Fixed and session-immutable (distinct from ``TERMINAL_CWD``, which drifts as
+    the agent ``cd``s around). Resolution order:
+
+    1. An explicit, non-placeholder working dir (``terminal.cwd`` / ``MESSAGING_CWD``
+       — the user chose it) wins.
+    2. Interactive CLI launch (``not is_gateway``): if the launch dir is the user's
+       ``$HOME`` or inside THOTH_HOME ("no project intent"), fall through to the
+       default workspace; otherwise the launch dir is the active root (the user
+       intentionally ``cd``'d into a project before running ``thoth``).
+    3. Default: ``{THOTH_HOME}/workspace`` (auto-created).
+    """
+    def _real(p: str) -> str:
+        return os.path.realpath(os.path.expanduser(p))
+
+    # 1. Explicit working dir.
+    if explicit_cwd and explicit_cwd not in _CWD_PLACEHOLDERS:
+        try:
+            return Path(_real(explicit_cwd))
+        except Exception:
+            pass  # fall through to default
+
+    # 2. Interactive CLI launched intentionally inside a project dir.
+    if not is_gateway and launch_cwd:
+        try:
+            launch_real = _real(launch_cwd)
+            home_real = _real("~")
+            thoth_real = os.path.realpath(_thoth_home_path())
+            inside_thoth = (
+                launch_real == thoth_real or launch_real.startswith(thoth_real + os.sep)
+            )
+            if launch_real != home_real and not inside_thoth:
+                return Path(launch_real)
+        except Exception:
+            pass
+
+    # 3. Default workspace.
+    try:
+        from thoth_constants import ensure_workspace_dir  # local import to avoid cycles
+        return ensure_workspace_dir()
+    except Exception:
+        return _thoth_home_path() / "workspace"
+
+
+def get_active_root() -> Optional[str]:
+    """Return the resolved THOTH_ACTIVE_ROOT (the workspace boundary), or None."""
+    v = os.getenv("THOTH_ACTIVE_ROOT", "").strip()
+    if not v:
+        return None
+    try:
+        return os.path.realpath(os.path.expanduser(v))
+    except Exception:
+        return None
+
+
+def boundary_enabled() -> bool:
+    """Whether the workspace permission boundary is active.
+
+    Off if the kill-switch env ``THOTH_NO_WORKSPACE_BOUNDARY`` is truthy, or if
+    ``approvals.workspace_boundary`` is false in config. Defaults to True.
+    """
+    if os.getenv("THOTH_NO_WORKSPACE_BOUNDARY", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return False
+    try:
+        from thoth_cli.config import load_config  # local import to avoid cycles
+        approvals = (load_config() or {}).get("approvals", {}) or {}
+        return bool(approvals.get("workspace_boundary", True))
+    except Exception:
+        return True
+
+
+def is_path_outside_active_root(path: str, active_root: Optional[str] = None) -> bool:
+    """Return True if *path* resolves outside the active root.
+
+    Boundary unset → always False (never gate). The system temp dir is always
+    treated as inside (scratch space), mirroring should_auto_approve_edit.
+    """
+    root = active_root if active_root is not None else get_active_root()
+    if not root:
+        return False
+    try:
+        resolved = os.path.realpath(os.path.expanduser(str(path)))
+    except Exception:
+        return False
+    if resolved == root or resolved.startswith(root + os.sep):
+        return False
+    try:
+        import tempfile
+        tmp = os.path.realpath(tempfile.gettempdir())
+        if resolved == tmp or resolved.startswith(tmp + os.sep):
+            return False
+    except Exception:
+        pass
+    return True
+
+
+def check_path_boundary(path: str, op_type: str, active_root: Optional[str] = None) -> str:
+    """Return 'allow' or 'needs_approval' for a path op against the active root.
+
+    Reads are NEVER gated. Writes/execs outside the active root need approval
+    (when the boundary is enabled).
+    """
+    if op_type == "read":
+        return "allow"
+    if not boundary_enabled():
+        return "allow"
+    return "needs_approval" if is_path_outside_active_root(path, active_root) else "allow"
+
+
 def build_write_denied_paths(home: str) -> set[str]:
     """Return exact sensitive paths that must never be written."""
     thoth_home = _thoth_home_path()

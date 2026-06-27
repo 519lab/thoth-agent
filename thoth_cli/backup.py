@@ -1,8 +1,8 @@
 """
 Backup and import commands for thoth CLI.
 
-`thoth backup` creates a zip archive of the entire ~/.hermes/ directory
-(excluding the hermes-agent repo and transient files).
+`thoth backup` creates a zip archive of the entire ~/.thoth/ directory
+(excluding the app/ code repo and transient files).
 
 `thoth import` restores from a backup zip, overlaying onto the current
 THOTH_HOME root.
@@ -33,7 +33,8 @@ logger = logging.getLogger(__name__)
 
 # Directory names to skip entirely (matched against each path component)
 _EXCLUDED_DIRS = {
-    "hermes-agent",     # the codebase repo — re-clone instead
+    "app",              # the codebase repo — re-clone instead
+    "hermes-agent",     # legacy code-dir name (pre-rename installs)
     "__pycache__",      # bytecode caches — regenerated on import
     ".git",             # nested git dirs (profiles shouldn't have these, but safety)
     "node_modules",     # js deps if website/ somehow leaks in
@@ -140,10 +141,10 @@ def run_backup(args) -> None:
         # If user gave a directory, put the zip inside it
         if out_path.is_dir():
             stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-            out_path = out_path / f"hermes-backup-{stamp}.zip"
+            out_path = out_path / f"thoth-backup-{stamp}.zip"
     else:
         stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        out_path = Path.home() / f"hermes-backup-{stamp}.zip"
+        out_path = Path.home() / f"thoth-backup-{stamp}.zip"
 
     # Ensure the suffix is .zip
     if out_path.suffix.lower() != ".zip":
@@ -284,7 +285,7 @@ def _validate_backup_zip(zf: zipfile.ZipFile) -> tuple[bool, str]:
 def _detect_prefix(zf: zipfile.ZipFile) -> str:
     """Detect if the zip has a common directory prefix wrapping all entries.
 
-    Some tools zip as `.hermes/config.yaml` instead of `config.yaml`.
+    Some tools zip as `.thoth/config.yaml` instead of `config.yaml`.
     Returns the prefix to strip (empty string if none).
     """
     names = [n for n in zf.namelist() if not n.endswith("/")]
@@ -298,8 +299,8 @@ def _detect_prefix(zf: zipfile.ZipFile) -> str:
     first_parts = {p[0] for p in parts_list if len(p) > 1}
     if len(first_parts) == 1:
         prefix = first_parts.pop()
-        # Only strip if it looks like a hermes dir name
-        if prefix in {".hermes", "hermes"}:
+        # Only strip if it looks like a thoth dir name
+        if prefix in {".thoth", "thoth"}:
             return prefix + "/"
 
     return ""
@@ -451,8 +452,8 @@ def run_import(args) -> None:
 
         # Guidance
         print()
-        if not (thoth_root / "hermes-agent").is_dir():
-            print("Note: The hermes-agent codebase was not included in the backup.")
+        if not (thoth_root / "app").is_dir() and not (thoth_root / "hermes-agent").is_dir():
+            print("Note: The app/ codebase was not included in the backup.")
             print(f"  If this is a fresh install, run: {cli_name()} update")
 
         if restored_profiles:

@@ -508,7 +508,7 @@ class TestWeixinOutboundMedia:
              patch("gateway.platforms.weixin.secrets.token_bytes", return_value=aes_key):
             message_id = asyncio.run(adapter._send_file("wxid_test123", str(image_path), ""))
 
-        assert message_id.startswith("hermes-weixin-")
+        assert message_id.startswith("thoth-weixin-")
         assert len(session.post_calls) == 1
         upload_url, upload_kwargs = session.post_calls[0]
         assert upload_url == "https://upload.example.com/media"

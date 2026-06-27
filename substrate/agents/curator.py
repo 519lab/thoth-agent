@@ -143,6 +143,15 @@ class Curator(SubAgent):
         self._last_retry_failed_at: float = 0.0
         # Last L3/L4 curation pass (its own slow interval).
         self._last_curate_upper_at: float = 0.0
+        # Per-tick watchdog override (innovation #4): the Curator's tick runs
+        # the hourly L3/L4 backfill in-line, which can far exceed the LOW-level
+        # interval-derived ceiling. Give it a window sized to the upper-curation
+        # cadence so a legitimately long backfill tick is not false-tripped as
+        # wedged. Env-tunable via the same flag the backfill cadence reads.
+        self.tick_timeout_s = _env_float(
+            "THOTH_SUBSTRATE_CURATOR_TICK_TIMEOUT_S",
+            _CURATE_UPPER_INTERVAL_S,
+        )
         # Merge thresholds are env-tunable (operators dial the merge
         # aggressiveness without a redeploy; the accelerator script picks the
         # same env up). Instance attrs so tests can still override directly.

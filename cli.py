@@ -8,7 +8,7 @@ Features ASCII art branding, interactive REPL, toolset selection, and rich forma
 Usage:
     python cli.py                          # Start interactive mode with all tools
     python cli.py --toolsets web,terminal  # Start with specific toolsets
-    python cli.py --skills hermes-agent-dev,github-auth
+    python cli.py --skills thoth-agent-dev,github-auth
     python cli.py --list-tools             # List available tools and exit
 """
 
@@ -101,7 +101,7 @@ from thoth_cli.cli_name import cli_name
 _COMMAND_SPINNER_FRAMES = ("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏")
 
 
-# Load .env from ~/.hermes/.env first, then project root as dev fallback.
+# Load .env from ~/.thoth/.env first, then project root as dev fallback.
 # User-managed env files should override stale shell exports on restart.
 from thoth_constants import get_thoth_home, display_thoth_home
 from thoth_cli.browser_connect import (
@@ -228,7 +228,7 @@ def _load_prefill_messages(file_path: str) -> List[Dict[str, Any]]:
     The file should contain a JSON array of {role, content} dicts, e.g.:
         [{"role": "user", "content": "Hi"}, {"role": "assistant", "content": "Hello!"}]
     
-    Relative paths are resolved from ~/.hermes/.
+    Relative paths are resolved from ~/.thoth/.
     Returns an empty list if the path is empty or the file doesn't exist.
     """
     if not file_path:
@@ -275,14 +275,14 @@ def load_cli_config() -> Dict[str, Any]:
     Load CLI configuration from config files.
     
     Config lookup order:
-    1. ~/.hermes/config.yaml (user config - preferred)
+    1. ~/.thoth/config.yaml (user config - preferred)
     2. ./cli-config.yaml (project config - fallback)
     
     Environment variables take precedence over config file values.
     Returns default values if no config file exists.
 
     If THOTH_IGNORE_USER_CONFIG=1 is set (via ``thoth chat --ignore-user-config``),
-    the user config at ``~/.hermes/config.yaml`` is skipped entirely and only the
+    the user config at ``~/.thoth/config.yaml`` is skipped entirely and only the
     built-in defaults plus the project-level ``cli-config.yaml`` (if any) are used.
     Credentials in ``.env`` are still loaded — this flag only suppresses
     behavioral/config settings.
@@ -497,8 +497,20 @@ def load_cli_config() -> Dict[str, Any]:
     effective_backend = terminal_config.get("env_type", "local")
 
     if effective_backend == "local":
-        terminal_config["cwd"] = os.getcwd()
+        # Resolve the active root: explicit terminal.cwd wins; an intentional
+        # `cd /project && thoth` makes that the root; launching from $HOME (or
+        # THOTH_HOME) with no explicit cwd falls back to {THOTH_HOME}/workspace.
+        from agent.file_safety import resolve_active_root
+        _raw_cwd = terminal_config.get("cwd")
+        _active_root = resolve_active_root(
+            explicit_cwd=_raw_cwd, launch_cwd=os.getcwd(), is_gateway=False
+        )
+        terminal_config["cwd"] = str(_active_root)
         defaults["terminal"]["cwd"] = terminal_config["cwd"]
+        # THOTH_ACTIVE_ROOT is the fixed boundary (TERMINAL_CWD may drift as the
+        # agent cd's). Don't override the gateway, which sets it in gateway/run.py.
+        if os.environ.get("_THOTH_GATEWAY") != "1":
+            os.environ["THOTH_ACTIVE_ROOT"] = str(_active_root)
     elif terminal_config.get("cwd") in _CWD_PLACEHOLDERS:
         terminal_config.pop("cwd", None)
     
@@ -622,7 +634,7 @@ def load_cli_config() -> Dict[str, Any]:
 CLI_CONFIG = load_cli_config()
 
 
-# Initialize centralized logging early — agent.log + errors.log in ~/.hermes/logs/.
+# Initialize centralized logging early — agent.log + errors.log in ~/.thoth/logs/.
 # This ensures CLI sessions produce a log trail even before AIAgent is instantiated.
 try:
     from thoth_logging import setup_logging
@@ -2589,7 +2601,7 @@ def save_config_value(key_path: str, value: any) -> bool:
     Save a value to the active config file at the specified key path.
     
     Respects the same lookup order as load_cli_config():
-    1. ~/.hermes/config.yaml (user config - preferred, used if it exists)
+    1. ~/.thoth/config.yaml (user config - preferred, used if it exists)
     2. ./cli-config.yaml (project config - fallback)
     
     Args:
@@ -2605,7 +2617,7 @@ def save_config_value(key_path: str, value: any) -> bool:
     config_path = user_config_path if user_config_path.exists() else project_config_path
     
     try:
-        # Ensure parent directory exists (for ~/.hermes/config.yaml on first use)
+        # Ensure parent directory exists (for ~/.thoth/config.yaml on first use)
         config_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Save back atomically while preserving comments, ordering, quotes, and
@@ -2923,7 +2935,7 @@ class ThothCLI:
         _run_state_db_auto_maintenance(self._session_db)
 
         # Opportunistic shadow-repo cleanup — deletes orphan/stale
-        # checkpoint repos under ~/.hermes/checkpoints/.  Opt-in via
+        # checkpoint repos under ~/.thoth/checkpoints/.  Opt-in via
         # checkpoints.auto_prune, idempotent via .last_prune marker.
         _run_checkpoint_auto_maintenance()
 
@@ -5043,7 +5055,7 @@ class ThothCLI:
     def _try_attach_clipboard_image(self) -> bool:
         """Check clipboard for an image and attach it if found.
 
-        Saves the image to ~/.hermes/images/ and appends the path to
+        Saves the image to ~/.thoth/images/ and appends the path to
         ``_attached_images``.  Returns True if an image was attached.
         """
         from thoth_cli.clipboard import save_clipboard_image
@@ -6573,7 +6585,7 @@ class ThothCLI:
         _cprint(f"  Branch session:   {new_session_id}")
 
     def save_conversation(self):
-        """Save the current conversation to a JSON snapshot under ~/.hermes/sessions/saved/.
+        """Save the current conversation to a JSON snapshot under ~/.thoth/sessions/saved/.
 
         The snapshot is a convenience export for sharing or off-line inspection;
         every message is already persisted incrementally to the SQLite session
@@ -9914,7 +9926,7 @@ class ThothCLI:
             print(f"  ❌ MCP reload failed: {e}")
 
     def _reload_skills(self) -> None:
-        """Reload skills: rescan ~/.hermes/skills/ and queue a note for the
+        """Reload skills: rescan ~/.thoth/skills/ and queue a note for the
         next user turn.
 
         Skills don't need to live in the system prompt for the model to use
@@ -11957,28 +11969,6 @@ class ThothCLI:
                 try:
                     from thoth_cli.config import get_config_path as _get_cfg_path_resid
                     mark_seen(_get_cfg_path_resid(), OPENCLAW_RESIDUE_FLAG)
-                except Exception:
-                    pass  # best-effort — banner will fire again next session
-        except Exception:
-            pass  # banner is non-critical — never break startup
-        # First-time Hermes-residue banner — fires once if a legacy ~/.hermes/
-        # home exists on a fresh Thoth install, pointing at `thoth hermes migrate`.
-        try:
-            from agent.onboarding import is_seen, mark_seen
-            from thoth_cli.hermes_import import (
-                detect_hermes_residue,
-                hermes_residue_hint_cli,
-            )
-            _THOTH_RESIDUE_FLAG = "hermes_residue_import"
-            if not is_seen(self.config, _THOTH_RESIDUE_FLAG) and detect_hermes_residue():
-                try:
-                    _hres_color = _welcome_skin.get_color("banner_dim", "#B8860B")
-                except Exception:
-                    _hres_color = "#B8860B"
-                self._console_print(f"[{_hres_color}]{hermes_residue_hint_cli()}[/]")
-                try:
-                    from thoth_cli.config import get_config_path as _get_cfg_path_hres
-                    mark_seen(_get_cfg_path_hres(), _THOTH_RESIDUE_FLAG)
                 except Exception:
                     pass  # best-effort — banner will fire again next session
         except Exception:
@@ -14314,7 +14304,7 @@ def main(
     Examples:
         python cli.py                            # Start interactive mode
         python cli.py --toolsets web,terminal    # Use specific toolsets
-        python cli.py --skills hermes-agent-dev,github-auth
+        python cli.py --skills thoth-agent-dev,github-auth
         python cli.py -q "What is Python?"       # Single query mode
         python cli.py -q "Describe this" --image ~/storage/shared/Pictures/cat.png
         python cli.py --list-tools               # List tools and exit
@@ -14637,6 +14627,3 @@ def main(
 
 if __name__ == "__main__":
     fire.Fire(main)
-
-# Back-compat alias (Hermes→Thoth rename). Remove in a later cleanup phase.
-HermesCLI = ThothCLI

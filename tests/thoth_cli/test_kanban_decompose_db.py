@@ -16,7 +16,7 @@ def kanban_home(tmp_path, monkeypatch, thoth_db_initialized_sync):
     """Phase 0: depends on thoth_db_initialized_sync so the per-test PG
     database is migrated before kb.init_db() inserts into kanban_boards.
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)

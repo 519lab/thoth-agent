@@ -24,6 +24,7 @@ https://github.com/giampaolo/psutil/pull/2762 and ships a release.
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import subprocess
 import sys
@@ -33,15 +34,33 @@ import urllib.request
 from pathlib import Path
 
 # Pin a version we know patches cleanly. Update when a newer psutil
-# changes the marker line shape and we need to follow upstream.
-PSUTIL_URL = (
-    "https://files.pythonhosted.org/packages/aa/c6/"
-    "d1ddf4abb55e93cebc4f2ed8b5d6dbad109ecb8d63748dd2b20ab5e57ebe/"
-    "psutil-7.2.2.tar.gz"
-)
+# changes the marker line shape and we need to follow upstream. The download
+# URL is resolved from the PyPI JSON API at runtime so we don't carry a
+# hardcoded files.pythonhosted.org hash path that rots on re-upload.
+PSUTIL_VERSION = "7.2.2"
+PYPI_JSON_URL = f"https://pypi.org/pypi/psutil/{PSUTIL_VERSION}/json"
 
 MARKER = 'LINUX = sys.platform.startswith("linux")'
 REPLACEMENT = 'LINUX = sys.platform.startswith(("linux", "android"))'
+
+
+def _resolve_sdist_url() -> str:
+    """Resolve the psutil sdist (.tar.gz) download URL via the PyPI JSON API.
+
+    A hardcoded files.pythonhosted.org path breaks whenever PyPI changes the
+    hashed upload location; the JSON API always returns the current URL for the
+    pinned version.
+    """
+    try:
+        with urllib.request.urlopen(PYPI_JSON_URL, timeout=30) as resp:
+            data = json.load(resp)
+    except Exception as exc:
+        sys.exit(f"Failed to query PyPI for psutil {PSUTIL_VERSION}: {exc}")
+    for entry in data.get("urls", []):
+        url = entry.get("url", "")
+        if entry.get("packagetype") == "sdist" and url.endswith(".tar.gz"):
+            return url
+    sys.exit(f"No sdist (.tar.gz) found on PyPI for psutil {PSUTIL_VERSION}")
 
 
 def _resolve_install_cmd(pip_arg: str | None, prefer_uv: bool) -> list[str]:
@@ -78,12 +97,19 @@ def main() -> int:
         "compatibility shim (see psutil#2762)..."
     )
 
+    sdist_url = _resolve_sdist_url()
+
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         archive = tmp_path / "psutil.tar.gz"
-        urllib.request.urlretrieve(PSUTIL_URL, archive)
+        try:
+            urllib.request.urlretrieve(sdist_url, archive)
+        except Exception as exc:
+            sys.exit(f"Failed to download psutil sdist from {sdist_url}: {exc}")
         with tarfile.open(archive) as tar:
-            tar.extractall(tmp_path)
+            # filter="data" rejects unsafe members (absolute paths, traversal,
+            # special files) — the secure default landing in Python 3.14.
+            tar.extractall(tmp_path, filter="data")
 
         try:
             src_root = next(
@@ -107,7 +133,15 @@ def main() -> int:
         print(f"  $ {' '.join(cmd)}")
         result = subprocess.run(cmd)
         if result.returncode != 0:
-            return result.returncode
+            # Fatal on Termux/Android: psutil backs the agent's process/memory
+            # tooling, so a silent skip would leave a broken install. Surface a
+            # clear message and propagate the failing exit code.
+            sys.exit(
+                "✗ psutil install failed on Termux/Android (exit code "
+                f"{result.returncode}). psutil is required for the agent's "
+                "process and memory tooling — the install cannot continue "
+                "without it."
+            )
 
     print("✓ psutil installed via Android compatibility shim")
     return 0

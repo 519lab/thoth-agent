@@ -8,8 +8,8 @@ Nous can attribute usage to Thoth Agent and bucket it by client release.
 Tag shape (sent in OpenAI-compatible ``extra_body['tags']``):
 
     [
-        "product=hermes-agent",
-        "client=hermes-client-v<__version__>",
+        "product=thoth-agent",
+        "client=thoth-client-v<__version__>",
     ]
 
 The version is sourced live from ``thoth_cli.__version__`` so it auto-aligns
@@ -50,9 +50,9 @@ def _thoth_version() -> str:
 def thoth_client_tag() -> str:
     """Return the ``client=...`` tag for Nous Portal requests.
 
-    Format: ``client=hermes-client-v<MAJOR>.<MINOR>.<PATCH>``.
+    Format: ``client=thoth-client-v<MAJOR>.<MINOR>.<PATCH>``.
     """
-    return f"client=hermes-client-v{_thoth_version()}"
+    return f"client=thoth-client-v{_thoth_version()}"
 
 
 def nous_portal_tags() -> List[str]:
@@ -61,7 +61,4 @@ def nous_portal_tags() -> List[str]:
     Always returns a fresh list so callers can mutate it freely
     (e.g. ``merged_extra.setdefault("tags", []).extend(nous_portal_tags())``).
     """
-    return ["product=hermes-agent", thoth_client_tag()]
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-hermes_client_tag = thoth_client_tag
+    return ["product=thoth-agent", thoth_client_tag()]

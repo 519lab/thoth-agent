@@ -148,7 +148,7 @@ async def test_pattern_finder_skips_below_min_entities(booted, monkeypatch):
 
 
 def test_register_subparser_l3():
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
     assert callable(parser.parse_args(["substrate", "l3", "patterns", "--limit", "3"]).func)

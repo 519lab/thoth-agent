@@ -63,7 +63,7 @@ class TestFlushAfterCompression:
         ``thoth_db_initialized_sync`` fixture binds the pool to
         ``_sync_loop`` and lets ``run_sync`` drive the queries directly.
         """
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         from thoth_state import SessionDB
 
         db = SessionDB()
@@ -78,12 +78,12 @@ class TestFlushAfterCompression:
 
         # Flush original messages to the original session
         agent._flush_messages_to_session_db(original_history, [])
-        original_rows = _hermes_db.run_sync(db.get_messages("original-session"))
+        original_rows = _thoth_db.run_sync(db.get_messages("original-session"))
         assert len(original_rows) == 200
 
         # Simulate compression: new session, reset idx, shorter messages
         agent.session_id = "compressed-session"
-        _hermes_db.run_sync(
+        _thoth_db.run_sync(
             db.create_session(session_id="compressed-session", source="test")
         )
         agent._last_flushed_db_idx = 0
@@ -98,7 +98,7 @@ class TestFlushAfterCompression:
 
         agent._flush_messages_to_session_db(compressed_messages, None)
 
-        new_rows = _hermes_db.run_sync(db.get_messages("compressed-session"))
+        new_rows = _thoth_db.run_sync(db.get_messages("compressed-session"))
         assert len(new_rows) == 5, (
             f"Expected 5 compressed messages in new session, got {len(new_rows)}. "
             f"Compression persistence bug: messages not written to PG."
@@ -106,14 +106,14 @@ class TestFlushAfterCompression:
 
     def test_flush_with_stale_history_loses_messages(self, thoth_db_initialized_sync):
         """Demonstrates the bug condition: stale conversation_history causes data loss."""
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         from thoth_state import SessionDB
 
         db = SessionDB()
         agent = self._make_agent(db)
 
         agent.session_id = "new-session"
-        _hermes_db.run_sync(
+        _thoth_db.run_sync(
             db.create_session(session_id="new-session", source="test")
         )
         agent._last_flushed_db_idx = 0
@@ -126,7 +126,7 @@ class TestFlushAfterCompression:
         stale_history = [{"role": "user", "content": f"msg{i}"} for i in range(100)]
         agent._flush_messages_to_session_db(compressed, stale_history)
 
-        rows = _hermes_db.run_sync(db.get_messages("new-session"))
+        rows = _thoth_db.run_sync(db.get_messages("new-session"))
         assert len(rows) == 0, (
             "Expected 0 messages with stale conversation_history "
             "(this test verifies the bug condition exists)"

@@ -261,6 +261,32 @@ class MemoryManager:
     # provider (Honcho, Hindsight, etc.) rather than displacing one.
     _BUILTIN_PROVIDER_NAMES = frozenset({"builtin", "substrate"})
 
+    def _index_provider_tools(self, provider: MemoryProvider) -> None:
+        """Map a provider's current tool names → provider for routing.
+
+        Idempotent: a tool already mapped to *this* provider is skipped
+        silently (so it can be called repeatedly — e.g. once at
+        :meth:`add_provider` and again from :meth:`initialize_all` once the
+        provider is enabled and finally reports its schemas). A name already
+        held by a *different* provider is a genuine conflict and is warned +
+        left with the first registrant (first-wins).
+        """
+        for schema in provider.get_tool_schemas():
+            tool_name = schema.get("name", "")
+            if not tool_name:
+                continue
+            existing = self._tool_to_provider.get(tool_name)
+            if existing is None:
+                self._tool_to_provider[tool_name] = provider
+            elif existing is not provider:
+                logger.warning(
+                    "Memory tool name conflict: '%s' already registered by %s, "
+                    "ignoring from %s",
+                    tool_name,
+                    existing.name,
+                    provider.name,
+                )
+
     def add_provider(self, provider: MemoryProvider) -> None:
         """Register a memory provider.
 
@@ -292,19 +318,12 @@ class MemoryManager:
 
         self._providers.append(provider)
 
-        # Index tool names → provider for routing
-        for schema in provider.get_tool_schemas():
-            tool_name = schema.get("name", "")
-            if tool_name and tool_name not in self._tool_to_provider:
-                self._tool_to_provider[tool_name] = provider
-            elif tool_name in self._tool_to_provider:
-                logger.warning(
-                    "Memory tool name conflict: '%s' already registered by %s, "
-                    "ignoring from %s",
-                    tool_name,
-                    self._tool_to_provider[tool_name].name,
-                    provider.name,
-                )
+        # Index tool names → provider for routing. Note this runs at
+        # registration time — a provider whose get_tool_schemas() is gated on
+        # initialize() (e.g. SubstrateMemoryProvider, which returns [] until
+        # _enabled is set) contributes nothing here. initialize_all() re-runs
+        # the indexing once providers are enabled, so those tools still route.
+        self._index_provider_tools(provider)
 
         logger.info(
             "Memory provider '%s' registered (%d tools)",
@@ -618,3 +637,11 @@ class MemoryManager:
                     "Memory provider '%s' initialize failed: %s",
                     provider.name, e,
                 )
+            else:
+                # Re-index now that the provider is initialized: a provider
+                # that gates its schemas on initialize() (e.g. substrate's
+                # substrate_recall_more, hidden until _enabled) reports [] at
+                # add_provider() time, so without this its tools never enter
+                # the routing map and dispatch can't find them. Idempotent for
+                # providers that already registered their tools.
+                self._index_provider_tools(provider)

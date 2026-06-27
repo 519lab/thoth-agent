@@ -39,7 +39,7 @@ load_thoth_dotenv(
 # JSON-RPC pipe (TUI side parses it, doesn't log raw), the root logger
 # only catches handled warnings, and the subprocess exits before stderr
 # flushes through the stderr->gateway.stderr event pump. This hook
-# appends every unhandled exception to ~/.hermes/logs/tui_gateway_crash.log
+# appends every unhandled exception to ~/.thoth/logs/tui_gateway_crash.log
 # AND re-emits a one-line summary to stderr so the TUI can surface it in
 # Activity — exactly what was missing when the voice-mode turns started
 # exiting the gateway mid-TTS.
@@ -316,8 +316,8 @@ def _finalize_session(session: dict | None, end_reason: str = "tui_close") -> No
         try:
             db = _get_db()
             if db is not None:
-                import thoth_db as _hermes_db
-                _hermes_db.run_sync(db.end_session(session_id, end_reason))
+                import thoth_db as _thoth_db
+                _thoth_db.run_sync(db.end_session(session_id, end_reason))
         except Exception:
             pass
 
@@ -2311,10 +2311,10 @@ def _(rid, params: dict) -> dict:
         # short; the compression-tip projection in ``list_sessions_rich``
         # can also merge rows.
         fetch_limit = max(limit * 2, 200)
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         rows = [
             s
-            for s in _hermes_db.run_sync(db.list_sessions_rich(source=None, limit=fetch_limit))
+            for s in _thoth_db.run_sync(db.list_sessions_rich(source=None, limit=fetch_limit))
             if (s.get("source") or "").strip().lower() not in deny
         ][:limit]
         return _ok(
@@ -2361,8 +2361,8 @@ def _(rid, params: dict) -> dict:
         # users (lots of recent ``tool`` rows) don't get a false
         # "no eligible session" answer.  ``session.list`` uses a
         # similar over-fetch strategy.
-        import thoth_db as _hermes_db
-        rows = _hermes_db.run_sync(db.list_sessions_rich(source=None, limit=200))
+        import thoth_db as _thoth_db
+        rows = _thoth_db.run_sync(db.list_sessions_rich(source=None, limit=200))
         for row in rows:
             src = (row.get("source") or "").strip().lower()
             if src in deny:
@@ -2390,10 +2390,10 @@ def _(rid, params: dict) -> dict:
     db = _get_db()
     if db is None:
         return _db_unavailable_error(rid, code=5000)
-    import thoth_db as _hermes_db
-    found = _hermes_db.run_sync(db.get_session(target))
+    import thoth_db as _thoth_db
+    found = _thoth_db.run_sync(db.get_session(target))
     if not found:
-        found = _hermes_db.run_sync(db.get_session_by_title(target))
+        found = _thoth_db.run_sync(db.get_session_by_title(target))
         if found:
             target = found["id"]
         else:
@@ -2401,9 +2401,9 @@ def _(rid, params: dict) -> dict:
     sid = uuid.uuid4().hex[:8]
     _enable_gateway_prompts()
     try:
-        _hermes_db.run_sync(db.reopen_session(target))
-        history = _hermes_db.run_sync(db.get_messages_as_conversation(target))
-        display_history = _hermes_db.run_sync(db.get_messages_as_conversation(
+        _thoth_db.run_sync(db.reopen_session(target))
+        history = _thoth_db.run_sync(db.get_messages_as_conversation(target))
+        display_history = _thoth_db.run_sync(db.get_messages_as_conversation(
             target, include_ancestors=True
         ))
         messages = _history_to_messages(display_history)
@@ -2460,8 +2460,8 @@ def _(rid, params: dict) -> dict:
         return _err(rid, 4023, "cannot delete an active session")
     sessions_dir = get_thoth_home() / "sessions"
     try:
-        import thoth_db as _hermes_db
-        deleted = _hermes_db.run_sync(db.delete_session(target, sessions_dir=sessions_dir))
+        import thoth_db as _thoth_db
+        deleted = _thoth_db.run_sync(db.delete_session(target, sessions_dir=sessions_dir))
     except Exception as e:
         return _err(rid, 5036, f"delete failed: {e}")
     if not deleted:
@@ -2481,14 +2481,14 @@ def _(rid, params: dict) -> dict:
     if "title" not in params:
         fallback = session.get("pending_title") or ""
         try:
-            import thoth_db as _hermes_db
-            resolved_title = _hermes_db.run_sync(db.get_session_title(key)) or ""
+            import thoth_db as _thoth_db
+            resolved_title = _thoth_db.run_sync(db.get_session_title(key)) or ""
             if fallback:
-                if _hermes_db.run_sync(db.set_session_title(key, fallback)):
+                if _thoth_db.run_sync(db.set_session_title(key, fallback)):
                     session["pending_title"] = None
                     resolved_title = fallback
                 else:
-                    existing_row = _hermes_db.run_sync(db.get_session(key))
+                    existing_row = _thoth_db.run_sync(db.get_session(key))
                     existing_title = ((existing_row or {}).get("title") or "").strip()
                     if existing_title == fallback:
                         session["pending_title"] = None
@@ -2510,13 +2510,13 @@ def _(rid, params: dict) -> dict:
     if not title:
         return _err(rid, 4021, "title required")
     try:
-        import thoth_db as _hermes_db
-        if _hermes_db.run_sync(db.set_session_title(key, title)):
+        import thoth_db as _thoth_db
+        if _thoth_db.run_sync(db.set_session_title(key, title)):
             session["pending_title"] = None
             return _ok(rid, {"pending": False, "title": title})
         # rowcount == 0 can mean "same value" as well as "missing row".
         # Queue only when the session row truly does not exist yet.
-        existing_row = _hermes_db.run_sync(db.get_session(key))
+        existing_row = _thoth_db.run_sync(db.get_session(key))
         if existing_row:
             session["pending_title"] = None
             return _ok(
@@ -2564,8 +2564,8 @@ def _(rid, params: dict) -> dict:
     db = _get_db()
     if db and key:
         try:
-            import thoth_db as _hermes_db
-            meta = _hermes_db.run_sync(db.get_session(key)) or {}
+            import thoth_db as _thoth_db
+            meta = _thoth_db.run_sync(db.get_session(key)) or {}
         except Exception:
             meta = {}
 
@@ -2617,8 +2617,8 @@ def _(rid, params: dict) -> dict:
     db = _get_db()
     if db is not None and session.get("session_key"):
         try:
-            import thoth_db as _hermes_db
-            history = _hermes_db.run_sync(db.get_messages_as_conversation(
+            import thoth_db as _thoth_db
+            history = _thoth_db.run_sync(db.get_messages_as_conversation(
                 session["session_key"], include_ancestors=True
             ))
         except Exception:
@@ -2826,26 +2826,26 @@ def _(rid, params: dict) -> dict:
     new_key = _new_session_key()
     branch_name = params.get("name", "")
     try:
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         if branch_name:
             title = branch_name
         else:
-            current = _hermes_db.run_sync(db.get_session_title(old_key)) or "branch"
+            current = _thoth_db.run_sync(db.get_session_title(old_key)) or "branch"
             title = (
-                _hermes_db.run_sync(db.get_next_title_in_lineage(current))
+                _thoth_db.run_sync(db.get_next_title_in_lineage(current))
                 if hasattr(db, "get_next_title_in_lineage")
                 else f"{current} (branch)"
             )
-        _hermes_db.run_sync(db.create_session(
+        _thoth_db.run_sync(db.create_session(
             new_key, source="tui", model=_resolve_model(), parent_session_id=old_key
         ))
         for msg in history:
-            _hermes_db.run_sync(db.append_message(
+            _thoth_db.run_sync(db.append_message(
                 session_id=new_key,
                 role=msg.get("role", "user"),
                 content=msg.get("content"),
             ))
-        _hermes_db.run_sync(db.set_session_title(new_key, title))
+        _thoth_db.run_sync(db.set_session_title(new_key, title))
     except Exception as e:
         return _err(rid, 5008, f"branch failed: {e}")
     new_sid = uuid.uuid4().hex[:8]
@@ -3532,8 +3532,8 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
                 if _pdb:
                     _session_key = session.get("session_key") or sid
                     try:
-                        import thoth_db as _hermes_db
-                        if _hermes_db.run_sync(_pdb.set_session_title(_session_key, _pending)):
+                        import thoth_db as _thoth_db
+                        if _thoth_db.run_sync(_pdb.set_session_title(_session_key, _pending)):
                             session["pending_title"] = None
                     except ValueError as exc:
                         # Invalid/duplicate title — non-retryable, drop it.
@@ -4504,7 +4504,7 @@ def _(rid, params: dict) -> dict:
 
 @method("reload.env")
 def _(rid, params: dict) -> dict:
-    """Re-read ``~/.hermes/.env`` into the gateway process via
+    """Re-read ``~/.thoth/.env`` into the gateway process via
     ``thoth_cli.config.reload_env``, matching classic CLI's ``/reload``
     handler.  Newly added API keys take effect on the next agent call
     without restarting the TUI.
@@ -5520,7 +5520,7 @@ def _(rid, params: dict) -> dict:
         if not pconfig.api_key_env_vars:
             return _err(rid, 4004, f"no env var defined for {pconfig.name}")
 
-        # Save the key to ~/.hermes/.env
+        # Save the key to ~/.thoth/.env
         env_var = pconfig.api_key_env_vars[0]
         save_env_value(env_var, api_key)
         # Also set in current process so the refreshed inventory sees it.
@@ -6017,10 +6017,10 @@ def _(rid, params: dict) -> dict:
         return _db_unavailable_error(rid, code=5017)
     try:
         cutoff = time.time() - days * 86400
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
         rows = [
             s
-            for s in _hermes_db.run_sync(db.list_sessions_rich(limit=500))
+            for s in _thoth_db.run_sync(db.list_sessions_rich(limit=500))
             if (s.get("started_at") or 0) >= cutoff
         ]
         return _ok(

@@ -7,43 +7,43 @@ ENV PYTHONUNBUFFERED=1
 
 # Store Playwright browsers outside the volume mount so the build-time
 # install survives the /opt/data volume overlay at runtime.
-ENV PLAYWRIGHT_BROWSERS_PATH=/opt/hermes/.playwright
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/thoth/.playwright
 
 # Install system dependencies in one layer, clear APT cache
 # tini reaps orphaned zombie processes (MCP stdio subprocesses, git, bun, etc.)
-# that would otherwise accumulate when hermes runs as PID 1. See #15012.
+# that would otherwise accumulate when thoth runs as PID 1. See #15012.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential curl nodejs npm python3 ripgrep ffmpeg gcc python3-dev libffi-dev procps git openssh-client docker-cli tini && \
     rm -rf /var/lib/apt/lists/*
 
 # Non-root user for runtime; UID can be overridden via THOTH_UID at runtime
-RUN useradd -u 10000 -m -d /opt/data hermes
+RUN useradd -u 10000 -m -d /opt/data thoth
 
 COPY --chmod=0755 --from=gosu_source /gosu /usr/local/bin/
 COPY --chmod=0755 --from=uv_source /usr/local/bin/uv /usr/local/bin/uvx /usr/local/bin/
 
-WORKDIR /opt/hermes
+WORKDIR /opt/thoth
 
 # ---------- Layer-cached dependency install ----------
 # Copy only package manifests first so npm install + Playwright are cached
 # unless the lockfiles themselves change.
 #
-# ui-tui/packages/hermes-ink/ is copied IN FULL (not just its manifests)
+# ui-tui/packages/thoth-ink/ is copied IN FULL (not just its manifests)
 # because it is referenced as a `file:` workspace dependency from
 # ui-tui/package.json.  Copying the tree up front lets npm resolve the
 # workspace to real content instead of stopping at a bare package.json.
 COPY package.json package-lock.json ./
 COPY web/package.json web/package-lock.json web/
 COPY ui-tui/package.json ui-tui/package-lock.json ui-tui/
-COPY ui-tui/packages/hermes-ink/ ui-tui/packages/hermes-ink/
+COPY ui-tui/packages/thoth-ink/ ui-tui/packages/thoth-ink/
 
 # `npm_config_install_links=false` forces npm to install `file:` deps as
 # symlinks (the npm 10+ default) even on Debian's older bundled npm 9.x,
 # which defaults to `install-links=true` and installs file deps as *copies*.
 # The host-side package-lock.json is generated with a newer npm that uses
 # symlinks, so an install-as-copy produces a hidden node_modules/.package-lock.json
-# that permanently disagrees with the root lock on the @hermes/ink entry.
+# that permanently disagrees with the root lock on the @thoth/ink entry.
 # That disagreement trips the TUI launcher's `_tui_need_npm_install()`
 # check on every startup and triggers a runtime `npm install` that then
 # fails with EACCES (node_modules/ is root-owned from build time).
@@ -82,7 +82,7 @@ RUN uv sync --frozen --no-install-project --extra all --extra messaging
 
 # ---------- Source code ----------
 # .dockerignore excludes node_modules, so the installs above survive.
-COPY --chown=hermes:hermes . .
+COPY --chown=thoth:thoth . .
 
 # Build browser dashboard and terminal UI assets.
 RUN cd web && npm run build && \
@@ -91,30 +91,33 @@ RUN cd web && npm run build && \
 # ---------- Permissions ----------
 # Make install dir world-readable so any THOTH_UID can read it at runtime.
 # The venv needs to be traversable too.
-# node_modules trees additionally need to be writable by the hermes user
+# node_modules trees additionally need to be writable by the thoth user
 # so the runtime `npm install` triggered by _tui_need_npm_install() in
-# thoth_cli/main.py succeeds (see #18800). /opt/hermes/web is build-time
+# thoth_cli/main.py succeeds (see #18800). /opt/thoth/web is build-time
 # only (THOTH_WEB_DIST points at thoth_cli/web_dist) and is intentionally
 # not chowned here.
-# The .venv MUST remain hermes-writable so lazy_deps.py can install
+# The .venv MUST remain thoth-writable so lazy_deps.py can install
 # remaining optional platform packages and future pin bumps at first use.
 # Without this, `uv pip install` fails with EACCES and adapters silently
 # fail to load.  See tools/lazy_deps.py.
 USER root
-RUN chmod -R a+rX /opt/hermes && \
-    chown -R hermes:hermes /opt/hermes/.venv /opt/hermes/ui-tui /opt/hermes/node_modules
+RUN chmod -R a+rX /opt/thoth && \
+    chown -R thoth:thoth /opt/thoth/.venv /opt/thoth/ui-tui /opt/thoth/node_modules
 # Start as root so the entrypoint can usermod/groupmod + gosu.
-# If THOTH_UID is unset, the entrypoint drops to the default hermes user (10000).
+# If THOTH_UID is unset, the entrypoint drops to the default thoth user (10000).
 
-# ---------- Link hermes-agent itself (editable) ----------
+# ---------- Link thoth-agent itself (editable) ----------
 # Deps are already installed in the cached layer above; `--no-deps` makes
 # this a fast (~1s) egg-link creation with no resolution or downloads.
 RUN uv pip install --no-cache-dir --no-deps -e "."
 
 # ---------- Runtime ----------
-ENV THOTH_WEB_DIST=/opt/hermes/thoth_cli/web_dist
+ENV THOTH_WEB_DIST=/opt/thoth/thoth_cli/web_dist
 ENV THOTH_HOME=/opt/data
-ENV PATH="/opt/data/.local/bin:${PATH}"
+# Put the app venv's console scripts (thoth/thoth-agent/thoth-acp) on PATH so the
+# entrypoint's bare `exec thoth "$@"` resolves. Without this the container exits
+# 127 ("thoth: command not found") and crash-loops.
+ENV PATH="/opt/thoth/.venv/bin:/opt/data/.local/bin:${PATH}"
 RUN mkdir -p /opt/data
 VOLUME [ "/opt/data" ]
-ENTRYPOINT [ "/usr/bin/tini", "-g", "--", "/opt/hermes/docker/entrypoint.sh" ]
+ENTRYPOINT [ "/usr/bin/tini", "-g", "--", "/opt/thoth/docker/entrypoint.sh" ]

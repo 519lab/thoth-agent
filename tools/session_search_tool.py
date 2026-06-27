@@ -59,8 +59,8 @@ class _SyncDB:
 
     def __init__(self, async_db):
         self._async_db = async_db
-        import thoth_db as _hermes_db
-        self._run_sync = _hermes_db.run_sync
+        import thoth_db as _thoth_db
+        self._run_sync = _thoth_db.run_sync
 
     def __getattr__(self, name):
         if name in self._DELEGATED:
@@ -69,6 +69,24 @@ class _SyncDB:
                 return self._run_sync(async_method(*args, **kwargs))
             return _wrapper
         raise AttributeError(name)
+
+
+def _ensure_sync_db(db):
+    """Wrap a raw async ``_AsyncSessionDB`` in :class:`_SyncDB` so the sync
+    helper code in this module can call its methods without ``await``.
+
+    The tool dispatch (``agent/tool_executor.py``) passes the live
+    ``_AsyncSessionDB`` straight through as ``db=``, whose methods are
+    coroutines — calling them un-awaited yields ``'coroutine' object is not
+    iterable``. No-op for an already-sync db (``_SyncDB`` or a sync test
+    double), detected by probing whether ``get_session`` is a coroutine fn.
+    """
+    if db is None or isinstance(db, _SyncDB):
+        return db
+    import inspect
+    if inspect.iscoroutinefunction(getattr(db, "get_session", None)):
+        return _SyncDB(db)
+    return db
 
 
 def _format_timestamp(ts: Union[int, float, str, None]) -> str:
@@ -444,6 +462,10 @@ def session_search(
             logging.debug("SessionDB unavailable for session_search", exc_info=True)
             from thoth_state import format_session_db_unavailable
             return tool_error(format_session_db_unavailable(), success=False)
+
+    # The tool dispatch passes the raw async _AsyncSessionDB as db=, so wrap it
+    # for the sync helper code below (idempotent / no-op if already sync).
+    db = _ensure_sync_db(db)
 
     # Scroll shape takes precedence — explicit anchor beats any query.
     if (isinstance(session_id, str) and session_id.strip()) and around_message_id is not None:

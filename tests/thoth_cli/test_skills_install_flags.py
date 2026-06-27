@@ -26,7 +26,7 @@ def test_cli_skills_install_yes_sets_skip_confirm(monkeypatch):
     monkeypatch.setattr(
         sys,
         "argv",
-        ["hermes", "skills", "install", "official/email/agentmail", "--yes"],
+        ["thoth", "skills", "install", "official/email/agentmail", "--yes"],
     )
 
     main()
@@ -50,7 +50,7 @@ def test_cli_skills_install_y_alias(monkeypatch):
     monkeypatch.setattr(
         sys,
         "argv",
-        ["hermes", "skills", "install", "test/skill", "-y"],
+        ["thoth", "skills", "install", "test/skill", "-y"],
     )
 
     main()
@@ -73,7 +73,7 @@ def test_cli_skills_install_force_sets_force(monkeypatch):
     monkeypatch.setattr(
         sys,
         "argv",
-        ["hermes", "skills", "install", "test/skill", "--force"],
+        ["thoth", "skills", "install", "test/skill", "--force"],
     )
 
     main()
@@ -96,7 +96,7 @@ def test_cli_skills_install_force_and_yes_together(monkeypatch):
     monkeypatch.setattr(
         sys,
         "argv",
-        ["hermes", "skills", "install", "test/skill", "--force", "--yes"],
+        ["thoth", "skills", "install", "test/skill", "--force", "--yes"],
     )
 
     main()
@@ -119,7 +119,7 @@ def test_cli_skills_install_no_flags(monkeypatch):
     monkeypatch.setattr(
         sys,
         "argv",
-        ["hermes", "skills", "install", "test/skill"],
+        ["thoth", "skills", "install", "test/skill"],
     )
 
     main()

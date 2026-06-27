@@ -5,7 +5,7 @@ version: 1.0.0
 author: Thoth Agent
 license: MIT
 metadata:
-  hermes:
+  thoth:
     tags: [kanban, codex, worktrees, autonomous-agents, prediction-market-bot]
     related_skills: [kanban-worker, codex, thoth-agent]
 ---

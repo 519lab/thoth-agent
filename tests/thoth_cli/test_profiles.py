@@ -45,12 +45,12 @@ from thoth_cli.profiles import (
 def profile_env(tmp_path, monkeypatch):
     """Set up an isolated environment for profile tests.
 
-    * Path.home() -> tmp_path  (so _get_profiles_root() = tmp_path/.hermes/profiles)
-    * THOTH_HOME  -> tmp_path/.hermes  (so get_thoth_home() agrees)
-    * Creates the bare-minimum ~/.hermes directory.
+    * Path.home() -> tmp_path  (so _get_profiles_root() = tmp_path/.thoth/profiles)
+    * THOTH_HOME  -> tmp_path/.thoth  (so get_thoth_home() agrees)
+    * Creates the bare-minimum ~/.thoth directory.
     """
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    default_home = tmp_path / ".hermes"
+    default_home = tmp_path / ".thoth"
     default_home.mkdir(exist_ok=True)
     monkeypatch.setenv("THOTH_HOME", str(default_home))
     return tmp_path
@@ -114,7 +114,7 @@ class TestValidateProfileName:
         with pytest.raises(ValueError):
             validate_profile_name("")
 
-    @pytest.mark.parametrize("name", ["hermes", "test", "tmp", "root", "sudo"])
+    @pytest.mark.parametrize("name", ["thoth", "test", "tmp", "root", "sudo"])
     def test_reserved_names_rejected(self, name):
         """Reserved names collide with the Thoth install itself or with
         common system binaries — reject them at validate time so
@@ -133,16 +133,16 @@ class TestGetProfileDir:
     def test_default_returns_thoth_home(self, profile_env):
         tmp_path = profile_env
         result = get_profile_dir("default")
-        assert result == tmp_path / ".hermes"
+        assert result == tmp_path / ".thoth"
 
     def test_named_profile_returns_profiles_subdir(self, profile_env):
         tmp_path = profile_env
         result = get_profile_dir("coder")
-        assert result == tmp_path / ".hermes" / "profiles" / "coder"
+        assert result == tmp_path / ".thoth" / "profiles" / "coder"
 
     def test_named_profile_matching_is_case_insensitive(self, profile_env):
         tmp_path = profile_env
-        assert get_profile_dir("Coder") == tmp_path / ".hermes" / "profiles" / "coder"
+        assert get_profile_dir("Coder") == tmp_path / ".thoth" / "profiles" / "coder"
 
 
 # ===================================================================
@@ -174,7 +174,7 @@ class TestCreateProfile:
 
     def test_clone_config_copies_files(self, profile_env):
         tmp_path = profile_env
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         # Create source config files in default profile
         (default_home / "config.yaml").write_text("model: test")
         (default_home / ".env").write_text("KEY=val")
@@ -188,7 +188,7 @@ class TestCreateProfile:
 
     def test_clone_config_copies_source_skills(self, profile_env):
         tmp_path = profile_env
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         skill_dir = default_home / "skills" / "custom" / "installed-skill"
         skill_dir.mkdir(parents=True)
         (skill_dir / "SKILL.md").write_text("---\nname: installed-skill\n---\n")
@@ -205,7 +205,7 @@ class TestCreateProfile:
 
     def test_clone_all_copies_entire_tree(self, profile_env):
         tmp_path = profile_env
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         # Populate default with some content
         (default_home / "memories").mkdir(exist_ok=True)
         (default_home / "memories" / "note.md").write_text("remember this")
@@ -226,9 +226,9 @@ class TestCreateProfile:
         assert not (profile_dir / "processes.json").exists()
 
     def test_clone_all_excludes_sibling_profiles_tree(self, profile_env):
-        """--clone-all from default ~/.hermes must not copy profiles/* (nested explosion)."""
+        """--clone-all from default ~/.thoth must not copy profiles/* (nested explosion)."""
         tmp_path = profile_env
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         profiles_root = default_home / "profiles"
         profiles_root.mkdir(exist_ok=True)
         (profiles_root / "other").mkdir(parents=True, exist_ok=True)
@@ -250,7 +250,7 @@ class TestCreateProfile:
         minus infrastructure."
         """
         tmp_path = profile_env
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
         # Simulate infrastructure dirs that only the default profile has
         (default_home / "hermes-agent" / ".git").mkdir(parents=True)
         (default_home / "hermes-agent" / "venv" / "bin").mkdir(parents=True)
@@ -496,7 +496,7 @@ class TestActiveProfile:
 
     def test_empty_file_returns_default(self, profile_env):
         tmp_path = profile_env
-        active_path = tmp_path / ".hermes" / "active_profile"
+        active_path = tmp_path / ".thoth" / "active_profile"
         active_path.write_text("")
         assert get_active_profile() == "default"
 
@@ -504,7 +504,7 @@ class TestActiveProfile:
         tmp_path = profile_env
         create_profile("coder", no_alias=True)
         set_active_profile("coder")
-        active_path = tmp_path / ".hermes" / "active_profile"
+        active_path = tmp_path / ".thoth" / "active_profile"
         assert active_path.exists()
 
         set_active_profile("default")
@@ -523,13 +523,13 @@ class TestGetActiveProfileName:
     """Tests for get_active_profile_name()."""
 
     def test_default_thoth_home_returns_default(self, profile_env):
-        # THOTH_HOME points to tmp_path/.hermes which is the default
+        # THOTH_HOME points to tmp_path/.thoth which is the default
         assert get_active_profile_name() == "default"
 
     def test_profile_path_returns_profile_name(self, profile_env, monkeypatch):
         tmp_path = profile_env
         create_profile("coder", no_alias=True)
-        profile_dir = tmp_path / ".hermes" / "profiles" / "coder"
+        profile_dir = tmp_path / ".thoth" / "profiles" / "coder"
         monkeypatch.setenv("THOTH_HOME", str(profile_dir))
         assert get_active_profile_name() == "coder"
 
@@ -556,12 +556,12 @@ class TestResolveProfileEnv:
         tmp_path = profile_env
         create_profile("coder", no_alias=True)
         result = resolve_profile_env("coder")
-        assert result == str(tmp_path / ".hermes" / "profiles" / "coder")
+        assert result == str(tmp_path / ".thoth" / "profiles" / "coder")
 
     def test_default_returns_default_home(self, profile_env):
         tmp_path = profile_env
         result = resolve_profile_env("default")
-        assert result == str(tmp_path / ".hermes")
+        assert result == str(tmp_path / ".thoth")
 
     def test_nonexistent_raises_file_not_found(self, profile_env):
         with pytest.raises(FileNotFoundError):
@@ -587,7 +587,7 @@ class TestAliasCollision:
         assert result is None
 
     def test_reserved_name_returns_message(self, profile_env):
-        result = check_alias_collision("hermes")
+        result = check_alias_collision("thoth")
         assert result is not None
         assert "reserved" in result.lower()
 
@@ -612,7 +612,7 @@ class TestRenameProfile:
     def test_renames_directory(self, profile_env):
         tmp_path = profile_env
         create_profile("oldname", no_alias=True)
-        old_dir = tmp_path / ".hermes" / "profiles" / "oldname"
+        old_dir = tmp_path / ".thoth" / "profiles" / "oldname"
         assert old_dir.is_dir()
 
         # Mock alias collision to avoid subprocess calls
@@ -621,12 +621,12 @@ class TestRenameProfile:
 
         assert not old_dir.is_dir()
         assert new_dir.is_dir()
-        assert new_dir == tmp_path / ".hermes" / "profiles" / "newname"
+        assert new_dir == tmp_path / ".thoth" / "profiles" / "newname"
 
     def test_renames_root_honcho_host_without_changing_ai_peer(self, profile_env):
         tmp_path = profile_env
         create_profile("ssi_health", no_alias=True)
-        honcho_path = tmp_path / ".hermes" / "honcho.json"
+        honcho_path = tmp_path / ".thoth" / "honcho.json"
         honcho_path.write_text(json.dumps({
             "hosts": {
                 "hermes.ssi_health": {
@@ -653,7 +653,7 @@ class TestRenameProfile:
     def test_pins_ai_peer_when_absent_on_honcho_host_rename(self, profile_env):
         tmp_path = profile_env
         create_profile("ssi_health", no_alias=True)
-        honcho_path = tmp_path / ".hermes" / "honcho.json"
+        honcho_path = tmp_path / ".thoth" / "honcho.json"
         honcho_path.write_text(json.dumps({
             "hosts": {
                 "hermes.ssi_health": {"workspace": "hermes", "enabled": True}
@@ -671,7 +671,7 @@ class TestRenameProfile:
     def test_does_not_overwrite_existing_honcho_host_on_rename(self, profile_env):
         tmp_path = profile_env
         create_profile("ssi_health", no_alias=True)
-        honcho_path = tmp_path / ".hermes" / "honcho.json"
+        honcho_path = tmp_path / ".thoth" / "honcho.json"
         honcho_path.write_text(json.dumps({
             "hosts": {
                 "hermes.ssi_health": {"aiPeer": "ssi_health"},
@@ -1012,7 +1012,7 @@ class TestProfileIsolation:
 
 
 # ===================================================================
-# TestGetProfilesRoot / TestGetDefaultHermesHome (internal helpers)
+# TestGetProfilesRoot / TestGetDefaultThothHome (internal helpers)
 # ===================================================================
 
 class TestInternalHelpers:
@@ -1021,15 +1021,15 @@ class TestInternalHelpers:
     def test_profiles_root_under_home(self, profile_env):
         tmp_path = profile_env
         root = _get_profiles_root()
-        assert root == tmp_path / ".hermes" / "profiles"
+        assert root == tmp_path / ".thoth" / "profiles"
 
     def test_default_thoth_home(self, profile_env):
         tmp_path = profile_env
         home = _get_default_thoth_home()
-        assert home == tmp_path / ".hermes"
+        assert home == tmp_path / ".thoth"
 
     def test_profiles_root_docker_deployment(self, tmp_path, monkeypatch):
-        """In Docker (THOTH_HOME outside ~/.hermes), profiles go under THOTH_HOME."""
+        """In Docker (THOTH_HOME outside ~/.thoth), profiles go under THOTH_HOME."""
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -1047,8 +1047,8 @@ class TestInternalHelpers:
         assert home == docker_home
 
     def test_profiles_root_profile_mode(self, tmp_path, monkeypatch):
-        """In profile mode (THOTH_HOME under ~/.hermes), profiles root is still ~/.hermes/profiles."""
-        native = tmp_path / ".hermes"
+        """In profile mode (THOTH_HOME under ~/.thoth), profiles root is still ~/.thoth/profiles."""
+        native = tmp_path / ".thoth"
         profile_dir = native / "profiles" / "coder"
         profile_dir.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -1105,7 +1105,7 @@ class TestEdgeCases:
     def test_create_profile_returns_correct_path(self, profile_env):
         tmp_path = profile_env
         result = create_profile("mybot", no_alias=True)
-        expected = tmp_path / ".hermes" / "profiles" / "mybot"
+        expected = tmp_path / ".thoth" / "profiles" / "mybot"
         assert result == expected
 
     def test_list_profiles_default_info_fields(self, profile_env):
@@ -1119,7 +1119,7 @@ class TestEdgeCases:
         """Verify _check_gateway_running uses the shared gateway PID validator."""
         from thoth_cli.profiles import _check_gateway_running
         tmp_path = profile_env
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
 
         with patch("gateway.status.get_running_pid", return_value=99999) as mock_get_running_pid:
             assert _check_gateway_running(default_home) is True
@@ -1132,7 +1132,7 @@ class TestEdgeCases:
         """Shared PID validator returning None means the profile is not running."""
         from thoth_cli.profiles import _check_gateway_running
         tmp_path = profile_env
-        default_home = tmp_path / ".hermes"
+        default_home = tmp_path / ".thoth"
 
         with patch("gateway.status.get_running_pid", return_value=None) as mock_get_running_pid:
             assert _check_gateway_running(default_home) is False

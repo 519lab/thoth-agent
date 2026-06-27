@@ -86,9 +86,7 @@ def _get_service_pids() -> set:
             try:
                 result = subprocess.run(
                     scope_args + ["list-units",
-                                  # Canonical thoth-gateway* + legacy
-                                  # hermes-gateway* (pre-rename installs).
-                                  "thoth-gateway*", "hermes-gateway*",
+                                  "thoth-gateway*",
                                   "--plain", "--no-legend", "--no-pager"],
                     capture_output=True, text=True, timeout=5,
                 )
@@ -315,7 +313,6 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
         "thoth_cli/main.py --profile",
         "thoth_cli/main.py -p",
         "thoth gateway",
-        "hermes gateway",
         "gateway/run.py",
     ]
     current_home = str(get_thoth_home().resolve())
@@ -717,7 +714,7 @@ def _sync_thoth_home_from_systemd_unit(system: bool) -> None:
     """When acting on a system-scope unit, adopt its ``THOTH_HOME``.
 
     Under ``sudo``, ``THOTH_HOME`` is stripped and ``HOME=/root``, so
-    :func:`get_thoth_home` falls back to ``/root/.hermes`` — the wrong
+    :func:`get_thoth_home` falls back to ``/root/.thoth`` — the wrong
     profile. The unit file pins ``THOTH_HOME`` for the actual gateway
     process, so we mirror that into our own environment to make
     ``read_runtime_status`` / ``get_running_pid`` read the correct files.
@@ -1299,7 +1296,7 @@ def _profile_suffix() -> str:
 def _profile_arg(thoth_home: str | None = None) -> str:
     """Return ``--profile <name>`` only when THOTH_HOME is a named profile.
 
-    For ``~/.hermes/profiles/<name>``, returns ``"--profile <name>"``.
+    For ``~/.thoth/profiles/<name>``, returns ``"--profile <name>"``.
     For the default profile or hash-based custom paths, returns the empty string.
 
     Args:
@@ -1327,8 +1324,8 @@ def _profile_arg(thoth_home: str | None = None) -> str:
 def get_service_name() -> str:
     """Derive a systemd service name scoped to this THOTH_HOME.
 
-    Default ``~/.hermes`` returns ``thoth-gateway`` (backward compatible).
-    Profile ``~/.hermes/profiles/coder`` returns ``thoth-gateway-coder``.
+    Default ``~/.thoth`` returns ``thoth-gateway``.
+    Profile ``~/.thoth/profiles/coder`` returns ``thoth-gateway-coder``.
     Any other THOTH_HOME appends a short hash for uniqueness.
     """
     suffix = _profile_suffix()
@@ -1585,199 +1582,6 @@ def has_conflicting_systemd_units() -> bool:
     return len(get_installed_systemd_scopes()) > 1
 
 
-# Legacy service names from older Hermes installs that predate the
-# hermes-gateway rename. ``hermes-gateway.service`` is now legacy too (it was
-# the default unit name before the thoth-gateway rename). Kept as an explicit
-# allowlist (NOT a glob) so profile units (hermes-gateway-*.service) and
-# unrelated third-party "hermes" units are never matched — consistent with
-# the existing design.
-_LEGACY_SERVICE_NAMES: tuple[str, ...] = ("hermes.service", "hermes-gateway.service")
-
-# ExecStart content markers that identify a unit as running our gateway.
-# A legacy unit is only flagged when its file contains one of these.
-_LEGACY_UNIT_EXECSTART_MARKERS: tuple[str, ...] = (
-    "thoth_cli.main gateway",
-    "thoth_cli/main.py gateway",
-    "thoth_cli.main gateway",
-    "thoth_cli/main.py gateway",
-    "gateway/run.py",
-    " hermes gateway ",
-    "/hermes gateway ",
-)
-
-
-def _legacy_unit_search_paths() -> list[tuple[bool, Path]]:
-    """Return ``[(is_system, base_dir), ...]`` — directories to scan for legacy units.
-
-    Factored out so tests can monkeypatch the search roots without touching
-    real filesystem paths.
-    """
-    return [
-        (False, Path.home() / ".config" / "systemd" / "user"),
-        (True, Path("/etc/systemd/system")),
-    ]
-
-
-def _find_legacy_hermes_units() -> list[tuple[str, Path, bool]]:
-    """Return ``[(unit_name, unit_path, is_system)]`` for legacy Hermes gateway units.
-
-    Detects unit files installed by older Hermes versions that used a
-    different service name (e.g. ``hermes.service`` or ``hermes-gateway.service``
-    before the rename to ``thoth-gateway.service``). When both a legacy unit
-    and the current ``thoth-gateway.service`` are active, they fight over the
-    same bot token — the PR #5646 signal-recovery change turns this into a
-    30-second SIGTERM flap loop.
-
-    Safety guards:
-
-    * Explicit allowlist of legacy names (no globbing). Profile units such
-      as ``hermes-gateway-coder.service`` and unrelated third-party
-      ``hermes-*`` services are never matched.
-    * ExecStart content check — only flag units that invoke our gateway
-      entrypoint. A user-created ``hermes.service`` running an unrelated
-      binary is left untouched.
-    * Results are returned purely for caller inspection; this function
-      never mutates or removes anything.
-    """
-    results: list[tuple[str, Path, bool]] = []
-    for is_system, base in _legacy_unit_search_paths():
-        for name in _LEGACY_SERVICE_NAMES:
-            unit_path = base / name
-            try:
-                if not unit_path.exists():
-                    continue
-                text = unit_path.read_text(encoding="utf-8", errors="ignore")
-            except (OSError, PermissionError):
-                continue
-            if not any(marker in text for marker in _LEGACY_UNIT_EXECSTART_MARKERS):
-                # Not our gateway — leave alone
-                continue
-            results.append((name, unit_path, is_system))
-    return results
-
-
-def has_legacy_hermes_units() -> bool:
-    """Return True when any legacy Hermes gateway unit files exist."""
-    return bool(_find_legacy_hermes_units())
-
-
-def print_legacy_unit_warning() -> None:
-    """Warn about legacy Hermes gateway unit files if any are installed.
-
-    Idempotent: prints nothing when no legacy units are detected. Safe to
-    call from any status/install/setup path.
-    """
-    legacy = _find_legacy_hermes_units()
-    if not legacy:
-        return
-    print_warning("Legacy Hermes gateway unit(s) detected from an older install:")
-    for name, path, is_system in legacy:
-        scope = "system" if is_system else "user"
-        print_info(f"    {path}  ({scope} scope)")
-    print_info(f"  These run alongside the current {get_service_name()} service and")
-    print_info("  cause SIGTERM flap loops — both try to use the same bot token.")
-    print_info("  Remove them with:")
-    print_info(f"    {cli_name()} gateway migrate-legacy")
-
-
-def remove_legacy_hermes_units(
-    interactive: bool = True,
-    dry_run: bool = False,
-) -> tuple[int, list[Path]]:
-    """Stop, disable, and remove legacy Hermes gateway unit files.
-
-    Iterates over whatever ``_find_legacy_hermes_units()`` returns — which is
-    an explicit allowlist of legacy names (not a glob). Profile units and
-    unrelated third-party services are never touched.
-
-    Args:
-        interactive: When True, prompt before removing. When False, remove
-            without asking (used when another prompt has already confirmed,
-            e.g. from the install flow).
-        dry_run: When True, list what would be removed and return.
-
-    Returns:
-        ``(removed_count, remaining_paths)`` — remaining includes units we
-        couldn't remove (typically system-scope when not running as root).
-    """
-    legacy = _find_legacy_hermes_units()
-    if not legacy:
-        print("No legacy Hermes gateway units found.")
-        return 0, []
-
-    user_units = [(n, p) for n, p, is_sys in legacy if not is_sys]
-    system_units = [(n, p) for n, p, is_sys in legacy if is_sys]
-
-    print()
-    print("Legacy Hermes gateway unit(s) found:")
-    for name, path, is_system in legacy:
-        scope = "system" if is_system else "user"
-        print(f"  {path}  ({scope} scope)")
-    print()
-
-    if dry_run:
-        print("(dry-run — nothing removed)")
-        return 0, [p for _, p, _ in legacy]
-
-    if interactive and not prompt_yes_no("Remove these legacy units?", True):
-        print(f"Skipped. Run again with: {cli_name()} gateway migrate-legacy")
-        return 0, [p for _, p, _ in legacy]
-
-    removed = 0
-    remaining: list[Path] = []
-
-    # User-scope removal
-    for name, path in user_units:
-        try:
-            _run_systemctl(["stop", name], system=False, check=False, timeout=90)
-            _run_systemctl(["disable", name], system=False, check=False, timeout=30)
-            path.unlink(missing_ok=True)
-            print(f"  ✓ Removed {path}")
-            removed += 1
-        except (OSError, RuntimeError) as e:
-            print(f"  ⚠ Could not remove {path}: {e}")
-            remaining.append(path)
-
-    if user_units:
-        try:
-            _run_systemctl(["daemon-reload"], system=False, check=False, timeout=30)
-        except RuntimeError:
-            pass
-
-    # System-scope removal (needs root)
-    if system_units:
-        if os.geteuid() != 0:  # windows-footgun: ok — Linux systemd removal path, guarded by `if system == "Linux"` / systemd-only branch
-            print()
-            print_warning("System-scope legacy units require root to remove.")
-            print_info(f"  Re-run with: sudo {cli_name()} gateway migrate-legacy")
-            for _, path in system_units:
-                remaining.append(path)
-        else:
-            for name, path in system_units:
-                try:
-                    _run_systemctl(["stop", name], system=True, check=False, timeout=90)
-                    _run_systemctl(["disable", name], system=True, check=False, timeout=30)
-                    path.unlink(missing_ok=True)
-                    print(f"  ✓ Removed {path}")
-                    removed += 1
-                except (OSError, RuntimeError) as e:
-                    print(f"  ⚠ Could not remove {path}: {e}")
-                    remaining.append(path)
-
-            try:
-                _run_systemctl(["daemon-reload"], system=True, check=False, timeout=30)
-            except RuntimeError:
-                pass
-
-    print()
-    if remaining:
-        print_warning(f"{len(remaining)} legacy unit(s) still present — see messages above.")
-    else:
-        print_success(f"Removed {removed} legacy unit(s).")
-
-    return removed, remaining
-
-
 def print_systemd_scope_conflict_warning() -> None:
     scopes = get_installed_systemd_scopes()
     if len(scopes) < 2:
@@ -1961,11 +1765,11 @@ def _launchd_user_home() -> Path:
 def get_launchd_plist_path() -> Path:
     """Return the launchd plist path, scoped per profile.
 
-    Default ``~/.hermes`` → ``ai.hermes.gateway.plist`` (backward compatible).
-    Profile ``~/.hermes/profiles/coder`` → ``ai.hermes.gateway-coder.plist``.
+    Default ``~/.thoth`` → ``ai.thoth.gateway.plist``. Profile
+    ``~/.thoth/profiles/coder`` → ``ai.thoth.gateway-coder.plist``.
     """
     suffix = _profile_suffix()
-    name = f"ai.hermes.gateway-{suffix}" if suffix else "ai.hermes.gateway"
+    name = f"ai.thoth.gateway-{suffix}" if suffix else "ai.thoth.gateway"
     return _launchd_user_home() / "Library" / "LaunchAgents" / f"{name}.plist"
 
 def _detect_venv_dir() -> Path | None:
@@ -2074,7 +1878,7 @@ def _remap_path_for_user(path: str, target_home_dir: str) -> str:
     If *path* lives under ``Path.home()`` the corresponding prefix is swapped
     to *target_home_dir*; otherwise the path is returned unchanged.
 
-      /root/.hermes/hermes-agent  -> /home/alice/.hermes/hermes-agent
+      /root/.thoth/app  -> /home/alice/.thoth/app
       /opt/thoth                 -> /opt/thoth  (kept as-is)
 
     Note: this function intentionally does NOT resolve symlinks. A venv's
@@ -2100,38 +1904,34 @@ def _thoth_home_for_target_user(target_home_dir: str) -> str:
     When installing a system service via sudo, get_thoth_home() resolves to
     root's home.  This translates it to the target user's equivalent path:
       /root/.thoth                     → /home/alice/.thoth
-      /root/.hermes                    → /home/alice/.hermes
-      /root/.hermes/profiles/coder     → /home/alice/.hermes/profiles/coder
+      /root/.thoth/profiles/coder      → /home/alice/.thoth/profiles/coder
       /opt/custom-thoth               → /opt/custom-thoth  (kept as-is)
-    Checks both .thoth (Phase-3 canonical) and .hermes (legacy) so that
-    explicit THOTH_HOME=/root/.hermes paths still remap correctly.
     PermissionError from resolve() (e.g. /root unreachable) falls back to
     the unresolved absolute path for comparison purposes.
     """
     current_thoth_path = get_thoth_home()
     try:
-        current_hermes = current_thoth_path.resolve()
+        current_thoth = current_thoth_path.resolve()
     except OSError:
-        current_hermes = current_thoth_path.absolute()
+        current_thoth = current_thoth_path.absolute()
 
     caller_home = Path.home()
-    for dirname in (".thoth", ".hermes"):
-        candidate_raw = caller_home / dirname
-        try:
-            candidate = candidate_raw.resolve()
-        except OSError:
-            candidate = candidate_raw.absolute()
+    candidate_raw = caller_home / ".thoth"
+    try:
+        candidate = candidate_raw.resolve()
+    except OSError:
+        candidate = candidate_raw.absolute()
 
-        if current_hermes == candidate:
-            return str(Path(target_home_dir) / dirname)
-        try:
-            relative = current_hermes.relative_to(candidate)
-            return str(Path(target_home_dir) / dirname / relative)
-        except ValueError:
-            continue
+    if current_thoth == candidate:
+        return str(Path(target_home_dir) / ".thoth")
+    try:
+        relative = current_thoth.relative_to(candidate)
+        return str(Path(target_home_dir) / ".thoth" / relative)
+    except ValueError:
+        pass
 
     # Completely custom path — keep as-is
-    return str(current_hermes)
+    return str(current_thoth)
 
 
 def _build_service_path_dirs(project_root: Path | None = None) -> list[str]:
@@ -2337,7 +2137,7 @@ def refresh_systemd_unit_if_needed(system: bool = False) -> bool:
     # The user-scope unit path resolves under ``Path.home()``, which is NOT
     # sandboxed by the test conftest (only THOTH_HOME is). If a test
     # exercises ``run_gateway()`` with a pytest-tmp THOTH_HOME, the freshly
-    # generated unit bakes that ``/tmp/pytest-of-.../hermes_test`` path into
+    # generated unit bakes that ``/tmp/pytest-of-.../thoth_test`` path into
     # ``Environment="THOTH_HOME=..."``. Writing that to the developer's
     # real user systemd unit file silently breaks their gateway on the next
     # reboot (systemd loads the polluted env, the gateway looks at an empty
@@ -2349,8 +2149,8 @@ def refresh_systemd_unit_if_needed(system: bool = False) -> bool:
     # still works.
     if not system and (
         "/pytest-of-" in new_unit
-        or "/hermes_test\"" in new_unit
-        or "/hermes_test/" in new_unit
+        or "/thoth_test\"" in new_unit
+        or "/thoth_test/" in new_unit
     ):
         return False
 
@@ -2489,19 +2289,6 @@ def systemd_install(
     if system:
         _require_root_for_system_service("install")
 
-    # Offer to remove legacy units (hermes.service from pre-rename installs)
-    # before installing the new hermes-gateway.service. If both remain, they
-    # flap-fight for the Telegram bot token on every gateway startup.
-    # Only removes units matching _LEGACY_SERVICE_NAMES + our ExecStart
-    # signature — profile units are never touched.
-    if has_legacy_hermes_units():
-        print()
-        print_legacy_unit_warning()
-        print()
-        if prompt_yes_no("Remove the legacy unit(s) before installing?", True):
-            remove_legacy_hermes_units(interactive=False)
-            print()
-
     unit_path = get_systemd_unit_path(system=system)
     scope_flag = " --system" if system else ""
 
@@ -2543,7 +2330,6 @@ def systemd_install(
         _ensure_linger_enabled()
 
     print_systemd_scope_conflict_warning()
-    print_legacy_unit_warning()
 
 
 def systemd_uninstall(system: bool = False):
@@ -2724,10 +2510,6 @@ def systemd_status(deep: bool = False, system: bool = False, full: bool = False)
         print_systemd_scope_conflict_warning()
         print()
 
-    if has_legacy_hermes_units():
-        print_legacy_unit_warning()
-        print()
-
     if not systemd_unit_is_current(system=system):
         print("⚠ Installed gateway service definition is outdated")
         print(f"  Run: {'sudo ' if system else ''}{cli_name()} gateway restart{scope_flag}  # auto-refreshes the unit")
@@ -2817,55 +2599,14 @@ def get_launchd_label() -> str:
     """Return the launchd service label, scoped per profile.
 
     Default root → ``ai.thoth.gateway``. Profile ``coder`` →
-    ``ai.thoth.gateway-coder``. The old ``ai.hermes.gateway`` label is kept in
-    ``_LEGACY_LAUNCHD_LABELS`` so install/uninstall can bootout an orphaned
-    agent left by a pre-rename Hermes install.
+    ``ai.thoth.gateway-coder``.
     """
     suffix = _profile_suffix()
     return f"ai.thoth.gateway-{suffix}" if suffix else "ai.thoth.gateway"
 
 
-# Legacy launchd label BASES used by pre-rename Hermes installs. Kept as an
-# explicit allowlist (NOT a glob) so install/uninstall/refresh can best-effort
-# ``launchctl bootout`` the orphaned agent, ensuring the old ``ai.hermes.gateway``
-# does not keep running alongside the renamed ``ai.thoth.gateway`` (double-run /
-# bot-token fight). Mirrors the systemd ``_LEGACY_SERVICE_NAMES`` design.
-_LEGACY_LAUNCHD_LABELS: tuple[str, ...] = ("ai.hermes.gateway",)
-
-
-def _legacy_launchd_labels_for_profile() -> list[str]:
-    """Return the OLD launchd labels for the CURRENT profile.
-
-    Suffixes each base in :data:`_LEGACY_LAUNCHD_LABELS` with the active
-    profile suffix, mirroring :func:`get_launchd_label`'s logic so the right
-    per-profile legacy agent is booted out.
-    """
-    suffix = _profile_suffix()
-    return [f"{base}-{suffix}" if suffix else base for base in _LEGACY_LAUNCHD_LABELS]
-
-
 def _launchd_domain() -> str:
     return f"gui/{os.getuid()}"  # windows-footgun: ok — POSIX launchd (macOS) helper, never invoked on Windows
-
-
-def _bootout_legacy_launchd_agent() -> None:
-    """Best-effort ``launchctl bootout`` of the orphaned pre-rename agent(s).
-
-    Mirrors the systemd legacy-migration philosophy: defensive and best-effort,
-    never raising. If no old ``ai.hermes.gateway`` agent is loaded (the common
-    case), launchctl returns nonzero and we simply ignore it.
-    """
-    domain = _launchd_domain()
-    for legacy_label in _legacy_launchd_labels_for_profile():
-        try:
-            subprocess.run(
-                ["launchctl", "bootout", f"{domain}/{legacy_label}"],
-                check=False,
-                timeout=90,
-            )
-        except Exception:
-            # Never let legacy migration break install/uninstall.
-            pass
 
 
 def generate_launchd_plist() -> str:
@@ -2980,9 +2721,6 @@ def refresh_launchd_plist_if_needed() -> bool:
 
     plist_path.write_text(generate_launchd_plist(), encoding="utf-8")
     label = get_launchd_label()
-    # Best-effort: bootout any orphaned pre-rename ai.hermes.gateway agent for
-    # this profile so it does not double-run alongside the renamed label.
-    _bootout_legacy_launchd_agent()
     # Bootout/bootstrap so launchd picks up the new definition
     subprocess.run(["launchctl", "bootout", f"{_launchd_domain()}/{label}"], check=False, timeout=90)
     subprocess.run(["launchctl", "bootstrap", _launchd_domain(), str(plist_path)], check=False, timeout=30)
@@ -3007,12 +2745,8 @@ def launchd_install(force: bool = False):
     print(f"Installing launchd service to: {plist_path}")
     plist_path.write_text(generate_launchd_plist())
 
-    # Best-effort: bootout any orphaned pre-rename ai.hermes.gateway agent for
-    # this profile so it does not double-run alongside the renamed label.
-    _bootout_legacy_launchd_agent()
-
     subprocess.run(["launchctl", "bootstrap", _launchd_domain(), str(plist_path)], check=True, timeout=30)
-    
+
     print()
     print("✓ Service installed and loaded!")
     print()
@@ -3025,9 +2759,6 @@ def launchd_uninstall():
     plist_path = get_launchd_plist_path()
     label = get_launchd_label()
     subprocess.run(["launchctl", "bootout", f"{_launchd_domain()}/{label}"], check=False, timeout=90)
-    # Best-effort: also bootout any orphaned pre-rename ai.hermes.gateway agent
-    # for this profile so an old install is fully removed.
-    _bootout_legacy_launchd_agent()
 
     if plist_path.exists():
         plist_path.unlink()
@@ -3225,7 +2956,7 @@ def _guard_official_docker_root_gateway() -> None:
         "Refusing to run the Thoth gateway as root inside the official Docker image."
     )
     print(
-        "  The image entrypoint normally drops privileges to the 'hermes' user. "
+        "  The image entrypoint normally drops privileges to the 'thoth' user. "
         "If you override entrypoint in Docker Compose, include "
         "/opt/thoth/docker/entrypoint.sh before the Thoth command."
     )
@@ -3809,7 +3540,7 @@ def _all_platforms() -> list[dict]:
     # Populate the registry so plugin platforms are visible. Idempotent.
     # Bundled platform plugins (``kind: platform``) auto-load unconditionally,
     # so every shipped messaging channel appears in the setup menu by default.
-    # User-installed platform plugins under ~/.hermes/plugins/ still require
+    # User-installed platform plugins under ~/.thoth/plugins/ still require
     # opt-in via ``plugins.enabled`` (untrusted code).
     try:
         from thoth_cli.plugins import discover_plugins
@@ -4319,7 +4050,7 @@ def _setup_weixin():
     print()
     print_info("  1. Thoth will open Tencent iLink QR login in this terminal.")
     print_info("  2. Use WeChat to scan and confirm the QR code.")
-    print_info("  3. Thoth will store the returned account_id/token in ~/.hermes/.env.")
+    print_info("  3. Thoth will store the returned account_id/token in ~/.thoth/.env.")
     print_info("  4. This adapter supports native text, image, video, and document delivery.")
 
     existing_account = get_env_value("WEIXIN_ACCOUNT_ID")
@@ -4871,7 +4602,7 @@ def _configure_platform(platform: dict) -> None:
       4. Env-var hint fallback for plugins that offer no setup helper.
 
     Bundled platform plugins (e.g. IRC) auto-load, so no plugin enable step
-    is needed here. User-installed platform plugins under ~/.hermes/plugins/
+    is needed here. User-installed platform plugins under ~/.thoth/plugins/
     must already be in ``plugins.enabled`` before they appear in this menu.
     """
     entry = platform.get("_registry_entry")
@@ -4896,7 +4627,7 @@ def _configure_platform(platform: dict) -> None:
     print(color(f"  ─── {emoji} {label} Setup ───", Colors.CYAN))
     required = entry.required_env if entry else []
     if required:
-        print_info(f"  Set these env vars in ~/.hermes/.env: {', '.join(required)}")
+        print_info(f"  Set these env vars in ~/.thoth/.env: {', '.join(required)}")
     else:
         print_info(f"  Configure {label} in config.yaml under gateway.platforms.{platform['key']}")
     if platform.get("install_hint"):
@@ -4924,10 +4655,6 @@ def gateway_setup():
 
     if supports_systemd_services() and has_conflicting_systemd_units():
         print_systemd_scope_conflict_warning()
-        print()
-
-    if supports_systemd_services() and has_legacy_hermes_units():
-        print_legacy_unit_warning()
         print()
 
     if service_installed and service_running:
@@ -5206,7 +4933,7 @@ def _gateway_command_inner(args):
             print()
             print(f"  {cli_name()} gateway run                              # direct foreground")
             print(f"  tmux new -s thoth '{cli_name()} gateway run'         # persistent via tmux")
-            print(f"  nohup {cli_name()} gateway run > ~/.hermes/logs/gateway.log 2>&1 &  # background")
+            print(f"  nohup {cli_name()} gateway run > ~/.thoth/logs/gateway.log 2>&1 &  # background")
             sys.exit(1)
         elif is_container():
             print("Service installation is not needed inside a Docker container.")
@@ -5277,7 +5004,7 @@ def _gateway_command_inner(args):
             print()
             print(f"  {cli_name()} gateway run                              # direct foreground")
             print(f"  tmux new -s thoth '{cli_name()} gateway run'         # persistent via tmux")
-            print(f"  nohup {cli_name()} gateway run > ~/.hermes/logs/gateway.log 2>&1 &  # background")
+            print(f"  nohup {cli_name()} gateway run > ~/.thoth/logs/gateway.log 2>&1 &  # background")
             print()
             print("To enable systemd: add systemd=true to /etc/wsl.conf and run 'wsl --shutdown' from PowerShell.")
             sys.exit(1)
@@ -5539,10 +5266,10 @@ def _gateway_command_inner(args):
                 print("To start:")
                 print(f"  {cli_name()} gateway run      # Run in foreground")
                 if is_termux():
-                    print(f"  nohup {cli_name()} gateway run > ~/.hermes/logs/gateway.log 2>&1 &  # Best-effort background start")
+                    print(f"  nohup {cli_name()} gateway run > ~/.thoth/logs/gateway.log 2>&1 &  # Best-effort background start")
                 elif is_wsl():
                     print(f"  tmux new -s thoth '{cli_name()} gateway run'         # persistent via tmux")
-                    print(f"  nohup {cli_name()} gateway run > ~/.hermes/logs/gateway.log 2>&1 &  # background")
+                    print(f"  nohup {cli_name()} gateway run > ~/.thoth/logs/gateway.log 2>&1 &  # background")
                 elif is_windows():
                     print(f"  {cli_name()} gateway install  # Install as Windows Scheduled Task (auto-start on login)")
                 else:
@@ -5554,14 +5281,3 @@ def _gateway_command_inner(args):
 
     elif subcmd == "list":
         _gateway_list()
-
-    elif subcmd == "migrate-legacy":
-        # Stop, disable, and remove legacy Hermes gateway unit files from
-        # pre-rename installs (e.g. hermes.service). Profile units and
-        # unrelated third-party services are never touched.
-        dry_run = getattr(args, 'dry_run', False)
-        yes = getattr(args, 'yes', False)
-        if not supports_systemd_services() and not is_macos():
-            print("Legacy unit migration only applies to systemd-based Linux hosts.")
-            return
-        remove_legacy_hermes_units(interactive=not yes, dry_run=dry_run)

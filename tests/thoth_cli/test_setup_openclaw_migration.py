@@ -18,7 +18,7 @@ class TestOfferOpenclawMigration:
     def test_skips_when_no_openclaw_dir(self, tmp_path):
         """Should return False immediately when ~/.openclaw does not exist."""
         with patch("thoth_cli.setup.Path.home", return_value=tmp_path):
-            assert setup_mod._offer_openclaw_migration(tmp_path / ".hermes") is False
+            assert setup_mod._offer_openclaw_migration(tmp_path / ".thoth") is False
 
     def test_skips_when_migration_script_missing(self, tmp_path):
         """Should return False when the migration script file is absent."""
@@ -28,7 +28,7 @@ class TestOfferOpenclawMigration:
             patch("thoth_cli.setup.Path.home", return_value=tmp_path),
             patch.object(setup_mod, "_OPENCLAW_SCRIPT", tmp_path / "nonexistent.py"),
         ):
-            assert setup_mod._offer_openclaw_migration(tmp_path / ".hermes") is False
+            assert setup_mod._offer_openclaw_migration(tmp_path / ".thoth") is False
 
     def test_skips_when_user_declines(self, tmp_path):
         """Should return False when user declines the migration prompt."""
@@ -41,7 +41,7 @@ class TestOfferOpenclawMigration:
             patch.object(setup_mod, "_OPENCLAW_SCRIPT", script),
             patch.object(setup_mod, "prompt_yes_no", return_value=False),
         ):
-            assert setup_mod._offer_openclaw_migration(tmp_path / ".hermes") is False
+            assert setup_mod._offer_openclaw_migration(tmp_path / ".thoth") is False
 
     def test_runs_migration_when_user_accepts(self, tmp_path):
         """Should run dry-run preview first, then execute after confirmation."""
@@ -49,7 +49,7 @@ class TestOfferOpenclawMigration:
         openclaw_dir.mkdir()
 
         # Create a fake thoth home with config
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         config_path = thoth_home / "config.yaml"
         config_path.write_text("agent:\n  max_turns: 90\n")
@@ -118,7 +118,7 @@ class TestOfferOpenclawMigration:
         openclaw_dir = tmp_path / ".openclaw"
         openclaw_dir.mkdir()
 
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         config_path = thoth_home / "config.yaml"
         config_path.write_text("agent:\n  max_turns: 90\n")
@@ -167,7 +167,7 @@ class TestOfferOpenclawMigration:
         """Should catch exceptions and return False."""
         openclaw_dir = tmp_path / ".openclaw"
         openclaw_dir.mkdir()
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         config_path = thoth_home / "config.yaml"
         config_path.write_text("")
@@ -193,7 +193,7 @@ class TestOfferOpenclawMigration:
         """Should bootstrap config.yaml before running migration."""
         openclaw_dir = tmp_path / ".openclaw"
         openclaw_dir.mkdir()
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         config_path = thoth_home / "config.yaml"
         # config does NOT exist yet

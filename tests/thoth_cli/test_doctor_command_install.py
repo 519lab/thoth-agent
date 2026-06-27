@@ -13,7 +13,7 @@ import thoth_cli.doctor as doctor_mod
 
 def _setup_doctor_env(monkeypatch, tmp_path, venv_name="venv"):
     """Create a minimal THOTH_HOME + PROJECT_ROOT for doctor tests."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
 
@@ -23,7 +23,7 @@ def _setup_doctor_env(monkeypatch, tmp_path, venv_name="venv"):
     # Create a fake venv entry point
     venv_bin_dir = project / venv_name / "bin"
     venv_bin_dir.mkdir(parents=True, exist_ok=True)
-    thoth_bin = venv_bin_dir / "hermes"
+    thoth_bin = venv_bin_dir / "thoth"
     thoth_bin.write_text("#!/usr/bin/env python\n# entry point\n")
     thoth_bin.chmod(0o755)
 
@@ -77,7 +77,7 @@ class TestDoctorCommandInstallation:
         # Create the command link dir with correct symlink
         cmd_link_dir = tmp_path / ".local" / "bin"
         cmd_link_dir.mkdir(parents=True)
-        cmd_link = cmd_link_dir / "hermes"
+        cmd_link = cmd_link_dir / "thoth"
         cmd_link.symlink_to(thoth_bin)
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -111,7 +111,7 @@ class TestDoctorCommandInstallation:
         assert "Created symlink" in out
 
         # Verify the symlink was actually created
-        cmd_link = tmp_path / ".local" / "bin" / "hermes"
+        cmd_link = tmp_path / ".local" / "bin" / "thoth"
         assert cmd_link.is_symlink()
         assert cmd_link.resolve() == thoth_bin.resolve()
 
@@ -122,8 +122,8 @@ class TestDoctorCommandInstallation:
         # Create a symlink pointing to the wrong target
         cmd_link_dir = tmp_path / ".local" / "bin"
         cmd_link_dir.mkdir(parents=True)
-        cmd_link = cmd_link_dir / "hermes"
-        wrong_target = tmp_path / "wrong_hermes"
+        cmd_link = cmd_link_dir / "thoth"
+        wrong_target = tmp_path / "wrong_thoth"
         wrong_target.write_text("#!/usr/bin/env python\n")
         cmd_link.symlink_to(wrong_target)
 
@@ -140,8 +140,8 @@ class TestDoctorCommandInstallation:
         # Create a symlink pointing to wrong target
         cmd_link_dir = tmp_path / ".local" / "bin"
         cmd_link_dir.mkdir(parents=True)
-        cmd_link = cmd_link_dir / "hermes"
-        wrong_target = tmp_path / "wrong_hermes"
+        cmd_link = cmd_link_dir / "thoth"
+        wrong_target = tmp_path / "wrong_thoth"
         wrong_target.write_text("#!/usr/bin/env python\n")
         cmd_link.symlink_to(wrong_target)
 
@@ -156,7 +156,7 @@ class TestDoctorCommandInstallation:
 
     @pytest.mark.skipif(sys.platform == "win32", reason="Symlink check is Unix-only")
     def test_missing_venv_entry_point_shows_warn(self, monkeypatch, tmp_path):
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir(parents=True, exist_ok=True)
         (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
 
@@ -196,17 +196,17 @@ class TestDoctorCommandInstallation:
         home, project, _ = _setup_doctor_env(monkeypatch, tmp_path, venv_name=".venv")
 
         # Create the command link with correct symlink
-        thoth_bin = project / ".venv" / "bin" / "hermes"
+        thoth_bin = project / ".venv" / "bin" / "thoth"
         cmd_link_dir = tmp_path / ".local" / "bin"
         cmd_link_dir.mkdir(parents=True)
-        cmd_link = cmd_link_dir / "hermes"
+        cmd_link = cmd_link_dir / "thoth"
         cmd_link.symlink_to(thoth_bin)
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out = _run_doctor(fix=False)
         assert "Venv entry point exists" in out
-        assert ".venv/bin/hermes" in out
+        assert ".venv/bin/thoth" in out
 
     @pytest.mark.skipif(sys.platform == "win32", reason="Symlink check is Unix-only")
     def test_non_symlink_regular_file_shows_ok(self, monkeypatch, tmp_path):
@@ -215,7 +215,7 @@ class TestDoctorCommandInstallation:
 
         cmd_link_dir = tmp_path / ".local" / "bin"
         cmd_link_dir.mkdir(parents=True)
-        cmd_link = cmd_link_dir / "hermes"
+        cmd_link = cmd_link_dir / "thoth"
         cmd_link.write_text("#!/bin/sh\nexec python -m thoth_cli.main \"$@\"\n")
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -242,7 +242,7 @@ class TestDoctorCommandInstallation:
 
     def test_windows_skips_check(self, monkeypatch, tmp_path):
         """On Windows, the Command Installation section is skipped."""
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir(parents=True, exist_ok=True)
         (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
 

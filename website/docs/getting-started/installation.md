@@ -30,7 +30,7 @@ Open PowerShell and run:
 iex (irm https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.ps1)
 ```
 
-The installer handles **everything**: `uv`, Python 3.11, Node.js 22, `ripgrep`, `ffmpeg`, **and a portable Git Bash** (PortableGit — a self-contained Git-for-Windows distribution that ships `bash.exe` and the full POSIX toolchain Thoth uses for shell commands; on 32-bit Windows the installer falls back to MinGit, which lacks bash and disables terminal-tool / agent-browser features).  It clones the repo under `%LOCALAPPDATA%\thoth\hermes-agent`, creates a virtualenv, and adds `thoth` to your **User PATH**.  Restart your terminal (or open a new PowerShell window) after the install so PATH picks up.
+The installer handles **everything**: `uv`, Python 3.11, Node.js 22, `ripgrep`, `ffmpeg`, **and a portable Git Bash** (PortableGit — a self-contained Git-for-Windows distribution that ships `bash.exe` and the full POSIX toolchain Thoth uses for shell commands; on 32-bit Windows the installer falls back to MinGit, which lacks bash and disables terminal-tool / agent-browser features).  It clones the repo under `%LOCALAPPDATA%\thoth\thoth-agent`, creates a virtualenv, and adds `thoth` to your **User PATH**.  Restart your terminal (or open a new PowerShell window) after the install so PATH picks up.
 
 **How Git is handled:**
 1. If `git` is already on your PATH, the installer uses your existing install.
@@ -85,8 +85,8 @@ Where the installer puts things depends on whether you're installing as a normal
 | Installer | Code lives at | `thoth` binary | Data directory |
 |---|---|---|---|
 | pip install | Python site-packages | `~/.local/bin/thoth` (console_scripts) | `~/.thoth/` |
-| Per-user (git installer) | `~/.thoth/hermes-agent/` | `~/.local/bin/thoth` (symlink) | `~/.thoth/` |
-| Root-mode (`sudo curl … \| sudo bash`) | `/usr/local/lib/hermes-agent/` | `/usr/local/bin/thoth` | `/root/.thoth/` (or `$THOTH_HOME`) |
+| Per-user (git installer) | `~/.thoth/thoth-agent/` | `~/.local/bin/thoth` (symlink) | `~/.thoth/` |
+| Root-mode (`sudo curl … \| sudo bash`) | `/usr/local/lib/thoth-agent/` | `/usr/local/bin/thoth` | `/root/.thoth/` (or `$THOTH_HOME`) |
 
 The root-mode **FHS layout** (`/usr/local/lib/…`, `/usr/local/bin/thoth`) matches where other system-wide developer tools land on Linux. It's useful for shared-machine deployments where one system install should serve every user. Per-user config (auth, skills, sessions) still lives under each user's `~/.thoth/` or explicit `THOTH_HOME`.
 
@@ -167,10 +167,10 @@ Running Thoth as a dedicated unprivileged user (e.g. a `thoth` systemd service a
    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
    # Option B — symlink system-wide (run as an admin)
-   sudo ln -s /home/thoth/.thoth/hermes-agent/venv/bin/thoth /usr/local/bin/thoth
+   sudo ln -s /home/thoth/.thoth/thoth-agent/venv/bin/thoth /usr/local/bin/thoth
    ```
 
-4. **Verify:** `thoth doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `thoth` file (`~/.thoth/hermes-agent/thoth`) with system Python instead of the venv launcher (`~/.thoth/hermes-agent/venv/bin/thoth`) — fix step 3.
+4. **Verify:** `thoth doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `thoth` file (`~/.thoth/thoth-agent/thoth`) with system Python instead of the venv launcher (`~/.thoth/thoth-agent/venv/bin/thoth`) — fix step 3.
 
 The same pattern works on Arch (the installer uses pacman with the same sudo-detection logic), Fedora/RHEL, and openSUSE — those distros don't support `--with-deps` at all, so an administrator always installs the system libraries separately. The relevant `dnf`/`zypper` commands are printed by the installer.
 
@@ -188,4 +188,4 @@ For more diagnostics, run `thoth doctor` — it will tell you exactly what's mis
 
 ## Install method auto-detection
 
-Thoth auto-detects whether it was installed via `pip`, the git installer, Homebrew, or NixOS, and `thoth update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (Python site-packages, `~/.thoth/hermes-agent/`, Homebrew prefix, or Nix store path). `thoth doctor` also surfaces the detected method under its environment summary.
+Thoth auto-detects whether it was installed via `pip`, the git installer, Homebrew, or NixOS, and `thoth update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (Python site-packages, `~/.thoth/thoth-agent/`, Homebrew prefix, or Nix store path). `thoth doctor` also surfaces the detected method under its environment summary.

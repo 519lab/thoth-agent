@@ -292,7 +292,7 @@ gateway:
   update:
     platform_not_messaging:  "✗ /update só está disponível em plataformas de mensagens. Executa `thoth update` a partir do terminal."
     not_git_repo:            "✗ Não é um repositório git — não é possível atualizar."
-    hermes_cmd_not_found:    "✗ Não foi possível localizar o comando `thoth`. O Thoth está em execução, mas o comando de atualização não conseguiu encontrar o executável no PATH nem através do interpretador Python atual. Tenta executar `thoth update` manualmente no teu terminal."
+    thoth_cmd_not_found:    "✗ Não foi possível localizar o comando `thoth`. O Thoth está em execução, mas o comando de atualização não conseguiu encontrar o executável no PATH nem através do interpretador Python atual. Tenta executar `thoth update` manualmente no teu terminal."
     start_failed:            "✗ Falha ao iniciar a atualização: {error}"
     starting:                "⚕ A iniciar a atualização do Thoth… Vou transmitir o progresso aqui."
 

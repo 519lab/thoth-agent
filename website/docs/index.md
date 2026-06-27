@@ -1,8 +1,9 @@
 ---
 slug: /
 sidebar_position: 0
-title: "Thoth Agent Documentation"
-description: "The self-improving AI agent — an MIT-licensed fork of Hermes (Nous Research), maintained by 519lab. A built-in learning loop that creates skills from experience, improves them during use, and remembers across sessions."
+title: "Self-Improving AI Agent with a Memory Substrate"
+description: "Thoth is a self-improving, self-hostable AI agent with a cognitive memory substrate — it builds skills from experience and remembers across sessions. MIT-licensed."
+hide_title: true
 hide_table_of_contents: true
 displayed_sidebar: docs
 ---

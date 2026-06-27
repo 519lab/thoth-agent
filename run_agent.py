@@ -232,7 +232,7 @@ def _routermint_headers() -> dict:
     from thoth_cli import __version__ as _THOTH_VERSION
 
     return {
-        "User-Agent": f"HermesAgent/{_THOTH_VERSION}",
+        "User-Agent": f"ThothAgent/{_THOTH_VERSION}",
     }
 
 
@@ -507,8 +507,8 @@ class AIAgent:
         if self._session_db_created or not self._session_db:
             return
         try:
-            import thoth_db as _hermes_db
-            _hermes_db.run_sync(self._session_db.create_session(
+            import thoth_db as _thoth_db
+            _thoth_db.run_sync(self._session_db.create_session(
                 session_id=self.session_id,
                 source=self.platform or os.environ.get("THOTH_SESSION_SOURCE", "cli"),
                 model=self.model,
@@ -1279,8 +1279,8 @@ class AIAgent:
                     ]
                 elif isinstance(msg.get("tool_calls"), list):
                     tool_calls_data = msg["tool_calls"]
-                import thoth_db as _hermes_db
-                _hermes_db.run_sync(self._session_db.append_message(
+                import thoth_db as _thoth_db
+                _thoth_db.run_sync(self._session_db.append_message(
                     session_id=self.session_id,
                     role=role,
                     content=content,
@@ -1523,7 +1523,7 @@ class AIAgent:
 
         Gated by ``sessions.write_json_snapshots`` (default False).  state.db
         is the canonical message store; this writer exists only for users
-        whose external tooling consumes ``~/.hermes/sessions/session_{sid}.json``
+        whose external tooling consumes ``~/.thoth/sessions/session_{sid}.json``
         directly.  When the flag is off this is a fast no-op.
 
         When enabled, rewrites the snapshot after every persistence point with
@@ -2407,7 +2407,50 @@ class AIAgent:
         return False
 
     @staticmethod
+    def _resolve_tls_verify() -> Any:
+        """Resolve the TLS verify setting for the model client.
+
+        Returns an ``ssl.SSLContext`` built from the resolved CA bundle
+        (``THOTH_CA_BUNDLE`` / ``REQUESTS_CA_BUNDLE`` / ``SSL_CERT_FILE``
+        override → OS system trust store → certifi), or ``True`` to defer
+        to httpx's certifi default.
+
+        Deliberately decoupled from keepalive-client construction (#184):
+        TLS trust must reach the OpenAI client even when the keepalive
+        transport setup fails. The OS system store is a superset of certifi
+        that also carries internally-installed CAs, so endpoints behind a
+        private CA (e.g. a local model server on ``*.skynet.home``) verify
+        with zero config — without it they fail with what the OpenAI SDK
+        flattens into a bare ``APIConnectionError`` ("Connection error.").
+        Never raises: any failure degrades to certifi with a warning.
+        """
+        try:
+            from agent.model_metadata import resolve_ca_bundle
+            _ca = resolve_ca_bundle()
+            if _ca:
+                import ssl as _ssl
+                return _ssl.create_default_context(cafile=_ca)
+        except Exception as exc:
+            logger.warning(
+                "TLS CA bundle resolution failed (%s); deferring to certifi "
+                "default — internal-CA endpoints may fail to verify", exc
+            )
+        return True  # certifi default
+
+    @staticmethod
     def _build_keepalive_http_client(base_url: str = "") -> Any:
+        # Resolve TLS trust FIRST and independently of the keepalive
+        # transport: a failure building socket keepalives must never silently
+        # strip the CA bundle and drop the client back to certifi (#184).
+        _verify = AIAgent._resolve_tls_verify()
+        # When a custom transport is provided, httpx won't auto-read proxy
+        # from env vars (allow_env_proxies = trust_env and transport is None).
+        # Explicitly read proxy settings while still honoring NO_PROXY for
+        # loopback / local endpoints such as a locally hosted sub2api.
+        try:
+            _proxy = _get_proxy_for_base_url(base_url)
+        except Exception:
+            _proxy = None
         try:
             import httpx as _httpx
             import socket as _socket
@@ -2419,19 +2462,6 @@ class AIAgent:
                 _sock_opts.append((_socket.IPPROTO_TCP, _socket.TCP_KEEPCNT, 3))
             elif hasattr(_socket, "TCP_KEEPALIVE"):
                 _sock_opts.append((_socket.IPPROTO_TCP, _socket.TCP_KEEPALIVE, 30))
-            # When a custom transport is provided, httpx won't auto-read proxy
-            # from env vars (allow_env_proxies = trust_env and transport is None).
-            # Explicitly read proxy settings while still honoring NO_PROXY for
-            # loopback / local endpoints such as a locally hosted sub2api.
-            _proxy = _get_proxy_for_base_url(base_url)
-            # Verify TLS against a resolved CA bundle (THOTH_CA_BUNDLE /
-            # SSL_CERT_FILE override → OS system store → certifi). httpx's
-            # default uses certifi only, which omits internally-installed
-            # CAs, so endpoints behind a private CA (e.g. a local model
-            # server on *.skynet.home) fail with what surfaces as an
-            # APIConnectionError. Using the system store fixes that with
-            # zero config and stays a superset of certifi for public CAs.
-            #
             # ``verify`` MUST go on the HTTPTransport, NOT the Client: httpx
             # only applies a Client-level ``verify`` when it builds the
             # *default* transport. With an explicit ``transport=`` (needed
@@ -2441,21 +2471,33 @@ class AIAgent:
             # (the ssl default context reads that at the env level). ``proxy``
             # stays on the Client: httpx applies it via proxy mounts, which
             # do work alongside a custom transport.
-            from agent.model_metadata import resolve_ca_bundle
-            _ca = resolve_ca_bundle()
-            if _ca:
-                import ssl as _ssl
-                _verify: Any = _ssl.create_default_context(cafile=_ca)
-            else:
-                _verify = True  # certifi default
             return _httpx.Client(
                 transport=_httpx.HTTPTransport(
                     verify=_verify, socket_options=_sock_opts
                 ),
                 proxy=_proxy,
             )
-        except Exception:
-            return None
+        except Exception as exc:
+            # Keepalive transport setup failed. Preserve TLS trust by falling
+            # back to a plain client that still carries the resolved CA bundle
+            # (verify works on the default transport here) — we lose only the
+            # socket keepalives, not internal-CA verification.
+            logger.warning(
+                "keepalive http client build failed (%s); falling back to a "
+                "CA-aware client without socket keepalives %s",
+                exc, base_url_hostname(base_url) or "?",
+            )
+            try:
+                import httpx as _httpx
+                return _httpx.Client(verify=_verify, proxy=_proxy)
+            except Exception as exc2:
+                logger.warning(
+                    "CA-aware http client build also failed (%s); OpenAI SDK "
+                    "will use its certifi default — internal-CA endpoints may "
+                    "fail to verify %s",
+                    exc2, base_url_hostname(base_url) or "?",
+                )
+                return None
 
     def _create_openai_client(self, client_kwargs: dict, *, reason: str, shared: bool) -> Any:
         """Forwarder — see ``agent.agent_runtime_helpers.create_openai_client``."""

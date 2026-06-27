@@ -43,6 +43,24 @@ def run_codex_app_server_turn(
     """
     from agent.transports.codex_app_server_session import CodexAppServerSession
 
+    # Recall outcome label (innovation #1): capture the turn-start time up
+    # front (world clock — same clock recall stamps ``requested_at`` with) so
+    # the post-turn windowed UPDATE below can scope to this turn. The codex
+    # path bypasses the chat_completions loop and its post-turn block, so the
+    # outcome write is duplicated here.
+    from datetime import datetime as _dt, timezone as _tz
+    _turn_started_at = _dt.now(_tz.utc)
+
+    # Per-turn skill-load tracking (innovation #2): reset the thread-local
+    # loaded-skills set on this turn's thread so the post-turn efficacy
+    # attribution below only sees skills loaded by THIS turn. The codex path
+    # bypasses the chat_completions loop and its reset, so we mirror it here.
+    try:
+        from tools.skill_usage import reset_skills_loaded_this_turn
+        agent._skills_loaded_this_turn = reset_skills_loaded_this_turn()
+    except Exception:
+        agent._skills_loaded_this_turn = set()
+
     # Lazy session: one CodexAppServerSession per AIAgent instance.
     # Spawned on first turn, reused across turns, closed at AIAgent
     # shutdown (see _cleanup hook).
@@ -122,15 +140,15 @@ def run_codex_app_server_turn(
     )
 
     # Now check the skill nudge AFTER iters were incremented — same
-    # pattern the chat_completions path uses (line ~15432).
-    should_review_skills = False
-    if (
-        agent._skill_nudge_interval > 0
-        and agent._iters_since_skill >= agent._skill_nudge_interval
-        and "skill_manage" in agent.valid_tool_names
-    ):
-        should_review_skills = True
-        agent._iters_since_skill = 0
+    # signal-based trigger the chat_completions path uses (innovation #8),
+    # via the shared helper so both runtimes stay in sync.  A failed turn is
+    # hard evidence worth a review; the codex path bypasses tool_executor, so
+    # turn.error is the failure signal we fold into _skill_review_signal here.
+    from agent.background_review import should_review_skills_after_turn
+
+    if turn.error is not None:
+        agent._skill_review_signal = True
+    should_review_skills = should_review_skills_after_turn(agent)
 
     # External memory provider sync (mirrors line ~15439). Skipped on
     # interrupt/error to avoid feeding partial transcripts to memory.
@@ -161,11 +179,63 @@ def run_codex_app_server_turn(
         except Exception:
             logger.debug("background review spawn raised", exc_info=True)
 
+    # Recall outcome label (innovation #1) — mirror the chat_completions
+    # post-turn block. Best-effort; gated by THOTH_RECALL_OUTCOME_LABEL. Codex
+    # tool iterations don't feed the per-turn tool counters, so the proxy is
+    # the completed/failed/interrupted signal alone here.
+    _codex_completed = not turn.interrupted and turn.error is None
+    try:
+        from substrate import config as _recall_cfg
+        if _recall_cfg.RECALL_OUTCOME_LABEL_ENABLED:
+            from substrate import get_bound_substrate
+            _substrate = get_bound_substrate()
+            if _substrate is not None:
+                from agent.turn_outcome import (
+                    compute_outcome_score,
+                    write_recall_outcome,
+                )
+                import thoth_db
+                _outcome_score = compute_outcome_score(
+                    completed=_codex_completed,
+                    failed=turn.error is not None,
+                    interrupted=turn.interrupted,
+                )
+                thoth_db.run_sync(
+                    write_recall_outcome(
+                        _substrate,
+                        session_id=agent.session_id,
+                        turn_started_at=_turn_started_at,
+                        outcome_score=_outcome_score,
+                    )
+                )
+    except Exception as exc:
+        logger.debug("recall outcome label failed: %s", exc)
+
+    # Skill-efficacy attribution (innovation #2) — mirror the chat_completions
+    # post-turn block. Single-skill turns only; multi-skill credit-splitting is
+    # a TODO. Codex tool iterations don't feed the per-turn tool counters, so
+    # the proxy is the completed/failed/interrupted signal alone here.
+    try:
+        _loaded = getattr(agent, "_skills_loaded_this_turn", None) or set()
+        if len(_loaded) == 1:
+            from agent.turn_outcome import compute_outcome_score
+            from tools.skill_usage import record_efficacy
+
+            _eff_score = compute_outcome_score(
+                completed=_codex_completed,
+                failed=turn.error is not None,
+                interrupted=turn.interrupted,
+            )
+            for _skill_name in _loaded:
+                record_efficacy(_skill_name, _eff_score)
+    except Exception as exc:
+        logger.debug("skill efficacy attribution failed: %s", exc)
+
     return {
         "final_response": turn.final_text,
         "messages": messages,
         "api_calls": 1,  # one app-server "turn" maps to one logical API call
-        "completed": not turn.interrupted and turn.error is None,
+        "completed": _codex_completed,
         "partial": turn.interrupted or turn.error is not None,
         "error": turn.error,
         "codex_thread_id": turn.thread_id,

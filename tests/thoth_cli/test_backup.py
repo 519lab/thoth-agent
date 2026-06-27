@@ -16,7 +16,7 @@ import pytest
 # ---------------------------------------------------------------------------
 
 def _make_thoth_tree(root: Path) -> None:
-    """Create a realistic ~/.hermes directory structure for testing."""
+    """Create a realistic ~/.thoth directory structure for testing."""
     (root / "config.yaml").write_text("model:\n  provider: openrouter\n")
     (root / ".env").write_text("OPENROUTER_API_KEY=sk-test-123\n")
     (root / "memory_store.db").write_bytes(b"fake-sqlite")
@@ -147,7 +147,7 @@ class TestShouldExclude:
 class TestBackup:
     def test_creates_zip(self, tmp_path, monkeypatch):
         """Backup creates a valid zip containing expected files."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         _make_thoth_tree(thoth_home)
 
@@ -181,7 +181,7 @@ class TestBackup:
 
     def test_excludes_thoth_agent(self, tmp_path, monkeypatch):
         """Backup does NOT include hermes-agent/ directory."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         _make_thoth_tree(thoth_home)
 
@@ -201,7 +201,7 @@ class TestBackup:
 
     def test_excludes_pycache(self, tmp_path, monkeypatch):
         """Backup does NOT include __pycache__ dirs."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         _make_thoth_tree(thoth_home)
 
@@ -221,7 +221,7 @@ class TestBackup:
 
     def test_excludes_pid_files(self, tmp_path, monkeypatch):
         """Backup does NOT include PID files."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         _make_thoth_tree(thoth_home)
 
@@ -240,8 +240,8 @@ class TestBackup:
             assert pid_files == []
 
     def test_default_output_path(self, tmp_path, monkeypatch):
-        """When no output path given, zip goes to ~/hermes-backup-*.zip."""
-        thoth_home = tmp_path / ".hermes"
+        """When no output path given, zip goes to ~/thoth-backup-*.zip."""
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text("model: test\n")
 
@@ -254,7 +254,7 @@ class TestBackup:
         run_backup(args)
 
         # Should exist in home dir
-        zips = list(tmp_path.glob("hermes-backup-*.zip"))
+        zips = list(tmp_path.glob("thoth-backup-*.zip"))
         assert len(zips) == 1
 
 
@@ -312,7 +312,7 @@ class TestImport:
 
     def test_restores_files(self, tmp_path, monkeypatch):
         """Import extracts files into thoth home."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -336,16 +336,16 @@ class TestImport:
         assert (thoth_home / "profiles" / "coder" / "config.yaml").exists()
 
     def test_strips_thoth_prefix(self, tmp_path, monkeypatch):
-        """Import strips .hermes/ prefix if all entries share it."""
-        thoth_home = tmp_path / ".hermes"
+        """Import strips .thoth/ prefix if all entries share it."""
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "backup.zip"
         self._make_backup_zip(zip_path, {
-            ".hermes/config.yaml": "model: test\n",
-            ".hermes/skills/a/SKILL.md": "# A\n",
+            ".thoth/config.yaml": "model: test\n",
+            ".thoth/skills/a/SKILL.md": "# A\n",
         })
 
         args = Namespace(zipfile=str(zip_path), force=True)
@@ -358,7 +358,7 @@ class TestImport:
 
     def test_rejects_empty_zip(self, tmp_path, monkeypatch):
         """Import rejects an empty zip."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -375,7 +375,7 @@ class TestImport:
 
     def test_rejects_non_thoth_zip(self, tmp_path, monkeypatch):
         """Import rejects a zip that doesn't look like a thoth backup."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -394,7 +394,7 @@ class TestImport:
 
     def test_blocks_path_traversal(self, tmp_path, monkeypatch):
         """Import blocks zip entries with path traversal."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -418,7 +418,7 @@ class TestImport:
 
     def test_confirmation_prompt_abort(self, tmp_path, monkeypatch):
         """Import aborts when user says no to confirmation."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         # Pre-existing config triggers the confirmation
         (thoth_home / "config.yaml").write_text("existing: true\n")
@@ -441,7 +441,7 @@ class TestImport:
 
     def test_force_skips_confirmation(self, tmp_path, monkeypatch):
         """Import with --force skips confirmation and overwrites."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text("existing: true\n")
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -461,7 +461,7 @@ class TestImport:
 
     def test_missing_file_exits(self, tmp_path, monkeypatch):
         """Import exits with error for nonexistent file."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -474,7 +474,7 @@ class TestImport:
     @pytest.mark.skipif(os.name != "posix", reason="POSIX file permissions only")
     def test_restores_secret_files_with_0600_perms(self, tmp_path, monkeypatch):
         """Secret files must end up at 0600 after restore (zipfile drops mode bits)."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -506,7 +506,7 @@ class TestRoundTrip:
     def test_backup_then_import(self, tmp_path, monkeypatch):
         """Full round-trip: backup -> import to a new location -> verify."""
         # Source
-        src_home = tmp_path / "source" / ".hermes"
+        src_home = tmp_path / "source" / ".thoth"
         src_home.mkdir(parents=True)
         _make_thoth_tree(src_home)
 
@@ -521,7 +521,7 @@ class TestRoundTrip:
         assert out_zip.exists()
 
         # Import into a different location
-        dst_home = tmp_path / "dest" / ".hermes"
+        dst_home = tmp_path / "dest" / ".thoth"
         dst_home.mkdir(parents=True)
         monkeypatch.setenv("THOTH_HOME", str(dst_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "dest")
@@ -610,18 +610,18 @@ class TestValidation:
             ok, reason = _validate_backup_zip(zf)
         assert not ok
 
-    def test_detect_prefix_hermes(self):
-        """Detects .hermes/ prefix wrapping all entries."""
+    def test_detect_prefix_thoth(self):
+        """Detects .thoth/ prefix wrapping all entries."""
         import io
         from thoth_cli.backup import _detect_prefix
 
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
-            zf.writestr(".hermes/config.yaml", "test")
-            zf.writestr(".hermes/skills/a/SKILL.md", "skill")
+            zf.writestr(".thoth/config.yaml", "test")
+            zf.writestr(".thoth/skills/a/SKILL.md", "skill")
         buf.seek(0)
         with zipfile.ZipFile(buf, "r") as zf:
-            assert _detect_prefix(zf) == ".hermes/"
+            assert _detect_prefix(zf) == ".thoth/"
 
     def test_detect_prefix_none(self):
         """No prefix when entries are at root."""
@@ -644,8 +644,8 @@ class TestValidation:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
             # Only directory entries (trailing slash)
-            zf.writestr(".hermes/", "")
-            zf.writestr(".hermes/skills/", "")
+            zf.writestr(".thoth/", "")
+            zf.writestr(".thoth/skills/", "")
         buf.seek(0)
         with zipfile.ZipFile(buf, "r") as zf:
             assert _detect_prefix(zf) == ""
@@ -658,7 +658,7 @@ class TestValidation:
 class TestBackupEdgeCases:
     def test_nonexistent_thoth_home(self, tmp_path, monkeypatch):
         """Backup exits when thoth home doesn't exist."""
-        fake_home = tmp_path / "nonexistent" / ".hermes"
+        fake_home = tmp_path / "nonexistent" / ".thoth"
         monkeypatch.setenv("THOTH_HOME", str(fake_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "nonexistent")
 
@@ -670,7 +670,7 @@ class TestBackupEdgeCases:
 
     def test_output_is_directory(self, tmp_path, monkeypatch):
         """When output path is a directory, zip is created inside it."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text("model: test\n")
 
@@ -685,12 +685,12 @@ class TestBackupEdgeCases:
         from thoth_cli.backup import run_backup
         run_backup(args)
 
-        zips = list(out_dir.glob("hermes-backup-*.zip"))
+        zips = list(out_dir.glob("thoth-backup-*.zip"))
         assert len(zips) == 1
 
     def test_output_without_zip_suffix(self, tmp_path, monkeypatch):
         """Output path without .zip gets suffix appended."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text("model: test\n")
 
@@ -708,7 +708,7 @@ class TestBackupEdgeCases:
 
     def test_empty_thoth_home(self, tmp_path, monkeypatch):
         """Backup handles empty thoth home (no files to back up)."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         # Only excluded dirs, no actual files
         (thoth_home / "__pycache__").mkdir()
@@ -727,7 +727,7 @@ class TestBackupEdgeCases:
 
     def test_permission_error_during_backup(self, tmp_path, monkeypatch):
         """Backup handles permission errors gracefully."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text("model: test\n")
 
@@ -754,7 +754,7 @@ class TestBackupEdgeCases:
 
     def test_pre1980_timestamp_skipped(self, tmp_path, monkeypatch):
         """Backup skips files with pre-1980 timestamps (ZIP limitation)."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text("model: test\n")
 
@@ -780,9 +780,9 @@ class TestBackupEdgeCases:
             # The pre-1980 file should be skipped, not crash the backup
             assert "ancient.txt" not in names
 
-    def test_skips_output_zip_inside_hermes(self, tmp_path, monkeypatch):
+    def test_skips_output_zip_inside_thoth(self, tmp_path, monkeypatch):
         """Backup skips its own output zip if it's inside thoth root."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text("model: test\n")
 
@@ -810,7 +810,7 @@ class TestImportEdgeCases:
 
     def test_not_a_zip(self, tmp_path, monkeypatch):
         """Import rejects a non-zip file."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
 
@@ -825,7 +825,7 @@ class TestImportEdgeCases:
 
     def test_eof_during_confirmation(self, tmp_path, monkeypatch):
         """Import handles EOFError during confirmation prompt."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / "config.yaml").write_text("existing\n")
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -843,7 +843,7 @@ class TestImportEdgeCases:
 
     def test_keyboard_interrupt_during_confirmation(self, tmp_path, monkeypatch):
         """Import handles KeyboardInterrupt during confirmation prompt."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         (thoth_home / ".env").write_text("KEY=val\n")
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -861,7 +861,7 @@ class TestImportEdgeCases:
 
     def test_permission_error_during_import(self, tmp_path, monkeypatch):
         """Import handles permission errors during extraction."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -890,7 +890,7 @@ class TestImportEdgeCases:
 
     def test_progress_with_many_files(self, tmp_path, monkeypatch):
         """Import shows progress with 500+ files."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -923,7 +923,7 @@ class TestProfileRestoration:
 
     def test_import_creates_profile_wrappers(self, tmp_path, monkeypatch):
         """Import auto-creates wrapper scripts for restored profiles."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -959,7 +959,7 @@ class TestProfileRestoration:
 
     def test_import_skips_profile_dirs_without_config(self, tmp_path, monkeypatch):
         """Import doesn't create wrappers for profile dirs without config."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -985,7 +985,7 @@ class TestProfileRestoration:
 
     def test_import_without_profiles_module(self, tmp_path, monkeypatch):
         """Import gracefully handles missing profiles module (fresh install)."""
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setenv("THOTH_HOME", str(thoth_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -1068,7 +1068,7 @@ class TestQuickSnapshot:
     @pytest.fixture
     def thoth_home(self, tmp_path):
         """Create a fake THOTH_HOME with critical state files."""
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir()
         (home / "config.yaml").write_text("model:\n  provider: openrouter\n")
         (home / ".env").write_text("OPENROUTER_API_KEY=test-key-123\n")
@@ -1279,7 +1279,7 @@ class TestPreUpdateBackup:
 
     @pytest.fixture
     def thoth_home(self, tmp_path):
-        root = tmp_path / ".hermes"
+        root = tmp_path / ".thoth"
         root.mkdir()
         _make_thoth_tree(root)
         return root
@@ -1428,7 +1428,7 @@ class TestRunPreUpdateBackup:
 
     @pytest.fixture
     def thoth_home(self, tmp_path, monkeypatch):
-        root = tmp_path / ".hermes"
+        root = tmp_path / ".thoth"
         root.mkdir()
         _make_thoth_tree(root)
         # Point THOTH_HOME at the temp dir so config + backup paths resolve here
@@ -1543,11 +1543,11 @@ class TestRunPreUpdateBackup:
 
 class TestPreMigrationBackup:
     """Tests for create_pre_migration_backup — the auto-backup
-    ``thoth claw migrate`` runs before mutating ~/.hermes/."""
+    ``thoth claw migrate`` runs before mutating ~/.thoth/."""
 
     @pytest.fixture
     def thoth_home(self, tmp_path):
-        root = tmp_path / ".hermes"
+        root = tmp_path / ".thoth"
         root.mkdir()
         _make_thoth_tree(root)
         return root
@@ -1615,7 +1615,7 @@ class TestPreMigrationBackup:
         assert len(remaining) <= 3, f"expected <=3 backups retained, got {len(remaining)}"
 
     def test_missing_thoth_home_returns_none(self, tmp_path):
-        """Fresh install with no ~/.hermes yet — nothing to back up."""
+        """Fresh install with no ~/.thoth yet — nothing to back up."""
         from thoth_cli.backup import create_pre_migration_backup
         missing = tmp_path / "does-not-exist"
         out = create_pre_migration_backup(thoth_home=missing)

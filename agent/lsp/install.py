@@ -114,7 +114,7 @@ def thoth_lsp_bin_dir() -> Path:
     """Return the Thoth-owned bin staging dir for LSP servers."""
     home = os.environ.get("THOTH_HOME")
     if home is None:
-        home = os.path.join(os.path.expanduser("~"), ".hermes")
+        home = os.path.join(os.path.expanduser("~"), ".thoth")
     p = Path(home) / "lsp" / "bin"
     p.mkdir(parents=True, exist_ok=True)
     return p
@@ -374,6 +374,3 @@ __all__ = [
     "detect_status",
     "thoth_lsp_bin_dir",
 ]
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-hermes_lsp_bin_dir = thoth_lsp_bin_dir

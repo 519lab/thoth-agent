@@ -44,7 +44,7 @@ class TestUserConfigMerge:
         import yaml
 
         # Simulate a legacy user config without the new key.
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir()
         cfg_path = home / "config.yaml"
         legacy = {
@@ -69,7 +69,7 @@ class TestUserConfigMerge:
         """
         import yaml
 
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".thoth"
         home.mkdir()
         cfg_path = home / "config.yaml"
         user_cfg = {

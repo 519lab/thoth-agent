@@ -29,6 +29,7 @@ from typing import Any, Dict, List, Optional
 
 from agent.anthropic_adapter import _is_oauth_token
 from agent.auxiliary_client import set_runtime_main
+from agent.background_review import should_review_skills_after_turn
 from agent.codex_responses_adapter import _summarize_user_message_for_log
 from agent.display import KawaiiSpinner
 from agent.error_classifier import FailoverReason, classify_api_error
@@ -595,7 +596,28 @@ def run_conversation(
     # present are surfaced in an advisory footer so the model cannot
     # over-claim success while the file is actually unchanged on disk.
     agent._turn_failed_file_mutations: Dict[str, Dict[str, Any]] = {}
-    
+
+    # Per-turn tool tallies for the recall outcome proxy (innovation #1).
+    # Reset here, incremented in agent/tool_executor.py as results land,
+    # consumed in the post-turn block to label the recall_log rows this turn
+    # used. ``_turn_started_at`` is the lower bound of the windowed UPDATE —
+    # captured in world time (the same clock recall stamps ``requested_at``
+    # with) so the correlation window lines up.
+    agent._turn_tool_calls = 0
+    agent._turn_tool_failures = 0
+    from datetime import datetime as _dt, timezone as _tz
+    _turn_started_at = _dt.now(_tz.utc)
+
+    # Per-turn skill-load tracking (innovation #2). The counter-bump helpers
+    # (bump_use/bump_view) record loaded skills into a thread-local set on this
+    # turn's execution thread; we reset it here and drain it in the post-turn
+    # block to attribute the turn's outcome score to the loaded skill(s).
+    try:
+        from tools.skill_usage import reset_skills_loaded_this_turn
+        agent._skills_loaded_this_turn = reset_skills_loaded_this_turn()
+    except Exception:
+        agent._skills_loaded_this_turn = set()
+
     # Record the execution thread so interrupt()/clear_interrupt() can
     # scope the tool-level interrupt signal to THIS agent's thread only.
     # Must be set before any thread-scoped interrupt syncing.
@@ -4146,13 +4168,80 @@ def run_conversation(
     # Clear stream callback so it doesn't leak into future calls
     agent._stream_callback = None
 
-    # Check skill trigger NOW — based on how many tool iterations THIS turn used.
-    _should_review_skills = False
-    if (agent._skill_nudge_interval > 0
-            and agent._iters_since_skill >= agent._skill_nudge_interval
-            and "skill_manage" in agent.valid_tool_names):
-        _should_review_skills = True
-        agent._iters_since_skill = 0
+    # Recall outcome label (innovation #1) — stamp this turn's success proxy
+    # onto the recall_log rows the turn consumed, so the offline replay
+    # harness has a label. Best-effort: a failure here must never affect the
+    # response we just produced. Gated by THOTH_RECALL_OUTCOME_LABEL.
+    try:
+        from substrate import config as _recall_cfg
+        if _recall_cfg.RECALL_OUTCOME_LABEL_ENABLED:
+            from substrate import get_bound_substrate
+            _substrate = get_bound_substrate()
+            if _substrate is not None:
+                from agent.turn_outcome import (
+                    compute_outcome_score,
+                    write_recall_outcome,
+                )
+                import thoth_db
+                _outcome_score = compute_outcome_score(
+                    completed=completed,
+                    failed=failed,
+                    interrupted=interrupted,
+                    tool_calls=getattr(agent, "_turn_tool_calls", 0),
+                    tool_failures=getattr(agent, "_turn_tool_failures", 0),
+                    tool_failure_penalty=(
+                        _recall_cfg.RECALL_OUTCOME_TOOL_FAILURE_PENALTY
+                    ),
+                )
+                thoth_db.run_sync(
+                    write_recall_outcome(
+                        _substrate,
+                        session_id=agent.session_id,
+                        turn_started_at=_turn_started_at,
+                        outcome_score=_outcome_score,
+                    )
+                )
+    except Exception as exc:
+        logger.debug("recall outcome label failed: %s", exc)
+
+    # Skill-efficacy attribution (innovation #2) — fold this turn's outcome
+    # score into the efficacy EMA of every skill loaded this turn. Independent
+    # of the recall-outcome flag above (different signal, different store: a
+    # JSON sidecar, no DB). START with single-skill turns only so credit is
+    # unambiguous; multi-skill credit-splitting is a TODO. Best-effort: a
+    # failure here must never affect the response we just produced.
+    #
+    # TODO(#2): multi-skill turns. When len(loaded) > 1 we currently skip
+    # attribution entirely rather than guess how to split credit across the
+    # loaded skills. Revisit with a credit-assignment heuristic (e.g. equal
+    # split, or weight by which skill the turn's tool calls actually exercised).
+    try:
+        _loaded = getattr(agent, "_skills_loaded_this_turn", None) or set()
+        if len(_loaded) == 1:
+            from agent.turn_outcome import compute_outcome_score
+            from tools.skill_usage import record_efficacy
+
+            _eff_score = compute_outcome_score(
+                completed=completed,
+                failed=failed,
+                interrupted=interrupted,
+                tool_calls=getattr(agent, "_turn_tool_calls", 0),
+                tool_failures=getattr(agent, "_turn_tool_failures", 0),
+            )
+            for _skill_name in _loaded:
+                record_efficacy(_skill_name, _eff_score)
+    except Exception as exc:
+        logger.debug("skill efficacy attribution failed: %s", exc)
+
+    # Check skill trigger NOW — based on how many tool iterations THIS turn
+    # used and/or whether a review signal fired during the turn (innovation #8).
+    # A failed turn is itself hard evidence worth a review, so fold it into the
+    # in-turn signal before the shared trigger helper evaluates it.  The helper
+    # also resets _iters_since_skill on a fire and always clears the per-turn
+    # signal so it can't leak into a later turn.
+    if failed:
+        agent._skill_review_signal = True
+    _should_review_skills = should_review_skills_after_turn(agent)
 
     # External memory provider: sync the completed turn + queue next prefetch.
     agent._sync_external_memory_for_turn(

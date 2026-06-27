@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thoth — the self-improving AI agent</title>
+  <meta name="description" content="Thoth is a self-improving AI agent with a cognitive memory substrate. It creates skills from experience, improves them during use, and remembers across sessions. MIT-licensed, self-hostable." />
+  <link rel="icon" href="/docs/img/favicon.svg" type="image/svg+xml" />
+  <link rel="canonical" href="https://thoth.519lab.com/" />
+  <meta name="theme-color" content="#14305C" />
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Thoth" />
+  <meta property="og:title" content="Thoth — the self-improving AI agent" />
+  <meta property="og:description" content="A cognitive memory substrate, skills that improve from experience, and a runtime that works everywhere — gateway, editors (ACP), TUI, and messaging." />
+  <meta property="og:url" content="https://thoth.519lab.com/" />
+  <meta property="og:image" content="https://thoth.519lab.com/docs/img/og-card.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Thoth — the self-improving AI agent" />
+  <meta name="twitter:description" content="A cognitive memory substrate, skills that improve from experience, and a runtime that works everywhere." />
+  <meta name="twitter:image" content="https://thoth.519lab.com/docs/img/og-card.png" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "WebSite", "@id": "https://thoth.519lab.com/#website", "url": "https://thoth.519lab.com/", "name": "Thoth", "description": "Self-improving, self-hostable AI agent with a cognitive memory substrate.", "publisher": { "@id": "https://thoth.519lab.com/#org" } },
+      { "@type": "Organization", "@id": "https://thoth.519lab.com/#org", "name": "519lab", "url": "https://github.com/519lab" },
+      { "@type": "SoftwareApplication", "name": "Thoth", "applicationCategory": "DeveloperApplication", "operatingSystem": "Linux, macOS, Windows (WSL2)", "url": "https://thoth.519lab.com/", "downloadUrl": "https://github.com/519lab/thoth-agent", "license": "https://opensource.org/licenses/MIT", "description": "A self-improving AI agent that creates skills from experience and remembers across sessions, backed by a PostgreSQL + pgvector memory substrate.", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" } }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --lapis-deep: #14305C;
+      --lapis: #1B3A6B;
+      --lapis-mid: #2B5BA8;
+      --lapis-bright: #4A82D4;
+      --gold: #E8B23A;
+      --gold-bright: #F2C75E;
+      --gold-deep: #A8791E;
+      --vellum: #FAF6EC;
+      --vellum-dim: #d8cfba;
+      --ink: #0e2444;
+      --serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+      --sans: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      color: var(--vellum);
+      background:
+        radial-gradient(1200px 700px at 50% -10%, rgba(74,130,212,0.22), transparent 60%),
+        radial-gradient(900px 600px at 85% 10%, rgba(232,178,58,0.10), transparent 55%),
+        linear-gradient(180deg, var(--ink) 0%, var(--lapis-deep) 45%, var(--lapis-deep) 100%);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--gold-bright); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Top bar ── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 0;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-family: var(--serif); font-weight: 600; font-size: 1.25rem; letter-spacing: 0.02em; }
+    .brand img { width: 30px; height: 30px; }
+    .brand b { background: linear-gradient(180deg, var(--gold-bright), var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    nav.top a { color: var(--vellum); font-size: 0.95rem; margin-left: 22px; opacity: 0.85; }
+    nav.top a:hover { opacity: 1; text-decoration: none; }
+
+    /* ── Hero ── */
+    .hero { text-align: center; padding: 64px 0 40px; }
+    .eyebrow {
+      display: inline-block; font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--gold); border: 1px solid rgba(232,178,58,0.35);
+      border-radius: 999px; padding: 6px 14px; margin-bottom: 26px; background: rgba(232,178,58,0.06);
+    }
+    .hero h1 {
+      font-family: var(--serif); font-weight: 700; line-height: 1.04;
+      font-size: clamp(2.8rem, 7vw, 5rem); letter-spacing: -0.01em; margin-bottom: 18px;
+    }
+    .hero h1 .accent { background: linear-gradient(180deg, var(--gold-bright), var(--gold-deep)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero p.lede { font-size: clamp(1.05rem, 2.4vw, 1.4rem); color: var(--vellum-dim); max-width: 640px; margin: 0 auto 34px; }
+
+    /* install box */
+    .install {
+      display: inline-flex; align-items: center; gap: 14px;
+      background: rgba(8,20,40,0.6); border: 1px solid rgba(232,178,58,0.30);
+      border-radius: 12px; padding: 14px 16px; font-family: var(--mono); font-size: 0.92rem;
+      max-width: 100%; box-shadow: 0 8px 30px rgba(0,0,0,0.35); backdrop-filter: blur(6px);
+    }
+    .install code { color: var(--vellum); white-space: nowrap; overflow-x: auto; }
+    .install code .p { color: var(--gold); }
+    .copy { cursor: pointer; border: 1px solid rgba(232,178,58,0.4); background: transparent; color: var(--gold-bright);
+      font-family: var(--sans); font-size: 0.8rem; border-radius: 7px; padding: 6px 11px; white-space: nowrap; transition: all .15s; }
+    .copy:hover { background: rgba(232,178,58,0.14); }
+    .copy.done { color: #7BE0A4; border-color: rgba(123,224,164,0.5); }
+
+    .cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 30px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 9px; font-weight: 600; font-size: 1rem;
+      border-radius: 10px; padding: 13px 26px; transition: transform .12s, box-shadow .15s, background .15s;
+    }
+    .btn:hover { transform: translateY(-2px); text-decoration: none; }
+    .btn-primary { background: linear-gradient(180deg, var(--gold-bright), var(--gold)); color: var(--ink);
+      box-shadow: 0 6px 22px rgba(232,178,58,0.30); }
+    .btn-primary:hover { box-shadow: 0 10px 30px rgba(232,178,58,0.42); }
+    .btn-ghost { color: var(--vellum); border: 1px solid rgba(250,246,236,0.3); }
+    .btn-ghost:hover { border-color: var(--gold); color: var(--gold-bright); }
+
+    /* keyboard focus — brand ring (UA default is low-contrast on lapis) */
+    .btn:focus-visible, nav.top a:focus-visible, .copy:focus-visible,
+    .foot .links a:focus-visible, .brand a:focus-visible {
+      outline: 2px solid var(--gold-bright); outline-offset: 3px; border-radius: 6px;
+    }
+
+    /* ── Features ── */
+    section.features { padding: 50px 0 30px; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 760px; margin: 0 auto; }
+    .card {
+      background: rgba(43,91,168,0.10); border: 1px solid rgba(74,130,212,0.22);
+      border-radius: 16px; padding: 26px 24px; transition: border-color .2s, transform .2s, background .2s;
+    }
+    .card:hover { border-color: rgba(232,178,58,0.45); transform: translateY(-3px); background: rgba(43,91,168,0.16); }
+    .card .ic { font-size: 1.5rem; margin-bottom: 12px; display: block; }
+    .card h3 { font-family: var(--serif); font-weight: 600; font-size: 1.2rem; margin-bottom: 8px; color: var(--vellum); }
+    .card p { color: var(--vellum-dim); font-size: 0.96rem; }
+
+    /* ── Band ── */
+    section.band { padding: 56px 0; text-align: center; }
+    section.band h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 16px; }
+    section.band p { color: var(--vellum-dim); max-width: 660px; margin: 0 auto; font-size: 1.08rem; }
+    section.band .pills { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+    .pill { font-family: var(--mono); font-size: 0.82rem; color: var(--gold-bright);
+      border: 1px solid rgba(232,178,58,0.3); border-radius: 999px; padding: 7px 15px; background: rgba(232,178,58,0.05); }
+
+    /* ── Footer ── */
+    footer { border-top: 1px solid rgba(250,246,236,0.12); margin-top: 30px; padding: 34px 0 48px; }
+    .foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .foot .links a { color: var(--vellum); margin-right: 20px; font-size: 0.95rem; opacity: 0.85; }
+    .foot .links a:hover { opacity: 1; color: var(--gold-bright); text-decoration: none; }
+    .foot .attr { color: var(--vellum-dim); font-size: 0.85rem; }
+    .foot .attr a { color: var(--vellum-dim); text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      nav.top a.install-link { display: none; }   /* keep Docs + GitHub on mobile */
+      .grid { grid-template-columns: 1fr; max-width: 420px; }
+      .install { flex-direction: column; align-items: stretch; }
+      .install code { white-space: nowrap; overflow-x: auto; font-size: 0.8rem; -webkit-overflow-scrolling: touch; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <img src="/docs/img/thoth-mark.svg" alt="" />
+        <span>Thoth</span>
+      </div>
+      <nav class="top">
+        <a href="/docs/">Docs</a>
+        <a class="install-link" href="/docs/getting-started/installation/">Install</a>
+        <a class="gh" href="https://github.com/519lab/thoth-agent">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <span class="eyebrow">Self-improving · Self-hostable · MIT</span>
+        <h1>The agent that<br /><span class="accent">learns from its work</span></h1>
+        <p class="lede">Thoth creates skills from experience, sharpens them as it works, and remembers across sessions — backed by a cognitive memory substrate, not a stateless chat loop.</p>
+
+        <div class="install">
+          <code id="cmd"><span class="p">curl</span> -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | <span class="p">bash</span></code>
+          <button class="copy" id="copy" aria-live="polite" aria-label="Copy install command">Copy</button>
+        </div>
+
+        <div class="cta">
+          <a class="btn btn-primary" href="/docs/getting-started/quickstart/">Get started <span aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="https://github.com/519lab/thoth-agent"><span aria-hidden="true">★</span> Star on GitHub</a>
+        </div>
+      </section>
+
+      <section class="features">
+        <div class="grid">
+          <div class="card">
+            <span class="ic" aria-hidden="true">📜</span>
+            <h3>Skills from experience</h3>
+            <p>It writes and refines its own reusable skills as it solves real tasks — capability compounds instead of resetting every session.</p>
+          </div>
+          <div class="card">
+            <span class="ic" aria-hidden="true">🧠</span>
+            <h3>Cognitive memory substrate</h3>
+            <p>A persistent, queryable memory layer (PostgreSQL + pgvector) keeps context, decisions, and learnings alive across runs.</p>
+          </div>
+          <div class="card">
+            <span class="ic" aria-hidden="true">🔌</span>
+            <h3>Runs where you work</h3>
+            <p>One agent, many surfaces: a gateway for messaging platforms, ACP for editors like Zed, a terminal TUI, and an OpenAI-compatible API.</p>
+          </div>
+          <div class="card">
+            <span class="ic" aria-hidden="true">🗝️</span>
+            <h3>Your models, your keys</h3>
+            <p>Bring any provider — Anthropic, OpenAI, Nous, local — with credential pooling, fallback chains, and per-task model tiering.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="band">
+        <h2>An agent with a memory of its own</h2>
+        <p>Most agents forget everything the moment a conversation ends. Thoth keeps a substrate — it observes its own runs, distills what worked into skills, and carries that forward. The longer you use it, the more it knows how you work.</p>
+        <div class="pills">
+          <span class="pill">thoth chat</span>
+          <span class="pill">gateway</span>
+          <span class="pill">ACP / Zed</span>
+          <span class="pill">sub-agent crew</span>
+          <span class="pill">skills hub</span>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="foot">
+        <div class="links">
+          <a href="/docs/">Docs</a>
+          <a href="/docs/getting-started/installation/">Install</a>
+          <a href="https://github.com/519lab/thoth-agent">GitHub</a>
+          <a href="/llms.txt">llms.txt</a>
+        </div>
+        <div class="attr">
+          Built by <a href="https://github.com/519lab">519lab</a> · MIT-licensed fork of Hermes by <a href="https://nousresearch.com">Nous Research</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('copy');
+      var cmd = 'curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | bash';
+      btn.addEventListener('click', function () {
+        navigator.clipboard.writeText(cmd).then(function () {
+          btn.textContent = 'Copied ✓';
+          btn.classList.add('done');
+          setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('done'); }, 2000);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

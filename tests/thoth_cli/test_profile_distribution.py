@@ -43,7 +43,7 @@ from thoth_cli.profile_distribution import (
 @pytest.fixture()
 def profile_env(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    default_home = tmp_path / ".hermes"
+    default_home = tmp_path / ".thoth"
     default_home.mkdir(exist_ok=True)
     monkeypatch.setenv("THOTH_HOME", str(default_home))
     return tmp_path
@@ -94,7 +94,7 @@ class TestManifestParsing:
             "name: telem\n"
             "version: 1.2.3\n"
             "description: Telem monitor\n"
-            "hermes_requires: '>=0.12.0'\n"
+            "thoth_requires: '>=0.12.0'\n"
             "author: Kyle\n"
             "license: MIT\n"
             "env_requires:\n"
@@ -328,7 +328,7 @@ class TestInstall:
         assert example.is_file()
         assert "OPENAI_API_KEY" in example.read_text()
 
-    def test_install_enforces_hermes_requires(self, profile_env, monkeypatch):
+    def test_install_enforces_thoth_requires(self, profile_env, monkeypatch):
         # Pin current Thoth version to something well below the requirement
         import thoth_cli
         monkeypatch.setattr(thoth_cli, "__version__", "0.1.0", raising=False)
@@ -336,7 +336,7 @@ class TestInstall:
         mf = DistributionManifest(
             name="future",
             version="1.0.0",
-            hermes_requires=">=99.0.0",
+            thoth_requires=">=99.0.0",
         )
         staged = _make_staging_dir(profile_env, "future", manifest=mf)
         with pytest.raises(DistributionError, match="requires Thoth"):

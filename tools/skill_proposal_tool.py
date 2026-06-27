@@ -151,6 +151,16 @@ def _do_approve(slug: str) -> str:
     except Exception:
         logger.debug("skill_proposal: mark_agent_created failed", exc_info=True)
 
+    # Copy the evaluator's verdict into the usage sidecar by name (innovation
+    # #2) so skills_match can weight ranking (pass 1.0 / flag 0.7 / reject
+    # excluded). Best-effort: a verdict-join failure never blocks the install.
+    try:
+        from tools.skill_usage import set_eval_verdict
+
+        set_eval_verdict(p.slug, p.eval_verdict)
+    except Exception:
+        logger.debug("skill_proposal: set_eval_verdict failed", exc_info=True)
+
     _run(store.set_status(slug, "approved", by="user"))
 
     # Best-effort: refresh the slash-command map so /<slug> works immediately

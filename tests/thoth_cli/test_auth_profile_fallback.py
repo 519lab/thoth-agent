@@ -28,17 +28,17 @@ def _make_auth_store(pool: dict | None = None, providers: dict | None = None) ->
 
 @pytest.fixture()
 def profile_env(tmp_path, monkeypatch):
-    """Set up a global root + an active profile under Path.home()/.hermes/profiles/coder.
+    """Set up a global root + an active profile under Path.home()/.thoth/profiles/coder.
 
     * Path.home() -> tmp_path
-    * Global root -> tmp_path/.hermes            (has its own auth.json fixture)
-    * Profile     -> tmp_path/.hermes/profiles/coder   (active, THOTH_HOME points here)
+    * Global root -> tmp_path/.thoth            (has its own auth.json fixture)
+    * Profile     -> tmp_path/.thoth/profiles/coder   (active, THOTH_HOME points here)
 
     This mirrors the real "named profile mounted under the default root"
     layout that profile users actually have on disk.
     """
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    global_root = tmp_path / ".hermes"
+    global_root = tmp_path / ".thoth"
     global_root.mkdir()
     profile_dir = global_root / "profiles" / "coder"
     profile_dir.mkdir(parents=True)
@@ -287,7 +287,7 @@ def test_classic_mode_does_not_double_read_same_file(tmp_path, monkeypatch):
     profile and global resolve to the same directory.
     """
     # Put Path.home() under a subdir so the seat belt in _auth_file_path()
-    # sees tmp_path/home/.hermes as the "real home" — which is NOT equal
+    # sees tmp_path/home/.thoth as the "real home" — which is NOT equal
     # to the THOTH_HOME we set (tmp_path/classic), so the guard passes.
     fake_home = tmp_path / "home"
     fake_home.mkdir()
@@ -310,7 +310,7 @@ def test_classic_mode_does_not_double_read_same_file(tmp_path, monkeypatch):
     from thoth_cli.auth import read_credential_pool, _global_auth_file_path
 
     # Classic mode: THOTH_HOME is set to a custom path that is NOT under
-    # ~/.hermes/profiles/ — get_default_thoth_root() returns THOTH_HOME
+    # ~/.thoth/profiles/ — get_default_thoth_root() returns THOTH_HOME
     # itself, so the profile root and global root are the same directory,
     # and the helper correctly returns None (no fallback).
     assert _global_auth_file_path() is None

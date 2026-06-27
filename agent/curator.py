@@ -58,6 +58,17 @@ DEFAULT_MIN_IDLE_HOURS = 2
 DEFAULT_STALE_AFTER_DAYS = 30
 DEFAULT_ARCHIVE_AFTER_DAYS = 90
 
+# Efficacy-based curation (innovation #2). A *mature* skill (enough activity,
+# old enough) whose efficacy EMA sits below this floor is archived regardless
+# of recency — a skill that keeps getting loaded into turns that fail is worse
+# than a skill that's merely idle. ``EFFICACY_MIN_SAMPLES`` is the confidence
+# gate: don't act on an EMA built from too few turns. ``EFFICACY_MATURE_ACTIVITY``
+# is the activity floor below which we never apply the efficacy path (a skill
+# loaded once or twice hasn't earned a verdict).
+DEFAULT_EFFICACY_FLOOR = 0.35
+DEFAULT_EFFICACY_MIN_SAMPLES = 5
+DEFAULT_EFFICACY_MATURE_ACTIVITY = 5
+
 
 # ---------------------------------------------------------------------------
 # .curator_state — persistent scheduler + status
@@ -130,7 +141,7 @@ def is_paused() -> bool:
 # ---------------------------------------------------------------------------
 
 def _load_config() -> Dict[str, Any]:
-    """Read curator.* config from ~/.hermes/config.yaml. Tolerates missing file."""
+    """Read curator.* config from ~/.thoth/config.yaml. Tolerates missing file."""
     try:
         from thoth_cli.config import load_config
         cfg = load_config()
@@ -181,6 +192,38 @@ def get_archive_after_days() -> int:
         return int(cfg.get("archive_after_days", DEFAULT_ARCHIVE_AFTER_DAYS))
     except (TypeError, ValueError):
         return DEFAULT_ARCHIVE_AFTER_DAYS
+
+
+def efficacy_archival_enabled() -> bool:
+    """Whether efficacy-based archival is active (innovation #2).
+
+    Default OFF — the signal ships report-only first. Driven by the
+    ``THOTH_SKILL_EFFICACY_ENABLED`` env kill-switch (truthy = on); the
+    ``curator.efficacy_floor`` config block tunes the threshold once enabled.
+    Env wins over config so an operator can flip it without editing config.yaml.
+    """
+    env = (os.environ.get("THOTH_SKILL_EFFICACY_ENABLED") or "").strip().lower()
+    if env in {"1", "true", "yes", "on"}:
+        return True
+    if env in {"0", "false", "no", "off"}:
+        return False
+    return bool(_load_config().get("efficacy_enabled", False))
+
+
+def get_efficacy_floor() -> float:
+    cfg = _load_config()
+    try:
+        return float(cfg.get("efficacy_floor", DEFAULT_EFFICACY_FLOOR))
+    except (TypeError, ValueError):
+        return DEFAULT_EFFICACY_FLOOR
+
+
+def get_efficacy_min_samples() -> int:
+    cfg = _load_config()
+    try:
+        return int(cfg.get("efficacy_min_samples", DEFAULT_EFFICACY_MIN_SAMPLES))
+    except (TypeError, ValueError):
+        return DEFAULT_EFFICACY_MIN_SAMPLES
 
 
 # ---------------------------------------------------------------------------
@@ -264,7 +307,23 @@ def apply_automatic_transitions(now: Optional[datetime] = None) -> Dict[str, int
     stale_cutoff = now - timedelta(days=get_stale_after_days())
     archive_cutoff = now - timedelta(days=get_archive_after_days())
 
-    counts = {"marked_stale": 0, "archived": 0, "reactivated": 0, "checked": 0}
+    # Efficacy-based archival (innovation #2): only when explicitly enabled
+    # (report-only by default). A mature skill whose efficacy EMA is below the
+    # floor is archived regardless of recency, alongside the inactivity path.
+    efficacy_on = efficacy_archival_enabled()
+    efficacy_floor = get_efficacy_floor()
+    efficacy_min_samples = get_efficacy_min_samples()
+    # Maturity gate: enough total activity AND old enough that the EMA reflects
+    # real use, not a cold-start artifact. Reuse the stale window as the age bar.
+    mature_age_cutoff = stale_cutoff
+
+    counts = {
+        "marked_stale": 0,
+        "archived": 0,
+        "archived_low_efficacy": 0,
+        "reactivated": 0,
+        "checked": 0,
+    }
 
     for row in _u.agent_created_report():
         counts["checked"] += 1
@@ -281,6 +340,26 @@ def apply_automatic_transitions(now: Optional[datetime] = None) -> Dict[str, int
 
         current = row.get("state", _u.STATE_ACTIVE)
 
+        # Efficacy path FIRST so a chronically-failing-but-recently-used skill
+        # is archived even though the inactivity cutoffs wouldn't touch it.
+        # Inactivity stays as the fallback below.
+        if (
+            efficacy_on
+            and current != _u.STATE_ARCHIVED
+            and _is_low_efficacy_mature(
+                row,
+                floor=efficacy_floor,
+                min_samples=efficacy_min_samples,
+                mature_age_cutoff=mature_age_cutoff,
+                created_anchor=anchor,
+            )
+        ):
+            ok, _msg = _u.archive_skill(name)
+            if ok:
+                counts["archived"] += 1
+                counts["archived_low_efficacy"] += 1
+            continue
+
         if anchor <= archive_cutoff and current != _u.STATE_ARCHIVED:
             ok, _msg = _u.archive_skill(name)
             if ok:
@@ -294,6 +373,57 @@ def apply_automatic_transitions(now: Optional[datetime] = None) -> Dict[str, int
             counts["reactivated"] += 1
 
     return counts
+
+
+def _is_low_efficacy_mature(
+    row: Dict[str, Any],
+    *,
+    floor: float,
+    min_samples: int,
+    mature_age_cutoff: datetime,
+    created_anchor: datetime,
+) -> bool:
+    """Return True when a skill is mature AND under the efficacy floor.
+
+    "Mature" = enough observed activity (``activity_count >=
+    DEFAULT_EFFICACY_MATURE_ACTIVITY``), enough efficacy samples to trust the
+    EMA (``efficacy_samples >= min_samples``), and old enough that the EMA isn't
+    a cold-start artifact (created before ``mature_age_cutoff``). Skills missing
+    an EMA (never attributed) are never archived on this path — absence of
+    signal is not a low score.
+    """
+    ema = row.get("efficacy_ema")
+    if ema is None:
+        return False
+    try:
+        ema_f = float(ema)
+    except (TypeError, ValueError):
+        return False
+
+    try:
+        samples = int(row.get("efficacy_samples") or 0)
+    except (TypeError, ValueError):
+        samples = 0
+    if samples < max(1, min_samples):
+        return False
+
+    try:
+        activity = int(row.get("activity_count") or 0)
+    except (TypeError, ValueError):
+        activity = 0
+    if activity < DEFAULT_EFFICACY_MATURE_ACTIVITY:
+        return False
+
+    # Age gate: the skill must have existed long enough for the EMA to mean
+    # something. ``created_anchor`` is the latest-activity-or-created anchor the
+    # caller already computed; fall back to created_at for the age check.
+    created = _parse_iso(row.get("created_at")) or created_anchor
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    if created > mature_age_cutoff:
+        return False
+
+    return ema_f < floor
 
 
 # ---------------------------------------------------------------------------
@@ -311,7 +441,7 @@ CURATOR_DRY_RUN_BANNER = (
     "write_file, or remove_file.\n"
     "  • DO NOT call terminal to mv skill directories into .archive/.\n"
     "  • DO NOT call terminal to mv, cp, rm, or rewrite any file under "
-    "~/.hermes/skills/.\n"
+    "~/.thoth/skills/.\n"
     "  • skills_list and skill_view are FINE — read as much as you need.\n"
     "\n"
     "Your output IS the deliverable. Produce the exact same "
@@ -345,7 +475,7 @@ CURATOR_REVIEW_PROMPT = (
     "1. DO NOT touch bundled or hub-installed skills. The candidate list "
     "below is already filtered to agent-created skills only.\n"
     "2. DO NOT delete any skill. Archiving (moving the skill's directory "
-    "into ~/.hermes/skills/.archive/) is the maximum destructive action. "
+    "into ~/.thoth/skills/.archive/) is the maximum destructive action. "
     "Archives are recoverable; deletion is not.\n"
     "3. DO NOT touch skills shown as pinned=yes. Skip them entirely.\n"
     "4. DO NOT use usage counters as a reason to skip consolidation. The "
@@ -360,7 +490,7 @@ CURATOR_REVIEW_PROMPT = (
     "How to work — not optional:\n"
     "1. Scan the full candidate list. Identify PREFIX CLUSTERS (skills "
     "sharing a first word or domain keyword). Examples you are likely "
-    "to find: hermes-config-*, hermes-dashboard-*, gateway-*, codex-*, "
+    "to find: thoth-config-*, thoth-dashboard-*, gateway-*, codex-*, "
     "ollama-*, anthropic-*, gemini-*, mcp-*, salvage-*, pr-*, "
     "competitor-*, python-*, security-*, etc. Expect 10-25 clusters.\n"
     "2. For each cluster with 2+ members, do NOT ask 'are these pairs "
@@ -389,7 +519,7 @@ CURATOR_REVIEW_PROMPT = (
     "      • `scripts/<name>.<ext>` for statically re-runnable actions "
     "(verification scripts, fixture generators, probes)\n"
     "      Then archive the old sibling. Use `terminal` with `mkdir -p "
-    "~/.hermes/skills/<umbrella>/references/ && mv ... <umbrella>/"
+    "~/.thoth/skills/<umbrella>/references/ && mv ... <umbrella>/"
     "references/<topic>.md` (or templates/ / scripts/).\n"
     "4. Also flag skills whose NAME is too narrow (contains a PR number, "
     "a feature codename, a specific error string, an 'audit' / "
@@ -452,10 +582,10 @@ CURATOR_REVIEW_PROMPT = (
 def _reports_root() -> Path:
     """Directory where curator run reports are written.
 
-    Lives under the profile-aware logs dir (``~/.hermes/logs/curator/``)
+    Lives under the profile-aware logs dir (``~/.thoth/logs/curator/``)
     alongside ``agent.log`` and ``gateway.log`` so it's found by anyone
     looking for operational telemetry, not mixed in with the user's
-    authored skill data in ``~/.hermes/skills/``.
+    authored skill data in ``~/.thoth/skills/``.
 
     ``ensure_thoth_home()`` pre-creates this dir on every CLI launch and
     the v22→v23 migration backfills it for existing profiles, but we
@@ -1203,7 +1333,7 @@ def _render_report_markdown(p: Dict[str, Any]) -> str:
     lines.append("")
 
     # Consolidated list — content absorbed into an umbrella. The directory
-    # on disk still lives under ~/.hermes/skills/.archive/ (every removal is
+    # on disk still lives under ~/.thoth/skills/.archive/ (every removal is
     # recoverable by design), but the "live" content for these skills
     # continues to exist inside the destination umbrella.
     consolidated = p.get("consolidated") or []
@@ -1212,7 +1342,7 @@ def _render_report_markdown(p: Dict[str, Any]) -> str:
         lines.append(
             "_These skills were **absorbed into another skill** during this run — "
             "their content still lives, just under a different name. "
-            "The original directory was moved to `~/.hermes/skills/.archive/` for "
+            "The original directory was moved to `~/.thoth/skills/.archive/` for "
             "safety and can be restored via `thoth curator restore <name>` if the "
             "consolidation was wrong._\n"
         )
@@ -1248,7 +1378,7 @@ def _render_report_markdown(p: Dict[str, Any]) -> str:
         lines.append(
             "_These skills were archived without being merged into an umbrella "
             "(e.g. stale, unused, or judged irrelevant). "
-            "Directories live under `~/.hermes/skills/.archive/`. "
+            "Directories live under `~/.thoth/skills/.archive/`. "
             "Restore any via `thoth curator restore <name>`._\n"
         )
         SHOW = 50
@@ -1335,7 +1465,7 @@ def _render_report_markdown(p: Dict[str, Any]) -> str:
     # Recovery footer
     lines.append("## Recovery\n")
     lines.append("- Restore an archived skill: `thoth curator restore <name>`")
-    lines.append("- All archives live under `~/.hermes/skills/.archive/` and are recoverable by `mv`")
+    lines.append("- All archives live under `~/.thoth/skills/.archive/` and are recoverable by `mv`")
     lines.append("- See `run.json` in this directory for the full machine-readable record.")
     lines.append("")
 

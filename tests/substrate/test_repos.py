@@ -80,14 +80,14 @@ class TestStreamRepo:
 
         repo = StreamRepo(thoth_db.pool())
         stream = await repo.register(
-            name="hermes.test.unique_stream",
+            name="thoth.test.unique_stream",
             family=Family.EXTEROCEPTIVE,
             modality=Modality.TEXT,
             source="test",
             organ="pytest",
             decay_profile_id=DEFAULT_TEXT_PROFILE,
         )
-        assert stream.name == "hermes.test.unique_stream"
+        assert stream.name == "thoth.test.unique_stream"
         assert stream.lifecycle_state is Lifecycle.ACTIVE
         assert stream.family is Family.EXTEROCEPTIVE
 
@@ -97,7 +97,7 @@ class TestStreamRepo:
 
         repo = StreamRepo(thoth_db.pool())
         first = await repo.register(
-            name="hermes.test.dupe",
+            name="thoth.test.dupe",
             family=Family.SELF_STATE,
             modality=Modality.STRUCTURED_EVENT,
             source="test",
@@ -106,7 +106,7 @@ class TestStreamRepo:
         )
         # Same name + different params → no error, returns the original.
         second = await repo.register(
-            name="hermes.test.dupe",
+            name="thoth.test.dupe",
             family=Family.SELF_ACTION,  # would-be conflict
             modality=Modality.TEXT,
             source="other",
@@ -123,7 +123,7 @@ class TestStreamRepo:
 
         repo = StreamRepo(thoth_db.pool())
         stream = await repo.register(
-            name="hermes.test.cache_probe",
+            name="thoth.test.cache_probe",
             family=Family.SELF_STATE,
             modality=Modality.TEXT,
             source="test",
@@ -141,14 +141,14 @@ class TestStreamRepo:
 
         repo = StreamRepo(thoth_db.pool())
         stream = await repo.register(
-            name="hermes.test.by_name",
+            name="thoth.test.by_name",
             family=Family.SELF_STATE,
             modality=Modality.TEXT,
             source="test",
             organ="pytest",
             decay_profile_id=DEFAULT_TEXT_PROFILE,
         )
-        cached = await repo.get_by_name("hermes.test.by_name")
+        cached = await repo.get_by_name("thoth.test.by_name")
         assert cached is stream
 
     @pytest.mark.asyncio
@@ -157,7 +157,7 @@ class TestStreamRepo:
 
         repo = StreamRepo(thoth_db.pool())
         stream = await repo.register(
-            name="hermes.test.invalidate",
+            name="thoth.test.invalidate",
             family=Family.SELF_STATE,
             modality=Modality.TEXT,
             source="test",
@@ -191,7 +191,7 @@ async def test_slice_repo_commit_inserts_pending(thoth_db_initialized):
     streams = StreamRepo(thoth_db.pool())
     slices = SliceRepo(thoth_db.pool())
     stream = await streams.register(
-        name="hermes.test.commit_pending",
+        name="thoth.test.commit_pending",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -234,7 +234,7 @@ async def test_slice_repo_list_pending_orders_oldest_first(thoth_db_initialized)
     streams = StreamRepo(thoth_db.pool())
     slices = SliceRepo(thoth_db.pool())
     stream = await streams.register(
-        name="hermes.test.list_pending",
+        name="thoth.test.list_pending",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -276,7 +276,7 @@ async def test_slice_repo_decide_transitions_pending_to_passed(thoth_db_initiali
     streams = StreamRepo(thoth_db.pool())
     slices = SliceRepo(thoth_db.pool())
     stream = await streams.register(
-        name="hermes.test.decide_one",
+        name="thoth.test.decide_one",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -337,7 +337,7 @@ async def test_slice_repo_decide_many_batch(thoth_db_initialized):
     streams = StreamRepo(thoth_db.pool())
     slices = SliceRepo(thoth_db.pool())
     stream = await streams.register(
-        name="hermes.test.decide_many",
+        name="thoth.test.decide_many",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",
@@ -391,7 +391,7 @@ async def test_slice_repo_force_reject_expired_uses_ttl(thoth_db_initialized):
     streams = StreamRepo(thoth_db.pool())
     slices = SliceRepo(thoth_db.pool())
     stream = await streams.register(
-        name="hermes.test.force_reject",
+        name="thoth.test.force_reject",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",

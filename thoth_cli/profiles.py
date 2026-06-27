@@ -3,9 +3,9 @@ Profile management for multiple isolated Thoth instances.
 
 Each profile is a fully independent THOTH_HOME directory with its own
 config.yaml, .env, memory, sessions, skills, gateway, cron, and logs.
-Profiles live under ``~/.hermes/profiles/<name>/`` by default.
+Profiles live under ``~/.thoth/profiles/<name>/`` by default.
 
-The "default" profile is ``~/.hermes`` itself — backward compatible,
+The "default" profile is ``~/.thoth`` itself — backward compatible,
 zero migration needed.
 
 Usage::
@@ -77,12 +77,13 @@ _CLONE_ALL_STRIP: list[str] = [
 ]
 
 # Infrastructure artifacts excluded from --clone-all when the source is the
-# default profile (``~/.hermes``).  Named profiles never contain these
+# default profile (``~/.thoth``).  Named profiles never contain these
 # directories at root, so the exclusion is gated to avoid silently dropping
 # user data from a named-profile source.
 #
 # Rationale per item:
-#   hermes-agent  — git repo checkout (~84 MB source + ~3 GB venv)
+#   app           — git repo checkout (~84 MB source + ~3 GB venv)
+#   hermes-agent  — legacy code-dir name (pre-rename installs)
 #   .worktrees    — git worktrees
 #   profiles      — sibling named profiles (recursive copy never intended)
 #   bin           — installed binaries (tirith etc., ~10 MB) shared per-host
@@ -93,7 +94,8 @@ _CLONE_ALL_STRIP: list[str] = [
 # archive is a portable snapshot; clone-all keeps those because the cloned
 # profile is meant to keep working immediately).
 _CLONE_ALL_DEFAULT_EXCLUDE_ROOT: frozenset[str] = frozenset({
-    "hermes-agent",
+    "app",
+    "hermes-agent",  # legacy code-dir name (pre-rename installs)
     ".worktrees",
     "profiles",
     "bin",
@@ -123,7 +125,7 @@ def _clone_all_copytree_ignore(source_dir: Path):
     Two categories:
       1. Root-level entries in ``_CLONE_ALL_DEFAULT_EXCLUDE_ROOT`` — known
          Thoth infrastructure directories that only the default profile
-         (``~/.hermes``) ever contains.  Gated on ``source_dir`` actually
+         (``~/.thoth``) ever contains.  Gated on ``source_dir`` actually
          being the default profile so a named-profile source never has its
          own data silently dropped.
       2. Universal exclusions at any depth — Python bytecode caches that
@@ -164,13 +166,14 @@ def _clone_all_copytree_ignore(source_dir: Path):
     return _ignore
 
 
-# Directories/files to exclude when exporting the default (~/.hermes) profile.
+# Directories/files to exclude when exporting the default (~/.thoth) profile.
 # The default profile contains infrastructure (repo checkout, worktrees, DBs,
 # caches, binaries) that named profiles don't have.  We exclude those so the
 # export is a portable, reasonable-size archive of actual profile data.
 _DEFAULT_EXPORT_EXCLUDE_ROOT = frozenset({
     # Infrastructure
-    "hermes-agent",         # repo checkout (multi-GB)
+    "app",                  # repo checkout (multi-GB)
+    "hermes-agent",         # legacy code-dir name (pre-rename installs)
     ".worktrees",           # git worktrees
     "profiles",             # other profiles — never recursive-export
     "bin",                  # installed binaries (tirith, etc.)
@@ -194,7 +197,7 @@ _DEFAULT_EXPORT_EXCLUDE_ROOT = frozenset({
 
 # Names that cannot be used as profile aliases
 _RESERVED_NAMES = frozenset({
-    "hermes", "default", "test", "tmp", "root", "sudo",
+    "thoth", "default", "test", "tmp", "root", "sudo",
 })
 
 # Thoth subcommands that cannot be used as profile names/aliases
@@ -218,7 +221,7 @@ def _get_profiles_root() -> Path:
     can see all profiles.
 
     In Docker/custom deployments where THOTH_HOME points outside
-    ``~/.hermes``, profiles live under ``THOTH_HOME/profiles/`` so
+    ``~/.thoth``, profiles live under ``THOTH_HOME/profiles/`` so
     they persist on the mounted volume.
     """
     return _get_default_thoth_home() / "profiles"
@@ -227,8 +230,8 @@ def _get_profiles_root() -> Path:
 def _get_default_thoth_home() -> Path:
     """Return the default (pre-profile) THOTH_HOME path.
 
-    In standard deployments this is ``~/.hermes``.
-    In Docker/custom deployments where THOTH_HOME is outside ``~/.hermes``
+    In standard deployments this is ``~/.thoth``.
+    In Docker/custom deployments where THOTH_HOME is outside ``~/.thoth``
     (e.g. ``/opt/data``), returns THOTH_HOME directly.
     """
     from thoth_constants import get_default_thoth_root
@@ -276,14 +279,14 @@ def validate_profile_name(name: str) -> None:
     honest about what the on-disk directory name must look like, while
     ingress-point normalization handles UX flexibility (see #18498).
 
-    Also rejects names in :data:`_RESERVED_NAMES` (``hermes``, ``test``,
+    Also rejects names in :data:`_RESERVED_NAMES` (``thoth``, ``test``,
     ``tmp``, ``root``, ``sudo``) that would create confusing on-disk
-    collisions (a ``hermes`` profile inside ``~/.hermes/``) or get refused
+    collisions (a ``thoth`` profile inside ``~/.thoth/``) or get refused
     at alias-creation time anyway. ``default`` is a special pass-through —
     it's a valid alias for the built-in root profile.
     """
     if name == "default":
-        return  # special alias for ~/.hermes
+        return  # special alias for ~/.thoth
     if not _PROFILE_ID_RE.match(name):
         raise ValueError(
             f"Invalid profile name {name!r}. Must match "
@@ -680,7 +683,7 @@ def create_profile(
 
     if canon == "default":
         raise ValueError(
-            "Cannot create a profile named 'default' — it is the built-in profile (~/.hermes)."
+            "Cannot create a profile named 'default' — it is the built-in profile (~/.thoth)."
         )
 
     profile_dir = get_profile_dir(canon)
@@ -704,7 +707,7 @@ def create_profile(
             )
 
     if clone_all and source_dir:
-        # Full copy of source profile (exclude sibling ~/.hermes/profiles/)
+        # Full copy of source profile (exclude sibling ~/.thoth/profiles/)
         shutil.copytree(
             source_dir,
             profile_dir,
@@ -839,7 +842,7 @@ def delete_profile(name: str, yes: bool = False) -> Path:
 
     if canon == "default":
         raise ValueError(
-            "Cannot delete the default profile (~/.hermes).\n"
+            "Cannot delete the default profile (~/.thoth).\n"
             "To remove everything, use: thoth uninstall"
         )
 
@@ -1075,7 +1078,7 @@ def get_active_profile() -> str:
 def set_active_profile(name: str) -> None:
     """Set the sticky active profile.
 
-    Writes to ``~/.hermes/active_profile``. Use ``"default"`` to clear.
+    Writes to ``~/.thoth/active_profile``. Use ``"default"`` to clear.
     """
     canon = normalize_profile_name(name)
     validate_profile_name(canon)
@@ -1100,8 +1103,8 @@ def set_active_profile(name: str) -> None:
 def get_active_profile_name() -> str:
     """Infer the current profile name from THOTH_HOME.
 
-    Returns ``"default"`` if THOTH_HOME is not set or points to ``~/.hermes``.
-    Returns the profile name if THOTH_HOME points into ``~/.hermes/profiles/<name>``.
+    Returns ``"default"`` if THOTH_HOME is not set or points to ``~/.thoth``.
+    Returns the profile name if THOTH_HOME points into ``~/.thoth/profiles/<name>``.
     Returns ``"custom"`` if THOTH_HOME is set to an unrecognized path.
     """
     from thoth_constants import get_thoth_home
@@ -1170,8 +1173,8 @@ def export_profile(name: str, output_path: str) -> Path:
     base = str(output).removesuffix(".tar.gz").removesuffix(".tgz")
 
     if canon == "default":
-        # The default profile IS ~/.hermes itself — its parent is ~/ and its
-        # directory name is ".hermes", not "default".  We stage a clean copy
+        # The default profile IS ~/.thoth itself — its parent is ~/ and its
+        # directory name is ".thoth", not "default".  We stage a clean copy
         # under a temp dir so the archive contains ``default/...``.
         with tempfile.TemporaryDirectory() as tmpdir:
             staged = Path(tmpdir) / "default"
@@ -1299,13 +1302,13 @@ def import_profile(archive_path: str, name: Optional[str] = None) -> Path:
         )
 
     # Archives exported from the default profile have "default/" as top-level
-    # dir.  Importing as "default" would target ~/.hermes itself — disallow
+    # dir.  Importing as "default" would target ~/.thoth itself — disallow
     # that and guide the user toward a named profile.
     canon = normalize_profile_name(inferred_name)
     validate_profile_name(canon)
     if canon == "default":
         raise ValueError(
-            "Cannot import as 'default' — that is the built-in root profile (~/.hermes). "
+            "Cannot import as 'default' — that is the built-in root profile (~/.thoth). "
             "Specify a different name: thoth profile import <archive> --name <name>"
         )
 
@@ -1473,19 +1476,13 @@ def resolve_profile_env(profile_name: str) -> str:
 
 @contextlib.contextmanager
 def profile_env_context(profile_dir):
-    """Context manager: set THOTH_HOME and THOTH_HOME to profile_dir, restore on exit."""
+    """Context manager: set THOTH_HOME to profile_dir, restore on exit."""
     profile_str = str(profile_dir)
-    old_hermes = os.environ.get("THOTH_HOME")
     old_thoth = os.environ.get("THOTH_HOME")
     try:
         os.environ["THOTH_HOME"] = profile_str
-        os.environ["THOTH_HOME"] = profile_str
         yield
     finally:
-        if old_hermes is None:
-            os.environ.pop("THOTH_HOME", None)
-        else:
-            os.environ["THOTH_HOME"] = old_hermes
         if old_thoth is None:
             os.environ.pop("THOTH_HOME", None)
         else:

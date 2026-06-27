@@ -402,7 +402,7 @@ def test_x_search_honors_config_model_and_timeout(monkeypatch, tmp_path):
 
     monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
 
-    # Patch the in-module config loader so tests don't touch ~/.hermes/config.yaml.
+    # Patch the in-module config loader so tests don't touch ~/.thoth/config.yaml.
     monkeypatch.setattr(
         "tools.x_search_tool._load_x_search_config",
         lambda: {"model": "grok-custom-test", "timeout_seconds": 45, "retries": 0},

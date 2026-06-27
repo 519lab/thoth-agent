@@ -10,7 +10,7 @@ import pytest
 @pytest.fixture
 def _isolate(tmp_path, monkeypatch):
     """Isolate THOTH_HOME so tests don't touch real config."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setenv("THOTH_HOME", str(home))
 
@@ -26,7 +26,7 @@ def cli_obj(_isolate):
         from cli import ThothCLI
         obj = ThothCLI.__new__(ThothCLI)
         obj.model = "test-model"
-        obj.enabled_toolsets = ["hermes-core"]
+        obj.enabled_toolsets = ["thoth-core"]
         obj.compact = False
         obj.console = MagicMock()
         obj.session_id = None

@@ -758,15 +758,15 @@ Skills with very long descriptions are truncated to 40 characters in the Telegra
    ```bash
    thoth backup
    ```
-   This creates a zip of your entire `~/.thoth/` directory — config, API keys, memories, skills, sessions, and profiles — saved to your home directory as `~/hermes-backup-<timestamp>.zip`.
+   This creates a zip of your entire `~/.thoth/` directory — config, API keys, memories, skills, sessions, and profiles — saved to your home directory as `~/thoth-backup-<timestamp>.zip`.
 
 3. Copy the zip to the new machine and import it:
    ```bash
    # On the source machine
-   scp ~/hermes-backup-<timestamp>.zip newmachine:~/
+   scp ~/thoth-backup-<timestamp>.zip newmachine:~/
 
    # On the new machine
-   thoth import ~/hermes-backup-<timestamp>.zip
+   thoth import ~/thoth-backup-<timestamp>.zip
    ```
 
 4. On the new machine, run `thoth setup` to verify API keys and provider config are working.

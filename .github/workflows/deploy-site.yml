@@ -76,6 +76,15 @@ jobs:
         run: |
           mkdir -p _site/docs
           cp -r website/build/* _site/docs/
+          # Marketing landing page at the bare root (https://thoth.519lab.com/).
+          # The Docusaurus app lives under /docs/ (baseUrl); this standalone page
+          # is the front door and links into it. It references the docs-deployed
+          # brand assets (/docs/img/*) so there is a single source of truth.
+          cp website/landing/index.html _site/index.html
+          # robots.txt + a root sitemap (the landing page) at the site root, so
+          # crawlers probing / find them; the docs sitemap covers /docs/ pages.
+          cp website/landing/robots.txt _site/robots.txt
+          cp website/landing/sitemap.xml _site/sitemap.xml
           # llms.txt / llms-full.txt are also published at the site root
           # (https://thoth.519lab.com/llms.txt) because some
           # agents and IDE plugins probe the classic root-level path rather

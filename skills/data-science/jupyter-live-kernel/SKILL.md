@@ -6,7 +6,7 @@ author: Thoth Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [jupyter, notebook, repl, data-science, exploration, iterative]
     category: data-science
 ---

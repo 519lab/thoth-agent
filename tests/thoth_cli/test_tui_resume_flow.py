@@ -220,7 +220,7 @@ def test_main_top_level_tui_accepts_toolsets(monkeypatch, main_mod):
 
     import thoth_cli.config as config_mod
 
-    monkeypatch.setattr(sys, "argv", ["hermes", "--tui", "--toolsets", "web,terminal"])
+    monkeypatch.setattr(sys, "argv", ["thoth", "--tui", "--toolsets", "web,terminal"])
     monkeypatch.setitem(
         sys.modules,
         "thoth_cli.plugins",
@@ -256,7 +256,7 @@ def test_termux_fast_tui_launch_uses_light_parser(monkeypatch, main_mod):
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
     monkeypatch.setattr(
-        sys, "argv", ["hermes", "--tui", "--toolsets", "web,terminal"]
+        sys, "argv", ["thoth", "--tui", "--toolsets", "web,terminal"]
     )
     monkeypatch.setattr(
         main_mod,
@@ -270,7 +270,7 @@ def test_termux_fast_tui_launch_uses_light_parser(monkeypatch, main_mod):
 
 def test_termux_fast_tui_launch_skips_help(monkeypatch, main_mod):
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.setattr(sys, "argv", ["hermes", "--tui", "--help"])
+    monkeypatch.setattr(sys, "argv", ["thoth", "--tui", "--help"])
 
     assert main_mod._try_termux_fast_tui_launch() is False
 
@@ -278,7 +278,7 @@ def test_termux_fast_tui_launch_skips_help(monkeypatch, main_mod):
 def test_fast_tui_launch_is_termux_only(monkeypatch, main_mod):
     monkeypatch.delenv("TERMUX_VERSION", raising=False)
     monkeypatch.setenv("PREFIX", "/usr")
-    monkeypatch.setattr(sys, "argv", ["hermes", "--tui"])
+    monkeypatch.setattr(sys, "argv", ["thoth", "--tui"])
 
     assert main_mod._try_termux_fast_tui_launch() is False
 
@@ -290,7 +290,7 @@ def test_termux_fast_cli_launch_chat_uses_light_parser(monkeypatch, main_mod):
     monkeypatch.setenv("TERMUX_VERSION", "1")
     monkeypatch.delenv("THOTH_TUI", raising=False)
     monkeypatch.setattr(
-        sys, "argv", ["hermes", "chat", "-q", "hello", "--toolsets", "web,terminal"]
+        sys, "argv", ["thoth", "chat", "-q", "hello", "--toolsets", "web,terminal"]
     )
     monkeypatch.setattr(
         main_mod, "_prepare_agent_startup", lambda args: prepared.append(args.command)
@@ -321,7 +321,7 @@ def test_termux_fast_cli_launch_oneshot_uses_light_parser(monkeypatch, main_mod)
     monkeypatch.setattr(
         sys,
         "argv",
-        ["hermes", "-z", "hello", "--model", "gpt-test", "--provider", "openai"],
+        ["thoth", "-z", "hello", "--model", "gpt-test", "--provider", "openai"],
     )
     monkeypatch.setattr(
         main_mod, "_prepare_agent_startup", lambda args: prepared.append(args.command)
@@ -355,7 +355,7 @@ def test_termux_fast_cli_launch_version_skips_update_check(monkeypatch, main_mod
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
     monkeypatch.delenv("THOTH_TUI", raising=False)
-    monkeypatch.setattr(sys, "argv", ["hermes", "version"])
+    monkeypatch.setattr(sys, "argv", ["thoth", "version"])
     monkeypatch.setattr(
         main_mod, "_print_version_info", lambda *, check_updates: captured.append(check_updates)
     )
@@ -367,7 +367,7 @@ def test_termux_fast_cli_launch_version_skips_update_check(monkeypatch, main_mod
 def test_termux_fast_cli_launch_skips_help(monkeypatch, main_mod):
     monkeypatch.setenv("TERMUX_VERSION", "1")
     monkeypatch.delenv("THOTH_TUI", raising=False)
-    monkeypatch.setattr(sys, "argv", ["hermes", "chat", "--help"])
+    monkeypatch.setattr(sys, "argv", ["thoth", "chat", "--help"])
 
     assert main_mod._try_termux_fast_cli_launch() is False
 
@@ -376,7 +376,7 @@ def test_termux_fast_cli_launch_can_be_disabled(monkeypatch, main_mod):
     monkeypatch.setenv("TERMUX_VERSION", "1")
     monkeypatch.setenv("THOTH_TERMUX_DISABLE_FAST_CLI", "1")
     monkeypatch.delenv("THOTH_TUI", raising=False)
-    monkeypatch.setattr(sys, "argv", ["hermes", "version"])
+    monkeypatch.setattr(sys, "argv", ["thoth", "version"])
 
     assert main_mod._try_termux_fast_cli_launch() is False
 
@@ -516,7 +516,7 @@ def test_main_top_level_oneshot_accepts_toolsets(monkeypatch, main_mod):
     import thoth_cli.config as config_mod
 
     monkeypatch.setattr(
-        sys, "argv", ["hermes", "-z", "hello", "--toolsets", "web,terminal"]
+        sys, "argv", ["thoth", "-z", "hello", "--toolsets", "web,terminal"]
     )
     monkeypatch.setitem(
         sys.modules,
@@ -775,7 +775,7 @@ def test_launch_tui_exports_model_provider_and_toolsets(monkeypatch, main_mod):
     assert env["THOTH_INFERENCE_PROVIDER"] == "nous"
     assert env["THOTH_TUI_TOOLSETS"] == "web,terminal"
     active_path = Path(env["THOTH_TUI_ACTIVE_SESSION_FILE"])
-    assert active_path.name.startswith("hermes-tui-active-session-")
+    assert active_path.name.startswith("thoth-tui-active-session-")
     assert active_path.suffix == ".json"
     assert active_path_during_call == active_path
     assert not active_path.exists()
@@ -845,7 +845,7 @@ def test_launch_tui_sets_resume_env_from_resume_arg(monkeypatch, main_mod):
 def test_make_tui_argv_dev_prebuilds_thoth_ink(monkeypatch, main_mod, tmp_path):
     tui_dir = tmp_path / "ui-tui"
     tsx = tui_dir / "node_modules" / ".bin" / "tsx"
-    ink_dir = tui_dir / "packages" / "hermes-ink"
+    ink_dir = tui_dir / "packages" / "thoth-ink"
     tsx.parent.mkdir(parents=True)
     ink_dir.mkdir(parents=True)
     tsx.write_text("#!/usr/bin/env node\n", encoding="utf-8")

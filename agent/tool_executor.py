@@ -249,6 +249,9 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
         is_error, _ = _detect_tool_failure(function_name, result)
         if is_error:
             logger.info("tool %s failed (%.2fs): %s", function_name, duration, result[:200])
+            # innovation #8: a tool error is hard evidence worth a skill
+            # review (a loaded skill may have steered us wrong).  Best-effort.
+            agent._skill_review_signal = True
         else:
             logger.info("tool %s completed (%.2fs, %d chars)", function_name, duration, len(result))
         results[index] = (function_name, function_args, result, duration, is_error, False)
@@ -371,6 +374,17 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
                 _err_text = _multimodal_text_summary(function_result)
                 result_preview = _err_text[:200] if len(_err_text) > 200 else _err_text
                 logger.warning("Tool %s returned error (%.2fs): %s", function_name, tool_duration, result_preview)
+
+            # Per-turn tool tallies feeding the recall outcome proxy
+            # (innovation #1). Guardrail-blocked calls never ran, so they
+            # count as neither a call nor a failure (mirrors the file-mutation
+            # verifier's `not blocked` gate just below).
+            if not blocked:
+                agent._turn_tool_calls = getattr(agent, "_turn_tool_calls", 0) + 1
+                if is_error:
+                    agent._turn_tool_failures = (
+                        getattr(agent, "_turn_tool_failures", 0) + 1
+                    )
 
             # Track file-mutation outcome for the turn-end verifier.
             # `blocked` calls never actually ran — don't let a guardrail
@@ -802,6 +816,9 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
             )
         if _is_error_result:
             logger.warning("Tool %s returned error (%.2fs): %s", function_name, tool_duration, result_preview)
+            # innovation #8: a tool error is hard evidence worth a skill
+            # review (a loaded skill may have steered us wrong).  Best-effort.
+            agent._skill_review_signal = True
         else:
             logger.info("tool %s completed (%.2fs, %d chars)", function_name, tool_duration, _result_len)
 

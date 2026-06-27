@@ -6,7 +6,7 @@ author: FEUAZUR
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [SiYuan, Notes, Knowledge Base, PKM, API]
     related_skills: [obsidian, notion]
     homepage: https://github.com/siyuan-note/siyuan

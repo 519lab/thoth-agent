@@ -353,7 +353,7 @@ def test_bot_uid_none_processes_channel_message():
 def test_config_bridges_slack_free_response_channels(monkeypatch, tmp_path):
     from gateway.config import load_gateway_config
 
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / "config.yaml").write_text(
         "slack:\n"
@@ -383,7 +383,7 @@ def test_config_bridges_slack_free_response_channels(monkeypatch, tmp_path):
 def test_top_level_slack_settings_do_not_disable_env_token_setup(monkeypatch, tmp_path):
     from gateway.config import load_gateway_config
 
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / "config.yaml").write_text(
         "slack:\n"
@@ -407,7 +407,7 @@ def test_top_level_slack_settings_do_not_disable_env_token_setup(monkeypatch, tm
 def test_explicit_top_level_slack_enabled_false_wins_over_env_token(monkeypatch, tmp_path):
     from gateway.config import load_gateway_config
 
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / "config.yaml").write_text(
         "slack:\n"
@@ -432,7 +432,7 @@ def test_explicit_top_level_slack_enabled_false_wins_over_env_token(monkeypatch,
 def test_explicit_platforms_slack_enabled_false_wins_over_env_token(monkeypatch, tmp_path):
     from gateway.config import load_gateway_config
 
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / "config.yaml").write_text(
         "platforms:\n"
@@ -458,7 +458,7 @@ def test_explicit_platforms_slack_enabled_false_wins_over_env_token(monkeypatch,
 def test_config_bridges_slack_reply_in_thread(monkeypatch, tmp_path):
     from gateway.config import load_gateway_config
 
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / "config.yaml").write_text(
         "slack:\n"
@@ -498,7 +498,7 @@ def test_config_bridges_slack_reply_in_thread(monkeypatch, tmp_path):
 def test_config_bridges_slack_strict_mention(monkeypatch, tmp_path):
     from gateway.config import load_gateway_config
 
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / "config.yaml").write_text(
         "slack:\n"
@@ -648,7 +648,7 @@ def test_allowed_channels_env_var_blocks_channel(monkeypatch):
 def test_config_bridges_slack_allowed_channels(monkeypatch, tmp_path):
     from gateway.config import load_gateway_config
 
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / "config.yaml").write_text(
         "slack:\n"
@@ -671,7 +671,7 @@ def test_config_bridges_slack_allowed_channels_env_takes_precedence(monkeypatch,
     """Env var set before load_gateway_config() should not be overwritten."""
     from gateway.config import load_gateway_config
 
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
     (thoth_home / "config.yaml").write_text(
         "slack:\n"

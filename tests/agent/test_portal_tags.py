@@ -8,7 +8,7 @@ def test_thoth_client_tag_includes_current_version():
     from thoth_cli import __version__
     from agent.portal_tags import thoth_client_tag
 
-    assert thoth_client_tag() == f"client=hermes-client-v{__version__}"
+    assert thoth_client_tag() == f"client=thoth-client-v{__version__}"
 
 
 def test_thoth_client_tag_format():
@@ -16,7 +16,7 @@ def test_thoth_client_tag_format():
     from agent.portal_tags import thoth_client_tag
 
     tag = thoth_client_tag()
-    assert tag.startswith("client=hermes-client-v")
+    assert tag.startswith("client=thoth-client-v")
     # No spaces, no commas — single tag value
     assert " " not in tag
     assert "," not in tag
@@ -27,7 +27,7 @@ def test_nous_portal_tags_contains_product_and_client():
     from agent.portal_tags import thoth_client_tag, nous_portal_tags
 
     tags = nous_portal_tags()
-    assert "product=hermes-agent" in tags
+    assert "product=thoth-agent" in tags
     assert thoth_client_tag() in tags
     assert len(tags) == 2
 

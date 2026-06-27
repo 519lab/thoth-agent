@@ -250,7 +250,7 @@ The general `PluginManager` (the thing `thoth plugins` operates on) **sees** mod
 Like any Thoth plugin, model providers can ship as a pip package. Add an entry point to your `pyproject.toml`:
 
 ```toml
-[project.entry-points."hermes.plugins"]
+[project.entry-points."thoth_agent.plugins"]
 acme-inference = "acme_thoth_plugin:register"
 ```
 

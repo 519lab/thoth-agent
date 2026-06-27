@@ -16,7 +16,7 @@ import pytest
 @pytest.fixture()
 def isolated_cron_profile_home(tmp_path, monkeypatch):
     """Create an isolated Thoth root with a named profile and temp cron store."""
-    root = tmp_path / "hermes-root"
+    root = tmp_path / "thoth-root"
     profile_home = root / "profiles" / "support"
     profile_home.mkdir(parents=True)
     (root / "cron").mkdir(parents=True)

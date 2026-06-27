@@ -6,7 +6,7 @@ author: thoth-agent
 license: MIT
 platforms: [linux, macos]
 metadata:
-  hermes:
+  thoth:
     tags: [search, searxng, meta-search, self-hosted, free, fallback]
     related_skills: [duckduckgo-search, domain-intel]
     fallback_for_toolsets: [web]

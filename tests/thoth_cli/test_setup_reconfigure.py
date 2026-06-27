@@ -30,7 +30,7 @@ def _make_setup_args(**overrides):
 @pytest.fixture
 def existing_install(tmp_path, monkeypatch):
     """Simulate a returning user with an existing configured install."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
     monkeypatch.setenv("THOTH_HOME", str(home))
@@ -40,7 +40,7 @@ def existing_install(tmp_path, monkeypatch):
 @pytest.fixture
 def fresh_install(tmp_path, monkeypatch):
     """Simulate a first-time user with no existing configuration."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".thoth"
     home.mkdir()
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
     monkeypatch.setenv("THOTH_HOME", str(home))
@@ -243,7 +243,7 @@ class TestArgparse:
             "thoth_cli.setup.run_setup_wizard",
             lambda args: captured.setdefault("args", args),
         )
-        monkeypatch.setattr(sys, "argv", ["hermes", "setup", "--reconfigure"])
+        monkeypatch.setattr(sys, "argv", ["thoth", "setup", "--reconfigure"])
         try:
             main()
         except SystemExit:
@@ -260,7 +260,7 @@ class TestArgparse:
             "thoth_cli.setup.run_setup_wizard",
             lambda args: captured.setdefault("args", args),
         )
-        monkeypatch.setattr(sys, "argv", ["hermes", "setup", "--quick"])
+        monkeypatch.setattr(sys, "argv", ["thoth", "setup", "--quick"])
         try:
             main()
         except SystemExit:
@@ -277,7 +277,7 @@ class TestArgparse:
             "thoth_cli.setup.run_setup_wizard",
             lambda args: captured.setdefault("args", args),
         )
-        monkeypatch.setattr(sys, "argv", ["hermes", "setup"])
+        monkeypatch.setattr(sys, "argv", ["thoth", "setup"])
         try:
             main()
         except SystemExit:

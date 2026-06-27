@@ -6,7 +6,7 @@ author: Mibayy (@Mibayy), youssefea (@youssefea), ethernet8023 (@ethernet8023), 
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [EVM, Ethereum, BNB, BSC, Base, Arbitrum, Polygon, Optimism, Avalanche, zkSync, Blockchain, Crypto, Web3, DeFi, NFT, ENS, Whale, Security]
     category: blockchain
     related_skills: [solana]

@@ -68,7 +68,7 @@ thoth memory setup        # select "honcho" — runs the Honcho-specific post-se
 
 The legacy `thoth honcho setup` command still works (it now redirects to `thoth memory setup`), but is only registered after Honcho is selected as the active memory provider.
 
-**Config:** `$THOTH_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$THOTH_HOME/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/519lab/thoth-agent/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/hermes).
+**Config:** `$THOTH_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$THOTH_HOME/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/519lab/thoth-agent/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/thoth).
 
 <details>
 <summary>Full config reference</summary>
@@ -105,11 +105,11 @@ The legacy `thoth honcho setup` command still works (it now redirects to `thoth 
 {
   "apiKey": "your-key-from-app.honcho.dev",
   "hosts": {
-    "hermes": {
+    "thoth": {
       "enabled": true,
-      "aiPeer": "hermes",
+      "aiPeer": "thoth",
       "peerName": "your-name",
-      "workspace": "hermes"
+      "workspace": "thoth"
     }
   }
 }
@@ -124,11 +124,11 @@ The legacy `thoth honcho setup` command still works (it now redirects to `thoth 
 {
   "baseUrl": "http://localhost:8000",
   "hosts": {
-    "hermes": {
+    "thoth": {
       "enabled": true,
-      "aiPeer": "hermes",
+      "aiPeer": "thoth",
       "peerName": "your-name",
-      "workspace": "hermes"
+      "workspace": "thoth"
     }
   }
 }
@@ -159,7 +159,7 @@ The mapping:
 thoth profile create coder --clone
 ```
 
-`--clone` creates a `hermes.coder` host block in `honcho.json` with `aiPeer: "coder"`, shared `workspace`, inherited `peerName`, `recallMode`, `writeFrequency`, `observation`, etc. The AI peer is eagerly created in Honcho so it exists before the first message.
+`--clone` creates a `thoth.coder` host block in `honcho.json` with `aiPeer: "coder"`, shared `workspace`, inherited `peerName`, `recallMode`, `writeFrequency`, `observation`, etc. The AI peer is eagerly created in Honcho so it exists before the first message.
 
 ### Existing profiles, backfill Honcho peers
 
@@ -174,7 +174,7 @@ Scans every Thoth profile, creates host blocks for any profile without one, inhe
 Each host block can override the observation config independently. Example: a code-focused profile where the AI peer observes the user but doesn't self-model:
 
 ```json
-"hermes.coder": {
+"thoth.coder": {
   "aiPeer": "coder",
   "observation": {
     "user": { "observeMe": true, "observeOthers": true },
@@ -205,13 +205,13 @@ See the [Honcho page](./honcho.md#observation-directional-vs-unified) for the fu
 ```json
 {
   "apiKey": "your-key",
-  "workspace": "hermes",
+  "workspace": "thoth",
   "peerName": "eri",
   "hosts": {
-    "hermes": {
+    "thoth": {
       "enabled": true,
-      "aiPeer": "hermes",
-      "workspace": "hermes",
+      "aiPeer": "thoth",
+      "workspace": "thoth",
       "peerName": "eri",
       "recallMode": "hybrid",
       "writeFrequency": "async",
@@ -229,10 +229,10 @@ See the [Honcho page](./honcho.md#observation-directional-vs-unified) for the fu
       "messageMaxChars": 25000,
       "saveMessages": true
     },
-    "hermes.coder": {
+    "thoth.coder": {
       "enabled": true,
       "aiPeer": "coder",
-      "workspace": "hermes",
+      "workspace": "thoth",
       "peerName": "eri",
       "recallMode": "tools",
       "observation": {
@@ -240,10 +240,10 @@ See the [Honcho page](./honcho.md#observation-directional-vs-unified) for the fu
         "ai": { "observeMe": true, "observeOthers": true }
       }
     },
-    "hermes.writer": {
+    "thoth.writer": {
       "enabled": true,
       "aiPeer": "writer",
-      "workspace": "hermes",
+      "workspace": "thoth",
       "peerName": "eri"
     }
   },
@@ -255,7 +255,7 @@ See the [Honcho page](./honcho.md#observation-directional-vs-unified) for the fu
 
 </details>
 
-See the [config reference](https://github.com/519lab/thoth-agent/blob/main/plugins/memory/honcho/README.md) and [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/hermes).
+See the [config reference](https://github.com/519lab/thoth-agent/blob/main/plugins/memory/honcho/README.md) and [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/thoth).
 
 
 ---
@@ -318,7 +318,7 @@ echo "MEM0_API_KEY=your-key" >> ~/.thoth/.env
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `user_id` | `hermes-user` | User identifier |
+| `user_id` | `thoth-user` | User identifier |
 | `agent_id` | `thoth` | Agent identifier |
 
 ---
@@ -390,7 +390,7 @@ thoth memory setup    # select "holographic"
 thoth config set memory.provider holographic
 ```
 
-**Config:** `config.yaml` under `plugins.hermes-memory-store`
+**Config:** `config.yaml` under `plugins.thoth-memory-store`
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -501,7 +501,7 @@ echo 'SUPERMEMORY_API_KEY=***' >> ~/.thoth/.env
 - Session-end conversation ingest for richer graph-level knowledge building
 - Profile facts injected on first turn and at configurable intervals
 - Trivial message filtering (skips "ok", "thanks", etc.)
-- **Profile-scoped containers** — use `{identity}` in `container_tag` (e.g. `thoth-{identity}` → `hermes-coder`) to isolate memories per Thoth profile
+- **Profile-scoped containers** — use `{identity}` in `container_tag` (e.g. `thoth-{identity}` → `thoth-coder`) to isolate memories per Thoth profile
 - **Multi-container mode** — enable `enable_custom_container_tags` with a `custom_containers` list to let the agent read/write across named containers. Automatic operations (sync, prefetch) stay on the primary container.
 
 <details>
@@ -509,7 +509,7 @@ echo 'SUPERMEMORY_API_KEY=***' >> ~/.thoth/.env
 
 ```json
 {
-  "container_tag": "hermes",
+  "container_tag": "thoth",
   "enable_custom_container_tags": true,
   "custom_containers": ["project-alpha", "shared-knowledge"],
   "custom_container_instructions": "Use project-alpha for coding context."

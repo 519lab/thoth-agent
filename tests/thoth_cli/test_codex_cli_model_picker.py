@@ -34,7 +34,7 @@ def _make_fake_jwt(expiry_offset: int = 3600) -> str:
 @pytest.fixture()
 def thoth_auth_only_env(tmp_path, monkeypatch):
     """Tokens already in Thoth auth store (no Codex CLI needed)."""
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
 
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -111,7 +111,7 @@ def claude_code_only_env(tmp_path, monkeypatch):
     """Set up an environment where Anthropic credentials only exist in
     ~/.claude/.credentials.json (Claude Code) — not in env vars or Thoth
     auth store."""
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
 
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -166,7 +166,7 @@ def test_claude_code_file_detected_by_model_picker(claude_code_only_env):
 
 def test_no_codex_when_no_credentials(tmp_path, monkeypatch):
     """openai-codex should NOT appear when no credentials exist anywhere."""
-    thoth_home = tmp_path / ".hermes"
+    thoth_home = tmp_path / ".thoth"
     thoth_home.mkdir()
 
     monkeypatch.setenv("THOTH_HOME", str(thoth_home))
@@ -193,6 +193,3 @@ def test_no_codex_when_no_credentials(tmp_path, monkeypatch):
     assert "openai-codex" not in slugs, (
         "openai-codex should not appear without any credentials"
     )
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-hermes_auth_only_env = thoth_auth_only_env

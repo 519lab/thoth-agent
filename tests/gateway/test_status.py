@@ -16,7 +16,7 @@ class TestGatewayPidState:
 
         payload = json.loads((tmp_path / "gateway.pid").read_text())
         assert payload["pid"] == os.getpid()
-        assert payload["kind"] == "hermes-gateway"
+        assert payload["kind"] == "thoth-gateway"
         assert isinstance(payload["argv"], list)
         assert payload["argv"]
 
@@ -62,7 +62,7 @@ class TestGatewayPidState:
         dead_pid = 999999  # not our pid, and below we simulate it's dead
         pid_path.write_text(json.dumps({
             "pid": dead_pid,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "argv": ["python", "-m", "thoth_cli.main", "gateway", "run"],
             "start_time": 111,
         }))
@@ -80,7 +80,7 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -100,7 +100,7 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "argv": ["/venv/bin/python", "/repo/thoth_cli/main.py", "gateway", "run", "--replace"],
             "start_time": 123,
         }))
@@ -125,7 +125,7 @@ class TestGatewayPidState:
         pid_path = other_home / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -137,7 +137,7 @@ class TestGatewayPidState:
         lock_path = other_home / "gateway.lock"
         lock_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -162,7 +162,7 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -192,13 +192,13 @@ class TestGatewayPidState:
 
         pid_path.write_text(json.dumps({
             "pid": dead_foreign_pid,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
         lock_path.write_text(json.dumps({
             "pid": dead_foreign_pid,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -213,7 +213,7 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": 99999,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "argv": ["python", "-m", "thoth_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -225,7 +225,7 @@ class TestGatewayPidState:
             "_build_pid_record",
             lambda: {
                 "pid": os.getpid(),
-                "kind": "hermes-gateway",
+                "kind": "thoth-gateway",
                 "argv": ["python", "-m", "thoth_cli.main", "gateway"],
                 "start_time": 123,
             },
@@ -276,7 +276,7 @@ class TestGatewayRuntimeStatus:
         state_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 1000.0,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "platforms": {},
             "updated_at": "2025-01-01T00:00:00Z",
         }))
@@ -295,7 +295,7 @@ class TestGatewayRuntimeStatus:
         state_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 1000.0,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "argv": ["/old/path/thoth", "gateway", "run"],
             "platforms": {},
             "updated_at": "2025-01-01T00:00:00Z",
@@ -431,7 +431,7 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 123,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
         }))
 
         # Post-#21561 the liveness probe routes through
@@ -458,8 +458,8 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 873,
             "start_time": None,
-            "kind": "hermes-gateway",
-            "argv": ["/Users/user/.hermes/hermes-agent/thoth_cli/main.py", "gateway", "run", "--replace"],
+            "kind": "thoth-gateway",
+            "argv": ["/Users/user/.thoth/thoth-agent/thoth_cli/main.py", "gateway", "run", "--replace"],
         }))
 
         # Post-#21561 the liveness probe routes through
@@ -494,7 +494,7 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": None,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
             "argv": ["thoth_cli/main.py", "gateway", "run"],
         }))
 
@@ -518,8 +518,8 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": None,
-            "kind": "hermes-gateway",
-            "argv": ["/Users/user/.hermes/hermes-agent/thoth_cli/main.py", "gateway", "run", "--replace"],
+            "kind": "thoth-gateway",
+            "argv": ["/Users/user/.thoth/thoth-agent/thoth_cli/main.py", "gateway", "run", "--replace"],
         }))
 
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
@@ -538,7 +538,7 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 123,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
         }))
 
         # Post-#21561: simulate "PID gone" via _pid_exists returning False.
@@ -599,12 +599,12 @@ class TestScopedLocks:
         target_lock.write_text(json.dumps({
             "pid": 111,
             "start_time": 222,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
         }))
         other_lock.write_text(json.dumps({
             "pid": 999,
             "start_time": 333,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
         }))
 
         removed = status.release_all_scoped_locks(
@@ -625,7 +625,7 @@ class TestScopedLocks:
         reused_pid_lock.write_text(json.dumps({
             "pid": 111,
             "start_time": 999,
-            "kind": "hermes-gateway",
+            "kind": "thoth-gateway",
         }))
 
         removed = status.release_all_scoped_locks(

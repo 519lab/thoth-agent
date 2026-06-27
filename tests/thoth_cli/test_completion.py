@@ -18,7 +18,7 @@ from thoth_cli.completion import _walk, generate_bash, generate_zsh, generate_fi
 
 def _make_parser() -> argparse.ArgumentParser:
     """Build a minimal parser that mirrors the real thoth structure."""
-    p = argparse.ArgumentParser(prog="hermes")
+    p = argparse.ArgumentParser(prog="thoth")
     p.add_argument("--version", "-V", action="store_true")
     p.add_argument("-p", "--profile", help="Profile name")
     sub = p.add_subparsers(dest="command")
@@ -142,8 +142,8 @@ class TestGenerateZsh:
 
     def test_registers_compdef_instead_of_invoking_completion_function(self):
         out = generate_zsh(_make_parser())
-        assert 'compdef _hermes thoth' in out
-        assert '_hermes "$@"' not in out
+        assert 'compdef _thoth thoth' in out
+        assert '_thoth "$@"' not in out
 
     def test_preserves_valid_zsh_arguments_alias_syntax(self):
         out = generate_zsh(_make_parser())
@@ -178,7 +178,7 @@ class TestGenerateZsh:
                 [
                     "zsh",
                     "-fc",
-                    f"autoload -Uz compinit && compinit -D; source {path}; [[ ${{_comps[thoth]}} == _hermes ]]",
+                    f"autoload -Uz compinit && compinit -D; source {path}; [[ ${{_comps[thoth]}} == _thoth ]]",
                 ],
                 capture_output=True,
                 text=True,
@@ -259,7 +259,7 @@ class TestProfileCompletion:
     def test_bash_has_profiles_helper(self):
         out = generate_bash(_make_parser())
         assert "_thoth_profiles()" in out
-        assert 'profiles_dir="$HOME/.hermes/profiles"' in out
+        assert 'profiles_dir="$HOME/.thoth/profiles"' in out
 
     def test_bash_completes_profiles_after_p_flag(self):
         out = generate_bash(_make_parser())
@@ -289,7 +289,7 @@ class TestProfileCompletion:
     def test_zsh_has_profiles_helper(self):
         out = generate_zsh(_make_parser())
         assert "_thoth_profiles()" in out
-        assert "$HOME/.hermes/profiles" in out
+        assert "$HOME/.thoth/profiles" in out
 
     def test_zsh_has_profile_flag_completion(self):
         out = generate_zsh(_make_parser())
@@ -303,7 +303,7 @@ class TestProfileCompletion:
     def test_fish_has_profiles_helper(self):
         out = generate_fish(_make_parser())
         assert "__thoth_profiles" in out
-        assert "$HOME/.hermes/profiles" in out
+        assert "$HOME/.thoth/profiles" in out
 
     def test_fish_has_profile_flag_completion(self):
         out = generate_fish(_make_parser())

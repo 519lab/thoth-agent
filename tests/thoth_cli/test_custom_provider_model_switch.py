@@ -15,7 +15,7 @@ import pytest
 @pytest.fixture
 def config_home(tmp_path, monkeypatch):
     """Isolated THOTH_HOME with a minimal config."""
-    home = tmp_path / "hermes"
+    home = tmp_path / "thoth"
     home.mkdir()
     config_yaml = home / "config.yaml"
     config_yaml.write_text("model: old-model\ncustom_providers: []\n")

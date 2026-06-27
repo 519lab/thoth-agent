@@ -7,16 +7,16 @@
 #
 # Defaults:
 #
-#   - INSTALL_DIR:  ~/.thoth/hermes-agent
+#   - INSTALL_DIR:  ~/.thoth/app
 #   - THOTH_HOME:  ~/.thoth
 #   - CLI command:  thoth
-#   - PostgreSQL:   docker compose service on port 5432, db `hermes`
+#   - PostgreSQL:   docker compose service on port 5432, db `thoth`
 #
 # If you are installing on a machine that already has an upstream
 # 519lab/thoth-agent install and want to coexist without overwriting
 # it, override the defaults explicitly:
 #
-#   curl ... | bash -s -- --cli-name thoth-substrate --hermes-home ~/.thoth-substrate
+#   curl ... | bash -s -- --cli-name thoth-substrate --thoth-home ~/.thoth-substrate
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | bash
@@ -75,14 +75,21 @@ fi
 
 PYTHON_VERSION="3.11"
 NODE_VERSION="22"
+# Minimum system Node we'll accept before falling back to a managed install.
+# package.json engines require >=20; older distro node → EBADENGINE and
+# silently-broken browser tools / TUI / dashboard.
+NODE_MIN_MAJOR="20"
+# Minimum uv that reliably supports `uv python find` + `uv sync --locked`.
+# Older uv self-updates / gets reinstalled rather than being trusted.
+UV_MIN_VERSION="0.4.0"
 
 # PostgreSQL — substrate's source of truth.
 # Defaults match the docker-compose.yml shipped with this repo.
 PG_HOST_DEFAULT="localhost"
 PG_PORT_DEFAULT="5432"
-PG_USER_DEFAULT="hermes"
-PG_PASSWORD_DEFAULT="hermes"
-PG_DATABASE_DEFAULT="hermes"
+PG_USER_DEFAULT="thoth"
+PG_PASSWORD_DEFAULT="thoth"
+PG_DATABASE_DEFAULT="thoth"
 
 # ── FHS-style root install layout (set by resolve_install_layout) ──────────
 ROOT_FHS_LAYOUT=false
@@ -128,7 +135,7 @@ while [[ $# -gt 0 ]]; do
         --reset-db)        RESET_DB=true; shift ;;
         --branch)          BRANCH="$2"; shift 2 ;;
         --dir)             INSTALL_DIR="$2"; INSTALL_DIR_EXPLICIT=true; shift 2 ;;
-        --hermes-home)     THOTH_HOME="$2"; shift 2 ;;
+        --thoth-home)      THOTH_HOME="$2"; shift 2 ;;
         --cli-name)        CLI_NAME="$2"; shift 2 ;;
         --pg-dsn)          PG_DSN_OVERRIDE="$2"; shift 2 ;;
         --force-rewrite-config) FORCE_REWRITE_CONFIG=true; shift ;;
@@ -156,9 +163,9 @@ Options:
                         DESTRUCTIVE: all substrate state in that volume is lost.
   --branch NAME       Git branch to install (default: main)
   --dir PATH          Installation directory
-                        default (non-root): ~/.thoth/hermes-agent
-                        default (root, Linux): /usr/local/lib/hermes-agent
-  --hermes-home PATH  Data directory
+                        default (non-root): ~/.thoth/app
+                        default (root, Linux): /usr/local/lib/thoth
+  --thoth-home PATH   Data directory
                         default: ~/.thoth
                         (Override env: THOTH_HOME)
   --cli-name NAME     Name for the CLI shim
@@ -167,7 +174,7 @@ Options:
                         coexist with another Thoth install on the same machine.
                         (Override env: THOTH_CLI_NAME)
   --pg-dsn URL        PostgreSQL DSN to use
-                        default: postgresql://hermes:hermes@localhost:5432/hermes
+                        default: postgresql://thoth:thoth@localhost:5432/thoth
                         (matches the docker-compose service shipped with this repo)
   --force-rewrite-config
                       On updates, rewrite THOTH_PG_DSN and other installer-
@@ -177,8 +184,8 @@ Options:
                       user-customized values.
   -h, --help          Show this help
 
-Side-by-side install (coexist with an existing upstream Hermes):
-  curl ... | bash -s -- --cli-name thoth-substrate --hermes-home ~/.thoth-substrate
+Side-by-side install (coexist with another Thoth install):
+  curl ... | bash -s -- --cli-name thoth-substrate --thoth-home ~/.thoth-substrate
 
 Custom PostgreSQL (e.g. your own cluster, Neon, Supabase):
   curl ... | bash -s -- --skip-postgres --pg-dsn 'postgresql://user:pw@host:5432/db'
@@ -214,6 +221,23 @@ log_info()    { echo -e "${CYAN}→${NC} $1"; }
 log_success() { echo -e "${GREEN}✓${NC} $1"; }
 log_warn()    { echo -e "${YELLOW}⚠${NC} $1"; }
 log_error()   { echo -e "${RED}✗${NC} $1"; }
+
+# _version_ge A B → succeeds when version A is >= version B. Uses `sort -V`
+# so multi-component versions (0.4.18 vs 0.4.0) compare correctly. Falls
+# back to a string compare if `sort -V` is unavailable.
+_version_ge() {
+    [ "$(printf '%s\n%s\n' "$2" "$1" | sort -V 2>/dev/null | head -1)" = "$2" ]
+}
+
+# Portable in-place sed. GNU sed accepts `sed -i EXPR FILE`; BSD/macOS sed
+# requires a backup-suffix arg (`sed -i '' EXPR FILE`) and otherwise errors —
+# which, bare under `set -e`, aborts the whole install on re-runs (#214).
+# Sidestep the incompatibility with a temp-file rewrite.
+_sed_inplace() {
+    local expr="$1" file="$2" tmp
+    tmp="$(mktemp 2>/dev/null || echo "${file}.tmp.$$")"
+    sed "$expr" "$file" > "$tmp" && mv "$tmp" "$file"
+}
 
 prompt_yes_no() {
     local question="$1"
@@ -261,15 +285,13 @@ is_termux() {
 detect_install_mode() {
     # An "update" is when ANY of these markers exist from a prior install
     # against this $THOTH_HOME / $INSTALL_DIR pair:
-    #   - $THOTH_HOME/.install_log    — written at the end of every install
-    #   - $THOTH_HOME/.hermes_install — written by copy_config_templates
-    #   - $THOTH_HOME/.substrate_install — legacy marker (pre-2026-05-26)
-    #   - $INSTALL_DIR/.git            — repo is already cloned
+    #   - $THOTH_HOME/.install_log   — written at the end of every install
+    #   - $THOTH_HOME/.thoth_install — written by copy_config_templates
+    #   - $INSTALL_DIR/.git          — repo is already cloned
     # Any one of these indicates the user has run the installer before, so
     # we preserve their config/state and skip first-run wizards.
     if [ -f "$THOTH_HOME/.install_log" ] \
-       || [ -f "$THOTH_HOME/.hermes_install" ] \
-       || [ -f "$THOTH_HOME/.substrate_install" ] \
+       || [ -f "$THOTH_HOME/.thoth_install" ] \
        || [ -d "$INSTALL_DIR/.git" ]; then
         IS_UPDATE=true
         log_info "Existing installation detected — running in UPDATE mode."
@@ -286,18 +308,18 @@ resolve_install_layout() {
     fi
 
     if is_termux; then
-        INSTALL_DIR="$THOTH_HOME/hermes-agent"
+        INSTALL_DIR="$THOTH_HOME/app"
         return 0
     fi
 
-    # Root on Linux: FHS layout, unless a legacy install exists at THOTH_HOME.
+    # Root on Linux: FHS layout, unless an install already exists at THOTH_HOME.
     if [ "$OS" = "linux" ] && [ "$(id -u)" -eq 0 ]; then
-        if [ -d "$THOTH_HOME/hermes-agent/.git" ]; then
-            INSTALL_DIR="$THOTH_HOME/hermes-agent"
+        if [ -d "$THOTH_HOME/app/.git" ]; then
+            INSTALL_DIR="$THOTH_HOME/app"
             log_info "Existing install detected at $INSTALL_DIR — keeping layout"
             return 0
         fi
-        INSTALL_DIR="/usr/local/lib/hermes-agent"
+        INSTALL_DIR="/usr/local/lib/thoth"
         ROOT_FHS_LAYOUT=true
         log_info "Root install on Linux — using FHS layout"
         log_info "  Code:    $INSTALL_DIR"
@@ -306,7 +328,8 @@ resolve_install_layout() {
         return 0
     fi
 
-    INSTALL_DIR="$THOTH_HOME/hermes-agent"
+    # Non-root default: the ``app`` checkout under THOTH_HOME.
+    INSTALL_DIR="$THOTH_HOME/app"
 }
 
 get_command_link_dir() {
@@ -329,7 +352,7 @@ get_command_link_display_dir() {
     fi
 }
 
-get_hermes_command_path() {
+get_thoth_command_path() {
     local link_dir
     link_dir="$(get_command_link_dir)"
     if [ -x "$link_dir/$CLI_NAME" ]; then
@@ -340,27 +363,18 @@ get_hermes_command_path() {
 }
 
 # Warn ONLY when we'd actually overwrite a foreign install, not on a
-# normal re-install of our own launcher. Two checks:
+# normal re-install of our own launcher. One check:
 #
-#   1. ``$THOTH_HOME`` already contains a directory that's NOT one of
-#      ours (no ``.hermes_install`` marker file).
-#   2. An existing ``thoth`` on PATH resolves to a different real file
-#      than the one we're about to write. ``command -v`` plus
-#      ``readlink -f`` canonicalize both sides so re-installing the
-#      same launcher from a path that includes ``~`` vs ``/home/user``
-#      vs a symlinked dir compares equal and the check stays quiet.
+#   * An existing ``thoth`` on PATH resolves to a different real file
+#     than the one we're about to write. ``command -v`` plus
+#     ``readlink -f`` canonicalize both sides so re-installing the
+#     same launcher from a path that includes ``~`` vs ``/home/user``
+#     vs a symlinked dir compares equal and the check stays quiet.
 #
-# When neither check fires (which is the common case — first-time install
-# OR a re-install of the same Thoth), the function exits silently.
+# When the check doesn't fire (the common case — first-time install OR a
+# re-install of the same Thoth), the function exits silently.
 warn_upstream_collision() {
-    local hermes_home_dir="$HOME/.hermes"
     local saw_collision=false
-
-    if [ "$THOTH_HOME" = "$hermes_home_dir" ] && [ -d "$hermes_home_dir" ] && [ ! -f "$hermes_home_dir/.hermes_install" ] && [ ! -f "$hermes_home_dir/.substrate_install" ]; then
-        log_warn "$hermes_home_dir already exists and wasn't created by this installer."
-        log_warn "  skills/config/SOUL.md in that directory will be SHARED with the existing install."
-        saw_collision=true
-    fi
 
     if [ "$CLI_NAME" = "thoth" ] && command -v thoth >/dev/null 2>&1; then
         local existing existing_canon target_link target_canon
@@ -383,11 +397,11 @@ warn_upstream_collision() {
     if [ "$saw_collision" = true ]; then
         if [ "$IS_INTERACTIVE" = true ] || [ -r /dev/tty ]; then
             if ! prompt_yes_no "Continue anyway?" "no"; then
-                echo "Aborted. Re-run with --hermes-home and/or --cli-name to install side-by-side."
+                echo "Aborted. Re-run with --thoth-home and/or --cli-name to install side-by-side."
                 exit 1
             fi
         else
-            log_warn "Non-interactive — proceeding (set --hermes-home and --cli-name explicitly if this is wrong)."
+            log_warn "Non-interactive — proceeding (set --thoth-home and --cli-name explicitly if this is wrong)."
         fi
     fi
 }
@@ -428,14 +442,24 @@ install_uv() {
         return 0
     fi
     log_info "Checking for uv package manager..."
+    # Accept an existing uv only if it meets the minimum version; `uv python
+    # find` and `uv sync --locked` need a reasonably recent uv (#222). An old
+    # uv falls through and gets (re)installed via the astral installer below.
+    local _uv_candidate="" _uv_where=""
     if command -v uv &> /dev/null; then
-        UV_CMD="uv"; log_success "uv found ($($UV_CMD --version 2>/dev/null))"; return 0
+        _uv_candidate="uv"; _uv_where=""
+    elif [ -x "$HOME/.local/bin/uv" ]; then
+        _uv_candidate="$HOME/.local/bin/uv"; _uv_where=" at ~/.local/bin"
+    elif [ -x "$HOME/.cargo/bin/uv" ]; then
+        _uv_candidate="$HOME/.cargo/bin/uv"; _uv_where=" at ~/.cargo/bin"
     fi
-    if [ -x "$HOME/.local/bin/uv" ]; then
-        UV_CMD="$HOME/.local/bin/uv"; log_success "uv found at ~/.local/bin ($($UV_CMD --version 2>/dev/null))"; return 0
-    fi
-    if [ -x "$HOME/.cargo/bin/uv" ]; then
-        UV_CMD="$HOME/.cargo/bin/uv"; log_success "uv found at ~/.cargo/bin ($($UV_CMD --version 2>/dev/null))"; return 0
+    if [ -n "$_uv_candidate" ]; then
+        local _uv_ver
+        _uv_ver="$("$_uv_candidate" --version 2>/dev/null | awk '{print $2}')"
+        if [ -n "$_uv_ver" ] && _version_ge "$_uv_ver" "$UV_MIN_VERSION"; then
+            UV_CMD="$_uv_candidate"; log_success "uv found$_uv_where ($($UV_CMD --version 2>/dev/null))"; return 0
+        fi
+        log_warn "uv ${_uv_ver:-unknown} is older than $UV_MIN_VERSION — upgrading via the astral installer"
     fi
     log_info "Installing uv (fast Python package manager)..."
     local _log _inst
@@ -538,11 +562,25 @@ check_docker() {
         log_info "  (you'll still need to run 'alembic upgrade head' yourself)"
         exit 1
     fi
-    if ! docker info >/dev/null 2>&1; then
-        log_error "Docker is installed but not running"
-        case "$OS" in
-            macos) log_info "  Launch Docker Desktop" ;;
-            linux) log_info "  sudo systemctl start docker  (or: sudo service docker start)" ;;
+    # Capture stderr (drop stdout) so we can tell "daemon down" apart from
+    # "daemon up but you lack permission". For rootless / user-not-in-docker-
+    # group the daemon IS running and `systemctl start docker` is the wrong
+    # remedy — the fix is the docker group (#219).
+    local _docker_err
+    if ! _docker_err="$(docker info 2>&1 >/dev/null)"; then
+        case "$_docker_err" in
+            *"permission denied"*|*"dial unix"*|*"connect: permission denied"*)
+                log_error "Docker is running but you don't have permission to access it"
+                log_info "  Add your user to the docker group, then re-run:"
+                log_info "    sudo usermod -aG docker $USER && newgrp docker"
+                ;;
+            *)
+                log_error "Docker is installed but not running"
+                case "$OS" in
+                    macos) log_info "  Launch Docker Desktop" ;;
+                    linux) log_info "  sudo systemctl start docker  (or: sudo service docker start)" ;;
+                esac
+                ;;
         esac
         exit 1
     fi
@@ -569,9 +607,16 @@ check_node() {
     fi
     log_info "Checking Node.js (for TUI + dashboard + browser tools)..."
     if command -v node &> /dev/null; then
-        log_success "Node.js $(node --version) found"
-        HAS_NODE=true
-        return 0
+        # Gate on the major version: package.json engines require >=20, and an
+        # old distro node otherwise breaks browser tools / TUI silently (#218).
+        local node_major
+        node_major="$(node --version 2>/dev/null | sed 's/^v//' | cut -d. -f1)"
+        if [ -n "$node_major" ] && [ "$node_major" -ge "$NODE_MIN_MAJOR" ] 2>/dev/null; then
+            log_success "Node.js $(node --version) found"
+            HAS_NODE=true
+            return 0
+        fi
+        log_warn "Node.js $(node --version 2>/dev/null) is older than v$NODE_MIN_MAJOR (required) — installing a Thoth-managed Node.js $NODE_VERSION LTS"
     fi
     if [ -x "$THOTH_HOME/node/bin/node" ]; then
         export PATH="$THOTH_HOME/node/bin:$PATH"
@@ -738,46 +783,54 @@ clone_repo() {
         if [ -d "$INSTALL_DIR/.git" ]; then
             log_info "Existing installation found, updating..."
             cd "$INSTALL_DIR"
-            local autostash_ref=""
-            if [ -n "$(git status --porcelain)" ]; then
-                local stash_name="thoth-install-autostash-$(date -u +%Y%m%d-%H%M%S)"
-                log_info "Local changes detected, stashing before update..."
-                git stash push --include-untracked -m "$stash_name"
-                autostash_ref="stash@{0}"
-            fi
             git fetch origin
-            git checkout "$BRANCH"
-            git pull --ff-only origin "$BRANCH"
-            if [ -n "$autostash_ref" ]; then
-                local restore_now="yes"
-                if [ -t 0 ] && [ -t 1 ]; then
-                    printf "Restore local changes now? [Y/n] "
-                    read -r ans
-                    case "$ans" in ""|y|Y|yes|YES|Yes) restore_now="yes" ;; *) restore_now="no" ;; esac
-                fi
-                if [ "$restore_now" = "yes" ]; then
-                    git stash apply "$autostash_ref" && git stash drop "$autostash_ref" >/dev/null \
-                        && log_warn "Local changes restored — review git status if behavior is unexpected"
-                else
-                    log_info "Local changes preserved in git stash ($autostash_ref)"
-                fi
+            # The code dir is managed and DISPOSABLE — config + state live in
+            # THOTH_HOME, never in this checkout. If it has diverged (hand-edits
+            # from debugging, partially-deleted files, etc.), do NOT stash/replay:
+            # that produces catastrophic modify/delete conflicts on nearly every
+            # file. Instead back up the diff and hard-reset to the upstream branch.
+            if [ -n "$(git status --porcelain)" ]; then
+                local backup_dir="${THOTH_HOME:-$HOME/.thoth}/.install-backup"
+                local stamp; stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+                local patch_file="$backup_dir/code-local-changes-$stamp.patch"
+                mkdir -p "$backup_dir" 2>/dev/null || true
+                git diff HEAD > "$patch_file" 2>/dev/null || true
+                git status --porcelain > "$backup_dir/code-local-status-$stamp.txt" 2>/dev/null || true
+                log_warn "Local changes in the code dir detected — resetting to a clean"
+                log_warn "  upstream copy (the code dir is managed; your config + data in"
+                log_warn "  ${THOTH_HOME:-$HOME/.thoth} are untouched)."
+                [ -s "$patch_file" ] && log_warn "  Saved a diff of your changes to: $patch_file"
             fi
+            # Force the local branch to exactly match upstream — conflict-proof.
+            git checkout -q "$BRANCH" 2>/dev/null || git checkout -q -B "$BRANCH" "origin/$BRANCH"
+            git reset --hard "origin/$BRANCH"
+            # Remove stray now-untracked files (e.g. modules deleted upstream) but
+            # KEEP gitignored build artifacts: no -x, so venv/ and node_modules/
+            # (gitignored) are preserved; -e is belt-and-suspenders for old checkouts.
+            git clean -fd -e venv -e node_modules >/dev/null 2>&1 || true
         else
             log_error "Directory exists but is not a git repository: $INSTALL_DIR"
             log_info "Remove it or choose a different directory with --dir"
             exit 1
         fi
-    else
-        log_info "Trying SSH clone..."
+    elif [ "${THOTH_INSTALL_SSH:-}" = "1" ]; then
+        # Opt-in SSH (maintainers who want to push later). Falls back to HTTPS.
+        log_info "Trying SSH clone (THOTH_INSTALL_SSH=1)..."
         if GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=5" \
            git clone --branch "$BRANCH" "$REPO_URL_SSH" "$INSTALL_DIR" 2>/dev/null; then
             log_success "Cloned via SSH"
         else
             rm -rf "$INSTALL_DIR" 2>/dev/null
-            log_info "SSH failed, trying HTTPS..."
+            log_info "SSH failed, falling back to HTTPS..."
             git clone --branch "$BRANCH" "$REPO_URL_HTTPS" "$INSTALL_DIR" || { log_error "git clone failed"; exit 1; }
             log_success "Cloned via HTTPS"
         fi
+    else
+        # Public project: clone over HTTPS by default — no SSH keys or GitHub
+        # auth required, works for anyone. (Set THOTH_INSTALL_SSH=1 to use SSH.)
+        log_info "Cloning from the public repo over HTTPS..."
+        git clone --branch "$BRANCH" "$REPO_URL_HTTPS" "$INSTALL_DIR" || { log_error "git clone failed"; exit 1; }
+        log_success "Cloned via HTTPS"
     fi
     cd "$INSTALL_DIR"
     log_success "Repository ready"
@@ -893,7 +946,7 @@ verify_core_deps() {
 
 # Detect a non-substrate PostgreSQL listening on the chosen port. If a native
 # pg server (apt-installed `postgresql` is common on Ubuntu) is bound to
-# 5432 *and* it doesn't accept our `hermes/hermes` creds, our docker
+# 5432 *and* it doesn't accept our `thoth/thoth` creds, our docker
 # container will silently fail to bind (or bind on a different interface)
 # and every connection from the host will hit the native one and bounce
 # with InvalidPasswordError. Probe first; if the port is taken by something
@@ -901,9 +954,9 @@ verify_core_deps() {
 # downstream to that port.
 # Inspect / optionally destroy the named postgres data volume that the
 # docker-compose `postgres` service mounts at /var/lib/postgresql/data
-# (declared as `hermes_pg_data` in docker-compose.yml; the actual docker
+# (declared as `thoth_pg_data` in docker-compose.yml; the actual docker
 # volume is prefixed with the compose project name, e.g.
-# `hermes-agent_hermes_pg_data`).
+# `thoth_thoth_pg_data`).
 #
 #   * Default (no --reset-db): NEVER deletes data. Logs LOUDLY that an
 #     existing database is being reused, and — when cheaply obtainable —
@@ -919,11 +972,11 @@ _warn_or_reset_pg_volume() {
     local probe_container="${1:-}"
     # Resolve the compose-prefixed volume name. `docker compose` knows the
     # project; ask it for the volume's full name. Fall back to the common
-    # `hermes-agent_hermes_pg_data` if the lookup yields nothing.
+    # `thoth_thoth_pg_data` if the lookup yields nothing.
     local vol_name=""
     if command -v docker >/dev/null 2>&1; then
         vol_name=$(docker volume ls --format '{{.Name}}' 2>/dev/null \
-            | grep -E '_hermes_pg_data$' | head -n1)
+            | grep -E '_thoth_pg_data$' | head -n1)
     fi
 
     if [ "$RESET_DB" = true ]; then
@@ -944,7 +997,7 @@ _warn_or_reset_pg_volume() {
     fi
 
     # Reuse path — do NOT delete anything. Warn loudly.
-    log_warn "PostgreSQL: REUSING existing database data (named volume '${vol_name:-hermes_pg_data}')."
+    log_warn "PostgreSQL: REUSING existing database data (named volume '${vol_name:-thoth_pg_data}')."
     log_warn "  The new container re-attaches the OLD volume, so its schema, rows,"
     log_warn "  and alembic_version are inherited from the previous install."
     # Try to surface the inherited alembic_version cheaply. Best-effort: only
@@ -953,7 +1006,7 @@ _warn_or_reset_pg_volume() {
     if [ -n "$probe_container" ] && command -v docker >/dev/null 2>&1; then
         local av
         av=$(docker exec "$probe_container" \
-            psql -U "${POSTGRES_USER:-hermes}" -d "${POSTGRES_DB:-hermes}" \
+            psql -U "${POSTGRES_USER:-thoth}" -d "${POSTGRES_DB:-thoth}" \
             -tAc 'SELECT version_num FROM alembic_version' 2>/dev/null | head -n1 | tr -d '[:space:]')
         if [ -n "$av" ]; then
             log_warn "  Inherited alembic_version: $av"
@@ -999,18 +1052,18 @@ choose_pg_port() {
     }
 
     # Upgrade-aware path: if a prior Thoth Postgres container exists
-    # (running OR stopped, current OR legacy name), reclaim its port
-    # and remove the old container so the new compose-up can bind
-    # cleanly. Without this, the substrate→hermes rename last week
-    # left old containers on port 5432 unreferenceable by the new
-    # compose project, the next install bumped to 5433, and every
-    # subsequent re-install drifted further up the port range.
+    # (running OR stopped), reclaim its port and remove the old container
+    # so the new compose-up can bind cleanly. Without this, a container
+    # left on port 5432 but unreferenceable by the new compose project
+    # would push the next install to 5433, drifting further up the port
+    # range on every re-install.
     #
     # Container name candidates, in priority order. First match wins:
-    #   1. ``hermes-agent-postgres-1`` — current compose project name
-    #   2. ``hermes-substrate-postgres-1`` — legacy (pre-2026-05-26)
+    #   1. ``${COMPOSE_PROJECT_NAME}-postgres-1`` — the pinned project (thoth)
+    #      resolved in resolve_compose_project
+    #   2. ``thoth-postgres-1`` — stable fresh-install name
     local existing_container=""
-    for name in hermes-agent-postgres-1 hermes-substrate-postgres-1; do
+    for name in "${COMPOSE_PROJECT_NAME:-thoth}-postgres-1" thoth-postgres-1; do
         if docker inspect "$name" >/dev/null 2>&1; then
             existing_container="$name"
             break
@@ -1035,7 +1088,7 @@ choose_pg_port() {
         if [ -n "$existing_port" ]; then
             log_info "PostgreSQL upgrade: found existing container '$existing_container' on port $existing_port"
             # CRITICAL: removing the container does NOT remove its named data
-            # volume (hermes_pg_data). The new compose-up re-attaches that same
+            # volume (thoth_pg_data). The new compose-up re-attaches that same
             # volume, so the "fresh" install inherits the OLD database — schema,
             # rows, and alembic_version included. If that alembic_version is
             # ahead of (or inconsistent with) the migrations in this checkout,
@@ -1067,7 +1120,7 @@ choose_pg_port() {
     if command -v docker >/dev/null 2>&1; then
         local orphan_vol
         orphan_vol=$(docker volume ls --format '{{.Name}}' 2>/dev/null \
-            | grep -E '_hermes_pg_data$' | head -n1)
+            | grep -E '_thoth_pg_data$' | head -n1)
         if [ -n "$orphan_vol" ]; then
             # Reuses (warns) by default; drops only under --reset-db.
             _warn_or_reset_pg_volume
@@ -1099,6 +1152,28 @@ choose_pg_port() {
     export POSTGRES_PORT="$port"
 }
 
+# Pin a STABLE docker-compose project name, decoupled from the install dir.
+# Compose otherwise derives the project (and thus the DB volume + container
+# names) from the code-dir basename — so `~/.thoth/app` yields project `app`
+# and volume `app_thoth_pg_data`. That couples the database's identity to a
+# directory name, which would silently point a "fresh" install at a NEW empty
+# volume and orphan the real data.
+#
+# Resolution (exported so EVERY `docker compose` call below is consistent,
+# regardless of the `cd "$INSTALL_DIR"` the compose steps do):
+#   1. An explicit COMPOSE_PROJECT_NAME in the environment always wins.
+#   2. Otherwise → the stable Thoth name `thoth`.
+resolve_compose_project() {
+    if [ -n "${COMPOSE_PROJECT_NAME:-}" ]; then
+        export COMPOSE_PROJECT_NAME
+        log_info "PostgreSQL: compose project '$COMPOSE_PROJECT_NAME' (from environment)"
+        return 0
+    fi
+    COMPOSE_PROJECT_NAME="thoth"
+    export COMPOSE_PROJECT_NAME
+    log_info "PostgreSQL: compose project '$COMPOSE_PROJECT_NAME'"
+}
+
 setup_postgres() {
     if [ "$SKIP_POSTGRES" = true ]; then
         log_info "Skipping PostgreSQL setup (--skip-postgres)"
@@ -1108,6 +1183,9 @@ setup_postgres() {
         return 0
     fi
 
+    # Pin the compose project BEFORE any docker-compose / container lookup so
+    # the DB volume + container names are stable and dir-independent.
+    resolve_compose_project
     choose_pg_port
 
     log_info "Starting PostgreSQL via docker compose (host port $PG_PORT_DEFAULT → container 5432)..."
@@ -1178,9 +1256,18 @@ setup_path() {
     mkdir -p "$link_dir"
     rm -f "$link_dir/$CLI_NAME"
 
-    # Launcher injects THOTH_PG_DSN if --skip-postgres wasn't used.
+    # Launcher injects THOTH_PG_DSN only when we actually have one.
     # Clears PYTHONPATH/PYTHONHOME so a parent process can't shadow this venv.
-    local pg_dsn="${PG_DSN_OVERRIDE:-postgresql://${PG_USER_DEFAULT}:${PG_PASSWORD_DEFAULT}@${PG_HOST_DEFAULT}:${PG_PORT_DEFAULT}/${PG_DATABASE_DEFAULT}}"
+    # With --skip-postgres and no --pg-dsn there is no local cluster, so baking
+    # the localhost:5432 default would just point the agent at a non-existent
+    # DB — leave THOTH_PG_DSN unset and let the user's own env/.env win (#227).
+    local pg_dsn_export=""
+    if [ -n "${PG_DSN_OVERRIDE:-}" ]; then
+        pg_dsn_export="export THOTH_PG_DSN=\"\${THOTH_PG_DSN:-$PG_DSN_OVERRIDE}\""
+    elif [ "$SKIP_POSTGRES" != true ]; then
+        local pg_dsn="postgresql://${PG_USER_DEFAULT}:${PG_PASSWORD_DEFAULT}@${PG_HOST_DEFAULT}:${PG_PORT_DEFAULT}/${PG_DATABASE_DEFAULT}"
+        pg_dsn_export="export THOTH_PG_DSN=\"\${THOTH_PG_DSN:-$pg_dsn}\""
+    fi
     # Pin the embedding dim choice (if the operator set one at install
     # time) into the launcher so re-installs and subsequent ``alembic
     # upgrade head`` invocations preserve the schema shape. Unset env →
@@ -1196,7 +1283,7 @@ setup_path() {
 unset PYTHONPATH
 unset PYTHONHOME
 export THOTH_HOME="\${THOTH_HOME:-$THOTH_HOME}"
-export THOTH_PG_DSN="\${THOTH_PG_DSN:-$pg_dsn}"
+$pg_dsn_export
 # Echo the user-facing launcher name into resume/setup hints. The venv
 # console script is itself named "thoth" so argv[0] can't carry this.
 export THOTH_CLI_NAME="\${THOTH_CLI_NAME:-$CLI_NAME}"
@@ -1240,7 +1327,11 @@ EOF
                   [ -f "$HOME/.zprofile"  ] && cfgs+=("$HOME/.zprofile")
                   [ ${#cfgs[@]} -eq 0 ] && { touch "$HOME/.zshrc"; cfgs+=("$HOME/.zshrc"); } ;;
             bash) [ -f "$HOME/.bashrc"       ] && cfgs+=("$HOME/.bashrc")
-                  [ -f "$HOME/.bash_profile" ] && cfgs+=("$HOME/.bash_profile") ;;
+                  [ -f "$HOME/.bash_profile" ] && cfgs+=("$HOME/.bash_profile")
+                  # No rc file at all (e.g. a minimal/login-only environment):
+                  # create ~/.bashrc so ~/.local/bin actually persists — mirror
+                  # the zsh/fish create-if-missing branches (#215).
+                  [ ${#cfgs[@]} -eq 0 ] && { touch "$HOME/.bashrc"; cfgs+=("$HOME/.bashrc"); } ;;
             fish)
                 local FISH_CONFIG="$HOME/.config/fish/config.fish"
                 mkdir -p "$(dirname "$FISH_CONFIG")"
@@ -1328,13 +1419,13 @@ copy_config_templates() {
 
             if [ "$FORCE_REWRITE_CONFIG" = true ]; then
                 _backup_env_file "force-rewrite-config"
-                sed -i "s|^THOTH_PG_DSN=.*|THOTH_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
+                _sed_inplace "s|^THOTH_PG_DSN=.*|THOTH_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
                 log_success "Updated THOTH_PG_DSN in $THOTH_HOME/.env ($cur → $pg_dsn) [--force-rewrite-config]"
             elif [ "$_looks_local" = true ]; then
                 # Local DSN whose port drifted (typical after a port-bump
                 # on an upgrade). Safe to rewrite — but back up first.
                 _backup_env_file "pg-dsn-port-drift"
-                sed -i "s|^THOTH_PG_DSN=.*|THOTH_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
+                _sed_inplace "s|^THOTH_PG_DSN=.*|THOTH_PG_DSN=$pg_dsn|" "$THOTH_HOME/.env"
                 log_success "Updated THOTH_PG_DSN in $THOTH_HOME/.env ($cur → $pg_dsn)"
             else
                 # Non-local DSN — almost certainly user-customized
@@ -1368,11 +1459,9 @@ SOUL_EOF
         log_success "Created $THOTH_HOME/SOUL.md"
     fi
 
-    # Marker so warn_upstream_collision can tell if THOTH_HOME has previously
-    # been used by this installer (avoid the warning on re-installs). The
-    # legacy filename ``.substrate_install`` is also still accepted on read so
-    # earlier installs aren't surprised by the warning.
-    touch "$THOTH_HOME/.hermes_install"
+    # Marker so detect_install_mode can tell if THOTH_HOME has previously
+    # been used by this installer (avoid first-run wizards on re-installs).
+    touch "$THOTH_HOME/.thoth_install"
 
     log_info "Syncing bundled skills..."
     if [ -x "$INSTALL_DIR/venv/bin/python" ] && [ -f "$INSTALL_DIR/tools/skills_sync.py" ]; then
@@ -1416,7 +1505,29 @@ configure_browser_env_from_system_browser() {
 
 run_browser_install_with_timeout() {
     local seconds="$1"; shift
-    if command -v timeout >/dev/null 2>&1; then timeout "$seconds" "$@"; else "$@"; fi
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "$seconds" "$@"
+    elif command -v gtimeout >/dev/null 2>&1; then
+        # macOS coreutils (brew) installs GNU timeout as `gtimeout`.
+        gtimeout "$seconds" "$@"
+    else
+        # Stock macOS ships neither `timeout` nor `gtimeout`. Run in the
+        # background and kill it on overrun so Playwright can't hang the
+        # installer forever (#222).
+        "$@" &
+        local _cmd_pid=$! _waited=0
+        while kill -0 "$_cmd_pid" 2>/dev/null; do
+            if [ "$_waited" -ge "$seconds" ]; then
+                log_warn "Browser install exceeded ${seconds}s — terminating"
+                kill "$_cmd_pid" 2>/dev/null
+                wait "$_cmd_pid" 2>/dev/null
+                return 124
+            fi
+            sleep 1
+            _waited=$((_waited + 1))
+        done
+        wait "$_cmd_pid"
+    fi
 }
 
 install_node_deps() {
@@ -1592,7 +1703,7 @@ setup_substrate_worker_service() {
     # Render the unit. We don't copy ``scripts/thoth-substrate-worker.service``
     # verbatim because that file uses ``%h`` (systemd home substitution)
     # which only works for ``--user`` units AND assumes the standard
-    # install layout — operators with custom ``--hermes-home`` /
+    # install layout — operators with custom ``--thoth-home`` /
     # ``--cli-name`` / system-mode installs need their actual paths
     # baked in. Template the values here so the unit is correct for
     # the install we just performed.
@@ -1745,8 +1856,8 @@ print_success() {
     echo ""
 
     if [ "$CLI_NAME" != "thoth" ]; then
-        echo -e "${BLUE}ℹ${NC}  Installed as ${BOLD}$CLI_NAME${NC} to avoid colliding with any existing upstream"
-        echo "    Hermes install. Pass ${BOLD}--cli-name thoth${NC} on a clean machine to use the natural name."
+        echo -e "${BLUE}ℹ${NC}  Installed as ${BOLD}$CLI_NAME${NC} to avoid colliding with another"
+        echo "    Thoth install. Pass ${BOLD}--cli-name thoth${NC} on a clean machine to use the natural name."
         echo ""
     fi
 
@@ -1767,6 +1878,14 @@ print_success() {
 
     [ "$HAS_NODE" = false ]    && echo -e "${YELLOW}Note: Node.js missing — browser tools / TUI / dashboard disabled.${NC}"
     [ "$HAS_RIPGREP" = false ] && echo -e "${YELLOW}Note: ripgrep missing — file search uses grep fallback.${NC}"
+
+    # Non-interactive / CI installs can finish with no provider key (the
+    # wizard was skipped or had nothing to read). Say so loudly so the user
+    # isn't surprised by a chat that can't reach any model (#227).
+    if ! _env_has_provider_api_key; then
+        echo ""
+        echo -e "${YELLOW}${BOLD}⚠  No provider key configured — run \`$CLI_NAME setup\` before chatting.${NC}"
+    fi
 }
 
 # ── Main ───────────────────────────────────────────────────────────────────

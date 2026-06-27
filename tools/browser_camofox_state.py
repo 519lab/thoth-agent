@@ -42,6 +42,6 @@ def get_camofox_identity(task_id: Optional[str] = None) -> Dict[str, str]:
         f"camofox-session:{scope_root}:{logical_scope}",
     ).hex[:16]
     return {
-        "user_id": f"hermes_{user_digest}",
+        "user_id": f"thoth_{user_digest}",
         "session_key": f"task_{session_digest}",
     }

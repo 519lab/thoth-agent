@@ -67,6 +67,54 @@ def test_detect_install_mode_function_exists() -> None:
     )
 
 
+def test_update_uses_hard_reset_not_stash_replay() -> None:
+    """The update path must hard-reset the (disposable) code dir to upstream
+    rather than stash/replay. Stash-apply on a diverged checkout produces
+    catastrophic modify/delete conflicts that leave the tree broken (#209)."""
+    body = _extract_function_body("clone_repo")
+    assert 'git reset --hard "origin/$BRANCH"' in body, (
+        "update path must `git reset --hard origin/$BRANCH` — the code dir is "
+        "managed/disposable, so a clean reset is conflict-proof."
+    )
+    # The fragile stash/replay strategy must be gone.
+    assert "git stash apply" not in body, (
+        "git stash apply must not be used — it caused #209 (modify/delete "
+        "conflict storm on a diverged checkout)."
+    )
+    # Local changes must be backed up before the reset, not silently dropped.
+    assert ".install-backup" in body and "git diff HEAD" in body, (
+        "update path must back up local code-dir changes to "
+        "THOTH_HOME/.install-backup before resetting."
+    )
+
+
+def test_compose_project_name_is_pinned_not_derived_from_code_dir() -> None:
+    """The DB's docker-compose project (→ volume + container names) must be
+    pinned and decoupled from the code-dir basename. Otherwise renaming the
+    code dir flips the compose project and orphans the real database behind a
+    new empty volume."""
+    text = _read_install_sh()
+    assert "resolve_compose_project()" in text, (
+        "resolve_compose_project() missing — without a pinned "
+        "COMPOSE_PROJECT_NAME the DB volume name follows the install dir and "
+        "renaming the code dir orphans the database."
+    )
+    body = _extract_function_body("resolve_compose_project")
+    # Must export the project name so every `docker compose` call is consistent.
+    assert "export COMPOSE_PROJECT_NAME" in body
+    # The stable Thoth name is always used (an explicit env override aside).
+    assert 'COMPOSE_PROJECT_NAME="thoth"' in body, (
+        "installs must use the stable 'thoth' compose project."
+    )
+    # setup_postgres must pin the project BEFORE choosing the port / touching
+    # any container, so detection + compose-up + reset all agree.
+    pg_body = _extract_function_body("setup_postgres")
+    assert "resolve_compose_project" in pg_body
+    assert pg_body.index("resolve_compose_project") < pg_body.index("choose_pg_port"), (
+        "resolve_compose_project must run before choose_pg_port."
+    )
+
+
 def test_run_setup_wizard_skips_when_provider_already_configured() -> None:
     """Update mode: don't re-prompt the wizard if .env already has an
     API key for one of the supported providers."""
@@ -171,20 +219,20 @@ def test_setup_substrate_worker_service_called_from_main() -> None:
 def test_substrate_worker_unit_uses_install_paths() -> None:
     """The rendered unit must reference the install's actual paths
     (INSTALL_DIR for ExecStart, THOTH_HOME for EnvironmentFile) so
-    operators with custom --hermes-home / --cli-name don't get a broken
+    operators with custom --thoth-home / --cli-name don't get a broken
     unit pointing at someone else's home directory."""
     body = _extract_function_body("setup_substrate_worker_service")
     # ExecStart resolves to the actual venv python in this install.
     assert "$INSTALL_DIR/venv/bin/python" in body or \
            "$python_path" in body, (
         "Unit's ExecStart must use $INSTALL_DIR-derived python path; "
-        "hardcoding ~/.hermes/hermes-agent breaks custom-dir installs."
+        "hardcoding ~/.thoth/app breaks custom-dir installs."
     )
-    # EnvironmentFile points at $THOTH_HOME/.env, not %h/.hermes/.env.
+    # EnvironmentFile points at $THOTH_HOME/.env, not a hardcoded home.
     assert "EnvironmentFile=$env_file" in body or \
            "EnvironmentFile=$THOTH_HOME" in body, (
         "Unit's EnvironmentFile must use $THOTH_HOME-derived path so "
-        "operators with custom --hermes-home get a working unit."
+        "operators with custom --thoth-home get a working unit."
     )
 
 
@@ -243,7 +291,7 @@ def test_pg_port_detection_handles_dual_stack_bindings() -> None:
 # scripts/install.sh::_warn_or_reset_pg_volume / choose_pg_port / verify_core_deps.
 #
 # Background: a "fresh" install on a new machine inherited a leftover postgres
-# named volume (hermes_pg_data). choose_pg_port removed the OLD container to
+# named volume (thoth_pg_data). choose_pg_port removed the OLD container to
 # reclaim its port, but the named VOLUME persisted and the new compose-up
 # re-attached it — so the install inherited a stale alembic_version whose
 # schema didn't match this checkout, exploding mid-migration with a cryptic

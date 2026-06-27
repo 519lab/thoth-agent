@@ -1,7 +1,7 @@
 """Regression tests for _apply_profile_override THOTH_HOME guard (issue #22502).
 
 When THOTH_HOME is set to the thoth root (e.g. systemd hardcodes
-THOTH_HOME=/root/.hermes), _apply_profile_override must still read
+THOTH_HOME=/root/.thoth), _apply_profile_override must still read
 active_profile and update THOTH_HOME to the profile directory.
 
 When THOTH_HOME is already a profile directory (.../profiles/<name>),
@@ -27,7 +27,7 @@ def _run_apply_profile_override(
     Returns the value of os.environ["THOTH_HOME"] after the call,
     or None if unset.
     """
-    thoth_root = tmp_path / ".hermes"
+    thoth_root = tmp_path / ".thoth"
     thoth_root.mkdir(parents=True, exist_ok=True)
 
     if active_profile is not None:
@@ -51,7 +51,7 @@ def _run_apply_profile_override(
     return os.environ.get("THOTH_HOME")
 
 
-class TestApplyProfileOverrideHermesHomeGuard:
+class TestApplyProfileOverrideThothHomeGuard:
     """Regression guard for issue #22502.
 
     Verifies that THOTH_HOME pointing to the thoth root does NOT suppress
@@ -62,14 +62,14 @@ class TestApplyProfileOverrideHermesHomeGuard:
     def test_thoth_home_at_root_with_active_profile_is_redirected(
         self, tmp_path, monkeypatch
     ):
-        """THOTH_HOME=/root/.hermes + active_profile=coder must redirect
+        """THOTH_HOME=/root/.thoth + active_profile=coder must redirect
         THOTH_HOME to .../profiles/coder.
 
         Bug scenario from #22502: systemd sets THOTH_HOME to the thoth root
         and the user switches to a profile via `thoth profile use`.
         Before the fix, the guard returned early and active_profile was ignored.
         """
-        thoth_root = tmp_path / ".hermes"
+        thoth_root = tmp_path / ".thoth"
         thoth_root.mkdir(parents=True, exist_ok=True)
 
         result = _run_apply_profile_override(
@@ -95,7 +95,7 @@ class TestApplyProfileOverrideHermesHomeGuard:
         with THOTH_HOME already set to a specific profile must stay in that
         profile.
         """
-        thoth_root = tmp_path / ".hermes"
+        thoth_root = tmp_path / ".thoth"
         profile_dir = thoth_root / "profiles" / "coder"
         profile_dir.mkdir(parents=True, exist_ok=True)
 
@@ -128,7 +128,7 @@ class TestApplyProfileOverrideHermesHomeGuard:
 
     def test_thoth_home_unset_default_profile_no_redirect(self, tmp_path, monkeypatch):
         """active_profile=default must not redirect THOTH_HOME."""
-        thoth_root = tmp_path / ".hermes"
+        thoth_root = tmp_path / ".thoth"
         thoth_root.mkdir(parents=True, exist_ok=True)
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)

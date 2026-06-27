@@ -8,7 +8,7 @@ instances via ``PluginContext.register_video_gen_provider()``; the active one
 ``video_generate`` tool call.
 
 Providers live in ``<repo>/plugins/video_gen/<name>/`` (built-in, auto-loaded
-as ``kind: backend``) or ``~/.hermes/plugins/video_gen/<name>/`` (user, opt-in
+as ``kind: backend``) or ``~/.thoth/plugins/video_gen/<name>/`` (user, opt-in
 via ``plugins.enabled``).
 
 Mirrors the ``image_gen`` provider design (``agent/image_gen_provider.py``) so

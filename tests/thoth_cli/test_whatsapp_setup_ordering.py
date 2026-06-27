@@ -25,15 +25,15 @@ import pytest
 @pytest.fixture
 def isolated_home(tmp_path, monkeypatch):
     home = tmp_path / "home"
-    hermes = home / ".hermes"
-    hermes.mkdir(parents=True)
+    thoth = home / ".thoth"
+    thoth.mkdir(parents=True)
     monkeypatch.setattr(Path, "home", lambda: home)
-    monkeypatch.setenv("THOTH_HOME", str(hermes))
+    monkeypatch.setenv("THOTH_HOME", str(thoth))
     # Ensure get_env_value cache doesn't carry stale state.
     for key in list(os.environ):
         if key.startswith("WHATSAPP_"):
             monkeypatch.delenv(key, raising=False)
-    return hermes
+    return thoth
 
 
 def _env_value(thoth_home: Path, key: str) -> str | None:

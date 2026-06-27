@@ -3,7 +3,7 @@
 approve must promote the draft via skill_manage (validated + sandboxed), mark it
 agent-created, and flip the proposal to approved; reject flips to rejected; show
 renders the staged SKILL.md + provenance. Skills are written to a tmp dir so the
-test never touches the real ~/.hermes/skills.
+test never touches the real ~/.thoth/skills.
 """
 
 from __future__ import annotations

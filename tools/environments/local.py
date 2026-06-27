@@ -238,10 +238,10 @@ def _find_bash() -> str:
     #
     # Layouts (both checked so upgrades between MinGit and PortableGit
     # installs work transparently):
-    #   PortableGit: %LOCALAPPDATA%\hermes\git\bin\bash.exe   (primary)
-    #   MinGit:      %LOCALAPPDATA%\hermes\git\usr\bin\bash.exe (legacy/32-bit fallback)
+    #   PortableGit: %LOCALAPPDATA%\thoth\git\bin\bash.exe   (primary)
+    #   MinGit:      %LOCALAPPDATA%\thoth\git\usr\bin\bash.exe (legacy/32-bit fallback)
     _local_appdata = os.environ.get("LOCALAPPDATA", "")
-    _thoth_portable_git = os.path.join(_local_appdata, "hermes", "git") if _local_appdata else ""
+    _thoth_portable_git = os.path.join(_local_appdata, "thoth", "git") if _local_appdata else ""
     if _thoth_portable_git:
         for candidate in (
             os.path.join(_thoth_portable_git, "bin", "bash.exe"),        # PortableGit (primary)

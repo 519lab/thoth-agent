@@ -4,7 +4,7 @@ Cron job scheduler - executes due jobs.
 Provides tick() which checks for due jobs and runs them. The gateway
 calls this every 60 seconds from a background thread.
 
-Uses a file-based lock (~/.hermes/cron/.tick.lock) so only one tick
+Uses a file-based lock (~/.thoth/cron/.tick.lock) so only one tick
 runs at a time if multiple processes overlap.
 """
 
@@ -1296,7 +1296,7 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
     # own try/except inside swallows any emission failure.
     try:
         from datetime import datetime, timezone
-        from substrate.events.hermes_hooks import on_cron_fire as _sub_cron_fire
+        from substrate.events.thoth_hooks import on_cron_fire as _sub_cron_fire
         from cron.jobs import _schedule_display_for_job
         _sub_cron_fire(
             str(job_id),
@@ -1774,8 +1774,8 @@ def _run_job_impl(job: dict) -> tuple[bool, str, str, Optional[str]]:
             _VAR_MAP[_var_name].set("")
         if _session_db:
             try:
-                import thoth_db as _hermes_db
-                _hermes_db.run_sync(_session_db.end_session(_cron_session_id, "cron_complete"))
+                import thoth_db as _thoth_db
+                _thoth_db.run_sync(_session_db.end_session(_cron_session_id, "cron_complete"))
             except (Exception, KeyboardInterrupt) as e:
                 logger.debug("Job '%s': failed to end session: %s", job_id, e)
             try:

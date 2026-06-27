@@ -20,7 +20,7 @@ from thoth_cli import __version__ as _THOTH_VERSION
 
 # Identify ourselves so endpoints fronted by Cloudflare's Browser Integrity
 # Check (error 1010) don't reject the default ``Python-urllib/*`` signature.
-_THOTH_USER_AGENT = f"hermes-cli/{_THOTH_VERSION}"
+_THOTH_USER_AGENT = f"thoth-cli/{_THOTH_VERSION}"
 
 COPILOT_BASE_URL = "https://api.githubcopilot.com"
 COPILOT_MODELS_URL = f"{COPILOT_BASE_URL}/models"
@@ -2037,7 +2037,7 @@ def _resolve_copilot_catalog_api_key() -> str:
          ``gho_*`` from device-code login, or a fine-grained PAT) stored in
          ``auth.json`` under ``credential_pool.copilot[]``. The pool is
          populated by ``thoth auth add copilot`` and by ``_seed_from_env``
-         when the env var is set in ``~/.hermes/.env``.
+         when the env var is set in ``~/.thoth/.env``.
 
     Without (2), users whose only Copilot credential is in the pool see
     the ``/model`` picker fall back to a stale hardcoded list because the

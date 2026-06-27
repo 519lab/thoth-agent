@@ -4,7 +4,7 @@ Phase A spec §8: ``Substrate.boot()`` does the full lifecycle —
 Alembic-head check, partition maintenance, stream auto-registration
 (the 15 streams from spec §9), sub-agent task spawn (Sentinel +
 force-reject + partition-maintenance + conductor stub), and binds the
-``substrate.events.hermes_hooks`` module so Thoth call sites can emit
+``substrate.events.thoth_hooks`` module so Thoth call sites can emit
 perception.
 
 ``Substrate.from_pool()`` is the test seam — it constructs a Substrate
@@ -217,6 +217,9 @@ _EXPECTED_REVISIONS = frozenset(
         #   token-usage sink (operational telemetry, never read by the awareness
         #   loop). Surfaced in ``thoth substrate health``.
         "20260528_0024",
+        # - ``20260624_0025`` — recall outcome label (innovation #1: recall-replay
+        #   eval harness). Adds nullable substrate_recall_log.outcome_score.
+        "20260624_0025",
     }
 )
 
@@ -314,7 +317,7 @@ class Substrate:
            ForceRejectWorker, PartitionMaintenanceWorker. Also instantiate
            StubConductor (which holds state but doesn't tick).
         5b. (``start_recall_log``) Start the Phase C recall-log writer.
-        6. (``bind_hooks``) Bind ``substrate.events.hermes_hooks`` to this
+        6. (``bind_hooks``) Bind ``substrate.events.thoth_hooks`` to this
            instance so Thoth call sites can emit perception via the hook
            surface.
 
@@ -375,9 +378,9 @@ class Substrate:
         # fire there) skips this so the global hook-target reference
         # stays bound to whichever writer process owns it.
         if bind_hooks:
-            from substrate.events import hermes_hooks
+            from substrate.events import thoth_hooks
 
-            hermes_hooks._bind(substrate)
+            thoth_hooks._bind(substrate)
 
         substrate.log.info(
             "substrate.boot.ok streams_registered=%d subagents=%d hooks=%s recall_log=%s",
@@ -471,9 +474,9 @@ class Substrate:
         # Unbind hooks first so any in-flight Thoth call site that
         # reaches a hook during shutdown is a silent no-op rather than
         # racing against a partially-shut-down substrate.
-        from substrate.events import hermes_hooks
+        from substrate.events import thoth_hooks
 
-        hermes_hooks._unbind()
+        thoth_hooks._unbind()
 
         # Stop every running sub-agent with a bounded wait. The base
         # class's ``stop_and_wait`` cancels the task on timeout so a

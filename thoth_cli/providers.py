@@ -230,7 +230,7 @@ class ProviderDef:
     is_aggregator: bool = False
     auth_type: str = "api_key"
     doc: str = ""
-    source: str = ""                      # "models.dev", "hermes", "user-config"
+    source: str = ""                      # "models.dev", "thoth", "user-config"
 
 
 # -- Aliases ------------------------------------------------------------------
@@ -470,7 +470,7 @@ def get_provider(name: str) -> Optional[ProviderDef]:
             base_url_env_var=overlay.base_url_env_var,
             is_aggregator=overlay.is_aggregator,
             auth_type=overlay.auth_type,
-            source="hermes",
+            source="thoth",
         )
 
     return None
@@ -719,7 +719,3 @@ def resolve_provider_full(
         pass
 
     return None
-
-# Back-compat aliases (Hermes→Thoth rename). Remove in a later cleanup phase.
-HermesOverlay = ThothOverlay
-THOTH_OVERLAYS = THOTH_OVERLAYS

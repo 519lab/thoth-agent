@@ -1,4 +1,4 @@
-"""Tests for ``substrate.events.hermes_hooks``.
+"""Tests for ``substrate.events.thoth_hooks``.
 
 Covers spec §6 + §11.2 hook test cases:
 * Each hook emits exactly one slice on the expected stream with the
@@ -19,7 +19,7 @@ import pytest
 import pytest_asyncio
 
 from substrate import Substrate
-from substrate.events import hermes_hooks
+from substrate.events import thoth_hooks
 
 
 @pytest_asyncio.fixture
@@ -36,7 +36,7 @@ async def booted_substrate(thoth_db_initialized):
     # Reset the binding for subsequent tests that exercise the pre-boot
     # no-op behavior. ``shutdown`` already does this, but the explicit
     # call here makes the test ordering robust if shutdown is skipped.
-    hermes_hooks._unbind()
+    thoth_hooks._unbind()
 
 
 def _now_utc() -> datetime:
@@ -53,17 +53,17 @@ def _now_utc() -> datetime:
 async def test_hook_noop_before_boot():
     # Ensure the binding is clear (other tests in this file boot the
     # substrate and bind it).
-    hermes_hooks._unbind()
-    result = await hermes_hooks.on_user_message_async(
+    thoth_hooks._unbind()
+    result = await thoth_hooks.on_user_message_async(
         "s1", "cli", "hi", _now_utc()
     )
     assert result is None  # silent no-op
 
 
 def test_sync_hook_noop_before_boot():
-    hermes_hooks._unbind()
+    thoth_hooks._unbind()
     # Returns None, doesn't raise even though substrate isn't booted.
-    assert hermes_hooks.on_user_message("s1", "cli", "hi", _now_utc()) is None
+    assert thoth_hooks.on_user_message("s1", "cli", "hi", _now_utc()) is None
 
 
 # ---------------------------------------------------------------------------
@@ -79,7 +79,7 @@ async def test_on_user_message_async_writes_slice(booted_substrate):
     """
     import thoth_db
 
-    await hermes_hooks.on_user_message_async(
+    await thoth_hooks.on_user_message_async(
         "sess-1", "cli", "hello from a test", _now_utc()
     )
 
@@ -101,7 +101,7 @@ async def test_on_user_message_async_writes_slice(booted_substrate):
 async def test_on_assistant_response_async_writes_slice(booted_substrate):
     import thoth_db
 
-    await hermes_hooks.on_assistant_response_async(
+    await thoth_hooks.on_assistant_response_async(
         "sess-2", "claude-sonnet-4-6", "ok done", _now_utc()
     )
     async with thoth_db.connection() as conn:
@@ -124,10 +124,10 @@ async def test_on_tool_call_and_result_pair(booted_substrate):
     import thoth_db
 
     t = _now_utc()
-    await hermes_hooks.on_tool_call_async(
+    await thoth_hooks.on_tool_call_async(
         "sess-3", "bash", {"cmd": "ls"}, t
     )
-    await hermes_hooks.on_tool_result_async(
+    await thoth_hooks.on_tool_result_async(
         "sess-3", "bash", "file1\nfile2\n", None, t
     )
 
@@ -160,7 +160,7 @@ async def test_on_tool_result_summarises_large_result(booted_substrate):
     import thoth_db
 
     big = "x" * 1000
-    await hermes_hooks.on_tool_result_async(
+    await thoth_hooks.on_tool_result_async(
         "sess-4", "search", big, None, _now_utc()
     )
     async with thoth_db.connection() as conn:
@@ -181,16 +181,16 @@ async def test_on_subagent_spawn_and_return(booted_substrate):
     import thoth_db
 
     t = _now_utc()
-    await hermes_hooks.on_subagent_spawn_async(
+    await thoth_hooks.on_subagent_spawn_async(
         "parent-1", "child-A", "investigate bug 42", t
     )
-    await hermes_hooks.on_subagent_return_async(
+    await thoth_hooks.on_subagent_return_async(
         "parent-1", "child-A", "fixed and verified", t
     )
     async with thoth_db.connection() as conn:
         spawn = await conn.fetchrow(
             """
-            SELECT payload FROM substrate_slices sl
+            SELECT sl.payload, sl.metadata FROM substrate_slices sl
              JOIN substrate_streams st ON st.stream_id = sl.stream_id
              WHERE st.name = 'thoth.self_action.subagent_spawn'
             """
@@ -203,6 +203,12 @@ async def test_on_subagent_spawn_and_return(booted_substrate):
             """
         )
     assert spawn["payload"] == {"child_id": "child-A", "goal": "investigate bug 42"}
+    # The spawn slice is keyed to the parent's session_id (mirroring return) so
+    # the Parser folds it into the parent's batch and it can consolidate —
+    # otherwise it strands forever under a parent_session_id-only key as
+    # undrainable backlog.
+    assert spawn["metadata"]["session_id"] == "parent-1"
+    assert spawn["metadata"]["parent_session_id"] == "parent-1"
     assert ret["payload"] == {"child_id": "child-A", "summary": "fixed and verified"}
     # The return summary carries real NL worth consolidating: it's keyed to
     # the parent's session_id so the Parser folds it into the parent's
@@ -215,7 +221,7 @@ async def test_on_subagent_spawn_and_return(booted_substrate):
 async def test_on_session_start_async_writes_slice(booted_substrate):
     import thoth_db
 
-    await hermes_hooks.on_session_start_async(
+    await thoth_hooks.on_session_start_async(
         "sess-5", "discord", "claude-haiku-4-5", _now_utc()
     )
     async with thoth_db.connection() as conn:
@@ -236,7 +242,7 @@ async def test_on_session_start_async_writes_slice(booted_substrate):
 async def test_on_session_end_async_writes_slice(booted_substrate):
     import thoth_db
 
-    await hermes_hooks.on_session_end_async("sess-6", "user_quit", _now_utc())
+    await thoth_hooks.on_session_end_async("sess-6", "user_quit", _now_utc())
     async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             """
@@ -254,7 +260,7 @@ async def test_on_session_end_async_writes_slice(booted_substrate):
 async def test_on_cron_fire_async_writes_slice(booted_substrate):
     import thoth_db
 
-    await hermes_hooks.on_cron_fire_async("job-7", _now_utc())
+    await thoth_hooks.on_cron_fire_async("job-7", _now_utc())
     async with thoth_db.connection() as conn:
         row = await conn.fetchrow(
             """
@@ -278,7 +284,7 @@ async def test_on_cron_fire_includes_name_and_schedule(booted_substrate):
     job name + schedule so it's meaningful in recall/self-model."""
     import thoth_db
 
-    await hermes_hooks.on_cron_fire_async(
+    await thoth_hooks.on_cron_fire_async(
         "abc123", _now_utc(), job_name="nightly digest", schedule="every day at 06:00"
     )
     async with thoth_db.connection() as conn:
@@ -305,7 +311,7 @@ async def test_on_cron_fire_excluded_from_parse_backlog(booted_substrate):
     slice is neither."""
     import thoth_db
 
-    await hermes_hooks.on_cron_fire_async("job-8", _now_utc())
+    await thoth_hooks.on_cron_fire_async("job-8", _now_utc())
     async with thoth_db.connection() as conn:
         backlog = await conn.fetchval(
             """
@@ -336,7 +342,7 @@ async def test_on_session_start_shares_txn(booted_substrate):
 
     try:
         async with thoth_db.transaction() as conn:
-            await hermes_hooks.on_session_start_async(
+            await thoth_hooks.on_session_start_async(
                 "sess-rollback",
                 "cli",
                 "model-x",
@@ -370,7 +376,7 @@ async def test_hook_swallows_errors(booted_substrate, monkeypatch):
     """When the underlying ``commit_slice`` raises, the hook logs and
     returns None — the Thoth caller MUST NOT see the exception.
     """
-    import substrate.events.hermes_hooks as mod
+    import substrate.events.thoth_hooks as mod
 
     async def _boom(*args, **kwargs):
         raise RuntimeError("commit_slice exploded in tests")
@@ -399,11 +405,11 @@ async def test_hook_skips_when_stream_missing(thoth_db_initialized):
 
     # Construct a substrate that DIDN'T auto-register §9 streams.
     sub = Substrate.from_pool(thoth_db.pool())
-    hermes_hooks._bind(sub)
+    thoth_hooks._bind(sub)
     try:
-        result = await hermes_hooks.on_user_message_async(
+        result = await thoth_hooks.on_user_message_async(
             "s", "cli", "hi", _now_utc()
         )
         assert result is None
     finally:
-        hermes_hooks._unbind()
+        thoth_hooks._unbind()

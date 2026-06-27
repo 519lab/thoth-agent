@@ -85,7 +85,7 @@ app = FastAPI(title="Thoth Agent", version=__version__)
 # Injected into the SPA HTML so only the legitimate web UI can use it.
 # ---------------------------------------------------------------------------
 _SESSION_TOKEN = secrets.token_urlsafe(32)
-_SESSION_HEADER_NAME = "X-Hermes-Session-Token"
+_SESSION_HEADER_NAME = "X-Thoth-Session-Token"
 
 # In-browser Chat tab (/chat, /api/pty, …).  Off unless ``thoth dashboard --tui``
 # or THOTH_DASHBOARD_TUI=1.  Set from :func:`start_server`.
@@ -610,7 +610,9 @@ async def get_status():
         from thoth_state import SessionDB
         db = SessionDB()
         try:
-            sessions = await db.list_sessions_rich(limit=50)
+            sessions = _epochify(
+                await _route_session_db(db, db.list_sessions_rich(limit=50))
+            )
             now = time.time()
             active_sessions = sum(
                 1 for s in sessions
@@ -647,7 +649,7 @@ async def get_status():
 # Both commands are spawned as detached subprocesses so the HTTP request
 # returns immediately.  stdin is closed (``DEVNULL``) so any stray ``input()``
 # calls fail fast with EOF rather than hanging forever.  stdout/stderr are
-# streamed to a per-action log file under ``~/.hermes/logs/<action>.log`` so
+# streamed to a per-action log file under ``~/.thoth/logs/<action>.log`` so
 # the dashboard can tail them back to the user.
 # ---------------------------------------------------------------------------
 
@@ -656,7 +658,7 @@ _ACTION_LOG_DIR: Path = get_thoth_home() / "logs"
 # Short ``name`` (from the URL) → absolute log file path.
 _ACTION_LOG_FILES: Dict[str, str] = {
     "gateway-restart": "gateway-restart.log",
-    "hermes-update": "hermes-update.log",
+    "thoth-update": "thoth-update.log",
 }
 
 # ``name`` → most recently spawned Popen handle.  Used so ``status`` can
@@ -729,18 +731,18 @@ async def restart_gateway():
     }
 
 
-@app.post("/api/hermes/update")
-async def update_hermes():
+@app.post("/api/thoth/update")
+async def update_thoth():
     """Kick off ``thoth update`` in the background."""
     try:
-        proc = _spawn_thoth_action(["update"], "hermes-update")
+        proc = _spawn_thoth_action(["update"], "thoth-update")
     except Exception as exc:
         _log.exception("Failed to spawn thoth update")
         raise HTTPException(status_code=500, detail=f"Failed to start update: {exc}")
     return {
         "ok": True,
         "pid": proc.pid,
-        "name": "hermes-update",
+        "name": "thoth-update",
     }
 
 
@@ -773,14 +775,62 @@ async def get_action_status(name: str, lines: int = 200):
     }
 
 
+# ---------------------------------------------------------------------------
+# Session endpoints — Postgres-backend helpers.
+#
+# Two backend-shape gaps the dashboard has to bridge when SessionDB is backed
+# by Postgres (``_AsyncSessionDB``, no ``_conn``) rather than SQLite:
+#
+#   1. asyncpg pools are loop-bound. The dashboard's ``async def`` handlers run
+#      on uvicorn's event loop, but the pool lives on thoth_db's dedicated DB
+#      loop, so awaiting a DB coroutine directly raises "got Future attached to
+#      a different loop". ``_route_session_db`` routes through
+#      ``thoth_db.run_on_pool_loop`` on PG and awaits directly on SQLite (whose
+#      connection is thread-bound and must NOT hop loops).
+#   2. PG returns ``timestamptz`` columns as ``datetime``; the SQLite contract
+#      (and the frontend's epoch arithmetic / ``timeAgo``) expect epoch floats.
+#      ``_epochify`` normalizes datetimes to epoch floats in the response.
+# ---------------------------------------------------------------------------
+async def _route_session_db(db, coro):
+    """Await a SessionDB coroutine on the loop its backend is bound to."""
+    if hasattr(db, "_conn"):
+        # SQLite: connection is thread-bound — await on the current loop.
+        return await coro
+    import thoth_db
+    return await thoth_db.run_on_pool_loop(coro)
+
+
+def _epochify(obj):
+    """Recursively convert ``datetime`` values to epoch floats (in place).
+
+    PG ``timestamptz`` columns decode to ``datetime``; SQLite stores epoch
+    REALs. Normalize so both backends hand the frontend the same shape.
+    JSONB values never contain datetimes, so recursing is safe.
+    """
+    import datetime as _dt
+    if isinstance(obj, _dt.datetime):
+        return obj.timestamp()
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            obj[k] = _epochify(v)
+        return obj
+    if isinstance(obj, list):
+        return [_epochify(v) for v in obj]
+    return obj
+
+
 @app.get("/api/sessions")
 async def get_sessions(limit: int = 20, offset: int = 0):
     try:
         from thoth_state import SessionDB
         db = SessionDB()
         try:
-            sessions = await db.list_sessions_rich(limit=limit, offset=offset)
-            total = await db.session_count()
+            sessions = _epochify(
+                await _route_session_db(
+                    db, db.list_sessions_rich(limit=limit, offset=offset)
+                )
+            )
+            total = await _route_session_db(db, db.session_count())
             now = time.time()
             for s in sessions:
                 s["is_active"] = (
@@ -815,7 +865,9 @@ async def search_sessions(q: str = "", limit: int = 20):
                 else:
                     terms.append(token + "*")
             prefix_query = " ".join(terms)
-            matches = await db.search_messages(query=prefix_query, limit=limit)
+            matches = await _route_session_db(
+                db, db.search_messages(query=prefix_query, limit=limit)
+            )
             # Group by session_id — return unique sessions with their best snippet
             seen: dict = {}
             for m in matches:
@@ -829,7 +881,7 @@ async def search_sessions(q: str = "", limit: int = 20):
                         "model": m.get("model"),
                         "session_started": m.get("session_started"),
                     }
-            return {"results": list(seen.values())}
+            return _epochify({"results": list(seen.values())})
         finally:
             db.close()
     except Exception:
@@ -1053,7 +1105,7 @@ def get_auxiliary_models():
 async def set_model_assignment(body: ModelAssignment):
     """Assign a model to the main slot or an auxiliary task slot.
 
-    Writes to ``~/.hermes/config.yaml`` — applies to **new** sessions only.
+    Writes to ``~/.thoth/config.yaml`` — applies to **new** sessions only.
     The currently running chat PTY (if any) is not affected; use the
     ``/model`` slash command inside a chat to hot-swap that specific session.
     """
@@ -1313,7 +1365,7 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
     """Combined status across the three Anthropic credential sources we read.
 
     Thoth resolves Anthropic creds in this order at runtime:
-    1. ``~/.hermes/.anthropic_oauth.json`` — Thoth-managed PKCE flow
+    1. ``~/.thoth/.anthropic_oauth.json`` — Thoth-managed PKCE flow
     2. ``~/.claude/.credentials.json`` — Claude Code CLI credentials (auto)
     3. ``ANTHROPIC_TOKEN`` / ``ANTHROPIC_API_KEY`` env vars
     The dashboard reports the highest-priority source that's actually present.
@@ -1338,7 +1390,7 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
     if thoth_creds and thoth_creds.get("accessToken"):
         return {
             "logged_in": True,
-            "source": "hermes_pkce",
+            "source": "thoth_pkce",
             "source_label": f"Thoth PKCE ({_THOTH_OAUTH_FILE})",
             "token_preview": _truncate_token(thoth_creds.get("accessToken")),
             "expires_at": thoth_creds.get("expiresAt"),
@@ -1529,7 +1581,7 @@ async def list_oauth_providers():
         docs_url        external docs/portal link for the "Learn more" link
         status:
           logged_in        bool — currently has usable creds
-          source           short slug ("hermes_pkce", "claude_code", ...)
+          source           short slug ("thoth_pkce", "claude_code", ...)
           source_label     human-readable origin (file path, env var name)
           token_preview    last N chars of the token, never the full token
           expires_at       ISO timestamp string or null
@@ -1606,7 +1658,7 @@ async def disconnect_oauth_provider(provider_id: str, request: Request):
 #     2. UI opens auth_url in a new tab. User authorizes, copies code.
 #     3. POST /api/providers/oauth/anthropic/submit { session_id, code }
 #          → server exchanges (code + verifier) → tokens at console.anthropic.com
-#          → persists to ~/.hermes/.anthropic_oauth.json AND credential pool
+#          → persists to ~/.thoth/.anthropic_oauth.json AND credential pool
 #          → returns { ok: true, status: "approved" }
 #
 #   Device code (Nous, OpenAI Codex):
@@ -2379,11 +2431,11 @@ def _session_latest_descendant(session_id: str):
             except Exception:
                 return None
 
-    import thoth_db as _hermes_db
+    import thoth_db as _thoth_db
     db = SessionDB()
     try:
-        sid = _hermes_db.run_sync(db.resolve_session_id(session_id))
-        if not sid or not _hermes_db.run_sync(db.get_session(sid)):
+        sid = _thoth_db.run_sync(db.resolve_session_id(session_id))
+        if not sid or not _thoth_db.run_sync(db.get_session(sid)):
             return None, []
 
         # _conn is SQLite-specific; on PG (_AsyncSessionDB) it won't exist.
@@ -2407,7 +2459,7 @@ def _session_latest_descendant(session_id: str):
                     "started_at": row_get(row, "started_at", 2),
                 })
         else:
-            rows = _hermes_db.run_sync(db.list_sessions_rich(limit=10000, offset=0))
+            rows = _thoth_db.run_sync(db.list_sessions_rich(limit=10000, offset=0))
 
         children = {}
         for row in rows:
@@ -2444,11 +2496,13 @@ async def get_session_detail(session_id: str):
     from thoth_state import SessionDB
     db = SessionDB()
     try:
-        sid = await db.resolve_session_id(session_id)
-        session = await db.get_session(sid) if sid else None
+        sid = await _route_session_db(db, db.resolve_session_id(session_id))
+        session = (
+            await _route_session_db(db, db.get_session(sid)) if sid else None
+        )
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
-        return session
+        return _epochify(session)
     finally:
         db.close()
 
@@ -2471,11 +2525,11 @@ async def get_session_messages(session_id: str):
     from thoth_state import SessionDB
     db = SessionDB()
     try:
-        sid = await db.resolve_session_id(session_id)
+        sid = await _route_session_db(db, db.resolve_session_id(session_id))
         if not sid:
             raise HTTPException(status_code=404, detail="Session not found")
-        messages = await db.get_messages(sid)
-        return {"session_id": sid, "messages": messages}
+        messages = await _route_session_db(db, db.get_messages(sid))
+        return _epochify({"session_id": sid, "messages": messages})
     finally:
         db.close()
 
@@ -2485,7 +2539,7 @@ async def delete_session_endpoint(session_id: str):
     from thoth_state import SessionDB
     db = SessionDB()
     try:
-        if not await db.delete_session(session_id):
+        if not await _route_session_db(db, db.delete_session(session_id)):
             raise HTTPException(status_code=404, detail="Session not found")
         return {"ok": True}
     finally:
@@ -3977,7 +4031,7 @@ def _normalise_theme_definition(data: Dict[str, Any]) -> Optional[Dict[str, Any]
     # tag on theme apply.  Clipped to _THEME_CUSTOM_CSS_MAX to keep the
     # payload bounded.  We intentionally do NOT parse/sanitise the CSS
     # here — the dashboard is localhost-only and themes are user-authored
-    # YAML in ~/.hermes/, same trust level as the config file itself.
+    # YAML in ~/.thoth/, same trust level as the config file itself.
     custom_css_val = data.get("customCSS")
     custom_css: Optional[str] = None
     if isinstance(custom_css_val, str) and custom_css_val.strip():
@@ -4032,7 +4086,7 @@ def _normalise_theme_definition(data: Dict[str, Any]) -> Optional[Dict[str, Any]
 
 
 def _discover_user_themes() -> list:
-    """Scan ~/.hermes/dashboard-themes/*.yaml for user-created themes.
+    """Scan ~/.thoth/dashboard-themes/*.yaml for user-created themes.
 
     Returns a list of fully-normalised theme definitions ready to ship
     to the frontend, so the client can apply them without a secondary
@@ -4059,7 +4113,7 @@ async def get_dashboard_themes():
 
     Built-in entries ship name/label/description only (the frontend owns
     their full definitions in `web/src/themes/presets.ts`).  User themes
-    from `~/.hermes/dashboard-themes/*.yaml` ship with their full
+    from `~/.thoth/dashboard-themes/*.yaml` ship with their full
     normalised definition under `definition`, so the client can apply
     them without a stub.
     """
@@ -4107,9 +4161,9 @@ def _discover_dashboard_plugins() -> list:
     """Scan plugins/*/dashboard/manifest.json for dashboard extensions.
 
     Checks three plugin sources (same as thoth_cli.plugins):
-    1. User plugins:    ~/.hermes/plugins/<name>/dashboard/manifest.json
+    1. User plugins:    ~/.thoth/plugins/<name>/dashboard/manifest.json
     2. Bundled plugins: <repo>/plugins/<name>/dashboard/manifest.json  (memory/, etc.)
-    3. Project plugins: ./.hermes/plugins/  (only if THOTH_ENABLE_PROJECT_PLUGINS)
+    3. Project plugins: ./.thoth/plugins/  (only if THOTH_ENABLE_PROJECT_PLUGINS)
     """
     plugins = []
     seen_names: set = set()
@@ -4122,7 +4176,7 @@ def _discover_dashboard_plugins() -> list:
         (bundled_root, "bundled"),
     ]
     if os.environ.get("THOTH_ENABLE_PROJECT_PLUGINS"):
-        search_dirs.append((Path.cwd() / ".hermes" / "plugins", "project"))
+        search_dirs.append((Path.cwd() / ".thoth" / "plugins", "project"))
 
     for plugins_root, source in search_dirs:
         if not plugins_root.is_dir():

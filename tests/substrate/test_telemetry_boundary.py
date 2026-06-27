@@ -95,7 +95,7 @@ async def test_read_load_ignores_substrate_streams(substrate):
 
     # Passed+unconsolidated slices on a PERCEPTUAL stream DO count.
     stream = await substrate.streams.register(
-        name="hermes.test.read_load_perceptual",
+        name="thoth.test.read_load_perceptual",
         family=Family.SELF_STATE,
         modality=Modality.STRUCTURED_EVENT,
         source="test",

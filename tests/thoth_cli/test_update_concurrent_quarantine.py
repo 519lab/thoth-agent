@@ -1,4 +1,4 @@
-"""Tests for issue #26670 — concurrent hermes.exe detection and improved
+"""Tests for issue #26670 — concurrent thoth.exe detection and improved
 quarantine retry / reboot-deferred fallback during `thoth update` on Windows.
 
 These tests force ``_is_windows`` to return ``True`` via patching so the
@@ -31,7 +31,7 @@ pytestmark = pytest.mark.real_concurrent_gate
 # ---------------------------------------------------------------------------
 
 
-def _make_proc(pid: int, exe: str, name: str = "hermes.exe"):
+def _make_proc(pid: int, exe: str, name: str = "thoth.exe"):
     """Build a duck-typed psutil Process stand-in with the .info dict."""
     proc = MagicMock()
     proc.info = {"pid": pid, "exe": exe, "name": name}
@@ -41,8 +41,8 @@ def _make_proc(pid: int, exe: str, name: str = "hermes.exe"):
 @patch.object(cli_main, "_is_windows", return_value=True)
 def test_detect_concurrent_returns_empty_when_no_other_processes(_winp, tmp_path):
     scripts_dir = tmp_path
-    (scripts_dir / "hermes.exe").write_bytes(b"")
-    (scripts_dir / "hermes-gateway.exe").write_bytes(b"")
+    (scripts_dir / "thoth.exe").write_bytes(b"")
+    (scripts_dir / "thoth-gateway.exe").write_bytes(b"")
 
     fake_psutil = types.SimpleNamespace(process_iter=lambda attrs: iter([]))
     with patch.dict(sys.modules, {"psutil": fake_psutil}):
@@ -54,11 +54,11 @@ def test_detect_concurrent_returns_empty_when_no_other_processes(_winp, tmp_path
 @patch.object(cli_main, "_is_windows", return_value=True)
 def test_detect_concurrent_excludes_self_pid(_winp, tmp_path):
     scripts_dir = tmp_path
-    shim = scripts_dir / "hermes.exe"
+    shim = scripts_dir / "thoth.exe"
     shim.write_bytes(b"")
     my_pid = os.getpid()
 
-    procs = [_make_proc(my_pid, str(shim), "hermes.exe")]
+    procs = [_make_proc(my_pid, str(shim), "thoth.exe")]
     fake_psutil = types.SimpleNamespace(process_iter=lambda attrs: iter(procs))
     with patch.dict(sys.modules, {"psutil": fake_psutil}):
         result = cli_main._detect_concurrent_thoth_instances(scripts_dir)
@@ -69,41 +69,41 @@ def test_detect_concurrent_excludes_self_pid(_winp, tmp_path):
 @patch.object(cli_main, "_is_windows", return_value=True)
 def test_detect_concurrent_finds_other_thoth_process(_winp, tmp_path):
     scripts_dir = tmp_path
-    shim = scripts_dir / "hermes.exe"
+    shim = scripts_dir / "thoth.exe"
     shim.write_bytes(b"")
 
     other_pid = os.getpid() + 1
     procs = [
-        _make_proc(other_pid, str(shim), "hermes.exe"),
+        _make_proc(other_pid, str(shim), "thoth.exe"),
         _make_proc(os.getpid() + 2, r"C:\\Windows\\System32\\notepad.exe", "notepad.exe"),
     ]
     fake_psutil = types.SimpleNamespace(process_iter=lambda attrs: iter(procs))
     with patch.dict(sys.modules, {"psutil": fake_psutil}):
         result = cli_main._detect_concurrent_thoth_instances(scripts_dir)
 
-    assert result == [(other_pid, "hermes.exe")]
+    assert result == [(other_pid, "thoth.exe")]
 
 
 @patch.object(cli_main, "_is_windows", return_value=True)
 def test_detect_concurrent_matches_case_insensitively(_winp, tmp_path):
     scripts_dir = tmp_path
-    shim = scripts_dir / "hermes.exe"
+    shim = scripts_dir / "thoth.exe"
     shim.write_bytes(b"")
 
-    # Simulate the desktop spawning hermes.EXE (uppercase ext) from same path
-    upper = str(shim).replace("hermes.exe", "HERMES.EXE")
-    procs = [_make_proc(9999, upper, "HERMES.EXE")]
+    # Simulate the desktop spawning thoth.EXE (uppercase ext) from same path
+    upper = str(shim).replace("thoth.exe", "THOTH.EXE")
+    procs = [_make_proc(9999, upper, "THOTH.EXE")]
     fake_psutil = types.SimpleNamespace(process_iter=lambda attrs: iter(procs))
     with patch.dict(sys.modules, {"psutil": fake_psutil}):
         result = cli_main._detect_concurrent_thoth_instances(scripts_dir)
 
-    assert result == [(9999, "HERMES.EXE")]
+    assert result == [(9999, "THOTH.EXE")]
 
 
 @patch.object(cli_main, "_is_windows", return_value=True)
 def test_detect_concurrent_no_psutil_returns_empty(_winp, tmp_path):
     scripts_dir = tmp_path
-    (scripts_dir / "hermes.exe").write_bytes(b"")
+    (scripts_dir / "thoth.exe").write_bytes(b"")
 
     # Block psutil import — simulate environment without it.
     with patch.dict(sys.modules, {"psutil": None}):
@@ -124,16 +124,16 @@ def test_detect_concurrent_is_noop_off_windows(_winp, tmp_path):
 
 
 def test_format_message_mentions_pids_and_remediation(tmp_path):
-    matches = [(1234, "hermes.exe"), (5678, "hermes.exe")]
+    matches = [(1234, "thoth.exe"), (5678, "thoth.exe")]
     msg = cli_main._format_concurrent_instances_message(matches, tmp_path)
 
     assert "1234" in msg
     assert "5678" in msg
-    assert "hermes.exe" in msg
+    assert "thoth.exe" in msg
     assert "Thoth Desktop" in msg
     assert "--force" in msg
     # Mentions the file that would have been overwritten
-    assert str(tmp_path / "hermes.exe") in msg
+    assert str(tmp_path / "thoth.exe") in msg
 
 
 # ---------------------------------------------------------------------------
@@ -144,7 +144,7 @@ def test_format_message_mentions_pids_and_remediation(tmp_path):
 @patch.object(cli_main, "_is_windows", return_value=True)
 def test_quarantine_succeeds_first_attempt(_winp, tmp_path):
     """When the rename works immediately, no warning, single rename pair returned."""
-    shim = tmp_path / "hermes.exe"
+    shim = tmp_path / "thoth.exe"
     shim.write_bytes(b"old")
 
     pairs = cli_main._quarantine_running_thoth_exe(tmp_path)
@@ -152,7 +152,7 @@ def test_quarantine_succeeds_first_attempt(_winp, tmp_path):
     assert len(pairs) == 1
     orig, quarantine = pairs[0]
     assert orig == shim
-    assert quarantine.name.startswith("hermes.exe.old.")
+    assert quarantine.name.startswith("thoth.exe.old.")
     assert quarantine.exists()
     assert not shim.exists()
 
@@ -160,7 +160,7 @@ def test_quarantine_succeeds_first_attempt(_winp, tmp_path):
 @patch.object(cli_main, "_is_windows", return_value=True)
 def test_quarantine_retries_then_succeeds(_winp, tmp_path, monkeypatch):
     """A transient OSError on the first attempt should not be fatal."""
-    shim = tmp_path / "hermes.exe"
+    shim = tmp_path / "thoth.exe"
     shim.write_bytes(b"old")
 
     original_rename = Path.rename
@@ -187,7 +187,7 @@ def test_quarantine_retries_then_succeeds(_winp, tmp_path, monkeypatch):
 @patch.object(cli_main, "_is_windows", return_value=True)
 def test_quarantine_falls_back_to_reboot_schedule(_winp, tmp_path, capsys, monkeypatch):
     """When every retry fails, we schedule via MoveFileEx and warn helpfully."""
-    shim = tmp_path / "hermes.exe"
+    shim = tmp_path / "thoth.exe"
     shim.write_bytes(b"locked")
 
     def always_fails(self, target):
@@ -222,7 +222,7 @@ def test_quarantine_actionable_warning_when_everything_fails(
     _winp, tmp_path, capsys, monkeypatch
 ):
     """When even MoveFileEx fails we should print remediation hints, not a bare error."""
-    shim = tmp_path / "hermes.exe"
+    shim = tmp_path / "thoth.exe"
     shim.write_bytes(b"locked")
 
     def always_fails(self, target):
@@ -249,7 +249,7 @@ def test_quarantine_actionable_warning_when_everything_fails(
 
 @patch.object(cli_main, "_is_windows", return_value=True)
 def test_cmd_update_aborts_on_concurrent_instance(_winp, tmp_path, capsys):
-    """If another hermes.exe is running, the update bails out before
+    """If another thoth.exe is running, the update bails out before
     touching the working tree (exit code 2)."""
     scripts_dir = tmp_path / "Scripts"
     scripts_dir.mkdir()
@@ -268,7 +268,7 @@ def test_cmd_update_aborts_on_concurrent_instance(_winp, tmp_path, capsys):
     ), patch.object(
         cli_main,
         "_detect_concurrent_thoth_instances",
-        return_value=[(4242, "hermes.exe")],
+        return_value=[(4242, "thoth.exe")],
     ), patch.object(
         cli_main, "_run_pre_update_backup"
     ) as mock_backup, patch.object(
@@ -305,7 +305,7 @@ def test_cmd_update_force_bypasses_concurrent_check(_winp, tmp_path):
         no_backup=True,
     )
 
-    detect = MagicMock(return_value=[(9, "hermes.exe")])
+    detect = MagicMock(return_value=[(9, "thoth.exe")])
 
     # Short-circuit out of _cmd_update_impl via a sentinel raise immediately
     # AFTER the gate. _run_pre_update_backup is the first call after the gate.

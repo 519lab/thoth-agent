@@ -112,7 +112,7 @@ def _get_subagent_approval_callback():
 
 # Build a description fragment listing toolsets available for subagents.
 # Excludes toolsets where ALL tools are blocked, composite/platform toolsets
-# (hermes-* prefixed), and scenario toolsets.
+# (thoth-* prefixed), and scenario toolsets.
 #
 # NOTE: "delegation" is in this exclusion set so the subagent-facing
 # capability hint string (_TOOLSET_LIST_STR) doesn't advertise it as a
@@ -1188,7 +1188,7 @@ def _dump_subagent_timeout_diagnostic(
 
     See issue #14726: users hit "subagent timed out after 300s with no response"
     with zero API calls and no way to inspect what happened. This helper
-    writes a dedicated log under ``~/.hermes/logs/subagent-<sid>-<ts>.log``
+    writes a dedicated log under ``~/.thoth/logs/subagent-<sid>-<ts>.log``
     capturing the child's config, system-prompt / tool-schema sizes, activity
     tracker snapshot, and the worker thread's Python stack at timeout.
 
@@ -1487,7 +1487,7 @@ def _run_single_child(
         # substrate isn't booted; its own try/except swallows failures.
         try:
             from datetime import datetime, timezone
-            from substrate.events.hermes_hooks import on_subagent_spawn
+            from substrate.events.thoth_hooks import on_subagent_spawn
             _parent_sess = getattr(parent_agent, "session_id", None) or (
                 _parent_sid if isinstance(_parent_sid, str) else ""
             )
@@ -1832,7 +1832,7 @@ def _run_single_child(
         # Substrate perception — emit subagent_return on success path.
         try:
             from datetime import datetime, timezone
-            from substrate.events.hermes_hooks import on_subagent_return
+            from substrate.events.thoth_hooks import on_subagent_return
             _parent_sess = getattr(parent_agent, "session_id", None) or (
                 _parent_sid if isinstance(_parent_sid, str) else ""
             )
@@ -1865,7 +1865,7 @@ def _run_single_child(
         # the substrate sees the lifecycle close regardless of outcome.
         try:
             from datetime import datetime, timezone
-            from substrate.events.hermes_hooks import on_subagent_return
+            from substrate.events.thoth_hooks import on_subagent_return
             _parent_sess = getattr(parent_agent, "session_id", None) or (
                 _parent_sid if isinstance(_parent_sid, str) else ""
             )

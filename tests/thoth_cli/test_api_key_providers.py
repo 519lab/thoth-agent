@@ -732,7 +732,7 @@ class TestHasAnyProviderConfigured:
     def test_glm_key_counts(self, monkeypatch, tmp_path):
         from thoth_cli import config as config_module
         monkeypatch.setenv("GLM_API_KEY", "test-key")
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setattr(config_module, "get_env_path", lambda: thoth_home / ".env")
         monkeypatch.setattr(config_module, "get_thoth_home", lambda: thoth_home)
@@ -742,7 +742,7 @@ class TestHasAnyProviderConfigured:
     def test_minimax_key_counts(self, monkeypatch, tmp_path):
         from thoth_cli import config as config_module
         monkeypatch.setenv("MINIMAX_API_KEY", "test-key")
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setattr(config_module, "get_env_path", lambda: thoth_home / ".env")
         monkeypatch.setattr(config_module, "get_thoth_home", lambda: thoth_home)
@@ -752,7 +752,7 @@ class TestHasAnyProviderConfigured:
     def test_gh_cli_token_counts(self, monkeypatch, tmp_path):
         from thoth_cli import config as config_module
         monkeypatch.setattr("thoth_cli.copilot_auth._try_gh_cli_token", lambda: "gho_cli_secret")
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setattr(config_module, "get_env_path", lambda: thoth_home / ".env")
         monkeypatch.setattr(config_module, "get_thoth_home", lambda: thoth_home)
@@ -763,7 +763,7 @@ class TestHasAnyProviderConfigured:
         """Claude Code credentials should NOT skip the wizard when Thoth is unconfigured."""
         from thoth_cli import config as config_module
         from thoth_cli.auth import PROVIDER_REGISTRY
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         monkeypatch.setattr(config_module, "get_env_path", lambda: thoth_home / ".env")
         monkeypatch.setattr(config_module, "get_thoth_home", lambda: thoth_home)
@@ -794,7 +794,7 @@ class TestHasAnyProviderConfigured:
         """config.yaml with model.provider set should count as configured."""
         import yaml
         from thoth_cli import config as config_module
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         config_file = thoth_home / "config.yaml"
         config_file.write_text(yaml.dump({
@@ -814,7 +814,7 @@ class TestHasAnyProviderConfigured:
         """config.yaml with model.base_url set (custom endpoint) should count."""
         import yaml
         from thoth_cli import config as config_module
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         config_file = thoth_home / "config.yaml"
         config_file.write_text(yaml.dump({
@@ -833,7 +833,7 @@ class TestHasAnyProviderConfigured:
         """config.yaml with model.api_key set should count."""
         import yaml
         from thoth_cli import config as config_module
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         config_file = thoth_home / "config.yaml"
         config_file.write_text(yaml.dump({
@@ -853,7 +853,7 @@ class TestHasAnyProviderConfigured:
         import yaml
         from thoth_cli import config as config_module
         from thoth_cli.auth import PROVIDER_REGISTRY
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         config_file = thoth_home / "config.yaml"
         config_file.write_text(yaml.dump({
@@ -879,7 +879,7 @@ class TestHasAnyProviderConfigured:
         """Claude Code credentials should count when Thoth has been explicitly configured."""
         import yaml
         from thoth_cli import config as config_module
-        thoth_home = tmp_path / ".hermes"
+        thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()
         # Write a config with a non-default model to simulate explicit configuration
         config_file = thoth_home / "config.yaml"

@@ -114,7 +114,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # We intercept --profile/-p from sys.argv here and set the env var so that
 # every subsequent ``os.getenv("THOTH_HOME", ...)`` resolves correctly.
 # The flag is stripped from sys.argv so argparse never sees it.
-# Falls back to ~/.hermes/active_profile for sticky default.
+# Falls back to ~/.thoth/active_profile for sticky default.
 # ---------------------------------------------------------------------------
 def _apply_profile_override() -> None:
     """Pre-parse --profile/-p and set THOTH_HOME before module imports."""
@@ -147,9 +147,9 @@ def _apply_profile_override() -> None:
     # 1.5 If THOTH_HOME is already set and no explicit flag was given, trust it
     # only when it already points to a specific profile directory.  The
     # distinguishing heuristic: a profile path has "profiles" as its immediate
-    # parent directory name (e.g. ~/.hermes/profiles/coder or
+    # parent directory name (e.g. ~/.thoth/profiles/coder or
     # /opt/data/profiles/coder).  If THOTH_HOME points to the thoth root
-    # instead (e.g. systemd hardcodes THOTH_HOME=/root/.hermes), we must
+    # instead (e.g. systemd hardcodes THOTH_HOME=/root/.thoth), we must
     # still read active_profile — the user may have switched profiles via
     # `thoth profile use` and the gateway should honour that choice.
     # See issue #22502.
@@ -204,7 +204,7 @@ def _apply_profile_override() -> None:
 
 _apply_profile_override()
 
-# Load .env from ~/.hermes/.env first, then project root as dev fallback.
+# Load .env from ~/.thoth/.env first, then project root as dev fallback.
 # User-managed env files should override stale shell exports on restart.
 from thoth_cli.config import get_thoth_home
 from thoth_cli.cli_name import cli_name
@@ -793,10 +793,10 @@ def _resolve_last_session(source: str = "cli") -> Optional[str]:
     db = None
     try:
         from thoth_state import SessionDB
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
 
         db = SessionDB()
-        sessions = _hermes_db.run_sync(db.search_sessions(source=source, limit=1))
+        sessions = _thoth_db.run_sync(db.search_sessions(source=source, limit=1))
         return sessions[0]["id"] if sessions else None
     except Exception:
         pass
@@ -933,24 +933,24 @@ def _resolve_session_by_name_or_id(name_or_id: str) -> Optional[str]:
     """
     try:
         from thoth_state import SessionDB
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
 
         db = SessionDB()
 
         # Try as exact session ID first
-        session = _hermes_db.run_sync(db.get_session(name_or_id))
+        session = _thoth_db.run_sync(db.get_session(name_or_id))
         resolved_id: Optional[str] = None
         if session:
             resolved_id = session["id"]
         else:
             # Try as title (with auto-latest for lineage)
-            resolved_id = _hermes_db.run_sync(db.resolve_session_by_title(name_or_id))
+            resolved_id = _thoth_db.run_sync(db.resolve_session_by_title(name_or_id))
 
         if resolved_id:
             # Project forward through compression chain so resumes land on
             # the live tip instead of a dead compressed parent.
             try:
-                resolved_id = _hermes_db.run_sync(db.get_compression_tip(resolved_id)) or resolved_id
+                resolved_id = _thoth_db.run_sync(db.get_compression_tip(resolved_id)) or resolved_id
             except Exception:
                 pass
 
@@ -987,14 +987,14 @@ def _print_tui_exit_summary(
     db = None
     try:
         from thoth_state import SessionDB
-        import thoth_db as _hermes_db
+        import thoth_db as _thoth_db
 
         db = SessionDB()
-        session = _hermes_db.run_sync(db.get_session(target))
+        session = _thoth_db.run_sync(db.get_session(target))
         if not session:
             return
 
-        title = _hermes_db.run_sync(db.get_session_title(target))
+        title = _thoth_db.run_sync(db.get_session_title(target))
         message_count = int(session.get("message_count") or 0)
         if message_count == 0:
             return  # No real conversation — don't show resume info
@@ -1047,7 +1047,7 @@ to avoid false-positive reinstalls on every launch.
 
 
 def _tui_need_npm_install(root: Path) -> bool:
-    """True when @hermes/ink is missing or node_modules is behind package-lock.json.
+    """True when @thoth/ink is missing or node_modules is behind package-lock.json.
 
     Prebuilt bundle mode: when ``dist/entry.js`` exists and there is no
     ``package-lock.json`` (nix install layout only ships ``dist/`` +
@@ -1078,7 +1078,7 @@ def _tui_need_npm_install(root: Path) -> bool:
     if entry.is_file() and not lock.is_file():
         return False
 
-    ink = root / "node_modules" / "@hermes" / "ink" / "package.json"
+    ink = root / "node_modules" / "@thoth" / "ink" / "package.json"
     if not ink.is_file():
         return True
     if not lock.is_file():
@@ -1121,7 +1121,7 @@ def _tui_need_npm_install(root: Path) -> bool:
 
 _TUI_BUILD_INPUT_DIRS = (
     "src",
-    "packages/hermes-ink/src",
+    "packages/thoth-ink/src",
 )
 
 _TUI_BUILD_INPUT_FILES = (
@@ -1131,10 +1131,10 @@ _TUI_BUILD_INPUT_FILES = (
     "tsconfig.build.json",
     "babel.compiler.config.cjs",
     "scripts/build.mjs",
-    "packages/hermes-ink/package.json",
-    "packages/hermes-ink/package-lock.json",
-    "packages/hermes-ink/index.js",
-    "packages/hermes-ink/text-input.js",
+    "packages/thoth-ink/package.json",
+    "packages/thoth-ink/package-lock.json",
+    "packages/thoth-ink/index.js",
+    "packages/thoth-ink/text-input.js",
 )
 
 _TUI_BUILD_INPUT_SUFFIXES = frozenset(
@@ -1324,13 +1324,13 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
         did_install = True
 
     if tui_dev:
-        # Keep the local @hermes/ink package exports in sync with source.
-        # --dev runs src/entry.tsx directly, but @hermes/ink resolves through
-        # packages/hermes-ink/dist/entry-exports.js. If that dist bundle is
+        # Keep the local @thoth/ink package exports in sync with source.
+        # --dev runs src/entry.tsx directly, but @thoth/ink resolves through
+        # packages/thoth-ink/dist/entry-exports.js. If that dist bundle is
         # stale after a pull, newer hooks/components can exist in src while
         # being missing at runtime (e.g. useCursorAdvance). Prebuild it here.
         npm = _node_bin("npm")
-        ink_dir = tui_dir / "packages" / "hermes-ink"
+        ink_dir = tui_dir / "packages" / "thoth-ink"
         result = subprocess.run(
             [npm, "run", "build"],
             cwd=str(ink_dir),
@@ -1425,7 +1425,7 @@ def _launch_tui(
 
     env = os.environ.copy()
     active_session_fd, active_session_file = tempfile.mkstemp(
-        prefix="hermes-tui-active-session-", suffix=".json"
+        prefix="thoth-tui-active-session-", suffix=".json"
     )
     os.close(active_session_fd)
     env["THOTH_TUI_ACTIVE_SESSION_FILE"] = active_session_file
@@ -1690,7 +1690,7 @@ def cmd_chat(args):
         os.environ["THOTH_YOLO_MODE"] = "1"
 
     # --ignore-user-config: make load_cli_config() / load_config() skip the
-    # user's ~/.hermes/config.yaml and return built-in defaults. Set BEFORE
+    # user's ~/.thoth/config.yaml and return built-in defaults. Set BEFORE
     # importing cli (which runs `CLI_CONFIG = load_cli_config()` at module
     # import time). Credentials in .env are still loaded — this flag only
     # ignores behavioral/config settings.
@@ -2389,7 +2389,7 @@ def select_provider_and_model(args=None):
 
     # ── Post-switch cleanup: clear stale OPENAI_BASE_URL ──────────────
     # When the user switches to a named provider (anything except "custom"),
-    # a leftover OPENAI_BASE_URL in ~/.hermes/.env can poison auxiliary
+    # a leftover OPENAI_BASE_URL in ~/.thoth/.env can poison auxiliary
     # clients that use provider:auto. Clear it proactively.  (#5161)
     if selected_provider not in {
         "custom",
@@ -2400,7 +2400,7 @@ def select_provider_and_model(args=None):
 
 
 def _clear_stale_openai_base_url():
-    """Remove OPENAI_BASE_URL from ~/.hermes/.env if the active provider is not 'custom'.
+    """Remove OPENAI_BASE_URL from ~/.thoth/.env if the active provider is not 'custom'.
 
     After a provider switch, a leftover OPENAI_BASE_URL causes auxiliary
     clients (compression, vision, delegation) with provider:auto to route
@@ -2832,7 +2832,7 @@ def _model_flow_openrouter(config, current_model=""):
     from thoth_cli.config import get_env_value
 
     # Route through _prompt_api_key so users can replace a stale/broken key
-    # in-flow (K/R/C) instead of having to edit ~/.hermes/.env by hand. The
+    # in-flow (K/R/C) instead of having to edit ~/.thoth/.env by hand. The
     # previous bypass-when-key-exists branch left no way to recover from a
     # bad paste short of re-running `thoth setup` from scratch. OpenRouter
     # isn't in PROVIDER_REGISTRY so we synthesize a minimal pconfig.
@@ -2893,7 +2893,7 @@ def _model_flow_ai_gateway(config, current_model=""):
     from thoth_cli.config import get_env_value
 
     # Route through _prompt_api_key so users can replace a stale/broken key
-    # in-flow (K/R/C) instead of having to edit ~/.hermes/.env by hand.
+    # in-flow (K/R/C) instead of having to edit ~/.thoth/.env by hand.
     pconfig = PROVIDER_REGISTRY["ai-gateway"]
     existing_key = get_env_value("AI_GATEWAY_API_KEY") or ""
     if not existing_key:
@@ -3412,7 +3412,7 @@ def _model_flow_google_gemini_cli(_config, current_model=""):
       2. If creds missing, run PKCE browser OAuth via agent.google_oauth.
       3. Resolve project context (env -> config -> auto-discover -> free tier).
       4. Prompt user to pick a model.
-      5. Save to ~/.hermes/config.yaml.
+      5. Save to ~/.thoth/config.yaml.
     """
     from thoth_cli.auth import (
         DEFAULT_GEMINI_CLOUDCODE_BASE_URL,
@@ -4900,7 +4900,7 @@ def _prompt_api_key(pconfig, existing_key: str, provider_id: str = "") -> tuple:
 
     Handles both first-time entry and the already-configured case.  When a key
     is already present, offers [K]eep / [R]eplace / [C]lear so the user can
-    recover from a malformed paste without editing ``~/.hermes/.env`` by hand.
+    recover from a malformed paste without editing ``~/.thoth/.env`` by hand.
 
     Returns ``(resolved_key, abort)``.  ``abort=True`` means the caller should
     ``return`` immediately — the user cancelled entry, declined to replace, or
@@ -6278,7 +6278,7 @@ def _validate_critical_files_syntax(root) -> tuple[bool, str | None, str | None]
     import tempfile
 
     root = Path(root)
-    with tempfile.TemporaryDirectory(prefix="hermes-syntax-check-") as tmpdir:
+    with tempfile.TemporaryDirectory(prefix="thoth-syntax-check-") as tmpdir:
         for relpath in _UPDATE_CRITICAL_FILES:
             path = root / relpath
             if not path.exists():
@@ -6879,7 +6879,7 @@ def _update_via_zip(args):
 
     print("→ Downloading latest version...")
     try:
-        tmp_dir = tempfile.mkdtemp(prefix="hermes-update-")
+        tmp_dir = tempfile.mkdtemp(prefix="thoth-update-")
         zip_path = os.path.join(tmp_dir, f"thoth-agent-{branch}.zip")
         urlretrieve(zip_url, zip_path)
 
@@ -7038,7 +7038,7 @@ def _stash_local_changes_if_needed(git_cmd: list[str], cwd: Path) -> Optional[st
     from datetime import datetime, timezone
 
     stash_name = datetime.now(timezone.utc).strftime(
-        "hermes-update-autostash-%Y%m%d-%H%M%S"
+        "thoth-update-autostash-%Y%m%d-%H%M%S"
     )
     print("→ Local changes detected — stashing before update...")
     subprocess.run(
@@ -7554,8 +7554,7 @@ def _thoth_exe_shims(scripts_dir: Path) -> list[Path]:
     if not _is_windows():
         return []
     return [
-        scripts_dir / "hermes.exe",
-        scripts_dir / "hermes-gateway.exe",
+        scripts_dir / "thoth.exe",
     ]
 
 
@@ -7566,13 +7565,13 @@ def _detect_concurrent_thoth_instances(
 
     Windows blocks DELETE/REPLACE on a running .exe — and even RENAME on the
     same .exe when another process opened it without ``FILE_SHARE_DELETE``.
-    The Thoth Desktop Electron app spawns ``hermes.EXE`` as a backend child,
+    The Thoth Desktop Electron app spawns ``thoth.EXE`` as a backend child,
     so during ``thoth update`` the user-invoked process and the desktop's
     child both hold the same file. The quarantine rename then fails with
     ``[WinError 32]`` and uv inherits the lock.
 
     This helper enumerates processes whose ``exe`` matches one of the venv's
-    shims (``hermes.exe`` / ``hermes-gateway.exe``) and returns ``(pid,
+    shims (``thoth.exe``) and returns ``(pid,
     process_name)`` pairs. The caller's own PID is excluded so the running
     ``thoth update`` invocation never reports itself.
 
@@ -7630,8 +7629,8 @@ def _format_concurrent_instances_message(
     matches: list[tuple[int, str]], scripts_dir: Path
 ) -> str:
     """Build a human-readable explanation + remediation hint for the user."""
-    shim = scripts_dir / "hermes.exe"
-    lines = ["✗ Another hermes.exe is running:"]
+    shim = scripts_dir / "thoth.exe"
+    lines = ["✗ Another thoth.exe is running:"]
     for pid, name in matches:
         lines.append(f"    PID {pid}  {name}")
     lines.append("")
@@ -7648,15 +7647,15 @@ def _format_concurrent_instances_message(
 def _quarantine_running_thoth_exe(
     scripts_dir: Path, *, max_attempts: int = 4
 ) -> list[tuple[Path, Path]]:
-    """Pre-empt Windows file lock on the running ``hermes.exe``.
+    """Pre-empt Windows file lock on the running ``thoth.exe``.
 
     Windows allows RENAMING a mapped/running executable (the kernel tracks the
     file by handle, not path), but blocks DELETE/REPLACE while it's loaded. uv
     needs to overwrite the entry-point shims during ``pip install -e .``;
-    when ``thoth update`` runs, ``hermes.exe`` IS the live process, and uv
+    when ``thoth update`` runs, ``thoth.exe`` IS the live process, and uv
     fails with ``Access is denied. (os error 5)``.
 
-    We rename live shims to ``hermes.exe.old.<unix-ms>`` first. uv then writes
+    We rename live shims to ``thoth.exe.old.<unix-ms>`` first. uv then writes
     fresh shims at the original paths. The ``.old`` files are cleaned up on
     the next thoth invocation by ``_cleanup_quarantined_exes``.
 
@@ -7794,7 +7793,7 @@ def _restore_quarantined_exes(moved: list[tuple[Path, Path]]) -> None:
 
 
 def _cleanup_quarantined_exes(scripts_dir: Path | None = None) -> None:
-    """Sweep ``hermes.exe.old.*`` left by prior updates.
+    """Sweep ``thoth.exe.old.*`` left by prior updates.
 
     Called early on every thoth invocation. The .old files are unlocked once
     their owning process exited, so deletion succeeds the next run. Silent
@@ -7895,7 +7894,7 @@ def _install_python_dependencies_with_optional_fallback(
     By default this targets ``.[all]``; Termux callers can pass
     ``group='termux-all'`` to use the curated Android-compatible profile.
 
-    On Windows, pre-renames live ``hermes.exe`` / ``hermes-gateway.exe`` shims
+    On Windows, pre-renames the live ``thoth.exe`` shim
     in the venv Scripts dir before each install attempt so uv can write fresh
     copies (Windows blocks REPLACE on a running .exe but allows RENAME). See
     ``_quarantine_running_thoth_exe`` for the rationale.
@@ -8042,7 +8041,7 @@ def _update_node_dependencies() -> None:
         # Chromium fetch on first install) print progress instead of
         # appearing to hang silently for minutes (#18840).  The
         # `_UpdateOutputStream` wrapper installed by the updater mirrors
-        # streamed output to ``~/.hermes/logs/update.log`` so nothing is lost.
+        # streamed output to ``~/.thoth/logs/update.log`` so nothing is lost.
         result = _run_npm_install_deterministic(
             npm,
             path,
@@ -8065,7 +8064,7 @@ class _UpdateOutputStream:
     Wraps the process's original stdout/stderr so that:
 
     * Every write is also mirrored to an append-only log file
-      (``~/.hermes/logs/update.log``) that users can inspect after the
+      (``~/.thoth/logs/update.log``) that users can inspect after the
       terminal disconnects.
     * Writes to the original stream that fail with ``BrokenPipeError`` /
       ``OSError`` / ``ValueError`` (closed file) no longer cascade into
@@ -8147,7 +8146,7 @@ def _install_hangup_protection(gateway_mode: bool = False):
        across ``exec()``, so pip and git subprocesses also stop dying on
        hangup.
     2. ``sys.stdout`` / ``sys.stderr`` are wrapped to mirror output to
-       ``~/.hermes/logs/update.log`` and to silently absorb
+       ``~/.thoth/logs/update.log`` and to silently absorb
        ``BrokenPipeError`` when the terminal vanishes.
 
     ``SIGINT`` (Ctrl-C) and ``SIGTERM`` (systemd shutdown) are
@@ -8340,7 +8339,7 @@ def _ensure_fhs_path_guard() -> None:
     except AttributeError:
         return
     # Only act when this is actually an FHS-layout install (command link at
-    # /usr/local/bin/thoth, code at /usr/local/lib/hermes-agent).
+    # /usr/local/bin/thoth, code at /usr/local/lib/thoth).
     fhs_link = Path("/usr/local/bin/thoth")
     if not fhs_link.is_symlink() and not fhs_link.exists():
         return
@@ -8482,7 +8481,7 @@ def _run_pre_update_backup(args) -> None:
         size_bytes /= 1024
         size_str = f"{size_bytes:.1f} {unit}"
 
-    # Render path using display_thoth_home so the user sees ~/.hermes/...
+    # Render path using display_thoth_home so the user sees ~/.thoth/...
     try:
         from thoth_constants import get_thoth_home, display_thoth_home
 
@@ -8556,7 +8555,7 @@ def _cmd_update_pip(args):
 # Substrate-worker restart on update
 # ---------------------------------------------------------------------------
 #
-# ``thoth update`` historically restarted only ``hermes-gateway*`` units, so
+# ``thoth update`` historically restarted only ``thoth-gateway*`` units, so
 # the substrate worker (Sentinel / Curator / embedding sub-agents, run by
 # ``thoth-substrate-worker.service``) kept executing stale code after every
 # update.  Unlike the gateway, the worker unit ships graceful SIGTERM handling
@@ -8580,9 +8579,6 @@ def _venv_python() -> str:
 
 def _restart_substrate_workers() -> list:
     """Discover and restart all ``thoth-substrate*`` systemd units.
-
-    Also matches legacy ``hermes-substrate*`` units from installs that predate
-    the worker rename, so an in-place ``thoth update`` restarts either.
 
     Mirrors the gateway path's two-scope discovery (``--user`` then system),
     but uses a blunt ``systemctl restart`` because the worker unit drains
@@ -8617,11 +8613,7 @@ def _restart_substrate_workers() -> list:
                 scope_cmd
                 + [
                     "list-units",
-                    # Match new ``thoth-substrate*`` units and, for installs
-                    # that predate the substrate-worker rename, the legacy
-                    # ``hermes-substrate*`` units — restart whichever exist.
                     "thoth-substrate*",
-                    "hermes-substrate*",
                     "--plain",
                     "--no-legend",
                     "--no-pager",
@@ -8920,7 +8912,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
     print("⚕ Updating Thoth Agent...")
     print()
 
-    # On Windows, abort early if another hermes.exe is holding the venv shim
+    # On Windows, abort early if another thoth.exe is holding the venv shim
     # open. Continuing would result in a string of WinError 32 warnings and
     # then either a deferred-rename leftover or a failed git-pull fast path
     # that silently falls back to the slower ZIP route. See issue #26670.
@@ -9360,11 +9352,6 @@ def _cmd_update_impl(args, gateway_mode: bool):
         except Exception:
             pass  # honcho plugin not installed or not configured
 
-        # Thoth rename: create ~/.thoth → ~/.hermes symlink for existing installs.
-        from thoth_cli.config import migrate_home_to_thoth as _migrate_home
-        if _migrate_home(quiet=False):
-            print()
-
         # Check for config migrations
         print()
         print("→ Checking configuration for new options...")
@@ -9655,7 +9642,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             relaunched_profiles = []
 
             # --- Systemd services (Linux) ---
-            # Discover all hermes-gateway* units (default + profiles)
+            # Discover all thoth-gateway* units (default + profiles)
             if supports_systemd_services():
                 try:
                     _ensure_user_systemd_env()
@@ -9671,12 +9658,9 @@ def _cmd_update_impl(args, gateway_mode: bool):
                             scope_cmd
                             + [
                                 "list-units",
-                                # Canonical thoth-gateway* units plus legacy
-                                # hermes-gateway* (installs predating the
-                                # gateway-service rename) — restart whichever
-                                # exist, including profile units (-coder, etc.).
+                                # Canonical thoth-gateway* units, including
+                                # profile units (-coder, etc.).
                                 "thoth-gateway*",
-                                "hermes-gateway*",
                                 "--plain",
                                 "--no-legend",
                                 "--no-pager",
@@ -9902,7 +9886,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         pass
 
                 # --- Substrate worker (Linux) ---
-                # Restart thoth-substrate* (and legacy hermes-substrate*) units so sub-agents
+                # Restart thoth-substrate* units so sub-agents
                 # (Sentinel / Curator / embedding) pick up the new code too.
                 # The worker drains gracefully on SIGTERM, so a plain restart
                 # is correct — no SIGUSR1 handoff dance needed. Best-effort.
@@ -10059,35 +10043,6 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
         except Exception as e:
             logger.debug("Gateway restart during update failed: %s", e)
-
-        # Warn if legacy Hermes gateway unit files are still installed.
-        # When both hermes.service (from a pre-rename install) and the
-        # current hermes-gateway.service are enabled, they SIGTERM-fight
-        # for the same bot token (see PR #11909). Flagging here means
-        # every `thoth update` surfaces the issue until the user migrates.
-        try:
-            from thoth_cli.gateway import (
-                has_legacy_hermes_units,
-                _find_legacy_hermes_units,
-                supports_systemd_services,
-            )
-
-            if supports_systemd_services() and has_legacy_hermes_units():
-                print()
-                print("⚠ Legacy Hermes gateway unit(s) detected:")
-                for name, path, is_sys in _find_legacy_hermes_units():
-                    scope = "system" if is_sys else "user"
-                    print(f"    {path}  ({scope} scope)")
-                print()
-                print("  These pre-rename units (hermes.service) fight the current")
-                print("  hermes-gateway.service for the bot token and cause SIGTERM")
-                print("  flap loops. Remove them with:")
-                print()
-                print(f"    {cli_name()} gateway migrate-legacy")
-                print()
-                print("  (add `sudo` if any are in system scope)")
-        except Exception as e:
-            logger.debug("Legacy unit check during update failed: %s", e)
 
         # Kill stale dashboard processes — the dashboard has no service
         # manager, so leaving it alive after a code update produces a
@@ -10272,7 +10227,7 @@ def cmd_profile(args):
         try:
             set_active_profile(name)
             if name == "default":
-                print(f"Switched to: default (~/.hermes)")
+                print(f"Switched to: default (~/.thoth)")
             else:
                 print(f"Switched to: {name}")
         except (ValueError, FileNotFoundError) as e:
@@ -10736,8 +10691,8 @@ def cmd_profile(args):
             print(f"Author:       {data['author']}")
         if data.get("license"):
             print(f"License:      {data['license']}")
-        if data.get("hermes_requires"):
-            print(f"Requires:     Thoth {data['hermes_requires']}")
+        if data.get("thoth_requires"):
+            print(f"Requires:     Thoth {data['thoth_requires']}")
         if data.get("source"):
             print(f"Source:       {data['source']}")
         if data.get("installed_at"):
@@ -10765,8 +10720,8 @@ def _render_distribution_plan(plan) -> None:
         print(f"  {mf.description}")
     if mf.author:
         print(f"  Author:   {mf.author}")
-    if mf.hermes_requires:
-        print(f"  Requires: Thoth {mf.hermes_requires}")
+    if mf.thoth_requires:
+        print(f"  Requires: Thoth {mf.thoth_requires}")
     print(f"  Source:   {plan.provenance}")
     print(f"  Target:   {plan.target_dir}")
     if plan.existing:
@@ -10984,7 +10939,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "acp", "auth", "backup", "bundles", "checkpoints", "claw", "completion",
         "computer-use",
         "config", "cron", "curator", "dashboard", "db", "debug", "doctor",
-        "dump", "embed", "fallback", "gateway", "hermes", "hooks", "import", "insights",
+        "dump", "embed", "fallback", "gateway", "hooks", "import", "insights",
         "kanban", "login", "logout", "logs", "lsp", "mcp", "memory", "migrate",
         "model", "pairing", "plugins", "postinstall", "profile", "proxy",
         "send", "sessions", "setup",
@@ -11279,7 +11234,7 @@ def main():
     except Exception:
         pass
 
-    # Sweep stale ``hermes.exe.old.*`` quarantine files left by previous
+    # Sweep stale ``thoth.exe.old.*`` quarantine files left by previous
     # ``thoth update`` runs on Windows. Silent no-op on non-Windows or when
     # there's nothing to clean. See ``_quarantine_running_thoth_exe``.
     try:
@@ -11396,7 +11351,7 @@ def main():
         help="Manage external secret sources (Bitwarden Secrets Manager)",
         description=(
             "Pull API keys from an external secret manager at process startup "
-            "instead of storing them in ~/.hermes/.env.  Currently supports "
+            "instead of storing them in ~/.thoth/.env.  Currently supports "
             "Bitwarden Secrets Manager.  See: "
             "https://thoth.519lab.com/docs/user-guide/secrets/bitwarden"
         ),
@@ -11615,31 +11570,6 @@ def main():
 
     # gateway setup
     gateway_subparsers.add_parser("setup", help="Configure messaging platforms")
-
-    # gateway migrate-legacy
-    gateway_migrate_legacy = gateway_subparsers.add_parser(
-        "migrate-legacy",
-        help="Remove legacy hermes.service units from pre-rename installs",
-        description=(
-            "Stop, disable, and remove legacy Thoth gateway unit files "
-            "(e.g. hermes.service) left over from older installs. Profile "
-            "units (hermes-gateway-<profile>.service) and unrelated "
-            "third-party services are never touched."
-        ),
-    )
-    gateway_migrate_legacy.add_argument(
-        "--dry-run",
-        dest="dry_run",
-        action="store_true",
-        help="List what would be removed without doing it",
-    )
-    gateway_migrate_legacy.add_argument(
-        "-y",
-        "--yes",
-        dest="yes",
-        action="store_true",
-        help="Skip the confirmation prompt",
-    )
 
     # =========================================================================
     # proxy command — local OpenAI-compatible proxy that attaches the user's
@@ -12041,7 +11971,7 @@ def main():
     cron_create.add_argument(
         "--script",
         help=(
-            "Path to a script under ~/.hermes/scripts/. Default mode: "
+            "Path to a script under ~/.thoth/scripts/. Default mode: "
             "script stdout is injected into the agent's prompt each run. "
             "With --no-agent: the script IS the job and its stdout is "
             "delivered verbatim. .sh/.bash files run via bash, everything "
@@ -12104,7 +12034,7 @@ def main():
     cron_edit.add_argument(
         "--script",
         help=(
-            "Path to a script under ~/.hermes/scripts/. Pass empty string to clear. "
+            "Path to a script under ~/.thoth/scripts/. Pass empty string to clear. "
             "With --no-agent the script IS the job; otherwise its stdout is "
             "injected into the agent's prompt each run."
         ),
@@ -12242,9 +12172,9 @@ def main():
         "hooks",
         help="Inspect and manage shell-script hooks",
         description=(
-            "Inspect shell-script hooks declared in ~/.hermes/config.yaml, "
+            "Inspect shell-script hooks declared in ~/.thoth/config.yaml, "
             "test them against synthetic payloads, and manage the first-use "
-            "consent allowlist at ~/.hermes/shell-hooks-allowlist.json."
+            "consent allowlist at ~/.thoth/shell-hooks-allowlist.json."
         ),
     )
     hooks_subparsers = hooks_parser.add_subparsers(dest="hooks_action")
@@ -12412,13 +12342,13 @@ Examples:
         "backup",
         help="Back up Thoth home directory to a zip file",
         description="Create a zip archive of your entire Thoth configuration, "
-        "skills, sessions, and data (excludes the hermes-agent codebase). "
+        "skills, sessions, and data (excludes the app/ codebase). "
         "Use --quick for a fast snapshot of just critical state files.",
     )
     backup_parser.add_argument(
         "-o",
         "--output",
-        help="Output path for the zip file (default: ~/hermes-backup-<timestamp>.zip)",
+        help="Output path for the zip file (default: ~/thoth-backup-<timestamp>.zip)",
     )
     backup_parser.add_argument(
         "-q",
@@ -12436,7 +12366,7 @@ Examples:
     # =========================================================================
     checkpoints_parser = subparsers.add_parser(
         "checkpoints",
-        help="Inspect / prune / clear ~/.hermes/checkpoints/",
+        help="Inspect / prune / clear ~/.thoth/checkpoints/",
         description="Manage the filesystem checkpoint store — the shadow git "
         "repo thoth uses to snapshot working directories before "
         "write_file/patch/terminal calls. Lets you see how much "
@@ -12660,7 +12590,7 @@ Examples:
         "reset",
         help="Reset a bundled skill — clears 'user-modified' tracking so updates work again",
         description=(
-            "Clear a bundled skill's entry from the sync manifest (~/.hermes/skills/.bundled_manifest) "
+            "Clear a bundled skill's entry from the sync manifest (~/.thoth/skills/.bundled_manifest) "
             "so future 'thoth update' runs stop marking it as user-modified. Pass --restore to also "
             "replace the current copy with the bundled version."
         ),
@@ -13293,16 +13223,16 @@ Examples:
 
         try:
             from thoth_state import SessionDB
-            import thoth_db as _hermes_db
+            import thoth_db as _thoth_db
 
             db = SessionDB()
             # Bootstrap the asyncpg pool from the sync entry-point so the
-            # subsequent ``_hermes_db.run_sync(...)`` calls don't hit the
+            # subsequent ``_thoth_db.run_sync(...)`` calls don't hit the
             # ``thoth_db.init() not called`` raise. The lazy bootstrap in
             # ``pool()`` only fires when no loop is running; inside
             # ``run_sync``'s ``run_until_complete`` the loop IS running,
             # so we need to prime the pool here from sync context.
-            if not _hermes_db.ensure_pool_sync():
+            if not _thoth_db.ensure_pool_sync():
                 print(
                     "Error: THOTH_PG_DSN not set. Set it in your shell "
                     "or run via the launcher (~/.local/bin/thoth) which "
@@ -13320,7 +13250,7 @@ Examples:
         _exclude = None if _source else ["tool"]
 
         if action == "list":
-            sessions = _hermes_db.run_sync(db.list_sessions_rich(
+            sessions = _thoth_db.run_sync(db.list_sessions_rich(
                 source=args.source, exclude_sources=_exclude, limit=args.limit
             ))
             if not sessions:
@@ -13350,11 +13280,11 @@ Examples:
 
         elif action == "export":
             if args.session_id:
-                resolved_session_id = _hermes_db.run_sync(db.resolve_session_id(args.session_id))
+                resolved_session_id = _thoth_db.run_sync(db.resolve_session_id(args.session_id))
                 if not resolved_session_id:
                     print(f"Session '{args.session_id}' not found.")
                     return
-                data = _hermes_db.run_sync(db.export_session(resolved_session_id))
+                data = _thoth_db.run_sync(db.export_session(resolved_session_id))
                 if not data:
                     print(f"Session '{args.session_id}' not found.")
                     return
@@ -13367,7 +13297,7 @@ Examples:
                         f.write(line)
                     print(f"Exported 1 session to {args.output}")
             else:
-                sessions = _hermes_db.run_sync(db.export_all(source=args.source))
+                sessions = _thoth_db.run_sync(db.export_all(source=args.source))
                 if args.output == "-":
 
                     for s in sessions:
@@ -13379,7 +13309,7 @@ Examples:
                     print(f"Exported {len(sessions)} sessions to {args.output}")
 
         elif action == "delete":
-            resolved_session_id = _hermes_db.run_sync(db.resolve_session_id(args.session_id))
+            resolved_session_id = _thoth_db.run_sync(db.resolve_session_id(args.session_id))
             if not resolved_session_id:
                 print(f"Session '{args.session_id}' not found.")
                 return
@@ -13390,7 +13320,7 @@ Examples:
                     print("Cancelled.")
                     return
             sessions_dir = get_thoth_home() / "sessions"
-            if _hermes_db.run_sync(db.delete_session(resolved_session_id, sessions_dir=sessions_dir)):
+            if _thoth_db.run_sync(db.delete_session(resolved_session_id, sessions_dir=sessions_dir)):
                 print(f"Deleted session '{resolved_session_id}'.")
             else:
                 print(f"Session '{args.session_id}' not found.")
@@ -13405,19 +13335,19 @@ Examples:
                     print("Cancelled.")
                     return
             sessions_dir = get_thoth_home() / "sessions"
-            count = _hermes_db.run_sync(db.prune_sessions(
+            count = _thoth_db.run_sync(db.prune_sessions(
                 older_than_days=days, source=args.source, sessions_dir=sessions_dir
             ))
             print(f"Pruned {count} session(s).")
 
         elif action == "rename":
-            resolved_session_id = _hermes_db.run_sync(db.resolve_session_id(args.session_id))
+            resolved_session_id = _thoth_db.run_sync(db.resolve_session_id(args.session_id))
             if not resolved_session_id:
                 print(f"Session '{args.session_id}' not found.")
                 return
             title = " ".join(args.title)
             try:
-                if _hermes_db.run_sync(db.set_session_title(resolved_session_id, title)):
+                if _thoth_db.run_sync(db.set_session_title(resolved_session_id, title)):
                     print(f"Session '{resolved_session_id}' renamed to: {title}")
                 else:
                     print(f"Session '{args.session_id}' not found.")
@@ -13428,7 +13358,7 @@ Examples:
             limit = getattr(args, "limit", 500) or 500
             source = getattr(args, "source", None)
             _browse_exclude = None if source else ["tool"]
-            sessions = _hermes_db.run_sync(db.list_sessions_rich(
+            sessions = _thoth_db.run_sync(db.list_sessions_rich(
                 source=source, exclude_sources=_browse_exclude, limit=limit
             ))
             db.close()
@@ -13545,8 +13475,8 @@ Examples:
     claw_migrate.add_argument(
         "--no-backup",
         action="store_true",
-        help="Skip the pre-migration zip snapshot of ~/.hermes/ (by default a "
-        "single restore-point archive is written to ~/.hermes/backups/ "
+        help="Skip the pre-migration zip snapshot of ~/.thoth/ (by default a "
+        "single restore-point archive is written to ~/.thoth/backups/ "
         "before apply; restorable with 'thoth import').",
     )
     claw_migrate.add_argument(
@@ -13587,63 +13517,6 @@ Examples:
         claw_command(args)
 
     claw_parser.set_defaults(func=cmd_claw)
-
-    # hermes — import from a legacy Hermes Agent install (~/.hermes -> ~/.thoth)
-    hermes_parser = subparsers.add_parser(
-        "hermes",
-        help="Import settings/config from a legacy Hermes Agent install",
-        description="Same-lineage import of config, memories, and skills from "
-        "an existing ~/.hermes home into Thoth. Copies user data only — never "
-        "code, venvs, caches, or runtime state.",
-    )
-    hermes_subparsers = hermes_parser.add_subparsers(dest="hermes_action")
-
-    hermes_migrate = hermes_subparsers.add_parser(
-        "migrate",
-        help="Import settings/config/memories from a legacy ~/.hermes",
-        description="Import config.yaml, .env, memories, skills, and auth/state "
-        "from a Hermes Agent home. Shows a preview before making changes.",
-    )
-    hermes_migrate.add_argument(
-        "--source", help="Path to the Hermes home (default: ~/.hermes)"
-    )
-    hermes_migrate.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Preview only — show what would be imported, make no changes",
-    )
-    hermes_migrate.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Replace items that already exist in the Thoth home (default: skip them)",
-    )
-    hermes_migrate.add_argument(
-        "--yes", "-y", action="store_true", help="Skip the confirmation prompt"
-    )
-
-    hermes_cleanup = hermes_subparsers.add_parser(
-        "cleanup",
-        aliases=["clean"],
-        help="Archive the legacy ~/.hermes after importing",
-        description="Rename ~/.hermes to ~/.hermes.pre-migration. Hermes Agent "
-        "will stop working after this.",
-    )
-    hermes_cleanup.add_argument(
-        "--source", help="Path to the Hermes home to archive (default: ~/.hermes)"
-    )
-    hermes_cleanup.add_argument(
-        "--dry-run", action="store_true", help="Preview without making changes"
-    )
-    hermes_cleanup.add_argument(
-        "--yes", "-y", action="store_true", help="Skip the confirmation prompt"
-    )
-
-    def cmd_hermes(args):
-        from thoth_cli.hermes_import import hermes_command
-
-        hermes_command(args)
-
-    hermes_parser.set_defaults(func=cmd_hermes)
 
     # =========================================================================
     # version command
@@ -13694,7 +13567,7 @@ Examples:
         "--force",
         action="store_true",
         default=False,
-        help="Windows: proceed with the update even when another hermes.exe is detected. The concurrent process will likely cause WinError 32 warnings and may leave a reboot-deferred .exe replacement.",
+        help="Windows: proceed with the update even when another thoth.exe is detected. The concurrent process will likely cause WinError 32 warnings and may leave a reboot-deferred .exe replacement.",
     )
     update_parser.set_defaults(func=cmd_update)
 
@@ -13744,7 +13617,7 @@ Examples:
     acp_parser.add_argument(
         "--setup-browser",
         action="store_true",
-        help="Install agent-browser + Playwright Chromium into ~/.hermes/node/ "
+        help="Install agent-browser + Playwright Chromium into ~/.thoth/node/ "
              "for browser tool support (idempotent).",
     )
     acp_parser.add_argument(
@@ -14119,7 +13992,7 @@ Examples:
 
     db_migrate_sqlite = db_subparsers.add_parser(
         "migrate-from-sqlite",
-        help="Copy legacy ~/.hermes/state.db into the configured PostgreSQL database",
+        help="Copy legacy ~/.thoth/state.db into the configured PostgreSQL database",
         description=(
             "One-shot migration: reads sessions and messages from a legacy SQLite "
             "state.db and copies them into the PG schema. Requires THOTH_PG_DSN "
@@ -14131,7 +14004,7 @@ Examples:
         dest="sqlite_path",
         default=None,
         metavar="PATH",
-        help="Path to the source SQLite state.db (default: ~/.hermes/state.db)",
+        help="Path to the source SQLite state.db (default: ~/.thoth/state.db)",
     )
     db_migrate_sqlite.add_argument(
         "--dry-run",
@@ -14141,31 +14014,11 @@ Examples:
         help="Count rows without writing to PG",
     )
 
-    db_migrate_hermes = db_subparsers.add_parser(
-        "migrate-from-thoth",
-        help="Rename legacy substrate stream names (hermes.* -> thoth.*) for a Thoth cutover",
-        description=(
-            "One-time substrate stream-name rename for an existing Hermes "
-            "instance being cut over to Thoth. Renames substrate_streams names "
-            "from hermes.* to thoth.* in place (slices follow by stream_id). "
-            "Idempotent and collision-free. Requires THOTH_PG_DSN to be set."
-        ),
-    )
-    db_migrate_hermes.add_argument(
-        "--dry-run",
-        dest="dry_run",
-        action="store_true",
-        default=False,
-        help="Count matching rows without writing to PG",
-    )
-
     from thoth_cli.db_commands import (  # noqa: E402
         cmd_db,
-        cmd_db_migrate_from_hermes,
         cmd_db_migrate_from_sqlite,
     )
     db_migrate_sqlite.set_defaults(func=cmd_db_migrate_from_sqlite)
-    db_migrate_hermes.set_defaults(func=cmd_db_migrate_from_hermes)
     db_parser.set_defaults(func=cmd_db)
 
     # =========================================================================

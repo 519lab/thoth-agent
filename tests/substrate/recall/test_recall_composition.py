@@ -72,9 +72,9 @@ def test_compose_projection_sanitizes_inline_memory_fences():
 
 def test_compose_projection_includes_stream_attribution():
     """Header line ``[from <stream> at <iso>]`` is present in each block."""
-    c = _candidate(payload="hello", stream="hermes.test.attrib")
+    c = _candidate(payload="hello", stream="thoth.test.attrib")
     text, composed, tokens = compose_projection([c], token_budget=200)
-    assert "[from hermes.test.attrib at" in text
+    assert "[from thoth.test.attrib at" in text
     assert "hello" in text
 
 

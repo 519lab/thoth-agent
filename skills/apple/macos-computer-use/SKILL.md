@@ -8,7 +8,7 @@ description: |
 version: 1.0.0
 platforms: [macos]
 metadata:
-  hermes:
+  thoth:
     tags: [computer-use, macos, desktop, automation, gui]
     category: desktop
     related_skills: [browser]

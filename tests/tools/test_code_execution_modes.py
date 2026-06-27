@@ -319,7 +319,7 @@ class TestExecuteCodeModeIntegration(unittest.TestCase):
     def test_project_mode_interpreter_is_venv_python(self):
         """Project mode: sys.executable inside the child is the venv's python
         when VIRTUAL_ENV is set to a real venv."""
-        # The hermes-agent venv is always active during tests, so this also
+        # The thoth-agent venv is always active during tests, so this also
         # happens to equal sys.executable of the parent. What we're asserting
         # is: resolver picked a venv-bin/python path, not that it differs
         # from sys.executable.
@@ -334,16 +334,16 @@ class TestExecuteCodeModeIntegration(unittest.TestCase):
                 f"project-mode python should be under VIRTUAL_ENV={ve} or sys.executable={sys.executable}, got {output}",
             )
 
-    def test_project_mode_can_still_import_hermes_tools(self):
-        """Regression: hermes_tools still importable from non-tmpdir CWD.
+    def test_project_mode_can_still_import_thoth_tools(self):
+        """Regression: thoth_tools still importable from non-tmpdir CWD.
 
         This is the PYTHONPATH fix — without it, switching to session CWD
-        breaks `from hermes_tools import terminal`.
+        breaks `from thoth_tools import terminal`.
         """
         import tempfile
         with tempfile.TemporaryDirectory() as td:
             code = (
-                "from hermes_tools import terminal\n"
+                "from thoth_tools import terminal\n"
                 "r = terminal('echo x')\n"
                 "print(r.get('output', 'MISSING'))\n"
             )
@@ -354,7 +354,7 @@ class TestExecuteCodeModeIntegration(unittest.TestCase):
     def test_strict_mode_can_still_import_thoth_tools(self):
         """Regression: strict mode's tmpdir CWD still works for imports."""
         code = (
-            "from hermes_tools import terminal\n"
+            "from thoth_tools import terminal\n"
             "r = terminal('echo x')\n"
             "print(r.get('output', 'MISSING'))\n"
         )
@@ -457,7 +457,7 @@ class TestSecurityInvariantsAcrossModes(unittest.TestCase):
         # execute_code is NOT in SANDBOX_ALLOWED_TOOLS (no recursion)
         self.assertNotIn("execute_code", SANDBOX_ALLOWED_TOOLS)
         code = (
-            "import hermes_tools as ht\n"
+            "import thoth_tools as ht\n"
             "print('execute_code_available:', hasattr(ht, 'execute_code'))\n"
             "print('delegate_task_available:', hasattr(ht, 'delegate_task'))\n"
         )
@@ -469,7 +469,7 @@ class TestSecurityInvariantsAcrossModes(unittest.TestCase):
     def test_tool_whitelist_enforced_in_project_mode(self):
         """CRITICAL: project mode does NOT widen the tool whitelist."""
         code = (
-            "import hermes_tools as ht\n"
+            "import thoth_tools as ht\n"
             "print('execute_code_available:', hasattr(ht, 'execute_code'))\n"
             "print('delegate_task_available:', hasattr(ht, 'delegate_task'))\n"
         )

@@ -4,7 +4,7 @@ description: "Webhook subscriptions: event-driven agent runs."
 version: 1.1.0
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [webhook, events, automation, integrations, notifications, push]
 ---
 

@@ -22,7 +22,7 @@ def fake_skills(tmp_path, monkeypatch):
         tagline = ", ".join(tags)
         (d / "SKILL.md").write_text(
             f"---\nname: {name}\ndescription: {desc}\n"
-            f"metadata:\n  hermes:\n    tags: [{tagline}]\n---\nbody\n",
+            f"metadata:\n  thoth:\n    tags: [{tagline}]\n---\nbody\n",
             encoding="utf-8",
         )
 
@@ -64,7 +64,7 @@ def test_suggest_empty_root_is_safe(tmp_path):
 
 
 def test_register_subparser_skills():
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="thoth")
     sub = parser.add_subparsers(dest="command")
     inspect_mod.register_subparser(sub)
     ns = parser.parse_args(["substrate", "skills", "kubernetes", "deploy"])

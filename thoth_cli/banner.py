@@ -255,11 +255,13 @@ def check_for_updates() -> Optional[int]:
         behind = _check_via_rev(embedded_rev)
     else:
         # Prefer the running code's location over the profile-scoped path.
-        # $THOTH_HOME/hermes-agent/ may be a stale copy from --clone-all;
+        # $THOTH_HOME/app/ may be a stale copy from --clone-all;
         # Path(__file__) always resolves to the actual installed checkout.
         repo_dir = Path(__file__).parent.parent.resolve()
         if not (repo_dir / ".git").exists():
-            repo_dir = thoth_home / "hermes-agent"
+            repo_dir = thoth_home / "app"
+        if not (repo_dir / ".git").exists():
+            repo_dir = thoth_home / "hermes-agent"  # legacy code-dir name
         if not (repo_dir / ".git").exists():
             behind = check_via_pypi()
         else:
@@ -277,13 +279,15 @@ def _resolve_repo_dir() -> Optional[Path]:
     """Return the active Thoth git checkout, or None if this isn't a git install.
 
     Prefers the running code's location over the profile-scoped path
-    because ``$THOTH_HOME/hermes-agent/`` may be a stale copy carried
+    because ``$THOTH_HOME/app/`` may be a stale copy carried
     over by ``--clone-all``.
     """
     repo_dir = Path(__file__).parent.parent.resolve()
     if not (repo_dir / ".git").exists():
         thoth_home = get_thoth_home()
-        repo_dir = thoth_home / "hermes-agent"
+        repo_dir = thoth_home / "app"
+        if not (repo_dir / ".git").exists():
+            repo_dir = thoth_home / "hermes-agent"  # legacy code-dir name
     return repo_dir if (repo_dir / ".git").exists() else None
 
 

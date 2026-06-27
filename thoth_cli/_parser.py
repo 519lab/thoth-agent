@@ -43,9 +43,8 @@ def _build_epilogue(cli: str) -> str:
     """Render the --help examples block using the actual launcher name.
 
     ``cli`` is whatever the user invoked the CLI as (``thoth`` upstream,
-    or a side-by-side fork name like ``hermes-substrate``). Note the
-    ``hermes-agent-dev`` toolset name below is data, not the command, and is
-    intentionally left unchanged.
+    or a side-by-side fork name like ``thoth-substrate``). The
+    ``thoth-agent-dev`` toolset name below is data, not the command.
     """
     return f"""
 Examples:
@@ -68,7 +67,7 @@ Examples:
     {cli} config edit            Edit config in $EDITOR
     {cli} config set model gpt-4 Set a config value
     {cli} gateway                Run messaging gateway
-    {cli} -s hermes-agent-dev,github-auth
+    {cli} -s thoth-agent-dev,github-auth
     {cli} -w                     Start in isolated git worktree
     {cli} gateway install        Install gateway background service
     {cli} sessions list          List past sessions
@@ -212,7 +211,7 @@ def build_top_level_parser():
         "--ignore-user-config",
         action="store_true",
         default=False,
-        help="Ignore ~/.hermes/config.yaml and fall back to built-in defaults (credentials in .env are still loaded)",
+        help="Ignore ~/.thoth/config.yaml and fall back to built-in defaults (credentials in .env are still loaded)",
     )
     _inherited_flag(
         parser,
@@ -354,7 +353,7 @@ def build_top_level_parser():
         "--ignore-user-config",
         action="store_true",
         default=argparse.SUPPRESS,
-        help="Ignore ~/.hermes/config.yaml and fall back to built-in defaults (credentials in .env are still loaded). Useful for isolated CI runs, reproduction, and third-party integrations.",
+        help="Ignore ~/.thoth/config.yaml and fall back to built-in defaults (credentials in .env are still loaded). Useful for isolated CI runs, reproduction, and third-party integrations.",
     )
     _inherited_flag(
         chat_parser,

@@ -6,7 +6,7 @@ author: Anthropic (adapted by 519lab)
 license: Apache-2.0
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  thoth:
     tags: [excel, openpyxl, finance, spreadsheet, modeling]
     related_skills: [pptx-author, dcf-model, comps-analysis, lbo-model, 3-statement-model]
 ---

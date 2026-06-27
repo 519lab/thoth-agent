@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 prerequisites:
   commands: [curl]
 metadata:
-  hermes:
+  thoth:
     tags: [Shopping, E-commerce, Shop.app, Products, Orders, Returns]
     related_skills: [shopify, maps]
     homepage: https://shop.app
