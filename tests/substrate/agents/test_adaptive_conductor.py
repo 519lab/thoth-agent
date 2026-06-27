@@ -15,20 +15,31 @@ from substrate.l0 import commit_slice
 
 
 def test_compute_targets_policy():
-    # Quiet → everyone LOW.
-    quiet = AdaptiveConductor._compute_targets({"backlog_ratio": 0.0})
+    # Quiet (small pending queue) → everyone LOW.
+    quiet = AdaptiveConductor._compute_targets({"pending": 0})
     assert quiet["parser"] is Level.LOW
 
-    # Moderate backlog → parser MODERATE, enrichment LOW.
-    mod = AdaptiveConductor._compute_targets({"backlog_ratio": 0.3})
+    # Moderate backlog (>= CONDUCTOR_PENDING_LOW=20) → parser MODERATE, enrichment LOW.
+    mod = AdaptiveConductor._compute_targets({"pending": 30})
     assert mod["parser"] is Level.MODERATE
     assert mod["associator"] is Level.LOW
 
-    # High backlog → parser HIGH, enrichment OFF (catch up).
-    hot = AdaptiveConductor._compute_targets({"backlog_ratio": 0.9})
+    # High backlog (>= CONDUCTOR_PENDING_HIGH=100) → parser HIGH, enrichment OFF (catch up).
+    hot = AdaptiveConductor._compute_targets({"pending": 150})
     assert hot["parser"] is Level.HIGH
     assert hot["associator"] is Level.OFF
     assert hot["pattern-finder"] is Level.OFF
+
+
+def test_compute_targets_ignores_inflated_ratio_on_small_queue():
+    """#107 regression: a near-100% backlog_ratio must NOT dial the Parser up
+    while the absolute pending queue is tiny. The ratio's denominator
+    (pending+consolidated) shrinks as the Curator releases consolidated history,
+    which falsely pinned a quiet substrate HIGH for a handful of real slices."""
+    targets = AdaptiveConductor._compute_targets(
+        {"pending": 6, "backlog_ratio": 0.99, "trend_bias": 0.2}
+    )
+    assert targets["parser"] is Level.LOW
 
 
 @pytest_asyncio.fixture
@@ -97,8 +108,8 @@ async def test_backlog_excludes_aged_out_slices(booted):
 @pytest.mark.asyncio
 async def test_conductor_dials_parser_up_under_backlog(booted, monkeypatch):
     monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
-    monkeypatch.setenv("CONDUCTOR_BACKLOG_HIGH", "0.5")
-    # All slices pending, none consolidated → backlog_ratio = 1.0 (>= high).
+    monkeypatch.setenv("CONDUCTOR_PENDING_HIGH", "5")
+    # 8 unconsolidated slices, HIGH threshold lowered to 5 → parser HIGH (catch up).
     await _seed_pending(booted, 8)
     await AdaptiveConductor(booted).tick()
 
@@ -143,14 +154,13 @@ def test_compute_targets_coherence_not_low_falls_through_to_backlog():
     assert "dreamer" not in base
 
 
-def test_trend_bias_escalates_sooner():
-    """A rising-backlog trend pushes the effective backlog over the HIGH
-    threshold even when raw backlog is just below it."""
-    # Raw 0.45 is below default HIGH (0.5) → MODERATE without bias.
-    assert AdaptiveConductor._compute_targets({"backlog_ratio": 0.45})["parser"] is Level.MODERATE
-    # +0.1 trend bias → effective 0.55 ≥ HIGH → escalate to HIGH.
-    biased = AdaptiveConductor._compute_targets({"backlog_ratio": 0.45, "trend_bias": 0.1})
-    assert biased["parser"] is Level.HIGH
+def test_trend_bias_is_telemetry_only_not_a_dial():
+    """#107: backlog_ratio and its trend_bias are retained as telemetry but no
+    longer gate the dial — only the absolute pending queue does. A near-100%
+    ratio with a rising trend must not escalate a near-empty queue."""
+    assert AdaptiveConductor._compute_targets(
+        {"pending": 0, "backlog_ratio": 0.45, "trend_bias": 0.1}
+    )["parser"] is Level.LOW
 
 
 @pytest.mark.asyncio
@@ -243,8 +253,8 @@ async def test_conductor_coherence_hysteresis(booted, monkeypatch):
 async def test_conductor_coherence_none_leaves_backlog_policy(booted, monkeypatch):
     """No coherence observation → latch untouched, backlog policy unchanged."""
     monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
-    monkeypatch.setenv("CONDUCTOR_BACKLOG_HIGH", "0.5")
-    # No coherence row written. Heavy backlog → normal HIGH catch-up policy.
+    monkeypatch.setenv("CONDUCTOR_PENDING_HIGH", "5")
+    # No coherence row written. Backlog over threshold → normal HIGH catch-up.
     await _seed_pending(booted, 8)
     c = AdaptiveConductor(booted)
     await c.tick()

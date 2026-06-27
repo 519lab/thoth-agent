@@ -198,10 +198,11 @@ class AdaptiveConductor(SubAgent):
     def _compute_targets(signals: dict) -> dict[str, Level]:
         """Policy → target intensity per agent. Pure (testable).
 
-        Thresholds on an *effective* backlog = observed backlog + a trend
-        bias (rising backlog escalates sooner, falling relaxes sooner). With
-        no ``trend_bias`` in signals the bias is 0 and this is the plain
-        deterministic policy.
+        Thresholds on the *absolute* pending work queue (``signals["pending"]``),
+        the count of unconsolidated perceptual slices inside the freshness
+        window — not the ``pending/(pending+consolidated)`` ratio, whose
+        denominator evaporates as the Curator releases consolidated history and
+        falsely escalates a quiet substrate (#107).
 
         Coherence override: when the coherence latch is tripped
         (``coherence_low``), corrective re-prioritization takes precedence
@@ -217,11 +218,18 @@ class AdaptiveConductor(SubAgent):
                 "dreamer": Level.OFF,
                 "curator": Level.LOW,
             }
-        high = _env_float("CONDUCTOR_BACKLOG_HIGH", 0.5)
-        low = _env_float("CONDUCTOR_BACKLOG_LOW", 0.1)
-        backlog = signals["backlog_ratio"] + signals.get("trend_bias", 0.0)
+        # Dial on the ABSOLUTE pending work queue, not the ratio
+        # pending/(pending+consolidated) (#107). The Curator releases
+        # consolidated slices over time, so on a quiet/aging substrate that
+        # denominator shrinks toward 0 and the ratio climbs toward 100% for a
+        # near-empty queue — which pinned the Parser HIGH for ~6 slices of real
+        # work. backlog_ratio + trend_bias stay in ``signals`` as a secondary
+        # trend metric (telemetry / critic / inspect) but no longer gate.
+        high = _env_float("CONDUCTOR_PENDING_HIGH", 100)
+        low = _env_float("CONDUCTOR_PENDING_LOW", 20)
+        pending = signals.get("pending", 0)
 
-        if backlog >= high:
+        if pending >= high:
             # Catch up: parser hard, enrichment paused.
             return {
                 "parser": Level.HIGH,
@@ -229,7 +237,7 @@ class AdaptiveConductor(SubAgent):
                 "pattern-finder": Level.OFF,
                 "curator": Level.LOW,
             }
-        if backlog >= low:
+        if pending >= low:
             return {
                 "parser": Level.MODERATE,
                 "associator": Level.LOW,
