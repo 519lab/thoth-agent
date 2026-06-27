@@ -166,7 +166,7 @@ Use `execute_code` for mechanical data gathering, then delegate the reasoning-he
 ```python
 # Step 1: Mechanical gathering (execute_code is better here — no reasoning needed)
 execute_code("""
-from hermes_tools import web_search, web_extract
+from thoth_tools import web_search, web_extract
 
 results = []
 for query in ["AI funding Q1 2026", "AI startup acquisitions 2026", "AI IPOs 2026"]:

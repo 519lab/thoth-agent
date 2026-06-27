@@ -126,8 +126,8 @@ class TestBuildToolTitle:
         assert title == "skill view (github-pitfalls/references/api.md)"
 
     def test_execute_code_title_includes_first_code_line(self):
-        title = build_tool_title("execute_code", {"code": "\nfrom hermes_tools import terminal\nprint('done')"})
-        assert title == "python: from hermes_tools import terminal"
+        title = build_tool_title("execute_code", {"code": "\nfrom thoth_tools import terminal\nprint('done')"})
+        assert title == "python: from thoth_tools import terminal"
 
     def test_skill_manage_title_includes_action_and_target(self):
         title = build_tool_title(

@@ -2,7 +2,7 @@
 
 ``substrate_parser_log`` — append-only audit of every Parser invocation,
 parallel to Phase C's ``substrate_recall_log``. Operators read it via
-``hermes substrate parser`` to see Parser cost, latency, and outcome
+``thoth substrate parser`` to see Parser cost, latency, and outcome
 distribution. One row per (session, tick) LLM call.
 
 Per the Phase D spec (2026-05-25-phase-d-l1-parser.md) §3.5. Revision

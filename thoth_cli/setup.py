@@ -2864,12 +2864,12 @@ _OPENCLAW_SCRIPT = (
     / "migration"
     / "openclaw-migration"
     / "scripts"
-    / "openclaw_to_hermes.py"
+    / "openclaw_to_thoth.py"
 )
 
 
 def _load_openclaw_migration_module():
-    """Load the openclaw_to_hermes migration script as a module.
+    """Load the openclaw_to_thoth migration script as a module.
 
     Returns the loaded module, or None if the script can't be loaded.
     """
@@ -2877,7 +2877,7 @@ def _load_openclaw_migration_module():
         return None
 
     spec = importlib.util.spec_from_file_location(
-        "openclaw_to_hermes", _OPENCLAW_SCRIPT
+        "openclaw_to_thoth", _OPENCLAW_SCRIPT
     )
     if spec is None or spec.loader is None:
         return None

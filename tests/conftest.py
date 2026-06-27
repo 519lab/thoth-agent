@@ -205,7 +205,7 @@ _THOTH_BEHAVIORAL_VARS = frozenset({
     "THOTH_HOME_MODE",
     "THOTH_AGENT_USE_LEGACY_SESSION_KEYS",
     # Set by the launcher shim to the invoked command name (e.g.
-    # hermes-substrate). Cleared so cli_name() deterministically returns the
+    # thoth-substrate). Cleared so cli_name() deterministically returns the
     # "thoth" default and the many tests asserting literal "thoth …" hints
     # don't depend on the ambient launcher name.
     "THOTH_CLI_NAME",
@@ -498,7 +498,7 @@ def _ensure_current_event_loop(request):
 # (``cmd_update``, ``kill_gateway_processes``, ``stop_profile_gateway``).
 # When a single test forgets to mock either ``os.kill`` or the global
 # ``find_gateway_pids`` helper, the real call leaks out of the hermetic
-# environment and finds the developer's live ``hermes-gateway`` process
+# environment and finds the developer's live ``thoth-gateway`` process
 # via ``psutil`` — sending it SIGTERM mid-test. The shutdown forensics in
 # PR #23285 caught this happening 5+ times in 3 days, every time
 # correlated with a ``tests/thoth_cli/`` pytest run starting up.
@@ -510,7 +510,7 @@ def _ensure_current_event_loop(request):
 #    a hard ``RuntimeError`` so the offending test gets a stack trace
 #    instead of silently murdering the real gateway.
 #  • ``subprocess.run`` / ``subprocess.Popen`` / ``call`` / ``check_call`` /
-#    ``check_output`` reject any ``systemctl ... <verb> hermes-gateway``
+#    ``check_output`` reject any ``systemctl ... <verb> thoth-gateway``
 #    invocation that would mutate the live unit. Read-only systemctl
 #    calls (``status``, ``show``, ``list-units``) still pass through.
 #
@@ -551,7 +551,7 @@ def _live_system_guard(request, monkeypatch):
       • pty.spawn
       • asyncio.create_subprocess_exec / create_subprocess_shell
     Subprocess inspection looks at the WHOLE command string (not just
-    tokens[0]), so ``bash -c "systemctl restart hermes-gateway"``,
+    tokens[0]), so ``bash -c "systemctl restart thoth-gateway"``,
     ``sudo systemctl ...``, ``env systemctl ...``, ``setsid systemctl ...``
     are all caught. ``pkill``/``killall``/``taskkill`` invocations
     targeting thoth/python patterns are also blocked.
@@ -644,8 +644,7 @@ def _live_system_guard(request, monkeypatch):
     # ── Subprocess command-string inspection (whole-line) ──────────
     _THOTH_TOKENS = (
         "thoth-gateway",
-        "hermes-gateway",
-        "hermes.service",
+        "thoth.service",
         "thoth_cli.main gateway",
         "thoth_cli/main.py gateway",
         "gateway/run.py",
@@ -703,12 +702,11 @@ def _live_system_guard(request, monkeypatch):
             head = tok.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
             if head in _PROCESS_KILLERS:
                 low = cmd_str.lower()
-                # pkill -f pattern: catch hermes-themed patterns + a
+                # pkill -f pattern: catch thoth-themed patterns + a
                 # plain "python" -f which would catch the live gateway
                 # whose cmdline contains "python -m thoth_cli.main".
                 if (
-                    "hermes" in low
-                    or "thoth" in low
+                    "thoth" in low
                     or "gateway" in low
                     or ("python" in low and "-f" in tokens)
                 ):
@@ -720,7 +718,7 @@ def _live_system_guard(request, monkeypatch):
             raise RuntimeError(
                 f"tests/conftest.py live-system guard: blocked "
                 f"subprocess.{name}({cmd!r}) — would mutate the "
-                "live hermes-gateway systemd unit. Mock "
+                "live thoth-gateway systemd unit. Mock "
                 "subprocess.run / _run_systemctl in the test, or "
                 "mark with @pytest.mark.live_system_guard_bypass."
             )

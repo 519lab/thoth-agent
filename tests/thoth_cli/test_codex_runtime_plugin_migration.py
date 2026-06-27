@@ -500,7 +500,7 @@ class TestMigrate:
                          expose_thoth_tools=True)
         text = (tmp_path / "config.toml").read_text()
         assert "[mcp_servers.thoth-tools]" in text
-        assert "hermes_tools_mcp_server" in text
+        assert "thoth_tools_mcp_server" in text
         # Must include startup + tool timeouts so codex doesn't give up
         assert "startup_timeout_sec" in text
         assert "tool_timeout_sec" in text
@@ -515,7 +515,7 @@ class TestMigrate:
                 expose_thoth_tools=False)
         text = (tmp_path / "config.toml").read_text()
         assert "[mcp_servers.thoth-tools]" not in text
-        assert "hermes_tools_mcp_server" not in text
+        assert "thoth_tools_mcp_server" not in text
 
     def test_dry_run_doesnt_write(self, tmp_path):
         report = migrate({"mcp_servers": {"x": {"command": "y"}}},
@@ -608,7 +608,7 @@ class TestMigrate:
             'args = ["--above"]\n'
         )
         # First migrate — adds managed block below user content
-        migrate({"mcp_servers": {"hermes-mcp": {"command": "npx"}}},
+        migrate({"mcp_servers": {"thoth-mcp": {"command": "npx"}}},
                 codex_home=tmp_path, discover_plugins=False,
                 expose_thoth_tools=False)
         text = target.read_text()
@@ -620,14 +620,14 @@ class TestMigrate:
             text + "\n[mcp_servers.user-below]\ncommand = \"below-server\"\n"
         )
         # Re-migrate — both should survive
-        migrate({"mcp_servers": {"hermes-mcp": {"command": "npx"}}},
+        migrate({"mcp_servers": {"thoth-mcp": {"command": "npx"}}},
                 codex_home=tmp_path, discover_plugins=False,
                 expose_thoth_tools=False)
         final = target.read_text()
         assert "user-above" in final
         assert "user-below" in final
         # And our managed block is still there with the new content
-        assert "[mcp_servers.hermes-mcp]" in final
+        assert "[mcp_servers.thoth-mcp]" in final
 
     def test_skipped_keys_reported(self, tmp_path):
         report = migrate({

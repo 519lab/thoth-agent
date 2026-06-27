@@ -8,7 +8,7 @@ Ported from [JimLiu/baoyu-skills](https://github.com/JimLiu/baoyu-skills) v1.56.
 
 | Change | Upstream | Thoth |
 |--------|----------|--------|
-| Metadata namespace | `openclaw` | `hermes` (with `tags` + `homepage`) |
+| Metadata namespace | `openclaw` | `thoth` (with `tags` + `homepage`) |
 | Trigger | Slash commands / CLI flags | Natural language skill matching |
 | User config | EXTEND.md file (project/user/XDG paths) | Removed — not part of Thoth infra |
 | User prompts | `AskUserQuestion` (batched) | `clarify` tool (one question at a time) |

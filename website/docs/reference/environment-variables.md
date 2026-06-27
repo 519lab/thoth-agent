@@ -531,7 +531,7 @@ Advanced per-platform knobs for throttling the outbound message batcher. Most us
 | `THOTH_HUMAN_DELAY_MAX_MS` | Custom delay range maximum (ms) |
 | `THOTH_QUIET` | Suppress non-essential output (`true`/`false`) |
 | `CODEX_HOME` | When [Codex app-server runtime](../user-guide/features/codex-app-server-runtime) is enabled, override the directory Codex CLI reads its config + auth from (default: `~/.codex`). Thoth's migration writes the managed block to `<CODEX_HOME>/config.toml`. |
-| `THOTH_KANBAN_TASK` | Set by the kanban dispatcher when spawning a worker (task UUID). Workers and the spawned `hermes-tools` MCP subprocess inherit it so kanban tools gate correctly. Don't set manually. |
+| `THOTH_KANBAN_TASK` | Set by the kanban dispatcher when spawning a worker (task UUID). Workers and the spawned `thoth-tools` MCP subprocess inherit it so kanban tools gate correctly. Don't set manually. |
 | `THOTH_API_TIMEOUT` | LLM API call timeout in seconds (default: `1800`) |
 | `THOTH_API_CALL_STALE_TIMEOUT` | Non-streaming stale-call timeout in seconds (default: `300`). Auto-disabled for local providers when left unset. Also configurable via `providers.<id>.stale_timeout_seconds` or `providers.<id>.models.<model>.stale_timeout_seconds` in `config.yaml`. |
 | `THOTH_STREAM_READ_TIMEOUT` | Streaming socket read timeout in seconds (default: `120`). Auto-increased to `THOTH_API_TIMEOUT` for local providers. Increase if local LLMs time out during long code generation. |

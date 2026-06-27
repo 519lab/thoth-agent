@@ -30,7 +30,7 @@
 <tr><td><b>研究就绪</b></td><td>批量轨迹生成、轨迹压缩——用于训练下一代工具调用模型。</td></tr>
 </table>
 
-> **关于名字的说明：** 项目名为 **Thoth**，命令行工具现已改为 `thoth`——本文档中的每个示例都使用它。旧的 `hermes` 命令仍作为别名可用，安装时配置也仍保留在 `~/.hermes` 下（数据库同样仍命名为 `hermes`），因此升级时不会有任何破坏。剩余的可执行文件 / 命名空间重命名正在进行中。
+> **关于名字的说明：** 项目名为 **Thoth**，命令行工具为 `thoth`——本文档中的每个示例都使用它。安装时配置保留在 `~/.thoth` 下，数据库命名为 `thoth`。
 
 ---
 
@@ -42,7 +42,7 @@
 curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.sh | bash
 ```
 
-安装程序会为你准备好所需的一切，包括一个 `docker compose` 的 PostgreSQL 17 服务（端口 5432，数据库 `hermes`），并运行 schema 迁移。如果你希望从干净的数据库开始，可传入 `--reset-db`；若要指向你自己的 PostgreSQL，可传入 `--skip-postgres`。
+安装程序会为你准备好所需的一切，包括一个 `docker compose` 的 PostgreSQL 17 服务（端口 5432，数据库 `thoth`），并运行 schema 迁移。如果你希望从干净的数据库开始，可传入 `--reset-db`；若要指向你自己的 PostgreSQL，可传入 `--skip-postgres`。
 
 ### Windows（原生，PowerShell）— 早期 Beta
 
@@ -52,11 +52,11 @@ curl -fsSL https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/ins
 iex (irm https://raw.githubusercontent.com/519lab/thoth-agent/main/scripts/install.ps1)
 ```
 
-安装程序会处理一切：uv、Python 3.11、Node.js、ripgrep、ffmpeg，**以及一个便携版 Git Bash**（MinGit，解压到 `%LOCALAPPDATA%\hermes\git`——无需管理员权限，与任何系统 Git 安装完全隔离），用于运行 shell 命令。如果你已经安装了 Git，它会检测并改用你的安装。
+安装程序会处理一切：uv、Python 3.11、Node.js、ripgrep、ffmpeg，**以及一个便携版 Git Bash**（MinGit，解压到 `%LOCALAPPDATA%\thoth\git`——无需管理员权限，与任何系统 Git 安装完全隔离），用于运行 shell 命令。如果你已经安装了 Git，它会检测并改用你的安装。
 
 > **Android / Termux：** Termux 会安装精选的 `.[termux]` 扩展，因为完整的 `.[all]` 扩展目前会拉取 Android 不兼容的语音依赖。
 >
-> **Windows 路径：** 原生 Windows 安装在 `%LOCALAPPDATA%\hermes` 下；WSL2 则与 Linux 一样安装在 `~/.hermes` 下。目前唯一需要专门用 WSL2 的功能是基于浏览器的仪表盘聊天面板（它使用 POSIX PTY——经典 CLI 和网关都可原生运行）。
+> **Windows 路径：** 原生 Windows 安装在 `%LOCALAPPDATA%\thoth` 下；WSL2 则与 Linux 一样安装在 `~/.thoth` 下。目前唯一需要专门用 WSL2 的功能是基于浏览器的仪表盘聊天面板（它使用 POSIX PTY——经典 CLI 和网关都可原生运行）。
 
 安装后：
 
@@ -75,16 +75,16 @@ Thoth 使用 **PostgreSQL 17**（启用 `vector` 和 `pg_trgm` 扩展）作为�
 
 ```bash
 docker compose up -d postgres
-export THOTH_PG_DSN=postgresql://hermes:hermes@localhost:5432/hermes   # 旧的 THOTH_PG_DSN 仍通过环境变量桥接生效
+export THOTH_PG_DSN=postgresql://thoth:thoth@localhost:5432/thoth
 uv run alembic -c migrations/alembic.ini upgrade head
 ```
 
-**生产部署：** 将 `THOTH_PG_DSN`（旧的 `THOTH_PG_DSN` 仍通过环境变量桥接生效）指向任意安装了 `vector` 和 `pg_trgm` 扩展的 PostgreSQL 17+ 实例，并将 `alembic upgrade head` 作为部署流程的一部分运行。
+**生产部署：** 将 `THOTH_PG_DSN` 指向任意安装了 `vector` 和 `pg_trgm` 扩展的 PostgreSQL 17+ 实例，并将 `alembic upgrade head` 作为部署流程的一部分运行。
 
 **从旧的基于 SQLite 的安装迁移？** 我们提供了一个一次性导入器：
 
 ```bash
-uv run thoth db migrate-from-sqlite --sqlite-path ~/.hermes/state.db   # 加 --dry-run 可预览
+uv run thoth db migrate-from-sqlite --sqlite-path ~/.thoth/state.db   # 加 --dry-run 可预览
 ```
 
 ---

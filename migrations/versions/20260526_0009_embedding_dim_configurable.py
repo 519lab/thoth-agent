@@ -21,17 +21,17 @@ slices on its next tick and re-embeds at the new dim.
 
 Operators changing dim AFTER first install need to:
 
-  1. Stop hermes (so the Curator isn't mid-write):
-        hermes gateway stop  # or just exit the CLI
+  1. Stop thoth (so the Curator isn't mid-write):
+        thoth gateway stop  # or just exit the CLI
   2. Set the new env var:
         export THOTH_EMBEDDING_DIM=768
   3. Re-run migrations (alembic detects this rev applied but
      ``upgrade_in_place`` reads the env each call, so a no-op upgrade
      followed by a manual re-apply via ``alembic stamp`` + repeat is
      needed — OR run the ALTER block below by hand against PG.
-     A ``hermes substrate reembed-dim N`` CLI command is the proper
+     A ``thoth substrate reembed-dim N`` CLI command is the proper
      long-term answer; not in this PR's scope).
-  4. Restart hermes; Curator backfills new embeddings on the next tick
+  4. Restart thoth; Curator backfills new embeddings on the next tick
      (~30s of activity).
 
 Cost note: clearing embeddings forces re-embed of every slice. With a
@@ -41,7 +41,7 @@ re-running embed() over every slice's payload text.
 Revision ID: 20260526_0009
 Revises: 20260526_0008  (Phase D parser audit — landed earlier today,
                          see PR llm-cognitive-thought#3 for the spec; the
-                         hermes-agent side of Phase D will land separately)
+                         thoth-agent side of Phase D will land separately)
 Create Date: 2026-05-26
 
 NOTE on down_revision: if Phase D's 0008 hasn't merged when this

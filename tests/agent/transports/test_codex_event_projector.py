@@ -203,7 +203,7 @@ class TestMcpToolCallProjection:
             "server": "obsidian",
             "tool": "search_notes",
             "status": "completed",
-            "arguments": {"query": "hermes"},
+            "arguments": {"query": "thoth"},
             "result": {"content": [{"text": "found"}]},
             "error": None,
         }

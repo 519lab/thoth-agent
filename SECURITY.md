@@ -274,7 +274,7 @@ private-disclosure channel and don't receive advisories.
   that explicitly disable protections: `--insecure` and equivalent
   flags on the dashboard or other components, disabled approvals,
   local backend in production, development profiles that bypass
-  hermes-home security, and similar. Reports against those
+  thoth-home security, and similar. Reports against those
   configurations are not vulnerabilities — that's the flag's job.
 - **Community-contributed skills and plugins.** Third-party skills
   (including the community skills repository) and third-party

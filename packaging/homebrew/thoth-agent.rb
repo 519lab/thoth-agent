@@ -26,14 +26,14 @@ class ThothAgent < Formula
 
     pkgshare.install "skills", "optional-skills"
 
-    %w[thoth thoth-agent thoth-acp hermes hermes-agent hermes-acp].each do |exe|
+    %w[thoth thoth-agent thoth-acp].each do |exe|
       next unless (libexec/"bin"/exe).exist?
 
       (bin/exe).write_env_script(
         libexec/"bin"/exe,
-        HERMES_BUNDLED_SKILLS: pkgshare/"skills",
-        HERMES_OPTIONAL_SKILLS: pkgshare/"optional-skills",
-        HERMES_MANAGED: "homebrew"
+        THOTH_BUNDLED_SKILLS: pkgshare/"skills",
+        THOTH_OPTIONAL_SKILLS: pkgshare/"optional-skills",
+        THOTH_MANAGED: "homebrew"
       )
     end
   end

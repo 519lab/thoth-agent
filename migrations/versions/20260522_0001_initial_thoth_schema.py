@@ -1,4 +1,4 @@
-"""initial hermes schema
+"""initial thoth schema
 
 Revision ID: 20260522_0001
 Revises:

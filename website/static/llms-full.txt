@@ -11473,7 +11473,7 @@ This is the shape that covers the workloads `delegate_task` can't:
 - **Engineering pipelines** — decompose → implement in parallel worktrees → review → iterate → PR.
 - **Fleet work** — one specialist managing N subjects (50 social accounts, 12 monitored services).
 
-For the full design rationale, comparative analysis against Cline Kanban / Paperclip / NanoClaw / Google Gemini Enterprise, and the eight canonical collaboration patterns, see `docs/hermes-kanban-v1-spec.pdf` in the repository.
+For the full design rationale, comparative analysis against Cline Kanban / Paperclip / NanoClaw / Google Gemini Enterprise, and the eight canonical collaboration patterns, see `docs/thoth-kanban-v1-spec.pdf` in the repository.
 
 ## Kanban vs. `delegate_task`
 
@@ -12160,7 +12160,7 @@ The board supports these eight patterns without any new primitives:
 | **P8 Fleet farming** | one profile, N subjects | 50 social accounts |
 | **P9 Triage specifier** | rough idea → `triage` → `thoth kanban specify` expands body → `todo` | "turn this one-liner into a spec'd task" |
 
-For worked examples of each, see `docs/hermes-kanban-v1-spec.pdf`.
+For worked examples of each, see `docs/thoth-kanban-v1-spec.pdf`.
 
 ## Multi-tenant usage
 
@@ -12293,7 +12293,7 @@ Kanban is deliberately single-host. `~/.thoth/kanban.db` is a local SQLite file 
 
 ## Design spec
 
-The complete design — architecture, concurrency correctness, comparison with other systems, implementation plan, risks, open questions — lives in `docs/hermes-kanban-v1-spec.pdf`. Read that before filing any behavior-change PR.
+The complete design — architecture, concurrency correctness, comparison with other systems, implementation plan, risks, open questions — lives in `docs/thoth-kanban-v1-spec.pdf`. Read that before filing any behavior-change PR.
 
 ---
 
@@ -12802,15 +12802,15 @@ The `execute_code` tool lets the agent write Python scripts that call Thoth tool
 
 ## How It Works
 
-1. The agent writes a Python script using `from hermes_tools import ...`
-2. Thoth generates a `hermes_tools.py` stub module with RPC functions
+1. The agent writes a Python script using `from thoth_tools import ...`
+2. Thoth generates a `thoth_tools.py` stub module with RPC functions
 3. Thoth opens a Unix domain socket and starts an RPC listener thread
 4. The script runs in a child process — tool calls travel over the socket back to Thoth
 5. Only the script's `print()` output is returned to the LLM; intermediate tool results never enter the context window
 
 ```python
 # The agent can write scripts like:
-from hermes_tools import web_search, web_extract
+from thoth_tools import web_search, web_extract
 
 results = web_search("Python 3.13 features", limit=5)
 for r in results["data"]["web"]:
@@ -12836,7 +12836,7 @@ The key benefit: intermediate tool results never enter the context window — on
 ### Data Processing Pipeline
 
 ```python
-from hermes_tools import search_files, read_file
+from thoth_tools import search_files, read_file
 import json
 
 # Find all config files and extract database settings
@@ -12852,7 +12852,7 @@ print(json.dumps(configs, indent=2))
 ### Multi-Step Web Research
 
 ```python
-from hermes_tools import web_search, web_extract
+from thoth_tools import web_search, web_extract
 import json
 
 # Search, extract, and summarize in one turn
@@ -12874,7 +12874,7 @@ print(json.dumps(summaries, indent=2))
 ### Bulk File Refactoring
 
 ```python
-from hermes_tools import search_files, read_file, patch
+from thoth_tools import search_files, read_file, patch
 
 # Find all Python files using deprecated API and fix them
 matches = search_files("old_api_call", path="src/", file_glob="*.py")
@@ -12895,7 +12895,7 @@ print(f"Fixed {fixed} files out of {len(matches.get('matches', []))} matches")
 ### Build and Test Pipeline
 
 ```python
-from hermes_tools import terminal, read_file
+from thoth_tools import terminal, read_file
 import json
 
 # Run tests, parse results, and report
@@ -13011,7 +13011,7 @@ terminal:
 
 See the [Security guide](/docs/user-guide/security#environment-variable-passthrough) for full details.
 
-Thoth always writes the script and the auto-generated `hermes_tools.py` RPC stub into a temp staging directory that is cleaned up after execution. In `strict` mode the script also *runs* there; in `project` mode it runs in the session's working directory (the staging directory stays on `PYTHONPATH` so imports still resolve). The child process runs in its own process group so it can be cleanly killed on timeout or interruption.
+Thoth always writes the script and the auto-generated `thoth_tools.py` RPC stub into a temp staging directory that is cleaned up after execution. In `strict` mode the script also *runs* there; in `project` mode it runs in the session's working directory (the staging directory stays on `PYTHONPATH` so imports still resolve). The child process runs in its own process group so it can be cleanly killed on timeout or interruption.
 
 ## execute_code vs terminal
 
@@ -30960,7 +30960,7 @@ Use `execute_code` for mechanical data gathering, then delegate the reasoning-he
 ```python
 # Step 1: Mechanical gathering (execute_code is better here — no reasoning needed)
 execute_code("""
-from hermes_tools import web_search, web_extract
+from thoth_tools import web_search, web_extract
 
 results = []
 for query in ["AI funding Q1 2026", "AI startup acquisitions 2026", "AI IPOs 2026"]:
@@ -35975,7 +35975,7 @@ Board resolution order (highest precedence first): `--board <slug>` flag → `TH
 
 All actions are also available as a slash command in the gateway (`/kanban …`), with the same argument surface — including `boards` subcommands and the `--board` flag.
 
-For the full design — comparison with Cline Kanban / Paperclip / NanoClaw / Gemini Enterprise, eight collaboration patterns, four user stories, concurrency correctness proof — see `docs/hermes-kanban-v1-spec.pdf` in the repository or the [Kanban user guide](/docs/user-guide/features/kanban).
+For the full design — comparison with Cline Kanban / Paperclip / NanoClaw / Gemini Enterprise, eight collaboration patterns, four user stories, concurrency correctness proof — see `docs/thoth-kanban-v1-spec.pdf` in the repository or the [Kanban user guide](/docs/user-guide/features/kanban).
 
 ## `thoth webhook`
 
@@ -38090,7 +38090,7 @@ Advanced per-platform knobs for throttling the outbound message batcher. Most us
 | `THOTH_HUMAN_DELAY_MAX_MS` | Custom delay range maximum (ms) |
 | `THOTH_QUIET` | Suppress non-essential output (`true`/`false`) |
 | `CODEX_HOME` | When [Codex app-server runtime](../user-guide/features/codex-app-server-runtime) is enabled, override the directory Codex CLI reads its config + auth from (default: `~/.codex`). Thoth's migration writes the managed block to `<CODEX_HOME>/config.toml`. |
-| `THOTH_KANBAN_TASK` | Set by the kanban dispatcher when spawning a worker (task UUID). Workers and the spawned `hermes-tools` MCP subprocess inherit it so kanban tools gate correctly. Don't set manually. |
+| `THOTH_KANBAN_TASK` | Set by the kanban dispatcher when spawning a worker (task UUID). Workers and the spawned `thoth-tools` MCP subprocess inherit it so kanban tools gate correctly. Don't set manually. |
 | `THOTH_API_TIMEOUT` | LLM API call timeout in seconds (default: `1800`) |
 | `THOTH_API_CALL_STALE_TIMEOUT` | Non-streaming stale-call timeout in seconds (default: `300`). Auto-disabled for local providers when left unset. Also configurable via `providers.<id>.stale_timeout_seconds` or `providers.<id>.models.<model>.stale_timeout_seconds` in `config.yaml`. |
 | `THOTH_STREAM_READ_TIMEOUT` | Streaming socket read timeout in seconds (default: `120`). Auto-increased to `THOTH_API_TIMEOUT` for local providers. Increase if local LLMs time out during long code generation. |
@@ -47774,7 +47774,7 @@ Thoth registers itself as an MCP server so codex can call back for tools codex d
 - **`skill_view` / `skills_list`** — read from Thoth's skill library.
 - **`text_to_speech`** — TTS through Thoth's configured provider.
 
-When the model wants one of these, codex spawns the `hermes_tools_mcp_server` subprocess via stdio MCP, the call is dispatched through `model_tools.handle_function_call()` (same code path as Thoth's default runtime), and the result is returned to codex like any other MCP response.
+When the model wants one of these, codex spawns the `thoth_tools_mcp_server` subprocess via stdio MCP, the call is dispatched through `model_tools.handle_function_call()` (same code path as Thoth's default runtime), and the result is returned to codex like any other MCP response.
 
 ### What's NOT available on this runtime
 
@@ -47807,7 +47807,7 @@ What also works because the MCP callback exposes them:
 - **`kanban_show` / `kanban_list`** — read-only board queries for the worker to check its own context.
 - **`kanban_create` / `kanban_unblock` / `kanban_link`** — orchestrator-only operations. Available for orchestrator agents running on the codex runtime that need to dispatch new tasks.
 
-The kanban tools are gated by `THOTH_KANBAN_TASK` env var the dispatcher sets — that var is propagated to the codex subprocess (codex inherits env) and from there to the spawned `hermes-tools` MCP server subprocess. So the tools see the right task id and gate correctly. For Codex app-server workers, Thoth also passes narrow app-server sandbox overrides when `THOTH_KANBAN_TASK` is present: keep `workspace-write` sandboxing, add the **board DB directory plus every Kanban path the dispatcher pinned** as extra writable roots (`THOTH_KANBAN_WORKSPACES_ROOT`, `THOTH_KANBAN_WORKSPACE`, legacy `THOTH_KANBAN_ROOT` — deduplicated, DB-dir first), and keep network disabled by default. This avoids the brittle `:danger-no-sandbox` workaround while letting `kanban_complete` / `kanban_block` update the board DB **and** letting workers write reports/artifacts under workspace mounts that live outside the DB directory (e.g. `/media/.../kanban-workspaces/...` on a separate drive — [issue #27941](https://github.com/519lab/thoth-agent/issues/27941)).
+The kanban tools are gated by `THOTH_KANBAN_TASK` env var the dispatcher sets — that var is propagated to the codex subprocess (codex inherits env) and from there to the spawned `thoth-tools` MCP server subprocess. So the tools see the right task id and gate correctly. For Codex app-server workers, Thoth also passes narrow app-server sandbox overrides when `THOTH_KANBAN_TASK` is present: keep `workspace-write` sandboxing, add the **board DB directory plus every Kanban path the dispatcher pinned** as extra writable roots (`THOTH_KANBAN_WORKSPACES_ROOT`, `THOTH_KANBAN_WORKSPACE`, legacy `THOTH_KANBAN_ROOT` — deduplicated, DB-dir first), and keep network disabled by default. This avoids the brittle `:danger-no-sandbox` workaround while letting `kanban_complete` / `kanban_block` update the board DB **and** letting workers write reports/artifacts under workspace mounts that live outside the DB directory (e.g. `/media/.../kanban-workspaces/...` on a separate drive — [issue #27941](https://github.com/519lab/thoth-agent/issues/27941)).
 
 ### Cron jobs
 
@@ -48059,15 +48059,15 @@ What's NOT migrated:
 Codex's built-in toolset covers shell/file ops/patches but doesn't have web search, browser automation, vision, image generation, etc. To keep those usable in a codex turn, Thoth registers itself as an MCP server in `~/.codex/config.toml`:
 
 ```toml
-[mcp_servers.hermes-tools]
+[mcp_servers.thoth-tools]
 command = "/path/to/python"
-args = ["-m", "agent.transports.hermes_tools_mcp_server"]
+args = ["-m", "agent.transports.thoth_tools_mcp_server"]
 env = { THOTH_HOME = "/your/.thoth", PYTHONPATH = "...", THOTH_QUIET = "1" }
 startup_timeout_sec = 30.0
 tool_timeout_sec = 600.0
 ```
 
-When the model calls `web_search` (or another exposed Thoth tool), codex spawns the `hermes_tools_mcp_server` subprocess via stdio, the request is dispatched through `model_tools.handle_function_call()`, and the result is projected back to codex like any other MCP response.
+When the model calls `web_search` (or another exposed Thoth tool), codex spawns the `thoth_tools_mcp_server` subprocess via stdio, the request is dispatched through `model_tools.handle_function_call()`, and the result is projected back to codex like any other MCP response.
 
 **Tools available via the callback:** `web_search`, `web_extract`, `browser_navigate`, `browser_click`, `browser_type`, `browser_press`, `browser_snapshot`, `browser_scroll`, `browser_back`, `browser_get_images`, `browser_console`, `browser_vision`, `vision_analyze`, `image_generate`, `skill_view`, `skills_list`, `text_to_speech`.
 
@@ -48089,7 +48089,7 @@ This runtime is **opt-in beta**. Working as of Thoth Agent 2026.5 + Codex CLI 0.
 
 - Multi-turn conversations
 - `commandExecution` and `fileChange` (apply_patch) approvals via Thoth UI
-- MCP tool calls (verified against `@modelcontextprotocol/server-filesystem` and the new `hermes-tools` callback)
+- MCP tool calls (verified against `@modelcontextprotocol/server-filesystem` and the new `thoth-tools` callback)
 - Native Codex plugin migration (verified against Linear / GitHub / Calendar inventory)
 - Deny/cancel paths
 - Toggle on/off cycle
@@ -48135,7 +48135,7 @@ If you find a bug, [open an issue](https://github.com/519lab/thoth-agent/issues)
         │   │  │   (linear, github,   │     │
         │   │  │    gmail, calendar,  │     │
         │   │  │    canva, ...)       │     │
-        │   │  └─ hermes-tools ───────┼─────────────────┐
+        │   │  └─ thoth-tools ───────┼─────────────────┐
         │   │       (callback to     │     │           │
         │   │        Thoth's richer  │     │           │
         │   │        tools)          │     │           │
@@ -48144,7 +48144,7 @@ If you find a bug, [open an issue](https://github.com/519lab/thoth-agent/issues)
                                                         │
                                                         ▼
         ┌──────────────────────────────────────────────────────────┐
-        │  hermes_tools_mcp_server.py (subprocess on demand)        │
+        │  thoth_tools_mcp_server.py (subprocess on demand)        │
         │   web_search, web_extract, browser_*, vision_analyze,    │
         │   image_generate, skill_view, skills_list, text_to_speech│
         └──────────────────────────────────────────────────────────┘
