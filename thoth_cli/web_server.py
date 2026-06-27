@@ -4405,6 +4405,13 @@ def _discover_dashboard_plugins() -> list:
                 slots: List[str] = []
                 if isinstance(slots_src, list):
                     slots = [s for s in slots_src if isinstance(s, str) and s]
+                entry = data.get("entry", "dist/index.js")
+                # Only advertise a frontend bundle the browser can actually load.
+                # A backend-only plugin (declares ``api`` but ships no built
+                # ``dist``) must not be offered to the frontend loader, or it
+                # 404s on every dashboard page and can stall plugin rendering.
+                # Its API still mounts via _mount_plugin_api_routes below.
+                has_frontend = (child / "dashboard" / entry).is_file()
                 plugins.append({
                     "name": name,
                     "label": data.get("label", name),
@@ -4413,7 +4420,8 @@ def _discover_dashboard_plugins() -> list:
                     "version": data.get("version", "0.0.0"),
                     "tab": tab_info,
                     "slots": slots,
-                    "entry": data.get("entry", "dist/index.js"),
+                    "entry": entry,
+                    "has_frontend": has_frontend,
                     "css": data.get("css"),
                     "has_api": bool(data.get("api")),
                     "source": source,
@@ -4447,11 +4455,13 @@ async def get_dashboard_plugins():
     # Read user's hidden plugins list from config.
     config = load_config()
     hidden: list = cfg_get(config, "dashboard", "hidden_plugins", default=[]) or []
-    # Strip internal fields before sending to frontend and filter out hidden.
+    # Strip internal fields before sending to frontend, filter out hidden, and
+    # skip backend-only plugins with no built bundle (has_frontend=False) so the
+    # loader never tries to <script src> a missing dist and 404s.
     return [
         {k: v for k, v in p.items() if not k.startswith("_")}
         for p in plugins
-        if p["name"] not in hidden
+        if p["name"] not in hidden and p.get("has_frontend", True)
     ]
 
 
