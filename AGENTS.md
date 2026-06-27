@@ -45,7 +45,6 @@ thoth-agent/
 │   ├── context_engine/   # Context-engine plugins
 │   ├── model-providers/  # Inference backend plugins (openrouter, anthropic, gmi, ...)
 │   ├── kanban/           # Multi-agent board dispatcher + worker plugin
-│   ├── thoth-achievements/  # Gamified achievement tracking
 │   ├── observability/    # Metrics / traces / logs plugin
 │   ├── image_gen/        # Image-generation providers
 │   └── <others>/         # disk-cleanup, example-dashboard, google_meet, platforms,
