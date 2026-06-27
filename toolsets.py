@@ -460,12 +460,6 @@ TOOLSETS = {
         "includes": []
     },
 
-    "thoth-dingtalk": {
-        "description": "DingTalk bot toolset - enterprise messaging platform (full access)",
-        "tools": _THOTH_CORE_TOOLS,
-        "includes": []
-    },
-
     "thoth-feishu": {
         "description": "Feishu/Lark bot toolset - enterprise messaging via Feishu/Lark (full access)",
         "tools": _THOTH_CORE_TOOLS + [
@@ -530,7 +524,7 @@ TOOLSETS = {
     "thoth-gateway": {
         "description": "Gateway toolset - union of all messaging platform tools",
         "tools": [],
-        "includes": ["thoth-telegram", "thoth-discord", "thoth-whatsapp", "thoth-slack", "thoth-signal", "thoth-bluebubbles", "thoth-homeassistant", "thoth-email", "thoth-sms", "thoth-mattermost", "thoth-matrix", "thoth-dingtalk", "thoth-feishu", "thoth-wecom", "thoth-wecom-callback", "thoth-weixin", "thoth-qqbot", "thoth-webhook", "thoth-yuanbao"]
+        "includes": ["thoth-telegram", "thoth-discord", "thoth-whatsapp", "thoth-slack", "thoth-signal", "thoth-bluebubbles", "thoth-homeassistant", "thoth-email", "thoth-sms", "thoth-mattermost", "thoth-matrix", "thoth-feishu", "thoth-wecom", "thoth-wecom-callback", "thoth-weixin", "thoth-qqbot", "thoth-webhook", "thoth-yuanbao"]
     }
 }
 

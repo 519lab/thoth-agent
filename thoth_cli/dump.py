@@ -111,7 +111,6 @@ def _configured_platforms() -> list[str]:
         "matrix": "MATRIX_HOMESERVER_URL",
         "mattermost": "MATTERMOST_URL",
         "homeassistant": "HASS_TOKEN",
-        "dingtalk": "DINGTALK_CLIENT_ID",
         "feishu": "FEISHU_APP_ID",
         "wecom": "WECOM_BOT_ID",
         "wecom_callback": "WECOM_CALLBACK_CORP_ID",

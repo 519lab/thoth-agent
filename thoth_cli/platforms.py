@@ -30,7 +30,6 @@ PLATFORMS: OrderedDict[str, PlatformInfo] = OrderedDict([
     ("homeassistant",  PlatformInfo(label="🏠 Home Assistant",  default_toolset="thoth-homeassistant")),
     ("mattermost",     PlatformInfo(label="💬 Mattermost",      default_toolset="thoth-mattermost")),
     ("matrix",         PlatformInfo(label="💬 Matrix",          default_toolset="thoth-matrix")),
-    ("dingtalk",       PlatformInfo(label="💬 DingTalk",        default_toolset="thoth-dingtalk")),
     ("feishu",         PlatformInfo(label="🪽 Feishu",          default_toolset="thoth-feishu")),
     ("wecom",          PlatformInfo(label="💬 WeCom",           default_toolset="thoth-wecom")),
     ("wecom_callback", PlatformInfo(label="💬 WeCom Callback",  default_toolset="thoth-wecom-callback")),

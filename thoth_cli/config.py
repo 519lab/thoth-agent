@@ -105,8 +105,6 @@ _EXTRA_ENV_KEYS = frozenset({
     "SIGNAL_ALLOWED_USERS", "SIGNAL_GROUP_ALLOWED_USERS",
     "SIGNAL_HOME_CHANNEL", "SIGNAL_HOME_CHANNEL_NAME",
     "SMS_HOME_CHANNEL", "SMS_HOME_CHANNEL_NAME",
-    "DINGTALK_CLIENT_ID", "DINGTALK_CLIENT_SECRET",
-    "DINGTALK_HOME_CHANNEL", "DINGTALK_HOME_CHANNEL_NAME",
     "FEISHU_APP_ID", "FEISHU_APP_SECRET", "FEISHU_ENCRYPT_KEY", "FEISHU_VERIFICATION_TOKEN",
     "FEISHU_HOME_CHANNEL", "FEISHU_HOME_CHANNEL_NAME",
     "YUANBAO_HOME_CHANNEL", "YUANBAO_HOME_CHANNEL_NAME",
@@ -4325,7 +4323,7 @@ def _normalize_max_turns_config(config: Dict[str, Any]) -> Dict[str, Any]:
 # thoth-* (2026-06). Existing configs are migrated in place on load+save so we
 # don't carry permanent back-compat aliases in the toolset registry.
 _RENAMED_TOOLSET_SUFFIXES = (
-    "api-server", "bluebubbles", "cron", "dingtalk", "discord", "email",
+    "api-server", "bluebubbles", "cron", "discord", "email",
     "feishu", "gateway", "homeassistant", "matrix", "mattermost", "qqbot",
     "signal", "slack", "sms", "telegram", "webhook", "wecom", "wecom-callback",
     "weixin", "whatsapp", "yuanbao", "acp", "cli",
