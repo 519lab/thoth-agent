@@ -38,6 +38,17 @@ def _seed_skill_usage(records: dict) -> None:
     (skills_dir / ".usage.json").write_text(json.dumps(records), encoding="utf-8")
 
 
+# Skill usage is sourced from the ~/.thoth/skills/.usage.json sidecar
+# (loads = view_count + use_count, edits = patch_count), windowed by last
+# activity. ``populated_db`` seeds these so generate()/formatters see skills;
+# the breakdown tests assert against these exact counts/timestamps.
+_SKILL_RECORDS = {
+    "github-pr-workflow": {"view_count": 2, "last_viewed_at": _iso(1 * 86400)},
+    "systematic-debugging": {"view_count": 1, "last_viewed_at": _iso(10 * 86400)},
+    "github-code-review": {"patch_count": 1, "last_patched_at": _iso(1 * 86400)},
+}
+
+
 def _epoch_to_dt(epoch: float) -> datetime:
     """Convert a unix epoch float to a tz-aware UTC datetime.
 
@@ -170,6 +181,9 @@ def populated_db(db):
     db.update_token_counts("s_old", input_tokens=5000, output_tokens=2000)
     db.append_message("s_old", role="user", content="old message")
     db.append_message("s_old", role="assistant", content="old reply")
+
+    # Skill usage now comes from the .usage.json sidecar, not message tool_calls.
+    _seed_skill_usage(_SKILL_RECORDS)
 
     return db
 
@@ -389,18 +403,8 @@ class TestInsightsPopulated:
         total_pct = sum(t["percentage"] for t in tools)
         assert total_pct == pytest.approx(100.0, abs=0.1)
 
-    # Skill usage is sourced from the ~/.thoth/skills/.usage.json sidecar
-    # (loads = view_count + use_count, edits = patch_count), windowed by last
-    # activity. Seed the sidecar with controlled timestamps; ``populated_db``
-    # supplies the sessions ``generate()`` needs to not short-circuit.
-    _SKILL_RECORDS = {
-        "github-pr-workflow": {"view_count": 2, "last_viewed_at": _iso(1 * 86400)},
-        "systematic-debugging": {"view_count": 1, "last_viewed_at": _iso(10 * 86400)},
-        "github-code-review": {"patch_count": 1, "last_patched_at": _iso(1 * 86400)},
-    }
-
     def test_skill_breakdown(self, populated_db):
-        _seed_skill_usage(self._SKILL_RECORDS)
+        # populated_db seeds the .usage.json sidecar (_SKILL_RECORDS).
         engine = InsightsEngine(populated_db)
         report = engine.generate(days=30)
         skills = report["skills"]
@@ -418,7 +422,6 @@ class TestInsightsPopulated:
         assert top_skill["last_used_at"] is not None
 
     def test_skill_breakdown_respects_days_filter(self, populated_db):
-        _seed_skill_usage(self._SKILL_RECORDS)
         engine = InsightsEngine(populated_db)
         report = engine.generate(days=3)
         skills = report["skills"]
