@@ -79,7 +79,6 @@ agent sees a syntax-clean file with semantic problems as
 | Haskell | `haskell-language-server` | manual (ghcup) |
 | Julia | `julia` + LanguageServer.jl | manual |
 | Clojure | `clojure-lsp` | manual |
-| Nix | `nixd` | manual |
 | Zig | `zls` | manual |
 | Gleam | `gleam lsp` | manual (gleam install) |
 | Elixir | `elixir-ls` | manual |

@@ -243,19 +243,6 @@ The table above shows the four plugin categories, but within "General plugins" t
 Not everything is a Python plugin. Some extension surfaces intentionally use **config-driven shell commands** (TTS, STT, shell hooks) so any CLI you already have becomes a plugin without writing Python. Others are **external servers** (MCP) the agent connects to and auto-registers tools from. And some are **drop-in directories** (gateway hooks) with their own manifest format. Pick the right surface for the integration style that fits your use case; the authoring guides in the table above each cover placeholders, discovery, and examples.
 :::
 
-```nix
-services.thoth-agent = {
-  # Directory plugin (source tree with plugin.yaml)
-  extraPlugins = [ (pkgs.fetchFromGitHub { ... }) ];
-  # Entry-point plugin (pip package)
-  extraPythonPackages = [ (pkgs.python312Packages.buildPythonPackage { ... }) ];
-  # Enable in config
-  settings.plugins.enabled = [ "my-plugin" ];
-};
-```
-
-Declarative plugins are symlinked with a `nix-managed-` prefix — they coexist with manually installed plugins and are cleaned up automatically when removed from the Nix config.
-
 ## Managing plugins
 
 ```bash

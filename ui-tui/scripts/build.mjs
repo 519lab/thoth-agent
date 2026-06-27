@@ -48,10 +48,10 @@ await build({
   logLevel: 'info'
 })
 
-// esbuild preserves the shebang from src/entry.tsx into the bundle, but Nix's
-// patchShebangs phase mangles `/usr/bin/env -S node --foo --bar` (it strips
-// the `node` token, leaving a broken interpreter). The thoth_cli launcher
-// always invokes this file as `node dist/entry.js` anyway, so the shebang is
+// esbuild preserves the shebang from src/entry.tsx into the bundle, but some
+// packaging tools rewrite `/usr/bin/env -S node --foo --bar` shebangs and can
+// mangle them into a broken interpreter line. The thoth_cli launcher always
+// invokes this file as `node dist/entry.js` anyway, so the shebang is
 // redundant — strip it.
 const body = readFileSync(out, 'utf8')
 if (body.startsWith('#!')) {

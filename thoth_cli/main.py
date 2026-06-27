@@ -809,117 +809,6 @@ def _resolve_last_session(source: str = "cli") -> Optional[str]:
     return None
 
 
-def _probe_container(cmd: list, backend: str, via_sudo: bool = False):
-    """Run a container inspect probe, returning the CompletedProcess.
-
-    Catches TimeoutExpired specifically for a human-readable message;
-    all other exceptions propagate naturally.
-    """
-    try:
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-    except subprocess.TimeoutExpired:
-        label = f"sudo {backend}" if via_sudo else backend
-        print(
-            f"Error: timed out waiting for {label} to respond.\n"
-            f"The {backend} daemon may be unresponsive or starting up.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-
-def _exec_in_container(container_info: dict, cli_args: list):
-    """Replace the current process with a command inside the managed container.
-
-    Probes whether sudo is needed (rootful containers), then os.execvp
-    into the container. On success the Python process is replaced entirely
-    and the container's exit code becomes the process exit code (OS semantics).
-    On failure, OSError propagates naturally.
-
-    Args:
-        container_info: dict with backend, container_name, exec_user, thoth_bin
-        cli_args: the original CLI arguments (everything after 'thoth')
-    """
-
-    backend = container_info["backend"]
-    container_name = container_info["container_name"]
-    exec_user = container_info["exec_user"]
-    thoth_bin = container_info["thoth_bin"]
-
-    runtime = shutil.which(backend)
-    if not runtime:
-        print(
-            f"Error: {backend} not found on PATH. Cannot route to container.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    # Rootful containers (NixOS systemd service) are invisible to unprivileged
-    # users — Podman uses per-user namespaces, Docker needs group access.
-    # Probe whether the runtime can see the container; if not, try via sudo.
-    sudo_path = None
-    probe = _probe_container(
-        [runtime, "inspect", "--format", "ok", container_name],
-        backend,
-    )
-    if probe.returncode != 0:
-        sudo_path = shutil.which("sudo")
-        if sudo_path:
-            probe2 = _probe_container(
-                [sudo_path, "-n", runtime, "inspect", "--format", "ok", container_name],
-                backend,
-                via_sudo=True,
-            )
-            if probe2.returncode != 0:
-                print(
-                    f"Error: container '{container_name}' not found via {backend}.\n"
-                    f"\n"
-                    f"The container is likely running as root. Your user cannot see it\n"
-                    f"because {backend} uses per-user namespaces. Grant passwordless\n"
-                    f"sudo for {backend} — the -n (non-interactive) flag is required\n"
-                    f"because a password prompt would hang or break piped commands.\n"
-                    f"\n"
-                    f"On NixOS:\n"
-                    f"\n"
-                    f"  security.sudo.extraRules = [{{\n"
-                    f'    users = [ "{os.getenv("USER", "your-user")}" ];\n'
-                    f'    commands = [{{ command = "{runtime}"; options = [ "NOPASSWD" ]; }}];\n'
-                    f"  }}];\n"
-                    f"\n"
-                    f"Or run: sudo {cli_name()} {' '.join(cli_args)}",
-                    file=sys.stderr,
-                )
-                sys.exit(1)
-        else:
-            print(
-                f"Error: container '{container_name}' not found via {backend}.\n"
-                f"The container may be running under root. Try: sudo {cli_name()} {' '.join(cli_args)}",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-
-    is_tty = sys.stdin.isatty()
-    tty_flags = ["-it"] if is_tty else ["-i"]
-
-    env_flags = []
-    for var in ("TERM", "COLORTERM", "LANG", "LC_ALL"):
-        val = os.environ.get(var)
-        if val:
-            env_flags.extend(["-e", f"{var}={val}"])
-
-    cmd_prefix = [sudo_path, "-n", runtime] if sudo_path else [runtime]
-    exec_cmd = (
-        cmd_prefix
-        + ["exec"]
-        + tty_flags
-        + ["-u", exec_user]
-        + env_flags
-        + [container_name, thoth_bin]
-        + cli_args
-    )
-
-    os.execvp(exec_cmd[0], exec_cmd)
-
-
 def _resolve_session_by_name_or_id(name_or_id: str) -> Optional[str]:
     """Resolve a session name (title) or ID to a session ID.
 
@@ -1050,7 +939,7 @@ def _tui_need_npm_install(root: Path) -> bool:
     """True when @thoth/ink is missing or node_modules is behind package-lock.json.
 
     Prebuilt bundle mode: when ``dist/entry.js`` exists and there is no
-    ``package-lock.json`` (nix install layout only ships ``dist/`` +
+    ``package-lock.json`` (a prebuilt bundle layout only ships ``dist/`` +
     ``package.json``), skip reinstall entirely — the bundle is self-contained
     and there is nothing to install.
 
@@ -1073,7 +962,7 @@ def _tui_need_npm_install(root: Path) -> bool:
     """
     lock = root / "package-lock.json"
     entry = root / "dist" / "entry.js"
-    # Prebuilt self-contained bundle (nix / packaged release): no lockfile
+    # Prebuilt self-contained bundle (packaged release): no lockfile
     # shipped, dist/entry.js is the single runtime artefact.
     if entry.is_file() and not lock.is_file():
         return False
@@ -1285,7 +1174,7 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
         )
         sys.exit(1)
 
-    # 1. Prebuilt bundle (nix / packaged release): just run it.
+    # 1. Prebuilt bundle (packaged release): just run it.
     if not tui_dev:
         if ext_dir:
             p = Path(ext_dir)
@@ -11212,7 +11101,7 @@ def main():
     # otherwise. ``thoth_db.ensure_pool_sync()`` returns False without
     # raising when the DSN env var isn't configured, so subcommands like
     # ``thoth --help`` or ``thoth version`` that never touch the DB
-    # still work in environments without a live PG (Nix sandbox smoke,
+    # still work in environments without a live PG (sandbox smoke,
     # CI smoke tests, fresh installs before first ``setup``). When the
     # DSN IS set, the pool gets created up-front on
     # ``thoth_db._sync_loop`` so downstream ``run_sync(coro)`` calls
@@ -14027,20 +13916,6 @@ Examples:
     # Pre-process argv so unquoted multi-word session names after -c / -r
     # are merged into a single token before argparse sees them.
     # e.g. ``thoth -c Pokemon Agent Dev`` → ``thoth -c 'Pokemon Agent Dev'``
-    # ── Container-aware routing ────────────────────────────────────────
-    # When NixOS container mode is active, route ALL subcommands into
-    # the managed container.  This MUST run before parse_args() so that
-    # --help, unrecognised flags, and every subcommand are forwarded
-    # transparently instead of being intercepted by argparse on the host.
-    from thoth_cli.config import get_container_exec_info
-
-    container_info = get_container_exec_info()
-    if container_info:
-        _exec_in_container(container_info, sys.argv[1:])
-        # Unreachable: os.execvp never returns on success (process is replaced)
-        # and raises OSError on failure (which propagates as a traceback).
-        sys.exit(1)
-
     _processed_argv = _coalesce_session_name_args(sys.argv[1:])
 
     # ── Defensive subparser routing (bpo-9338 workaround) ───────────

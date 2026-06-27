@@ -42,7 +42,7 @@ MANIFEST_FILE = SKILLS_DIR / ".bundled_manifest"
 def _get_bundled_dir() -> Path:
     """Locate the bundled skills/ directory.
 
-    Checks THOTH_BUNDLED_SKILLS env var first (set by Nix wrapper),
+    Checks THOTH_BUNDLED_SKILLS env var first (set by Homebrew packaging),
     then a wheel-installed data dir, then falls back to the relative
     path from this source file.
     """

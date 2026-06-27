@@ -298,7 +298,7 @@ def setup_verbose_logging() -> None:
 class _ManagedRotatingFileHandler(RotatingFileHandler):
     """RotatingFileHandler that ensures group-writable perms in managed mode.
 
-    In managed mode (NixOS), the stateDir uses setgid (2770) so new files
+    In managed mode, the stateDir uses setgid (2770) so new files
     inherit the thoth group. However, both _open() (initial creation) and
     doRollover() create files via open(), which uses the process umask —
     typically 0022, producing 0644. This subclass applies chmod 0660 after

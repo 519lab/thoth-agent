@@ -130,7 +130,7 @@ def get_available_skills() -> Dict[str, List[str]]:
 _UPDATE_CHECK_CACHE_SECONDS = 6 * 3600
 
 # Sentinel returned when we know an update exists but can't count commits
-# (e.g. nix-built thoth — no local git history to count against).
+# (e.g. a packaged build with no local git history to count against).
 UPDATE_AVAILABLE_NO_COUNT = -1
 
 _UPSTREAM_REPO_URL = "https://github.com/519lab/thoth-agent.git"
@@ -226,7 +226,7 @@ def check_via_pypi() -> Optional[int]:
 def check_for_updates() -> Optional[int]:
     """Check whether a Thoth update is available.
 
-    Two paths: if ``THOTH_REVISION`` is set (nix builds embed it), compare
+    Two paths: if ``THOTH_REVISION`` is set (packaged builds embed it), compare
     it to upstream main via ``git ls-remote``. Otherwise look for a local
     git checkout and count commits behind ``origin/main``.
 
@@ -673,9 +673,9 @@ def build_welcome_banner(console: Console, model: str, cwd: str,
                     f"[dim yellow] — run [bold]{recommended_update_command()}[/bold] to update[/]"
                 )
             else:
-                # UPDATE_AVAILABLE_NO_COUNT: nix-built thoth; we know an update
-                # exists but not by how much, and we don't know how the user
-                # installed it (nix run, profile, system flake, home-manager).
+                # UPDATE_AVAILABLE_NO_COUNT: a packaged build; we know an update
+                # exists but not by how much, and we don't know exactly how the
+                # user installed it.
                 managed_cmd = get_managed_update_command()
                 line = "[bold yellow]⚠ update available[/]"
                 if managed_cmd:

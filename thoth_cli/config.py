@@ -150,15 +150,12 @@ from thoth_cli.default_soul import DEFAULT_SOUL_MD
 
 
 # =============================================================================
-# Managed mode (NixOS declarative config)
+# Managed mode (Homebrew)
 # =============================================================================
 
-_MANAGED_TRUE_VALUES = ("true", "1", "yes")
 _MANAGED_SYSTEM_NAMES = {
     "brew": "Homebrew",
     "homebrew": "Homebrew",
-    "nix": "NixOS",
-    "nixos": "NixOS",
 }
 
 
@@ -167,27 +164,16 @@ def get_managed_system() -> Optional[str]:
     raw = os.getenv("THOTH_MANAGED", "").strip()
     if raw:
         normalized = raw.lower()
-        if normalized in _MANAGED_TRUE_VALUES:
-            return "NixOS"
         return _MANAGED_SYSTEM_NAMES.get(normalized, raw)
-
-    managed_marker = get_thoth_home() / ".managed"
-    if managed_marker.exists():
-        return "NixOS"
     return None
 
 
 def is_managed() -> bool:
     """Check if Thoth is running in package-manager-managed mode.
 
-    Two signals: the THOTH_MANAGED env var (set by the systemd service),
-    or a .managed marker file in THOTH_HOME (set by the NixOS activation
-    script, so interactive shells also see it).
+    Signalled by the THOTH_MANAGED env var (set by the packaging wrapper).
     """
     return get_managed_system() is not None
-
-
-_NIX_UPDATE_MSG = "Update your Nix flake input and rebuild (e.g. nix flake update, nixos-rebuild, or home-manager switch)"
 
 
 def get_managed_update_command() -> Optional[str]:
@@ -195,17 +181,15 @@ def get_managed_update_command() -> Optional[str]:
     managed_system = get_managed_system()
     if managed_system == "Homebrew":
         return "brew upgrade thoth-agent"
-    if managed_system == "NixOS":
-        return _NIX_UPDATE_MSG
     return None
 
 
 def detect_install_method(project_root: Optional[Path] = None) -> str:
-    """Detect how Thoth was installed: 'docker', 'nixos', 'homebrew', 'git', or 'pip'.
+    """Detect how Thoth was installed: 'docker', 'homebrew', 'git', or 'pip'.
 
     Resolution order:
     1. Stamped ``~/.thoth/.install_method`` file (written by installers)
-    2. THOTH_MANAGED env / .managed marker (NixOS, Homebrew)
+    2. THOTH_MANAGED env (Homebrew)
     3. Container detection (/.dockerenv, /run/.containerenv, cgroup)
     4. .git directory presence -> 'git'
     5. Fallback -> 'pip'
@@ -242,8 +226,6 @@ def stamp_install_method(method: str) -> None:
 
 def recommended_update_command_for_method(method: str) -> str:
     """Return the update command or guidance for a given install method."""
-    if method == "nixos":
-        return _NIX_UPDATE_MSG
     if method == "homebrew":
         return "brew upgrade thoth-agent"
     if method == "docker":
@@ -271,15 +253,6 @@ def format_managed_message(action: str = "modify this Thoth installation") -> st
     managed_system = get_managed_system() or "a package manager"
     raw = os.getenv("THOTH_MANAGED", "").strip().lower()
 
-    if managed_system == "NixOS":
-        env_hint = "true" if raw in _MANAGED_TRUE_VALUES else raw or "true"
-        return (
-            f"Cannot {action}: this Thoth installation is managed by NixOS "
-            f"(THOTH_MANAGED={env_hint}).\n"
-            "Edit services.thoth-agent.settings in your configuration.nix and run:\n"
-            "  sudo nixos-rebuild switch"
-        )
-
     if managed_system == "Homebrew":
         env_hint = raw or "homebrew"
         return (
@@ -297,59 +270,6 @@ def format_managed_message(action: str = "modify this Thoth installation") -> st
 def managed_error(action: str = "modify configuration"):
     """Print user-friendly error for managed mode."""
     print(format_managed_message(action), file=sys.stderr)
-
-
-# =============================================================================
-# Container-aware CLI (NixOS container mode)
-# =============================================================================
-
-def get_container_exec_info() -> Optional[dict]:
-    """Read container mode metadata from THOTH_HOME/.container-mode.
-
-    Returns a dict with keys: backend, container_name, exec_user, thoth_bin
-    or None if container mode is not active, we're already inside the
-    container, or THOTH_DEV=1 is set.
-
-    The .container-mode file is written by the NixOS activation script when
-    container.enable = true. It tells the host CLI to exec into the container
-    instead of running locally.
-    """
-    if os.environ.get("THOTH_DEV") == "1":
-        return None
-
-    from thoth_constants import is_container
-    if is_container():
-        return None
-
-    container_mode_file = get_thoth_home() / ".container-mode"
-
-    try:
-        info = {}
-        with open(container_mode_file, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if "=" in line and not line.startswith("#"):
-                    key, _, value = line.partition("=")
-                    info[key.strip()] = value.strip()
-    except FileNotFoundError:
-        return None
-    # All other exceptions (PermissionError, malformed data, etc.) propagate
-
-    backend = info.get("backend", "docker")
-    # Default container name is Thoth-branded; the NixOS activation writes the
-    # actual name (`thoth-agent`) explicitly, so this only applies to
-    # hand-rolled .container-mode files. exec_user defaults to `thoth` — the
-    # container image's OS user.
-    container_name = info.get("container_name", "thoth-agent")
-    exec_user = info.get("exec_user", "thoth")
-    thoth_bin = info.get("thoth_bin", "/data/current-package/bin/thoth")
-
-    return {
-        "backend": backend,
-        "container_name": container_name,
-        "exec_user": exec_user,
-        "thoth_bin": thoth_bin,
-    }
 
 
 # =============================================================================
@@ -375,7 +295,7 @@ def get_project_root() -> Path:
 def _secure_dir(path):
     """Set directory to owner-only access (0700 by default). No-op on Windows.
 
-    Skipped in managed mode — the NixOS module sets group-readable
+    Skipped in managed mode — the packaging wrapper sets group-readable
     permissions (0750) so interactive users in the thoth group can
     share state with the gateway service.
 
@@ -426,7 +346,7 @@ def _is_container() -> bool:
 def _secure_file(path):
     """Set file to owner-only read/write (0600). No-op on Windows.
 
-    Skipped in managed mode — the NixOS activation script sets
+    Skipped in managed mode — the packaging wrapper sets
     group-readable permissions (0640) on config files.
 
     Skipped in containers — Docker/Podman volume mounts often need broader
@@ -453,9 +373,10 @@ def _ensure_default_soul_md(home: Path) -> None:
 def ensure_thoth_home():
     """Ensure ~/.thoth directory structure exists with secure permissions.
 
-    In managed mode (NixOS), dirs are created by the activation script with
-    setgid + group-writable (2770). We skip mkdir and set umask(0o007) so
-    any files created (e.g. SOUL.md) are group-writable (0660).
+    In managed mode the packaging wrapper may pre-create dirs with
+    setgid + group-writable (2770). We set umask(0o007) so any files we
+    create (e.g. SOUL.md) are group-writable (0660), and mkdir any dirs
+    the wrapper did not seed so first run never hard-fails.
     """
     home = get_thoth_home()
     if is_managed():
@@ -478,23 +399,15 @@ def ensure_thoth_home():
 
 
 def _ensure_thoth_home_managed(home: Path):
-    """Managed-mode variant: verify dirs exist (activation creates them), seed SOUL.md."""
-    if not home.is_dir():
-        raise RuntimeError(
-            f"THOTH_HOME {home} does not exist. "
-            "Run 'sudo nixos-rebuild switch' first."
-        )
-    for subdir in ("cron", "sessions", "logs", "memories"):
-        d = home / subdir
-        if not d.is_dir():
-            raise RuntimeError(
-                f"{d} does not exist. "
-                "Run 'sudo nixos-rebuild switch' first."
-            )
-    # Curator reports dir is a sub-path of logs/; create it if missing.
-    # In managed mode the activation script may not know about this subdir,
-    # so we mkdir it ourselves (it's inside an already-secured logs/ dir).
-    (home / "logs" / "curator").mkdir(parents=True, exist_ok=True)
+    """Managed-mode variant: ensure dirs exist (group-writable), seed SOUL.md.
+
+    A managed package (e.g. Homebrew) installs into its own prefix and does
+    not seed the user's ~/.thoth subtree, so we mkdir the dirs ourselves
+    under the caller's umask(0o007) rather than requiring them up front.
+    """
+    home.mkdir(parents=True, exist_ok=True)
+    for subdir in ("cron", "sessions", "logs", "logs/curator", "memories"):
+        (home / subdir).mkdir(parents=True, exist_ok=True)
     # Inside umask(0o007) scope — SOUL.md will be created as 0660
     _ensure_default_soul_md(home)
 

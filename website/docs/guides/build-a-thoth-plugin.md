@@ -1075,42 +1075,6 @@ pip install thoth-plugin-calculator
 # Plugin auto-discovered on next thoth startup
 ```
 
-## Distribute for NixOS
-
-NixOS users can install your plugin declaratively if you provide a `pyproject.toml` with entry points:
-
-**Entry-point plugins** (recommended for distribution):
-```nix
-# User's configuration.nix
-services.thoth-agent.extraPythonPackages = [
-  (pkgs.python312Packages.buildPythonPackage {
-    pname = "my-plugin";
-    version = "1.0.0";
-    src = pkgs.fetchFromGitHub {
-      owner = "you";
-      repo = "thoth-my-plugin";
-      rev = "v1.0.0";
-      hash = "sha256-...";  # nix-prefetch-url --unpack
-    };
-    format = "pyproject";
-    build-system = [ pkgs.python312Packages.setuptools ];
-  })
-];
-```
-
-**Directory plugins** (no `pyproject.toml` needed):
-```nix
-services.thoth-agent.extraPlugins = [
-  (pkgs.fetchFromGitHub {
-    owner = "you";
-    repo = "thoth-my-plugin";
-    rev = "v1.0.0";
-    hash = "sha256-...";
-  })
-];
-```
-
-
 ## Common mistakes
 
 **Handler doesn't return JSON string:**

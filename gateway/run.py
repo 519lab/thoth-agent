@@ -519,7 +519,7 @@ def _last_transcript_timestamp(history: Optional[List[Dict[str, Any]]]) -> Any:
 
 
 # ---------------------------------------------------------------------------
-# SSL certificate auto-detection for NixOS and other non-standard systems.
+# SSL certificate auto-detection for packaged / non-standard systems.
 # Must run BEFORE any HTTP library (discord, aiohttp, etc.) is imported.
 # ---------------------------------------------------------------------------
 def _ensure_ssl_certs() -> None:

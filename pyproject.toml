@@ -176,9 +176,9 @@ termux-all = [
 feishu = ["lark-oapi==1.5.3", "qrcode==7.4.2"]
 google = [
   # Required by the google-workspace skill (Gmail, Calendar, Drive, Contacts,
-  # Sheets, Docs).  Declared here so packagers (Nix, Homebrew) ship them with
+  # Sheets, Docs).  Declared here so packagers (Homebrew) ship them with
   # the [all] extra and users don't hit runtime `pip install` paths that fail
-  # in environments without pip (e.g. Nix-managed Python).
+  # in environments without pip.
   "google-api-python-client==2.194.0",
   "google-auth-oauthlib==1.3.1",
   "google-auth-httplib2==0.3.1",
@@ -196,7 +196,7 @@ all = [
   # Policy (2026-05-12): `[all]` includes only extras that genuinely
   # CAN'T be lazy-installed via `tools/lazy_deps.py` — i.e. things every
   # session can use, things needed before the agent loop is alive
-  # (terminal/CLI), and skill deps that packagers (Nix, AUR, Homebrew)
+  # (terminal/CLI), and skill deps that packagers (AUR, Homebrew)
   # need in the wheel. Anything an opt-in backend (provider, search,
   # TTS, image, memory, messaging platform, terminal sandbox) needs
   # MUST live exclusively in `LAZY_DEPS` and resolve at first use —
