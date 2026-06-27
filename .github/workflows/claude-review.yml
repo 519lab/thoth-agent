@@ -34,7 +34,10 @@ concurrency:
 
 jobs:
   review:
-    if: ${{ github.event.pull_request.draft == false }}
+    # Skip bot-authored PRs (e.g. Dependabot action bumps): claude-code-action
+    # rejects non-human actors ("Workflow initiated by non-human actor") and a
+    # Claude review of a pinned-SHA dependency bump adds little value anyway.
+    if: ${{ github.event.pull_request.draft == false && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
