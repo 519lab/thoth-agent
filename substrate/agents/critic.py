@@ -129,7 +129,15 @@ class Critic(SubAgent):
     @staticmethod
     def _coherence(signals: dict) -> float:
         score = 1.0
-        score -= 0.4 * signals["backlog_ratio"]
+        # #107: penalize on the ABSOLUTE pending queue, not the ratio
+        # pending/(pending+consolidated). That denominator shrinks as the Curator
+        # releases consolidated history, so the ratio — and this penalty —
+        # inflate on a quiet substrate for a near-empty queue, and the resulting
+        # coherence sag can trip the Conductor's corrective latch. Scale linearly
+        # with real pending, saturating the full 0.4 penalty at CRITIC_BACKLOG_FULL_AT.
+        full_at = _env_float("CRITIC_BACKLOG_FULL_AT", 100.0)
+        backlog_load = min(1.0, signals.get("pending", 0) / full_at) if full_at > 0 else 0.0
+        score -= 0.4 * backlog_load
         rel = signals["parser_reliability"]
         if rel is not None and rel < 0.8:
             score -= 0.3 * (0.8 - rel) / 0.8

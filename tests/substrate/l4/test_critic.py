@@ -43,20 +43,31 @@ async def test_list_observations_filters(thoth_db_initialized):
 
 
 def test_coherence_penalises_backlog_and_alarms():
-    base = Critic._coherence({"backlog_ratio": 0.0, "parser_reliability": 1.0, "alarms_1h": 0})
+    # Backlog penalty is on absolute pending (#107), saturating at full_at=100.
+    base = Critic._coherence({"pending": 0, "parser_reliability": 1.0, "alarms_1h": 0})
     assert base == pytest.approx(1.0)
     backlogged = Critic._coherence(
-        {"backlog_ratio": 1.0, "parser_reliability": 1.0, "alarms_1h": 0}
+        {"pending": 100, "parser_reliability": 1.0, "alarms_1h": 0}
     )
-    assert backlogged == pytest.approx(0.6)  # 1.0 - 0.4
+    assert backlogged == pytest.approx(0.6)  # 1.0 - 0.4 (penalty saturated)
     alarmed = Critic._coherence(
-        {"backlog_ratio": 0.0, "parser_reliability": 1.0, "alarms_1h": 3}
+        {"pending": 0, "parser_reliability": 1.0, "alarms_1h": 3}
     )
     assert alarmed == pytest.approx(0.8)  # 1.0 - 0.2
     unreliable = Critic._coherence(
-        {"backlog_ratio": 0.0, "parser_reliability": 0.4, "alarms_1h": 0}
+        {"pending": 0, "parser_reliability": 0.4, "alarms_1h": 0}
     )
     assert unreliable < 1.0
+
+
+def test_coherence_does_not_sag_on_inflated_ratio_small_queue():
+    """#107 regression: a near-100% backlog_ratio must not sag coherence when
+    the absolute pending queue is tiny (the ratio's denominator evaporates as
+    consolidated history releases). A 6-slice queue ⇒ ~0.024 penalty, not 0.4."""
+    coh = Critic._coherence(
+        {"pending": 6, "backlog_ratio": 0.99, "parser_reliability": 1.0, "alarms_1h": 0}
+    )
+    assert coh == pytest.approx(1.0 - 0.4 * (6 / 100))  # ≈ 0.976, not 0.6
 
 
 # ---------------------------------------------------------------------------
