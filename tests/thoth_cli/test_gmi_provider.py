@@ -316,7 +316,6 @@ class TestGmiMainFlow:
     def test_chat_parser_accepts_gmi_provider(self, monkeypatch):
         recorded: dict[str, str] = {}
 
-        monkeypatch.setattr("thoth_cli.config.get_container_exec_info", lambda: None)
         monkeypatch.setattr(
             "thoth_cli.main.cmd_chat",
             lambda args: recorded.setdefault("provider", args.provider),

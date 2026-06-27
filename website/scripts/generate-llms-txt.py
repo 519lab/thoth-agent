@@ -43,7 +43,6 @@ SECTIONS: list[tuple[str, list[tuple[str, str, str | None]]]] = [
         ("getting-started/learning-path", "Learning Path", None),
         ("getting-started/updating", "Updating", None),
         ("getting-started/termux", "Termux (Android)", None),
-        ("getting-started/nix-setup", "Nix Setup", None),
     ]),
     ("Using Thoth", [
         ("user-guide/cli", "CLI", None),

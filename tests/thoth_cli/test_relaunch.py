@@ -9,7 +9,7 @@ from thoth_cli import relaunch as relaunch_mod
 
 class TestResolveThothBin:
     def test_prefers_absolute_argv0_when_executable(self, monkeypatch):
-        fake = "/nix/store/abc/bin/thoth"
+        fake = "/opt/thoth/bin/thoth"
         monkeypatch.setattr(sys, "argv", [fake])
         monkeypatch.setattr(relaunch_mod.os.path, "isfile", lambda p: p == fake)
         monkeypatch.setattr(relaunch_mod.os, "access", lambda p, mode: p == fake)

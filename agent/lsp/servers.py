@@ -91,7 +91,6 @@ LANGUAGE_BY_EXT: Dict[str, str] = {
     ".cljs": "clojurescript",
     ".cljc": "clojure",
     ".edn": "clojure",
-    ".nix": "nix",
     ".typ": "typst",
     ".typc": "typst",
     ".hs": "haskell",
@@ -526,19 +525,6 @@ def _spawn_clojure_lsp(root: str, ctx: ServerContext) -> Optional[SpawnSpec]:
     )
 
 
-def _spawn_nixd(root: str, ctx: ServerContext) -> Optional[SpawnSpec]:
-    bin_path = _resolve_override(ctx, "nixd") or _which("nixd")
-    if bin_path is None:
-        return None
-    return SpawnSpec(
-        command=[bin_path],
-        workspace_root=root,
-        cwd=root,
-        env=ctx.env_overrides.get("nixd", {}),
-        initialization_options=ctx.init_overrides.get("nixd", {}),
-    )
-
-
 def _spawn_zls(root: str, ctx: ServerContext) -> Optional[SpawnSpec]:
     bin_path = _resolve_override(ctx, "zls") or _which("zls")
     if bin_path is None:
@@ -788,11 +774,6 @@ def _root_clojure(file_path: str, workspace: str) -> Optional[str]:
     )
 
 
-def _root_nix(file_path: str, workspace: str) -> str:
-    found = nearest_root(file_path, ["flake.nix"])
-    return found or workspace
-
-
 def _root_zig(file_path: str, workspace: str) -> Optional[str]:
     return _root_or_workspace(file_path, workspace, ["build.zig"])
 
@@ -962,13 +943,6 @@ SERVERS: List[ServerDef] = [
         resolve_root=_root_clojure,
         build_spawn=_spawn_clojure_lsp,
         description="Clojure — clojure-lsp",
-    ),
-    ServerDef(
-        server_id="nixd",
-        extensions=(".nix",),
-        resolve_root=_root_nix,
-        build_spawn=_spawn_nixd,
-        description="Nix — nixd",
     ),
     ServerDef(
         server_id="zls",

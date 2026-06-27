@@ -72,7 +72,7 @@ On first launch Thoth installs the TUI's Node dependencies into `ui-tui/node_mod
 
 ### External prebuild
 
-Distributions that ship a prebuilt bundle (Nix, system packages) can point Thoth at it:
+Distributions that ship a prebuilt bundle (system packages) can point Thoth at it:
 
 ```bash
 export THOTH_TUI_DIR=/path/to/prebuilt/ui-tui

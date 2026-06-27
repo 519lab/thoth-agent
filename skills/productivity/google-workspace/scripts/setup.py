@@ -113,7 +113,7 @@ def install_deps():
     except subprocess.CalledProcessError as e:
         print(f"ERROR: Failed to install dependencies: {e}")
         print(
-            "On environments without pip (e.g. Nix), install the optional extra instead:"
+            "On environments without pip, install the optional extra instead:"
         )
         print("  pip install 'thoth-agent[google]'")
         print(f"Or manually: {sys.executable} -m pip install {' '.join(REQUIRED_PACKAGES)}")

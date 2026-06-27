@@ -132,7 +132,7 @@ ALLOWED_LINE_RES = [
 
 _TEXT_SUFFIXES = {
     ".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".json", ".md",
-    ".sh", ".bash", ".zsh", ".nix", ".toml", ".yaml", ".yml", ".cfg", ".ini",
+    ".sh", ".bash", ".zsh", ".toml", ".yaml", ".yml", ".cfg", ".ini",
     ".txt", ".html", ".css", ".env", ".ps1", ".plist", ".service", "",
 }
 

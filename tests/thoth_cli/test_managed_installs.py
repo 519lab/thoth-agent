@@ -29,10 +29,9 @@ def test_format_managed_message_homebrew(monkeypatch):
 def test_recommended_update_command_defaults_to_thoth_update(monkeypatch):
     monkeypatch.delenv("THOTH_MANAGED", raising=False)
 
-    # Also short-circuit the .managed marker path — CI runners may have an
-    # ambient ~/.thoth/.managed if a prior test left THOTH_HOME pointing
-    # somewhere with that marker, which would make get_managed_update_command()
-    # return "Update your Nix flake input ..." instead of falling through to
+    # Short-circuit the managed-update path so an ambient THOTH_MANAGED env
+    # (e.g. a Homebrew-managed CI runner) can't make get_managed_update_command()
+    # return a package-manager command instead of falling through to
     # detect_install_method().
     with patch("thoth_cli.config.get_managed_update_command", return_value=None), \
          patch("thoth_cli.config.detect_install_method", return_value="git"):

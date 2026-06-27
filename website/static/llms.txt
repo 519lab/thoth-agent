@@ -13,7 +13,6 @@ Repo: https://github.com/519lab/thoth-agent
 - [Learning Path](https://thoth.519lab.com/docs/getting-started/learning-path): Choose your learning path through the Thoth Agent documentation based on your experience level and goals.
 - [Updating](https://thoth.519lab.com/docs/getting-started/updating): How to update Thoth Agent to the latest version or uninstall it
 - [Termux (Android)](https://thoth.519lab.com/docs/getting-started/termux): Run Thoth Agent directly on an Android phone with Termux
-- [Nix Setup](https://thoth.519lab.com/docs/getting-started/nix-setup): Install and deploy Thoth Agent with Nix — from quick `nix run` to fully declarative NixOS module with container mode
 
 ## Using Thoth
 
@@ -63,7 +62,7 @@ Repo: https://github.com/519lab/thoth-agent
 
 ## Messaging Platforms
 
-- [Overview](https://thoth.519lab.com/docs/user-guide/messaging/index): Chat with Thoth from Telegram, Discord, Slack, WhatsApp, Signal, SMS, Email, Home Assistant, Mattermost, Matrix, DingTalk, Yuanbao, Microsoft Teams, LINE, Webhooks, or any OpenAI-compatible frontend via the API server — architecture and setup overview
+- [Overview](https://thoth.519lab.com/docs/user-guide/messaging/index): Chat with Thoth from Telegram, Discord, Slack, WhatsApp, Signal, SMS, Email, Home Assistant, Mattermost, Matrix, Yuanbao, Microsoft Teams, LINE, Webhooks, or any OpenAI-compatible frontend via the API server — architecture and setup overview
 - [Telegram](https://thoth.519lab.com/docs/user-guide/messaging/telegram): Set up Thoth Agent as a Telegram bot
 - [Discord](https://thoth.519lab.com/docs/user-guide/messaging/discord): Set up Thoth Agent as a Discord bot
 - [Slack](https://thoth.519lab.com/docs/user-guide/messaging/slack): Set up Thoth Agent as a Slack bot using Socket Mode
