@@ -241,7 +241,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup and PR process, a
 
 Thoth stands on the shoulders of **[Hermes](https://github.com/NousResearch/hermes-agent)**, the open-source agent created by **[Nous Research](https://nousresearch.com)**. The terminal interface, the messaging gateway, the skills system, the tool framework, the seven terminal backends — that foundation is their work, generously released under a permissive license so that others could build on it. Thoth exists because they chose to build in the open.
 
-To the Nous Research team and to every contributor who shaped Hermes over its many releases: **thank you.** This project carries your work forward with deep gratitude and respect. The renaming reflects a different direction and a memory-first architecture of our own — not a parting of ways with what you built, but a continuation of it.
+To the Nous Research team and to every contributor who shaped that foundation over its many releases: **thank you.** This project carries your work forward with deep gratitude and respect.
 
 ---
 
