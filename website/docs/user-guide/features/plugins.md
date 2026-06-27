@@ -49,7 +49,6 @@ description: A minimal example plugin
 
 import json
 
-
 def register(ctx):
     # --- Tool: hello_world ---
     schema = {
@@ -123,7 +122,6 @@ Every `ctx.*` API below is available inside a plugin's `register(ctx)` function.
 | User | `~/.thoth/plugins/` | Personal plugins |
 | Project | `.thoth/plugins/` | Project-specific plugins (requires `THOTH_ENABLE_PROJECT_PLUGINS=true`) |
 | pip | `thoth_agent.plugins` entry_points | Distributed packages |
-| Nix | `services.thoth-agent.extraPlugins` / `extraPythonPackages` | NixOS declarative installs — see [Nix Setup](/docs/getting-started/nix-setup#plugins) |
 
 Later sources override earlier ones on name collision, so a user plugin with the same name as a bundled plugin replaces it.
 
@@ -244,10 +242,6 @@ The table above shows the four plugin categories, but within "General plugins" t
 :::note
 Not everything is a Python plugin. Some extension surfaces intentionally use **config-driven shell commands** (TTS, STT, shell hooks) so any CLI you already have becomes a plugin without writing Python. Others are **external servers** (MCP) the agent connects to and auto-registers tools from. And some are **drop-in directories** (gateway hooks) with their own manifest format. Pick the right surface for the integration style that fits your use case; the authoring guides in the table above each cover placeholders, discovery, and examples.
 :::
-
-## NixOS declarative plugins
-
-On NixOS, plugins can be installed declaratively via the module options — no `thoth plugins install` needed. See the **[Nix Setup guide](/docs/getting-started/nix-setup#plugins)** for full details.
 
 ```nix
 services.thoth-agent = {

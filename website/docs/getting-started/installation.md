@@ -127,9 +127,6 @@ thoth setup          # Or run the full setup wizard to configure everything at o
 You do **not** need to install Python, Node.js, ripgrep, or ffmpeg manually. The installer detects what's missing and installs it for you. Just make sure `git` is available (`git --version`).
 :::
 
-:::tip Nix users
-If you use Nix (on NixOS, macOS, or Linux), there's a dedicated setup path with a Nix flake, declarative NixOS module, and optional container mode. See the **[Nix & NixOS Setup](./nix-setup.md)** guide.
-:::
 
 ---
 

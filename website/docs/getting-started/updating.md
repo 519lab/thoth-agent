@@ -202,25 +202,6 @@ uv pip install -e ".[all]"
 Rolling back may cause config incompatibilities if new options were added. Run `thoth config check` after rolling back and remove any unrecognized options from `config.yaml` if you encounter errors.
 :::
 
-### Note for Nix users
-
-If you installed via Nix flake, updates are managed through the Nix package manager:
-
-```bash
-# Update the flake input
-nix flake update thoth-agent
-
-# Or rebuild with the latest
-nix profile upgrade thoth-agent
-```
-
-Nix installations are immutable — rollback is handled by Nix's generation system:
-
-```bash
-nix profile rollback
-```
-
-See [Nix Setup](./nix-setup.md) for more details.
 
 ---
 

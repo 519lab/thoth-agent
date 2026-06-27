@@ -1110,7 +1110,6 @@ services.thoth-agent.extraPlugins = [
 ];
 ```
 
-See the [Nix Setup guide](/docs/getting-started/nix-setup#plugins) for complete documentation including overlay usage and collision checking.
 
 ## Common mistakes
 
