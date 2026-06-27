@@ -1,19 +1,24 @@
 name: Coverage
 
 # Informational coverage baseline. This workflow is intentionally
-# NON-BLOCKING: it never fails the PR on a coverage number. The goal is to
-# (1) make coverage visible on every PR via the job summary + artifact, and
-# (2) give the team a measured baseline to agree a floor against. Once a
-# floor is agreed, set ``fail_under`` in [tool.coverage.report] (pyproject)
-# and/or add a ratchet check here, then make this a required check.
+# NON-BLOCKING: it never fails the build on a coverage number. The goal is to
+# track a measured coverage baseline on main over time (job summary +
+# coverage.xml artifact).
+#
+# Runs ONLY on push to main (post-merge), NOT on pull requests. Rationale:
+# this job re-runs the ENTIRE test suite a second time (under coverage
+# instrumentation) — the `tests` workflow already runs the full suite on
+# every PR for correctness, so running it again per-PR just for an
+# informational, non-gating number doubled the suite and made coverage the
+# wall-clock long pole (~31m vs ~21m). Per-PR coverage gave no protection
+# (continue-on-error, no fail_under), so moving it post-merge loses nothing.
+#
+# If a coverage floor is later agreed: set ``fail_under`` in
+# [tool.coverage.report] (pyproject) and/or add a ratchet, re-add the
+# pull_request trigger, and make it a required check.
 
 on:
   push:
-    branches: [main]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-  pull_request:
     branches: [main]
     paths-ignore:
       - '**/*.md'
