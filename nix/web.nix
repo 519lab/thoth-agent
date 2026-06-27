@@ -4,7 +4,7 @@ let
   src = ../web;
   npmDeps = pkgs.fetchNpmDeps {
     inherit src;
-    hash = "sha256-xSsyluzU2lNhwGqB6XMCGMv3QFHZizE6hgUyc1jvyOw=";
+    hash = "sha256-SOGn+lgTJ5CPbUoHe5OWZauDvp/Q6v2UJH7LVvuSsXk=";
   };
 
   npm = thothNpmLib.mkNpmPassthru { folder = "web"; attr = "web"; pname = "thoth-web"; };
