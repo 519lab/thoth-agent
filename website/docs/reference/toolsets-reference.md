@@ -105,7 +105,6 @@ Platform toolsets define the complete tool configuration for a deployment target
 | `thoth-email` | Same as `thoth-cli`. |
 | `thoth-sms` | Same as `thoth-cli`. |
 | `thoth-bluebubbles` | Same as `thoth-cli`. |
-| `thoth-dingtalk` | Same as `thoth-cli`. |
 | `thoth-feishu` | Adds the five `feishu_doc_*` / `feishu_drive_*` tools (only used by the document-comment handler, not the regular chat adapter). |
 | `thoth-qqbot` | Same as `thoth-cli`. |
 | `thoth-wecom` | Same as `thoth-cli`. |

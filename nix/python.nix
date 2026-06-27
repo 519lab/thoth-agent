@@ -42,13 +42,10 @@ let
     (name: _: prev.${name}.overrideAttrs (old: {
       nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.setuptools ];
     }))
-    (lib.genAttrs [
-      "alibabacloud-credentials-api"
-      "alibabacloud-endpoint-util"
-      "alibabacloud-gateway-dingtalk"
-      "alibabacloud-gateway-spi"
-      "alibabacloud-tea"
-    ] (_: null));
+    # (was: the alibabacloud-* packages pulled by the dingtalk extra, which
+    # ship sdist-only with no pyproject — needed setuptools injected. The
+    # dingtalk platform was removed, so these are no longer in the resolution.)
+    (lib.genAttrs [ ] (_: null));
 
   pythonPackageOverrides = final: _prev:
     if isAarch64Darwin then {
