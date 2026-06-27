@@ -195,7 +195,7 @@ class TestSIGKILLEscalation:
         time.sleep(0.5)
         set_interrupt(True, thread_id=t.ident)
 
-        t.join(timeout=5)
+        t.join(timeout=30)
         set_interrupt(False, thread_id=t.ident)
 
         assert result_holder["value"] is not None

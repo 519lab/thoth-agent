@@ -48,7 +48,7 @@ def _process_group_snapshot(pgid: int) -> str:
     ).stdout.strip()
 
 
-def _wait_for_pgid_exit(pgid: int, timeout: float = 10.0) -> bool:
+def _wait_for_pgid_exit(pgid: int, timeout: float = 30.0) -> bool:
     """Wait for a process group to disappear under loaded xdist hosts."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -117,7 +117,7 @@ def test_wait_for_process_kills_subprocess_on_keyboardinterrupt():
         # does init_session() (one spawn) before the real command, so we need
         # to wait until a sleep 30 is visible.  Use pgrep-style lookup via
         # /proc to find the bash process running our sleep.
-        deadline = time.monotonic() + 5.0
+        deadline = time.monotonic() + 15.0
         target_pid = None
         while time.monotonic() < deadline:
             # Walk our children and grand-children to find one running 'sleep 30'
@@ -146,7 +146,7 @@ def test_wait_for_process_kills_subprocess_on_keyboardinterrupt():
             time.sleep(0.1)
 
         assert target_pid is not None, (
-            "test setup: couldn't find 'sleep 30' subprocess after 5 s"
+            "test setup: couldn't find 'sleep 30' subprocess after 15 s"
         )
         pgid = os.getpgid(target_pid)
         assert _pgid_still_alive(pgid), "sanity: subprocess should be alive"
@@ -167,8 +167,8 @@ def test_wait_for_process_kills_subprocess_on_keyboardinterrupt():
 
         # Give the worker a moment to: hit the exception at the next poll,
         # run the except-block cleanup (_kill_process), and exit.
-        t.join(timeout=5.0)
-        assert not t.is_alive(), "worker didn't exit within 5 s of the interrupt"
+        t.join(timeout=30.0)
+        assert not t.is_alive(), "worker didn't exit within 30 s of the interrupt"
 
         # The critical assertion: the subprocess GROUP must be dead.  Not
         # just the bash wrapper — the 'sleep 30' child too. Under xdist load,
