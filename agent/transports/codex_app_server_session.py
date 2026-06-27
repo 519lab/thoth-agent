@@ -627,14 +627,14 @@ class CodexAppServerSession:
         elif method == "mcpServer/elicitation/request":
             # Codex's MCP layer asks the user for structured input on
             # behalf of an MCP server (e.g. tool-call confirmation,
-            # OAuth, form data). For our own hermes-tools callback we
+            # OAuth, form data). For our own thoth-tools callback we
             # auto-accept — the user already approved Thoth's tools
             # by enabling the runtime, and we never expose anything
             # codex's built-in shell can't already do. For other MCP
             # servers we decline so the user explicitly opts in via
             # codex's own auth flow.
             server_name = params.get("serverName") or ""
-            if server_name == "hermes-tools":
+            if server_name == "thoth-tools":
                 self._client.respond(
                     rid,
                     {"action": "accept", "content": None, "_meta": None},

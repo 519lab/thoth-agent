@@ -163,7 +163,7 @@ def upgrade() -> None:
     )
 
     # Seed the substrate self-state stream. Stable UUID, name namespace
-    # 'substrate.*' (separate from 'hermes.*' user-facing streams).
+    # 'substrate.*' (separate from 'thoth.*' user-facing streams).
     op.execute(
         f"""
         INSERT INTO substrate_streams

@@ -37,13 +37,13 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg17
         env:
-          POSTGRES_USER: hermes
-          POSTGRES_PASSWORD: hermes
-          POSTGRES_DB: hermes
+          POSTGRES_USER: thoth
+          POSTGRES_PASSWORD: thoth
+          POSTGRES_DB: thoth
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U hermes -d hermes"
+          --health-cmd "pg_isready -U thoth -d thoth"
           --health-interval 2s
           --health-timeout 2s
           --health-retries 20
@@ -83,7 +83,7 @@ jobs:
           source .venv/bin/activate
           uv run alembic -c migrations/alembic.ini upgrade head
         env:
-          THOTH_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
+          THOTH_PG_DSN: postgresql://thoth:thoth@localhost:5432/thoth
 
       - name: Run tests with coverage
         # --coverage wraps each per-file pytest subprocess in
@@ -95,9 +95,9 @@ jobs:
           source .venv/bin/activate
           python scripts/run_tests_parallel.py --coverage | tee coverage-run.log
         env:
-          THOTH_PG_DSN: postgresql://hermes:hermes@localhost:5432/hermes
-          POSTGRES_USER: hermes
-          POSTGRES_PASSWORD: hermes
+          THOTH_PG_DSN: postgresql://thoth:thoth@localhost:5432/thoth
+          POSTGRES_USER: thoth
+          POSTGRES_PASSWORD: thoth
           THOTH_TEST_POSTGRES_PORT: "5432"
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""

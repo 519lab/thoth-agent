@@ -119,7 +119,7 @@ body:
       placeholder: "3.11.9"
 
   - type: input
-    id: hermes-version
+    id: thoth-version
     attributes:
       label: Thoth Version
       description: Output of `thoth version`

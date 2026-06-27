@@ -70,7 +70,7 @@ def _build_prompt(need_context: str) -> str:
         "  - It MUST start with YAML frontmatter delimited by `---` lines, "
         "including at least `name:` (lowercase-kebab, matches your `slug`) and "
         "`description:` (one line, <1024 chars). You may add "
-        "`metadata:\\n  hermes:\\n    tags: [...]`.\n"
+        "`metadata:\\n  thoth:\\n    tags: [...]`.\n"
         "  - After the closing `---`, write clear step-by-step instructions.\n"
         "  - The procedure must use only safe, ordinary capabilities. Do NOT "
         "include destructive actions, secret exfiltration, or anything that "

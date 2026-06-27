@@ -69,7 +69,7 @@ Every Thoth process picks it up on next start.
 NEW DEFAULT: override_existing = true
 
 ### Cell — LAZY INSTALL (sky blue background)
-~/.hermes/bin/bws
+~/.thoth/bin/bws
 bws v2.0.0 PINNED
 SHA-256 VERIFIED
 No apt · no brew · no sudo

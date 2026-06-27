@@ -6,10 +6,10 @@ __pycache__/
 .venv/
 .vscode/
 
-# Test-container HERMES_HOME artifacts. The docker-compose test-runner
-# sets HOME=/work so any test that hits the default HERMES_HOME lands
+# Test-container THOTH_HOME artifacts. The docker-compose test-runner
+# sets HOME=/work so any test that hits the default THOTH_HOME lands
 # files here. Not real user data; safe to ignore.
-/.hermes/
+/.thoth/
 /.local/
 
 # Working-scratch directory for in-progress drafts (the
@@ -31,7 +31,7 @@ data/
 .pytest-cache/
 tmp/
 temp_vision_images/
-hermes-*/*
+thoth-*/*
 examples/
 tests/quick_test_dataset.jsonl
 tests/sample_dataset.jsonl
@@ -50,14 +50,14 @@ agent-browser/
 privvy*
 images/
 __pycache__/
-hermes_agent.egg-info/
+thoth_agent.egg-info/
 wandb/
 testlogs
 
 # CLI config (may contain sensitive SSH paths)
 cli-config.yaml
 
-# Skills Hub state (lives in ~/.hermes/skills/.hub/ at runtime, but just in case)
+# Skills Hub state (lives in ~/.thoth/skills/.hub/ at runtime, but just in case)
 skills/.hub/
 ignored/
 .worktrees/

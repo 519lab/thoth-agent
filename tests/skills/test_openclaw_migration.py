@@ -12,12 +12,12 @@ SCRIPT_PATH = (
     / "migration"
     / "openclaw-migration"
     / "scripts"
-    / "openclaw_to_hermes.py"
+    / "openclaw_to_thoth.py"
 )
 
 
 def load_module():
-    spec = importlib.util.spec_from_file_location("openclaw_to_hermes", SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location("openclaw_to_thoth", SCRIPT_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     sys.modules[spec.name] = module
@@ -105,7 +105,7 @@ def test_resolve_selected_options_rejects_unknown_preset():
 def test_migrator_copies_skill_and_merges_allowlist(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
 
     (source / "workspace" / "skills" / "demo-skill").mkdir(parents=True)
@@ -150,7 +150,7 @@ def test_migrator_copies_skill_and_merges_allowlist(tmp_path: Path):
 def test_migrator_optionally_imports_supported_secrets_and_messaging_settings(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
 
     (source / "credentials").mkdir(parents=True)
     (source / "openclaw.json").write_text(
@@ -189,7 +189,7 @@ def test_messaging_cwd_skipped_when_inside_source(tmp_path: Path):
     """MESSAGING_CWD pointing inside the OpenClaw source dir should be skipped."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
 
     # Workspace path is inside the source directory
@@ -220,7 +220,7 @@ def test_messaging_cwd_skipped_when_inside_source(tmp_path: Path):
 def test_migrator_can_execute_only_selected_categories(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
 
     (source / "workspace" / "skills" / "demo-skill").mkdir(parents=True)
@@ -257,7 +257,7 @@ def test_migrator_can_execute_only_selected_categories(tmp_path: Path):
 def test_migrator_records_preset_in_report(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
     (target / "config.yaml").write_text("command_allowlist: []\n", encoding="utf-8")
 
@@ -285,7 +285,7 @@ def test_source_candidate_finds_files_in_custom_workspace(tmp_path: Path):
     be discovered there as a fallback."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     custom_ws = tmp_path / "my-custom-workspace"
 
     target.mkdir()
@@ -343,7 +343,7 @@ def test_source_candidate_prefers_standard_workspace_over_custom(tmp_path: Path)
     the standard location should win (custom is a fallback only)."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     custom_ws = tmp_path / "my-custom-workspace"
 
     target.mkdir()
@@ -379,7 +379,7 @@ def test_source_candidate_prefers_standard_workspace_over_custom(tmp_path: Path)
 def test_migrator_exports_full_overflow_entries(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
     (target / "config.yaml").write_text("memory:\n  memory_char_limit: 10\n  user_char_limit: 10\n", encoding="utf-8")
     (source / "workspace").mkdir(parents=True)
@@ -410,7 +410,7 @@ def test_migrator_exports_full_overflow_entries(tmp_path: Path):
 def test_migrator_can_rename_conflicting_imported_skill(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
 
     source_skill = source / "workspace" / "skills" / "demo-skill"
@@ -449,7 +449,7 @@ def test_migrator_can_rename_conflicting_imported_skill(tmp_path: Path):
 def test_migrator_can_overwrite_conflicting_imported_skill_with_backup(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
 
     source_skill = source / "workspace" / "skills" / "demo-skill"
@@ -487,7 +487,7 @@ def test_discord_settings_migrated(tmp_path: Path):
     """Discord bot token and allowlist migrate to .env."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
     source.mkdir()
 
@@ -518,7 +518,7 @@ def test_slack_settings_migrated(tmp_path: Path):
     """Slack bot/app tokens and allowlist migrate to .env."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
     source.mkdir()
 
@@ -551,7 +551,7 @@ def test_signal_settings_migrated(tmp_path: Path):
     """Signal account, HTTP URL, and allowlist migrate to .env."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
     source.mkdir()
 
@@ -584,7 +584,7 @@ def test_model_config_migrated(tmp_path: Path):
     """Default model setting migrates to config.yaml."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
     source.mkdir()
 
@@ -611,7 +611,7 @@ def test_model_config_object_format(tmp_path: Path):
     """Model config handles {primary: ...} object format."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
     source.mkdir()
 
@@ -637,7 +637,7 @@ def test_tts_config_migrated(tmp_path: Path):
     """TTS provider and voice settings migrate to config.yaml."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
     source.mkdir()
 
@@ -672,7 +672,7 @@ def test_shared_skills_migrated(tmp_path: Path):
     """Shared skills from ~/.openclaw/skills/ are migrated."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
 
     # Create a shared skill (not in workspace/skills/)
@@ -696,7 +696,7 @@ def test_daily_memory_merged(tmp_path: Path):
     """Daily memory notes from workspace/memory/*.md are merged into MEMORY.md."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
 
     mem_dir = source / "workspace" / "memory"
@@ -727,7 +727,7 @@ def test_provider_keys_require_migrate_secrets_flag(tmp_path: Path):
     """Provider keys migration is double-gated: needs option + --migrate-secrets."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     target.mkdir()
     source.mkdir()
 
@@ -771,7 +771,7 @@ def test_workspace_agents_records_skip_when_missing(tmp_path: Path):
     """Bug fix: workspace-agents records 'skipped' when source is missing."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     source.mkdir()
     target.mkdir()
 
@@ -790,7 +790,7 @@ def test_cron_store_is_archived_without_config_cron_section(tmp_path: Path):
     """Bug fix: archive cron store even when openclaw.json has no top-level cron config."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     output_dir = target / "migration-report"
     source.mkdir()
     target.mkdir()
@@ -842,7 +842,7 @@ def test_skill_installs_cleanly_under_skills_guard():
     # python_os_environ  — reads MIGRATION_JSON_OUTPUT to enable JSON output mode
     #                      (feature flag, not an env dump)
     # thoth_config_mod  — print statements in the post-migration summary that
-    #                      tell the user to *review* ~/.hermes/config.yaml;
+    #                      tell the user to *review* ~/.thoth/config.yaml;
     #                      the script never writes to that file
     #
     # Accept "caution" or "safe" — just not "dangerous" from a *real* threat.
@@ -921,7 +921,7 @@ def test_migrate_memory_rebrands_entries(tmp_path):
         encoding="utf-8",
     )
 
-    target_root = tmp_path / "hermes"
+    target_root = tmp_path / "thoth"
     target_root.mkdir()
     (target_root / "memories").mkdir()
 
@@ -952,7 +952,7 @@ def test_migrate_soul_rebrands_content(tmp_path):
     soul_md = workspace / "SOUL.md"
     soul_md.write_text("You are OpenClaw, an AI assistant made by SparkLab.", encoding="utf-8")
 
-    target_root = tmp_path / "hermes"
+    target_root = tmp_path / "thoth"
     target_root.mkdir()
 
     migrator = mod.Migrator(
@@ -981,7 +981,7 @@ def _run_model_migration(tmp_path: Path, openclaw_json: dict) -> dict:
 
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".thoth"
     source.mkdir(parents=True)
     target.mkdir(parents=True)
     (source / "openclaw.json").write_text(json.dumps(openclaw_json), encoding="utf-8")

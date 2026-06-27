@@ -9,7 +9,7 @@ Rotate once. Every Thoth process picks it up on next start.
 
 ### Lazy Install
 - `bws v2.0.0` pinned
-- Downloaded into `~/.hermes/bin/bws`
+- Downloaded into `~/.thoth/bin/bws`
 - SHA-256 verified vs GitHub Releases checksum file
 - No apt, no brew, no sudo
 - Cross-platform: linux gnu+musl, macos universal, windows x86_64+arm64

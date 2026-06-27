@@ -1,4 +1,0 @@
-[console_scripts]
-thoth = thoth_cli.main:main
-thoth-acp = acp_adapter.entry:main
-thoth-agent = run_agent:_cli_main

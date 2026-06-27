@@ -9,6 +9,6 @@ Key choices:
 
 Typical update flow:
 1. Bump the formula `url`, `version`, and `sha256`.
-2. Refresh Python resources with `brew update-python-resources --print-only hermes-agent`.
+2. Refresh Python resources with `brew update-python-resources --print-only thoth-agent`.
 3. Keep `ignore_packages: %w[certifi cryptography pydantic]`.
-4. Verify `brew audit --new --strict hermes-agent` and `brew test hermes-agent`.
+4. Verify `brew audit --new --strict thoth-agent` and `brew test thoth-agent`.

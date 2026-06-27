@@ -167,7 +167,7 @@ class TestMem0UserIdScoping:
         with patch("plugins.memory.mem0._load_config", return_value={
             "api_key": "test-key",
             "user_id": "thoth-user",
-            "agent_id": "hermes",
+            "agent_id": "thoth",
             "rerank": True,
         }):
             provider.initialize(session_id="test-sess", user_id="tg_user_99")
@@ -182,7 +182,7 @@ class TestMem0UserIdScoping:
         with patch("plugins.memory.mem0._load_config", return_value={
             "api_key": "test-key",
             "user_id": "custom-default",
-            "agent_id": "hermes",
+            "agent_id": "thoth",
             "rerank": True,
         }):
             provider.initialize(session_id="test-sess")
@@ -196,7 +196,7 @@ class TestMem0UserIdScoping:
         provider = Mem0MemoryProvider()
         with patch("plugins.memory.mem0._load_config", return_value={
             "api_key": "test-key",
-            "agent_id": "hermes",
+            "agent_id": "thoth",
             "rerank": True,
         }):
             provider.initialize(session_id="test-sess")
@@ -213,7 +213,7 @@ class TestMem0UserIdScoping:
         with patch("plugins.memory.mem0._load_config", return_value={
             "api_key": "test-key",
             "user_id": "thoth-user",
-            "agent_id": "hermes",
+            "agent_id": "thoth",
             "rerank": True,
         }):
             p1.initialize(session_id="sess-1", user_id="alice_123")
@@ -249,7 +249,7 @@ class TestHonchoUserIdScoping:
         mock_cfg.dialectic_depth = 1
         mock_cfg.dialectic_depth_levels = None
         mock_cfg.init_on_session_start = False
-        mock_cfg.ai_peer = "hermes"
+        mock_cfg.ai_peer = "thoth"
         mock_cfg.resolve_session_name.return_value = "test-sess"
         mock_cfg.session_strategy = "shared"
 
@@ -280,7 +280,7 @@ class TestHonchoUserIdScoping:
 
         mock_cfg = MagicMock()
         mock_cfg.peer_name = "static-user"
-        mock_cfg.ai_peer = "hermes"
+        mock_cfg.ai_peer = "thoth"
         mock_cfg.write_frequency = "sync"
         mock_cfg.dialectic_reasoning_level = "low"
         mock_cfg.dialectic_dynamic = True

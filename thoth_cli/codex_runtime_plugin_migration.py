@@ -595,7 +595,7 @@ def _build_thoth_tools_mcp_entry() -> dict:
 
     out: dict[str, Any] = {
         "command": sys.executable,
-        "args": ["-m", "agent.transports.hermes_tools_mcp_server"],
+        "args": ["-m", "agent.transports.thoth_tools_mcp_server"],
     }
     if env:
         out["env"] = env
@@ -691,7 +691,7 @@ def migrate(
     # codex subprocess can call back into Thoth for the tools codex
     # doesn't ship with — web_search, browser_*, delegate_task, vision,
     # memory, skills, session_search, image_generate, text_to_speech.
-    # The server itself is agent/transports/hermes_tools_mcp_server.py
+    # The server itself is agent/transports/thoth_tools_mcp_server.py
     # and is launched on demand by codex (stdio MCP).
     if expose_thoth_tools:
         translated["thoth-tools"] = _build_thoth_tools_mcp_entry()

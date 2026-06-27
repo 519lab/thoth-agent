@@ -10,15 +10,15 @@ The `execute_code` tool lets the agent write Python scripts that call Thoth tool
 
 ## How It Works
 
-1. The agent writes a Python script using `from hermes_tools import ...`
-2. Thoth generates a `hermes_tools.py` stub module with RPC functions
+1. The agent writes a Python script using `from thoth_tools import ...`
+2. Thoth generates a `thoth_tools.py` stub module with RPC functions
 3. Thoth opens a Unix domain socket and starts an RPC listener thread
 4. The script runs in a child process — tool calls travel over the socket back to Thoth
 5. Only the script's `print()` output is returned to the LLM; intermediate tool results never enter the context window
 
 ```python
 # The agent can write scripts like:
-from hermes_tools import web_search, web_extract
+from thoth_tools import web_search, web_extract
 
 results = web_search("Python 3.13 features", limit=5)
 for r in results["data"]["web"]:
@@ -44,7 +44,7 @@ The key benefit: intermediate tool results never enter the context window — on
 ### Data Processing Pipeline
 
 ```python
-from hermes_tools import search_files, read_file
+from thoth_tools import search_files, read_file
 import json
 
 # Find all config files and extract database settings
@@ -60,7 +60,7 @@ print(json.dumps(configs, indent=2))
 ### Multi-Step Web Research
 
 ```python
-from hermes_tools import web_search, web_extract
+from thoth_tools import web_search, web_extract
 import json
 
 # Search, extract, and summarize in one turn
@@ -82,7 +82,7 @@ print(json.dumps(summaries, indent=2))
 ### Bulk File Refactoring
 
 ```python
-from hermes_tools import search_files, read_file, patch
+from thoth_tools import search_files, read_file, patch
 
 # Find all Python files using deprecated API and fix them
 matches = search_files("old_api_call", path="src/", file_glob="*.py")
@@ -103,7 +103,7 @@ print(f"Fixed {fixed} files out of {len(matches.get('matches', []))} matches")
 ### Build and Test Pipeline
 
 ```python
-from hermes_tools import terminal, read_file
+from thoth_tools import terminal, read_file
 import json
 
 # Run tests, parse results, and report
@@ -219,7 +219,7 @@ terminal:
 
 See the [Security guide](/docs/user-guide/security#environment-variable-passthrough) for full details.
 
-Thoth always writes the script and the auto-generated `hermes_tools.py` RPC stub into a temp staging directory that is cleaned up after execution. In `strict` mode the script also *runs* there; in `project` mode it runs in the session's working directory (the staging directory stays on `PYTHONPATH` so imports still resolve). The child process runs in its own process group so it can be cleanly killed on timeout or interruption.
+Thoth always writes the script and the auto-generated `thoth_tools.py` RPC stub into a temp staging directory that is cleaned up after execution. In `strict` mode the script also *runs* there; in `project` mode it runs in the session's working directory (the staging directory stays on `PYTHONPATH` so imports still resolve). The child process runs in its own process group so it can be cleanly killed on timeout or interruption.
 
 ## execute_code vs terminal
 

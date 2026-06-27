@@ -3,7 +3,7 @@ name: Publish to PyPI
 # MANUAL TRIGGER ONLY — auto-on-tag publishing has been intentionally disabled.
 #
 # Why: this repo is a substrate fork (519lab/thoth-agent) of the upstream
-# 519lab/thoth-agent. It does not own the 'hermes-agent' PyPI package and
+# NousResearch/hermes-agent. It does not own the 'hermes-agent' PyPI package and
 # has no active PyPI release pipeline. The original `push: tags: v20*` trigger
 # was a foot-gun: pushing any CalVer-style tag would silently attempt a PyPI
 # publish (which would either fail with a credentials error or, worse, succeed
@@ -98,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/hermes-agent
+      url: https://pypi.org/p/thoth-agent
     permissions:
       id-token: write  # OIDC trusted publishing
 

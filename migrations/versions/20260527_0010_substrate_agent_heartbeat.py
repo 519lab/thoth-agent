@@ -3,7 +3,7 @@
 Adds ``substrate_agent_heartbeat``: one row per substrate sub-agent
 (``sentinel``, ``curator``, ``force-reject``, ``partition-maintenance``,
 …), upserted on a fixed ~10s cadence by the sub-agent run loop. This is
-the cross-process liveness surface the ``hermes substrate`` inspect CLI
+the cross-process liveness surface the ``thoth substrate`` inspect CLI
 reads to tell a *live* worker subprocess from a *dead* one.
 
 Why a dedicated table rather than an L0 ``substrate.self_state`` slice:
