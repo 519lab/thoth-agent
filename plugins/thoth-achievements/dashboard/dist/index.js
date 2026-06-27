@@ -52,7 +52,7 @@
     const url = "/api/plugins/thoth-achievements" + path;
     const token = window.__THOTH_SESSION_TOKEN__ || "";
     const headers = { ...((options && options.headers) || {}) };
-    if (token) headers["X-Hermes-Session-Token"] = token;
+    if (token) headers["X-Thoth-Session-Token"] = token;
     const res = await fetch(url, { ...(options || {}), headers });
     if (!res.ok) {
       const text = await res.text().catch(function () { return res.statusText; });
