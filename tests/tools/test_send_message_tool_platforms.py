@@ -4,7 +4,7 @@ The companion ``test_send_message_tool.py`` already covers Telegram/Discord/
 Signal/Matrix-adapter and the higher-level ``_send_to_platform`` chunking +
 ``_handle_send`` flows. This file fills the large coverage gap (the module sat
 at ~27%) on the remaining one-shot HTTP senders — Slack, WhatsApp, Email, SMS,
-Mattermost, Matrix (CS-API), Home Assistant, DingTalk, QQBot — plus the pure
+Mattermost, Matrix (CS-API), Home Assistant, QQBot — plus the pure
 helpers ``_describe_media_for_mirror`` / ``_telegram_retry_delay`` and the
 ``_send_to_platform`` routing table for the non-media platforms.
 
@@ -28,7 +28,6 @@ if str(PROJECT_ROOT) not in sys.path:
 from gateway.config import Platform  # noqa: E402
 from tools.send_message_tool import (  # noqa: E402
     _describe_media_for_mirror,
-    _send_dingtalk,
     _send_email,
     _send_homeassistant,
     _send_mattermost,
@@ -450,30 +449,6 @@ class TestSendHomeAssistant:
 
 
 # ---------------------------------------------------------------------------
-# _send_dingtalk (httpx mocked)
-# ---------------------------------------------------------------------------
-
-
-class TestSendDingtalk:
-    def test_not_configured(self):
-        result = _run(_send_dingtalk({}, "chat", "hi"))
-        assert "not configured" in result["error"].lower()
-
-    def test_success(self):
-        client = _FakeHttpxClient([_FakeHttpxResp(200, {"errcode": 0})])
-        with patch("httpx.AsyncClient", return_value=client):
-            result = _run(_send_dingtalk({"webhook_url": "https://oapi.dingtalk.com/robot/send"}, "chat", "hi"))
-        assert result["success"] is True
-        assert result["platform"] == "dingtalk"
-
-    def test_api_error(self):
-        client = _FakeHttpxClient([_FakeHttpxResp(200, {"errcode": 310000, "errmsg": "keywords not in content"})])
-        with patch("httpx.AsyncClient", return_value=client):
-            result = _run(_send_dingtalk({"webhook_url": "https://oapi.dingtalk.com/robot/send"}, "chat", "hi"))
-        assert "keywords not in content" in result["error"]
-
-
-# ---------------------------------------------------------------------------
 # _send_qqbot (httpx mocked; channel -> c2c -> group fallback chain)
 # ---------------------------------------------------------------------------
 
@@ -586,13 +561,6 @@ class TestSendToPlatformRouting:
             _run(_send_to_platform(Platform.HOMEASSISTANT, self._pconfig(), "tgt", "msg"))
         sender.assert_awaited_once()
         assert sender.await_args.args == ("tok", {"k": "v"}, "tgt", "msg")
-
-    def test_routes_dingtalk(self):
-        sender = AsyncMock(return_value={"success": True})
-        with patch("tools.send_message_tool._send_dingtalk", sender):
-            _run(_send_to_platform(Platform.DINGTALK, self._pconfig(), "chat", "msg"))
-        sender.assert_awaited_once()
-        assert sender.await_args.args == ({"k": "v"}, "chat", "msg")
 
     def test_routes_wecom(self):
         sender = AsyncMock(return_value={"success": True})

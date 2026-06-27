@@ -194,7 +194,6 @@ TIPS = [
     # --- Gateway & Messaging ---
     "Thoth runs on 21 messaging platforms: Telegram, Discord, Slack, WhatsApp, Signal, Matrix, IRC, Microsoft Teams, email, and more.",
     "thoth gateway install sets it up as a system service that starts on boot.",
-    "DingTalk uses Stream Mode — no webhooks or public URL needed.",
     "BlueBubbles brings iMessage to Thoth via a local macOS server.",
     "Webhook routes support HMAC validation, rate limiting, and event filtering.",
     "The API server exposes an OpenAI-compatible endpoint compatible with Open WebUI and LibreChat.",

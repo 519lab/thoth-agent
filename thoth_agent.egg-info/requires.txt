@@ -11,7 +11,7 @@ jinja2==3.1.6
 pydantic==2.13.4
 prompt_toolkit==3.0.52
 croniter==6.0.0
-PyJWT[crypto]==2.12.1
+PyJWT[crypto]==2.13.0
 psutil==7.2.2
 asyncpg==0.31.0
 alembic==1.18.4
@@ -66,11 +66,6 @@ mcp==1.26.0
 ty==0.0.21
 ruff==0.15.10
 coverage[toml]==7.6.10
-
-[dingtalk]
-dingtalk-stream==0.24.3
-alibabacloud-dingtalk==2.2.42
-qrcode==7.4.2
 
 [edge-tts]
 edge-tts==7.2.7

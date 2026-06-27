@@ -116,7 +116,6 @@ class Platform(Enum):
     HOMEASSISTANT = "homeassistant"
     EMAIL = "email"
     SMS = "sms"
-    DINGTALK = "dingtalk"
     API_SERVER = "api_server"
     WEBHOOK = "webhook"
     MSGRAPH_WEBHOOK = "msgraph_webhook"
@@ -438,10 +437,6 @@ _PLATFORM_CONNECTED_CHECKERS: dict[Platform, Callable[[PlatformConfig], bool]] =
     ),
     Platform.YUANBAO: lambda cfg: bool(
         cfg.extra.get("app_id") and cfg.extra.get("app_secret")
-    ),
-    Platform.DINGTALK: lambda cfg: bool(
-        (cfg.extra.get("client_id") or os.getenv("DINGTALK_CLIENT_ID"))
-        and (cfg.extra.get("client_secret") or os.getenv("DINGTALK_CLIENT_SECRET"))
     ),
 }
 
@@ -1130,30 +1125,6 @@ def load_gateway_config() -> GatewayConfig:
                 if "require_mention" in signal_cfg and not os.getenv("SIGNAL_REQUIRE_MENTION"):
                     os.environ["SIGNAL_REQUIRE_MENTION"] = str(signal_cfg["require_mention"]).lower()
 
-            # DingTalk settings → env vars (env vars take precedence)
-            dingtalk_cfg = yaml_cfg.get("dingtalk", {})
-            if isinstance(dingtalk_cfg, dict):
-                if "require_mention" in dingtalk_cfg and not os.getenv("DINGTALK_REQUIRE_MENTION"):
-                    os.environ["DINGTALK_REQUIRE_MENTION"] = str(dingtalk_cfg["require_mention"]).lower()
-                if "mention_patterns" in dingtalk_cfg and not os.getenv("DINGTALK_MENTION_PATTERNS"):
-                    os.environ["DINGTALK_MENTION_PATTERNS"] = json.dumps(dingtalk_cfg["mention_patterns"])
-                frc = dingtalk_cfg.get("free_response_chats")
-                if frc is not None and not os.getenv("DINGTALK_FREE_RESPONSE_CHATS"):
-                    if isinstance(frc, list):
-                        frc = ",".join(str(v) for v in frc)
-                    os.environ["DINGTALK_FREE_RESPONSE_CHATS"] = str(frc)
-                # allowed_chats: if set, bot ONLY responds in these group chats (whitelist)
-                ac = dingtalk_cfg.get("allowed_chats")
-                if ac is not None and not os.getenv("DINGTALK_ALLOWED_CHATS"):
-                    if isinstance(ac, list):
-                        ac = ",".join(str(v) for v in ac)
-                    os.environ["DINGTALK_ALLOWED_CHATS"] = str(ac)
-                allowed = dingtalk_cfg.get("allowed_users")
-                if allowed is not None and not os.getenv("DINGTALK_ALLOWED_USERS"):
-                    if isinstance(allowed, list):
-                        allowed = ",".join(str(v) for v in allowed)
-                    os.environ["DINGTALK_ALLOWED_USERS"] = str(allowed)
-
             # Mattermost settings → env vars (env vars take precedence)
             mattermost_cfg = yaml_cfg.get("mattermost", {})
             if isinstance(mattermost_cfg, dict):
@@ -1616,26 +1587,6 @@ def _apply_env_overrides(config: GatewayConfig) -> None:
                 config.platforms[Platform.MSGRAPH_WEBHOOK].extra[
                     "allowed_source_cidrs"
                 ] = cidrs
-
-    # DingTalk
-    dingtalk_client_id = os.getenv("DINGTALK_CLIENT_ID")
-    dingtalk_client_secret = os.getenv("DINGTALK_CLIENT_SECRET")
-    if dingtalk_client_id and dingtalk_client_secret:
-        if Platform.DINGTALK not in config.platforms:
-            config.platforms[Platform.DINGTALK] = PlatformConfig()
-        config.platforms[Platform.DINGTALK].enabled = True
-        config.platforms[Platform.DINGTALK].extra.update({
-            "client_id": dingtalk_client_id,
-            "client_secret": dingtalk_client_secret,
-        })
-        dingtalk_home = os.getenv("DINGTALK_HOME_CHANNEL")
-        if dingtalk_home:
-            config.platforms[Platform.DINGTALK].home_channel = HomeChannel(
-                platform=Platform.DINGTALK,
-                chat_id=dingtalk_home,
-                name=os.getenv("DINGTALK_HOME_CHANNEL_NAME", "Home"),
-                thread_id=os.getenv("DINGTALK_HOME_CHANNEL_THREAD_ID") or None,
-            )
 
     # Feishu / Lark
     feishu_app_id = os.getenv("FEISHU_APP_ID")

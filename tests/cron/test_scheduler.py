@@ -95,7 +95,6 @@ class TestResolveDeliveryTarget:
             ("mattermost", "MATTERMOST_HOME_CHANNEL", "team-town-square"),
             ("sms", "SMS_HOME_CHANNEL", "+15557654321"),
             ("email", "EMAIL_HOME_ADDRESS", "home@example.com"),
-            ("dingtalk", "DINGTALK_HOME_CHANNEL", "cidNNN"),
             ("feishu", "FEISHU_HOME_CHANNEL", "oc_home"),
             ("wecom", "WECOM_HOME_CHANNEL", "wecom-home"),
             ("weixin", "WEIXIN_HOME_CHANNEL", "wxid_home"),
@@ -115,7 +114,6 @@ class TestResolveDeliveryTarget:
             "MATTERMOST_HOME_CHANNEL",
             "SMS_HOME_CHANNEL",
             "EMAIL_HOME_ADDRESS",
-            "DINGTALK_HOME_CHANNEL",
             "BLUEBUBBLES_HOME_CHANNEL",
             "FEISHU_HOME_CHANNEL",
             "WECOM_HOME_CHANNEL",
@@ -446,7 +444,7 @@ class TestRoutingIntents:
 
         for var in ("TELEGRAM_HOME_CHANNEL", "DISCORD_HOME_CHANNEL", "SLACK_HOME_CHANNEL",
                     "SIGNAL_HOME_CHANNEL", "MATRIX_HOME_ROOM", "MATTERMOST_HOME_CHANNEL",
-                    "SMS_HOME_CHANNEL", "EMAIL_HOME_ADDRESS", "DINGTALK_HOME_CHANNEL",
+                    "SMS_HOME_CHANNEL", "EMAIL_HOME_ADDRESS",
                     "FEISHU_HOME_CHANNEL", "WECOM_HOME_CHANNEL", "WEIXIN_HOME_CHANNEL",
                     "BLUEBUBBLES_HOME_CHANNEL", "QQBOT_HOME_CHANNEL", "QQ_HOME_CHANNEL"):
             monkeypatch.delenv(var, raising=False)

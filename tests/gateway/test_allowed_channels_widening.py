@@ -1,7 +1,7 @@
 """Tests for the allowed_{channels,chats,rooms} whitelist extension
 added alongside PR #7401 (Slack).
 
-Covers: Telegram, Matrix, Mattermost, DingTalk.
+Covers: Telegram, Matrix, Mattermost.
 
 For each platform:
 - Empty = no restriction (fully backward compatible).
@@ -154,81 +154,6 @@ class TestTelegramAllowedChats:
 
         import os as _os
         assert _os.environ["TELEGRAM_ALLOWED_CHATS"] == "-999"
-
-
-# ---------------------------------------------------------------------------
-# DingTalk
-# ---------------------------------------------------------------------------
-
-def _make_dingtalk_adapter(*, allowed_chats=None, require_mention=None):
-    # Import lazily — DingTalk SDK may not be installed.
-    pytest.importorskip("gateway.platforms.dingtalk", reason="DingTalk adapter not importable")
-    from gateway.platforms.dingtalk import DingTalkAdapter
-
-    extra = {}
-    if allowed_chats is not None:
-        extra["allowed_chats"] = allowed_chats
-    if require_mention is not None:
-        extra["require_mention"] = require_mention
-
-    adapter = object.__new__(DingTalkAdapter)
-    adapter.platform = Platform.DINGTALK
-    adapter.config = PlatformConfig(enabled=True, extra=extra)
-    return adapter
-
-
-class TestDingTalkAllowedChats:
-    def test_empty_is_no_restriction(self, monkeypatch):
-        monkeypatch.delenv("DINGTALK_ALLOWED_CHATS", raising=False)
-        adapter = _make_dingtalk_adapter()
-        assert adapter._dingtalk_allowed_chats() == set()
-
-    def test_list_form(self):
-        adapter = _make_dingtalk_adapter(allowed_chats=["cidABC", "cidDEF"])
-        assert adapter._dingtalk_allowed_chats() == {"cidABC", "cidDEF"}
-
-    def test_csv_form(self):
-        adapter = _make_dingtalk_adapter(allowed_chats="cidABC, cidDEF")
-        assert adapter._dingtalk_allowed_chats() == {"cidABC", "cidDEF"}
-
-    def test_env_var_fallback(self, monkeypatch):
-        monkeypatch.setenv("DINGTALK_ALLOWED_CHATS", "cidABC,cidDEF")
-        adapter = _make_dingtalk_adapter()
-        assert adapter._dingtalk_allowed_chats() == {"cidABC", "cidDEF"}
-
-    def test_blocks_non_whitelisted_group(self):
-        adapter = _make_dingtalk_adapter(allowed_chats=["cidABC"])
-        assert adapter._should_process_message(
-            message=None, text="hello", is_group=True, chat_id="cidXYZ",
-        ) is False
-
-    def test_dm_unaffected(self):
-        """DMs (is_group=False) bypass the whitelist."""
-        adapter = _make_dingtalk_adapter(allowed_chats=["cidABC"])
-        assert adapter._should_process_message(
-            message=None, text="hello", is_group=False, chat_id="cidXYZ",
-        ) is True
-
-    def test_config_bridge(self, monkeypatch, tmp_path):
-        from gateway.config import load_gateway_config
-
-        thoth_home = tmp_path / ".thoth"
-        thoth_home.mkdir()
-        (thoth_home / "config.yaml").write_text(
-            "dingtalk:\n"
-            "  allowed_chats:\n"
-            "    - cidABC\n"
-            "    - cidDEF\n",
-            encoding="utf-8",
-        )
-        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
-        monkeypatch.setenv("DINGTALK_ALLOWED_CHATS", "__sentinel__")
-        monkeypatch.delenv("DINGTALK_ALLOWED_CHATS")
-
-        load_gateway_config()
-
-        import os as _os
-        assert _os.environ["DINGTALK_ALLOWED_CHATS"] == "cidABC,cidDEF"
 
 
 # ---------------------------------------------------------------------------

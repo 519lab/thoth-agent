@@ -71,7 +71,7 @@ def test_lazy_installable_extras_excluded_from_all():
         "edge-tts", "tts-premium",
         "voice",  # faster-whisper / sounddevice / numpy
         "modal", "daytona", "vercel",
-        "messaging", "slack", "matrix", "dingtalk", "feishu",
+        "messaging", "slack", "matrix", "feishu",
         "honcho", "hindsight",
     }
     all_extra_specs = optional_dependencies["all"]
@@ -93,14 +93,6 @@ def test_messaging_extra_includes_qrcode_for_weixin_setup():
     messaging_extra = optional_dependencies["messaging"]
     assert any(dep.startswith("qrcode") for dep in messaging_extra)
 
-
-def test_dingtalk_extra_includes_qrcode_for_qr_auth():
-    """DingTalk's QR-code device-flow auth (thoth_cli/dingtalk_auth.py)
-    needs the qrcode package."""
-    optional_dependencies = _load_optional_dependencies()
-
-    dingtalk_extra = optional_dependencies["dingtalk"]
-    assert any(dep.startswith("qrcode") for dep in dingtalk_extra)
 
 
 def test_feishu_extra_includes_qrcode_for_qr_login():

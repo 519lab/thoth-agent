@@ -139,11 +139,6 @@ LAZY_DEPS: dict[str, tuple[str, ...]] = {
         "asyncpg==0.31.0",
         "aiohttp-socks==0.11.0",
     ),
-    "platform.dingtalk": (
-        "dingtalk-stream==0.24.3",
-        "alibabacloud-dingtalk==2.2.42",
-        "qrcode==7.4.2",
-    ),
     "platform.feishu": (
         "lark-oapi==1.5.3",
         "qrcode==7.4.2",
