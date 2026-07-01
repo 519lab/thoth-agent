@@ -214,6 +214,14 @@ timeout-bounded, default 300 ms) is:
 2. **`recall_window`** — SQL ranking over a composite score combining **pgvector
    cosine similarity + keyword Jaccard + current salience + recency** (each
    weighted; see the `THOTH_RECALL_*_WEIGHT` knobs), within a lookback window.
+   The weights themselves are **learnable**: `thoth substrate recall tune` fits
+   the salience/recency/half-life weights against the outcome-labelled recall
+   log (time-ordered train/holdout split, guardrailed — see
+   `substrate/recall/tuner.py`), and `--apply` promotes the fitted vector to
+   the active `substrate_recall_weights` row, which the live path prefers over
+   the config defaults (short-TTL cache, so promotion/revert lands without a
+   restart; an explicitly-set `THOTH_RECALL_*_WEIGHT` env var still wins for
+   that field, and `THOTH_RECALL_TUNED_WEIGHTS=0` kills the whole mechanism).
    When the Critic's coherence is low, recall **pins to coherence** — raising the
    relevance floor so only stronger candidates surface (gated by
    `THOTH_RECALL_COHERENCE_PIN`).
@@ -303,9 +311,12 @@ finished but aren't":
 
 - **Boot-time config is a sharp edge.** Because config is read once at boot
   (§9), `THOTH_SUBSTRATE_RECALL` and the other `THOTH_*` knobs are effectively
-  irreversible mid-process — flipping recall on or off, or retuning weights,
-  requires a restart. This is by design (hot-path constants) but routinely
-  surprises operators.
+  irreversible mid-process — flipping recall on or off requires a restart. This
+  is by design (hot-path constants) but routinely surprises operators. The one
+  exception is the recall ranking weights: tuned weight sets promoted via
+  `thoth substrate recall tune --apply` (or reverted via
+  `recall weights --revert`) go live within the tuned-weights cache TTL
+  (default 300 s), no restart needed.
 
 None of these block the foreground — they are limits on how *autonomous* and
 *self-governing* the substrate is, not on its safety. The §9 invariants are what

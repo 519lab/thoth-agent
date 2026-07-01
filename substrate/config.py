@@ -227,6 +227,18 @@ RECALL_REINFORCE_MIN_RELEVANCE = _envfloat(
 # Recall log writer.
 RECALL_LOG_QUEUE_DEPTH = _envint("THOTH_RECALL_LOG_QUEUE_DEPTH", default=1024)
 
+# Tuned recall weights (learned-recall-weights innovation). When on, the
+# recall path prefers the ACTIVE row in ``substrate_recall_weights`` (written
+# by ``thoth substrate recall tune --apply``) over the config defaults above,
+# re-read through a short-TTL cache so a promotion/revert lands without a
+# restart. An explicitly-set THOTH_RECALL_*_WEIGHT env var still wins for
+# that field — the operator's hand override outranks the learned value.
+# Kill-switch: THOTH_RECALL_TUNED_WEIGHTS=0 restores pure config behaviour.
+RECALL_TUNED_WEIGHTS = _envbool("THOTH_RECALL_TUNED_WEIGHTS", default=True)
+RECALL_TUNED_WEIGHTS_TTL_S = _envfloat(
+    "THOTH_RECALL_TUNED_WEIGHTS_TTL_S", default=300.0
+)
+
 # Recall outcome label (innovation #1). When on, the post-turn block stamps
 # an ``outcome_score`` onto the recall_log rows the turn consumed (windowed
 # UPDATE keyed on session_id + turn-start time), so the offline replay
@@ -387,6 +399,8 @@ __all__ = [
     "RECALL_REINFORCE_RATE_LIMIT_PER_MIN",
     "RECALL_REINFORCE_MIN_RELEVANCE",
     "RECALL_LOG_QUEUE_DEPTH",
+    "RECALL_TUNED_WEIGHTS",
+    "RECALL_TUNED_WEIGHTS_TTL_S",
     "RECALL_OUTCOME_LABEL_ENABLED",
     "RECALL_OUTCOME_TOOL_FAILURE_PENALTY",
     "RECALL_EMBEDDING_MODEL",
