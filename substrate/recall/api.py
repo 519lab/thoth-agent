@@ -114,6 +114,89 @@ def _reset_coherence_cache() -> None:
     _COHERENCE_CACHE = (1.0, 0.0)
 
 
+# ---------------------------------------------------------------------------
+# Tuned recall weights (learned-recall-weights innovation).
+#
+# ``thoth substrate recall tune --apply`` promotes a fitted weight vector to
+# the single ACTIVE row in ``substrate_recall_weights``; the live path reads
+# it here through a short-TTL cache (same shape as the coherence cache) so a
+# promotion or revert lands within RECALL_TUNED_WEIGHTS_TTL_S without a
+# restart. Resolution order per field: an explicitly-set THOTH_RECALL_*
+# env var wins (operator's hand override), then the active tuned row, then
+# the config default. Any failure resolves to the config baseline — tuned
+# weights can degrade recall quality, never its availability.
+# ---------------------------------------------------------------------------
+
+# (weights-or-None, monotonic deadline). None means "no active tuned row".
+_TUNED_WEIGHTS_CACHE: tuple[Optional[object], float] = (None, 0.0)
+
+# rank_candidates_scored kwarg → (Weights field, env var that hand-overrides).
+_WEIGHT_FIELDS: tuple[tuple[str, str, str, str], ...] = (
+    ("similarity_weight", "similarity", "THOTH_RECALL_SIMILARITY_WEIGHT", "RECALL_SIMILARITY_WEIGHT"),
+    ("keyword_overlap_weight", "keyword", "THOTH_RECALL_KEYWORD_WEIGHT", "RECALL_KEYWORD_WEIGHT"),
+    ("salience_weight", "salience", "THOTH_RECALL_SALIENCE_WEIGHT", "RECALL_SALIENCE_WEIGHT"),
+    ("recency_weight", "recency", "THOTH_RECALL_RECENCY_WEIGHT", "RECALL_RECENCY_WEIGHT"),
+    ("recency_half_life_hours", "half_life_hours", "THOTH_RECALL_RECENCY_HALF_LIFE_HOURS", "RECALL_RECENCY_HALF_LIFE_HOURS"),
+)
+
+
+async def _cached_tuned_weights() -> Optional[object]:
+    """The active tuned :class:`~substrate.recall.replay.Weights`, or None.
+
+    Cached against a monotonic clock for RECALL_TUNED_WEIGHTS_TTL_S; a
+    failed read caches None for the same TTL so a missing table (pre-0026
+    DB) can't turn into a per-recall query storm."""
+    global _TUNED_WEIGHTS_CACHE
+    now = time.monotonic()
+    value, deadline = _TUNED_WEIGHTS_CACHE
+    if now < deadline:
+        return value
+
+    tuned = None
+    try:
+        import thoth_db
+        from substrate.recall import weights_store
+
+        async with thoth_db.connection() as conn:
+            tuned = await weights_store.get_active(conn)
+    except Exception as exc:  # noqa: BLE001 — availability over tuning
+        _log.debug("tuned recall weights read failed: %s", exc)
+        tuned = None
+
+    _TUNED_WEIGHTS_CACHE = (tuned, now + _cfg.RECALL_TUNED_WEIGHTS_TTL_S)
+    return tuned
+
+
+def _reset_tuned_weights_cache() -> None:
+    """Test hook — drop the cached tuned weights so the next read re-queries."""
+    global _TUNED_WEIGHTS_CACHE
+    _TUNED_WEIGHTS_CACHE = (None, 0.0)
+
+
+async def _effective_rank_weights() -> dict:
+    """The kwargs ``rank_candidates_scored`` should run with this recall.
+
+    Config baseline unless RECALL_TUNED_WEIGHTS is on AND an active tuned
+    row exists; even then, any field whose THOTH_RECALL_* env var the
+    operator explicitly set keeps the config (env-derived) value."""
+    import os
+
+    kwargs = {
+        kwarg: getattr(_cfg, cfg_name)
+        for kwarg, _, _, cfg_name in _WEIGHT_FIELDS
+    }
+    if not _cfg.RECALL_TUNED_WEIGHTS:
+        return kwargs
+    tuned = await _cached_tuned_weights()
+    if tuned is None:
+        return kwargs
+    for kwarg, fld, env_name, _ in _WEIGHT_FIELDS:
+        if (os.environ.get(env_name) or "").strip():
+            continue  # operator hand override wins over the learned value
+        kwargs[kwarg] = getattr(tuned, fld)
+    return kwargs
+
+
 def _evict_lru_if_full() -> None:
     """Drop the oldest entry when the LRU dict grows past the cap."""
     if len(_REINFORCE_LRU) <= _REINFORCE_LRU_MAX_SIZE:
@@ -329,16 +412,14 @@ async def recall(
         query_embedding = None
 
     # 3. Rank (scored, so we can apply a relevance floor + record why).
+    # Weights resolve env-override → active tuned row → config baseline
+    # (see _effective_rank_weights); failures degrade to the baseline.
     scored = rank_candidates_scored(
         candidates,
         query,
         query_embedding,
         t_now=t_now,
-        similarity_weight=_cfg.RECALL_SIMILARITY_WEIGHT,
-        keyword_overlap_weight=_cfg.RECALL_KEYWORD_WEIGHT,
-        salience_weight=_cfg.RECALL_SALIENCE_WEIGHT,
-        recency_weight=_cfg.RECALL_RECENCY_WEIGHT,
-        recency_half_life_hours=_cfg.RECALL_RECENCY_HALF_LIFE_HOURS,
+        **(await _effective_rank_weights()),
     )
 
     # 3z. Optional LLM-judge rerank of the top-K (innovation #3). Inserted

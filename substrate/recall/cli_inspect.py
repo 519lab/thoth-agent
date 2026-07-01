@@ -355,7 +355,7 @@ async def validate(
 # Runs the offline replay sweep over the labelled recall log and prints the
 # weight grid ranked by the v1 kept-vs-dropped outcome-separation metric. This
 # command NEVER applies the winning weights — it's an A/B oracle the operator
-# reads, and tuning stays a deliberate config edit.
+# reads. Applying is `tune --apply`'s job (below), behind its guardrails.
 # ---------------------------------------------------------------------------
 
 
@@ -416,6 +416,162 @@ async def replay(
     print("  (* = current live baseline from substrate/config.py)")
 
 
+# ---------------------------------------------------------------------------
+# Recall-weight tuner (learned-recall-weights innovation) — the applying
+# sibling of `replay`.
+#
+# Fits a weight vector on the labelled recall log (coordinate descent on the
+# train split of a time-ordered train/holdout split), prints the verdict, and
+# — only with --apply AND every guardrail green — promotes it to the active
+# row in substrate_recall_weights. The live recall path picks the promotion
+# up within RECALL_TUNED_WEIGHTS_TTL_S, no restart needed.
+# ---------------------------------------------------------------------------
+
+
+def _fmt_entry(label: str, entry) -> str:
+    return (
+        f"  {label:<10} sep={entry.separation:+.4f}  "
+        f"kept µ={entry.mean_outcome_kept:.3f} (n={entry.n_kept})  "
+        f"drop µ={entry.mean_outcome_dropped:.3f} (n={entry.n_dropped})"
+    )
+
+
+async def tune(
+    conn: "asyncpg.Connection",
+    *,
+    since: "datetime | None" = None,
+    limit: "int | None" = None,
+    holdout: float = 0.3,
+    apply: bool = False,
+) -> None:
+    """Fit recall weights on the labelled log; optionally promote them."""
+    from substrate.recall import replay as _replay
+    from substrate.recall import tuner as _tuner
+    from substrate.recall import weights_store as _store
+
+    corpus = await _replay.load_labeled_recalls(conn, since=since, limit=limit)
+    if not corpus:
+        print(
+            "(no labelled recalls with per-candidate records to tune on; "
+            "outcome labelling needs THOTH_RECALL_OUTCOME_LABEL on and a few "
+            "completed turns)"
+        )
+        return
+
+    result = _tuner.fit(corpus, holdout_fraction=holdout)
+
+    print(
+        f"Recall weight tune over {result.corpus_size} labelled recall(s) "
+        f"(train {result.train_size} / holdout {result.holdout_size}, "
+        f"time-ordered split)."
+    )
+    print()
+    print(f"baseline: {result.baseline.label()}")
+    print(_fmt_entry("train", result.baseline_train))
+    print(_fmt_entry("holdout", result.baseline_holdout))
+    print(f"fitted:   {result.best.label()}")
+    print(_fmt_entry("train", result.best_train))
+    print(_fmt_entry("holdout", result.best_holdout))
+    print()
+    print(f"holdout improvement: {result.holdout_improvement:+.4f}")
+
+    if result.guardrails:
+        print()
+        print("Guardrails NOT met — these weights should not be applied:")
+        for reason in result.guardrails:
+            print(f"  - {reason}")
+        if apply:
+            print()
+            print("--apply refused (guardrails above).")
+        return
+
+    if not result.recommend:
+        print()
+        print(
+            "Fit did not move off the baseline — nothing to apply (the live "
+            "weights already sit at a local optimum for this corpus)."
+        )
+        return
+
+    if not apply:
+        print()
+        print(
+            "Guardrails met. Re-run with --apply to promote these weights; "
+            "the live recall path picks them up within "
+            "THOTH_RECALL_TUNED_WEIGHTS_TTL_S (default 300s)."
+        )
+        return
+
+    row_id = await _store.save(
+        conn,
+        weights=result.best,
+        source="cli",
+        corpus_size=result.corpus_size,
+        train_metric=result.best_train.separation,
+        holdout_metric=result.best_holdout.separation,
+        baseline_holdout_metric=result.baseline_holdout.separation,
+        activate=True,
+    )
+    print()
+    print(
+        f"Applied: weight set {row_id} is now active. Revert any time with "
+        "`thoth substrate recall weights --revert`."
+    )
+
+
+async def weights(
+    conn: "asyncpg.Connection",
+    *,
+    limit: int = 10,
+    revert: bool = False,
+) -> None:
+    """Show the tuned-weight audit trail, or revert to the config baseline."""
+    from substrate.recall import weights_store as _store
+
+    if revert:
+        demoted = await _store.deactivate_all(conn)
+        if demoted:
+            print(
+                "Reverted: no tuned weight set is active; recall runs on the "
+                "config/env baseline (live within the cache TTL)."
+            )
+        else:
+            print("(nothing to revert — no tuned weight set was active)")
+        return
+
+    rows = await _store.history(conn, limit=limit)
+    if not rows:
+        print(
+            "(no tuned weight sets stored yet — run "
+            "`thoth substrate recall tune` once the recall log has labels)"
+        )
+        return
+
+    from substrate.recall.replay import baseline_weights
+
+    print(f"config baseline: {baseline_weights().label()}")
+    print()
+    for r in rows:
+        marker = "ACTIVE" if r["active"] else "      "
+        w = r["weights"]
+        label = w.label() if w is not None else "(corrupt row)"
+        hold = (
+            f"{r['holdout_metric']:+.4f}"
+            if r["holdout_metric"] is not None
+            else "n/a"
+        )
+        base = (
+            f"{r['baseline_holdout_metric']:+.4f}"
+            if r["baseline_holdout_metric"] is not None
+            else "n/a"
+        )
+        print(
+            f"{marker}  {r['created_at']:%Y-%m-%d %H:%M}  {label}\n"
+            f"        id={r['id']}  source={r['source']}  "
+            f"corpus={r['corpus_size']}  holdout sep {hold} vs baseline {base}"
+        )
+
+
 __all__ = [
     "print_summary",
     "print_recent",
@@ -423,4 +579,6 @@ __all__ = [
     "print_config",
     "validate",
     "replay",
+    "tune",
+    "weights",
 ]

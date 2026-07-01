@@ -252,6 +252,63 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
     )
     recall_replay.set_defaults(func=_cmd_inspect_recall_replay)
 
+    # Learned-recall-weights: the applying sibling of `replay`. Fits weights
+    # on the labelled log (time-ordered train/holdout split + guardrails);
+    # --apply promotes them to the active substrate_recall_weights row.
+    recall_tune = recall_sub.add_parser(
+        "tune",
+        help="Fit recall weights on the labelled log (--apply to promote)",
+        description="Coordinate-descent fit of the salience/recency/half-life "
+        "weights against the outcome_score-labelled recall log, validated on "
+        "a held-out newest fraction. Prints the verdict; with --apply AND "
+        "every guardrail green, promotes the fitted weights to the active "
+        "substrate_recall_weights row (picked up live within the cache TTL).",
+    )
+    recall_tune.add_argument(
+        "--since",
+        default=None,
+        help="Only tune on recalls newer than this (e.g. 7d, 24h, 90m)",
+    )
+    recall_tune.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max labelled recall rows to load (newest first)",
+    )
+    recall_tune.add_argument(
+        "--holdout",
+        type=float,
+        default=0.3,
+        help="Newest fraction of the corpus held out for validation (default 0.3)",
+    )
+    recall_tune.add_argument(
+        "--apply",
+        action="store_true",
+        help="Promote the fitted weights if every guardrail passes",
+    )
+    recall_tune.set_defaults(func=_cmd_inspect_recall_tune)
+
+    recall_weights = recall_sub.add_parser(
+        "weights",
+        help="Tuned recall-weight audit trail (--revert to baseline)",
+        description="List stored recall weight sets newest-first with their "
+        "evidence (corpus size, holdout separation vs baseline) and which is "
+        "active. --revert demotes the active set so recall runs on the "
+        "config/env baseline again.",
+    )
+    recall_weights.add_argument(
+        "--limit",
+        type=int,
+        default=10,
+        help="Max weight sets to list (default 10)",
+    )
+    recall_weights.add_argument(
+        "--revert",
+        action="store_true",
+        help="Deactivate the active tuned weight set (back to config baseline)",
+    )
+    recall_weights.set_defaults(func=_cmd_inspect_recall_weights)
+
     # ── Phase D: L1 + Parser subtrees ─────────────────────────────────
     l1_p = substrate_sub.add_parser(
         "l1", help="Inspect L1 (entities + relationships)"
@@ -480,6 +537,29 @@ def _cmd_inspect_recall_replay(args: argparse.Namespace) -> int:
         lambda conn: replay(
             conn, since=since, limit=args.limit, grid=args.grid
         )
+    )
+
+
+def _cmd_inspect_recall_tune(args: argparse.Namespace) -> int:
+    from substrate.recall.cli_inspect import tune
+
+    since = _parse_since(getattr(args, "since", None))
+    return _run_inspect(
+        lambda conn: tune(
+            conn,
+            since=since,
+            limit=args.limit,
+            holdout=args.holdout,
+            apply=args.apply,
+        )
+    )
+
+
+def _cmd_inspect_recall_weights(args: argparse.Namespace) -> int:
+    from substrate.recall.cli_inspect import weights
+
+    return _run_inspect(
+        lambda conn: weights(conn, limit=args.limit, revert=args.revert)
     )
 
 

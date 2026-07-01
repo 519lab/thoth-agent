@@ -220,6 +220,10 @@ _EXPECTED_REVISIONS = frozenset(
         # - ``20260624_0025`` — recall outcome label (innovation #1: recall-replay
         #   eval harness). Adds nullable substrate_recall_log.outcome_score.
         "20260624_0025",
+        # - ``20260701_0026`` — substrate_recall_weights: versioned, promotable
+        #   recall weight sets (learned-recall-weights innovation). The tuner's
+        #   --apply target; the live recall path prefers the active row.
+        "20260701_0026",
     }
 )
 
