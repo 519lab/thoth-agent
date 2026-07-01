@@ -249,6 +249,99 @@ async def test_conductor_coherence_hysteresis(booted, monkeypatch):
     assert booted.conductor.snapshot()["parser"] is Level.LOW
 
 
+def test_compute_targets_budget_exhausted_throttles_everything(monkeypatch):
+    """budget_ratio >= 1.0 → metabolic floor, overriding backlog AND the
+    coherence-corrective dial: a hard cap must stop spend, and coherence
+    recovery burns tokens like everything else."""
+    floor = AdaptiveConductor._compute_targets(
+        {"pending": 500, "coherence_low": True, "budget_ratio": 1.2}
+    )
+    assert floor["parser"] is Level.LOW
+    assert floor["associator"] is Level.OFF
+    assert floor["pattern-finder"] is Level.OFF
+    assert floor["dreamer"] is Level.OFF
+    assert floor["critic"] is Level.LOW
+    assert floor["curator"] is Level.LOW
+
+
+def test_compute_targets_budget_soft_ratio_suppresses_escalation():
+    """Past the soft ratio (default 0.8) the base policy still runs but may
+    not escalate: HIGH caps to MODERATE and the Dreamer is paused."""
+    capped = AdaptiveConductor._compute_targets(
+        {"pending": 500, "budget_ratio": 0.85}
+    )
+    assert capped["parser"] is Level.MODERATE  # HIGH capped
+    assert capped["associator"] is Level.OFF  # non-HIGH dials untouched
+    assert capped["dreamer"] is Level.OFF
+
+    # Quiet substrate near the budget: nothing to cap, dreamer still paused.
+    quiet = AdaptiveConductor._compute_targets(
+        {"pending": 0, "budget_ratio": 0.85}
+    )
+    assert quiet["parser"] is Level.LOW
+    assert quiet["dreamer"] is Level.OFF
+
+
+def test_compute_targets_no_budget_leaves_policy_ungoverned():
+    """budget_ratio None (no budget configured / spend read failed) must
+    reproduce the pre-budget policy exactly — no dreamer key introduced."""
+    hot = AdaptiveConductor._compute_targets({"pending": 500, "budget_ratio": None})
+    assert hot["parser"] is Level.HIGH
+    assert "dreamer" not in hot
+    # Below the soft ratio the governor stays out of the way too.
+    below = AdaptiveConductor._compute_targets({"pending": 500, "budget_ratio": 0.5})
+    assert below["parser"] is Level.HIGH
+    assert "dreamer" not in below
+
+
+async def _seed_spend(total_tokens: int) -> None:
+    """Record trailing-window sub-agent spend in substrate_agent_cost."""
+    import thoth_db
+
+    async with thoth_db.connection() as conn:
+        await conn.execute(
+            "INSERT INTO substrate_agent_cost "
+            "  (agent, model, prompt_tokens, completion_tokens, total_tokens, latency_ms) "
+            "VALUES ('parser', 'test-model', $1, 0, $1, 5)",
+            total_tokens,
+        )
+
+
+@pytest.mark.asyncio
+async def test_conductor_reads_spend_only_when_budget_set(booted, monkeypatch):
+    """No budget env → no spend read (budget_ratio None); with a budget the
+    trailing-hour SUM over substrate_agent_cost lands in the signals."""
+    monkeypatch.delenv("THOTH_SUBSTRATE_HOURLY_TOKEN_BUDGET", raising=False)
+    await _seed_spend(4_000)
+    c = AdaptiveConductor(booted)
+    signals = await c._read_load()
+    assert signals["budget_ratio"] is None
+    assert signals["spend_tokens_1h"] is None
+
+    monkeypatch.setenv("THOTH_SUBSTRATE_HOURLY_TOKEN_BUDGET", "10000")
+    signals = await c._read_load()
+    assert signals["spend_tokens_1h"] == 4_000
+    assert signals["budget_ratio"] == pytest.approx(0.4)
+    assert signals["hourly_token_budget"] == pytest.approx(10_000)
+
+
+@pytest.mark.asyncio
+async def test_conductor_budget_exhausted_tick_dials_floor(booted, monkeypatch):
+    """Live tick: spend over budget throttles the crew to floor levels even
+    with a hot backlog that would otherwise dial the Parser HIGH."""
+    monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
+    monkeypatch.setenv("CONDUCTOR_PENDING_HIGH", "5")
+    monkeypatch.setenv("THOTH_SUBSTRATE_HOURLY_TOKEN_BUDGET", "1000")
+    await _seed_pending(booted, 8)  # would be HIGH without governance
+    await _seed_spend(1_500)  # 150% of budget
+    await AdaptiveConductor(booted).tick()
+
+    snap = booted.conductor.snapshot()
+    assert snap["parser"] is Level.LOW
+    assert snap["dreamer"] is Level.OFF
+    assert snap["critic"] is Level.LOW
+
+
 @pytest.mark.asyncio
 async def test_conductor_coherence_none_leaves_backlog_policy(booted, monkeypatch):
     """No coherence observation → latch untouched, backlog policy unchanged."""

@@ -169,11 +169,23 @@ throttles how hard the other agents work. It has two halves:
   `THOTH_SUBSTRATE_CONDUCTOR` (default on; `0` restores the static
   earlier-phase behaviour).
 
+The Conductor also governs on **token spend**: when
+`THOTH_SUBSTRATE_HOURLY_TOKEN_BUDGET` is set (> 0), each tick reads the
+trailing-hour token total from `substrate_agent_cost` (the sink every sub-agent
+LLM call already writes to, §8). Past the soft ratio
+(`THOTH_CONDUCTOR_BUDGET_SOFT_RATIO`, default 0.8) it suppresses escalation —
+HIGH caps to MODERATE and the Dreamer (the most speculative spender) pauses;
+at/over the full budget it throttles the crew to floor levels until the
+trailing window drains. The hard cap outranks even the coherence-corrective
+dial: recovery burns tokens too, and the point of a hard cap is to stop spend.
+Unset (the default), the spend query isn't issued and the dial is ungoverned —
+the pre-budget behaviour exactly.
+
 What it does **not** yet do (deferred research, flagged in the Phase F PR): the
 *learned* executive — opportunity forecasting, intensity-policy learning,
-worklist scheduling, wake anticipation. And note the dimensions it steers on:
-**consolidation backlog and coherence, but not auxiliary-model cost/latency.**
-See §8 for what that implies.
+worklist scheduling, wake anticipation. And cost governance is a budget
+guardrail, not an optimizer — it doesn't steer on wall-clock latency or
+per-agent value-for-spend. See §8 for what that implies.
 
 Every sub-agent writes its decisions as `self_state` slices, so any decision can
 be replayed after the fact (`thoth substrate <agent> recent`).
@@ -276,19 +288,19 @@ The substrate is deployed and useful, but several pieces are intentionally
 partial. If you are evaluating or extending it, these are the spots that "look
 finished but aren't":
 
-- **The full cognitive crew runs by default; you can now *see* its cost, but
-  nothing throttles it on cost.** All eight cognitive sub-agents (§4) default to
-  ON. They no-op when no auxiliary model is configured — but the moment one is,
-  the whole crew runs, which is a real auxiliary-model **cost and latency
-  surface**. Token usage is now observable: per-call usage is recorded to
-  `substrate_agent_cost` and surfaced in `thoth substrate health`, so you can
-  attribute spend per sub-agent rather than guess. What remains deferred is
-  *acting* on it — there are no budgets, throttles, or a cost-aware governor; the
-  Conductor still steers on consolidation backlog and coherence, not on token
-  spend or wall-clock. The controls that exist are blunt: don't run the worker
-  subprocess, set per-agent `THOTH_SUBSTRATE_*=0`, or hold the Conductor/agents
-  at a lower intensity. Watch the per-agent cost and budget accordingly before
-  pointing the crew at a paid endpoint.
+- **The full cognitive crew runs by default; cost governance is opt-in.** All
+  eight cognitive sub-agents (§4) default to ON. They no-op when no auxiliary
+  model is configured — but the moment one is, the whole crew runs, which is a
+  real auxiliary-model **cost and latency surface**. Token usage is observable
+  (per-call usage lands in `substrate_agent_cost`, surfaced in
+  `thoth substrate health`) and, since the budget governor landed, *actionable*:
+  set `THOTH_SUBSTRATE_HOURLY_TOKEN_BUDGET` and the Conductor throttles the
+  crew on trailing-hour spend (§4). But the budget is unset by default, so an
+  unconfigured install still runs ungoverned; and the governor is a guardrail,
+  not an optimizer — no per-agent value-for-spend, no latency steering. The
+  blunt controls remain available: don't run the worker subprocess, set
+  per-agent `THOTH_SUBSTRATE_*=0`, or hold the Conductor/agents at a lower
+  intensity. Set a budget before pointing the crew at a paid endpoint.
 
 - **The Conductor is real but shallow.** The deterministic backlog policy has
   landed (§4) — this is no longer a stub. But it reacts only to consolidation
