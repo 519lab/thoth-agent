@@ -10,6 +10,14 @@ reads observable load, and drives the StubConductor:
   the enrichment agents (Associator / Pattern-finder → OFF) so scarce
   cycles go to parsing first.
 * **Backlog low** → everyone back to baseline LOW.
+* **Token budget spent** → the crew has a metabolic limit. When
+  ``THOTH_SUBSTRATE_HOURLY_TOKEN_BUDGET`` is set (> 0), the Conductor reads
+  the trailing-hour spend from ``substrate_agent_cost`` (the sink every
+  sub-agent LLM call already writes to) and governs on it: past the soft
+  ratio it suppresses escalation (HIGH → MODERATE, Dreamer OFF); at/over
+  the full budget it throttles the whole crew to floor levels until the
+  trailing window drains. Unset (the default) preserves today's behaviour
+  exactly — the spend query isn't even issued.
 
 It mutates intensities only through ``substrate.conductor.set_intensity``
 (which pushes to running agents + enforces each agent's floor — Sentinel
@@ -178,6 +186,30 @@ class AdaptiveConductor(SubAgent):
             "backlog_ratio": (row["pending"] / denom) if denom else 0.0,
         }
 
+        # Metabolic vital sign: trailing-hour token spend vs the operator's
+        # hourly budget. Only read when a budget is configured — the default
+        # (no budget) issues no query and leaves the dial ungoverned, so the
+        # pre-budget behaviour is preserved exactly. Best-effort like the
+        # coherence read: a failed query leaves budget_ratio None and the
+        # backlog policy runs unchanged.
+        budget = _env_float("THOTH_SUBSTRATE_HOURLY_TOKEN_BUDGET", 0.0)
+        spend: Optional[int] = None
+        budget_ratio: Optional[float] = None
+        if budget > 0:
+            try:
+                async with thoth_db.connection() as conn:
+                    spend = await conn.fetchval(
+                        "SELECT COALESCE(SUM(total_tokens), 0)::bigint "
+                        "  FROM substrate_agent_cost "
+                        " WHERE at > now() - interval '1 hour'"
+                    )
+                budget_ratio = float(spend) / budget
+            except Exception:
+                self._log.debug("conductor.read_spend.failed", exc_info=True)
+        signals["spend_tokens_1h"] = spend
+        signals["hourly_token_budget"] = budget if budget > 0 else None
+        signals["budget_ratio"] = budget_ratio
+
         # Coherence vital sign (the Critic's self-assessed identity health).
         # Drives corrective re-prioritization when it dips below the floor.
         # Best-effort: a missing/erroring read leaves coherence None and the
@@ -208,7 +240,48 @@ class AdaptiveConductor(SubAgent):
         (``coherence_low``), corrective re-prioritization takes precedence
         over backlog — drive the Parser HIGH and the Critic to MODERATE
         (re-ground + re-assess identity) and pause enrichment + dreaming so
-        scarce cycles go to recovering coherence first."""
+        scarce cycles go to recovering coherence first.
+
+        Budget governance sits ABOVE both: a spent hourly token budget
+        (``budget_ratio >= 1.0``) throttles the whole crew to floor levels —
+        even coherence recovery burns tokens, and the point of a hard cap is
+        to stop spend, so the corrective dial waits until the trailing
+        window drains. Past the soft ratio (default 0.8) escalation is
+        suppressed instead: whatever the coherence/backlog policy asked for,
+        HIGH is capped to MODERATE and the Dreamer (the most speculative
+        spender) is paused. ``budget_ratio`` None (no budget configured, or
+        the spend read failed) leaves the policy ungoverned."""
+        budget_ratio = signals.get("budget_ratio")
+        if budget_ratio is not None and budget_ratio >= 1.0:
+            # Budget spent: metabolic floor. Sentinel keeps its FULL floor
+            # via set_intensity's per-agent floors; everyone else idles.
+            return {
+                "parser": Level.LOW,
+                "associator": Level.OFF,
+                "pattern-finder": Level.OFF,
+                "dreamer": Level.OFF,
+                "critic": Level.LOW,
+                "curator": Level.LOW,
+            }
+
+        targets = AdaptiveConductor._base_targets(signals)
+
+        soft = _env_float("THOTH_CONDUCTOR_BUDGET_SOFT_RATIO", 0.8)
+        if budget_ratio is not None and budget_ratio >= soft:
+            # Nearing the budget: keep working, stop escalating. Cap HIGH to
+            # MODERATE wherever the base policy asked for it and pause the
+            # Dreamer — the deep-cycle speculative spender — first.
+            targets = {
+                name: (Level.MODERATE if level is Level.HIGH else level)
+                for name, level in targets.items()
+            }
+            targets["dreamer"] = Level.OFF
+        return targets
+
+    @staticmethod
+    def _base_targets(signals: dict) -> dict[str, Level]:
+        """The coherence/backlog policy — target intensities before budget
+        governance is applied on top."""
         if signals.get("coherence_low") is True:
             return {
                 "parser": Level.HIGH,
@@ -264,6 +337,8 @@ class AdaptiveConductor(SubAgent):
                     "backlog_ratio": signals["backlog_ratio"],
                     "coherence": signals.get("coherence"),
                     "coherence_low": signals.get("coherence_low", False),
+                    "spend_tokens_1h": signals.get("spend_tokens_1h"),
+                    "budget_ratio": signals.get("budget_ratio"),
                     "targets": {k: v.value for k, v in targets.items()},
                 },
             )
