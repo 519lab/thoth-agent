@@ -26,6 +26,16 @@ if TYPE_CHECKING:  # pragma: no cover
 # that on every recall call.
 _ENCODER_CACHE: dict[str, "object"] = {}
 
+# Phase 2d: the context-engine eviction pointer stream. Its structured payload
+# already carries a self-describing, actionable ``text`` one-liner (the tool
+# name, the gist, and the exact ``context_expand(...)`` call). Rendering the
+# whole payload dict would spend projection tokens on scaffolding
+# (``kind`` / ``handle`` / ``orig_len``) the model doesn't need — so the block
+# renders ONLY that ``text`` line. Kept as a literal (matching the SQL carve-out
+# in ``SliceRepo.recall_window``) rather than imported from the agent package so
+# the recall composer stays free of an agent-side dependency.
+_CONTEXT_EVICTED_STREAM = "thoth.self_state.context_evicted"
+
 
 class _HeuristicEncoder:
     """Tiktoken-shaped fallback when tiktoken isn't installed.
@@ -101,6 +111,26 @@ def _payload_text(payload) -> str:
     return str(payload)
 
 
+def _eviction_body(candidate: "RecallCandidate") -> "Optional[str]":
+    """Compact body for a ``context_evicted`` pointer slice, else ``None``.
+
+    Phase 2d (plan §4): eviction pointers on
+    ``thoth.self_state.context_evicted`` carry a ready-made, self-describing
+    ``text`` line in their structured payload. Return just that line so the
+    composed block stays lean; return ``None`` for every other stream (and for
+    a malformed payload) so the caller falls back to the default full-payload
+    rendering — this special case is strictly stream-name-gated.
+    """
+    if candidate.stream_name != _CONTEXT_EVICTED_STREAM:
+        return None
+    payload = candidate.payload
+    if isinstance(payload, dict):
+        text = payload.get("text")
+        if isinstance(text, str) and text.strip():
+            return text
+    return None
+
+
 def _format_block(candidate: "RecallCandidate", *, provenance: "Optional[str]" = None) -> str:
     """Render one candidate as a recall-block string.
 
@@ -113,7 +143,11 @@ def _format_block(candidate: "RecallCandidate", *, provenance: "Optional[str]" =
     )
     if provenance:
         header += f"  · why: {provenance}"
-    body = _payload_text(candidate.payload)
+    # Eviction pointers render only their actionable ``text`` line; every
+    # other stream renders the full payload (unchanged).
+    body = _eviction_body(candidate)
+    if body is None:
+        body = _payload_text(candidate.payload)
     return f"{header}\n{body}"
 
 

@@ -101,6 +101,30 @@ def _fetch_evicted_slices() -> list[dict]:
     return thoth_db.run_sync(_go())
 
 
+def _recall_evicted(substrate, session_id: str) -> list:
+    """Query ``recall_window`` for THIS session's eviction pointers WITHOUT
+    running any Sentinel pass — the whole point of born_passed is that a fresh
+    pointer is immediately eligible (``sentinel_state='passed'``). Uses the
+    same carve-out path as the live proactive-recall pipeline (the
+    ``context_evicted`` stream is exempt from same-session exclusion)."""
+    import thoth_db
+    from datetime import datetime, timedelta, timezone
+
+    async def _go():
+        async with thoth_db.connection() as conn:
+            return await substrate.slices.recall_window(
+                conn,
+                t_now=datetime.now(timezone.utc) + timedelta(seconds=1),
+                time_window=timedelta(hours=1),
+                stream_names=[_EVICTED_STREAM],
+                min_salience=0.0,
+                limit=20,
+                exclude_session_id=session_id,  # carve-out keeps our own pointers
+            )
+
+    return thoth_db.run_sync(_go())
+
+
 # ---------------------------------------------------------------------------
 # Eviction → pointer slice
 # ---------------------------------------------------------------------------
@@ -140,6 +164,88 @@ def test_eviction_commits_one_pointer_slice_per_message(bound_substrate, db):
         assert r["consolidation_state"] == "consolidated"
         assert r["metadata"]["session_id"] == "s_c"
         assert r["metadata"]["source"] == "context_engine"
+
+
+def test_eviction_slices_born_passed_immediately_recallable(bound_substrate, db):
+    """Phase 2d: pointer slices are committed born_passed, so they are
+    ``sentinel_state='passed'`` the instant compress() returns and surface in
+    ``recall_window`` with NO Sentinel tick — closing the evict-then-recall gap
+    for adjacent turns. An eviction-only pass records survived_in_context=True.
+    """
+    db.create_session("s_bp", source="cli")
+    big_a = "AAA " + ("a" * 4000)
+    big_b = "BBB " + ("b" * 4000)
+    _seed_tool_row(db, "s_bp", "call_a", big_a)
+    _seed_tool_row(db, "s_bp", "call_b", big_b)
+
+    engine = _make_engine()
+    engine.on_session_start("s_bp", platform="cli")
+    engine.compress(_build_conversation(big_a, big_b))
+    # Sanity: this pass was eviction-only (Tier 2 never ran).
+    assert engine._last_compress_eviction_only is True
+
+    rows = _fetch_evicted_slices()
+    assert len(rows) == 2
+    for r in rows:
+        # Born passed → immediately eligible; NOT sitting sentinel-pending.
+        assert r["sentinel_state"] == "passed"
+        assert r["consolidation_state"] == "consolidated"
+        # Eviction alone relieved pressure → the stubs survived in context.
+        assert r["payload"]["survived_in_context"] is True
+
+    # End-to-end: they surface via recall_window with no _pass_all_pending step.
+    candidates = _recall_evicted(bound_substrate, "s_bp")
+    handles = {c.payload.get("handle") for c in candidates}
+    assert len(handles) == 2  # both evicted pointers recallable this turn
+
+
+def test_eviction_slice_records_survival_false_when_tier2_escalates(bound_substrate, db):
+    """When Tier 2 runs in the SAME pass (its summary paraphrases the stubs
+    away), the pointer slices are STILL committed (the only rediscovery path —
+    not gated off) but flagged ``survived_in_context=False`` so Phase-3 analysis
+    can tell the regimes apart (plan §4)."""
+    db.create_session("s_esc", source="cli")
+    big_a = "AAA " + ("a" * 4000)
+    big_b = "BBB " + ("b" * 4000)
+    _seed_tool_row(db, "s_esc", "call_a", big_a)
+    _seed_tool_row(db, "s_esc", "call_b", big_b)
+
+    engine = _make_engine()
+    # Floor impossibly high → eviction can't clear it → escalate to Tier 2.
+    engine._evict_min_reclaim = 10_000_000
+    engine.on_session_start("s_esc", platform="cli")
+    engine.compress(_build_conversation(big_a, big_b))
+
+    assert engine._last_compress_eviction_only is False   # Tier 2 ran
+    assert engine.compression_count == 1
+
+    rows = _fetch_evicted_slices()
+    assert len(rows) == 2  # slices committed anyway (rediscovery path kept)
+    for r in rows:
+        assert r["payload"]["survived_in_context"] is False
+        assert r["sentinel_state"] == "passed"  # still born_passed
+
+
+def test_eviction_slices_kill_switch_mints_nothing(bound_substrate, db, monkeypatch):
+    """CONTEXT_ENGINE_SUBSTRATE_DISABLE_SLICES=1 disables pointer minting for
+    operators, while eviction itself still works (the ladder is substrate-
+    optional)."""
+    monkeypatch.setenv("CONTEXT_ENGINE_SUBSTRATE_DISABLE_SLICES", "1")
+    db.create_session("s_ks", source="cli")
+    big_a = "AAA " + ("a" * 4000)
+    big_b = "BBB " + ("b" * 4000)
+    _seed_tool_row(db, "s_ks", "call_a", big_a)
+    _seed_tool_row(db, "s_ks", "call_b", big_b)
+
+    engine = _make_engine()
+    engine.on_session_start("s_ks", platform="cli")
+    out = engine.compress(_build_conversation(big_a, big_b))
+
+    # Eviction still happened in-memory ...
+    assert out[3]["content"].startswith(EVICTION_STUB_PREFIX)
+    assert out[5]["content"].startswith(EVICTION_STUB_PREFIX)
+    # ... but no pointer slices were minted.
+    assert _fetch_evicted_slices() == []
 
 
 def test_eviction_without_substrate_commits_nothing(db):

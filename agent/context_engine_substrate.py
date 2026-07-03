@@ -244,6 +244,11 @@ class SubstrateContextEngine(ContextEngine):
         self._expanded_handles: "OrderedDict[str, int]" = OrderedDict()
         self._eviction_pass_count: int = 0
 
+        # Pointer-slice records collected by the most recent _evict_tier1 pass,
+        # awaiting the substrate commit in compress() (which knows whether Tier 2
+        # escalated in the same pass). Reset at the top of every _evict_tier1.
+        self._pending_eviction_records: List[Dict[str, Any]] = []
+
     # ------------------------------------------------------------------
     # Identity
     # ------------------------------------------------------------------
@@ -452,16 +457,35 @@ class SubstrateContextEngine(ContextEngine):
         # rewrite on its own → escalate to a bigger Tier-2 restructure).
         pressure_relieved = post_est <= target_tokens
         floor_met = reclaimed >= self._evict_min_reclaim
+        # Eviction-only success ⇔ Tier 2 does NOT run in this pass. Computed
+        # here (rather than inside _evict_tier1) because the escalation decision
+        # depends on the post-eviction size the loop can't yet know.
+        eviction_only = n_evicted > 0 and pressure_relieved and floor_met
+
+        # Phase 2c/2d: mint one pointer slice per evicted message so proactive
+        # recall can page evicted content back into THIS session. Deferred to
+        # here — not inside _evict_tier1 — so the slice payload can record
+        # ``survived_in_context``: when Tier 2 runs in the SAME pass it
+        # paraphrases the stubs away, leaving the pointer slices as the ONLY
+        # rediscovery path (plan §4). We still commit them (do NOT gate off),
+        # but flag ``survived_in_context=False`` so Phase-3 analysis can tell the
+        # two regimes apart. Best-effort + fully guarded — a substrate outage
+        # never affects the in-memory eviction that already happened above.
+        if self._pending_eviction_records:
+            self._commit_eviction_slices(
+                self._pending_eviction_records,
+                survived_in_context=eviction_only,
+            )
 
         self._emit_evicted_telemetry(
             trigger="threshold" if not force else "manual",
             reclaimed=reclaimed,
             evicted=n_evicted,
             skipped_unpersisted=n_skipped_unpersisted,
-            escalated_to_tier2=not (n_evicted > 0 and pressure_relieved and floor_met),
+            escalated_to_tier2=not eviction_only,
         )
 
-        if n_evicted > 0 and pressure_relieved and floor_met:
+        if eviction_only:
             # Eviction-only success — no summarisation, no rotation.
             self._last_compress_eviction_only = True
             return evicted_list
@@ -499,6 +523,9 @@ class SubstrateContextEngine(ContextEngine):
         """
         n = len(messages)
         result = [m.copy() for m in messages]
+        # Fresh per pass — compress() flushes these to the substrate after it
+        # knows whether Tier 2 escalated (see _pending_eviction_records).
+        self._pending_eviction_records = []
 
         # Protected zones (reuse the organ's boundary helpers so the head/tail
         # shape matches Tier 2 exactly): [0, head_end) head, [tail_start, n)
@@ -596,12 +623,10 @@ class SubstrateContextEngine(ContextEngine):
                 }
             )
 
-        # Phase 2c: mint one pointer slice per evicted message so proactive
-        # recall can page evicted content back into THIS session. Best-effort
-        # + fully guarded (see _commit_eviction_slices) — a substrate outage
-        # must never affect the eviction that already happened in-memory above.
-        if evicted_records:
-            self._commit_eviction_slices(evicted_records)
+        # Hand the collected pointer records to compress() to flush after the
+        # Tier-2 escalation decision (which sets ``survived_in_context``). The
+        # in-memory eviction above is complete regardless of the substrate.
+        self._pending_eviction_records = evicted_records
 
         return result, reclaimed, n_evicted, n_skipped_unpersisted
 
@@ -749,32 +774,62 @@ class SubstrateContextEngine(ContextEngine):
         except Exception:  # pragma: no cover - defensive
             return None
 
-    def _commit_eviction_slices(self, records: List[Dict[str, Any]]) -> None:
+    def _commit_eviction_slices(
+        self, records: List[Dict[str, Any]], *, survived_in_context: bool
+    ) -> None:
         """Commit one ``context_evicted`` pointer slice per evicted message.
 
         Payload is a STRUCTURED_EVENT carrying the retrieval ``handle``, the
-        ``tool_name``, the shared ``gist``, the original length, and a
+        ``tool_name``, the shared ``gist``, the original length, a
         searchable + actionable ``text`` one-liner (what the recall composer /
-        keyword path reads — it dumps the whole payload dict, so ``text`` is the
-        field that makes the surfaced block self-describing). Born consolidated:
-        these are pointers, never L1-extraction material, so they must not join
-        the Parser backlog or trip the stranded/alarm machinery.
+        keyword path reads to make the surfaced block self-describing), and
+        ``survived_in_context`` — ``False`` when Tier 2 ran in the SAME pass
+        (its summary paraphrases the stubs away, so the pointer is the only
+        rediscovery path), ``True`` when eviction alone relieved pressure. Phase-3
+        analysis uses that flag to distinguish the two regimes (plan §4).
+
+        Born **passed AND consolidated**: ``born_consolidated`` keeps these
+        pointers out of the Parser backlog (they are never L1-extraction
+        material); ``born_passed`` lands them ``sentinel_state='passed'``
+        immediately so ``recall_window`` (which filters on ``'passed'``) can
+        surface them in the SAME turn they were evicted — without it a pointer
+        isn't recallable until the next Sentinel tick, a gap for
+        evict-then-recall within adjacent turns. These are agent-authored,
+        trusted, structurally-validated events, so bypassing the Sentinel queue
+        is correct (mirrors the Summarizer's own ``born_passed`` summaries).
+        ``trust_score`` stays NULL on born-passed rows (recall ranking does not
+        read it), matching every other born-passed caller.
+
+        Operators can disable pointer minting entirely with
+        ``CONTEXT_ENGINE_SUBSTRATE_DISABLE_SLICES=1`` (eviction itself still
+        works — the ladder is substrate-optional).
 
         Runs on the sync compaction loop → bridges to the async commit via
         ``thoth_db.run_sync`` (the same sync-bridge pattern 2a/2b use). Fully
-        guarded: unbound substrate → skip silently; any error → log + drop.
+        guarded: kill-switch / unbound substrate → skip silently; any error →
+        log + drop.
         """
+        if os.environ.get("CONTEXT_ENGINE_SUBSTRATE_DISABLE_SLICES") == "1":
+            return  # operator kill-switch — mint no pointer slices
         substrate = self._bound_substrate()
         if substrate is None:
             return  # engine works without a substrate — nothing to point at
         try:
             import thoth_db
-            thoth_db.run_sync(self._acommit_eviction_slices(substrate, records))
+            thoth_db.run_sync(
+                self._acommit_eviction_slices(
+                    substrate, records, survived_in_context=survived_in_context
+                )
+            )
         except Exception as exc:  # substrate outage must never affect the pass
             logger.debug("eviction slice commit failed: %s", exc)
 
     async def _acommit_eviction_slices(
-        self, substrate: Any, records: List[Dict[str, Any]]
+        self,
+        substrate: Any,
+        records: List[Dict[str, Any]],
+        *,
+        survived_in_context: bool,
     ) -> None:
         """Async body of :meth:`_commit_eviction_slices` — resolve the stream
         once, then commit every pointer slice on it. Isolated so the whole
@@ -807,12 +862,16 @@ class SubstrateContextEngine(ContextEngine):
                     "gist": gist,
                     "orig_len": rec["orig_len"],
                     "text": text,
+                    "survived_in_context": survived_in_context,
                 },
                 event_time_world=now,
                 metadata={
                     "session_id": self._session_id,
                     "source": "context_engine",
                 },
+                # Born passed (immediately recallable, bypass Sentinel) AND
+                # consolidated (never Parser fodder). See the sync wrapper.
+                born_passed=True,
                 born_consolidated=True,
             )
 
