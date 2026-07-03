@@ -31,11 +31,13 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
+from agent import context_telemetry
 from agent.model_metadata import estimate_request_tokens_rough
 from agent.session_db_bridge import resolve_maybe_awaitable
 
@@ -313,6 +315,8 @@ def compress_context(
         except Exception:
             pass
 
+    _compress_trigger = "manual" if force else ("focus" if focus_topic else "threshold")
+    _compress_t0 = time.monotonic()
     try:
         compressed = agent.context_compressor.compress(messages, current_tokens=approx_tokens, focus_topic=focus_topic, force=force)
     except TypeError:
@@ -334,6 +338,16 @@ def compress_context(
                 "No messages were dropped — conversation continues unchanged. "
                 "Run /compress to retry, or /new to start a fresh session."
             )
+        context_telemetry.emit_compression_event(
+            agent,
+            trigger=_compress_trigger,
+            messages_before=_pre_msg_count,
+            messages_after=_pre_msg_count,
+            tokens_before=approx_tokens,
+            tokens_after=approx_tokens,
+            duration_s=time.monotonic() - _compress_t0,
+            aborted=True,
+        )
         _existing_sp = getattr(agent, "_cached_system_prompt", None)
         if not _existing_sp:
             _existing_sp = agent._build_system_prompt(system_message)
@@ -511,6 +525,21 @@ def compress_context(
         "context compression done: session=%s messages=%d->%d tokens=~%s",
         agent.session_id or "none", _pre_msg_count, len(compressed),
         f"{_compressed_est:,}",
+    )
+    context_telemetry.emit_compression_event(
+        agent,
+        trigger=_compress_trigger,
+        messages_before=_pre_msg_count,
+        messages_after=len(compressed),
+        tokens_before=approx_tokens,
+        tokens_after=_compressed_est,
+        duration_s=time.monotonic() - _compress_t0,
+        aborted=False,
+        summary_fallback=bool(
+            getattr(agent.context_compressor, "_last_summary_fallback_used", False)
+        ),
+        old_session_id=locals().get("old_session_id"),
+        new_session_id=agent.session_id,
     )
     return compressed, new_system_prompt
 
