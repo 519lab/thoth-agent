@@ -1,0 +1,470 @@
+{
+  "n_rows": 30,
+  "engines": [
+    "compressor"
+  ],
+  "per_task": {
+    "e1_merge_env_to_json": {
+      "runs": [
+        {
+          "engine": "compressor",
+          "run_index": 0,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 1,
+          "prompt_tokens": 229315.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 1,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 3,
+          "prompt_tokens": 570260.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 2,
+          "passed": true,
+          "mean_outcome": 0.9167,
+          "compression_count": 4,
+          "prompt_tokens": 451677.0,
+          "cost_usd": 0.0,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "pass_rate": 1.0,
+        "mean_outcome": 0.9722,
+        "mean_prompt_tokens_per_task": 417084.0,
+        "mean_cost_per_task": 0.0,
+        "cache_hit_rate": 0.6354,
+        "mean_compressions_per_task": 2.67,
+        "errors": 0
+      }
+    },
+    "e2_todo_census": {
+      "runs": [
+        {
+          "engine": "compressor",
+          "run_index": 0,
+          "passed": true,
+          "mean_outcome": 0.8333,
+          "compression_count": 0,
+          "prompt_tokens": 212382.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 1,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 0,
+          "prompt_tokens": 190159.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 2,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 0,
+          "prompt_tokens": 258251.0,
+          "cost_usd": 0.0,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "pass_rate": 1.0,
+        "mean_outcome": 0.9444,
+        "mean_prompt_tokens_per_task": 220264.0,
+        "mean_cost_per_task": 0.0,
+        "cache_hit_rate": 0.9119,
+        "mean_compressions_per_task": 0.0,
+        "errors": 0
+      }
+    },
+    "e3_rename_json_key": {
+      "runs": [
+        {
+          "engine": "compressor",
+          "run_index": 0,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 0,
+          "prompt_tokens": 293425.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 1,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 0,
+          "prompt_tokens": 252300.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 2,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 0,
+          "prompt_tokens": 466977.0,
+          "cost_usd": 0.0,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "pass_rate": 1.0,
+        "mean_outcome": 1.0,
+        "mean_prompt_tokens_per_task": 337567.3,
+        "mean_cost_per_task": 0.0,
+        "cache_hit_rate": 0.9165,
+        "mean_compressions_per_task": 0.0,
+        "errors": 0
+      }
+    },
+    "e4_csv_to_json": {
+      "runs": [
+        {
+          "engine": "compressor",
+          "run_index": 0,
+          "passed": true,
+          "mean_outcome": 0.9167,
+          "compression_count": 0,
+          "prompt_tokens": 206007.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 1,
+          "passed": true,
+          "mean_outcome": 0.9167,
+          "compression_count": 0,
+          "prompt_tokens": 333671.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 2,
+          "passed": true,
+          "mean_outcome": 0.9167,
+          "compression_count": 0,
+          "prompt_tokens": 295360.0,
+          "cost_usd": 0.0,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "pass_rate": 1.0,
+        "mean_outcome": 0.9167,
+        "mean_prompt_tokens_per_task": 278346.0,
+        "mean_cost_per_task": 0.0,
+        "cache_hit_rate": 0.8646,
+        "mean_compressions_per_task": 0.0,
+        "errors": 0
+      }
+    },
+    "e5_dedup_sort": {
+      "runs": [
+        {
+          "engine": "compressor",
+          "run_index": 0,
+          "passed": true,
+          "mean_outcome": 0.8889,
+          "compression_count": 0,
+          "prompt_tokens": 395515.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 1,
+          "passed": true,
+          "mean_outcome": 0.9167,
+          "compression_count": 0,
+          "prompt_tokens": 272090.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 2,
+          "passed": true,
+          "mean_outcome": 0.9167,
+          "compression_count": 0,
+          "prompt_tokens": 829800.0,
+          "cost_usd": 0.0,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "pass_rate": 1.0,
+        "mean_outcome": 0.9074,
+        "mean_prompt_tokens_per_task": 499135.0,
+        "mean_cost_per_task": 0.0,
+        "cache_hit_rate": 0.9045,
+        "mean_compressions_per_task": 0.0,
+        "errors": 0
+      }
+    },
+    "m1_user_stated_facts": {
+      "runs": [
+        {
+          "engine": "compressor",
+          "run_index": 0,
+          "passed": true,
+          "mean_outcome": 0.975,
+          "compression_count": 1,
+          "prompt_tokens": 336584.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 1,
+          "passed": true,
+          "mean_outcome": 0.85,
+          "compression_count": 3,
+          "prompt_tokens": 283730.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 2,
+          "passed": true,
+          "mean_outcome": 0.9667,
+          "compression_count": 1,
+          "prompt_tokens": 362026.0,
+          "cost_usd": 0.0,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "pass_rate": 1.0,
+        "mean_outcome": 0.9306,
+        "mean_prompt_tokens_per_task": 327446.7,
+        "mean_cost_per_task": 0.0,
+        "cache_hit_rate": 0.6738,
+        "mean_compressions_per_task": 1.67,
+        "errors": 0
+      }
+    },
+    "m2_fixture_fact": {
+      "runs": [
+        {
+          "engine": "compressor",
+          "run_index": 0,
+          "passed": true,
+          "mean_outcome": 0.95,
+          "compression_count": 2,
+          "prompt_tokens": 652880.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 1,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 2,
+          "prompt_tokens": 701457.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 2,
+          "passed": true,
+          "mean_outcome": 0.9625,
+          "compression_count": 1,
+          "prompt_tokens": 434804.0,
+          "cost_usd": 0.0,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "pass_rate": 1.0,
+        "mean_outcome": 0.9708,
+        "mean_prompt_tokens_per_task": 596380.3,
+        "mean_cost_per_task": 0.0,
+        "cache_hit_rate": 0.7815,
+        "mean_compressions_per_task": 1.67,
+        "errors": 0
+      }
+    },
+    "m3_multi_fact_combine": {
+      "runs": [
+        {
+          "engine": "compressor",
+          "run_index": 0,
+          "passed": true,
+          "mean_outcome": 0.9167,
+          "compression_count": 3,
+          "prompt_tokens": 315135.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 1,
+          "passed": true,
+          "mean_outcome": 0.95,
+          "compression_count": 1,
+          "prompt_tokens": 333103.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 2,
+          "passed": true,
+          "mean_outcome": 0.9667,
+          "compression_count": 1,
+          "prompt_tokens": 331773.0,
+          "cost_usd": 0.0,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "pass_rate": 1.0,
+        "mean_outcome": 0.9445,
+        "mean_prompt_tokens_per_task": 326670.3,
+        "mean_cost_per_task": 0.0,
+        "cache_hit_rate": 0.6557,
+        "mean_compressions_per_task": 1.67,
+        "errors": 0
+      }
+    },
+    "c1_protected_zone": {
+      "runs": [
+        {
+          "engine": "compressor",
+          "run_index": 0,
+          "passed": false,
+          "mean_outcome": 1.0,
+          "compression_count": 0,
+          "prompt_tokens": 263666.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 1,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 0,
+          "prompt_tokens": 642015.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 2,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 0,
+          "prompt_tokens": 331524.0,
+          "cost_usd": 0.0,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "pass_rate": 0.6667,
+        "mean_outcome": 1.0,
+        "mean_prompt_tokens_per_task": 412401.7,
+        "mean_cost_per_task": 0.0,
+        "cache_hit_rate": 0.9295,
+        "mean_compressions_per_task": 0.0,
+        "errors": 0
+      }
+    },
+    "c2_license_header": {
+      "runs": [
+        {
+          "engine": "compressor",
+          "run_index": 0,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 2,
+          "prompt_tokens": 489126.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 1,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 5,
+          "prompt_tokens": 562629.0,
+          "cost_usd": 0.0,
+          "error": null
+        },
+        {
+          "engine": "compressor",
+          "run_index": 2,
+          "passed": true,
+          "mean_outcome": 1.0,
+          "compression_count": 2,
+          "prompt_tokens": 406092.0,
+          "cost_usd": 0.0,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "pass_rate": 1.0,
+        "mean_outcome": 1.0,
+        "mean_prompt_tokens_per_task": 485949.0,
+        "mean_cost_per_task": 0.0,
+        "cache_hit_rate": 0.6641,
+        "mean_compressions_per_task": 3.0,
+        "errors": 0
+      }
+    }
+  },
+  "per_engine": {
+    "compressor": {
+      "runs": 30,
+      "pass_rate": 0.9667,
+      "mean_outcome": 0.9587,
+      "mean_prompt_tokens_per_task": 390124.4,
+      "mean_cost_per_task": 0.0,
+      "cache_hit_rate": 0.788,
+      "mean_compressions_per_task": 1.07,
+      "errors": 0
+    }
+  },
+  "overall": {
+    "runs": 30,
+    "pass_rate": 0.9667,
+    "mean_outcome": 0.9587,
+    "mean_prompt_tokens_per_task": 390124.4,
+    "mean_cost_per_task": 0.0,
+    "cache_hit_rate": 0.788,
+    "mean_compressions_per_task": 1.07,
+    "errors": 0
+  }
+}
