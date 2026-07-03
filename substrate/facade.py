@@ -604,6 +604,7 @@ class Substrate:
         from substrate.agents.sentinel import StubSentinel
         from substrate.agents.skill_scout import SkillScout
         from substrate.agents.summarizer import Summarizer
+        from substrate.agents.tuner_watch import RecallTunerWatch
 
         self._conductor = StubConductor(self)
 
@@ -618,6 +619,7 @@ class Substrate:
         dreamer = Dreamer(self)          # Phase F  — gated THOTH_SUBSTRATE_DREAMER
         summarizer = Summarizer(self)    # gated THOTH_SUBSTRATE_SUMMARIZER
         skill_scout = SkillScout(self)   # self-improvement Tier 1 — gated THOTH_SUBSTRATE_SKILL_SCOUT
+        tuner_watch = RecallTunerWatch(self)  # report-only daily fit — gated THOTH_SUBSTRATE_TUNER_WATCH (#288)
         # Adaptive Conductor policy loop (Phase F). Drives the StubConductor
         # (self._conductor) when THOTH_SUBSTRATE_CONDUCTOR=1; no-op otherwise.
         conductor_policy = AdaptiveConductor(self)
@@ -625,7 +627,7 @@ class Substrate:
         for agent in (
             partition, force_reject, curator, parser, associator,
             pattern_finder, critic, reflector, dreamer, summarizer,
-            skill_scout, conductor_policy, sentinel,
+            skill_scout, tuner_watch, conductor_policy, sentinel,
         ):
             agent.start()
             self._subagents[agent.name] = agent

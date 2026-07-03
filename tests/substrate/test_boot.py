@@ -134,6 +134,7 @@ async def test_subagents_running(booted_with_subagents):
         "dreamer",  # Phase F (tick no-ops unless THOTH_SUBSTRATE_DREAMER=1)
         "summarizer",  # polish (retrospective summarization)
         "skill-scout",  # self-improvement Tier 1 (tick no-ops unless THOTH_SUBSTRATE_SKILL_SCOUT=1)
+        "recall-tuner-watch",  # report-only daily recall-weights fit (#288)
     }
     for name, agent in agents.items():
         task = agent.task
