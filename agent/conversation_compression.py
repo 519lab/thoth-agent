@@ -339,6 +339,36 @@ def compress_context(
             _existing_sp = agent._build_system_prompt(system_message)
         return messages, _existing_sp
 
+    # Eviction-only pass (substrate context engine, plan §2.6): Tier 0+1
+    # relieved pressure by replacing old tool-result BODIES in place with
+    # retrieval stubs — the message count, order, and roles are unchanged and
+    # the conversation logically continues in the SAME session. Session
+    # rotation exists for summarisation-compaction, which *restructures*
+    # history (drops the middle, mints a summary turn); applying it to stub
+    # eviction would be wrong — it would strand the continuing turn under a new
+    # session id and append a todo snapshot that changes the message count.
+    # So skip the whole rotation block. We still rebuild the system-prompt
+    # cache and recompute last_prompt_tokens (exactly as the normal path does
+    # below) so pressure math sees the smaller context, and we append NO todo
+    # snapshot. ``compressed`` is the in-place-edited list. Plain
+    # ContextCompressor never sets this flag, so its path is untouched.
+    if getattr(agent.context_compressor, "_last_compress_eviction_only", False):
+        agent._invalidate_system_prompt()
+        new_system_prompt = agent._build_system_prompt(system_message)
+        agent._cached_system_prompt = new_system_prompt
+        _evicted_est = estimate_request_tokens_rough(
+            compressed,
+            system_prompt=new_system_prompt or "",
+            tools=agent.tools or None,
+        )
+        agent.context_compressor.last_prompt_tokens = _evicted_est
+        agent.context_compressor.last_completion_tokens = 0
+        logger.info(
+            "context eviction (no rotation): session=%s messages=%d tokens=~%s",
+            agent.session_id or "none", len(compressed), f"{_evicted_est:,}",
+        )
+        return compressed, new_system_prompt
+
     summary_error = getattr(agent.context_compressor, "_last_summary_error", None)
     if summary_error:
         if getattr(agent, "_last_compression_summary_warning", None) != summary_error:

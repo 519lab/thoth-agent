@@ -8,19 +8,18 @@ a window we lossily summarise: evicted content becomes a small, actionable stub
 carrying a **retrieval handle**, while the byte-exact original stays in the
 ``messages`` table and the substrate indexes it for proactive recall.
 
-Phased delivery — this file is **Phase 2a only**:
+Phased delivery — this file now covers **Phase 2a + 2b**:
 
-  * **2a (this PR)** — the engine skeleton plus the two verbatim retrieval
-    handles (``context_expand`` / ``context_grep``) over the session store. No
-    eviction happens yet: every compaction concern (``should_compress``,
-    ``compress``, token tracking, lifecycle) delegates to an internal
-    ``ContextCompressor`` organ so behaviour is byte-identical to today's
-    default engine. The only *new* observable surface is the two tools.
-  * **2b (next)** — Tier-0 structural prune + Tier-1 evict-to-substrate with
-    stubs, boundary/threshold triggers, batching, hot-page protection
-    (plan §2.2). The handles minted here are the retrieval side of that
-    mechanism.
-  * **2c** — substrate integration (eviction slices, proactive recall
+  * **2a** — the engine skeleton plus the two verbatim retrieval handles
+    (``context_expand`` / ``context_grep``) over the session store.
+  * **2b (this PR)** — the tiered ``compress()`` eviction ladder: Tier-0
+    structural prune (reusing the organ, minus its lossy tool-result summary),
+    Tier-1 evict oldest-first tool results to actionable stubs carrying the
+    handles 2a minted, threshold-triggered + batched to a ``clear_at_least``
+    floor, with hot-page protection and an unpersisted-content skip; Tier-2
+    falls back to the organ's summarise-compress. Eviction-only passes signal
+    ``compress_context`` to skip session rotation (plan §2.2/§2.3/§2.6).
+  * **2c (next)** — substrate integration (eviction slices, proactive recall
     surfacing, dereference → reinforce).
   * **2d** — Tier-2 absorption: the ``ContextCompressor`` organ becomes the
     degraded/overflow fallback rather than the mechanism.
@@ -52,11 +51,20 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
-from typing import Any, Dict, List, Optional
+from collections import OrderedDict
+from typing import Any, Dict, List, Optional, Tuple
 
-from agent.context_compressor import ContextCompressor
+from agent.context_compressor import (
+    EVICTION_STUB_PREFIX,
+    ContextCompressor,
+    _CHARS_PER_TOKEN,
+    _content_length_for_budget,
+)
 from agent.context_engine import ContextEngine
+from agent.model_metadata import estimate_messages_tokens_rough
+from agent.redact import redact_sensitive_text
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +85,57 @@ _DEFAULT_EXPAND_MAX_CHARS = 20_000
 # turn a grep into an unbounded walk (the walk is a handful of ~1ms
 # ``get_session`` reads, well within the "cheaply available" bar from plan §2.4).
 _LINEAGE_MAX_DEPTH = 25
+
+# ---------------------------------------------------------------------------
+# Tier-1 eviction tunables (plan §2.2/§2.3). All env-overridable so live
+# installs can dial the policy without a redeploy; the defaults below are the
+# plan's starting heuristics.
+# ---------------------------------------------------------------------------
+
+# Verbatim-class size floor: only tool results at least this many chars are
+# worth evicting. Below it, the stub (which itself costs ~200-300 chars) would
+# reclaim little or nothing — not worth a cache-invalidating in-place edit.
+_DEFAULT_EVICT_MIN_CHARS = 1_500
+
+# Fraction of the compressor's compaction threshold an eviction pass drives the
+# estimated context down to before it stops (the "pressure target"). 0.6 leaves
+# comfortable headroom below the threshold so the next few turns don't
+# immediately re-trigger. Oldest-first, so the re-stabilised prefix is maximal.
+_DEFAULT_EVICT_TARGET_RATIO = 0.6
+
+# A pass must reclaim at least this many tokens or it isn't worth the one-time
+# prompt-cache suffix rewrite (plan §2.3). Default is max(15% of context, 20k);
+# resolved per-engine from context_length in __init__. If the reachable
+# candidates can't reach the floor, we still evict them (they help) and fall
+# through to Tier 2 for the remainder.
+_DEFAULT_EVICT_MIN_RECLAIM_FLOOR = 20_000
+_DEFAULT_EVICT_MIN_RECLAIM_CONTEXT_FRACTION = 0.15
+
+# Hot-page protection: never evict a message whose handle was dereferenced
+# (``context_expand``) within the last N eviction passes. The Codex
+# 53×-re-read incident is the failure mode recency-only eviction thrashes on.
+_DEFAULT_EVICT_HOT_WINDOW = 50
+
+# Cap on the recently-expanded-handle set (insertion-ordered; oldest drop
+# first). Bounds memory on reference-heavy sessions.
+_EXPANDED_HANDLES_CAP = 200
+
+
+def _env_int(name: str, default: int) -> int:
+    """Read a positive int from the environment, falling back on any garbage."""
+    try:
+        val = int(os.environ.get(name, "").strip())
+        return val if val > 0 else default
+    except (TypeError, ValueError):
+        return default
+
+
+def _env_float(name: str, default: float) -> float:
+    try:
+        val = float(os.environ.get(name, "").strip())
+        return val if val > 0 else default
+    except (TypeError, ValueError):
+        return default
 
 
 def _make_handle(session_id: str, message_id: Any) -> str:
@@ -129,6 +188,45 @@ class SubstrateContextEngine(ContextEngine):
         # each compression-driven rotation). context_grep scopes to this id's
         # lineage; context_expand doesn't need it (handles carry their own sid).
         self._session_id: Optional[str] = None
+
+        # -- Tier-1 eviction policy (plan §2.2/§2.3) ----------------------
+        # Set to True by compress() when Tier 0+1 relieved pressure WITHOUT a
+        # Tier-2 summarisation. conversation_compression.compress_context reads
+        # it (via getattr on the engine) to skip session rotation: stub
+        # eviction preserves message structure, so the conversation continues
+        # in the same session. Reset at the top of every compress() call.
+        self._last_compress_eviction_only: bool = False
+
+        self._evict_min_chars = _env_int(
+            "CONTEXT_EVICT_MIN_CHARS", _DEFAULT_EVICT_MIN_CHARS
+        )
+        self._evict_target_ratio = _env_float(
+            "CONTEXT_EVICT_TARGET_RATIO", _DEFAULT_EVICT_TARGET_RATIO
+        )
+        self._evict_hot_window = _env_int(
+            "CONTEXT_EVICT_HOT_WINDOW", _DEFAULT_EVICT_HOT_WINDOW
+        )
+        # clear_at_least floor: env override wins, else max(15% of context,
+        # 20k). context_length comes from the organ (may be 0 before a model
+        # is resolved — the max() keeps the floor sane regardless).
+        _floor_env = os.environ.get("CONTEXT_EVICT_MIN_RECLAIM", "").strip()
+        if _floor_env:
+            self._evict_min_reclaim = _env_int(
+                "CONTEXT_EVICT_MIN_RECLAIM", _DEFAULT_EVICT_MIN_RECLAIM_FLOOR
+            )
+        else:
+            self._evict_min_reclaim = max(
+                int(self._compressor.context_length
+                    * _DEFAULT_EVICT_MIN_RECLAIM_CONTEXT_FRACTION),
+                _DEFAULT_EVICT_MIN_RECLAIM_FLOOR,
+            )
+
+        # Hot-page tracking: handle -> eviction-pass index at which the model
+        # last dereferenced it via context_expand. Insertion-ordered and
+        # capped; a handle is "hot" (protected) while
+        # ``_eviction_pass_count - expanded_at < _evict_hot_window``.
+        self._expanded_handles: "OrderedDict[str, int]" = OrderedDict()
+        self._eviction_pass_count: int = 0
 
     # ------------------------------------------------------------------
     # Identity
@@ -233,7 +331,9 @@ class SubstrateContextEngine(ContextEngine):
         return getattr(self._compressor, name)
 
     # ------------------------------------------------------------------
-    # Core compaction interface — pure delegation in Phase 2a.
+    # Core compaction interface. Token tracking + should_compress delegate to
+    # the organ; compress() is the tiered eviction ladder (Phase 2b) with the
+    # organ as the Tier-2 fallback.
     # ------------------------------------------------------------------
 
     def update_from_response(self, usage: Dict[str, Any]) -> None:
@@ -242,12 +342,320 @@ class SubstrateContextEngine(ContextEngine):
     def should_compress(self, prompt_tokens: int = None) -> bool:
         return self._compressor.should_compress(prompt_tokens)
 
-    def compress(self, messages, *args, **kwargs):
-        # Signature-compatible with ContextCompressor.compress (current_tokens,
-        # focus_topic, force). compress_context already tolerates engines with
-        # narrower signatures via a TypeError fallback, but forwarding *args
-        # keeps the manual /compress focus + force paths working unchanged.
-        return self._compressor.compress(messages, *args, **kwargs)
+    def compress(
+        self,
+        messages: List[Dict[str, Any]],
+        current_tokens: int = None,
+        focus_topic: str = None,
+        force: bool = False,
+    ) -> List[Dict[str, Any]]:
+        """Tiered compaction: structural prune → evict-to-stub → summarise.
+
+        The eviction ladder from plan §2.2 — cheapest, most reversible tier
+        first, escalating only on residual pressure:
+
+          * **Tier 0** — the organ's structural prune (``_prune_old_tool_results``:
+            md5 dedup, image stripping, oversized tool-arg truncation). No LLM,
+            no store.
+          * **Tier 1** — evict oldest-first tool results outside the protected
+            head/tail to an actionable *stub* carrying a retrieval handle. The
+            byte-exact original stays in the session store; only the in-memory
+            body is replaced. Message count/order/roles are preserved
+            (pairing + alternation invariants, plan §2.6).
+          * **Tier 2** — if Tier 0+1 didn't clear the pressure target (or
+            couldn't reclaim the ``clear_at_least`` floor), fall through to the
+            organ's summarise-compress on the already-stubbed list. This is
+            today's compression behaviour, demoted to a fallback.
+
+        ``compress()`` is only entered under threshold pressure, so Tier 1
+        evicts greedily until the pressure target is met or candidates are
+        exhausted — never trickle (the prompt-cache math in plan §2.3).
+
+        When Tier 0+1 alone relieved pressure, ``_last_compress_eviction_only``
+        is set so ``compress_context`` skips session rotation (structure was
+        preserved). When Tier 2 runs, it stays False and the normal
+        rotation path proceeds unchanged.
+        """
+        # Reset the eviction-only seam AND the organ's per-call summary-failure
+        # flags. On the eviction-only path we never enter the organ's
+        # compress() (which is what normally clears these), so a stale
+        # _last_compress_aborted from a PRIOR Tier-2 abort would otherwise make
+        # compress_context think this pass aborted. Clear them up front.
+        self._last_compress_eviction_only = False
+        self._compressor._last_compress_aborted = False
+        self._compressor._last_summary_error = None
+        self._compressor._last_aux_model_failure_error = None
+        self._compressor._last_aux_model_failure_model = None
+
+        # Eviction requires the durable session store (the handle target) and a
+        # known session lineage. If either is missing — PG down, disabled
+        # install, or not yet attached to a session — fall straight to Tier 2,
+        # which IS the compressor: behaviour is byte-identical to Phase 2a.
+        db = None
+        if os.environ.get("CONTEXT_EVICT", "1") != "0" and self._session_id:
+            try:
+                db = self._resolve_db(None)
+            except _DBUnavailable:
+                db = None
+        if db is None:
+            return self._compressor.compress(
+                messages, current_tokens=current_tokens,
+                focus_topic=focus_topic, force=force,
+            )
+
+        start_est = current_tokens or estimate_messages_tokens_rough(messages)
+        target_tokens = int(self.threshold_tokens * self._evict_target_ratio)
+
+        # ---- Tier 0: structural prune (organ machinery) ----
+        # summarize_tool_results=False: keep only the cheap, non-lossy work
+        # (exact-dup dedup, image-payload stripping, oversized tool-arg
+        # truncation). Tool-result BODIES are left intact for Tier 1 to evict
+        # *restorably* to a stub+handle — Tier 0's own lossy 1-line summaries
+        # would strand them with no way back (plan §2.2).
+        tier0, _pruned = self._compressor._prune_old_tool_results(
+            messages,
+            protect_tail_count=self.protect_last_n,
+            protect_tail_tokens=self._compressor.tail_token_budget,
+            summarize_tool_results=False,
+        )
+
+        # ---- Tier 1: evict oldest-first tool results to stubs ----
+        self._eviction_pass_count += 1
+        evicted_list, reclaimed, n_evicted, n_skipped_unpersisted = self._evict_tier1(
+            tier0, db, target_tokens, start_est,
+        )
+
+        post_est = estimate_messages_tokens_rough(evicted_list)
+        # Keep the organ's token state honest so pressure math (should_compress,
+        # run_agent display) sees the POST-eviction size, not the stale pre one.
+        self._compressor.last_prompt_tokens = post_est
+
+        # Did eviction alone relieve pressure? Two gates (plan §2.3): the
+        # pressure target must be met AND the pass must have reclaimed the
+        # clear_at_least floor (a sub-floor reclaim isn't worth the cache
+        # rewrite on its own → escalate to a bigger Tier-2 restructure).
+        pressure_relieved = post_est <= target_tokens
+        floor_met = reclaimed >= self._evict_min_reclaim
+
+        self._emit_evicted_telemetry(
+            trigger="threshold" if not force else "manual",
+            reclaimed=reclaimed,
+            evicted=n_evicted,
+            skipped_unpersisted=n_skipped_unpersisted,
+            escalated_to_tier2=not (n_evicted > 0 and pressure_relieved and floor_met),
+        )
+
+        if n_evicted > 0 and pressure_relieved and floor_met:
+            # Eviction-only success — no summarisation, no rotation.
+            self._last_compress_eviction_only = True
+            return evicted_list
+
+        # ---- Tier 2: summarise-compress on the already-stubbed list ----
+        # Feed the post-eviction estimate so the organ logs/accounts against
+        # the real current size. The organ increments compression_count and
+        # manages its own summary-failure flags from here.
+        return self._compressor.compress(
+            evicted_list, current_tokens=post_est,
+            focus_topic=focus_topic, force=force,
+        )
+
+    # ------------------------------------------------------------------
+    # Tier-1 eviction internals
+    # ------------------------------------------------------------------
+
+    def _evict_tier1(
+        self,
+        messages: List[Dict[str, Any]],
+        db,
+        target_tokens: int,
+        start_est: int,
+    ) -> Tuple[List[Dict[str, Any]], int, int, int]:
+        """Evict oldest-first tool results to stubs; return the rewritten list.
+
+        Returns ``(new_messages, reclaimed_tokens, n_evicted, n_skipped_unpersisted)``.
+
+        Structure is preserved exactly: we copy each message and replace only
+        the *content* of evicted tool results — never the role, never the
+        ``tool_call_id``, never any assistant ``tool_calls``/``arguments``. So
+        message count, order, and role alternation are identical to the input
+        (plan §2.6). We stop as soon as the estimated size crosses the pressure
+        target (greedy, oldest-first) or candidates are exhausted.
+        """
+        n = len(messages)
+        result = [m.copy() for m in messages]
+
+        # Protected zones (reuse the organ's boundary helpers so the head/tail
+        # shape matches Tier 2 exactly): [0, head_end) head, [tail_start, n)
+        # tail. The tail cut is token-budgeted AND guarantees the newest user
+        # message stays live (organ's #10896 fix), so we never touch it.
+        head_end = self._compressor._protect_head_size(result)
+        head_end = self._compressor._align_boundary_forward(result, head_end)
+        tail_start = self._compressor._find_tail_cut_by_tokens(result, head_end)
+
+        # Candidate tool results in the middle band, above the size floor,
+        # not already stubs. Collect indices oldest-first (ascending).
+        candidates: List[int] = []
+        call_ids: List[str] = []
+        for i in range(head_end, tail_start):
+            msg = result[i]
+            if msg.get("role") != "tool":
+                continue
+            content = msg.get("content")
+            if not isinstance(content, str) or len(content) < self._evict_min_chars:
+                continue
+            if content.startswith(EVICTION_STUB_PREFIX):
+                continue  # already evicted — idempotent under repeated passes
+            cid = msg.get("tool_call_id")
+            if not cid:
+                continue  # can't mint a resolvable handle without a call id
+            candidates.append(i)
+            call_ids.append(cid)
+
+        if not candidates:
+            return result, 0, 0, 0
+
+        # Resolve tool_call_id -> (session_id, message_id) in ONE query across
+        # the current conversation lineage. Absent ids are not yet flushed to
+        # the store (persistence lags tool execution — see
+        # resolve_tool_call_message_ids docstring) and must be skipped: never
+        # evict content that isn't durably retrievable.
+        lineage = self._session_lineage(db, self._session_id) if self._session_id else []
+        resolved: Dict[str, tuple] = {}
+        try:
+            resolved = db.resolve_tool_call_message_ids(lineage, call_ids) or {}
+        except Exception as exc:  # DB hiccup → evict nothing, let Tier 2 handle it
+            logger.warning("eviction handle resolution failed: %s", exc, exc_info=True)
+            return result, 0, 0, 0
+
+        # Build a call_id -> tool_name map from the assistant tool_calls so the
+        # stub names the tool even when the in-memory tool message lacks it.
+        tool_names = self._tool_name_index(result)
+
+        running_est = start_est
+        reclaimed = 0
+        n_evicted = 0
+        n_skipped_unpersisted = 0
+
+        for idx, cid in zip(candidates, call_ids):
+            if running_est <= target_tokens:
+                break  # pressure target met — stop (greedy, oldest-first)
+            row = resolved.get(cid)
+            if row is None:
+                n_skipped_unpersisted += 1
+                continue
+            sid, mid = row
+            handle = _make_handle(sid, mid)
+            if self._is_hot(handle):
+                continue  # recently paged back in — leave it live
+            msg = result[idx]
+            orig = msg.get("content") or ""
+            tool_name = (
+                msg.get("tool_name")
+                or msg.get("name")
+                or tool_names.get(cid)
+                or "tool"
+            )
+            stub = self._make_stub(handle, tool_name, orig)
+            # Reclaimed tokens = original body minus the stub we leave behind.
+            delta = max(
+                0,
+                _content_length_for_budget(orig) // _CHARS_PER_TOKEN
+                - len(stub) // _CHARS_PER_TOKEN,
+            )
+            result[idx] = {**msg, "content": stub}
+            reclaimed += delta
+            running_est -= delta
+            n_evicted += 1
+
+        return result, reclaimed, n_evicted, n_skipped_unpersisted
+
+    @staticmethod
+    def _tool_name_index(messages: List[Dict[str, Any]]) -> Dict[str, str]:
+        """Map ``tool_call_id -> tool_name`` from assistant ``tool_calls``.
+
+        Mirrors the organ's ``_prune_old_tool_results`` call-id index so stubs
+        can name the tool even when the tool-role message carries no name.
+        """
+        out: Dict[str, str] = {}
+        for msg in messages:
+            if msg.get("role") != "assistant":
+                continue
+            for tc in msg.get("tool_calls") or []:
+                if isinstance(tc, dict):
+                    cid = tc.get("id", "")
+                    fn = tc.get("function", {}) or {}
+                    name = fn.get("name") if isinstance(fn, dict) else None
+                else:
+                    cid = getattr(tc, "id", "") or ""
+                    fn = getattr(tc, "function", None)
+                    name = getattr(fn, "name", None) if fn else None
+                if cid and name:
+                    out[cid] = name
+        return out
+
+    def _make_stub(self, handle: str, tool_name: str, original: str) -> str:
+        """Build the one-line, actionable eviction stub (plan §2.2).
+
+        Format (as shipped)::
+
+            [evicted tool result §sid:<sid>#m:<mid> — <tool> (<n> chars).
+             Gist: <first ~120 chars sanitised>. Retrieve exact:
+             context_expand("sid:<sid>#m:<mid>")]
+
+        Actionable by design: the exact ``context_expand`` call is IN the stub,
+        because untrained models under-use passive placeholders (plan §2.2/§6).
+        The gist is redacted (no secrets leak into the persisted stub) and
+        flattened to a single line.
+        """
+        gist = redact_sensitive_text(original[:400])
+        gist = re.sub(r"\s+", " ", gist).strip()[:120]
+        if not gist:
+            gist = "(empty)"
+        return (
+            f"{EVICTION_STUB_PREFIX}{handle} — {tool_name} "
+            f"({len(original):,} chars). Gist: {gist}. "
+            f'Retrieve exact: context_expand("{handle}")]'
+        )
+
+    def _is_hot(self, handle: str) -> bool:
+        """True if ``handle`` was dereferenced within the last N eviction passes.
+
+        Hot pages (content the model keeps paging back in / re-reading) are
+        exempt from eviction so we don't thrash on reference-heavy artifacts.
+        """
+        expanded_at = self._expanded_handles.get(handle)
+        if expanded_at is None:
+            return False
+        return (self._eviction_pass_count - expanded_at) < self._evict_hot_window
+
+    def _record_expanded(self, handle: str) -> None:
+        """Note a handle dereference for hot-page protection (insertion-ordered,
+        capped). Called from ``context_expand`` handling."""
+        # Refresh recency: move to the end, stamp the current pass index.
+        self._expanded_handles.pop(handle, None)
+        self._expanded_handles[handle] = self._eviction_pass_count
+        while len(self._expanded_handles) > _EXPANDED_HANDLES_CAP:
+            self._expanded_handles.popitem(last=False)
+
+    def _emit_evicted_telemetry(self, **fields: Any) -> None:
+        """Emit one ``context.evicted`` event per Tier-1 pass, best-effort.
+
+        ``agent.context_telemetry`` ships on the Phase-0b branch and may be
+        absent in this worktree — guarded so eviction never depends on it.
+        """
+        try:
+            from agent import context_telemetry  # arrives with Phase-0b
+        except ImportError:
+            return
+        try:
+            context_telemetry.emit(
+                "context.evicted",
+                session_id=self._session_id,
+                pass_index=self._eviction_pass_count,
+                **fields,
+            )
+        except Exception as exc:  # telemetry must never break the loop
+            logger.debug("context.evicted telemetry emit failed: %s", exc)
 
     def should_compress_preflight(self, messages: List[Dict[str, Any]]) -> bool:
         return self._compressor.should_compress_preflight(messages)
@@ -281,6 +689,12 @@ class SubstrateContextEngine(ContextEngine):
         return self._compressor.on_session_end(session_id, messages)
 
     def on_session_reset(self) -> None:
+        # A real /new or /reset ends the conversation — drop hot-page state and
+        # the eviction-pass counter so a fresh session starts clean. (Handles
+        # from the ended session would never be evicted again anyway.)
+        self._expanded_handles.clear()
+        self._eviction_pass_count = 0
+        self._last_compress_eviction_only = False
         return self._compressor.on_session_reset()
 
     # ------------------------------------------------------------------
@@ -480,6 +894,11 @@ class SubstrateContextEngine(ContextEngine):
                 )
             })
         session_id, message_id = parsed
+
+        # Hot-page protection: the model asking to page this handle back in is a
+        # dereference — record it (canonical form) so Tier-1 eviction won't
+        # re-evict it for the next _evict_hot_window passes.
+        self._record_expanded(_make_handle(session_id, message_id))
 
         window = args.get("window", 0)
         try:

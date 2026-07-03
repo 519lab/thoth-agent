@@ -61,6 +61,16 @@ _SUMMARY_TOKENS_CEILING = 12_000
 # Placeholder used when pruning old tool results
 _PRUNED_TOOL_PLACEHOLDER = "[Old tool output cleared to save context space]"
 
+# Marker prefix for tool results the substrate context engine (Phase 2b,
+# ``agent/context_engine_substrate.py``) has evicted to a retrieval *stub*.
+# Tier-0 pruning here MUST NOT re-summarise these: the stub already replaced
+# the body with a one-line, actionable pointer carrying the retrieval handle,
+# and clobbering it with a generic ``_summarize_tool_result`` line would strand
+# the byte-exact original in the session store with no in-context way back.
+# The compressor declares the marker (Tier 0 lives here); the engine mints
+# stubs with this exact prefix. See plan §2.2 (the eviction ladder).
+EVICTION_STUB_PREFIX = "[evicted tool result §"
+
 # Chars per token rough estimate
 _CHARS_PER_TOKEN = 4
 # Flat token cost per attached image part.  Real cost varies by provider and
@@ -639,6 +649,7 @@ class ContextCompressor(ContextEngine):
     def _prune_old_tool_results(
         self, messages: List[Dict[str, Any]], protect_tail_count: int,
         protect_tail_tokens: int | None = None,
+        summarize_tool_results: bool = True,
     ) -> tuple[List[Dict[str, Any]], int]:
         """Replace old tool result contents with informative 1-line summaries.
 
@@ -656,6 +667,16 @@ class ContextCompressor(ContextEngine):
         ``protect_tail_count`` messages (backward-compatible default).
         When both are given, the token budget takes priority and the message
         count acts as a hard minimum floor.
+
+        ``summarize_tool_results`` (default True — historical behaviour) controls
+        the *lossy* text-summarisation of old string tool results in Pass 2.
+        The substrate context engine reuses this method as its Tier-0 pass with
+        ``summarize_tool_results=False`` so the cheap, non-lossy structural work
+        (exact-dup dedup, image-payload stripping, oversized tool-arg
+        truncation) still runs, but tool-result BODIES are left intact for
+        Tier-1 *restorable* eviction-to-stub (which keeps a retrieval handle).
+        Image stripping stays on regardless — a base64 screenshot has no handle
+        target and must not survive.
 
         Returns (pruned_messages, pruned_count).
         """
@@ -767,6 +788,14 @@ class ContextCompressor(ContextEngine):
                 continue
             # Skip already-deduplicated or previously-summarized results
             if content.startswith("[Duplicate tool output"):
+                continue
+            # Skip substrate-engine eviction stubs — they already carry the
+            # retrieval handle; re-summarising would strand the original.
+            if content.startswith(EVICTION_STUB_PREFIX):
+                continue
+            # Tier-0 (substrate engine) turns this off: tool-result bodies are
+            # left for Tier-1 restorable eviction instead of lossy summary.
+            if not summarize_tool_results:
                 continue
             # Only prune if the content is substantial (>200 chars)
             if len(content) > 200:
