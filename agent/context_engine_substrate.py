@@ -8,19 +8,26 @@ a window we lossily summarise: evicted content becomes a small, actionable stub
 carrying a **retrieval handle**, while the byte-exact original stays in the
 ``messages`` table and the substrate indexes it for proactive recall.
 
-Phased delivery — this file now covers **Phase 2a + 2b**:
+Phased delivery — this file now covers **Phase 2a + 2b + 2c**:
 
   * **2a** — the engine skeleton plus the two verbatim retrieval handles
     (``context_expand`` / ``context_grep``) over the session store.
-  * **2b (this PR)** — the tiered ``compress()`` eviction ladder: Tier-0
+  * **2b** — the tiered ``compress()`` eviction ladder: Tier-0
     structural prune (reusing the organ, minus its lossy tool-result summary),
     Tier-1 evict oldest-first tool results to actionable stubs carrying the
     handles 2a minted, threshold-triggered + batched to a ``clear_at_least``
     floor, with hot-page protection and an unpersisted-content skip; Tier-2
     falls back to the organ's summarise-compress. Eviction-only passes signal
     ``compress_context`` to skip session rotation (plan §2.2/§2.3/§2.6).
-  * **2c (next)** — substrate integration (eviction slices, proactive recall
-    surfacing, dereference → reinforce).
+  * **2c (this PR)** — substrate integration. Each Tier-1 eviction mints one
+    ``thoth.self_state.context_evicted`` pointer slice (born consolidated — a
+    pointer, never Parser fodder) carrying the handle + a searchable/actionable
+    ``text`` gist, so proactive recall can page evicted content back into the
+    SAME session (a stream-name carve-out in ``recall_window`` exempts these
+    pointers from the same-session exclusion). Dereferencing a handle via
+    ``context_expand`` reinforces its pointer slice; every reactive retrieval
+    emits a ``context.pagein`` event. All substrate access is best-effort +
+    guarded — the ladder still works with no substrate bound.
   * **2d** — Tier-2 absorption: the ``ContextCompressor`` organ becomes the
     degraded/overflow fallback rather than the mechanism.
 
@@ -54,6 +61,7 @@ import logging
 import os
 import re
 from collections import OrderedDict
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from agent.context_compressor import (
@@ -119,6 +127,14 @@ _DEFAULT_EVICT_HOT_WINDOW = 50
 # Cap on the recently-expanded-handle set (insertion-ordered; oldest drop
 # first). Bounds memory on reference-heavy sessions.
 _EXPANDED_HANDLES_CAP = 200
+
+# Phase 2c: the perceptual stream eviction pointer slices land on. Must match
+# the spec registered in ``substrate.facade._autoregister_specs`` and the
+# recall carve-out in ``SliceRepo.recall_window``. Kept here (rather than
+# imported from the substrate package) so the engine's substrate access stays
+# lazy + best-effort — a substrate that never booted must not turn a plain
+# import of this module into a hard dependency.
+_CONTEXT_EVICTED_STREAM = "thoth.self_state.context_evicted"
 
 
 def _env_int(name: str, default: int) -> int:
@@ -535,6 +551,10 @@ class SubstrateContextEngine(ContextEngine):
         reclaimed = 0
         n_evicted = 0
         n_skipped_unpersisted = 0
+        # Pointer-slice records for the substrate commit below. Collected in the
+        # loop (pure, no I/O) and flushed once after — so the substrate write
+        # never interleaves with, or can abort, the in-memory eviction.
+        evicted_records: List[Dict[str, Any]] = []
 
         for idx, cid in zip(candidates, call_ids):
             if running_est <= target_tokens:
@@ -555,7 +575,8 @@ class SubstrateContextEngine(ContextEngine):
                 or tool_names.get(cid)
                 or "tool"
             )
-            stub = self._make_stub(handle, tool_name, orig)
+            gist = self._compute_gist(orig)
+            stub = self._make_stub(handle, tool_name, orig, gist)
             # Reclaimed tokens = original body minus the stub we leave behind.
             delta = max(
                 0,
@@ -566,6 +587,21 @@ class SubstrateContextEngine(ContextEngine):
             reclaimed += delta
             running_est -= delta
             n_evicted += 1
+            evicted_records.append(
+                {
+                    "handle": handle,
+                    "tool_name": tool_name,
+                    "gist": gist,
+                    "orig_len": len(orig),
+                }
+            )
+
+        # Phase 2c: mint one pointer slice per evicted message so proactive
+        # recall can page evicted content back into THIS session. Best-effort
+        # + fully guarded (see _commit_eviction_slices) — a substrate outage
+        # must never affect the eviction that already happened in-memory above.
+        if evicted_records:
+            self._commit_eviction_slices(evicted_records)
 
         return result, reclaimed, n_evicted, n_skipped_unpersisted
 
@@ -593,7 +629,20 @@ class SubstrateContextEngine(ContextEngine):
                     out[cid] = name
         return out
 
-    def _make_stub(self, handle: str, tool_name: str, original: str) -> str:
+    @staticmethod
+    def _compute_gist(original: str) -> str:
+        """Redacted, single-line, ~120-char gist of a tool result.
+
+        Factored out of :meth:`_make_stub` so the in-context stub and the
+        substrate eviction-pointer slice share ONE gist — they must describe
+        the evicted content identically. Redacted (no secrets leak into either
+        the persisted stub or the substrate row) and whitespace-flattened.
+        """
+        gist = redact_sensitive_text((original or "")[:400])
+        gist = re.sub(r"\s+", " ", gist).strip()[:120]
+        return gist or "(empty)"
+
+    def _make_stub(self, handle: str, tool_name: str, original: str, gist: str) -> str:
         """Build the one-line, actionable eviction stub (plan §2.2).
 
         Format (as shipped)::
@@ -604,13 +653,8 @@ class SubstrateContextEngine(ContextEngine):
 
         Actionable by design: the exact ``context_expand`` call is IN the stub,
         because untrained models under-use passive placeholders (plan §2.2/§6).
-        The gist is redacted (no secrets leak into the persisted stub) and
-        flattened to a single line.
+        ``gist`` is the shared redacted one-liner from :meth:`_compute_gist`.
         """
-        gist = redact_sensitive_text(original[:400])
-        gist = re.sub(r"\s+", " ", gist).strip()[:120]
-        if not gist:
-            gist = "(empty)"
         return (
             f"{EVICTION_STUB_PREFIX}{handle} — {tool_name} "
             f"({len(original):,} chars). Gist: {gist}. "
@@ -637,25 +681,171 @@ class SubstrateContextEngine(ContextEngine):
         while len(self._expanded_handles) > _EXPANDED_HANDLES_CAP:
             self._expanded_handles.popitem(last=False)
 
-    def _emit_evicted_telemetry(self, **fields: Any) -> None:
-        """Emit one ``context.evicted`` event per Tier-1 pass, best-effort.
+    def _emit_context_event(self, event: str, **fields: Any) -> None:
+        """Emit one context-engine telemetry event, best-effort.
 
         ``agent.context_telemetry`` ships on the Phase-0b branch and may be
-        absent in this worktree — guarded so eviction never depends on it.
+        absent in this worktree — guarded behind ``ImportError`` so the engine
+        never depends on it. ``session_id`` is always attached. Any emit
+        failure is swallowed: telemetry must never perturb the turn.
         """
         try:
             from agent import context_telemetry  # arrives with Phase-0b
         except ImportError:
             return
         try:
-            context_telemetry.emit(
-                "context.evicted",
-                session_id=self._session_id,
-                pass_index=self._eviction_pass_count,
-                **fields,
-            )
+            context_telemetry.emit(event, session_id=self._session_id, **fields)
         except Exception as exc:  # telemetry must never break the loop
-            logger.debug("context.evicted telemetry emit failed: %s", exc)
+            logger.debug("%s telemetry emit failed: %s", event, exc)
+
+    def _emit_evicted_telemetry(self, **fields: Any) -> None:
+        """Emit one ``context.evicted`` event per Tier-1 pass (plan §2.3)."""
+        self._emit_context_event(
+            "context.evicted", pass_index=self._eviction_pass_count, **fields
+        )
+
+    def _emit_pagein(
+        self,
+        tool: str,
+        handle_or_pattern: Any,
+        served_bytes: int,
+        truncated: bool,
+    ) -> None:
+        """Emit one ``context.pagein`` event per reactive retrieval call.
+
+        The reactive path is the model explicitly paging content back in via
+        ``context_expand`` / ``context_grep`` (as opposed to the proactive
+        recall-surfacing path). Recorded so 2d/Phase-3 grading can weigh how
+        often eviction forced a re-read against how much recall pre-empted it.
+        """
+        self._emit_context_event(
+            "context.pagein",
+            tool=tool,
+            handle_or_pattern=handle_or_pattern,
+            served_bytes=served_bytes,
+            truncated=truncated,
+            source="reactive",
+        )
+
+    # ------------------------------------------------------------------
+    # Substrate integration (Phase 2c) — eviction pointer slices + the
+    # dereference→reinforce loop. Every path here is best-effort and fully
+    # guarded: the substrate is optional (the engine's eviction ladder works
+    # without it), so a missing/unbooted/erroring substrate must never affect
+    # the compaction pass or a tool response.
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _bound_substrate() -> Any:
+        """Return the process-bound Substrate, or ``None`` if unavailable.
+
+        Late, defensive import: importing the substrate package must never be
+        the reason a plain context-engine install (substrate never booted)
+        raises. Any failure resolves to ``None`` (substrate absent).
+        """
+        try:
+            from substrate import get_bound_substrate
+            return get_bound_substrate()
+        except Exception:  # pragma: no cover - defensive
+            return None
+
+    def _commit_eviction_slices(self, records: List[Dict[str, Any]]) -> None:
+        """Commit one ``context_evicted`` pointer slice per evicted message.
+
+        Payload is a STRUCTURED_EVENT carrying the retrieval ``handle``, the
+        ``tool_name``, the shared ``gist``, the original length, and a
+        searchable + actionable ``text`` one-liner (what the recall composer /
+        keyword path reads — it dumps the whole payload dict, so ``text`` is the
+        field that makes the surfaced block self-describing). Born consolidated:
+        these are pointers, never L1-extraction material, so they must not join
+        the Parser backlog or trip the stranded/alarm machinery.
+
+        Runs on the sync compaction loop → bridges to the async commit via
+        ``thoth_db.run_sync`` (the same sync-bridge pattern 2a/2b use). Fully
+        guarded: unbound substrate → skip silently; any error → log + drop.
+        """
+        substrate = self._bound_substrate()
+        if substrate is None:
+            return  # engine works without a substrate — nothing to point at
+        try:
+            import thoth_db
+            thoth_db.run_sync(self._acommit_eviction_slices(substrate, records))
+        except Exception as exc:  # substrate outage must never affect the pass
+            logger.debug("eviction slice commit failed: %s", exc)
+
+    async def _acommit_eviction_slices(
+        self, substrate: Any, records: List[Dict[str, Any]]
+    ) -> None:
+        """Async body of :meth:`_commit_eviction_slices` — resolve the stream
+        once, then commit every pointer slice on it. Isolated so the whole
+        batch shares one stream lookup and one run_sync bridge."""
+        from substrate.l0 import commit_slice
+
+        stream = await substrate.streams.get_by_name(_CONTEXT_EVICTED_STREAM)
+        if stream is None:
+            logger.debug(
+                "eviction stream %s not registered — skipping pointer slices",
+                _CONTEXT_EVICTED_STREAM,
+            )
+            return
+        now = datetime.now(timezone.utc)
+        for rec in records:
+            handle = rec["handle"]
+            tool_name = rec["tool_name"]
+            gist = rec["gist"]
+            text = (
+                f"{tool_name}: {gist} — "
+                f'Retrieve exact: context_expand("{handle}")'
+            )
+            await commit_slice(
+                substrate,
+                stream.stream_id,
+                {
+                    "kind": "context_evicted",
+                    "handle": handle,
+                    "tool_name": tool_name,
+                    "gist": gist,
+                    "orig_len": rec["orig_len"],
+                    "text": text,
+                },
+                event_time_world=now,
+                metadata={
+                    "session_id": self._session_id,
+                    "source": "context_engine",
+                },
+                born_consolidated=True,
+            )
+
+    def _reinforce_eviction_handle(self, handle: str) -> None:
+        """Bump the salience of the eviction slice for ``handle`` (plan §2.4).
+
+        Called when the model dereferences a handle via ``context_expand``: a
+        page-in is evidence the evicted content is still wanted, so we reinforce
+        its pointer slice to keep proactive recall surfacing it. Fire-and-forget
+        + fully guarded — the tool response never waits on or fails from this.
+        """
+        substrate = self._bound_substrate()
+        if substrate is None:
+            return
+        try:
+            import thoth_db
+            thoth_db.run_sync(self._areinforce_eviction_handle(substrate, handle))
+        except Exception as exc:  # never block/perturb the tool response
+            logger.debug("eviction dereference reinforce failed: %s", exc)
+
+    async def _areinforce_eviction_handle(self, substrate: Any, handle: str) -> None:
+        """Async body — look up the newest pointer slice for ``handle`` and
+        reinforce it through the Phase-B ``reinforce_slice`` API (default
+        decay-profile bump). A missing pointer (never evicted, or already
+        released) is a no-op."""
+        from substrate.l0.api import reinforce_slice
+
+        async with substrate.pool.acquire() as conn:
+            slice_id = await substrate.slices.find_eviction_slice_by_handle(
+                conn, handle
+            )
+        if slice_id is not None:
+            await reinforce_slice(substrate, slice_id)
 
     def should_compress_preflight(self, messages: List[Dict[str, Any]]) -> bool:
         return self._compressor.should_compress_preflight(messages)
@@ -811,10 +1001,24 @@ class SubstrateContextEngine(ContextEngine):
         except _DBUnavailable as exc:
             return json.dumps({"error": str(exc)})
 
+        # Reactive-path telemetry (plan §2c/#5): one context.pagein per
+        # retrieval call. ``served_bytes`` is the JSON response size; the
+        # ``"truncated"`` marker in an expand result means content was capped.
         if name == "context_expand":
-            return self._handle_expand(db, args)
+            result = self._handle_expand(db, args)
+            self._emit_pagein(
+                "context_expand",
+                args.get("handle"),
+                len(result),
+                '"truncated"' in result,
+            )
+            return result
         if name == "context_grep":
-            return self._handle_grep(db, args, kwargs.get("current_session_id"))
+            result = self._handle_grep(db, args, kwargs.get("current_session_id"))
+            self._emit_pagein(
+                "context_grep", args.get("pattern"), len(result), False
+            )
+            return result
         return json.dumps({"error": f"Unknown context engine tool: {name}"})
 
     # ------------------------------------------------------------------
@@ -898,7 +1102,12 @@ class SubstrateContextEngine(ContextEngine):
         # Hot-page protection: the model asking to page this handle back in is a
         # dereference — record it (canonical form) so Tier-1 eviction won't
         # re-evict it for the next _evict_hot_window passes.
-        self._record_expanded(_make_handle(session_id, message_id))
+        canonical = _make_handle(session_id, message_id)
+        self._record_expanded(canonical)
+        # Dereference → reinforce (plan §2.4): a page-in is evidence the evicted
+        # content is still wanted, so bump its pointer slice's salience to keep
+        # proactive recall surfacing it. Fire-and-forget + fully guarded.
+        self._reinforce_eviction_handle(canonical)
 
         window = args.get("window", 0)
         try:

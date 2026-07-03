@@ -365,6 +365,14 @@ DEFAULT_RECALL_STREAMS: tuple[str, ...] = (
     # Retrospective summaries (the Summarizer): dense, carry older context
     # forward so recall surfaces a summary instead of the faded originals.
     "thoth.self_action.summary",
+    # Phase 2c proactive path (context-engine substrate, plan §2.4): eviction
+    # pointer slices. The ONE self_state stream recall draws from — a deliberate
+    # exception to the "no self_state in recall" rule below, because these are
+    # not the agent's own conclusions echoed back but restorable handles to
+    # content the agent itself evicted, which must resurface IN the same session.
+    # The same-session exclusion is exempted for this stream in
+    # SliceRepo.recall_window; other sessions' eviction slices rank normally.
+    "thoth.self_state.context_evicted",
 )
 
 

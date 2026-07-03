@@ -356,6 +356,74 @@ async def test_recall_window_excludes_named_session(substrate):
 
 
 @pytest.mark.asyncio
+async def test_recall_window_keeps_context_evicted_for_own_session(substrate):
+    """Phase-2c carve-out: eviction pointer slices on
+    ``thoth.self_state.context_evicted`` are NOT excluded for their own
+    session (the whole point — this session's evicted content must resurface
+    in this session's recall), while a normal-stream slice from the same
+    session still IS excluded. Another session's eviction slice ranks normally.
+    """
+    import thoth_db
+
+    # The registered eviction pointer stream (name-matched to the recall
+    # carve-out) + a normal user-message stream that obeys the exclusion.
+    evicted = await substrate.streams.register(
+        name="thoth.self_state.context_evicted",
+        family=Family.SELF_STATE,
+        modality=Modality.STRUCTURED_EVENT,
+        source="agent",
+        organ="context_engine",
+        decay_profile_id=DEFAULT_STRUCTURED_PROFILE,
+    )
+    user = await substrate.streams.register(
+        name="thoth.world.user_message.cli",
+        family=Family.EXTEROCEPTIVE,
+        modality=Modality.TEXT,
+        source="cli",
+        organ="gateway.cli",
+        decay_profile_id=DEFAULT_TEXT_PROFILE,
+    )
+    t = _now_utc()
+    # Same-session (S) eviction pointer + same-session user message, plus an
+    # eviction pointer from another session (O).
+    await commit_slice(
+        substrate, evicted.stream_id,
+        {"kind": "context_evicted", "handle": "sid:S#m:7", "text": "evicted-S"},
+        event_time_world=t, metadata={"session_id": "S", "source": "context_engine"},
+    )
+    await commit_slice(
+        substrate, user.stream_id, "user-msg-S",
+        event_time_world=t, metadata={"session_id": "S", "source": "cli"},
+    )
+    await commit_slice(
+        substrate, evicted.stream_id,
+        {"kind": "context_evicted", "handle": "sid:O#m:3", "text": "evicted-O"},
+        event_time_world=t, metadata={"session_id": "O", "source": "context_engine"},
+    )
+    await _pass_all_pending(substrate)
+
+    async with thoth_db.connection() as conn:
+        candidates = await substrate.slices.recall_window(
+            conn,
+            t_now=t + timedelta(seconds=1),
+            time_window=timedelta(hours=1),
+            stream_names=[evicted.name, user.name],
+            min_salience=0.0,
+            limit=10,
+            exclude_session_id="S",  # recalling FOR session S
+        )
+    # Normalise: eviction payloads are dicts, the user payload is a bare string.
+    handles = {c.payload.get("handle") for c in candidates if isinstance(c.payload, dict)}
+    strings = {c.payload for c in candidates if isinstance(c.payload, str)}
+    # Session S's OWN eviction pointer is kept (carve-out) ...
+    assert "sid:S#m:7" in handles
+    # ... the other session's eviction pointer ranks normally (also kept) ...
+    assert "sid:O#m:3" in handles
+    # ... but session S's normal user message is still excluded.
+    assert "user-msg-S" not in strings
+
+
+@pytest.mark.asyncio
 async def test_recall_window_returns_embedding_when_present(substrate):
     """When ``embedding`` is populated the candidate carries it as a 1536-d list."""
     import thoth_db

@@ -2,7 +2,8 @@
 
 Phase A spec §8: ``Substrate.boot()`` does the full lifecycle —
 Alembic-head check, partition maintenance, stream auto-registration
-(the 15 streams from spec §9), sub-agent task spawn (Sentinel +
+(the spec §9 streams, plus the Phase-2c ``context_evicted`` pointer
+stream), sub-agent task spawn (Sentinel +
 force-reject + partition-maintenance + conductor stub), and binds the
 ``substrate.events.thoth_hooks`` module so Thoth call sites can emit
 perception.
@@ -137,6 +138,22 @@ def _autoregister_specs() -> list[tuple[str, Family, Modality, str, str, "object
                 Modality.STRUCTURED_EVENT,
                 "agent",
                 "cron.scheduler",
+                DEFAULT_STRUCTURED_PROFILE,
+            ),
+            # Phase 2c (context-engine substrate): one pointer slice per
+            # Tier-1-evicted message. The payload carries the retrieval
+            # handle + a searchable, actionable "text" gist; the byte-exact
+            # original stays in the session store. Born consolidated (never
+            # parsed to L1) so these pointers never join the Parser backlog —
+            # they exist purely so proactive recall can page evicted content
+            # back into the SAME session. See agent/context_engine_substrate.py
+            # and the recall carve-out in SliceRepo.recall_window.
+            (
+                "thoth.self_state.context_evicted",
+                Family.SELF_STATE,
+                Modality.STRUCTURED_EVENT,
+                "agent",
+                "context_engine",
                 DEFAULT_STRUCTURED_PROFILE,
             ),
         ]
@@ -316,7 +333,8 @@ class Substrate:
            ``THOTH_AUTO_MIGRATE=1`` (from ``SubstrateConfig.auto_migrate``)
            run ``alembic upgrade head``; otherwise raise.
         3. Ensure month partitions exist (current + next 2).
-        4. Auto-register the 15 streams from spec §9 (idempotent).
+        4. Auto-register the spec §9 streams + the Phase-2c
+           ``context_evicted`` pointer stream (idempotent).
         5. (``start_subagents``) Spawn sub-agent tasks: StubSentinel,
            ForceRejectWorker, PartitionMaintenanceWorker. Also instantiate
            StubConductor (which holds state but doesn't tick).

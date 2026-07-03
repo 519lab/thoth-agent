@@ -72,16 +72,17 @@ async def test_boot_refuses_old_alembic_head(thoth_db_initialized, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_streams_autoregister(booted_no_subagents):
-    """After boot, every §9 stream exists as ACTIVE.
+    """After boot, every auto-registered stream exists as ACTIVE.
 
-    The migration seeds ``substrate.self_state``; boot adds the rest.
-    The full §9 list is 15 streams.
+    The migration seeds ``substrate.self_state``; boot adds the rest. The
+    §9 list is 15 streams; Phase 2c adds ``thoth.self_state.context_evicted``
+    (eviction pointer slices) for 16 total.
     """
     import thoth_db
 
     expected_names = {name for (name, *_rest) in _autoregister_specs()}
     expected_names.add("substrate.self_state")
-    assert len(expected_names) == 15  # spec §9
+    assert len(expected_names) == 16  # §9 (15) + Phase-2c context_evicted
 
     async with thoth_db.connection() as conn:
         rows = await conn.fetch(

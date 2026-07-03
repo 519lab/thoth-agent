@@ -577,7 +577,12 @@ class SliceRepo:
             given) — keeps the live session's own slices, already present in
             the transcript, out of recall; session-less slices (NULL id) are
             always kept (``IS DISTINCT FROM``). NULL ``exclude_session_id``
-            disables the filter.
+            disables the filter. **Exception** (Phase 2c proactive path, plan
+            §2.4): the ``thoth.self_state.context_evicted`` stream is exempt
+            from this same-session exclusion — its slices are restorable
+            pointers to content THIS session evicted, and the whole point is
+            that they resurface in THIS session's recall. Other sessions'
+            eviction slices fall through to the normal predicate.
 
         Order: ``salience DESC, event_time DESC LIMIT limit``. The
         ranker (``substrate.recall.projection.rank_candidates``) reorders
@@ -604,6 +609,11 @@ class SliceRepo:
                AND sl.consolidation_state <> 'released'
                AND sl.salience_score >= $4
                AND ($6::text IS NULL
+                    -- Phase 2c proactive path (plan §2.4): eviction pointers
+                    -- are re-surfaced INTO their own session by design, so the
+                    -- context_evicted stream is exempt from the same-session
+                    -- exclusion. All other streams keep the normal filter.
+                    OR st.name = 'thoth.self_state.context_evicted'
                     OR sl.metadata->>'session_id' IS DISTINCT FROM $6)
              ORDER BY sl.salience_score DESC, sl.event_time_world DESC
              LIMIT $5
@@ -647,6 +657,36 @@ class SliceRepo:
                 )
             )
         return candidates
+
+    async def find_eviction_slice_by_handle(
+        self,
+        conn: "asyncpg.Connection",
+        handle: str,
+    ) -> "Optional[UUID]":
+        """Return the newest ``context_evicted`` slice whose payload
+        ``handle`` matches, or ``None``.
+
+        Lean lookup for the Phase-2c dereference→reinforce path (plan §2.4):
+        when the agent pages an evicted handle back in via ``context_expand``,
+        we bump that pointer slice's salience so proactive recall keeps
+        surfacing content the agent actually re-reads. Newest-first + LIMIT 1
+        because a handle is minted fresh on each eviction pass, so the most
+        recent pointer is the live one; older pointers for the same handle (if
+        any) have already decayed toward release.
+        """
+        row = await conn.fetchrow(
+            """
+            SELECT sl.slice_id
+              FROM substrate_slices  sl
+              JOIN substrate_streams st ON st.stream_id = sl.stream_id
+             WHERE st.name = 'thoth.self_state.context_evicted'
+               AND sl.payload->>'handle' = $1
+             ORDER BY sl.event_time_world DESC
+             LIMIT 1
+            """,
+            handle,
+        )
+        return row["slice_id"] if row else None
 
     async def set_embedding(
         self,

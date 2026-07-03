@@ -24,7 +24,20 @@ def test_user_messages_and_summaries_remain():
 
 
 def test_no_self_state_streams_leak_in():
-    # Self-state (tool results, lifecycle) is not recall material either.
-    assert not any(
-        s.startswith("thoth.self_state.") for s in DEFAULT_RECALL_STREAMS
-    )
+    # Self-state (tool results, lifecycle) is not recall material either —
+    # with ONE deliberate exception: Phase-2c eviction pointers
+    # (``thoth.self_state.context_evicted``). Those are not the agent's own
+    # conclusions echoed back but restorable handles to content the agent
+    # itself evicted, which must resurface in-session via proactive recall.
+    leaked = {
+        s for s in DEFAULT_RECALL_STREAMS
+        if s.startswith("thoth.self_state.")
+        and s != "thoth.self_state.context_evicted"
+    }
+    assert not leaked
+
+
+def test_context_evicted_included_for_proactive_recall():
+    # The Phase-2c proactive path: eviction pointers ARE a default recall
+    # source so evicted content can page back into the same session.
+    assert "thoth.self_state.context_evicted" in DEFAULT_RECALL_STREAMS
