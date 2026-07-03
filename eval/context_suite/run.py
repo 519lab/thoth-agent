@@ -218,6 +218,17 @@ def _live_run(args: argparse.Namespace) -> int:
         f"'{args.engine}', model '{args.model}'\n  → {jsonl_path}"
     )
 
+    with_db = False
+    if args.pg_dsn:
+        from eval.context_suite.runner import attach_db
+
+        substrate_up = attach_db(args.pg_dsn)
+        with_db = True
+        print(
+            f"  DB-backed grading: session store attached, substrate "
+            f"{'UP' if substrate_up else 'DEGRADED (no eviction slices/recall)'}"
+        )
+
     rows: List[Dict[str, Any]] = []
     with open(jsonl_path, "w", encoding="utf-8") as fh:
         for run_index in range(args.runs):
@@ -234,6 +245,7 @@ def _live_run(args: argparse.Namespace) -> int:
                     compress_threshold_tokens=args.compress_threshold_tokens,
                     run_index=run_index,
                     timeout_s=args.timeout,
+                    with_db=with_db,
                 )
                 row = result.to_json()
                 rows.append(row)
@@ -283,6 +295,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--compress-threshold-tokens", type=int, default=50_000,
                    help="Force compression once a turn's prompt exceeds this "
                         "(0/negative = use the model's real window).")
+    p.add_argument("--pg-dsn", default=None,
+                   help="Snapshot-seeded grading DB DSN (test cluster :5433; "
+                        "port 5432 is refused). Enables session persistence + "
+                        "memory — REQUIRED to grade the substrate engine; use "
+                        "the same flag for the compressor arm so the A/B is "
+                        "fair. Re-seed between arms via "
+                        "scripts/seed-context-baseline-db.sh.")
     p.add_argument("--timeout", type=int, default=900,
                    help="Per-task wall-clock cap (seconds).")
     p.add_argument("--out", default="eval/results",

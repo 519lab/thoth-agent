@@ -56,6 +56,38 @@ A/B = those last two invocations. Compare the two `summary_*.json` files (or the
 per-engine block each prints). `--runs N` repeats every task for variance.
 Filter with `--tasks e1_merge_env_to_json m1_user_stated_facts …`.
 
+### DB-backed grading (required for the substrate engine)
+
+The substrate engine's differentiators — durable eviction handles, eviction
+slices, proactive recall — only exist with a session store and a booted
+substrate. Without `--pg-dsn` it silently degrades to Tier-2 (summarize-only)
+and the A/B measures nothing. The official comparison therefore runs BOTH arms
+DB-backed, against the snapshot-seeded grading database:
+
+```bash
+# 1. (Re-)seed the grading DB from the newest valid nightly dump (test
+#    cluster :5433; refuses live 5432 and 0-byte failed backups):
+scripts/seed-context-baseline-db.sh
+
+# 2. Arm A — compressor, DB-backed:
+python -m eval.context_suite.run --engine compressor \
+    --pg-dsn postgresql://thoth:thoth@localhost:5433/thoth_baseline \
+    --model <model> --base-url <url> --api-key <key> --runs 3 --out eval/results
+
+# 3. RE-SEED so arm B starts from the identical snapshot (suite runs write
+#    sessions/slices into the grading DB — that's the point, but fairness
+#    demands identical starting state):
+scripts/seed-context-baseline-db.sh
+
+# 4. Arm B — substrate engine, same tasks/model/snapshot:
+python -m eval.context_suite.run --engine substrate \
+    --pg-dsn postgresql://thoth:thoth@localhost:5433/thoth_baseline \
+    --model <model> --base-url <url> --api-key <key> --runs 3 --out eval/results
+```
+
+One process = one DSN (`attach_db` binds the pool once and refuses port 5432).
+The no-DSN mode remains for harness smoke tests and compressor-only checks.
+
 ### Unit tests (no model, no DB)
 
 ```bash

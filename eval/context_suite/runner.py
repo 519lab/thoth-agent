@@ -19,9 +19,12 @@ Responsibilities (kept out of ``tasks`` so that module stays model-free):
 Robustness contract: a timeout or any exception yields a *failed* TaskResult,
 never an uncaught exception — one bad task must not sink the suite.
 
-Safety: this NEVER points at a database. It sets ``skip_memory=True`` and
-passes no ``session_db``, so no Postgres connection is opened; the suite is
-inert with respect to the live (5432) and test (5433) instances alike.
+Safety: by default this points at NO database (``skip_memory=True``, no
+``session_db`` — inert with respect to both instances). DB-backed grading is
+explicit opt-in via :func:`attach_db`, which refuses port 5432 (the live
+install) and binds the process to one snapshot-seeded grading DSN — required
+to grade the substrate engine, whose handles/eviction slices/proactive recall
+only exist with a session store + bound substrate.
 
 Not thread-safe for *concurrent* tasks: it ``chdir``s the process into the
 workspace (so relative file-tool paths resolve there) and mutates a few env
@@ -178,6 +181,52 @@ def _scoped_env(workspace: Path, engine: str):
 # --------------------------------------------------------------------------- #
 
 
+_db_attached_dsn: Optional[str] = None
+
+
+def attach_db(pg_dsn: str) -> bool:
+    """Point the process at a grading database and boot the substrate writer.
+
+    The substrate context engine's differentiators (durable eviction
+    handles, eviction slices, proactive recall) only exist with a session
+    store + bound substrate — without a DSN the engine silently degrades
+    to Tier-2 (summarize-only) and an A/B measures nothing. This attaches
+    the snapshot-seeded grading DB (scripts/seed-context-baseline-db.sh;
+    the test cluster on :5433 — NEVER the live install).
+
+    Process-wide and one-shot by design: the DB pool binds to one DSN per
+    process, so one suite invocation grades against one database. Returns
+    True when the substrate writer booted, False when it degraded (the
+    session store may still work — the substrate boot is best-effort,
+    mirroring production startup).
+    """
+    global _db_attached_dsn
+    if _db_attached_dsn is not None:
+        if _db_attached_dsn != pg_dsn:
+            raise RuntimeError(
+                "attach_db called twice with different DSNs — one process "
+                "grades against one database; start a new process to switch."
+            )
+        return True
+    if ":5432/" in pg_dsn or pg_dsn.rstrip("/").endswith(":5432"):
+        raise RuntimeError(
+            "refusing DSN on port 5432 (the live install); grading runs "
+            "only against the snapshot-seeded test cluster."
+        )
+    os.environ["THOTH_PG_DSN"] = pg_dsn
+    _db_attached_dsn = pg_dsn
+    from thoth_bootstrap import bootstrap_substrate_sync
+
+    substrate = bootstrap_substrate_sync(mode="writer")
+    if substrate is None:
+        logger.warning(
+            "substrate writer failed to boot for %s — session store may "
+            "still attach; eviction slices / proactive recall will be OFF",
+            pg_dsn.split("@")[-1],
+        )
+    return substrate is not None
+
+
 def _build_agent(
     *,
     model: str,
@@ -187,6 +236,7 @@ def _build_agent(
     max_iterations: int,
     quiet: bool,
     compress_threshold_tokens: Optional[int],
+    with_db: bool = False,
 ):
     """Construct an AIAgent for the eval (lazy import keeps ``tasks`` light)."""
     from run_agent import AIAgent  # heavy import — deferred to call time
@@ -201,7 +251,11 @@ def _build_agent(
         quiet_mode=quiet,
         verbose_logging=not quiet,
         skip_context_files=True,  # don't inject SOUL.md/AGENTS.md
-        skip_memory=True,         # no persistent memory / DB
+        # DB-backed grading (attach_db): the session store must persist
+        # messages (eviction handles resolve against it) and the memory
+        # manager must run (proactive recall injection). Both engines get
+        # the same setting per arm so the comparison stays fair.
+        skip_memory=not with_db,
     )
     # Force compression to actually fire at eval fixture sizes: the real model
     # window (e.g. 200k) would need enormous fixtures. Shrinking ``threshold_
@@ -297,6 +351,7 @@ def _run_task_inner(
     compress_threshold_tokens: Optional[int],
     run_index: int,
     workspace: Path,
+    with_db: bool = False,
 ) -> TaskResult:
     """Body of a single task run (executed inside the timeout watchdog)."""
     started = time.time()
@@ -313,6 +368,7 @@ def _run_task_inner(
             max_iterations=max_iterations,
             quiet=quiet,
             compress_threshold_tokens=compress_threshold_tokens,
+            with_db=with_db,
         )
         metrics, messages = _run_turns(agent, task)
 
@@ -376,13 +432,16 @@ def run_task(
     run_index: int = 0,
     timeout_s: int = DEFAULT_TASK_TIMEOUT_S,
     keep_workspace: bool = False,
+    with_db: bool = False,
 ) -> TaskResult:
     """Run one task and return a :class:`TaskResult` (never raises).
 
     A timeout or any exception is folded into a *failed* result so a single bad
     task can't crash a batch. ``compress_threshold_tokens`` shrinks the engine's
     trigger so compression fires at eval fixture sizes (set ``None`` to use the
-    model's real window).
+    model's real window). ``with_db=True`` requires a prior :func:`attach_db`
+    call — it enables session persistence + memory so the substrate engine's
+    handles and recall actually operate.
     """
     workspace = Path(tempfile.mkdtemp(prefix=f"ctxsuite_{task.id}_"))
 
@@ -411,6 +470,7 @@ def run_task(
                 compress_threshold_tokens=compress_threshold_tokens,
                 run_index=run_index,
                 workspace=workspace,
+                with_db=with_db,
             )
             try:
                 return future.result(timeout=timeout_s)
@@ -428,6 +488,7 @@ def run_task(
 __all__ = [
     "TaskResult",
     "TurnMetric",
+    "attach_db",
     "run_task",
     "DEFAULT_TASK_TIMEOUT_S",
 ]

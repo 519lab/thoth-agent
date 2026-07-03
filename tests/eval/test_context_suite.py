@@ -331,3 +331,65 @@ def test_run_task_happy_path_without_model(monkeypatch):
     assert 0.0 <= result.mean_outcome <= 1.0
     # The memory probe should have recorded a result.
     assert any(p["name"] == "reactive_pagein" for p in result.probes)
+
+
+# --------------------------------------------------------------------------- #
+# DB-backed grading mode (attach_db)                                           #
+# --------------------------------------------------------------------------- #
+
+
+class TestAttachDb:
+    def _reset(self, monkeypatch):
+        import eval.context_suite.runner as runner_mod
+
+        monkeypatch.setattr(runner_mod, "_db_attached_dsn", None)
+        return runner_mod
+
+    def test_refuses_live_port(self, monkeypatch):
+        runner_mod = self._reset(monkeypatch)
+        with pytest.raises(RuntimeError, match="5432"):
+            runner_mod.attach_db("postgresql://u:p@localhost:5432/thoth")
+
+    def test_sets_env_and_boots_writer(self, monkeypatch):
+        runner_mod = self._reset(monkeypatch)
+        monkeypatch.delenv("THOTH_PG_DSN", raising=False)
+        booted = {}
+
+        def fake_boot(log=None, *, mode="writer"):
+            booted["mode"] = mode
+            return object()  # substrate handle
+
+        import thoth_bootstrap
+
+        monkeypatch.setattr(thoth_bootstrap, "bootstrap_substrate_sync", fake_boot)
+        ok = runner_mod.attach_db("postgresql://u:p@localhost:5433/thoth_baseline")
+        assert ok is True
+        assert booted["mode"] == "writer"
+        import os
+
+        assert os.environ["THOTH_PG_DSN"].endswith(":5433/thoth_baseline")
+
+    def test_degrades_when_substrate_boot_fails(self, monkeypatch):
+        runner_mod = self._reset(monkeypatch)
+        import thoth_bootstrap
+
+        monkeypatch.setattr(
+            thoth_bootstrap, "bootstrap_substrate_sync",
+            lambda log=None, *, mode="writer": None,
+        )
+        ok = runner_mod.attach_db("postgresql://u:p@localhost:5433/thoth_baseline")
+        assert ok is False  # session store may still work; substrate is off
+
+    def test_second_attach_same_dsn_is_noop_different_raises(self, monkeypatch):
+        runner_mod = self._reset(monkeypatch)
+        import thoth_bootstrap
+
+        monkeypatch.setattr(
+            thoth_bootstrap, "bootstrap_substrate_sync",
+            lambda log=None, *, mode="writer": object(),
+        )
+        dsn = "postgresql://u:p@localhost:5433/thoth_baseline"
+        assert runner_mod.attach_db(dsn) is True
+        assert runner_mod.attach_db(dsn) is True  # idempotent
+        with pytest.raises(RuntimeError, match="different DSNs"):
+            runner_mod.attach_db("postgresql://u:p@localhost:5433/other")
