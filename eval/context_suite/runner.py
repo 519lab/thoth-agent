@@ -53,6 +53,7 @@ logger = logging.getLogger(__name__)
 # Default per-task wall-clock cap. Long-horizon tasks with large fixtures and
 # up to 40 iterations are slow; a hung provider call must still be reclaimable.
 DEFAULT_TASK_TIMEOUT_S = 900
+CANCEL_GRACE_S = 30  # cooperative-exit window after a watchdog interrupt
 
 
 @dataclass
@@ -266,10 +267,24 @@ def _build_agent(
         engine = getattr(agent, "context_compressor", None)
         if engine is not None and hasattr(engine, "threshold_tokens"):
             engine.threshold_tokens = int(compress_threshold_tokens)
+
+    # Kill the post-turn background-review forks for grading runs. With a DB
+    # attached (skip_memory=False) these fire after turns and spawn threads
+    # that OUTLIVE the task: they keep calling the model (unmetered tokens
+    # that would pollute the arm's accounting) and race the runner's chdir
+    # across workspaces — observed in the 2026-07-03 arm-A wedge as an e1-era
+    # thread looping on ``cd <deleted e1 workspace>`` during e5. Grading
+    # measures the CONTEXT ENGINE, not the self-improvement loop; zeroing the
+    # nudge intervals disables both forks at their gates
+    # (conversation_loop._should_review_memory / should_review_skills_after_turn).
+    agent._memory_nudge_interval = 0
+    agent._skill_nudge_interval = 0
     return agent
 
 
-def _run_turns(agent, task: Task) -> tuple[List[TurnMetric], List[Dict[str, Any]]]:
+def _run_turns(
+    agent, task: Task, control: Optional[Dict[str, Any]] = None
+) -> tuple[List[TurnMetric], List[Dict[str, Any]]]:
     """Send every turn with threaded history; return per-turn metrics + msgs."""
     from agent.turn_outcome import compute_outcome_score
 
@@ -278,6 +293,10 @@ def _run_turns(agent, task: Task) -> tuple[List[TurnMetric], List[Dict[str, Any]
     final_messages: List[Dict[str, Any]] = []
 
     for i, user_message in enumerate(task.turns):
+        if control is not None and control.get("cancelled"):
+            # Watchdog fired: the current turn was interrupted via
+            # agent.interrupt(); do not start further turns.
+            break
         prev_len = len(history) if history else 0
         result = agent.run_conversation(
             user_message,
@@ -352,8 +371,14 @@ def _run_task_inner(
     run_index: int,
     workspace: Path,
     with_db: bool = False,
+    control: Optional[Dict[str, Any]] = None,
 ) -> TaskResult:
-    """Body of a single task run (executed inside the timeout watchdog)."""
+    """Body of a single task run (executed inside the timeout watchdog).
+
+    ``control`` is the watchdog's cooperative-cancellation channel: the body
+    publishes its live agent under ``control["agent"]`` as soon as it exists,
+    and checks ``control["cancelled"]`` between turns.
+    """
     started = time.time()
 
     task.setup(workspace)
@@ -370,7 +395,9 @@ def _run_task_inner(
             compress_threshold_tokens=compress_threshold_tokens,
             with_db=with_db,
         )
-        metrics, messages = _run_turns(agent, task)
+        if control is not None:
+            control["agent"] = agent
+        metrics, messages = _run_turns(agent, task, control)
 
     transcript = Transcript(
         messages=messages, turns=list(task.turns), initial_files=initial_files
@@ -452,35 +479,64 @@ def run_task(
             mean_outcome=0.0, error=msg,
         )
 
+    control: Dict[str, Any] = {"cancelled": False, "agent": None}
+    # Manual executor lifecycle — deliberately NOT a ``with`` block. The
+    # 2026-07-03 arm-A wedge: ``ThreadPoolExecutor.__exit__`` is
+    # ``shutdown(wait=True)``, which blocks on the very worker the watchdog
+    # just timed out (a hung provider stream held it for 15+ minutes while
+    # no result row could be written). Cancellation is now cooperative-then-
+    # abandon: interrupt the agent (aborts in-flight tools, stops the loop at
+    # its next check), give it a grace window to return a partial result,
+    # then ``shutdown(wait=False)`` so the suite moves on regardless.
+    pool = ThreadPoolExecutor(max_workers=1)
     try:
-        # Watchdog: run the body in a worker thread so a hung provider call is
-        # reclaimable. The thread is a daemon — if it overruns we abandon it and
-        # return a failed result rather than blocking the whole suite.
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            future = pool.submit(
-                _run_task_inner,
-                task,
-                model=model,
-                base_url=base_url,
-                api_key=api_key,
-                provider=provider,
-                engine=engine,
-                max_iterations=max_iterations,
-                quiet=quiet,
-                compress_threshold_tokens=compress_threshold_tokens,
-                run_index=run_index,
-                workspace=workspace,
-                with_db=with_db,
+        future = pool.submit(
+            _run_task_inner,
+            task,
+            model=model,
+            base_url=base_url,
+            api_key=api_key,
+            provider=provider,
+            engine=engine,
+            max_iterations=max_iterations,
+            quiet=quiet,
+            compress_threshold_tokens=compress_threshold_tokens,
+            run_index=run_index,
+            workspace=workspace,
+            with_db=with_db,
+            control=control,
+        )
+        try:
+            return future.result(timeout=timeout_s)
+        except FutureTimeout:
+            logger.warning(
+                "task %s timed out after %ss — interrupting agent",
+                task.id, timeout_s,
             )
+            control["cancelled"] = True
+            agent = control.get("agent")
+            if agent is not None:
+                try:
+                    agent.interrupt("grading watchdog timeout")
+                except Exception:
+                    logger.debug("watchdog interrupt failed", exc_info=True)
             try:
-                return future.result(timeout=timeout_s)
+                # Grace window: a cooperative exit still yields a (partial)
+                # result with real metrics instead of a bare timeout row.
+                return future.result(timeout=CANCEL_GRACE_S)
             except FutureTimeout:
-                logger.warning("task %s timed out after %ss", task.id, timeout_s)
-                return _fail(f"timeout after {timeout_s}s")
+                logger.warning(
+                    "task %s did not exit within the %ss grace window — "
+                    "abandoning its thread (interrupt stays set, so it "
+                    "cannot keep calling the model once unblocked)",
+                    task.id, CANCEL_GRACE_S,
+                )
+                return _fail(f"timeout after {timeout_s}s (+{CANCEL_GRACE_S}s grace)")
     except Exception as exc:  # construction / setup / oracle failure
         logger.error("task %s crashed: %s", task.id, exc, exc_info=True)
         return _fail(f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}")
     finally:
+        pool.shutdown(wait=False)
         if not keep_workspace:
             shutil.rmtree(workspace, ignore_errors=True)
 

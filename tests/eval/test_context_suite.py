@@ -19,6 +19,7 @@ oracle logic are size-independent, and small fixtures keep the suite fast.
 from __future__ import annotations
 
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
@@ -393,3 +394,105 @@ class TestAttachDb:
         assert runner_mod.attach_db(dsn) is True  # idempotent
         with pytest.raises(RuntimeError, match="different DSNs"):
             runner_mod.attach_db("postgresql://u:p@localhost:5433/other")
+
+
+# --------------------------------------------------------------------------- #
+# Watchdog: cooperative interrupt + non-blocking abandonment (2026-07-03 fix)  #
+# --------------------------------------------------------------------------- #
+
+
+class TestWatchdog:
+    def _task(self):
+        from eval.context_suite.tasks import get_tasks
+
+        return get_tasks(["e1_merge_env_to_json"])[0]
+
+    def test_timeout_interrupts_agent_and_returns(self, monkeypatch):
+        """Watchdog fires -> agent.interrupt() called -> cooperative exit
+        inside the grace window returns without blocking on the thread."""
+        import eval.context_suite.runner as runner_mod
+
+        interrupted = {"called": False}
+
+        class FakeAgent:
+            def interrupt(self, message=""):
+                interrupted["called"] = True
+
+        def fake_inner(task, *, control=None, **kwargs):
+            control["agent"] = FakeAgent()
+            # Block past the (tiny) timeout, exiting only on cancellation —
+            # the cooperative path.
+            for _ in range(200):
+                if control.get("cancelled"):
+                    return runner_mod.TaskResult(
+                        task_id=task.id, family=task.family, engine="compressor",
+                        model="m", run_index=0, passed=False,
+                        oracle_details="cancelled", mean_outcome=0.0,
+                        error="cancelled",
+                    )
+                time.sleep(0.05)
+            raise AssertionError("never cancelled")
+
+        monkeypatch.setattr(runner_mod, "_run_task_inner", fake_inner)
+        started = time.time()
+        result = runner_mod.run_task(
+            self._task(), model="m", engine="compressor", timeout_s=1
+        )
+        elapsed = time.time() - started
+        assert interrupted["called"] is True
+        assert result.passed is False
+        assert "cancelled" in (result.error or "")
+        assert elapsed < 1 + runner_mod.CANCEL_GRACE_S  # cooperative, not full grace
+
+    def test_truly_hung_thread_is_abandoned_not_awaited(self, monkeypatch):
+        """A thread that ignores cancellation (hung provider stream) is
+        abandoned after the grace window — run_task must NOT block on it
+        (the 2026-07-03 arm-A wedge: executor __exit__ waited forever)."""
+        import threading
+
+        import eval.context_suite.runner as runner_mod
+
+        release = threading.Event()
+
+        def fake_inner(task, *, control=None, **kwargs):
+            release.wait(timeout=60)  # simulates a hung stream; ignores cancel
+            return None
+
+        monkeypatch.setattr(runner_mod, "_run_task_inner", fake_inner)
+        monkeypatch.setattr(runner_mod, "CANCEL_GRACE_S", 1)
+        started = time.time()
+        result = runner_mod.run_task(
+            self._task(), model="m", engine="compressor", timeout_s=1
+        )
+        elapsed = time.time() - started
+        release.set()  # let the leaked thread die promptly for test hygiene
+        assert result.passed is False
+        assert "timeout" in (result.error or "")
+        assert elapsed < 10  # returned at ~timeout+grace, never awaited the thread
+
+    def test_build_agent_disables_background_review_forks(self, monkeypatch):
+        """Grading agents must not spawn post-turn review threads: they
+        outlive the task, race the runner's chdir across workspaces, and
+        burn unmetered tokens (observed in the 2026-07-03 arm-A wedge)."""
+        import sys
+        from types import SimpleNamespace
+
+        import eval.context_suite.runner as runner_mod
+
+        class StubAgent:
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+                self._memory_nudge_interval = 5   # non-zero defaults
+                self._skill_nudge_interval = 7
+                self.context_compressor = SimpleNamespace(threshold_tokens=100_000)
+
+        monkeypatch.setitem(
+            sys.modules, "run_agent", SimpleNamespace(AIAgent=StubAgent)
+        )
+        agent = runner_mod._build_agent(
+            model="m", base_url=None, api_key=None, provider=None,
+            max_iterations=5, quiet=True, compress_threshold_tokens=50_000,
+        )
+        assert agent._memory_nudge_interval == 0
+        assert agent._skill_nudge_interval == 0
+        assert agent.context_compressor.threshold_tokens == 50_000
