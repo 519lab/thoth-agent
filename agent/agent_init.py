@@ -1428,7 +1428,18 @@ def init_agent(
     _engine_name = "compressor"  # default
     try:
         _ctx_cfg = _agent_cfg.get("context", {}) if isinstance(_agent_cfg, dict) else {}
-        _engine_name = _ctx_cfg.get("engine", "compressor") or "compressor"
+        # Per-instance override for programmatic construction (the eval/grading
+        # harness): ``THOTH_CONTEXT_ENGINE`` selects the engine without mutating
+        # config.yaml, so a single process can A/B ``compressor`` vs a candidate
+        # engine by flipping one env var per AIAgent. Config stays the default;
+        # the env var wins only when set/non-empty. This is the "config seam used
+        # during development/grading only" of plans/substrate-context-engine.md
+        # §5 — see eval/context_suite/.
+        _engine_name = (
+            os.environ.get("THOTH_CONTEXT_ENGINE", "").strip()
+            or _ctx_cfg.get("engine", "compressor")
+            or "compressor"
+        )
     except Exception:
         pass
 
