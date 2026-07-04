@@ -1,7 +1,22 @@
 # Substrate Context Engine — design sketch
 
-*2026-07-03 · status: SKETCH (pre-implementation) · based on main @ 2541808b8*
+*2026-07-03 · status: **EXECUTED — hypothesis LOST at Phase 3** (see outcome note below) · based on main @ 2541808b8*
 *Research inputs: substrate internals map, context-engine internals map, live-DB baseline (2026-07-03), SOTA survey (mid-2026). All file:line refs verified against the current tree.*
+
+> **Outcome (2026-07-03, same day):** all phases executed. Phase 0a fixes
+> (#284–#289) and Phase 0b telemetry shipped; the graded suite + DB-backed
+> A/B protocol were built (eval/context_suite); the full engine (2a–2d) was
+> built and mechanism-verified. The pre-committed Phase 3 A/B (10 tasks ×
+> 3 runs/arm, live model, snapshot-seeded arms): compressor 29/30 vs
+> substrate 27/30; probes and constraint survival tied; tokens −3.1% and
+> Tier-2 summarizations −54% for the substrate arm; zero errors both arms.
+> Per §4's pre-committed criteria the challenger did not win → **the
+> compressor remains the default engine; Phase 4 replacement did not
+> proceed.** Full data: eval/results/2026-07-03-ab-v2/VERDICT.md (suite
+> branch). Notable confound for any future attempt: the baseline arm also
+> benefits from substrate recall injection, and it erased the constraint-
+> family weakness that motivated part of the design. Untested headroom:
+> task-boundary triggers, stub gist quality, larger-n runs.
 
 ## Goals (frozen — do not move these)
 
