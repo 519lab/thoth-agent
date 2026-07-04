@@ -31,6 +31,21 @@
 > 27/30 @ 483.1k · cooling 27/30 @ 442.8k — proactive management keeps
 > its cost promise and pays for it in quality; round 3 needs a quality
 > idea (gist fidelity, window tuning), not more knobs.
+>
+> **Round 3 (2026-07-04): informative gists.** Greg's correction: the
+> first-120-chars gist was a builder shortcut, never the design — stubs
+> must carry a compressed summary of the full input that preserves what
+> the model needs to keep performing. Mechanism: (1) content-aware
+> structural extraction, free and deterministic — file reads keep first
+> ~5 LINES (headers/licenses), a structure outline, and tail; terminal
+> keeps exit code + first/last lines; search keeps counts + paths;
+> (2) for large/prose content, ONE batched aux-model call per
+> distillation pass producing task-relevant summaries (capped, redacted,
+> handle always appended; falls back to (1) when aux unavailable).
+> **Pre-committed round-3 criteria: identical to round 2** — pass >=
+> 29/30, tokens <= 90% of baseline, backstop < 0.2/task, probes and
+> constraint >= baseline, zero errors. The token win must survive the
+> richer gists.
 
 > **Outcome (2026-07-03, same day):** all phases executed. Phase 0a fixes
 > (#284–#289) and Phase 0b telemetry shipped; the graded suite + DB-backed
