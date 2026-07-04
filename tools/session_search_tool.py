@@ -55,6 +55,9 @@ class _SyncDB:
         "get_messages_around",
         "get_anchored_view",
         "search_messages",
+        # Substrate context engine (Phase 2b) resolves eviction handles through
+        # this same sync bridge during compress().
+        "resolve_tool_call_message_ids",
     })
 
     def __init__(self, async_db):

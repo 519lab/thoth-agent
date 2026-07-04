@@ -3521,7 +3521,29 @@ def run_conversation(
                         messages, tools=agent.tools or None
                     )
 
-                if agent.compression_enabled and _compressor.should_compress(_real_tokens):
+                # Proactive engines (cooling) queue age-based work that must
+                # run independent of token pressure — that is the entire
+                # hypothesis (plans/substrate-context-engine.md round 2).
+                # The ABC default returns False and the cooling override is
+                # an O(messages) early-return walk, so threshold-only
+                # engines see no behavior change on this hot path.
+                _preflight_work = False
+                if agent.compression_enabled:
+                    try:
+                        _preflight_work = _compressor.should_compress_preflight(messages)
+                    except Exception:
+                        _preflight_work = False
+
+                if agent.compression_enabled and (_compressor.should_compress(_real_tokens) or _preflight_work):
+                    # Restorable-eviction engines resolve handles against
+                    # session-store rows; flush pending messages first so
+                    # current-turn tool results are durable candidates
+                    # (cursor-idempotent, #860 — no-op when up to date).
+                    if getattr(_compressor, "needs_durable_messages", False):
+                        try:
+                            agent._flush_messages_to_session_db(messages, conversation_history)
+                        except Exception:
+                            logger.debug("pre-compress flush failed", exc_info=True)
                     agent._safe_print("  ⟳ compacting context…")
                     messages, active_system_prompt = agent._compress_context(
                         messages, system_message,
@@ -3531,7 +3553,11 @@ def run_conversation(
                     # Compression created a new session — clear history so
                     # _flush_messages_to_session_db writes compressed messages
                     # to the new session (see preflight compression comment).
-                    conversation_history = None
+                    # Eviction/distillation-only passes do NOT rotate the
+                    # session (in-place body edits, same session id), so the
+                    # history bookkeeping must survive them unchanged.
+                    if not getattr(_compressor, "_last_compress_eviction_only", False):
+                        conversation_history = None
                 
                 # Save session log incrementally (so progress is visible even if interrupted)
                 agent._session_messages = messages

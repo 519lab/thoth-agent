@@ -1426,6 +1426,7 @@ def init_agent(
     # 4. Fall back to built-in ContextCompressor
     _selected_engine = None
     _engine_name = "compressor"  # default
+    _builtin_substrate = False  # built-in substrate engine (checked before plugins)
     try:
         _ctx_cfg = _agent_cfg.get("context", {}) if isinstance(_agent_cfg, dict) else {}
         # Per-instance override for programmatic construction (the eval/grading
@@ -1443,7 +1444,13 @@ def init_agent(
     except Exception:
         pass
 
-    if _engine_name != "compressor":
+    # The substrate engine is a built-in (Phase 2 of the substrate-context-engine
+    # plan), not a plugin — resolve it here BEFORE the plugin lookup so it is
+    # never routed through plugins/context_engine/ and never trips the
+    # "engine not found" fallback warning.
+    if _engine_name in ("substrate", "cooling"):
+        _builtin_substrate = True
+    elif _engine_name != "compressor":
         # Try loading from plugins/context_engine/<name>/
         try:
             from plugins.context_engine import load_context_engine
@@ -1468,7 +1475,40 @@ def init_agent(
             )
     # else: config says "compressor" — use built-in, don't auto-activate plugins
 
-    if _selected_engine is not None:
+    if _builtin_substrate:
+        # Built-in substrate context engine: composes an internal
+        # ContextCompressor with the SAME constructor params as the default
+        # branch below, so Phase-2a behaviour is byte-identical to today's
+        # engine — it just additionally exposes context_expand/context_grep.
+        # The "cooling" engine (Round 2) is the age-triggered proactive subclass
+        # of SubstrateContextEngine; same constructor contract, so it drops into
+        # this branch unchanged.
+        if _engine_name == "cooling":
+            from agent.context_engine_cooling import (
+                CoolingContextEngine as _BuiltinEngineCls,
+            )
+        else:
+            from agent.context_engine_substrate import (
+                SubstrateContextEngine as _BuiltinEngineCls,
+            )
+        agent.context_compressor = _BuiltinEngineCls(
+            model=agent.model,
+            threshold_percent=compression_threshold,
+            protect_first_n=compression_protect_first,
+            protect_last_n=compression_protect_last,
+            summary_target_ratio=compression_target_ratio,
+            summary_model_override=None,
+            quiet_mode=agent.quiet_mode,
+            base_url=agent.base_url,
+            api_key=getattr(agent, "api_key", ""),
+            config_context_length=_config_context_length,
+            provider=agent.provider,
+            api_mode=agent.api_mode,
+            abort_on_summary_failure=compression_abort_on_summary_failure,
+        )
+        if not agent.quiet_mode:
+            _ra().logger.info("Using context engine: %s", _engine_name)
+    elif _selected_engine is not None:
         agent.context_compressor = _selected_engine
         # Resolve context_length for plugin engines — mirrors switch_model() path
         from agent.model_metadata import get_model_context_length

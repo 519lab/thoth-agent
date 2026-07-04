@@ -1185,6 +1185,48 @@ class _AsyncSessionDB:
             "messages_after": messages_after,
         }
 
+    async def resolve_tool_call_message_ids(
+        self,
+        session_ids: List[str],
+        tool_call_ids: List[str],
+    ) -> Dict[str, tuple]:
+        """Map ``tool_call_id -> (session_id, message_id)`` for durably-stored
+        tool messages across a set of sessions (a conversation lineage).
+
+        The substrate context engine calls this at eviction time (Phase 2b):
+        an in-memory tool message is only safe to evict-to-stub once its
+        byte-exact body has a row in the session store — that row *is* the
+        retrieval handle target. A ``tool_call_id`` absent from the result has
+        not been flushed yet (``run_agent._flush_messages_to_session_db`` runs
+        on the next loop checkpoint, not synchronously with tool execution),
+        so the engine skips it this pass rather than mint a stub whose handle
+        would resolve to nothing.
+
+        A single lean ``id, session_id, tool_call_id`` projection — no message
+        bodies — so resolving a whole pass of candidates is one small query.
+        If the same ``tool_call_id`` appears in more than one row (provider ids
+        are unique, but a resumed lineage could in principle overlap), the
+        most recent row (highest ``id``) wins.
+        """
+        if not session_ids or not tool_call_ids:
+            return {}
+        async with thoth_db.connection() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, session_id, tool_call_id
+                FROM messages
+                WHERE session_id = ANY($1)
+                  AND tool_call_id = ANY($2)
+                ORDER BY id
+                """,
+                list(session_ids), list(tool_call_ids),
+            )
+        # ORDER BY id ascending → the last assignment (highest id) wins.
+        out: Dict[str, tuple] = {}
+        for r in rows:
+            out[r["tool_call_id"]] = (r["session_id"], r["id"])
+        return out
+
     async def get_anchored_view(
         self,
         session_id: str,
