@@ -27,6 +27,7 @@ from uuid import UUID
 
 from substrate import config as _cfg
 from substrate.recall.composer import (
+    _CONTEXT_EVICTED_STREAM,
     compose_projection,
     render_l1_header,
     render_l3_header,
@@ -249,6 +250,37 @@ def _summarise_embedding_path(
     return "mixed"
 
 
+def _gate_evicted_candidates(kept: list) -> list:
+    """Apply the eviction-pointer relevance floor + per-projection cap (finding D).
+
+    ``kept`` is the post-relevance-floor list of scored candidates (each exposes
+    ``.candidate.stream_name``, ``.relevance`` and ``.score``), in descending
+    score order. Round-4 forensic finding D: the ``context_evicted`` stream
+    flooded projections — 141 pointers composed, <7% dereferenced — because
+    restorable handles entered composition on the general floor alone. This gate
+    keeps a ``context_evicted`` candidate only when its topical relevance clears
+    ``RECALL_EVICTED_MIN_RELEVANCE`` (default 0.55, well above the general 0.05),
+    and admits at most ``RECALL_EVICTED_MAX`` (default 2) of them per projection,
+    highest-scored first. Every non-eviction candidate is passed through
+    unchanged and in place, so ordering and regular recall are untouched.
+    """
+    min_rel = _cfg.RECALL_EVICTED_MIN_RELEVANCE
+    max_evicted = _cfg.RECALL_EVICTED_MAX
+    out: list = []
+    n_evicted = 0
+    for sc in kept:
+        if getattr(sc.candidate, "stream_name", None) != _CONTEXT_EVICTED_STREAM:
+            out.append(sc)  # regular candidate — unaffected
+            continue
+        if sc.relevance < min_rel:
+            continue  # below the dedicated eviction floor — drop
+        if n_evicted >= max_evicted:
+            continue  # per-projection eviction cap reached — drop the rest
+        out.append(sc)
+        n_evicted += 1
+    return out
+
+
 async def _reinforce_hits(
     substrate: "Substrate",
     composed: list[RecallCandidate],
@@ -463,6 +495,11 @@ async def recall(
         kept = [sc for sc in scored if sc.score >= floor] or scored[:1]
     else:
         kept = []
+    # 3a-bis. Eviction-pointer gating (finding D). Restorable ``context_evicted``
+    # handles must clear a dedicated, stricter relevance floor and are capped per
+    # projection — the graded runs composed 141 of them and the model
+    # dereferenced <7%. Regular candidates pass through untouched.
+    kept = _gate_evicted_candidates(kept)
     ranked = [sc.candidate for sc in kept]
     provenance = {sc.candidate.slice_id: f"{sc.score:.2f} {sc.path}" for sc in kept}
     # Topical relevance per kept slice — recall reinforcement is weighted by

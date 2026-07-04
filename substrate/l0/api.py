@@ -56,6 +56,7 @@ async def commit_slice(
     conn: "Optional[asyncpg.Connection]" = None,
     born_passed: bool = False,
     born_consolidated: bool = False,
+    salience: Optional[float] = None,
 ) -> Address:
     """Commit a slice durably. Default ``sentinel_state='pending'``;
     set ``born_passed=True`` for self-emitted audit slices that must
@@ -72,6 +73,12 @@ async def commit_slice(
     ``trust_hint`` is accepted for forward-compatibility with Phase B+
     Sentinel logic but is ignored in Phase A — the stub Sentinel
     computes trust from the stream's modality.
+
+    ``salience`` (default ``None`` → the storage default 1.0) sets the
+    birth salience. Round-4 forensic finding E: eviction pointer slices
+    born at the 1.0 ceiling cannot be reinforced (``LEAST(1.0, s+bump)``),
+    so the context engine mints them below the ceiling to keep the
+    dereference→reinforce loop live. Clamped to ``[0.0, 1.0]`` in storage.
 
     ``born_passed=True`` is mandatory for any agent that writes its own
     audit-trail slices on ``substrate.self_state`` (or any other stream
@@ -185,6 +192,7 @@ async def commit_slice(
             summary_of=summary_of_json,
             born_passed=born_passed,
             born_consolidated=born_consolidated,
+            salience=salience,
         )
     else:
         async with substrate.pool.acquire() as own_conn:
@@ -202,6 +210,7 @@ async def commit_slice(
                 summary_of=summary_of_json,
                 born_passed=born_passed,
                 born_consolidated=born_consolidated,
+                salience=salience,
             )
 
     return Address(

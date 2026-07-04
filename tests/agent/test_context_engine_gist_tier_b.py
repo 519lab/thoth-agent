@@ -50,7 +50,9 @@ class _Resp:
         self.choices = [type("C", (), {"message": msg})()]
 
 
-def _big(tag: str, n: int = 5000) -> str:
+# Body size clears the round-4 Tier-B eligibility floor (finding C: 4k → 8k),
+# so these still exercise the Tier-B upgrade path.
+def _big(tag: str, n: int = 9000) -> str:
     return f"{tag}\n" + (tag[0] * n)
 
 
@@ -59,9 +61,9 @@ def _records_and_result(n: int = 3):
     records = []
     result = []
     for i in range(n):
-        orig = _big(f"BODY{i}", 5000)
+        orig = _big(f"BODY{i}", 9000)
         handle = f"sid:s#m:{i}"
-        stub = f'{EVICTION_STUB_PREFIX}{handle} — terminal (5006 chars). Gist: TIER_A_{i}. Retrieve exact: context_expand("{handle}")]'
+        stub = f'{EVICTION_STUB_PREFIX}{handle} — terminal ({len(orig)} chars). Gist: TIER_A_{i}. Retrieve exact: context_expand("{handle}")]'
         result.append({"role": "tool", "tool_call_id": f"c{i}", "content": stub})
         records.append({
             "handle": handle,
@@ -194,7 +196,7 @@ class TestTierBApply:
     def test_small_items_are_ineligible_no_call(self):
         engine = _make_engine()
         records, result = _records_and_result(2)
-        # Shrink both bodies below the 4000-char eligibility floor.
+        # Shrink both bodies below the 8000-char eligibility floor (finding C).
         for r in records:
             r["_orig"] = "tiny"
         with patch("agent.auxiliary_client.call_llm") as m:

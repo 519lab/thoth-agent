@@ -31,6 +31,7 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -40,6 +41,65 @@ from agent.model_metadata import estimate_request_tokens_rough
 from agent.session_db_bridge import resolve_maybe_awaitable
 
 logger = logging.getLogger(__name__)
+
+
+def _emit_compression_telemetry(
+    agent: Any,
+    *,
+    trigger: str,
+    messages_before: int,
+    messages_after: int,
+    tokens_before: Optional[int],
+    tokens_after: Optional[int],
+    duration_s: float,
+    aborted: bool,
+    summary_fallback: bool = False,
+    old_session_id: Optional[str] = None,
+    new_session_id: Optional[str] = None,
+) -> None:
+    """Emit one ``context.compressed`` row, best-effort and guarded.
+
+    Evidence-driven repair (round-4 forensic finding B, part 2): ~30% of
+    ``context.compressed`` rows reported impossible NEGATIVE ``tokens_saved``
+    because ``tokens_before`` and ``tokens_after`` were sampled on DIFFERENT
+    bases — ``tokens_before`` came from the caller's ``approx_tokens`` (which,
+    depending on the trigger path, was either the real ``last_prompt_tokens``
+    or a messages-only ``estimate_messages_tokens_rough``), while
+    ``tokens_after`` was a schema-inclusive ``estimate_request_tokens_rough``.
+    When ``before`` was messages-only and ``after`` was schema-inclusive, the
+    tool-schema overhead alone made ``after > before`` even though summarisation
+    removed real content.
+
+    Both sides are now sampled with ``estimate_request_tokens_rough`` at the
+    call sites, so ``tokens_saved = before - after`` is measured on ONE
+    consistent, schema-inclusive basis and cannot go negative for a genuine
+    summarisation pass. This helper stays neutral to that (it just relays the
+    values), and keeps the graceful no-op when ``agent.context_telemetry`` (the
+    Phase-0b module) is absent from this worktree.
+    """
+    try:
+        from agent import context_telemetry  # arrives with Phase-0b
+    except ImportError:
+        return
+    emit = getattr(context_telemetry, "emit_compression_event", None)
+    if not callable(emit):
+        return
+    try:
+        emit(
+            agent,
+            trigger=trigger,
+            messages_before=messages_before,
+            messages_after=messages_after,
+            tokens_before=tokens_before,
+            tokens_after=tokens_after,
+            duration_s=duration_s,
+            aborted=aborted,
+            summary_fallback=summary_fallback,
+            old_session_id=old_session_id,
+            new_session_id=new_session_id,
+        )
+    except Exception:  # telemetry must never break compression
+        logger.debug("context.compressed emit failed", exc_info=True)
 
 
 def check_compression_model_feasibility(agent: Any) -> None:
@@ -296,6 +356,17 @@ def compress_context(
             agent._compression_feasibility_checked = True
 
     _pre_msg_count = len(messages)
+    _tel_started = time.monotonic()
+    # Finding B(2): sample tokens_before on the SAME schema-inclusive basis as
+    # tokens_after (estimate_request_tokens_rough, tool schemas included) rather
+    # than the caller's path-dependent approx_tokens — otherwise savings can go
+    # negative. Uses the pre-compression system prompt (old cache) so the delta
+    # reflects the message-body summarisation, not a prompt swap.
+    _tel_tokens_before = estimate_request_tokens_rough(
+        messages,
+        system_prompt=getattr(agent, "_cached_system_prompt", None) or "",
+        tools=agent.tools or None,
+    )
     logger.info(
         "context compression started: session=%s messages=%d tokens=~%s model=%s focus=%r",
         agent.session_id or "none", _pre_msg_count,
@@ -337,6 +408,18 @@ def compress_context(
         _existing_sp = getattr(agent, "_cached_system_prompt", None)
         if not _existing_sp:
             _existing_sp = agent._build_system_prompt(system_message)
+        # Aborted pass: no content removed, so before == after (tokens_saved 0 —
+        # never negative). Consistent-basis sampling per finding B(2).
+        _emit_compression_telemetry(
+            agent,
+            trigger="auto" if not force else "manual",
+            messages_before=_pre_msg_count,
+            messages_after=len(messages),
+            tokens_before=_tel_tokens_before,
+            tokens_after=_tel_tokens_before,
+            duration_s=time.monotonic() - _tel_started,
+            aborted=True,
+        )
         return messages, _existing_sp
 
     # Eviction-only pass (substrate context engine, plan §2.6): Tier 0+1
@@ -541,6 +624,23 @@ def compress_context(
         "context compression done: session=%s messages=%d->%d tokens=~%s",
         agent.session_id or "none", _pre_msg_count, len(compressed),
         f"{_compressed_est:,}",
+    )
+    # Finding B(2): tokens_before and tokens_after are BOTH
+    # estimate_request_tokens_rough (schema-inclusive) — before was sampled at
+    # entry, after is _compressed_est just computed above — so tokens_saved is a
+    # single-basis measurement and cannot be negative for a genuine pass.
+    _emit_compression_telemetry(
+        agent,
+        trigger="auto" if not force else "manual",
+        messages_before=_pre_msg_count,
+        messages_after=len(compressed),
+        tokens_before=_tel_tokens_before,
+        tokens_after=_compressed_est,
+        duration_s=time.monotonic() - _tel_started,
+        aborted=False,
+        summary_fallback=bool(summary_error),
+        old_session_id=locals().get("old_session_id"),
+        new_session_id=agent.session_id,
     )
     return compressed, new_system_prompt
 

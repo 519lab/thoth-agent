@@ -224,6 +224,20 @@ RECALL_REINFORCE_MIN_RELEVANCE = _envfloat(
     "THOTH_RECALL_REINFORCE_MIN_RELEVANCE", default=0.2
 )
 
+# Round-4 forensic finding D: 141 eviction pointers were composed into recall
+# projections across the graded runs, but the model dereferenced <7% of them —
+# the ``context_evicted`` stream flooded the projection with restorable handles
+# the model rarely wanted. Eviction pointers must clear a DEDICATED relevance
+# floor — meaningfully above the general ``RECALL_MIN_RELEVANCE`` (0.05) and the
+# reinforce floor (0.2) — before they enter composition, AND at most
+# ``RECALL_EVICTED_MAX`` of them may be composed per projection. Regular
+# candidates are unaffected. The floor compares the per-slice topical relevance
+# (the fixed similarity term), the same quantity the reinforce gate uses.
+RECALL_EVICTED_MIN_RELEVANCE = _envfloat(
+    "THOTH_RECALL_EVICTED_MIN_RELEVANCE", default=0.55
+)
+RECALL_EVICTED_MAX = _envint("THOTH_RECALL_EVICTED_MAX", default=2)
+
 # Recall log writer.
 RECALL_LOG_QUEUE_DEPTH = _envint("THOTH_RECALL_LOG_QUEUE_DEPTH", default=1024)
 
@@ -406,6 +420,8 @@ __all__ = [
     "RECALL_RECENCY_HALF_LIFE_HOURS",
     "RECALL_REINFORCE_RATE_LIMIT_PER_MIN",
     "RECALL_REINFORCE_MIN_RELEVANCE",
+    "RECALL_EVICTED_MIN_RELEVANCE",
+    "RECALL_EVICTED_MAX",
     "RECALL_LOG_QUEUE_DEPTH",
     "RECALL_TUNED_WEIGHTS",
     "RECALL_TUNED_WEIGHTS_TTL_S",

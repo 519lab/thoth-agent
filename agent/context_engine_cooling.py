@@ -278,9 +278,34 @@ class CoolingContextEngine(SubstrateContextEngine):
             messages, db,
         )
 
-        post_est = estimate_messages_tokens_rough(distilled)
-        # Keep the organ's token state honest so pressure math sees the
-        # POST-distillation size.
+        # ---- Relief check on the SCHEMA-INCLUSIVE basis (finding B) ----
+        # Evidence-driven repair (round-4 forensic finding B): the loop triggers
+        # compress() on ``last_prompt_tokens`` from real API usage, which INCLUDES
+        # ~20-30k of tool-schema + system tokens (conversation_loop.py §3547 gates
+        # on ``should_compress(last_prompt_tokens)`` and passes that same value in
+        # as ``current_tokens``). This relief check used to compare a MESSAGES-ONLY
+        # estimate of the distilled list — a ~25k dead-band. When schemas alone
+        # kept the real prompt over threshold, messages-only under-reported, so a
+        # distillation-only pass looked "relieved," never escalated, and the loop
+        # RE-ENTERED compress() every turn (churn) re-distilling nothing.
+        #
+        # The engine can't see the schemas directly, so we capture the overhead
+        # for THIS agent: the schema-inclusive trigger token count minus a
+        # messages-only estimate of the SAME input list is the schema+system
+        # constant. Carry it into post_est before the pressure check, and set
+        # last_prompt_tokens on the same schema-inclusive basis so the NEXT loop
+        # trigger compares like-for-like and doesn't re-fire spuriously.
+        post_est_msgs = estimate_messages_tokens_rough(distilled)
+        schema_overhead = 0
+        if current_tokens is not None:
+            try:
+                pre_est_msgs = estimate_messages_tokens_rough(messages)
+                schema_overhead = max(0, int(current_tokens) - pre_est_msgs)
+            except (TypeError, ValueError):
+                schema_overhead = 0
+        post_est = post_est_msgs + schema_overhead
+        # Keep the organ's token state honest AND schema-inclusive so pressure
+        # math — here and on the next loop trigger — sees the real prompt size.
         self._compressor.last_prompt_tokens = post_est
 
         # Emergency-backstop condition: does REAL threshold pressure still hold

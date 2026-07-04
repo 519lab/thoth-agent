@@ -149,7 +149,19 @@ _CONTEXT_EVICTED_STREAM = "thoth.self_state.context_evicted"
 
 # Tier B only fires for items at least this large — small results are already
 # well-served by the deterministic structural gist; a model call buys nothing.
-_DEFAULT_GIST_AUX_MIN_CHARS = 4_000
+# Round-4 forensic finding C: round-3's informative gists cost ~+45k tokens/task
+# (gist bytes × turns). Raising the Tier-B floor 4k → 8k reserves the batched
+# main-model summary for genuinely large content, where the structural gist
+# leaves the most on the table — smaller items keep the free Tier-A gist.
+_DEFAULT_GIST_AUX_MIN_CHARS = 8_000
+
+# Round-4 forensic finding E: eviction pointer slices are born at salience 1.0
+# (the ceiling), which makes recall reinforcement arithmetically inert — the
+# reinforce bump is ``LEAST(1.0, salience + bump)`` and can never rise from 1.0,
+# so a dereference (evidence the evicted content is still wanted) cannot lift the
+# pointer in proactive recall ranking. Mint eviction slices below the ceiling so
+# the dereference→reinforce loop has headroom. Env-tunable.
+_DEFAULT_EVICT_SLICE_SALIENCE = 0.5
 
 # Per-item input cap fed to the batched call. Bounds the prompt so one pass over
 # several fat tool results stays a single, fast prefill on the local main rig.
@@ -967,17 +979,45 @@ class SubstrateContextEngine(ContextEngine):
     def _emit_context_event(self, event: str, **fields: Any) -> None:
         """Emit one context-engine telemetry event, best-effort.
 
-        ``agent.context_telemetry`` ships on the Phase-0b branch and may be
-        absent in this worktree — guarded behind ``ImportError`` so the engine
-        never depends on it. ``session_id`` is always attached. Any emit
-        failure is swallowed: telemetry must never perturb the turn.
+        Evidence-driven repair (round-4 forensic finding A): during graded runs
+        ``context.evicted`` / ``context.pagein`` emitted ZERO rows despite 162
+        eviction slices being minted. Root cause — this method used to call
+        ``context_telemetry.emit(event, session_id=..., **fields)``, but the
+        telemetry module (``agent/context_telemetry.py`` on the Phase-0b branch)
+        exposes **no** ``emit`` function: its public surface is
+        ``emit_turn_event`` / ``emit_compression_event`` plus a module-private
+        generic sink ``_emit(event, payload)``. On the integration branch the
+        ``from agent import context_telemetry`` import *succeeded* (so the
+        ``ImportError`` guard never fired), then ``.emit(...)`` raised
+        ``AttributeError`` — silently swallowed by the broad ``except`` below.
+        The result was a permanent silent no-op even though the substrate was
+        booted and writing rows.
+
+        Fix: resolve the module's real sink. Build a payload dict (with
+        ``session_id`` inside it, matching how ``_emit`` writes the row), prefer
+        a public ``emit`` if a future module version adds one, and otherwise
+        fall through to the ``_emit(event, payload)`` that actually exists today.
+        The ``ImportError`` guard still keeps the graceful no-op when the module
+        is absent (this worktree), and any emit failure is still swallowed —
+        telemetry must never perturb the turn.
         """
         try:
             from agent import context_telemetry  # arrives with Phase-0b
         except ImportError:
             return
+        # session_id travels INSIDE the payload — the module's generic sink
+        # (``_emit(event, payload)``) writes ``payload`` straight into the row.
+        payload = {"session_id": self._session_id, **fields}
         try:
-            context_telemetry.emit(event, session_id=self._session_id, **fields)
+            sink = getattr(context_telemetry, "emit", None)
+            if not callable(sink):
+                # The real, current API: a module-private generic sink with the
+                # signature ``_emit(event, payload)`` — the same one
+                # emit_turn_event/emit_compression_event funnel through.
+                sink = getattr(context_telemetry, "_emit", None)
+            if not callable(sink):
+                return  # module present but exposes no usable sink → no-op
+            sink(event, payload)
         except Exception as exc:  # telemetry must never break the loop
             logger.debug("%s telemetry emit failed: %s", event, exc)
 
@@ -1094,6 +1134,17 @@ class SubstrateContextEngine(ContextEngine):
         batch shares one stream lookup and one run_sync bridge."""
         from substrate.l0 import commit_slice
 
+        # Finding E: born below the salience ceiling so recall reinforcement can
+        # still raise these pointers when the model dereferences them.
+        try:
+            evict_salience = float(
+                os.environ.get(
+                    "CONTEXT_EVICT_SLICE_SALIENCE", _DEFAULT_EVICT_SLICE_SALIENCE
+                )
+            )
+        except (TypeError, ValueError):
+            evict_salience = _DEFAULT_EVICT_SLICE_SALIENCE
+
         stream = await substrate.streams.get_by_name(_CONTEXT_EVICTED_STREAM)
         if stream is None:
             logger.debug(
@@ -1131,6 +1182,9 @@ class SubstrateContextEngine(ContextEngine):
                 # consolidated (never Parser fodder). See the sync wrapper.
                 born_passed=True,
                 born_consolidated=True,
+                # Finding E: sub-ceiling birth salience keeps the
+                # dereference→reinforce loop live.
+                salience=evict_salience,
             )
 
     def _reinforce_eviction_handle(self, handle: str) -> None:

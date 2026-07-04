@@ -454,20 +454,29 @@ class TestCompressContextRotationSeam:
 # ---------------------------------------------------------------------------
 
 class TestTelemetrySeam:
-    """The ``context.evicted`` emit is behind a try/except ImportError because
-    ``agent.context_telemetry`` ships on the Phase-0b branch and is absent
-    here. When it IS present the pass must emit one event with the pass stats;
-    when absent, eviction must still work (covered implicitly everywhere else).
+    """Round-4 forensic finding A: during graded runs ``context.evicted`` /
+    ``context.pagein`` emitted ZERO rows despite 162 eviction slices being
+    minted. Root cause — ``_emit_context_event`` called
+    ``context_telemetry.emit(event, session_id=..., **fields)``, but the real
+    telemetry module (``agent/context_telemetry.py`` on the Phase-0b branch)
+    exposes NO ``emit`` — only a module-private generic sink
+    ``_emit(event, payload)``. The ``from agent import context_telemetry``
+    import succeeded on the integration branch, then ``.emit`` raised
+    ``AttributeError``, silently swallowed. The OLD test stubbed a ``.emit``
+    that the real module never had, so it went green while production emitted
+    nothing — the blind spot that let the bug ship.
+
+    These tests stub the module's REAL interface (``_emit(event, payload)``),
+    prove events actually emit when the module is importable, and prove the
+    graceful no-op when it is absent.
     """
 
-    def test_emits_context_evicted_when_module_present(self, db, monkeypatch):
-        calls = []
-        fake = types.ModuleType("agent.context_telemetry")
-        fake.emit = lambda event, **fields: calls.append((event, fields))
-        monkeypatch.setitem(sys.modules, "agent.context_telemetry", fake)
+    def _inject(self, monkeypatch, module):
+        monkeypatch.setitem(sys.modules, "agent.context_telemetry", module)
         import agent as _agent_pkg
-        monkeypatch.setattr(_agent_pkg, "context_telemetry", fake, raising=False)
+        monkeypatch.setattr(_agent_pkg, "context_telemetry", module, raising=False)
 
+    def _seed_and_run(self, db):
         db.create_session("s_tel", source="cli")
         big_a = "AAA " + ("a" * 4000)
         big_b = "BBB " + ("b" * 4000)
@@ -475,15 +484,77 @@ class TestTelemetrySeam:
         _seed_tool_row(db, "s_tel", "call_b", big_b)
         engine = _make_engine()
         engine.on_session_start("s_tel", platform="cli")
-        engine.compress(_build_conversation(big_a, big_b))
+        result = engine.compress(_build_conversation(big_a, big_b))
+        return engine, result
 
-        assert len(calls) == 1
-        event, fields = calls[0]
-        assert event == "context.evicted"
-        assert fields["evicted"] == 2
-        assert fields["reclaimed"] > 0
-        assert fields["session_id"] == "s_tel"
-        assert fields["escalated_to_tier2"] is False
+    def test_emits_context_evicted_via_real_private_sink(self, db, monkeypatch):
+        # The module's actual API: ``_emit(event, payload)`` (no public ``emit``).
+        calls = []
+        fake = types.ModuleType("agent.context_telemetry")
+        fake._emit = lambda event, payload: calls.append((event, payload))
+        self._inject(monkeypatch, fake)
+
+        self._seed_and_run(db)
+
+        evicted = [c for c in calls if c[0] == "context.evicted"]
+        assert len(evicted) == 1
+        event, payload = evicted[0]
+        assert payload["evicted"] == 2
+        assert payload["reclaimed"] > 0
+        assert payload["session_id"] == "s_tel"  # travels INSIDE the payload now
+        assert payload["escalated_to_tier2"] is False
+
+    def test_prefers_public_emit_when_module_exposes_one(self, db, monkeypatch):
+        # Forward-compat: if a future module version adds a public ``emit`` with
+        # the ``(event, payload)`` shape, it wins over ``_emit``.
+        calls = []
+        fake = types.ModuleType("agent.context_telemetry")
+        fake.emit = lambda event, payload: calls.append(("public", event, payload))
+        fake._emit = lambda event, payload: calls.append(("private", event, payload))
+        self._inject(monkeypatch, fake)
+
+        self._seed_and_run(db)
+
+        evicted = [c for c in calls if c[1] == "context.evicted"]
+        assert evicted and all(c[0] == "public" for c in evicted)
+
+    def test_emits_context_pagein_on_expand(self, db, monkeypatch):
+        calls = []
+        fake = types.ModuleType("agent.context_telemetry")
+        fake._emit = lambda event, payload: calls.append((event, payload))
+        self._inject(monkeypatch, fake)
+
+        engine, result = self._seed_and_run(db)
+        # Dereference one evicted handle → reactive pagein.
+        stub = next(m["content"] for m in result
+                    if isinstance(m.get("content"), str)
+                    and "context_expand(" in m["content"])
+        handle = _stub_handle(stub)
+        engine.handle_tool_call("context_expand", {"handle": handle}, db=db)
+
+        pageins = [c for c in calls if c[0] == "context.pagein"]
+        assert len(pageins) == 1
+        _event, payload = pageins[0]
+        assert payload["tool"] == "context_expand"
+        assert payload["source"] == "reactive"
+        assert payload["session_id"] == "s_tel"
+
+    def test_silent_noop_when_module_absent(self, db, monkeypatch):
+        # Force the ImportError path (module genuinely absent in this worktree):
+        # setting the sys.modules entry to None makes ``from agent import
+        # context_telemetry`` raise ImportError. Eviction must still work.
+        monkeypatch.setitem(sys.modules, "agent.context_telemetry", None)
+        engine, result = self._seed_and_run(db)
+        # Eviction happened (stubs present) and nothing raised.
+        assert any(
+            isinstance(m.get("content"), str) and "context_expand(" in m["content"]
+            for m in result
+        )
+        # Dereference path is also a safe no-op when telemetry is absent.
+        stub = next(m["content"] for m in result
+                    if isinstance(m.get("content"), str)
+                    and "context_expand(" in m["content"])
+        engine.handle_tool_call("context_expand", {"handle": _stub_handle(stub)}, db=db)
 
 
 class TestDegradedFallThrough:

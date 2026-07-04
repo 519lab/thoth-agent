@@ -33,6 +33,7 @@ from tests.agent.test_context_engine_substrate_eviction import (
     _build_conversation,
     _make_engine,
     _seed_tool_row,
+    _stub_handle,
 )
 
 _EVICTED_STREAM = "thoth.self_state.context_evicted"
@@ -354,13 +355,15 @@ def test_context_expand_reinforces_eviction_slice(bound_substrate, db):
 def test_context_expand_emits_pagein_telemetry(db, monkeypatch):
     """Each ``context_expand`` call emits one ``context.pagein`` event with the
     reactive-path fields. ``agent.context_telemetry`` ships on another branch,
-    so we inject a fake module (mirroring the 2b telemetry-seam test)."""
+    so we inject a fake module exposing its REAL sink ``_emit(event, payload)``
+    (finding A: the module has no public ``emit``; the payload carries the
+    fields, session_id included)."""
     import sys
     import types
 
     calls = []
     fake = types.ModuleType("agent.context_telemetry")
-    fake.emit = lambda event, **fields: calls.append((event, fields))
+    fake._emit = lambda event, payload: calls.append((event, payload))
     monkeypatch.setitem(sys.modules, "agent.context_telemetry", fake)
     import agent as _agent_pkg
 
@@ -375,7 +378,7 @@ def test_context_expand_emits_pagein_telemetry(db, monkeypatch):
     engine.on_session_start("s_pi", platform="cli")
     engine.handle_tool_call("context_expand", {"handle": handle}, db=db)
 
-    pageins = [fields for (event, fields) in calls if event == "context.pagein"]
+    pageins = [payload for (event, payload) in calls if event == "context.pagein"]
     assert len(pageins) == 1
     fields = pageins[0]
     assert fields["tool"] == "context_expand"
@@ -384,6 +387,64 @@ def test_context_expand_emits_pagein_telemetry(db, monkeypatch):
     assert fields["truncated"] is False
     assert fields["source"] == "reactive"
     assert fields["session_id"] == "s_pi"
+
+
+def test_eviction_slices_born_below_salience_ceiling(bound_substrate, db, monkeypatch):
+    """Round-4 forensic finding E: eviction pointer slices born at salience 1.0
+    (the ceiling) make recall reinforcement arithmetically inert
+    (``LEAST(1.0, s+bump)`` can't rise). They must be minted below the ceiling
+    (default 0.5, ``CONTEXT_EVICT_SLICE_SALIENCE``) so a dereference can RAISE
+    them."""
+    import thoth_db
+
+    db.create_session("s_sal", source="cli")
+    big_a = "AAA " + ("a" * 4000)
+    big_b = "BBB " + ("b" * 4000)
+    _seed_tool_row(db, "s_sal", "call_a", big_a)
+    _seed_tool_row(db, "s_sal", "call_b", big_b)
+
+    engine = _make_engine()
+    engine.on_session_start("s_sal", platform="cli")
+    out = engine.compress(_build_conversation(big_a, big_b))
+
+    rows = _fetch_evicted_slices()
+    assert len(rows) == 2
+    # Born at the sub-ceiling default, NOT 1.0.
+    for r in rows:
+        assert r["salience_score"] == pytest.approx(0.5)
+
+    # A dereference reinforces the matching pointer — salience RISES from 0.5,
+    # which is only possible because birth left headroom below the 1.0 cap.
+    stub = out[3]["content"]
+    handle = _stub_handle(stub)
+    engine.handle_tool_call("context_expand", {"handle": handle}, db=db)
+
+    async def _salience():
+        async with thoth_db.connection() as conn:
+            return await conn.fetchval(
+                "SELECT salience_score FROM substrate_slices "
+                "WHERE payload->>'handle' = $1",
+                handle,
+            )
+
+    assert thoth_db.run_sync(_salience()) > 0.5  # reinforcement was NOT inert
+
+
+def test_evict_slice_salience_env_override(bound_substrate, db, monkeypatch):
+    """``CONTEXT_EVICT_SLICE_SALIENCE`` tunes the birth salience (finding E)."""
+    monkeypatch.setenv("CONTEXT_EVICT_SLICE_SALIENCE", "0.3")
+    db.create_session("s_salenv", source="cli")
+    big_a = "AAA " + ("a" * 4000)
+    big_b = "BBB " + ("b" * 4000)
+    _seed_tool_row(db, "s_salenv", "call_a", big_a)
+    _seed_tool_row(db, "s_salenv", "call_b", big_b)
+
+    engine = _make_engine()
+    engine.on_session_start("s_salenv", platform="cli")
+    engine.compress(_build_conversation(big_a, big_b))
+
+    rows = _fetch_evicted_slices()
+    assert rows and all(r["salience_score"] == pytest.approx(0.3) for r in rows)
 
 
 def test_dereference_reinforce_no_pointer_is_noop(bound_substrate, db):

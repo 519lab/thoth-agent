@@ -38,9 +38,20 @@ def _python_file(header: str = LICENSE_HEADER) -> str:
 
 class TestFileShape:
     def test_license_header_lines_kept_verbatim(self):
+        # Round-4 finding C: the verbatim head default is now 3 lines (down from
+        # 5) to shed gist bytes. The first lines still survive verbatim — the c2
+        # fix's core (the model sees the header pattern to imitate) is intact —
+        # but the 4th+ header lines are dropped at the default.
         gist = structural_gist(_python_file(), "read_file", 700)
-        # Every one of the first ~5 header lines survives verbatim — this is the
-        # c2 fix: the model must still see the header pattern to imitate it.
+        assert "# Copyright 2026 Example Corp." in gist
+        assert "# SPDX-License-Identifier: Apache-2.0" in gist
+        # 4th header line is beyond the default-3 head → not kept verbatim.
+        assert "# Licensed under the Apache License, Version 2.0." not in gist
+
+    def test_head_lines_env_reaches_full_header(self, monkeypatch):
+        # Finding C keeps 5 reachable for tasks that must imitate a full header.
+        monkeypatch.setenv("CONTEXT_GIST_HEAD_LINES", "5")
+        gist = structural_gist(_python_file(), "read_file", 700)
         assert "# Copyright 2026 Example Corp." in gist
         assert "# SPDX-License-Identifier: Apache-2.0" in gist
         assert "# Licensed under the Apache License, Version 2.0." in gist
@@ -155,8 +166,9 @@ class TestDeterminism:
         assert a == b
 
     def test_default_budget_env(self, monkeypatch):
+        # Round-4 finding C: default budget cut 700 → 450 to shed gist bytes.
         monkeypatch.delenv("CONTEXT_GIST_BUDGET_CHARS", raising=False)
-        assert default_budget_chars() == 700
+        assert default_budget_chars() == 450
         monkeypatch.setenv("CONTEXT_GIST_BUDGET_CHARS", "250")
         assert default_budget_chars() == 250
         # Hard cap applies.
@@ -164,4 +176,4 @@ class TestDeterminism:
         assert default_budget_chars() == 4000
         # Garbage falls back to the default.
         monkeypatch.setenv("CONTEXT_GIST_BUDGET_CHARS", "not-a-number")
-        assert default_budget_chars() == 700
+        assert default_budget_chars() == 450

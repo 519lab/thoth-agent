@@ -45,14 +45,20 @@ from typing import Any, Dict, List, Optional
 from agent.redact import redact_sensitive_text
 
 # --- Budget -----------------------------------------------------------------
-# Default ~700 chars: enough for a 5-line license header + an outline + a tail,
-# small enough that the stub still reclaims the bulk of a multi-KB tool result.
-_BUDGET_DEFAULT = 700
+# Round-4 forensic finding C: round-3's informative gists cost ~+45k tokens/task
+# (gist bytes × turns). Default cut 700 → 450 chars: still fits a short verbatim
+# head + an outline + a tail, but every stub reclaims more of a multi-KB result.
+# ``CONTEXT_GIST_BUDGET_CHARS`` overrides (hard-capped below).
+_BUDGET_DEFAULT = 450
 _BUDGET_HARD_CAP = 4_000  # absolute ceiling regardless of env — a gist is a gist
 _BUDGET_FLOOR = 80        # below this the shape labels themselves don't fit
 
 # --- Structural extraction sizes (the plan's "~5 lines", "~3 lines" etc.) ---
-_FILE_HEAD_LINES = 5
+# The file verbatim head is env-tunable (``CONTEXT_GIST_HEAD_LINES``) — see
+# ``_file_head_lines()``. Round-4 finding C cut its default 5 → 3 to shed gist
+# bytes; 5 stays reachable for tasks that must imitate a full license header.
+_FILE_HEAD_LINES_DEFAULT = 3
+_FILE_HEAD_LINES_MAX = 20  # sane ceiling — a "gist" head is not the whole file
 _FILE_TAIL_LINES = 2
 _TERM_HEAD_LINES = 3
 _TERM_TAIL_LINES = 3
@@ -117,6 +123,23 @@ def _resolve_budget(budget_chars: Any) -> int:
 def default_budget_chars() -> int:
     """The runtime gist budget, from ``CONTEXT_GIST_BUDGET_CHARS`` (hard-capped)."""
     return _resolve_budget(os.environ.get("CONTEXT_GIST_BUDGET_CHARS", _BUDGET_DEFAULT))
+
+
+def _file_head_lines() -> int:
+    """Verbatim-head line count for file gists, from ``CONTEXT_GIST_HEAD_LINES``.
+
+    Round-4 finding C: default 3 (down from 5) to shed gist bytes, clamped to
+    ``[1, _FILE_HEAD_LINES_MAX]``. Set the env to 5+ for tasks that must imitate
+    a full file header (e.g. license/SPDX blocks) — the c2 header fix stays
+    reachable, it is just no longer paid on every stub by default.
+    """
+    try:
+        n = int(os.environ.get("CONTEXT_GIST_HEAD_LINES", _FILE_HEAD_LINES_DEFAULT))
+    except (TypeError, ValueError):
+        n = _FILE_HEAD_LINES_DEFAULT
+    if n <= 0:
+        n = _FILE_HEAD_LINES_DEFAULT
+    return max(1, min(n, _FILE_HEAD_LINES_MAX))
 
 
 def _cap(text: str, budget: int) -> str:
@@ -282,16 +305,18 @@ def _code_outline(lines: List[str]) -> str:
 
 
 def _gist_file(text: str, budget: int) -> str:
-    """First ~5 lines VERBATIM (the c2 header fix), then outline, then tail."""
+    """First ``CONTEXT_GIST_HEAD_LINES`` lines VERBATIM (the c2 header fix; default
+    3 per finding C), then outline, then tail."""
     lines = text.split("\n")
     n = len(lines)
+    head_lines = _file_head_lines()
     out = [f"file — {n} lines, {len(text)} chars"]
     out.append("head:")
-    out.extend(lines[:_FILE_HEAD_LINES])  # VERBATIM — headers/licenses/shebangs
+    out.extend(lines[:head_lines])  # VERBATIM — headers/licenses/shebangs
     outline = _code_outline(lines)
     if outline:
         out.append("outline: " + outline)
-    if n > _FILE_HEAD_LINES + _FILE_TAIL_LINES:
+    if n > head_lines + _FILE_TAIL_LINES:
         out.append("tail:")
         out.extend(lines[-_FILE_TAIL_LINES:])
     return "\n".join(out)

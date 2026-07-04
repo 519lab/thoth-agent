@@ -30,6 +30,7 @@ import pytest
 from agent.context_compressor import EVICTION_STUB_PREFIX
 from agent.context_engine_cooling import CoolingContextEngine
 from agent.context_engine_substrate import SubstrateContextEngine, _make_handle, _parse_handle
+from agent.model_metadata import estimate_messages_tokens_rough
 from thoth_state import _AsyncSessionDB
 from tests._helpers.sync_session_db import SyncSessionDB
 
@@ -320,6 +321,72 @@ class TestDistillationPass:
         assert r["consolidation_state"] == "consolidated"
         assert r["sentinel_state"] == "passed"  # born-passed, immediately recallable
         assert f'context_expand("{r["payload"]["handle"]}")' in r["payload"]["text"]
+
+
+# ---------------------------------------------------------------------------
+# Schema-inclusive relief check (round-4 forensic finding B, part 1)
+# ---------------------------------------------------------------------------
+
+class TestSchemaOverheadReliefCheck:
+    """Finding B(1): the loop triggers compress() on ``last_prompt_tokens`` from
+    real API usage — INCLUDING ~20-30k of tool-schema tokens — but the cooling
+    relief check compared a MESSAGES-ONLY estimate. That ~25k dead-band made a
+    distillation-only pass look "relieved" while the real prompt was still over
+    threshold, so the loop re-entered compress() every turn (churn). The fix
+    carries the schema+system overhead (schema-inclusive ``current_tokens`` minus
+    a messages-only estimate of the same input) into the pressure basis and into
+    ``last_prompt_tokens``.
+    """
+
+    def _seed_convo(self, db, session_id):
+        db.create_session(session_id, source="cli")
+        big = "AAA " + ("a" * 4000)
+        _seed_tool_row(db, session_id, "call_a", big)
+        engine = _make_engine()
+        engine.on_session_start(session_id, platform="cli")
+        return engine, _build_cooling_convo(big, n_turns_after=5)
+
+    def test_no_false_relief_when_schema_overhead_holds_pressure(self, db):
+        # Distillation gets the MESSAGES-only size well under threshold, but the
+        # schema-inclusive trigger token count is far over it — the pass must NOT
+        # report eviction-only relief; it must escalate to the backstop, and
+        # last_prompt_tokens must end schema-inclusive (>= threshold).
+        engine, msgs = self._seed_convo(db, "s_bover")
+        threshold = engine.threshold_tokens
+        schema_inclusive = threshold + 30_000  # ~real last_prompt_tokens w/ schemas
+
+        captured = {}
+
+        def _spy(self, messages, *, current_tokens=None, focus_topic=None,
+                 force=False, **kw):
+            # Backstop invoked ⇒ the relief check did NOT falsely relieve.
+            captured["current_tokens"] = current_tokens
+            captured["last_prompt_tokens"] = self._compressor.last_prompt_tokens
+            return messages  # don't run real Tier-2 — isolate the decision
+
+        with patch.object(SubstrateContextEngine, "compress", _spy):
+            engine.compress(list(msgs), current_tokens=schema_inclusive)
+
+        assert "current_tokens" in captured  # escalated to the backstop
+        assert captured["current_tokens"] >= threshold  # overhead carried in
+        assert captured["last_prompt_tokens"] >= threshold  # schema-inclusive
+        assert engine._last_compress_eviction_only is False
+
+    def test_genuine_relief_reports_relief_and_carries_overhead(self, db):
+        # Schema overhead present but the total stays under threshold → genuine
+        # relief: eviction-only True, and last_prompt_tokens = messages-only
+        # estimate of the distilled list PLUS the captured overhead.
+        engine, msgs = self._seed_convo(db, "s_brelief")
+        pre_msgs_est = estimate_messages_tokens_rough(msgs)
+        overhead = 800  # small schema+system overhead, keeps us under threshold
+        current_tokens = pre_msgs_est + overhead
+
+        out = engine.compress(list(msgs), current_tokens=current_tokens)
+
+        assert engine._last_compress_eviction_only is True
+        post_msgs_est = estimate_messages_tokens_rough(out)
+        assert engine.last_prompt_tokens == post_msgs_est + overhead
+        assert engine.last_prompt_tokens < engine.threshold_tokens
 
 
 # ---------------------------------------------------------------------------

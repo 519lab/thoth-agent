@@ -80,6 +80,7 @@ class SliceRepo:
         summary_of: Optional[list[dict]] = None,
         born_passed: bool = False,
         born_consolidated: bool = False,
+        salience: Optional[float] = None,
     ) -> tuple[UUID, datetime]:
         """Insert a fresh slice. Default ``sentinel_state='pending'``;
         set ``born_passed=True`` for self-emitted audit slices that
@@ -109,7 +110,12 @@ class SliceRepo:
           dicts directly — *never use ``::jsonb`` casts* (corrupts the
           prepared-statement type cache per Phase 0 ADR).
         * ``salience_score`` defaults to 1.0 on insert; Curator will
-          decay it later (Phase B+).
+          decay it later (Phase B+). ``salience`` (keyword, default
+          ``None`` → 1.0) overrides the birth salience — round-4 forensic
+          finding E: eviction pointer slices born at the 1.0 ceiling make
+          recall reinforcement arithmetically inert (``LEAST(1.0, s+bump)``
+          can never rise), so the context engine commits them at ~0.5 to
+          leave dereference headroom. Clamped to ``[0.0, 1.0]``.
         * ``trust_score`` is NULL while pending; Sentinel sets it on
           decision.
         * ``pending_committed_at`` is set to ``now()`` so the
@@ -161,6 +167,10 @@ class SliceRepo:
         consolidation_value = (
             "consolidated" if born_consolidated else "unconsolidated"
         )
+        # Birth salience: default 1.0 (unchanged for every existing caller),
+        # or the caller-supplied value clamped into [0.0, 1.0]. Bound as a
+        # query parameter — see finding E in the docstring.
+        salience_value = 1.0 if salience is None else max(0.0, min(1.0, float(salience)))
         row = await conn.fetchrow(
             f"""
             INSERT INTO substrate_slices
@@ -176,7 +186,7 @@ class SliceRepo:
                  LEAST(GREATEST($6, $5), now()),
                  $7, $8, $9,
                  '{state_value}', {pending_committed_clause}, '{consolidation_value}',
-                 1.0, $10, $11)
+                 $12, $10, $11)
             RETURNING slice_id, ingest_time_world
             """,
             slice_id,
@@ -190,6 +200,7 @@ class SliceRepo:
             payload_modality.value,
             metadata,
             summary_of,
+            salience_value,
         )
         # ``RETURNING`` always emits a row on a successful INSERT — assert
         # so a future schema change that drops the columns fails loudly
