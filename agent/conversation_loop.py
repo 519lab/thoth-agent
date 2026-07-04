@@ -3535,6 +3535,15 @@ def run_conversation(
                         _preflight_work = False
 
                 if agent.compression_enabled and (_compressor.should_compress(_real_tokens) or _preflight_work):
+                    # Restorable-eviction engines resolve handles against
+                    # session-store rows; flush pending messages first so
+                    # current-turn tool results are durable candidates
+                    # (cursor-idempotent, #860 — no-op when up to date).
+                    if getattr(_compressor, "needs_durable_messages", False):
+                        try:
+                            agent._flush_messages_to_session_db(messages, conversation_history)
+                        except Exception:
+                            logger.debug("pre-compress flush failed", exc_info=True)
                     agent._safe_print("  ⟳ compacting context…")
                     messages, active_system_prompt = agent._compress_context(
                         messages, system_message,

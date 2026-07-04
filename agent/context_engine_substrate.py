@@ -188,6 +188,15 @@ class SubstrateContextEngine(ContextEngine):
     slices arrive in Phase 2b/2c (see module docstring and plan §2.2).
     """
 
+    #: Restorable eviction resolves handles against session-store rows, but
+    #: the loop's flush cadence is per-turn — a mid-turn compress would see
+    #: every current-turn tool result as unpersisted and skip it (observed
+    #: 2026-07-04: a turn-1 backstop found ZERO durable candidates and fell
+    #: straight to Tier-2). The loop reads this flag and flushes pending
+    #: messages before calling compress() so candidates are durable exactly
+    #: when the engine needs them. Flush is cursor-idempotent (#860).
+    needs_durable_messages = True
+
     def __init__(
         self,
         *args: Any,
