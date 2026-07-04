@@ -216,6 +216,16 @@ def attach_db(pg_dsn: str) -> bool:
         )
     os.environ["THOTH_PG_DSN"] = pg_dsn
     _db_attached_dsn = pg_dsn
+
+    # Substrate.boot expects the pool to already be initialised on the loop
+    # (the CLI/gateway `await thoth_db.init(...)` before bootstrapping — a
+    # boot without it fails with "pool() accessed before init()", observed
+    # 2026-07-03: the first DB-backed A/B silently graded with the substrate
+    # OFF because of exactly this).
+    import thoth_db
+
+    thoth_db.run_sync(thoth_db.init(pg_dsn))
+
     from thoth_bootstrap import bootstrap_substrate_sync
 
     substrate = bootstrap_substrate_sync(mode="writer")
@@ -242,6 +252,19 @@ def _build_agent(
     """Construct an AIAgent for the eval (lazy import keeps ``tasks`` light)."""
     from run_agent import AIAgent  # heavy import — deferred to call time
 
+    # DB-backed grading (attach_db): the session store must persist messages
+    # (eviction handles resolve against session-store rows — without this the
+    # substrate engine's Tier-1 finds zero durable candidates and silently
+    # degrades to Tier-2, observed 2026-07-03) and the memory manager must run
+    # (proactive recall injection). The session store is caller-provided by
+    # design ("provided by CLI or gateway"), so the grading runner provides
+    # one too. Both engines get the same setting per arm — fair comparison.
+    session_db = None
+    if with_db:
+        from thoth_state import SessionDB
+
+        session_db = SessionDB()
+
     agent = AIAgent(
         base_url=base_url,
         api_key=api_key,
@@ -252,11 +275,8 @@ def _build_agent(
         quiet_mode=quiet,
         verbose_logging=not quiet,
         skip_context_files=True,  # don't inject SOUL.md/AGENTS.md
-        # DB-backed grading (attach_db): the session store must persist
-        # messages (eviction handles resolve against it) and the memory
-        # manager must run (proactive recall injection). Both engines get
-        # the same setting per arm so the comparison stays fair.
         skip_memory=not with_db,
+        session_db=session_db,
     )
     # Force compression to actually fire at eval fixture sizes: the real model
     # window (e.g. 200k) would need enormous fixtures. Shrinking ``threshold_
