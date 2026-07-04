@@ -392,7 +392,7 @@ class CoolingContextEngine(SubstrateContextEngine):
                 or tool_names.get(cid)
                 or "tool"
             )
-            gist = self._compute_gist(orig)
+            gist = self._compute_gist(orig, tool_name)
             stub = self._make_stub(handle, tool_name, orig, gist)
             delta = max(
                 0,
@@ -411,8 +411,16 @@ class CoolingContextEngine(SubstrateContextEngine):
                     # Distinguishes cooling-distilled pointers from the parent's
                     # threshold-triggered ones in the slice payload (Round 2).
                     "trigger": "cooling",
+                    # Transient — consumed + stripped by _apply_tier_b_gists.
+                    "_idx": idx,
+                    "_orig": orig,
                 }
             )
+
+        # Tier B: one batched MAIN-model call upgrades large distilled items'
+        # gists (inherited from the parent). Best-effort — Tier-A gists stand on
+        # any failure.
+        self._apply_tier_b_gists(result, records)
 
         self._pending_eviction_records = records
         return result, reclaimed, n_distilled, n_skipped_unpersisted

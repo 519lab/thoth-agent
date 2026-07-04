@@ -136,6 +136,91 @@ _EXPANDED_HANDLES_CAP = 200
 # import of this module into a hard dependency.
 _CONTEXT_EVICTED_STREAM = "thoth.self_state.context_evicted"
 
+# ---------------------------------------------------------------------------
+# Round-3 informative-gist tunables. The Round-2 gist was the first ~120 chars
+# of the evicted body — a builder shortcut the project owner rejected, and the
+# graded suite proved the harm: c2_license_header (every created file must open
+# with a license header) failed 2/3 under the cooling engine because the model
+# imitates the early file reads it can still see, and a prefix gist threw the
+# header away. Round 3 replaces the gist with a compressed summary of the FULL
+# input: Tier A is free content-aware structural extraction (agent.gist_extract);
+# Tier B upgrades large/prose items with ONE batched MAIN-model call per pass.
+# ---------------------------------------------------------------------------
+
+# Tier B only fires for items at least this large — small results are already
+# well-served by the deterministic structural gist; a model call buys nothing.
+_DEFAULT_GIST_AUX_MIN_CHARS = 4_000
+
+# Per-item input cap fed to the batched call. Bounds the prompt so one pass over
+# several fat tool results stays a single, fast prefill on the local main rig.
+_DEFAULT_GIST_AUX_ITEM_CAP = 6_000
+
+# Modest output ceiling — a gist is a few sentences per item, not an essay.
+_DEFAULT_GIST_AUX_MAX_TOKENS = 512
+
+# Timeout for the one batched gist call. Kept tight: on the target install the
+# main model is a fast LOCAL server (sub-second prefill for small prompts), so a
+# gist call that stalls has fallen off the happy path — cut it and use Tier A.
+_DEFAULT_GIST_LLM_TIMEOUT = 20.0
+
+# The batched Tier-B prompt. ONE call summarises every large evicted item in the
+# pass (numbered sections), which is why the economics work: the local main rig
+# prefills a modest prompt in well under a second, versus N slow round-trips to a
+# cloud aux chain. The instruction mirrors the c2 lesson — keep headers, paths,
+# ids, errors, exit codes — so the surviving gist preserves what the model needs
+# to keep performing after the body is gone.
+_GIST_BATCH_PROMPT = (
+    "You are compressing tool outputs into dense, factual gists for an AI "
+    "agent's working memory. Each numbered section below is one tool result "
+    "that is being removed from the agent's live context; the full text stays "
+    "retrievable, but the agent will normally see only your gist.\n\n"
+    "For EACH section, write a compact gist (<= {budget} characters) that "
+    "preserves what the agent needs to keep working WITHOUT re-reading the "
+    "original: key facts and outcomes, exact file paths, identifiers, error "
+    "messages, exit codes, and — for file contents — any license header, "
+    "shebang, or the names it defines. Be concrete; do not editorialize. NEVER "
+    "include API keys, tokens, passwords, or secrets — write [REDACTED].\n\n"
+    "Output EXACTLY one entry per section, each starting on its own line with "
+    "the section number in brackets, like:\n"
+    "[1] <gist for section 1>\n"
+    "[2] <gist for section 2>\n\n"
+    "There are {n} sections. Produce {n} numbered entries and nothing else.\n"
+)
+
+
+def _gist_budget() -> int:
+    """The active gist char budget (shared by Tier A + Tier B)."""
+    from agent.gist_extract import default_budget_chars
+    return default_budget_chars()
+
+
+def _parse_numbered_summaries(text: str, n_expected: int) -> Dict[int, str]:
+    """Parse ``[N] <gist>`` (or ``N.`` / ``N)``) numbered sections back out.
+
+    Tolerant of both one-line and multi-line-per-section output: text between a
+    marker and the next marker (or EOF) is that section's gist. Out-of-range or
+    empty sections are dropped so a malformed/partial reply degrades to a
+    per-item Tier-A fallback rather than a wrong gist. Returns ``{section_no:
+    gist}`` (1-indexed).
+    """
+    if not isinstance(text, str) or not text.strip():
+        return {}
+    markers = list(re.finditer(r"(?m)^\s*\[(\d+)\]\s*", text))
+    if not markers:
+        markers = list(re.finditer(r"(?m)^\s*(\d+)[.)]\s+", text))
+    out: Dict[int, str] = {}
+    for i, m in enumerate(markers):
+        try:
+            num = int(m.group(1))
+        except ValueError:  # pragma: no cover
+            continue
+        start = m.end()
+        end = markers[i + 1].start() if i + 1 < len(markers) else len(text)
+        chunk = text[start:end].strip()
+        if 1 <= num <= n_expected and chunk and num not in out:
+            out[num] = chunk
+    return out
+
 
 def _env_int(name: str, default: int) -> int:
     """Read a positive int from the environment, falling back on any garbage."""
@@ -611,9 +696,12 @@ class SubstrateContextEngine(ContextEngine):
                 or tool_names.get(cid)
                 or "tool"
             )
-            gist = self._compute_gist(orig)
+            gist = self._compute_gist(orig, tool_name)
             stub = self._make_stub(handle, tool_name, orig, gist)
             # Reclaimed tokens = original body minus the stub we leave behind.
+            # (A later Tier-B gist may grow the stub by at most a few hundred
+            # chars, so this can very slightly over-report — negligible against
+            # the multi-KB bodies and the ~20k clear_at_least floor.)
             delta = max(
                 0,
                 _content_length_for_budget(orig) // _CHARS_PER_TOKEN
@@ -629,8 +717,16 @@ class SubstrateContextEngine(ContextEngine):
                     "tool_name": tool_name,
                     "gist": gist,
                     "orig_len": len(orig),
+                    # Transient — consumed + stripped by _apply_tier_b_gists.
+                    "_idx": idx,
+                    "_orig": orig,
                 }
             )
+
+        # Tier B: one batched MAIN-model call upgrades the large items' gists in
+        # place (stub + record) before we stage them. Best-effort — a failure
+        # leaves the Tier-A structural gists untouched.
+        self._apply_tier_b_gists(result, evicted_records)
 
         # Hand the collected pointer records to compress() to flush after the
         # Tier-2 escalation decision (which sets ``survived_in_context``). The
@@ -663,31 +759,184 @@ class SubstrateContextEngine(ContextEngine):
                     out[cid] = name
         return out
 
-    @staticmethod
-    def _compute_gist(original: str) -> str:
-        """Redacted, single-line, ~120-char gist of a tool result.
+    def _compute_gist(self, original: str, tool_name: Optional[str] = None) -> str:
+        """Content-aware structural gist of a tool result (Round-3 Tier A).
 
-        Factored out of :meth:`_make_stub` so the in-context stub and the
-        substrate eviction-pointer slice share ONE gist — they must describe
-        the evicted content identically. Redacted (no secrets leak into either
-        the persisted stub or the substrate row) and whitespace-flattened.
+        Factored out so the in-context stub and the substrate eviction-pointer
+        slice share ONE gist — they must describe the evicted content
+        identically. Replaces the Round-2 first-120-chars shortcut (which lost
+        the c2 license-header pattern) with :func:`agent.gist_extract.structural_gist`:
+        a redacted, deterministic, shape-aware summary that keeps file headers,
+        outlines, exit codes, search paths, and JSON envelope fields — what the
+        model needs to keep performing after the body is evicted. Free (no LLM,
+        no DB); Tier B may later upgrade large items via one batched model call.
         """
-        gist = redact_sensitive_text((original or "")[:400])
-        gist = re.sub(r"\s+", " ", gist).strip()[:120]
-        return gist or "(empty)"
+        from agent.gist_extract import structural_gist
+
+        return structural_gist(original or "", tool_name, _gist_budget())
+
+    # ------------------------------------------------------------------
+    # Tier B — batched MAIN-model gist upgrade (Round 3). Large/prose items get
+    # a real summary from the MAIN model (a fast LOCAL server on the target
+    # install; the aux chain there is a slow cloud call, so we deliberately do
+    # NOT use it). ONE batched call per pass; any failure falls back to the
+    # Tier-A structural gist already computed — never raises, never fails a pass.
+    # ------------------------------------------------------------------
+
+    def _main_runtime(self) -> Dict[str, Any]:
+        """The main-model runtime the inner compressor was built with.
+
+        agent_init constructs the organ with the agent's own model/provider/
+        base_url/api_key/api_mode (see agent_init's engine branch), so these
+        fields ARE the main runtime. Passed to ``call_llm`` so the auto→main
+        Step-1 path resolves the main model directly (plan Round 3)."""
+        c = self._compressor
+        return {
+            "model": c.model,
+            "provider": c.provider,
+            "base_url": c.base_url,
+            "api_key": c.api_key,
+            "api_mode": c.api_mode,
+        }
+
+    def _apply_tier_b_gists(
+        self, result: List[Dict[str, Any]], records: List[Dict[str, Any]]
+    ) -> None:
+        """Upgrade large-item gists in-place via one batched MAIN-model call.
+
+        ``records`` carry transient ``_idx`` (position in ``result``) and
+        ``_orig`` (the evicted body) fields staged by the eviction loop. For
+        every item at/above ``CONTEXT_GIST_AUX_MIN_CHARS`` we ask the MAIN model
+        (one batched call) for a task-relevant gist and, on success, rewrite
+        both the record's ``gist`` and the in-context stub. Anything that goes
+        wrong — kill-switch, no eligible items, no client, timeout, malformed
+        reply — leaves the Tier-A structural gist untouched (the whole point:
+        richer when we can, correct always). The transient fields are always
+        stripped so they never reach the substrate slice payload.
+        """
+        if not records:
+            return
+        try:
+            if os.environ.get("CONTEXT_GIST_LLM", "1") == "0":
+                return  # operator kill-switch: structural gists only
+            rt = self._main_runtime()
+            if not (rt.get("model") and (rt.get("provider") or rt.get("base_url"))):
+                # No resolvable main endpoint (no provider AND no base_url) —
+                # there is no main model to batch-call, so structural gists
+                # stand. Also keeps unit tests (bare model, no endpoint) offline.
+                return
+            min_chars = _env_int(
+                "CONTEXT_GIST_AUX_MIN_CHARS", _DEFAULT_GIST_AUX_MIN_CHARS
+            )
+            eligible = [
+                r for r in records if len(r.get("_orig") or "") >= min_chars
+            ]
+            if not eligible:
+                return
+            summaries = self._batched_main_gists(eligible)
+            if not summaries:
+                return  # call failed / empty → Tier-A gists stand
+            budget = _gist_budget()
+            for i, rec in enumerate(eligible, start=1):
+                raw = summaries.get(i)
+                if not raw:
+                    continue  # this section missing/malformed → keep Tier A
+                g = redact_sensitive_text(raw).strip()[:budget]
+                if not g:
+                    continue
+                rec["gist"] = g
+                idx = rec.get("_idx")
+                if idx is not None and 0 <= idx < len(result):
+                    result[idx] = {
+                        **result[idx],
+                        "content": self._make_stub(
+                            rec["handle"], rec["tool_name"], rec.get("_orig") or "", g
+                        ),
+                    }
+        except Exception as exc:  # a gist upgrade must never break eviction
+            logger.debug("Tier-B gist upgrade failed, keeping structural gists: %s", exc)
+        finally:
+            for r in records:
+                r.pop("_idx", None)
+                r.pop("_orig", None)
+
+    def _batched_main_gists(
+        self, eligible: List[Dict[str, Any]]
+    ) -> Dict[int, str]:
+        """ONE batched MAIN-model call → ``{section_no: gist}`` (1-indexed).
+
+        Builds numbered, redacted, per-item-capped sections and forces the MAIN
+        model via ``provider="auto"`` + ``main_runtime`` (the auto Step-1 path
+        picks the main model, bypassing any aux-task config — on the target rig
+        the aux chain is a slow cloud call we must avoid). Returns ``{}`` on any
+        failure so the caller falls back to Tier A. Duration logged at debug.
+        """
+        import time
+
+        from agent.auxiliary_client import call_llm
+
+        item_cap = _env_int(
+            "CONTEXT_GIST_AUX_ITEM_CAP", _DEFAULT_GIST_AUX_ITEM_CAP
+        )
+        max_tokens = _env_int(
+            "CONTEXT_GIST_AUX_MAX_TOKENS", _DEFAULT_GIST_AUX_MAX_TOKENS
+        )
+        timeout = _env_float("CONTEXT_GIST_LLM_TIMEOUT", _DEFAULT_GIST_LLM_TIMEOUT)
+        budget = _gist_budget()
+
+        sections: List[str] = []
+        for i, rec in enumerate(eligible, start=1):
+            body = redact_sensitive_text((rec.get("_orig") or "")[:item_cap])
+            sections.append(
+                f"--- SECTION {i} (tool: {rec.get('tool_name', 'tool')}, "
+                f"{rec.get('orig_len', 0)} chars) ---\n{body}"
+            )
+        prompt = (
+            _GIST_BATCH_PROMPT.format(n=len(eligible), budget=budget)
+            + "\n"
+            + "\n\n".join(sections)
+        )
+
+        t0 = time.monotonic()
+        try:
+            resp = call_llm(
+                provider="auto",
+                main_runtime=self._main_runtime(),
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+                timeout=timeout,
+            )
+        except Exception as exc:  # no client / timeout / provider error → Tier A
+            logger.debug("Tier-B batched gist call failed: %s", exc)
+            return {}
+        logger.debug(
+            "Tier-B gist call: %d items in %.2fs", len(eligible), time.monotonic() - t0
+        )
+        try:
+            content = resp.choices[0].message.content
+            if not isinstance(content, str):
+                content = str(content) if content else ""
+        except Exception:  # malformed response object → Tier A
+            return {}
+        return _parse_numbered_summaries(content, len(eligible))
 
     def _make_stub(self, handle: str, tool_name: str, original: str, gist: str) -> str:
-        """Build the one-line, actionable eviction stub (plan §2.2).
+        """Build the actionable eviction stub (plan §2.2).
 
         Format (as shipped)::
 
             [evicted tool result §sid:<sid>#m:<mid> — <tool> (<n> chars).
-             Gist: <first ~120 chars sanitised>. Retrieve exact:
+             Gist: <informative gist>. Retrieve exact:
              context_expand("sid:<sid>#m:<mid>")]
 
-        Actionable by design: the exact ``context_expand`` call is IN the stub,
-        because untrained models under-use passive placeholders (plan §2.2/§6).
-        ``gist`` is the shared redacted one-liner from :meth:`_compute_gist`.
+        The prefix/handle/``context_expand`` grammar is fixed (context_expand
+        round-trip + stub-detection depend on it); only the ``Gist:`` section
+        changed in Round 3. Actionable by design: the exact ``context_expand``
+        call is IN the stub, because untrained models under-use passive
+        placeholders (plan §2.2/§6). ``gist`` is the shared Round-3 informative
+        gist from :meth:`_compute_gist` (content-aware structural extraction,
+        optionally upgraded by the Tier-B batched main-model call) — it may span
+        multiple lines, which is fine: stub detection only checks the prefix.
         """
         return (
             f"{EVICTION_STUB_PREFIX}{handle} — {tool_name} "

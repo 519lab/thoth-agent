@@ -215,6 +215,41 @@ class TestTier1EvictionOnly:
         assert f"{len(bigs[0]):,} chars" in stub
         assert "context_expand(" in stub
 
+    def test_stub_carries_structural_gist_not_body_prefix(self, db):
+        # Round-3: the stub gist is the content-aware STRUCTURAL summary, not a
+        # raw 120-char body prefix. The structural gist annotates counts and a
+        # head section — the marker "head:" never appeared in the old prefix.
+        engine, msgs, out, _, _, _ = self._run(db)
+        stub = out[3]["content"]
+        assert "head:" in stub
+        assert "chars" in stub
+
+    def test_stub_gist_preserves_file_header_lines(self, db):
+        # The c2 license-header fix, end to end: an evicted *file read* keeps its
+        # first lines (the license header) VERBATIM in the stub gist, so the
+        # model can still imitate the header pattern after the body is evicted.
+        db.create_session("s_hdr", source="cli")
+        header = (
+            "# Copyright 2026 Example Corp.\n"
+            "# SPDX-License-Identifier: Apache-2.0\n"
+            '"""Module docstring."""\n'
+        )
+        big = header + "\n".join(f"def fn{i}():\n    return {i}" for i in range(200))
+        other = "BBB " + ("b" * 4000)
+        _seed_tool_row(db, "s_hdr", "call_a", big, tool="read_file")
+        _seed_tool_row(db, "s_hdr", "call_b", other)
+        engine = _make_engine()
+        engine.on_session_start("s_hdr", platform="cli")
+        msgs = _build_conversation(big, other)
+        # Mark call_a as a file read so the gist takes the file shape.
+        msgs[2]["tool_calls"][0]["function"]["name"] = "read_file"
+        msgs[3]["tool_name"] = "read_file"
+        out = engine.compress(msgs)
+        stub = out[3]["content"]
+        assert stub.startswith(EVICTION_STUB_PREFIX)
+        assert "# Copyright 2026 Example Corp." in stub
+        assert "# SPDX-License-Identifier: Apache-2.0" in stub
+
     def test_tier0_leaves_bodies_for_restorable_tier1(self, db):
         # With a small protect_last_n the organ's Tier-0 pass would normally
         # summarise old tool results into lossy 1-line strings (no handle). The
