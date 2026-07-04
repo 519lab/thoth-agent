@@ -344,6 +344,12 @@ class TestAttachDb:
         import eval.context_suite.runner as runner_mod
 
         monkeypatch.setattr(runner_mod, "_db_attached_dsn", None)
+        # attach_db now really initialises the pool (the 2026-07-03 wiring
+        # fix) — stub the bridge so unit tests with fake DSNs never open a
+        # connection. The real init path is covered by the DB-backed smoke.
+        import thoth_db
+
+        monkeypatch.setattr(thoth_db, "run_sync", lambda coro: coro.close())
         return runner_mod
 
     def test_refuses_live_port(self, monkeypatch):
