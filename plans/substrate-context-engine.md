@@ -20,6 +20,17 @@
 > mechanism's whole point); backstop firings < 0.2/task; memory probes and
 > constraint survival >= baseline; zero harness/degradation errors. Loses
 > any → compressor stays.
+>
+> **Round 2 outcome (2026-07-04): LOST — 3 of 6 criteria.** 27/30 pass
+> (e1 watchdog timeout + c2 x2), backstop 0.60/task vs <0.2, constraint
+> 4/6. BUT: the token criterion PASSED for the first time — 442.8k/task
+> (−11.2%) at tied mean outcome, with Tier-2 summarizations cut 62%.
+> Compressor stays default; cooling branch unmerged. Full data:
+> eval/results/2026-07-04-cooling-arm/VERDICT.md (suite branch).
+> Standing after two rounds: compressor 29/30 @ 498.6k · substrate
+> 27/30 @ 483.1k · cooling 27/30 @ 442.8k — proactive management keeps
+> its cost promise and pays for it in quality; round 3 needs a quality
+> idea (gist fidelity, window tuning), not more knobs.
 
 > **Outcome (2026-07-03, same day):** all phases executed. Phase 0a fixes
 > (#284–#289) and Phase 0b telemetry shipped; the graded suite + DB-backed
