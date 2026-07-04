@@ -37,6 +37,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
+from agent import context_telemetry
 from agent.model_metadata import estimate_request_tokens_rough
 from agent.session_db_bridge import resolve_maybe_awaitable
 
@@ -384,6 +385,7 @@ def compress_context(
         except Exception:
             pass
 
+    _compress_trigger = "manual" if force else ("focus" if focus_topic else "threshold")
     try:
         compressed = agent.context_compressor.compress(messages, current_tokens=approx_tokens, focus_topic=focus_topic, force=force)
     except TypeError:
@@ -409,10 +411,12 @@ def compress_context(
         if not _existing_sp:
             _existing_sp = agent._build_system_prompt(system_message)
         # Aborted pass: no content removed, so before == after (tokens_saved 0 —
-        # never negative). Consistent-basis sampling per finding B(2).
+        # never negative). Consistent-basis sampling per finding B(2). Single
+        # emission point — the merge of the telemetry branch and the round-4
+        # sampling fix is resolved in favor of the corrected wrapper.
         _emit_compression_telemetry(
             agent,
-            trigger="auto" if not force else "manual",
+            trigger=_compress_trigger,
             messages_before=_pre_msg_count,
             messages_after=len(messages),
             tokens_before=_tel_tokens_before,
@@ -629,16 +633,20 @@ def compress_context(
     # estimate_request_tokens_rough (schema-inclusive) — before was sampled at
     # entry, after is _compressed_est just computed above — so tokens_saved is a
     # single-basis measurement and cannot be negative for a genuine pass.
+    # Trigger taxonomy and the engine's fallback flag come from the telemetry
+    # branch; the sampling basis comes from the round-4 fix.
     _emit_compression_telemetry(
         agent,
-        trigger="auto" if not force else "manual",
+        trigger=_compress_trigger,
         messages_before=_pre_msg_count,
         messages_after=len(compressed),
         tokens_before=_tel_tokens_before,
         tokens_after=_compressed_est,
         duration_s=time.monotonic() - _tel_started,
         aborted=False,
-        summary_fallback=bool(summary_error),
+        summary_fallback=bool(
+            getattr(agent.context_compressor, "_last_summary_fallback_used", False)
+        ),
         old_session_id=locals().get("old_session_id"),
         new_session_id=agent.session_id,
     )

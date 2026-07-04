@@ -609,6 +609,12 @@ def run_conversation(
     from datetime import datetime as _dt, timezone as _tz
     _turn_started_at = _dt.now(_tz.utc)
 
+    # Snapshot session token accumulators so the post-turn context.turn
+    # telemetry row can report per-turn deltas (Phase 0b,
+    # plans/substrate-context-engine.md §4).
+    from agent import context_telemetry as _ctx_telemetry
+    _turn_counter_snapshot = _ctx_telemetry.snapshot_turn_counters(agent)
+
     # Per-turn skill-load tracking (innovation #2). The counter-bump helpers
     # (bump_use/bump_view) record loaded skills into a thread-local set on this
     # turn's execution thread; we reset it here and drain it in the post-turn
@@ -4073,6 +4079,20 @@ def run_conversation(
         )
     else:
         logger.info(_diag_msg, *_diag_args)
+
+    # Persist the same turn summary (plus per-turn token deltas) as a
+    # context.turn telemetry row — queryable counterpart of the diag log
+    # above (Phase 0b, plans/substrate-context-engine.md §4). Best-effort.
+    _ctx_telemetry.emit_turn_event(
+        agent,
+        snapshot=_turn_counter_snapshot,
+        exit_reason=_turn_exit_reason,
+        api_calls=api_call_count,
+        messages=messages,
+        interrupted=interrupted,
+        response_len=_resp_len,
+        started_at=_turn_started_at,
+    )
 
     # File-mutation verifier footer.
     # If one or more ``write_file`` / ``patch`` calls failed during this
