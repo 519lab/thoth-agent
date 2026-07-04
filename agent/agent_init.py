@@ -1437,7 +1437,7 @@ def init_agent(
     # plan), not a plugin — resolve it here BEFORE the plugin lookup so it is
     # never routed through plugins/context_engine/ and never trips the
     # "engine not found" fallback warning.
-    if _engine_name == "substrate":
+    if _engine_name in ("substrate", "cooling"):
         _builtin_substrate = True
     elif _engine_name != "compressor":
         # Try loading from plugins/context_engine/<name>/
@@ -1469,8 +1469,18 @@ def init_agent(
         # ContextCompressor with the SAME constructor params as the default
         # branch below, so Phase-2a behaviour is byte-identical to today's
         # engine — it just additionally exposes context_expand/context_grep.
-        from agent.context_engine_substrate import SubstrateContextEngine
-        agent.context_compressor = SubstrateContextEngine(
+        # The "cooling" engine (Round 2) is the age-triggered proactive subclass
+        # of SubstrateContextEngine; same constructor contract, so it drops into
+        # this branch unchanged.
+        if _engine_name == "cooling":
+            from agent.context_engine_cooling import (
+                CoolingContextEngine as _BuiltinEngineCls,
+            )
+        else:
+            from agent.context_engine_substrate import (
+                SubstrateContextEngine as _BuiltinEngineCls,
+            )
+        agent.context_compressor = _BuiltinEngineCls(
             model=agent.model,
             threshold_percent=compression_threshold,
             protect_first_n=compression_protect_first,
@@ -1486,7 +1496,7 @@ def init_agent(
             abort_on_summary_failure=compression_abort_on_summary_failure,
         )
         if not agent.quiet_mode:
-            _ra().logger.info("Using context engine: substrate")
+            _ra().logger.info("Using context engine: %s", _engine_name)
     elif _selected_engine is not None:
         agent.context_compressor = _selected_engine
         # Resolve context_length for plugin engines — mirrors switch_model() path
