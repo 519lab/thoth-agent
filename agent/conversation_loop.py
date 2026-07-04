@@ -35,6 +35,7 @@ from agent.display import KawaiiSpinner
 from agent.error_classifier import FailoverReason, classify_api_error
 from agent.iteration_budget import IterationBudget
 from agent.memory_manager import build_memory_context_block
+from agent.working_set import build_working_set_block
 from agent.message_sanitization import (
     _repair_tool_call_arguments,
     _sanitize_messages_non_ascii,
@@ -830,6 +831,15 @@ def run_conversation(
                     _fenced = build_memory_context_block(_ext_prefetch_cache)
                     if _fenced:
                         _injections.append(_fenced)
+                # Working-set recitation: re-state the standing task + plan into
+                # the recency window every turn so it can't decay with distance
+                # (see agent/working_set.py).  Placed AFTER the memory block on
+                # purpose — recency is strongest attention, and this is the same
+                # API-call-time-only copy path, so nothing is persisted to
+                # history and the cached system prefix stays byte-stable.
+                _ws_block = build_working_set_block(agent, messages)
+                if _ws_block:
+                    _injections.append(_ws_block)
                 if _plugin_user_context:
                     _injections.append(_plugin_user_context)
                 if _injections:

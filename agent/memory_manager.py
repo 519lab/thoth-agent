@@ -40,13 +40,26 @@ logger = logging.getLogger(__name__)
 # Context fencing helpers
 # ---------------------------------------------------------------------------
 
-_FENCE_TAG_RE = re.compile(r'</?\s*memory-context\s*>', re.IGNORECASE)
+# Internal fence tag names.  The working-set fence (agent/working_set.py)
+# rides the same API-call-time user-message injection path as memory-context,
+# so any of these blocks a model might echo back must be scrubbed the same way.
+_FENCE_NAMES = ("memory-context", "working-set")
+
+_FENCE_TAG_RE = re.compile(
+    r'</?\s*(?:' + '|'.join(_FENCE_NAMES) + r')\s*>', re.IGNORECASE
+)
 _INTERNAL_CONTEXT_RE = re.compile(
-    r'<\s*memory-context\s*>[\s\S]*?</\s*memory-context\s*>',
+    r'<\s*(?P<tag>' + '|'.join(_FENCE_NAMES) + r')\s*>[\s\S]*?</\s*(?P=tag)\s*>',
     re.IGNORECASE,
 )
 _INTERNAL_NOTE_RE = re.compile(
     r'\[System note:\s*The following is recalled memory context,\s*NOT new user input\.\s*Treat as (?:informational background data|authoritative reference data[^\]]*)\.\]\s*',
+    re.IGNORECASE,
+)
+# The working-set block carries its own system-note line; strip a bare copy too
+# (the block regex above already removes it when the fence pair is intact).
+_WORKING_SET_NOTE_RE = re.compile(
+    r'\[System note:\s*standing task context[^\]]*\]\s*',
     re.IGNORECASE,
 )
 
@@ -55,6 +68,7 @@ def sanitize_context(text: str) -> str:
     """Strip fence tags, injected context blocks, and system notes from provider output."""
     text = _INTERNAL_CONTEXT_RE.sub('', text)
     text = _INTERNAL_NOTE_RE.sub('', text)
+    text = _WORKING_SET_NOTE_RE.sub('', text)
     text = _FENCE_TAG_RE.sub('', text)
     return text
 
@@ -85,16 +99,25 @@ class StreamingContextScrubber:
     ``reset()``.
     """
 
-    _OPEN_TAG = "<memory-context>"
-    _CLOSE_TAG = "</memory-context>"
+    # Every internal fence that rides the per-turn user-message injection path
+    # (memory-context + working-set) is scrubbed here.  Extend _FENCE_NAMES to
+    # cover a new fence — the state machine handles all of them uniformly.
+    _OPEN_TAGS = tuple(f"<{name}>" for name in _FENCE_NAMES)
+    _CLOSE_TAGS = tuple(f"</{name}>" for name in _FENCE_NAMES)
+    # Back-compat alias (memory-context is the first/primary fence).
+    _OPEN_TAG = _OPEN_TAGS[0]
+    _CLOSE_TAG = _CLOSE_TAGS[0]
 
     def __init__(self) -> None:
-        self._in_span: bool = False
+        # When inside a span, holds the exact close tag we're waiting for
+        # (each open tag must be closed by its own matching close tag); None
+        # when outside any span.
+        self._active_close: Optional[str] = None
         self._buf: str = ""
         self._at_block_boundary: bool = True
 
     def reset(self) -> None:
-        self._in_span = False
+        self._active_close = None
         self._buf = ""
         self._at_block_boundary = True
 
@@ -112,23 +135,25 @@ class StreamingContextScrubber:
         out: list[str] = []
 
         while buf:
-            if self._in_span:
-                idx = buf.lower().find(self._CLOSE_TAG)
+            if self._active_close is not None:
+                close_tag = self._active_close
+                idx = buf.lower().find(close_tag)
                 if idx == -1:
                     # Hold back a potential partial close tag; drop the rest
-                    held = self._max_partial_suffix(buf, self._CLOSE_TAG)
+                    held = self._max_partial_suffix(buf, close_tag)
                     self._buf = buf[-held:] if held else ""
                     return "".join(out)
                 # Found close — skip span content + tag, continue
-                buf = buf[idx + len(self._CLOSE_TAG):]
-                self._in_span = False
+                buf = buf[idx + len(close_tag):]
+                self._active_close = None
             else:
-                idx = self._find_boundary_open_tag(buf)
-                if idx == -1:
+                found = self._find_boundary_open_tag(buf)
+                if found is None:
                     # No open tag — hold back a potential partial open tag
+                    # (of any fence type)
                     held = (
                         self._max_pending_open_suffix(buf)
-                        or self._max_partial_suffix(buf, self._OPEN_TAG)
+                        or self._max_partial_open_suffix(buf)
                     )
                     if held:
                         self._append_visible(out, buf[:-held])
@@ -136,11 +161,12 @@ class StreamingContextScrubber:
                     else:
                         self._append_visible(out, buf)
                     return "".join(out)
-                # Emit text before the tag, enter span
+                # Emit text before the tag, enter span (waiting for its close)
+                idx, open_tag, close_tag = found
                 if idx > 0:
                     self._append_visible(out, buf[:idx])
-                buf = buf[idx + len(self._OPEN_TAG):]
-                self._in_span = True
+                buf = buf[idx + len(open_tag):]
+                self._active_close = close_tag
 
         return "".join(out)
 
@@ -152,9 +178,9 @@ class StreamingContextScrubber:
         truncated answer).  Otherwise the held-back partial-tag tail is
         emitted verbatim (it turned out not to be a real tag).
         """
-        if self._in_span:
+        if self._active_close is not None:
             self._buf = ""
-            self._in_span = False
+            self._active_close = None
             return ""
         tail = self._buf
         self._buf = ""
@@ -174,29 +200,48 @@ class StreamingContextScrubber:
                 return i
         return 0
 
-    def _find_boundary_open_tag(self, buf: str) -> int:
-        """Find an opening fence only when it starts a block-like span."""
+    def _find_boundary_open_tag(self, buf: str):
+        """Find the earliest block-like opening fence of ANY fence type.
+
+        Returns ``(idx, open_tag, close_tag)`` for the earliest valid opener, or
+        None.  Scanning all fence types keeps the machine correct when both a
+        memory-context and a working-set block appear in the same stream.
+        """
         buf_lower = buf.lower()
-        search_start = 0
-        while True:
-            idx = buf_lower.find(self._OPEN_TAG, search_start)
-            if idx == -1:
-                return -1
-            if self._is_block_boundary(buf, idx) and self._has_block_opener_suffix(buf, idx):
-                return idx
-            search_start = idx + 1
+        best = None  # (idx, open_tag, close_tag)
+        for open_tag, close_tag in zip(self._OPEN_TAGS, self._CLOSE_TAGS):
+            search_start = 0
+            while True:
+                idx = buf_lower.find(open_tag, search_start)
+                if idx == -1:
+                    break
+                if self._is_block_boundary(buf, idx) and self._has_block_opener_suffix(buf, idx, open_tag):
+                    if best is None or idx < best[0]:
+                        best = (idx, open_tag, close_tag)
+                    break
+                search_start = idx + 1
+        return best
 
     def _max_pending_open_suffix(self, buf: str) -> int:
-        """Hold a complete boundary tag until the following char confirms it."""
-        if not buf.lower().endswith(self._OPEN_TAG):
-            return 0
-        idx = len(buf) - len(self._OPEN_TAG)
-        if not self._is_block_boundary(buf, idx):
-            return 0
-        return len(self._OPEN_TAG)
+        """Hold a complete boundary open tag (any fence) until the next char confirms it."""
+        buf_lower = buf.lower()
+        for open_tag in self._OPEN_TAGS:
+            if not buf_lower.endswith(open_tag):
+                continue
+            idx = len(buf) - len(open_tag)
+            if self._is_block_boundary(buf, idx):
+                return len(open_tag)
+        return 0
 
-    def _has_block_opener_suffix(self, buf: str, idx: int) -> bool:
-        after_idx = idx + len(self._OPEN_TAG)
+    def _max_partial_open_suffix(self, buf: str) -> int:
+        """Longest buf-suffix that is a prefix of ANY open tag (partial-tag holdback)."""
+        return max(
+            (self._max_partial_suffix(buf, open_tag) for open_tag in self._OPEN_TAGS),
+            default=0,
+        )
+
+    def _has_block_opener_suffix(self, buf: str, idx: int, open_tag: str) -> bool:
+        after_idx = idx + len(open_tag)
         if after_idx >= len(buf):
             return False
         return buf[after_idx] in "\r\n"
