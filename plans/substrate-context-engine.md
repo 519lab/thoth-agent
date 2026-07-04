@@ -46,6 +46,16 @@
 > 29/30, tokens <= 90% of baseline, backstop < 0.2/task, probes and
 > constraint >= baseline, zero errors. The token win must survive the
 > richer gists.
+>
+> **Round 3 outcome (2026-07-04): LOST — 3 of 6.** 27/30 pass, tokens
+> 488.1k (the richer gists spent the round-2 token win), backstop 0.67.
+> BUT constraint survival recovered to 5/6 (the gist fix worked for its
+> target) and mean outcome 0.9506 is the best of any arm. Compressor
+> stays default. Meta-finding: at n=30 every challenger lands 27/30 on
+> scattered flakes — the suite's flake floor now binds; any round 4
+> must first raise statistical power (5+ runs, tightened tasks) before
+> iterating designs. Data: eval/results/2026-07-04-cooling-gists-arm/
+> (suite branch).
 
 > **Outcome (2026-07-03, same day):** all phases executed. Phase 0a fixes
 > (#284–#289) and Phase 0b telemetry shipped; the graded suite + DB-backed
