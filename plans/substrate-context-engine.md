@@ -3,6 +3,24 @@
 *2026-07-03 · status: **EXECUTED — hypothesis LOST at Phase 3** (see outcome note below) · based on main @ 2541808b8*
 *Research inputs: substrate internals map, context-engine internals map, live-DB baseline (2026-07-03), SOTA survey (mid-2026). All file:line refs verified against the current tree.*
 
+> **Round 2 (2026-07-04): cooling-window proactive engine.** Greg's
+> revised hypothesis: the win is *proactive* management — shape content at
+> ingestion so the context almost never fills; the compressor becomes an
+> emergency backstop that should fire ~never. Mechanism: tool results are
+> persisted byte-exact (existing 2a plumbing); once a result ages past a
+> small cooling window (~5 assistant tool-turns behind the tail) and
+> exceeds a size floor, it is distilled IN PLACE to gist + context_expand
+> handle — a bounded near-tail edit, so prefix cache loss is limited to
+> the window instead of the whole context (the round-1 lesson: never
+> trickle-edit the deep prefix). Eviction slices + proactive recall +
+> telemetry reuse the 2b/2c organs; the trigger changes from threshold
+> pressure to age. **Pre-committed round-2 criteria** (vs the archived v2
+> compressor arm: 29/30 pass, 498.6k tokens/task, 1.60 compressions/task):
+> pass rate >= baseline; prompt tokens/task <= 90% of baseline (the
+> mechanism's whole point); backstop firings < 0.2/task; memory probes and
+> constraint survival >= baseline; zero harness/degradation errors. Loses
+> any → compressor stays.
+
 > **Outcome (2026-07-03, same day):** all phases executed. Phase 0a fixes
 > (#284–#289) and Phase 0b telemetry shipped; the graded suite + DB-backed
 > A/B protocol were built (eval/context_suite); the full engine (2a–2d) was
