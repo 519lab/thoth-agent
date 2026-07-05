@@ -36,6 +36,7 @@ from agent.error_classifier import FailoverReason, classify_api_error
 from agent.iteration_budget import IterationBudget
 from agent.memory_manager import build_memory_context_block
 from agent.working_set import build_working_set_block
+from agent.expand_nudge import build_expand_nudge_block
 from agent.message_sanitization import (
     _repair_tool_call_arguments,
     _sanitize_messages_non_ascii,
@@ -848,6 +849,23 @@ def run_conversation(
                     _injections.append(_ws_block)
                 if _plugin_user_context:
                     _injections.append(_plugin_user_context)
+                # Decision-time expand nudge (round-5 reactive-retrieval lever;
+                # see agent/expand_nudge.py).  Appended LAST so it sits at MAX
+                # recency — right before the model's next decision — which is
+                # where OPENDEV (arXiv 2603.05344) measured the highest
+                # compliance for a short single-purpose user-role reminder.
+                # It parses the memory block we just built (_fenced) for the
+                # recall-surfaced context_expand pointers and re-states the
+                # un-dereferenced ones as an actionable prompt, reviving the
+                # dead reactive path (context.pagein == 0 events / ~0.3
+                # dereferences per task across four graded rounds).  When
+                # _ext_prefetch_cache is empty there are no recall pointers, so
+                # _fenced is undefined/irrelevant and we pass "" to skip.
+                _nudge = build_expand_nudge_block(
+                    agent, _fenced if _ext_prefetch_cache else "", messages
+                )
+                if _nudge:
+                    _injections.append(_nudge)
                 if _injections:
                     _base = api_msg.get("content", "")
                     if isinstance(_base, str):

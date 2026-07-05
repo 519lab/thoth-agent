@@ -40,10 +40,11 @@ logger = logging.getLogger(__name__)
 # Context fencing helpers
 # ---------------------------------------------------------------------------
 
-# Internal fence tag names.  The working-set fence (agent/working_set.py)
-# rides the same API-call-time user-message injection path as memory-context,
-# so any of these blocks a model might echo back must be scrubbed the same way.
-_FENCE_NAMES = ("memory-context", "working-set")
+# Internal fence tag names.  The working-set fence (agent/working_set.py) and
+# the expand-hint fence (agent/expand_nudge.py) ride the same API-call-time
+# user-message injection path as memory-context, so any of these blocks a model
+# might echo back must be scrubbed the same way.
+_FENCE_NAMES = ("memory-context", "working-set", "expand-hint")
 
 _FENCE_TAG_RE = re.compile(
     r'</?\s*(?:' + '|'.join(_FENCE_NAMES) + r')\s*>', re.IGNORECASE
@@ -62,6 +63,12 @@ _WORKING_SET_NOTE_RE = re.compile(
     r'\[System note:\s*standing task context[^\]]*\]\s*',
     re.IGNORECASE,
 )
+# The expand-hint block (agent/expand_nudge.py) likewise carries its own
+# system-note line; strip a bare copy if it leaks without its fence pair.
+_EXPAND_HINT_NOTE_RE = re.compile(
+    r'\[System note:\s*\d+\s*item\(s\) from earlier in this task[^\]]*\]\s*',
+    re.IGNORECASE,
+)
 
 
 def sanitize_context(text: str) -> str:
@@ -69,6 +76,7 @@ def sanitize_context(text: str) -> str:
     text = _INTERNAL_CONTEXT_RE.sub('', text)
     text = _INTERNAL_NOTE_RE.sub('', text)
     text = _WORKING_SET_NOTE_RE.sub('', text)
+    text = _EXPAND_HINT_NOTE_RE.sub('', text)
     text = _FENCE_TAG_RE.sub('', text)
     return text
 
