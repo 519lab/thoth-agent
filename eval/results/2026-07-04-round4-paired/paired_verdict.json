@@ -1,0 +1,62 @@
+{
+  "baseline_source": "/tmp/claude-1000/-mnt-d-coding-projects-thoth-agent/d90251c3-573e-4d9e-88e8-69cc32e7b62b/scratchpad/round4/arm-compressor/results_compressor_20260704_144001.jsonl",
+  "variant_source": "/tmp/claude-1000/-mnt-d-coding-projects-thoth-agent/d90251c3-573e-4d9e-88e8-69cc32e7b62b/scratchpad/round4/arm-cooling/results_cooling_20260704_164021.jsonl",
+  "n_baseline_rows": 50,
+  "n_variant_rows": 50,
+  "n_pairs": 50,
+  "seed": 42,
+  "resamples": 10000,
+  "warnings": [],
+  "metrics": [
+    {
+      "metric": "passed",
+      "direction": "higher",
+      "n_pairs": 50,
+      "mean_delta": 0.02,
+      "ci_lo": -0.08,
+      "ci_hi": 0.08,
+      "p_value": 1.0,
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "metric": "mean_outcome",
+      "direction": "higher",
+      "n_pairs": 50,
+      "mean_delta": -0.012254000000000001,
+      "ci_lo": -0.03613562731860552,
+      "ci_hi": 0.010013639529483354,
+      "p_value": 0.30056994300569945,
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "metric": "prompt_tokens",
+      "direction": "lower",
+      "n_pairs": 50,
+      "mean_delta": -41108.38,
+      "ci_lo": -119109.6727777313,
+      "ci_hi": 31008.478614771997,
+      "p_value": 0.29027097290270976,
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "metric": "compression_count",
+      "direction": "lower",
+      "n_pairs": 50,
+      "mean_delta": -0.42,
+      "ci_lo": -1.459145381601582,
+      "ci_hi": -0.02,
+      "p_value": 0.21077892210778923,
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "metric": "duration_s",
+      "direction": "lower",
+      "n_pairs": 50,
+      "mean_delta": -28.9708,
+      "ci_lo": -67.03742517291447,
+      "ci_hi": 1.6421306768139368,
+      "p_value": 0.09609039096090391,
+      "verdict": "INCONCLUSIVE"
+    }
+  ]
+}
