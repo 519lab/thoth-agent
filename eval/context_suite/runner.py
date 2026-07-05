@@ -48,6 +48,11 @@ from typing import Any, Dict, List, Optional
 
 from eval.context_suite.tasks import Task, Transcript, snapshot_tree
 
+# Module-level import (backfill's own heavy deps are lazy inside its functions,
+# so this stays cheap) — referenced by name in _maybe_backfill_embeddings so
+# tests can monkeypatch it. See eval/results/EMBEDDING-GAP-FINDING.md.
+from substrate.recall.backfill import backfill_unembedded_slices_sync
+
 logger = logging.getLogger(__name__)
 
 # Default per-task wall-clock cap. Long-horizon tasks with large fixtures and
@@ -183,6 +188,94 @@ def _scoped_env(workspace: Path, engine: str):
 
 
 _db_attached_dsn: Optional[str] = None
+# The booted substrate writer from :func:`attach_db`, stashed so the per-turn
+# embedding backfill (:func:`_maybe_backfill_embeddings`) can reach it. Process-
+# wide + one-shot, matching ``_db_attached_dsn``'s lifecycle.
+_db_substrate: Any = None
+
+# Embedding-provider keys the live worker resolves from ~/.thoth/.env (dotenv),
+# in the same precedence substrate/recall/embeddings.py uses (OPENAI first).
+_EMBED_PROVIDER_KEYS = ("OPENROUTER_API_KEY", "OPENAI_API_KEY")
+
+
+def _thoth_env_path() -> Path:
+    """The live-install dotenv the gateway/worker load provider keys from.
+
+    Resolved via ``get_thoth_home()`` (THOTH_HOME → ~/.thoth) at call time, so
+    this is ``~/.thoth/.env`` in production but honours a test's THOTH_HOME
+    tempdir — a test run never reads the developer's real key file.
+    """
+    from thoth_constants import get_thoth_home
+
+    return get_thoth_home() / ".env"
+
+
+def _load_embedding_keys_from_env_file(env_path: Path) -> Dict[str, str]:
+    """Parse ONLY the embedding-provider keys (``_EMBED_PROVIDER_KEYS``) from a
+    dotenv file. Values are never logged. Missing/unreadable file → ``{}``.
+
+    Deliberately minimal (no full dotenv semantics): one ``KEY=VALUE`` per
+    line, ``#`` comments and blanks skipped, optional ``export`` prefix and
+    surrounding quotes stripped. We only ever read the two provider keys, so a
+    malformed line elsewhere can't matter.
+    """
+    found: Dict[str, str] = {}
+    try:
+        text = env_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return found
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        key = key.strip()
+        if key.startswith("export "):
+            key = key[len("export "):].strip()
+        if key in _EMBED_PROVIDER_KEYS:
+            val = val.strip().strip('"').strip("'")
+            if val:
+                found[key] = val
+    return found
+
+
+def _ensure_embedding_provider_env(env_path: Optional[Path] = None) -> bool:
+    """Make an embedding-provider key available in-process for grading.
+
+    The substrate recall path embeds slices via an OpenAI-compatible client
+    resolved from ``OPENROUTER_API_KEY`` / ``OPENAI_API_KEY`` (see
+    ``substrate/recall/embeddings.py::_resolve_embedding_provider``). The eval
+    process starts with those stripped, so — mirroring how the live worker
+    loads its keys from ``~/.thoth/.env`` — if neither is already in
+    ``os.environ`` we parse them from the dotenv file (only those two keys;
+    values never logged). ``reset_client_cache()`` is then called so the lazy
+    embedding client re-reads env on its next call.
+
+    Returns True if a provider key is now present. If none is found anywhere,
+    logs a loud warning (proactive recall will be embedding-blind for the run)
+    and returns False — so a future keyless run degrades loudly, not silently.
+    See ``eval/results/EMBEDDING-GAP-FINDING.md``.
+    """
+    from substrate.recall.embeddings import reset_client_cache
+
+    path = env_path if env_path is not None else _thoth_env_path()
+    if not any(os.environ.get(k) for k in _EMBED_PROVIDER_KEYS):
+        for k, v in _load_embedding_keys_from_env_file(path).items():
+            os.environ[k] = v
+    # Drop the cached client so a newly-loaded key is picked up on next embed().
+    reset_client_cache()
+
+    if any(os.environ.get(k) for k in _EMBED_PROVIDER_KEYS):
+        return True
+    logger.warning(
+        "eval: no embedding provider key in env or %s — proactive recall will "
+        "be EMBEDDING-BLIND this run (slices minted during grading keep NULL "
+        "embeddings; semantic recall falls back to keyword Jaccard). Set "
+        "OPENROUTER_API_KEY or OPENAI_API_KEY to grade the proactive-recall "
+        "leg. See eval/results/EMBEDDING-GAP-FINDING.md.",
+        path,
+    )
+    return False
 
 
 def attach_db(pg_dsn: str) -> bool:
@@ -201,7 +294,7 @@ def attach_db(pg_dsn: str) -> bool:
     session store may still work — the substrate boot is best-effort,
     mirroring production startup).
     """
-    global _db_attached_dsn
+    global _db_attached_dsn, _db_substrate
     if _db_attached_dsn is not None:
         if _db_attached_dsn != pg_dsn:
             raise RuntimeError(
@@ -216,6 +309,14 @@ def attach_db(pg_dsn: str) -> bool:
         )
     os.environ["THOTH_PG_DSN"] = pg_dsn
     _db_attached_dsn = pg_dsn
+
+    # Make an embedding provider available in-process BEFORE booting the
+    # writer, mirroring how the live worker resolves its key. Without this the
+    # substrate recall path can't embed slices minted during grading, so
+    # semantic proactive recall is dead in the eval even though the writer
+    # boots fine (eval/results/EMBEDDING-GAP-FINDING.md). Best-effort: a
+    # keyless env logs a loud warning and degrades to keyword recall.
+    _ensure_embedding_provider_env()
 
     # Substrate.boot expects the pool to already be initialised on the loop
     # (the CLI/gateway `await thoth_db.init(...)` before bootstrapping — a
@@ -235,6 +336,8 @@ def attach_db(pg_dsn: str) -> bool:
             "still attach; eviction slices / proactive recall will be OFF",
             pg_dsn.split("@")[-1],
         )
+    # Stash the booted writer so the per-turn embedding backfill can reach it.
+    _db_substrate = substrate
     return substrate is not None
 
 
@@ -302,8 +405,48 @@ def _build_agent(
     return agent
 
 
+def _embed_backfill_enabled() -> bool:
+    """Whether the per-turn embedding backfill runs. Default on; the
+    ``THOTH_EVAL_EMBED_BACKFILL=0`` knob disables it to reproduce the old
+    NULL-embedding grading behaviour (embedding-blind proactive recall)."""
+    raw = os.environ.get("THOTH_EVAL_EMBED_BACKFILL", "1").strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
+
+def _maybe_backfill_embeddings(with_db: bool) -> None:
+    """Embed every slice minted this turn BEFORE the next turn's recall runs.
+
+    Production embeds asynchronously within ~30s via the Curator; grading has
+    no Curator worker and no provider, so slices minted during grading kept
+    NULL embeddings and semantic proactive recall was structurally dead in
+    every graded round (eval/results/EMBEDDING-GAP-FINDING.md). Driving the
+    standalone backfill inline between turns makes the eval mirror production,
+    tightened to before-next-turn so this turn's eviction pointers are
+    embeddable by the next turn's recall/prefetch.
+
+    Guarded: only on the DB-backed path (``with_db``) and behind the
+    ``THOTH_EVAL_EMBED_BACKFILL`` knob. Best-effort — a backfill failure must
+    never fail the task, so everything is wrapped and logged at debug.
+    """
+    if not with_db or not _embed_backfill_enabled():
+        return
+    substrate = _db_substrate
+    if substrate is None:
+        return
+    try:
+        backfill_unembedded_slices_sync(substrate)
+    except Exception:
+        logger.debug(
+            "per-turn embedding backfill failed (continuing)", exc_info=True
+        )
+
+
 def _run_turns(
-    agent, task: Task, control: Optional[Dict[str, Any]] = None
+    agent,
+    task: Task,
+    control: Optional[Dict[str, Any]] = None,
+    *,
+    with_db: bool = False,
 ) -> tuple[List[TurnMetric], List[Dict[str, Any]]]:
     """Send every turn with threaded history; return per-turn metrics + msgs."""
     from agent.turn_outcome import compute_outcome_score
@@ -358,6 +501,11 @@ def _run_turns(
                 outcome_score=score,
             )
         )
+
+        # Embed slices minted this turn before the next turn's recall/prefetch
+        # runs — makes proactive recall actually exercisable in grading
+        # (eval/results/EMBEDDING-GAP-FINDING.md). Best-effort + guarded.
+        _maybe_backfill_embeddings(with_db)
     return metrics, final_messages
 
 
@@ -417,7 +565,7 @@ def _run_task_inner(
         )
         if control is not None:
             control["agent"] = agent
-        metrics, messages = _run_turns(agent, task, control)
+        metrics, messages = _run_turns(agent, task, control, with_db=with_db)
 
     transcript = Transcript(
         messages=messages, turns=list(task.turns), initial_files=initial_files

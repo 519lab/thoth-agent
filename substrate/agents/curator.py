@@ -475,17 +475,8 @@ class Curator(SubAgent):
             return
 
         texts = [_extract_text_for_embedding(r["payload"]) for r in rows]
-        # ``RECALL_EMBEDDING_MODEL`` is an OVERRIDE knob (see
-        # ``substrate/config.py``). When unset (the default) we pass
-        # ``model=None`` so ``embed()`` reads ``auxiliary.embedding.model``
-        # from the operator's config.yaml — without that the Curator
-        # would silently force the OpenAI model name on Ollama / Voyage /
-        # any non-OpenAI provider, and every embed call would 404.
-        embed_kwargs = {"timeout_ms": _cfg.RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS}
-        if _cfg.RECALL_EMBEDDING_MODEL is not None:
-            embed_kwargs["model"] = _cfg.RECALL_EMBEDDING_MODEL
         try:
-            vectors = await embed(texts, **embed_kwargs)
+            vectors = await embed_backfill_batch(texts)
         except Exception as exc:
             self._log.warning("curator embed batch raised: %s", exc)
             # Whole-batch failure: bump each slice's retry counter.
@@ -749,6 +740,36 @@ class Curator(SubAgent):
                     "bumped_to": a["bumped_to"],
                 },
             )
+
+
+async def embed_backfill_batch(texts):
+    """Embed a batch of slice texts with the backfill timeout + optional
+    model override — the single embedding-call path shared by the Curator's
+    async emit loop (``_emit_embeddings_for_unembedded``) and the standalone
+    ``substrate.recall.backfill.backfill_unembedded_slices`` primitive.
+
+    Kept as one function so the grading harness (which drives the standalone
+    backfill inline between turns — see eval/results/EMBEDDING-GAP-FINDING.md)
+    embeds via byte-identical logic to production's async Curator: same
+    ``embed()`` entry point, same timeout, same model-override semantics.
+
+    ``RECALL_EMBEDDING_MODEL`` is an OVERRIDE knob (see ``substrate/config.py``).
+    When unset (the default) we pass ``model=None`` so ``embed()`` reads
+    ``auxiliary.embedding.model`` from the operator's config.yaml — without
+    that the Curator would silently force the OpenAI model name on Ollama /
+    Voyage / any non-OpenAI provider, and every embed call would 404.
+
+    Uses the generous backfill timeout, NOT the interactive recall-query
+    timeout — a slow local model would otherwise time out on every batch.
+    Returns one vector-or-None per input (``embed`` never raises on
+    provider failure; it returns ``[None, ...]``).
+    """
+    from substrate import config as _cfg
+
+    embed_kwargs = {"timeout_ms": _cfg.RECALL_EMBEDDING_BACKFILL_TIMEOUT_MS}
+    if _cfg.RECALL_EMBEDDING_MODEL is not None:
+        embed_kwargs["model"] = _cfg.RECALL_EMBEDDING_MODEL
+    return await embed(texts, **embed_kwargs)
 
 
 def _extract_text_for_embedding(payload) -> str:

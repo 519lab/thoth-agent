@@ -18,6 +18,7 @@ oracle logic are size-independent, and small fixtures keep the suite fast.
 
 from __future__ import annotations
 
+import os
 import tempfile
 import time
 from pathlib import Path
@@ -502,3 +503,160 @@ class TestWatchdog:
         assert agent._memory_nudge_interval == 0
         assert agent._skill_nudge_interval == 0
         assert agent.context_compressor.threshold_tokens == 50_000
+
+
+# --------------------------------------------------------------------------- #
+# Embedding-gap fix: provider-env loading + per-turn backfill (2026-07-05)     #
+# EMBEDDING-GAP-FINDING.md — make the eval mirror production so proactive      #
+# recall is actually exercisable in grading.                                   #
+# --------------------------------------------------------------------------- #
+
+
+class TestEmbeddingProviderEnvLoading:
+    """``_ensure_embedding_provider_env`` / ``_load_embedding_keys_from_env_file``."""
+
+    def test_loads_only_provider_keys_from_dotenv(self, tmp_path):
+        env = tmp_path / ".env"
+        env.write_text(
+            "# a comment\n"
+            'export OPENROUTER_API_KEY="or-secret-123"\n'
+            "OPENAI_API_KEY=oai-secret-456\n"
+            "SOME_OTHER_SECRET=nope\n"
+            "MALFORMED LINE NO EQUALS\n"
+        )
+        loaded = runner_mod._load_embedding_keys_from_env_file(env)
+        assert loaded == {
+            "OPENROUTER_API_KEY": "or-secret-123",
+            "OPENAI_API_KEY": "oai-secret-456",
+        }
+
+    def test_missing_file_returns_empty(self, tmp_path):
+        assert runner_mod._load_embedding_keys_from_env_file(tmp_path / "nope.env") == {}
+
+    def test_ensure_populates_env_and_resets_client(self, tmp_path, monkeypatch):
+        # No provider key present (conftest strips them); load from a fake file.
+        for k in runner_mod._EMBED_PROVIDER_KEYS:
+            monkeypatch.delenv(k, raising=False)
+        env = tmp_path / ".env"
+        env.write_text("OPENROUTER_API_KEY=from-file-key\n")
+
+        reset_calls = {"n": 0}
+        from substrate.recall import embeddings
+
+        monkeypatch.setattr(
+            embeddings, "reset_client_cache",
+            lambda: reset_calls.__setitem__("n", reset_calls["n"] + 1),
+        )
+
+        ok = runner_mod._ensure_embedding_provider_env(env_path=env)
+
+        assert ok is True
+        assert os.environ["OPENROUTER_API_KEY"] == "from-file-key"
+        assert reset_calls["n"] == 1  # lazy client dropped so the key is picked up
+
+    def test_ensure_warns_when_no_key_anywhere(self, tmp_path, monkeypatch):
+        for k in runner_mod._EMBED_PROVIDER_KEYS:
+            monkeypatch.delenv(k, raising=False)
+        from substrate.recall import embeddings
+
+        monkeypatch.setattr(embeddings, "reset_client_cache", lambda: None)
+
+        # Spy on logger.warning directly — deterministic regardless of pytest
+        # caplog handler/propagation state under a combined multi-file run.
+        warnings: list = []
+        monkeypatch.setattr(
+            runner_mod.logger, "warning",
+            lambda msg, *a, **k: warnings.append(msg % a if a else msg),
+        )
+
+        ok = runner_mod._ensure_embedding_provider_env(env_path=tmp_path / "absent.env")
+
+        assert ok is False  # degrades, does not crash
+        assert any("EMBEDDING-BLIND" in w for w in warnings)
+
+    def test_ensure_keeps_existing_env_key(self, monkeypatch):
+        monkeypatch.setenv("OPENAI_API_KEY", "already-here")
+        from substrate.recall import embeddings
+
+        monkeypatch.setattr(embeddings, "reset_client_cache", lambda: None)
+        # env_path points nowhere; existing key must be honoured without a load.
+        ok = runner_mod._ensure_embedding_provider_env(env_path=Path("/does/not/exist.env"))
+        assert ok is True
+        assert os.environ["OPENAI_API_KEY"] == "already-here"
+
+
+class _CountingAgent:
+    """Minimal agent: one canned turn result per call, no tools, no DB."""
+
+    def __init__(self):
+        self.context_compressor = None
+
+    def run_conversation(self, user_message, conversation_history=None, task_id=None):
+        msgs = list(conversation_history or [])
+        msgs += [
+            {"role": "user", "content": user_message},
+            {"role": "assistant", "content": "ok"},
+        ]
+        return {
+            "messages": msgs,
+            "completed": True, "failed": False, "interrupted": False,
+            "api_calls": 1,
+        }
+
+
+class _FakeTask:
+    def __init__(self, n_turns: int):
+        self.id = "fake_task"
+        self.turns = [f"turn {i}" for i in range(n_turns)]
+
+
+class TestPerTurnBackfillWiring:
+    """``_run_turns`` drives the embedding backfill once per turn, guarded by
+    ``with_db`` and the ``THOTH_EVAL_EMBED_BACKFILL`` knob."""
+
+    def _patch_backfill(self, monkeypatch):
+        calls = {"n": 0}
+        monkeypatch.setattr(
+            runner_mod, "backfill_unembedded_slices_sync",
+            lambda substrate, **kw: calls.__setitem__("n", calls["n"] + 1),
+        )
+        # A non-None substrate so the guard doesn't short-circuit.
+        monkeypatch.setattr(runner_mod, "_db_substrate", object())
+        return calls
+
+    def test_backfill_runs_once_per_turn_with_db(self, monkeypatch):
+        calls = self._patch_backfill(monkeypatch)
+        monkeypatch.delenv("THOTH_EVAL_EMBED_BACKFILL", raising=False)
+        metrics, _ = runner_mod._run_turns(
+            _CountingAgent(), _FakeTask(3), control=None, with_db=True
+        )
+        assert len(metrics) == 3
+        assert calls["n"] == 3
+
+    def test_backfill_skipped_without_db(self, monkeypatch):
+        calls = self._patch_backfill(monkeypatch)
+        runner_mod._run_turns(
+            _CountingAgent(), _FakeTask(3), control=None, with_db=False
+        )
+        assert calls["n"] == 0
+
+    def test_backfill_disabled_by_env_knob(self, monkeypatch):
+        calls = self._patch_backfill(monkeypatch)
+        monkeypatch.setenv("THOTH_EVAL_EMBED_BACKFILL", "0")
+        runner_mod._run_turns(
+            _CountingAgent(), _FakeTask(3), control=None, with_db=True
+        )
+        assert calls["n"] == 0
+
+    def test_backfill_failure_never_fails_turns(self, monkeypatch):
+        def _boom(substrate, **kw):
+            raise RuntimeError("embed backend down")
+
+        monkeypatch.setattr(runner_mod, "backfill_unembedded_slices_sync", _boom)
+        monkeypatch.setattr(runner_mod, "_db_substrate", object())
+        monkeypatch.delenv("THOTH_EVAL_EMBED_BACKFILL", raising=False)
+        # Must not raise despite the backfill blowing up every turn.
+        metrics, _ = runner_mod._run_turns(
+            _CountingAgent(), _FakeTask(2), control=None, with_db=True
+        )
+        assert len(metrics) == 2
