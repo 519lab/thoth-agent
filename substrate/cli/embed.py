@@ -86,6 +86,36 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
     )
     reshape_p.set_defaults(func=_cmd_embed_reshape)
 
+    reembed_p = embed_sub.add_parser(
+        "reembed",
+        help="Re-embed ALL slices in place with the configured provider "
+        "(same dimension — for a model/provider change)",
+        description=(
+            "Clear every existing embedding and re-embed inline using the "
+            "configured provider (auxiliary.embedding.* in config.yaml). Unlike "
+            "``reshape``, this does NOT change the column dimension — use it "
+            "when the MODEL changed but the dim is the same (e.g. swapping "
+            "text-embedding-3-small for qwen3-embedding:8b @ dimensions=1536). "
+            "``reshape`` short-circuits at an unchanged dim and would leave the "
+            "old vectors in place; this forces the re-embed. Existing vectors "
+            "are cleared and repopulated; recall degrades to keyword-only until "
+            "the pass completes. Interactive y/N prompt (shows the target DB) "
+            "before any destructive work — pass --yes to skip."
+        ),
+    )
+    reembed_p.add_argument(
+        "--yes", "-y",
+        action="store_true",
+        help="Skip the y/N confirmation prompt.",
+    )
+    reembed_p.add_argument(
+        "--batch-size",
+        type=int,
+        default=64,
+        help="Slices per embedding-API call (default 64; lower for rate limits).",
+    )
+    reembed_p.set_defaults(func=_cmd_embed_reembed)
+
     retry_p = embed_sub.add_parser(
         "retry-failed",
         help="Un-park slices marked embedding_failed so they get re-embedded",
@@ -115,10 +145,115 @@ def register_subparser(subparsers: argparse._SubParsersAction) -> None:
 def _cmd_embed_help(args: argparse.Namespace) -> int:
     """Default for ``thoth embed`` with no subcommand."""
     print(
-        "usage: thoth embed {reshape <DIM> | retry-failed}",
+        "usage: thoth embed {reshape <DIM> | reembed | retry-failed}",
         file=sys.stderr,
     )
     return 2
+
+
+# ---------------------------------------------------------------------------
+# reembed command — re-embed all slices in place at the SAME dim (model swap).
+# reshape short-circuits when the dim is unchanged, so a provider/model change
+# at a fixed dim (e.g. text-embedding-3-small -> qwen3-embedding:8b @1536) needs
+# this to force the clear-and-repopulate.
+# ---------------------------------------------------------------------------
+
+
+def _dsn_target_str() -> str:
+    """Human-readable ``host:port/dbname`` from ``THOTH_PG_DSN`` (password
+    stripped). This is the value that selects the instance — 5432 (live) vs
+    5433 (test) — so it is the safety-critical line to eyeball before a
+    destructive re-embed. Returns ``<THOTH_PG_DSN unset>`` if absent and a
+    coarse fallback if the DSN doesn't parse."""
+    import os
+    from urllib.parse import urlparse
+
+    dsn = os.environ.get("THOTH_PG_DSN")
+    if not dsn:
+        return "<THOTH_PG_DSN unset>"
+    try:
+        u = urlparse(dsn)
+        host = u.hostname or "local-socket"
+        port = u.port or 5432
+        dbname = (u.path or "").lstrip("/") or "?"
+        return f"{host}:{port}/{dbname}"
+    except Exception:
+        return "<unparseable DSN>"
+
+
+def _cmd_embed_reembed(args: argparse.Namespace) -> int:
+    """Validate connection, confirm (showing the target DB), then re-embed."""
+    import thoth_db
+
+    if not thoth_db.ensure_pool_sync():
+        print(
+            "error: THOTH_PG_DSN not set; cannot connect to substrate PG.",
+            file=sys.stderr,
+        )
+        return 1
+    return thoth_db.run_sync(
+        _reembed_async(interactive=not args.yes, batch_size=args.batch_size)
+    )
+
+
+async def _reembed_async(*, interactive: bool, batch_size: int) -> int:
+    """Clear every embedding column then re-embed slices inline.
+
+    Same dim as the current schema (no ALTER) — only the model changed. L3/L4
+    columns are cleared too and re-populate via the Curator's curation pass,
+    keeping every layer on one model (see ``_reshape_async``)."""
+    import thoth_db
+
+    current = await _current_schema_dim()
+    if current is None:
+        print(
+            "error: substrate_slices.embedding column not found. Run "
+            "``alembic upgrade head`` first.",
+            file=sys.stderr,
+        )
+        return 1
+
+    async with thoth_db.connection() as conn:
+        db = await conn.fetchval("SELECT current_database()")
+        total = await conn.fetchval(
+            "SELECT count(*) FROM substrate_slices"
+        ) or 0
+        dims = {t: await _table_vector_dim(conn, t) for t in _EMBEDDING_TABLES}
+
+    tables = [t for t, d in dims.items() if d is not None]
+    # Show the DSN's own host:port/db — the value that actually selects the
+    # instance (5432 live vs 5433 test) — NOT the server-internal
+    # inet_server_port(), which reports the container-internal 5432 for BOTH
+    # the live and test containers and so masks which one you're hitting.
+    print(f"About to RE-EMBED all slices at vector({current}) (no dim change):")
+    print(f"  target: {_dsn_target_str()}  (server reports current_database={db})")
+    print(f"  columns cleared + repopulated: {', '.join(tables)}")
+    print(f"  substrate_slices to re-embed: {total:,} (inline)")
+    print("  provider: configured auxiliary.embedding.* (recall degrades to "
+          "keyword-only until this completes)")
+
+    if interactive:
+        try:
+            ans = input("Continue? [y/N] ").strip().lower()
+        except EOFError:
+            ans = ""
+        if ans not in {"y", "yes"}:
+            print("Aborted.")
+            return 1
+
+    print(f"Clearing embeddings on {len(tables)} column(s) ...")
+    async with thoth_db.transaction() as conn:
+        for t in tables:
+            await conn.execute(f"UPDATE {t} SET embedding = NULL")
+    # Drop the cached schema dim so embed() re-reads it (unchanged here, but
+    # keeps behaviour identical to reshape's post-alter reset).
+    try:
+        from substrate.recall import embeddings as _embed_mod
+        _embed_mod.reset_schema_dim_cache()
+    except Exception:
+        pass
+
+    return await _backfill_inline(total=total, batch_size=batch_size)
 
 
 # ---------------------------------------------------------------------------

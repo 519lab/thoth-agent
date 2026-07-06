@@ -205,6 +205,90 @@ def test_reshape_parser_accepts_dim():
     assert args.batch_size == 100
 
 
+# ---------------------------------------------------------------------------
+# reembed — re-embed in place at the SAME dim (model/provider swap). reshape
+# short-circuits at an unchanged dim; reembed must force the clear+repopulate.
+# ---------------------------------------------------------------------------
+
+
+def test_dsn_target_str_shows_host_port_db_and_redacts(monkeypatch):
+    """The confirmation's target line comes from THOTH_PG_DSN (which selects
+    5432-live vs 5433-test), not the server-internal port. Password stripped."""
+    monkeypatch.setenv(
+        "THOTH_PG_DSN", "postgresql://thoth:secretpw@localhost:5433/thoth_baseline"
+    )
+    s = embed_cli._dsn_target_str()
+    assert s == "localhost:5433/thoth_baseline"
+    assert "secretpw" not in s
+
+
+def test_dsn_target_str_unset(monkeypatch):
+    monkeypatch.delenv("THOTH_PG_DSN", raising=False)
+    assert embed_cli._dsn_target_str() == "<THOTH_PG_DSN unset>"
+
+
+@pytest.mark.asyncio
+async def test_reembed_clears_and_repopulates_at_same_dim(
+    seeded_substrate, monkeypatch
+):
+    """The reason reembed exists: at an unchanged dim, reshape no-ops and leaves
+    the old (wrong-model) vectors; reembed must clear them and re-embed. Seed a
+    sentinel vector, run reembed, prove every slice was replaced by the mock's
+    output at the same 1536 dim."""
+    import thoth_db
+    from substrate.recall import embeddings as _embed
+
+    # Pre-set a recognizable sentinel embedding on our stream's slices so we can
+    # prove they were actually cleared+replaced (not left as-is like reshape).
+    sentinel = [0.5] * 1536
+    async with thoth_db.connection() as conn:
+        await conn.execute(
+            "UPDATE substrate_slices SET embedding = $1 "
+            "WHERE stream_id IN (SELECT stream_id FROM substrate_streams "
+            "WHERE name = 'thoth.test.embed_reshape')",
+            sentinel,
+        )
+
+    monkeypatch.setenv(_embed.MOCK_ENV_VAR, "1")  # deterministic 1536-d vectors
+    _embed.reset_schema_dim_cache()
+
+    rc = await embed_cli._reembed_async(interactive=False, batch_size=10)
+    assert rc == 0
+
+    async with thoth_db.connection() as conn:
+        rows = await conn.fetch(
+            "SELECT embedding FROM substrate_slices WHERE stream_id IN "
+            "(SELECT stream_id FROM substrate_streams "
+            "WHERE name = 'thoth.test.embed_reshape')"
+        )
+    assert len(rows) == 5
+    assert all(r["embedding"] is not None for r in rows)
+    assert all(len(r["embedding"]) == 1536 for r in rows)
+    # Every vector replaced — none still equals the sentinel.
+    assert all(list(r["embedding"]) != sentinel for r in rows)
+
+
+def test_reembed_parser_accepts_flags():
+    p = argparse.ArgumentParser()
+    sp = p.add_subparsers(dest="cmd")
+    embed_cli.register_subparser(sp)
+    args = p.parse_args(["embed", "reembed", "--yes", "--batch-size", "32"])
+    assert args.yes is True
+    assert args.batch_size == 32
+
+
+def test_cmd_embed_reembed_drives_sync_loop(thoth_db_initialized_sync, monkeypatch):
+    """Sync entrypoint must drive the coro via thoth_db.run_sync (cross-loop
+    safety, same contract as reshape). Mock the provider so no key is needed."""
+    from substrate.recall import embeddings as _embed
+
+    monkeypatch.setenv(_embed.MOCK_ENV_VAR, "1")
+    _embed.reset_schema_dim_cache()
+    args = argparse.Namespace(yes=True, batch_size=10)
+    rc = embed_cli._cmd_embed_reembed(args)
+    assert rc == 0  # would raise a cross-loop RuntimeError before run_sync
+
+
 @pytest.mark.asyncio
 async def test_backfill_aborts_on_all_failed_batch(seeded_substrate, monkeypatch):
     """Regression for the 2026-06 reshape runaway: when every embed() returns
