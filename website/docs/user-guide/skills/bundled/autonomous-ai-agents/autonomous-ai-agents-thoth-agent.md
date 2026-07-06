@@ -640,7 +640,7 @@ terminal(command="tmux new-session -d -s resumed 'thoth --resume 20260225_143052
 ## Durable & Background Systems
 
 Four systems run alongside the main conversation loop. Quick reference
-here; full developer notes live in `AGENTS.md`, user-facing docs under
+here; full developer notes live in `CLAUDE.md`, user-facing docs under
 `website/docs/user-guide/features/`.
 
 ### Delegation (`delegate_task`)

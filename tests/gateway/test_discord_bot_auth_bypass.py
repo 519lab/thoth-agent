@@ -48,7 +48,7 @@ def _make_bare_runner():
     """Build a GatewayRunner skeleton with just enough wiring for the auth test.
 
     Uses ``object.__new__`` to skip the heavy __init__ — many gateway tests
-    use this pattern (see AGENTS.md pitfall #17).
+    use this pattern (see CLAUDE.md: gateway/adapter attrs use getattr fallbacks).
     """
     from gateway.run import GatewayRunner
     runner = object.__new__(GatewayRunner)

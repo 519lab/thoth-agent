@@ -90,7 +90,7 @@ pytest tests/ -v
 - **Comments**: Only when explaining non-obvious intent, trade-offs, or API quirks
 - **Error handling**: Catch specific exceptions. Use `logger.warning()`/`logger.error()` with `exc_info=True` for unexpected errors
 - **Cross-platform**: Never assume Unix (see below)
-- **Profile-safe paths**: Never hardcode `~/.thoth` — use `get_thoth_home()` from `thoth_constants` for code paths and `display_thoth_home()` for user-facing messages. See [AGENTS.md](https://github.com/519lab/thoth-agent/blob/main/AGENTS.md#profiles-multi-instance-support) for full rules.
+- **Profile-safe paths**: Never hardcode `~/.thoth` — use `get_thoth_home()` from `thoth_constants` for code paths and `display_thoth_home()` for user-facing messages. See [CLAUDE.md](https://github.com/519lab/thoth-agent/blob/main/CLAUDE.md) for full rules.
 
 ## Cross-Platform Compatibility
 

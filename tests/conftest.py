@@ -1,6 +1,6 @@
 """Shared fixtures for the thoth-agent test suite.
 
-Hermetic-test invariants enforced here (see AGENTS.md for rationale):
+Hermetic-test invariants enforced here (see CLAUDE.md "Commands → Tests" for rationale):
 
 1. **No credential env vars.** All provider/credential-shaped env vars
    (ending in _API_KEY, _TOKEN, _SECRET, _PASSWORD, _CREDENTIALS, etc.)
