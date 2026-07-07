@@ -73,6 +73,19 @@ class PartitionMaintenanceWorker(SubAgent):
             # unenforced). PG won't self-heal it — surface it loudly so it's
             # caught before it matters, instead of only via a manual DB probe.
             underindexed = await find_underindexed_partitions(conn)
+
+            # #286: age-based retention for the append-only operational-log
+            # tables (substrate_telemetry + substrate_conductor_log) so they
+            # stay bounded — they had no pruning and grew to ~30% of the live
+            # DB. Runs on this daily calendar-bound cadence. Best-effort.
+            try:
+                from substrate.telemetry import prune as _prune_logs
+
+                pruned = await _prune_logs(conn)
+                if any(pruned.values()):
+                    self._log.info("substrate_log.pruned %s", pruned)
+            except Exception as exc:
+                self._log.debug("substrate_log.prune failed: %s", exc)
         if underindexed:
             names = ", ".join(
                 f"{p['partition']} ({p['index_count']}/{p['expected']})"

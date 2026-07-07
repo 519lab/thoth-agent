@@ -77,4 +77,98 @@ async def write(
         await own_conn.execute(_INSERT_SQL, agent, event, row_payload, at)
 
 
-__all__ = ["write"]
+# ---------------------------------------------------------------------------
+# Retention (#286). The two operational-log tables (substrate_telemetry,
+# substrate_conductor_log) are append-only and had no pruning — ~30% of the
+# live DB after 3.5 weeks. Age-based deletion, run from the daily
+# partition-maintenance cadence, keeps them bounded. High-volume kinds
+# (conductor.dialed) get a shorter window than the rest.
+# ---------------------------------------------------------------------------
+
+_DEFAULT_TELEMETRY_RETENTION_DAYS = 30
+_DEFAULT_CONDUCTOR_LOG_RETENTION_DAYS = 30
+_DEFAULT_HOT_EVENTS = ("conductor.dialed",)
+_DEFAULT_HOT_RETENTION_DAYS = 7
+
+
+def _int_env(name: str, default: int) -> int:
+    import os
+
+    raw = (os.environ.get(name) or "").strip()
+    try:
+        return int(raw) if raw else default
+    except ValueError:
+        return default
+
+
+async def _delete_aged(
+    conn: "asyncpg.Connection",
+    table: str,
+    days: int,
+    *,
+    event: Optional[str] = None,
+    batch: int = 20000,
+    max_total: int = 500000,
+) -> int:
+    """Bounded, batched age-based delete. Removes up to ``max_total`` rows this
+    call in ``batch``-sized chunks (short locks per statement); the daily
+    cadence clears any remainder. ``ctid`` gives an efficient LIMIT delete over
+    the ``at`` index. Retention below 0 days is treated as "disabled"."""
+    if days < 0:
+        return 0
+    where = "at < now() - make_interval(days => $1)"
+    params: list = [int(days)]
+    if event is not None:
+        where += " AND event = $2"
+        params.append(event)
+    total = 0
+    while total < max_total:
+        tag = await conn.execute(
+            f"DELETE FROM {table} WHERE ctid IN "
+            f"(SELECT ctid FROM {table} WHERE {where} LIMIT {int(batch)})",
+            *params,
+        )
+        n = int(tag.rsplit(" ", 1)[-1]) if tag.startswith("DELETE") else 0
+        total += n
+        if n < batch:
+            break
+    return total
+
+
+async def prune(conn: "asyncpg.Connection") -> dict:
+    """Age-based retention sweep over the operational-log tables. Returns
+    per-target deletion counts. Best-effort — callers wrap in try/except.
+
+    Windows are env-configurable (days): ``THOTH_SUBSTRATE_TELEMETRY_RETENTION_DAYS``
+    (default 30), ``THOTH_SUBSTRATE_TELEMETRY_HOT_RETENTION_DAYS`` (default 7,
+    for the high-volume kinds in ``_DEFAULT_HOT_EVENTS``), and
+    ``THOTH_SUBSTRATE_CONDUCTOR_LOG_RETENTION_DAYS`` (default 30). Set any to a
+    negative value to disable that sweep.
+    """
+    telemetry_days = _int_env(
+        "THOTH_SUBSTRATE_TELEMETRY_RETENTION_DAYS", _DEFAULT_TELEMETRY_RETENTION_DAYS
+    )
+    hot_days = _int_env(
+        "THOTH_SUBSTRATE_TELEMETRY_HOT_RETENTION_DAYS", _DEFAULT_HOT_RETENTION_DAYS
+    )
+    conductor_days = _int_env(
+        "THOTH_SUBSTRATE_CONDUCTOR_LOG_RETENTION_DAYS",
+        _DEFAULT_CONDUCTOR_LOG_RETENTION_DAYS,
+    )
+    deleted: dict = {}
+    # Hot kinds on the shorter window first; the general sweep then trims the
+    # rest (and any hot remnants older than the general window — harmless).
+    for ev in _DEFAULT_HOT_EVENTS:
+        deleted[f"telemetry:{ev}"] = await _delete_aged(
+            conn, "substrate_telemetry", hot_days, event=ev
+        )
+    deleted["telemetry"] = await _delete_aged(
+        conn, "substrate_telemetry", telemetry_days
+    )
+    deleted["conductor_log"] = await _delete_aged(
+        conn, "substrate_conductor_log", conductor_days
+    )
+    return deleted
+
+
+__all__ = ["write", "prune"]
