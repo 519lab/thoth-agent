@@ -225,7 +225,7 @@ uv pip install -e ".[all,dev]"
 scripts/run_tests.sh
 ```
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup and PR process, and [`AGENTS.md`](AGENTS.md) for the architecture and conventions agents (and humans) should follow.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup and PR process, and [`CLAUDE.md`](CLAUDE.md) for the architecture and conventions agents (and humans) should follow.
 
 ---
 

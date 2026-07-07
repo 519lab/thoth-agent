@@ -226,7 +226,7 @@ uv pip install -e ".[all,dev]"
 scripts/run_tests.sh
 ```
 
-开发设置和 PR 流程请参阅 [`CONTRIBUTING.md`](CONTRIBUTING.md)，架构以及代理（与人类）应遵循的约定请参阅 [`AGENTS.md`](AGENTS.md)。
+开发设置和 PR 流程请参阅 [`CONTRIBUTING.md`](CONTRIBUTING.md)，架构以及代理（与人类）应遵循的约定请参阅 [`CLAUDE.md`](CLAUDE.md)。
 
 ---
 
