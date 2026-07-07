@@ -71,6 +71,12 @@ class AdaptiveConductor(SubAgent):
         # trips True below the floor, clears only once coherence recovers to
         # the (higher) recovery threshold — avoids flapping in the band between.
         self._coherence_low = False
+        # Idle-aware dial logging (#285): the dial ticks every ~10s, but when
+        # the decision is unchanged (steady state / idle) a conductor_log row +
+        # conductor.dialed slice every tick is pure noise (~9k rows/day). Log on
+        # any change; otherwise only a coarse heartbeat.
+        self._last_dialed_targets: Optional[dict] = None
+        self._last_dial_log_ts: float = 0.0
 
     def forecast(self) -> Optional[float]:
         """The Conductor's current backlog forecast (EMA), or None if it
@@ -120,8 +126,22 @@ class AdaptiveConductor(SubAgent):
             return
         for agent_name, level in targets.items():
             conductor.set_intensity(agent_name, level)
-        await self._log_decision(signals, targets)
-        await self._emit_self_state(signals, targets)
+
+        # Idle-aware logging (#285). set_intensity above runs every tick (it's
+        # idempotent), but the durable writes — the conductor_log row and the
+        # conductor.dialed slice — are throttled: emit immediately whenever the
+        # decision changes, otherwise at most once per idle-heartbeat interval.
+        import time
+
+        target_values = {k: v.value for k, v in targets.items()}
+        changed = target_values != self._last_dialed_targets
+        heartbeat_s = _env_float("CONDUCTOR_IDLE_HEARTBEAT_SECONDS", 600.0)
+        now = time.monotonic()
+        if changed or (now - self._last_dial_log_ts) >= heartbeat_s:
+            await self._log_decision(signals, targets)
+            await self._emit_self_state(signals, targets)
+            self._last_dialed_targets = target_values
+            self._last_dial_log_ts = now
 
     async def _seed_forecast(self) -> None:
         """Reconstruct the EMA from the persistent decision log so a restart
