@@ -280,8 +280,11 @@ async def decay(*, half_life_seconds: float, min_age_seconds: float = 1.0, conn=
             """
             UPDATE l4_observations
                SET salience_score = salience_score
-                     * POWER(0.5, EXTRACT(EPOCH FROM (now() - salience_updated_at))
-                                  / GREATEST($1, 0.001)),
+                     -- Cap exponent at 60 half-lives so a very stale row can't
+                     -- underflow POWER(0.5, huge) and abort the decay UPDATE
+                     -- (see substrate/agents/curator.py _apply_natural_decay).
+                     * POWER(0.5, LEAST(EXTRACT(EPOCH FROM (now() - salience_updated_at))
+                                  / GREATEST($1, 0.001), 60.0)),
                    salience_updated_at = now()
              WHERE kind <> 'coherence'
                AND now() - salience_updated_at > make_interval(secs => $2)
