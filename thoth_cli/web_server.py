@@ -79,6 +79,33 @@ _log = logging.getLogger(__name__)
 
 app = FastAPI(title="Thoth Agent", version=__version__)
 
+
+@app.on_event("startup")
+async def _init_thoth_db_pool() -> None:
+    """Initialize the ``thoth_db`` asyncpg pool for this dashboard process.
+
+    The dashboard is a standalone FastAPI process; its session/log endpoints
+    reach the DB through ``thoth_db``, whose asyncpg pool must be initialized on
+    thoth_db's dedicated DB loop before any handler touches it. Without this,
+    ``/api/sessions`` and ``/api/logs`` 500 with ``thoth_db.init() not called``.
+    Mirrors the gateway's Phase-0 init (``gateway/run.py``); ``init`` is
+    idempotent, so sharing a process with the gateway is a harmless no-op.
+    """
+    import thoth_db
+
+    dsn = os.environ.get("THOTH_PG_DSN")
+    if not dsn:
+        _log.warning(
+            "THOTH_PG_DSN not set — dashboard session/log endpoints unavailable"
+        )
+        return
+    try:
+        # Route init onto the DB loop (where the pool must live), not uvicorn's
+        # event loop — same as the gateway.
+        await thoth_db.run_on_pool_loop(thoth_db.init(dsn))
+    except Exception:
+        _log.warning("dashboard PG pool init failed", exc_info=True)
+
 # ---------------------------------------------------------------------------
 # Session token for protecting sensitive endpoints (reveal).
 # Generated fresh on every server start — dies when the process exits.
