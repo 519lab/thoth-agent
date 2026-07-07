@@ -97,9 +97,26 @@ class Parser(SubAgent):
     # ------------------------------------------------------------------
 
     async def _select_sessions(self) -> list[str]:
+        """Pick sessions with parseable pending slices.
+
+        Two admission paths (issue #287):
+
+        * batch: >= ``PARSER_MIN_PENDING_SLICES`` pending slices — the
+          normal economical case (one aux-model call per batch).
+        * low-water flush: ANY pending slice older than
+          ``PARSER_SESSION_FLUSH_AGE_SECONDS`` (default 2 days). Session
+          "tails" of 1-4 slices — the residue after the bulk consolidated,
+          or short sessions — never reach the batch minimum; without the
+          flush they age past the 7-day fetch horizon and become immortal
+          (unconsolidatable AND unreleasable under
+          ``release_after_consolidation`` profiles), re-alarming the
+          Curator forever. The flush age must stay well inside the 7-day
+          horizon so tails drain while still fetchable.
+        """
         import thoth_db
 
         min_pending = _env_int("PARSER_MIN_PENDING_SLICES", 5)
+        flush_age = _env_int("PARSER_SESSION_FLUSH_AGE_SECONDS", 2 * 86400)
         limit = _env_int("PARSER_MAX_SESSIONS_PER_TICK", 4)
         async with thoth_db.connection() as conn:
             rows = await conn.fetch(
@@ -113,11 +130,13 @@ class Parser(SubAgent):
                    AND ingest_time_world > now() - interval '7 days'
                  GROUP BY metadata->>'session_id'
                 HAVING COUNT(*) >= $1
+                    OR MIN(ingest_time_world) < now() - make_interval(secs => $3)
                  ORDER BY MIN(ingest_time_world) ASC
                  LIMIT $2
                 """,
                 min_pending,
                 limit,
+                flush_age,
             )
         return [r["session_id"] for r in rows]
 

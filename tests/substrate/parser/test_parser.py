@@ -240,3 +240,57 @@ async def test_parser_session_selection_honours_min(booted, monkeypatch):
     sessions = await Parser(booted)._select_sessions()
     assert "sess-big" in sessions
     assert "sess-small" not in sessions
+
+
+async def _age_session(session_id: str, offset_seconds: float) -> None:
+    """Move a seeded session's slices back in time (all time columns
+    together so the event <= perception <= ingest CHECK holds)."""
+    import thoth_db
+
+    async with thoth_db.connection() as conn:
+        await conn.execute(
+            """
+            UPDATE substrate_slices
+               SET event_time_world      = now() - make_interval(secs => $2),
+                   perception_time_world = now() - make_interval(secs => $2),
+                   ingest_time_world     = now() - make_interval(secs => $2),
+                   time_start_world      = now() - make_interval(secs => $2),
+                   time_end_world        = now() - make_interval(secs => $2)
+             WHERE metadata->>'session_id' = $1
+            """,
+            session_id,
+            float(offset_seconds),
+        )
+
+
+@pytest.mark.asyncio
+async def test_parser_session_selection_flushes_stale_small_sessions(
+    booted, monkeypatch
+):
+    """Low-water flush (issue #287): a below-minimum session whose oldest
+    pending slice exceeds PARSER_SESSION_FLUSH_AGE_SECONDS is selected
+    anyway, so session tails drain instead of aging past the 7-day fetch
+    horizon and becoming immortal."""
+    monkeypatch.setenv("PARSER_SESSION_FLUSH_AGE_SECONDS", "60")
+
+    await _seed(booted, "sess-stale-tail", ["a", "b"])  # < 5 pending
+    await _age_session("sess-stale-tail", 120.0)  # older than flush age
+
+    await _seed(booted, "sess-fresh-tail", ["c", "d"])  # < 5, fresh
+
+    sessions = await Parser(booted)._select_sessions()
+    assert "sess-stale-tail" in sessions
+    assert "sess-fresh-tail" not in sessions
+
+
+@pytest.mark.asyncio
+async def test_parser_flush_does_not_reach_past_fetch_horizon(booted, monkeypatch):
+    """A tail older than the 7-day fetch horizon stays unselected — that
+    set belongs to the Curator's stranded drain, not the Parser."""
+    monkeypatch.setenv("PARSER_SESSION_FLUSH_AGE_SECONDS", "60")
+
+    await _seed(booted, "sess-ancient", ["a", "b"])
+    await _age_session("sess-ancient", 8 * 86400.0)  # past the 7-day horizon
+
+    sessions = await Parser(booted)._select_sessions()
+    assert "sess-ancient" not in sessions

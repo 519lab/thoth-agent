@@ -65,6 +65,23 @@ _ALARM_BATCH_LIMIT = 100
 # waiting an hour for the cooldown to expire.
 _ALARM_COOLDOWN_SECONDS = 3600
 
+# Stranded-slice drain horizon (issue #287). The Parser only fetches
+# pending slices younger than its 7-day horizon, so a passed +
+# unconsolidated slice older than this can NEVER consolidate — and with
+# ``release_after_consolidation`` profiles it can never be released
+# either: an immortal slice the alarm re-finds every cooldown, forever
+# (observed live: 1,602 alarms over 100 slices in ~2.5 weeks, which also
+# held the Critic's ``alarms_1h`` coherence penalty permanently at -0.2).
+# Same bug class PR #199 fixed for the Conductor backlog COUNT; this is
+# the alarm/consolidation side. Slices aging past the horizon get ONE
+# ``curator.slice_stranded`` telemetry event and are tombstoned via the
+# Parser's give-up idiom (``mark_slices_consolidated(ids, [])``), which
+# makes them release-eligible so natural decay retires them.
+# Must stay >= the Parser's fetch horizon (7 days) or slices would be
+# drained while still parseable.
+_STRANDED_DRAIN_SECONDS = 7 * 86400
+_STRANDED_BATCH_LIMIT = 200
+
 # --- Upper-layer (L3/L4) curation — the Curator now curates patterns +
 # observations too, not just L0 slices. These were unbounded append-only
 # with exact-text-only dedup; the Curator semantically merges near-dupes
@@ -111,6 +128,8 @@ class Curator(SubAgent):
     RELEASE_BATCH_LIMIT = _RELEASE_BATCH_LIMIT
     ALARM_COOLDOWN_SECONDS = _ALARM_COOLDOWN_SECONDS
     ALARM_BATCH_LIMIT = _ALARM_BATCH_LIMIT
+    STRANDED_DRAIN_SECONDS = _STRANDED_DRAIN_SECONDS
+    STRANDED_BATCH_LIMIT = _STRANDED_BATCH_LIMIT
     # Upper-layer curation knobs (class attrs so tests can override).
     CURATE_UPPER_INTERVAL_S = _CURATE_UPPER_INTERVAL_S
     UPPER_MERGE_MAX_DISTANCE = _UPPER_MERGE_MAX_DISTANCE
@@ -222,6 +241,10 @@ class Curator(SubAgent):
         await self._run_stage("decay", self._apply_natural_decay)
         await self._run_stage("release", self._release_stage)
         await self._run_stage("alarm", self._alarm_stage)
+        # Stranded-slice drain (issue #287): tombstone passed+unconsolidated
+        # slices the Parser can no longer reach so they stop alarming and
+        # become release-eligible.
+        await self._run_stage("strand", self._stranded_stage)
         # Phase C: embedding backfill — guarded by its own interval so
         # the Curator's main tick can run faster without hammering the
         # embedding API.
@@ -254,6 +277,10 @@ class Curator(SubAgent):
     async def _alarm_stage(self) -> None:
         alarmed = await self._alarm_pathological()
         await self._emit_alarm_audit(alarmed)
+
+    async def _stranded_stage(self) -> None:
+        stranded = await self._drain_stranded()
+        await self._emit_stranded_audit(stranded)
 
     # ------------------------------------------------------------------
     # Decay — Phase B spec §4 + archived plan Task 5.2.
@@ -395,6 +422,14 @@ class Curator(SubAgent):
            ``substrate_telemetry``; this guard remains for the historical
            ``substrate.self_state`` rows and any future ``substrate.*``
            stream — see ``substrate.storage.streams.is_perceptual``.)
+
+        4. Bounded to the stranded-drain horizon (issue #287). A slice
+           older than ``STRANDED_DRAIN_SECONDS`` is beyond the Parser's
+           fetch horizon and can never consolidate — alarming on it every
+           cooldown forever is pure noise (and held the Critic's
+           ``alarms_1h`` coherence penalty at -0.2 permanently). Those
+           slices are handled by :meth:`_drain_stranded` instead: one
+           ``curator.slice_stranded`` event, then tombstoned.
         """
         import thoth_db
 
@@ -412,6 +447,7 @@ class Curator(SubAgent):
                  WHERE sl.sentinel_state      = 'passed'
                    AND sl.consolidation_state = 'unconsolidated'
                    AND sl.ingest_time_world + dp.consolidation_window < now()
+                   AND sl.ingest_time_world > now() - make_interval(secs => $3)
                    AND sl.salience_updated_at < now() - make_interval(secs => $2)
                    AND st.name NOT LIKE 'substrate.%'
                  ORDER BY sl.ingest_time_world ASC
@@ -420,6 +456,7 @@ class Curator(SubAgent):
                 """,
                 self.ALARM_BATCH_LIMIT,
                 self.ALARM_COOLDOWN_SECONDS,
+                self.STRANDED_DRAIN_SECONDS,
             )
             for r in rows:
                 # Touch salience_updated_at so the cooldown predicate
@@ -447,6 +484,71 @@ class Curator(SubAgent):
                     }
                 )
         return alarmed
+
+    async def _drain_stranded(self) -> list[dict]:
+        """Tombstone passed+unconsolidated slices older than the Parser's
+        reach (issue #287).
+
+        The Parser fetches only pending slices younger than its 7-day
+        horizon, in per-session batches of ``PARSER_MIN_PENDING_SLICES``+.
+        A slice that ages past the horizon unconsolidated is stranded: it
+        can never consolidate, and (with ``release_after_consolidation``
+        profiles) never release — immortal, and re-alarmed every cooldown.
+
+        Drain = the Parser's own give-up idiom: ``mark_slices_consolidated``
+        with an empty extraction (the parse-error tombstone, spec §4.4).
+        Consolidated-empty slices leave the alarm set and become
+        release-eligible, so natural decay retires them. One-shot by
+        construction — a drained slice can never match this predicate again.
+
+        The ``substrate.%`` exclusion mirrors the alarm's: historical
+        non-perceptual rows stay untouched (they're excluded from every
+        awareness-loop query anyway; rewriting history there buys nothing).
+        """
+        import thoth_db
+
+        from substrate.l1 import store as l1_store
+
+        stranded: list[dict] = []
+        async with thoth_db.transaction() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT sl.slice_id, sl.stream_id, sl.ingest_time_world,
+                       EXTRACT(EPOCH FROM (now() - sl.ingest_time_world))::bigint AS age_seconds,
+                       sl.metadata->>'session_id' AS session_id
+                  FROM substrate_slices  sl
+                  JOIN substrate_streams st ON st.stream_id = sl.stream_id
+                 WHERE sl.sentinel_state      = 'passed'
+                   AND sl.consolidation_state = 'unconsolidated'
+                   AND sl.ingest_time_world < now() - make_interval(secs => $2)
+                   AND st.name NOT LIKE 'substrate.%'
+                 ORDER BY sl.ingest_time_world ASC
+                 LIMIT $1
+                 FOR UPDATE OF sl SKIP LOCKED
+                """,
+                self.STRANDED_BATCH_LIMIT,
+                self.STRANDED_DRAIN_SECONDS,
+            )
+            if rows:
+                await l1_store.mark_slices_consolidated(
+                    [r["slice_id"] for r in rows], [], conn=conn
+                )
+            stranded = [
+                {
+                    "slice_id": r["slice_id"],
+                    "stream_id": r["stream_id"],
+                    "age_seconds": int(r["age_seconds"]),
+                    "session_id": r["session_id"],
+                }
+                for r in rows
+            ]
+        if stranded:
+            self._log.info(
+                "curator.stranded_drain: tombstoned %d slice(s) older than %ds",
+                len(stranded),
+                self.STRANDED_DRAIN_SECONDS,
+            )
+        return stranded
 
     # ------------------------------------------------------------------
     # Phase C: embedding emit (spec §5.7).
@@ -759,6 +861,29 @@ class Curator(SubAgent):
                     "age_seconds": a["age_seconds"],
                     "consolidation_window_seconds": a["window_seconds"],
                     "bumped_to": a["bumped_to"],
+                },
+            )
+
+    async def _emit_stranded_audit(self, stranded: list[dict]) -> None:
+        """Record one ``curator.slice_stranded`` telemetry row per drained
+        slice (issue #287). One-shot by construction: the drain flips the
+        slice to ``consolidated``, so it can never be re-selected."""
+        if not stranded:
+            return
+
+        from substrate.telemetry import write as telemetry_write
+
+        for s in stranded:
+            await telemetry_write(
+                self._substrate,
+                agent="curator",
+                event="curator.slice_stranded",
+                payload={
+                    "slice_id": str(s["slice_id"]),
+                    "stream_id": str(s["stream_id"]),
+                    "age_seconds": s["age_seconds"],
+                    "session_id": s["session_id"],
+                    "action": "tombstoned_empty_consolidation",
                 },
             )
 
