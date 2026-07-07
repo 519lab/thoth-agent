@@ -2679,6 +2679,24 @@ class TestRunConversation:
         assert mock_handle_function_call.call_args.kwargs["tool_call_id"] == "c1"
         assert mock_handle_function_call.call_args.kwargs["session_id"] == agent.session_id
 
+    def test_sequential_tool_execution_increments_turn_tally(self, agent):
+        """A single-tool (sequential-path) turn must bump the per-turn tool
+        tallies, so the recall outcome proxy doesn't undercount it (#297)."""
+        self._setup_agent(agent)
+        tc = _mock_tool_call(name="web_search", arguments="{}", call_id="c1")
+        resp1 = _mock_response(content="", finish_reason="tool_calls", tool_calls=[tc])
+        resp2 = _mock_response(content="Done.", finish_reason="stop")
+        agent.client.chat.completions.create.side_effect = [resp1, resp2]
+        with (
+            patch("run_agent.handle_function_call", return_value="search result"),
+            patch.object(agent, "_persist_session"),
+            patch.object(agent, "_save_trajectory"),
+            patch.object(agent, "_cleanup_task_resources"),
+        ):
+            agent.run_conversation("search something")
+        assert agent._turn_tool_calls == 1
+        assert agent._turn_tool_failures == 0
+
     def test_request_scoped_api_hooks_fire_for_each_api_call(self, agent):
         self._setup_agent(agent)
         tc = _mock_tool_call(name="web_search", arguments="{}", call_id="c1")

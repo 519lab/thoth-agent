@@ -804,6 +804,15 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
         # Log tool errors to the persistent error log so [error] tags
         # in the UI always have a corresponding detailed entry on disk.
         _is_error_result, _ = _detect_tool_failure(function_name, function_result)
+        # Per-turn tool tallies feeding the recall outcome proxy (innovation #1).
+        # The parallel executor bumps these in _run_tool; the sequential path
+        # (single-tool / interactive turns) must too, or the turn undercounts
+        # tool activity and failures for the recall outcome label (#297). Guarded
+        # by ``not _execution_blocked`` so a blocked call counts as neither.
+        if not _execution_blocked:
+            agent._turn_tool_calls = getattr(agent, "_turn_tool_calls", 0) + 1
+            if _is_error_result:
+                agent._turn_tool_failures = getattr(agent, "_turn_tool_failures", 0) + 1
         if not _execution_blocked:
             function_result = agent._append_guardrail_observation(
                 function_name,
