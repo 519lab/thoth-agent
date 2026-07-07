@@ -225,6 +225,51 @@ async def test_decay_halves_salience_after_one_half_life(substrate):
 
 
 @pytest.mark.asyncio
+async def test_decay_does_not_underflow_on_very_stale_slice(substrate):
+    """A slice whose ``salience_updated_at`` is far older than its half-life
+    must not raise ``NumericValueOutOfRangeError`` (underflow).
+
+    Regression for #296: an unclamped ``POWER(0.5, dt/half_life)`` with a huge
+    exponent underflows double precision, and because the decay UPDATE is a
+    single statement it aborts entirely — so NO slice decays and
+    ``salience_updated_at`` never advances, an every-tick crash loop.
+    """
+    import thoth_db
+
+    stream = await substrate.streams.register(
+        name="thoth.test.decay_underflow",
+        family=Family.EXTEROCEPTIVE,
+        modality=Modality.TEXT,
+        source="cli",
+        organ="gateway.cli",
+        decay_profile_id=DEFAULT_TEXT_PROFILE,
+    )
+    # 100 days old against the 1-hour default half-life = 2400 half-lives.
+    # Unclamped, POWER(0.5, 2400) underflows double precision and raises.
+    slice_id = await _make_passed_slice(
+        substrate, stream.stream_id, "very stale",
+        salience=1.0, salience_updated_at_offset_s=100 * 24 * 3600.0,
+    )
+
+    curator = Curator(substrate)
+    # Must not raise (the whole point of #296).
+    await curator._apply_natural_decay()
+
+    async with thoth_db.connection() as conn:
+        row = await conn.fetchrow(
+            "SELECT salience_score, "
+            "       now() - salience_updated_at < interval '5 seconds' AS advanced "
+            "FROM substrate_slices WHERE slice_id = $1",
+            slice_id,
+        )
+    # Floored to ~0 (2^-60), far below any retention threshold, and — crucially —
+    # the UPDATE committed (salience_updated_at advanced) rather than aborting.
+    assert row["salience_score"] is not None
+    assert 0.0 <= float(row["salience_score"]) < 1e-6
+    assert row["advanced"] is True
+
+
+@pytest.mark.asyncio
 async def test_decay_does_not_touch_recently_updated(substrate):
     """Slice updated <1s ago is skipped by the decay UPDATE."""
     import thoth_db

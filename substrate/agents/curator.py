@@ -281,8 +281,20 @@ class Curator(SubAgent):
                    SET salience_score = sl.salience_score *
                        POWER(
                            0.5,
-                           EXTRACT(EPOCH FROM (now() - sl.salience_updated_at))
-                           / GREATEST(EXTRACT(EPOCH FROM dp.natural_half_life), 0.001)
+                           -- Cap the exponent at 60 half-lives.  A slice whose
+                           -- salience_updated_at is very old relative to its
+                           -- half-life would otherwise drive POWER(0.5, huge)
+                           -- below the smallest double and raise
+                           -- NumericValueOutOfRangeError (underflow), aborting
+                           -- the whole batched UPDATE so NO slice decays and
+                           -- salience_updated_at never advances — an every-tick
+                           -- crash loop. 2^-60 (~9e-19) is already far below any
+                           -- retention floor, so the slice releases normally.
+                           LEAST(
+                               EXTRACT(EPOCH FROM (now() - sl.salience_updated_at))
+                               / GREATEST(EXTRACT(EPOCH FROM dp.natural_half_life), 0.001),
+                               60.0
+                           )
                        ),
                        salience_updated_at = now()
                   FROM substrate_streams st
