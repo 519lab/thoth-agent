@@ -81,6 +81,54 @@ async def ensure_partitions(
     return names
 
 
+async def find_underindexed_partitions(
+    conn: "asyncpg.Connection",
+) -> list[dict]:
+    """Return child partitions of ``substrate_slices`` that carry FEWER
+    indexes than the parent table defines.
+
+    A healthy partition has one index per parent partitioned index (PG 17
+    propagates them on ``CREATE TABLE … PARTITION OF``). A shortfall means a
+    partition was provisioned while a parent partitioned index was INVALID —
+    so inserts there seq-scan and uniqueness goes unenforced (issue #284,
+    e.g. ``substrate_slices_202609`` came up with zero indexes). Repairing the
+    live state (recreating the parent indexes so they re-propagate) is an
+    operator maintenance-window task; this detector only surfaces the drift.
+    """
+    rows = await conn.fetch(
+        """
+        WITH parent AS (
+            SELECT count(*) AS n
+              FROM pg_index i
+              JOIN pg_class t ON t.oid = i.indrelid
+             WHERE t.relname = 'substrate_slices'
+        ),
+        children AS (
+            SELECT child.relname AS name,
+                   (SELECT count(*)
+                      FROM pg_index ci
+                     WHERE ci.indrelid = child.oid) AS n
+              FROM pg_inherits ih
+              JOIN pg_class parent ON parent.oid = ih.inhparent
+              JOIN pg_class child  ON child.oid  = ih.inhrelid
+             WHERE parent.relname = 'substrate_slices'
+        )
+        SELECT c.name AS partition, c.n AS index_count, p.n AS expected
+          FROM children c CROSS JOIN parent p
+         WHERE c.n < p.n
+         ORDER BY c.name
+        """
+    )
+    return [
+        {
+            "partition": r["partition"],
+            "index_count": r["index_count"],
+            "expected": r["expected"],
+        }
+        for r in rows
+    ]
+
+
 async def list_existing_partitions(conn: "asyncpg.Connection") -> list[str]:
     """Return the names of every child partition of ``substrate_slices``,
     sorted lexicographically (which, by the YYYYMM convention, is also

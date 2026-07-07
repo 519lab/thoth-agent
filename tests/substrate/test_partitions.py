@@ -15,6 +15,7 @@ import pytest
 
 from substrate.storage.partitions import (
     ensure_partitions,
+    find_underindexed_partitions,
     list_existing_partitions,
     _month_ranges,
 )
@@ -193,3 +194,32 @@ async def test_partition_indexes_inherited_from_parent(thoth_db_initialized):
     assert any("stream" in n and "time" in n for n in names), names
     # Pending partial index should be present.
     assert any("pending" in n for n in names), names
+
+
+@pytest.mark.asyncio
+async def test_find_underindexed_partitions_detects_invalid_parent_index(
+    thoth_db_initialized,
+):
+    """Reproduces #284: an INVALID parent partitioned index (created ON ONLY,
+    with no child indexes attached) leaves every child partition one index
+    short. The detector flags them; a healthy schema reports clean."""
+    from datetime import date as _date
+
+    import thoth_db
+
+    today = _date(2026, 8, 15)
+    async with thoth_db.connection() as conn:
+        await ensure_partitions(conn, ahead_months=1, today=today)
+        # Healthy: every partition inherits the full parent index set.
+        assert await find_underindexed_partitions(conn) == []
+
+        # ON ONLY = a partitioned parent index with no children attached —
+        # exactly the invalid state behind #284's zero-index partition.
+        await conn.execute(
+            "CREATE INDEX slices_underidx_probe "
+            "ON ONLY substrate_slices (trust_score)"
+        )
+        flagged = await find_underindexed_partitions(conn)
+
+    assert flagged, "expected under-indexed partitions after an ON ONLY parent index"
+    assert all(p["index_count"] == p["expected"] - 1 for p in flagged)

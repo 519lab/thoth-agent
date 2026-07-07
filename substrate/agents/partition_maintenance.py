@@ -19,7 +19,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from substrate.agents.base import Level, SubAgent
-from substrate.storage.partitions import ensure_partitions
+from substrate.storage.partitions import (
+    ensure_partitions,
+    find_underindexed_partitions,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from substrate.facade import Substrate
@@ -64,6 +67,34 @@ class PartitionMaintenanceWorker(SubAgent):
             self._log.debug(
                 "partition.ensure.ok partitions=%s", ",".join(created)
             )
+
+            # #284 health check: a partition provisioned while a parent index
+            # was INVALID comes up under-indexed (inserts seq-scan, uniqueness
+            # unenforced). PG won't self-heal it — surface it loudly so it's
+            # caught before it matters, instead of only via a manual DB probe.
+            underindexed = await find_underindexed_partitions(conn)
+        if underindexed:
+            names = ", ".join(
+                f"{p['partition']} ({p['index_count']}/{p['expected']})"
+                for p in underindexed
+            )
+            self._log.warning(
+                "partition.underindexed count=%d partitions=%s — recreate the "
+                "parent indexes on substrate_slices so they re-propagate",
+                len(underindexed),
+                names,
+            )
+            try:
+                from substrate.telemetry import write as telemetry_write
+
+                await telemetry_write(
+                    self._substrate,
+                    agent="partition-maintenance",
+                    event="partition.underindexed",
+                    payload={"partitions": underindexed},
+                )
+            except Exception as exc:  # telemetry is best-effort, never fatal
+                self._log.debug("partition.underindexed telemetry failed: %s", exc)
 
     # Override the base class interval so the daily cadence ignores
     # the Conductor's intensity dial. The worker is still
