@@ -359,3 +359,30 @@ async def test_conductor_coherence_none_leaves_backlog_policy(booted, monkeypatc
     # Corrective-only keys must not appear under the plain backlog policy.
     assert "critic" not in snap
     assert "dreamer" not in snap
+
+
+@pytest.mark.asyncio
+async def test_idle_dial_is_throttled_and_change_logs_immediately(booted, monkeypatch):
+    """Repeated idle ticks with an unchanged decision write at most one
+    conductor_log row (heartbeat); a changed decision logs immediately (#285)."""
+    import thoth_db
+
+    monkeypatch.setenv("THOTH_SUBSTRATE_CONDUCTOR", "1")
+
+    async def _log_count():
+        async with thoth_db.connection() as conn:
+            return await conn.fetchval("SELECT COUNT(*) FROM substrate_conductor_log")
+
+    c = AdaptiveConductor(booted)
+    # Idle (no backlog): first tick logs, then unchanged ticks are throttled.
+    await c.tick()
+    assert await _log_count() == 1
+    await c.tick()
+    await c.tick()
+    assert await _log_count() == 1, "unchanged idle ticks must not write new rows"
+
+    # A real change (backlog escalates the parser dial) logs immediately.
+    monkeypatch.setenv("CONDUCTOR_PENDING_HIGH", "5")
+    await _seed_pending(booted, 8)
+    await c.tick()
+    assert await _log_count() == 2, "a changed decision must log immediately"
