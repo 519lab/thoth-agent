@@ -2893,6 +2893,111 @@ class TestRunConversation:
         assert result["final_response"] == "Here is the actual answer."
         assert result["api_calls"] == 2  # 1 original + 1 nudge retry
 
+    def test_false_stop_narration_after_tool_triggers_nudge(self, agent):
+        """A non-empty 'I'll now… Continuing…' response after tool activity is
+        nudged to continue instead of ending the turn; the model then completes."""
+        self._setup_agent(agent)
+        tc = _mock_tool_call(name="web_search", arguments="{}", call_id="c1")
+        resp1 = _mock_response(content="", finish_reason="tool_calls", tool_calls=[tc])
+        resp2 = _mock_response(
+            content="I'll now analyze the results. Continuing...",
+            finish_reason="stop",
+        )
+        resp3 = _mock_response(content="Done. Found 3 matches.", finish_reason="stop")
+        agent.client.chat.completions.create.side_effect = [resp1, resp2, resp3]
+        with (
+            patch("run_agent.handle_function_call", return_value="search result"),
+            patch.object(agent, "_persist_session"),
+            patch.object(agent, "_save_trajectory"),
+            patch.object(agent, "_cleanup_task_resources"),
+        ):
+            result = agent.run_conversation("search something")
+        assert result["completed"] is True
+        assert result["final_response"] == "Done. Found 3 matches."
+        assert result["api_calls"] == 3  # tool call + nudged narration + completion
+        # the false-stop nudge was injected as a user message
+        assert any(
+            msg.get("role") == "user"
+            and "call the next tool now" in (msg.get("content") or "")
+            for msg in result["messages"]
+        )
+        # the narration itself is preserved in history (not dropped or emptied)
+        assert any(
+            msg.get("role") == "assistant"
+            and "Continuing" in (msg.get("content") or "")
+            for msg in result["messages"]
+        )
+
+    def test_false_stop_no_nudge_without_tool_activity(self, agent):
+        """A narration-style response with no prior tool call this turn is a
+        normal answer and must NOT be nudged (the guard requires tool activity)."""
+        self._setup_agent(agent)
+        resp1 = _mock_response(
+            content="I'll now look into that. Continuing...",
+            finish_reason="stop",
+        )
+        agent.client.chat.completions.create.side_effect = [resp1]
+        with (
+            patch.object(agent, "_persist_session"),
+            patch.object(agent, "_save_trajectory"),
+            patch.object(agent, "_cleanup_task_resources"),
+        ):
+            result = agent.run_conversation("what will you do?")
+        assert result["completed"] is True
+        assert result["final_response"] == "I'll now look into that. Continuing..."
+        assert result["api_calls"] == 1
+        assert result["turn_exit_reason"].startswith("text_response")
+
+    def test_false_stop_nudge_is_capped(self, agent):
+        """The false-stop nudge fires at most twice per run of consecutive
+        narrations, then yields to the user instead of looping forever."""
+        self._setup_agent(agent)
+        tc = _mock_tool_call(name="web_search", arguments="{}", call_id="c1")
+        resp_tool = _mock_response(content="", finish_reason="tool_calls", tool_calls=[tc])
+        narr = _mock_response(content="Continuing on the task...", finish_reason="stop")
+        agent.client.chat.completions.create.side_effect = [resp_tool, narr, narr, narr]
+        with (
+            patch("run_agent.handle_function_call", return_value="ok"),
+            patch.object(agent, "_persist_session"),
+            patch.object(agent, "_save_trajectory"),
+            patch.object(agent, "_cleanup_task_resources"),
+        ):
+            result = agent.run_conversation("do the task")
+        # 1 tool call + 3 narrations (first two nudged, third falls through & ends turn)
+        assert result["api_calls"] == 4
+        assert result["final_response"] == "Continuing on the task..."
+        nudges = [
+            m for m in result["messages"]
+            if m.get("role") == "user"
+            and "call the next tool now" in (m.get("content") or "")
+        ]
+        assert len(nudges) == 2  # capped at 2
+
+    def test_looks_like_false_stop_precision(self):
+        """The false-stop heuristic fires on narrate-and-yield but not on
+        genuine final answers (regression for review false positives)."""
+        from agent.conversation_loop import _looks_like_false_stop as f
+        for t in [  # narrate-and-stop → should nudge
+            "I will now implement the fix. Continuing...",
+            "Continuing on the corpus.",
+            "I'll now improve extraction to reduce nulls.",
+            "...moved the cap earlier. Continuing.",
+            "Let me continue with the next file.",
+        ]:
+            assert f(t) is True, t
+        for t in [  # genuine final answers → must NOT nudge
+            "No matches...",
+            'The last log line is "Retrying..."',
+            "The job is continuing normally.",
+            "The migration is proceeding to phase 2.",
+            "Top matches: foo, bar, baz…",
+            "Done. All 42 tests are green.",
+            "The answer is 42.",
+            "",
+            "x" * 700 + " i'll now do it",  # too long → assumed a genuine summary
+        ]:
+            assert f(t) is False, t
+
     def test_empty_response_triggers_fallback_provider(self, agent):
         """After 3 empty retries, fallback provider is activated and produces content."""
         self._setup_agent(agent)
