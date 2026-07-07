@@ -363,6 +363,9 @@ GOOGLE_MODEL_OPERATIONAL_GUIDANCE = (
     "to prevent CLI tools from hanging on prompts.\n"
     "- **Keep going:** Work autonomously until the task is fully resolved. "
     "Don't stop with a plan — execute it.\n"
+    "- **Act, don't narrate:** Never end a turn by describing what you'll do "
+    "next — call the tool now, or give your final answer. Stop only when the "
+    "task is complete.\n"
 )
 
 

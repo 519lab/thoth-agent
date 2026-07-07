@@ -129,6 +129,58 @@ def _ra():
     return run_agent
 
 
+# Continuation-intent phrases a model uses to narrate a next step instead of
+# acting ("I'll now …", "Continuing").  Deliberately narrow — this targets the
+# observed narrate-and-yield failure, not genuine multi-paragraph summaries.
+# First-person intent-to-act-next phrases — very rare in genuine final answers.
+# Deliberately NOT bare "continuing"/"proceeding to"/"moving on to": those match
+# ordinary status prose ("the job is continuing normally", "the migration is
+# proceeding to phase 2") and caused false positives in review.
+_FALSE_STOP_PHRASES = (
+    "i'll now",
+    "i will now",
+    "i'll continue",
+    "i will continue",
+    "i'll proceed",
+    "i will proceed",
+    "i'll go ahead",
+    "let me continue",
+    "let me now",
+    "next, i'll",
+    "next i'll",
+    "next, i will",
+)
+
+# "Continuing" only as a standalone declaration ("Continuing.", "Continuing…",
+# "Continuing on the corpus", "…Continuing.") — i.e. the model announcing it is
+# resuming. Excludes status prose where "continuing" is a mid-clause verb
+# ("is continuing normally", "continuing to grow").
+_CONTINUING_DECL_RE = re.compile(
+    r"\bcontinuing\b\s*(?:[.!?…]|on\b|with\b|now\b|$)", re.IGNORECASE
+)
+
+
+def _looks_like_false_stop(text: str) -> bool:
+    """True when a non-empty assistant message reads as mid-task continuation
+    narration rather than a final answer.
+
+    Conservative by design: requires a first-person intent-to-act-next phrase or
+    a standalone "Continuing" declaration, within a short-ish message.  A bare
+    trailing ellipsis is intentionally NOT a signal (genuine short answers and
+    CJK tone-softeners commonly end in "…").  Longer text is assumed to be a
+    genuine summary/answer and is left to end the turn.
+    """
+    if not text:
+        return False
+    stripped = text.strip()
+    if not stripped or len(stripped) > 600:
+        return False
+    if _CONTINUING_DECL_RE.search(stripped):
+        return True
+    lowered = stripped.lower()
+    return any(phrase in lowered for phrase in _FALSE_STOP_PHRASES)
+
+
 def _restore_or_build_system_prompt(agent, system_message, conversation_history):
     """Restore the cached system prompt from the session DB or build it fresh.
 
@@ -583,6 +635,7 @@ def run_conversation(
     interrupted = False
     failed = False
     codex_ack_continuations = 0
+    false_stop_continuations = 0  # capped nudges when the model narrates a next step but makes no tool call
     length_continue_retries = 0
     truncated_tool_call_retries = 0
     truncated_response_parts: List[str] = []
@@ -605,6 +658,10 @@ def run_conversation(
     # with) so the correlation window lines up.
     agent._turn_tool_calls = 0
     agent._turn_tool_failures = 0
+    # Reliable "a tool ran this turn" flag for the false-stop guard. Set in the
+    # tool-calls branch below (every tool round funnels through it), unlike
+    # ``_turn_tool_calls`` which only the parallel executor path increments.
+    agent._turn_had_tool_call = False
     from datetime import datetime as _dt, timezone as _tz
     _turn_started_at = _dt.now(_tz.utc)
 
@@ -3442,6 +3499,12 @@ def run_conversation(
                 # flag so it can fire again if the model goes empty on
                 # a LATER tool round.
                 agent._post_tool_empty_retried = False
+                # Mark that a tool actually ran this turn (both executor paths
+                # reach here) — the false-stop guard gates on this.
+                agent._turn_had_tool_call = True
+                # Real progress was made — refresh the false-stop nudge budget
+                # so a later narrate-and-yield in this turn is caught again.
+                false_stop_continuations = 0
 
                 messages.append(assistant_msg)
                 agent._emit_interim_assistant_message(assistant_msg)
@@ -3844,7 +3907,65 @@ def run_conversation(
                     length_continue_retries = 0
                 
                 final_response = agent._strip_think_blocks(final_response).strip()
-                
+
+                # ── False-stop continuation guard ──────────────────────
+                # The model ended its turn with a NON-EMPTY text response and
+                # no tool call, yet it was mid-task (a tool ran this turn) and
+                # the text reads as continuation narration ("I'll now …",
+                # "Continuing") rather than a final answer.  Weaker models
+                # (e.g. grok-4.3 on the codex_responses path) narrate-and-yield
+                # instead of calling the next tool, forcing the user to type
+                # "continue".  Nudge once (capped) instead of ending the turn.
+                # Mirrors the codex_ack continuation and the post-tool
+                # empty-response nudge above.  Only appends new messages, so
+                # prompt caching stays valid.
+                if (
+                    finish_reason == "stop"
+                    and getattr(agent, "_turn_had_tool_call", False)
+                    and false_stop_continuations < 2
+                    and _looks_like_false_stop(final_response)
+                ):
+                    false_stop_continuations += 1
+                    # Drop any trailing internal scaffolding (thinking-prefill /
+                    # empty-recovery sentinels) before stacking the narration +
+                    # nudge, so durable history keeps the single-pop-then-append
+                    # invariant used by the final-response and tool-call paths.
+                    while (
+                        messages
+                        and isinstance(messages[-1], dict)
+                        and (
+                            messages[-1].get("_thinking_prefill")
+                            or messages[-1].get("_empty_recovery_synthetic")
+                            or messages[-1].get("_empty_terminal_sentinel")
+                        )
+                    ):
+                        messages.pop()
+                    # Label the interim narration "incomplete" (not "stop") to
+                    # match the sibling continuation paths (codex_ack, prefill).
+                    interim_msg = agent._build_assistant_message(assistant_message, "incomplete")
+                    messages.append(interim_msg)
+                    agent._emit_interim_assistant_message(interim_msg)
+                    logger.info(
+                        "Non-empty continuation-intent response with no tool "
+                        "call after tool activity — nudging to continue (%d/2)",
+                        false_stop_continuations,
+                    )
+                    agent._emit_status(
+                        "↻ Model described a next step without acting — nudging to continue"
+                    )
+                    messages.append({
+                        "role": "user",
+                        "content": (
+                            "[System: You described a next step but ended your turn "
+                            "without calling a tool or giving a final answer. If the "
+                            "task is incomplete, call the next tool now. If it is "
+                            "genuinely complete, reply \"Done\" with a one-line summary.]"
+                        ),
+                        "_false_stop_synthetic": True,
+                    })
+                    agent._session_messages = messages
+                    continue
+
                 final_msg = agent._build_assistant_message(assistant_message, finish_reason)
 
                 # Pop thinking-only prefill and empty-response retry
