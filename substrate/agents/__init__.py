@@ -12,12 +12,14 @@ from substrate.agents.curator import Curator
 from substrate.agents.force_reject import ForceRejectWorker
 from substrate.agents.partition_maintenance import PartitionMaintenanceWorker
 from substrate.agents.sentinel import StubSentinel, _trust_for_modality
+from substrate.agents.tuner_watch import RecallTunerWatch
 
 __all__ = [
     "Curator",
     "ForceRejectWorker",
     "Level",
     "PartitionMaintenanceWorker",
+    "RecallTunerWatch",
     "StubConductor",
     "StubSentinel",
     "SubAgent",
