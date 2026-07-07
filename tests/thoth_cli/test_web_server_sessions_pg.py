@@ -111,3 +111,52 @@ class TestRouteSessionDB:
         result = await _route_session_db(_PgDB(), _query())
         assert result == 42
         assert "coro" in seen
+
+
+def test_startup_event_initializes_db_pool(monkeypatch):
+    """The dashboard's startup event must initialize the thoth_db pool, or every
+    PG-backed /api/sessions and /api/logs call 500s with 'thoth_db.init() not
+    called'. Regression for the standalone-dashboard pool-init bug."""
+    from starlette.testclient import TestClient
+
+    import thoth_db
+    from thoth_cli.web_server import app
+
+    called = {}
+
+    async def _fake_init(dsn, **kwargs):
+        called["dsn"] = dsn
+
+    async def _fake_run_on_pool_loop(coro):
+        return await coro
+
+    monkeypatch.setattr(thoth_db, "init", _fake_init, raising=False)
+    monkeypatch.setattr(thoth_db, "run_on_pool_loop", _fake_run_on_pool_loop, raising=False)
+    monkeypatch.setenv("THOTH_PG_DSN", "postgresql://u:p@localhost:5432/thoth")
+
+    # Entering the TestClient context fires ASGI lifespan startup.
+    with TestClient(app):
+        pass
+
+    assert called.get("dsn") == "postgresql://u:p@localhost:5432/thoth"
+
+
+def test_startup_event_noops_without_dsn(monkeypatch):
+    """No THOTH_PG_DSN → the startup init is a warning no-op, never a crash."""
+    from starlette.testclient import TestClient
+
+    import thoth_db
+    from thoth_cli.web_server import app
+
+    called = {"init": False}
+
+    async def _fake_init(dsn, **kwargs):
+        called["init"] = True
+
+    monkeypatch.setattr(thoth_db, "init", _fake_init, raising=False)
+    monkeypatch.delenv("THOTH_PG_DSN", raising=False)
+
+    with TestClient(app):
+        pass
+
+    assert called["init"] is False
