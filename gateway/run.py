@@ -100,6 +100,15 @@ from gateway.replay import (  # noqa: F401
     _last_transcript_timestamp,
 )
 
+# Session-key / platform-key parsing helpers were extracted to
+# gateway/session_key.py (issue #311, gateway sprawl umbrella). Re-imported
+# here so existing call sites, ``from gateway.run import ...`` in tests, and
+# ``patch("gateway.run.<name>")`` targets keep resolving unchanged.
+from gateway.session_key import (  # noqa: F401
+    _parse_session_key,
+    _platform_config_key,
+)
+
 # --- Agent cache tuning ---------------------------------------------------
 # Bounds the per-session AIAgent cache to prevent unbounded growth in
 # long-lived gateways (each AIAgent holds LLM clients, tool schemas,
@@ -862,11 +871,6 @@ def _check_unavailable_skill(command_name: str) -> str | None:
     return None
 
 
-def _platform_config_key(platform: "Platform") -> str:
-    """Map a Platform enum to its config.yaml key (LOCAL→"cli", rest→enum value)."""
-    return "cli" if platform == Platform.LOCAL else platform.value
-
-
 def _teams_pipeline_plugin_enabled() -> bool:
     """Return True when the standalone Teams pipeline plugin is enabled."""
     config = _load_gateway_config()
@@ -945,32 +949,6 @@ def _resolve_thoth_bin() -> Optional[list[str]]:
     except Exception:
         pass
 
-    return None
-
-
-def _parse_session_key(session_key: str) -> "dict | None":
-    """Parse a session key into its component parts.
-
-    Session keys follow the format
-    ``agent:main:{platform}:{chat_type}:{chat_id}[:{extra}...]``.
-    Returns a dict with ``platform``, ``chat_type``, ``chat_id``, and
-    optionally ``thread_id`` keys, or None if the key doesn't match.
-
-    The 6th element is only returned as ``thread_id`` for chat types where
-    it is unambiguous (``dm`` and ``thread``).  For group/channel sessions
-    the suffix may be a user_id (per-user isolation) rather than a
-    thread_id, so we leave ``thread_id`` out to avoid mis-routing.
-    """
-    parts = session_key.split(":")
-    if len(parts) >= 5 and parts[0] == "agent" and parts[1] == "main":
-        result = {
-            "platform": parts[2],
-            "chat_type": parts[3],
-            "chat_id": parts[4],
-        }
-        if len(parts) > 5 and parts[3] in {"dm", "thread"}:
-            result["thread_id"] = parts[5]
-        return result
     return None
 
 
