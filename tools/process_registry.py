@@ -868,7 +868,7 @@ class ProcessRegistry:
         a daemon spawned by `thoth update` restarting the gateway) is still
         holding the stdout pipe open, the reader blocks forever and poll()
         keeps returning "running" indefinitely (issue #17327 — 74 polls over
-        7 minutes on Feishu).
+        7 minutes).
 
         This helper closes that window: when `session.exited` is still False
         but the direct child's `Popen.poll()` reports an exit code, drain any

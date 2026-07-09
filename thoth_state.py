@@ -1082,7 +1082,7 @@ class _AsyncSessionDB:
                     msg.get("codex_message_items") if role == "assistant" else None
                 )
                 # Accept either `platform_message_id` (new explicit name) or
-                # `message_id` (yuanbao's existing convention on message dicts).
+                # `message_id` (an older convention on message dicts).
                 platform_msg_id = (
                     msg.get("platform_message_id") or msg.get("message_id")
                 )

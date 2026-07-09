@@ -175,12 +175,7 @@ Cron job results can be delivered to any supported platform:
 | Email | `email` | Deliver via email |
 | SMS | `sms` | Deliver via SMS |
 | Home Assistant | `homeassistant` | Deliver to HA conversation |
-| DingTalk | `dingtalk` | Deliver to DingTalk |
-| Feishu | `feishu` | Deliver to Feishu |
-| WeCom | `wecom` | Deliver to WeCom |
-| Weixin | `weixin` | Deliver to Weixin (WeChat) |
 | BlueBubbles | `bluebubbles` | Deliver to iMessage via BlueBubbles |
-| QQ Bot | `qqbot` | Deliver to QQ (Tencent) via Official API v2 |
 
 For Telegram topics, use the format `telegram:<chat_id>:<thread_id>` (e.g., `telegram:-1001234567890:17585`).
 

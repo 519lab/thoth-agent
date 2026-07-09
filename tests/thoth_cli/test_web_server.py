@@ -147,7 +147,6 @@ class TestWebServerEndpoints:
                 "platforms": {
                     "telegram": {"state": "connected", "updated_at": "2026-04-12T00:00:00+00:00"},
                     "whatsapp": {"state": "retrying", "updated_at": "2026-04-12T00:00:00+00:00"},
-                    "feishu": {"state": "connected", "updated_at": "2026-04-12T00:00:00+00:00"},
                 },
             },
         )
@@ -178,7 +177,6 @@ class TestWebServerEndpoints:
                 "updated_at": "2026-04-12T00:00:00+00:00",
                 "platforms": {
                     "whatsapp": {"state": "retrying", "updated_at": "2026-04-12T00:00:00+00:00"},
-                    "feishu": {"state": "connected", "updated_at": "2026-04-12T00:00:00+00:00"},
                 },
             },
         )

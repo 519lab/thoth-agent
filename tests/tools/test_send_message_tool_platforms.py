@@ -4,7 +4,7 @@ The companion ``test_send_message_tool.py`` already covers Telegram/Discord/
 Signal/Matrix-adapter and the higher-level ``_send_to_platform`` chunking +
 ``_handle_send`` flows. This file fills the large coverage gap (the module sat
 at ~27%) on the remaining one-shot HTTP senders — Slack, WhatsApp, Email, SMS,
-Mattermost, Matrix (CS-API), Home Assistant, QQBot — plus the pure
+Mattermost, Matrix (CS-API), Home Assistant — plus the pure
 helpers ``_describe_media_for_mirror`` / ``_telegram_retry_delay`` and the
 ``_send_to_platform`` routing table for the non-media platforms.
 
@@ -32,7 +32,6 @@ from tools.send_message_tool import (  # noqa: E402
     _send_homeassistant,
     _send_mattermost,
     _send_matrix,
-    _send_qqbot,
     _send_slack,
     _send_sms,
     _send_to_platform,
@@ -68,41 +67,6 @@ def _aiohttp_mock(status, json_data=None, text="error body"):
     session.put = MagicMock(return_value=resp)
     return session, resp
 
-
-class _FakeHttpxResp:
-    """Minimal httpx.Response stand-in (sync .json()/.raise_for_status())."""
-
-    def __init__(self, status_code=200, json_data=None, raise_exc=None):
-        self.status_code = status_code
-        self._json = json_data if json_data is not None else {}
-        self._raise = raise_exc
-
-    def json(self):
-        return self._json
-
-    def raise_for_status(self):
-        if self._raise is not None:
-            raise self._raise
-
-
-class _FakeHttpxClient:
-    """httpx.AsyncClient stand-in returning queued responses in order."""
-
-    def __init__(self, responses):
-        self._responses = list(responses)
-        self.calls = []
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *_a):
-        return False
-
-    async def post(self, url, **kwargs):
-        self.calls.append((url, kwargs))
-        if len(self._responses) > 1:
-            return self._responses.pop(0)
-        return self._responses[0]
 
 
 class _FakeFormData:
@@ -449,80 +413,6 @@ class TestSendHomeAssistant:
 
 
 # ---------------------------------------------------------------------------
-# _send_qqbot (httpx mocked; channel -> c2c -> group fallback chain)
-# ---------------------------------------------------------------------------
-
-
-class TestSendQqbot:
-    def _pconfig(self):
-        return SimpleNamespace(token="secret", extra={"app_id": "1234"})
-
-    def test_not_configured(self):
-        result = _run(_send_qqbot(SimpleNamespace(token="", extra={}), "chat", "hi"))
-        assert "not configured" in result["error"].lower()
-
-    def test_token_request_failed(self):
-        client = _FakeHttpxClient([_FakeHttpxResp(500, {})])
-        with patch("httpx.AsyncClient", return_value=client):
-            result = _run(_send_qqbot(self._pconfig(), "chat", "hi"))
-        assert "token request failed: 500" in result["error"]
-
-    def test_no_access_token(self):
-        client = _FakeHttpxClient([_FakeHttpxResp(200, {})])  # missing access_token
-        with patch("httpx.AsyncClient", return_value=client):
-            result = _run(_send_qqbot(self._pconfig(), "chat", "hi"))
-        assert "no access_token" in result["error"]
-
-    def test_channel_endpoint_success(self):
-        client = _FakeHttpxClient([
-            _FakeHttpxResp(200, {"access_token": "tok"}),
-            _FakeHttpxResp(200, {"id": "q-1"}),
-        ])
-        with patch("httpx.AsyncClient", return_value=client):
-            result = _run(_send_qqbot(self._pconfig(), "chan-1", "hi"))
-        assert result["success"] is True
-        assert result["message_id"] == "q-1"
-        # token call + channel call only (no fallback)
-        assert len(client.calls) == 2
-
-    def test_falls_back_to_c2c(self):
-        client = _FakeHttpxClient([
-            _FakeHttpxResp(200, {"access_token": "tok"}),
-            _FakeHttpxResp(404, {}),            # channel fails
-            _FakeHttpxResp(200, {"id": "c2c-1"}),  # c2c succeeds
-        ])
-        with patch("httpx.AsyncClient", return_value=client):
-            result = _run(_send_qqbot(self._pconfig(), "user-1", "hi"))
-        assert result["success"] is True
-        assert result["message_id"] == "c2c-1"
-
-    def test_falls_back_to_group(self):
-        client = _FakeHttpxClient([
-            _FakeHttpxResp(200, {"access_token": "tok"}),
-            _FakeHttpxResp(404, {}),  # channel
-            _FakeHttpxResp(404, {}),  # c2c
-            _FakeHttpxResp(200, {"id": "grp-1"}),  # group
-        ])
-        with patch("httpx.AsyncClient", return_value=client):
-            result = _run(_send_qqbot(self._pconfig(), "group-1", "hi"))
-        assert result["success"] is True
-        assert result["message_id"] == "grp-1"
-
-    def test_all_endpoints_fail(self):
-        client = _FakeHttpxClient([
-            _FakeHttpxResp(200, {"access_token": "tok"}),
-            _FakeHttpxResp(404, {}),
-            _FakeHttpxResp(403, {}),
-            _FakeHttpxResp(500, {}),
-        ])
-        with patch("httpx.AsyncClient", return_value=client):
-            result = _run(_send_qqbot(self._pconfig(), "x", "hi"))
-        assert "channel=404" in result["error"]
-        assert "c2c=403" in result["error"]
-        assert "group=500" in result["error"]
-
-
-# ---------------------------------------------------------------------------
 # _send_to_platform routing table (non-media platforms)
 # ---------------------------------------------------------------------------
 
@@ -562,46 +452,12 @@ class TestSendToPlatformRouting:
         sender.assert_awaited_once()
         assert sender.await_args.args == ("tok", {"k": "v"}, "tgt", "msg")
 
-    def test_routes_wecom(self):
-        sender = AsyncMock(return_value={"success": True})
-        with patch("tools.send_message_tool._send_wecom", sender):
-            _run(_send_to_platform(Platform.WECOM, self._pconfig(), "chat", "msg"))
-        sender.assert_awaited_once()
-        assert sender.await_args.args == ({"k": "v"}, "chat", "msg")
-
     def test_routes_bluebubbles(self):
         sender = AsyncMock(return_value={"success": True})
         with patch("tools.send_message_tool._send_bluebubbles", sender):
             _run(_send_to_platform(Platform.BLUEBUBBLES, self._pconfig(), "chat", "msg"))
         sender.assert_awaited_once()
         assert sender.await_args.args == ({"k": "v"}, "chat", "msg")
-
-    def test_routes_qqbot(self):
-        sender = AsyncMock(return_value={"success": True})
-        pconfig = self._pconfig()
-        with patch("tools.send_message_tool._send_qqbot", sender):
-            _run(_send_to_platform(Platform.QQBOT, pconfig, "chat", "msg"))
-        sender.assert_awaited_once()
-        # _send_qqbot(pconfig, chat_id, chunk)
-        assert sender.await_args.args == (pconfig, "chat", "msg")
-
-    def test_routes_yuanbao_text_only(self):
-        sender = AsyncMock(return_value={"success": True})
-        with patch("tools.send_message_tool._send_yuanbao", sender):
-            _run(_send_to_platform(Platform.YUANBAO, self._pconfig(), "direct:acc", "msg"))
-        sender.assert_awaited_once()
-        # text-only path: _send_yuanbao(chat_id, chunk)
-        assert sender.await_args.args == ("direct:acc", "msg")
-
-    def test_routes_weixin_one_shot(self):
-        sender = AsyncMock(return_value={"success": True})
-        pconfig = self._pconfig()
-        with patch("tools.send_message_tool._send_weixin", sender):
-            _run(_send_to_platform(Platform.WEIXIN, pconfig, "filehelper", "msg"))
-        sender.assert_awaited_once()
-        # _send_weixin(pconfig, chat_id, message, media_files=...)
-        assert sender.await_args.args[0] is pconfig
-        assert sender.await_args.args[1] == "filehelper"
 
     def test_sender_error_short_circuits(self):
         sender = AsyncMock(return_value={"error": "nope"})

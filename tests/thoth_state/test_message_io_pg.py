@@ -160,12 +160,12 @@ async def test_replace_messages_with_tool_calls_jsonb(db):
 @pytest.mark.asyncio
 async def test_replace_messages_accepts_platform_message_id_alias(db):
     """replace_messages accepts both 'platform_message_id' and 'message_id' keys."""
-    await db.create_session("R4", source="yuanbao")
+    await db.create_session("R4", source="telegram")
     await db.replace_messages("R4", [
-        {"role": "user", "content": "hello", "message_id": "yuanbao-42"},
+        {"role": "user", "content": "hello", "message_id": "telegram-42"},
     ])
     msgs = await db.get_messages("R4")
-    assert msgs[0]["platform_message_id"] == "yuanbao-42"
+    assert msgs[0]["platform_message_id"] == "telegram-42"
 
 
 # ---------------------------------------------------------------------------

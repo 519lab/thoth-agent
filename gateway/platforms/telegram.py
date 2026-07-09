@@ -4183,7 +4183,7 @@ class TelegramAdapter(BasePlatformAdapter):
     def _telegram_observe_unmentioned_group_messages(self) -> bool:
         """Return whether skipped unmentioned group messages are stored as context.
 
-        When enabled with ``require_mention``, Telegram matches the Yuanbao /
+        When enabled with ``require_mention``, Telegram matches the
         OpenClaw-style group UX: observe ordinary group chatter in the session
         transcript, but only dispatch the agent when the bot is explicitly
         addressed.

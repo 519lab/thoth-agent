@@ -85,7 +85,7 @@ class SessionSource:
     user_name: Optional[str] = None
     thread_id: Optional[str] = None  # For forum topics, Discord threads, etc.
     chat_topic: Optional[str] = None  # Channel topic/description (Discord, Slack)
-    user_id_alt: Optional[str] = None  # Platform-specific stable alt ID (Signal UUID, Feishu union_id)
+    user_id_alt: Optional[str] = None  # Platform-specific stable alt ID (Signal UUID)
     chat_id_alt: Optional[str] = None  # Signal group internal ID
     is_bot: bool = False  # True when the message author is a bot/webhook (Discord)
     guild_id: Optional[str] = None  # Discord guild / Slack workspace / Matrix server scope
@@ -364,14 +364,6 @@ def build_session_context_prompt(
             "one idea per bubble, 1–3 sentences each. "
             "If the user needs a detailed answer, give the short version first "
             "and offer to elaborate."
-        )
-    elif context.source.platform == Platform.YUANBAO:
-        lines.append("")
-        lines.append(
-            "**Platform notes:** You are running inside Yuanbao. "
-            "You CAN send private (DM) messages via the send_message tool. "
-            "Use target='yuanbao:direct:<account_id>' for DM "
-            "and target='yuanbao:group:<group_code>' for group chat."
         )
 
     # Connected platforms
@@ -1279,7 +1271,7 @@ class SessionStore:
                     reasoning_details=message.get("reasoning_details") if message.get("role") == "assistant" else None,
                     codex_reasoning_items=message.get("codex_reasoning_items") if message.get("role") == "assistant" else None,
                     codex_message_items=message.get("codex_message_items") if message.get("role") == "assistant" else None,
-                    # Platform-side message id (yuanbao msg_id, telegram update_id, …).
+                    # Platform-side message id (telegram update_id, …).
                     # Accept either explicit ``platform_message_id`` or the legacy
                     # ``message_id`` key the JSONL transcript used.
                     platform_message_id=(

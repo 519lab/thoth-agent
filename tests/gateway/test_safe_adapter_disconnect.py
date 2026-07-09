@@ -73,7 +73,7 @@ async def test_safe_disconnect_times_out_and_continues(bare_runner, monkeypatch,
     adapter.disconnect = AsyncMock(side_effect=hang)
 
     with caplog.at_level(logging.WARNING, logger="gateway.run"):
-        await bare_runner._safe_adapter_disconnect(adapter, Platform.FEISHU)
+        await bare_runner._safe_adapter_disconnect(adapter, Platform.DISCORD)
 
     adapter.disconnect.assert_awaited_once()
-    assert "Timed out after 0.0s while disconnecting feishu adapter" in caplog.text
+    assert "Timed out after 0.0s while disconnecting discord adapter" in caplog.text

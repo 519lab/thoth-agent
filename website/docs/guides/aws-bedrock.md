@@ -130,7 +130,7 @@ The doctor checks:
 
 ## Gateway (Messaging Platforms)
 
-Bedrock works with all Thoth gateway platforms (Telegram, Discord, Slack, Feishu, etc.). Configure Bedrock as your provider, then start the gateway normally:
+Bedrock works with all Thoth gateway platforms (Telegram, Discord, Slack, etc.). Configure Bedrock as your provider, then start the gateway normally:
 
 ```bash
 thoth gateway setup

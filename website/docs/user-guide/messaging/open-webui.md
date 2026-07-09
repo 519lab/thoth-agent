@@ -275,7 +275,7 @@ To run separate Thoth instances per user — each with their own config, memory,
 
 ### 1. Create profiles and configure API servers
 
-`API_SERVER_*` are env vars, not YAML config keys, so write them to each profile's `.env`. Pick ports outside the default-platform range (`8644` is the webhook adapter, `8645` is wecom-callback, `8646` is msgraph-webhook), e.g. `8650+`:
+`API_SERVER_*` are env vars, not YAML config keys, so write them to each profile's `.env`. Pick ports outside the default-platform range (`8644` is the webhook adapter, `8646` is msgraph-webhook), e.g. `8650+`:
 
 ```bash
 thoth profile create alice

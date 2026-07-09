@@ -156,8 +156,8 @@ class GatewayStreamConsumer:
         # subsequently failed.
         self._final_content_delivered = False
         # Cache adapter lifecycle capability: only platforms that need an
-        # explicit finalize call (e.g. DingTalk AI Cards) force us to make
-        # a redundant final edit.  Everyone else keeps the fast path.
+        # explicit finalize call force us to make a redundant final edit.
+        # Everyone else keeps the fast path.
         # Use ``is True`` (not ``bool(...)``) so MagicMock attribute access
         # in tests doesn't incorrectly enable this path.
         self._adapter_requires_finalize: bool = (
@@ -535,7 +535,7 @@ class GatewayStreamConsumer:
                         display_text += self.cfg.cursor
 
                     # Segment break: finalize the current message so platforms
-                    # that need explicit closure (e.g. DingTalk AI Cards) don't
+                    # that need explicit closure don't
                     # leave the previous segment stuck in a loading state when
                     # the next segment (tool progress, next chunk) creates a
                     # new message below it.  got_done has its own finalize

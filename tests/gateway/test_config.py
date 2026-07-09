@@ -428,38 +428,6 @@ class TestLoadGatewayConfig:
             "C01ABC": "Code review mode",
         }
 
-    def test_bridges_feishu_allow_bots_from_config_yaml_to_env(self, tmp_path, monkeypatch):
-        thoth_home = tmp_path / ".thoth"
-        thoth_home.mkdir()
-        config_path = thoth_home / "config.yaml"
-        config_path.write_text(
-            "feishu:\n  allow_bots: mentions\n",
-            encoding="utf-8",
-        )
-
-        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
-        monkeypatch.delenv("FEISHU_ALLOW_BOTS", raising=False)
-
-        load_gateway_config()
-
-        assert os.environ.get("FEISHU_ALLOW_BOTS") == "mentions"
-
-    def test_feishu_allow_bots_env_takes_precedence_over_config_yaml(self, tmp_path, monkeypatch):
-        thoth_home = tmp_path / ".thoth"
-        thoth_home.mkdir()
-        config_path = thoth_home / "config.yaml"
-        config_path.write_text(
-            "feishu:\n  allow_bots: all\n",
-            encoding="utf-8",
-        )
-
-        monkeypatch.setenv("THOTH_HOME", str(thoth_home))
-        monkeypatch.setenv("FEISHU_ALLOW_BOTS", "none")
-
-        load_gateway_config()
-
-        assert os.environ.get("FEISHU_ALLOW_BOTS") == "none"
-
     def test_invalid_quick_commands_in_config_yaml_are_ignored(self, tmp_path, monkeypatch):
         thoth_home = tmp_path / ".thoth"
         thoth_home.mkdir()

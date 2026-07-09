@@ -205,7 +205,7 @@ For OAuth quota usage, run this inside a Thoth session:
 
 ## Gateway (Messaging Platforms)
 
-Gemini works with all Thoth gateway platforms (Telegram, Discord, Slack, WhatsApp, LINE, Feishu, etc.). Configure Gemini as your provider, then start the gateway normally:
+Gemini works with all Thoth gateway platforms (Telegram, Discord, Slack, WhatsApp, LINE, etc.). Configure Gemini as your provider, then start the gateway normally:
 
 ```bash
 thoth gateway setup

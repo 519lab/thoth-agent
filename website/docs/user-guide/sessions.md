@@ -80,12 +80,7 @@ Each session is tagged with its source platform:
 | `mattermost` | Mattermost channels |
 | `email` | Email (IMAP/SMTP) |
 | `sms` | SMS via Twilio |
-| `dingtalk` | DingTalk messenger |
-| `feishu` | Feishu/Lark messenger |
-| `wecom` | WeCom (WeChat Work) |
-| `weixin` | Weixin (personal WeChat) |
 | `bluebubbles` | Apple iMessage via BlueBubbles macOS server |
-| `qqbot` | QQ Bot (Tencent QQ) via Official API v2 |
 | `homeassistant` | Home Assistant conversation |
 | `webhook` | Incoming webhooks |
 | `api-server` | API server requests |

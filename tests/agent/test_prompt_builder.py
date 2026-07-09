@@ -821,12 +821,6 @@ class TestPromptBuilderConstants:
         assert "MEDIA:" in hint
         assert "Markdown" in hint
 
-    def test_platform_hints_feishu(self):
-        hint = PLATFORM_HINTS["feishu"]
-        assert "Feishu" in hint
-        assert "MEDIA:" in hint
-        assert "Markdown" in hint
-
     def test_platform_hints_webui(self):
         hint = PLATFORM_HINTS["webui"]
         assert "WebUI" in hint

@@ -3789,7 +3789,6 @@ def _default_verify() -> bool | ssl.SSLContext:
     system trust store and valid public certs fail verification. When
     certifi is importable we pin its bundle explicitly; elsewhere we
     defer to httpx's built-in default (certifi via its own dependency).
-    Mirrors the weixin fix in 3a0ec1d93.
     """
     if sys.platform == "darwin":
         try:
