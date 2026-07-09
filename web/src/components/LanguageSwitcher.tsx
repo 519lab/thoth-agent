@@ -13,8 +13,8 @@ import { cn } from "@/lib/utils";
  * of all supported locales when clicked.  Persists choice to localStorage via
  * the I18n context.
  *
- * Replaces the older two-state EN↔ZH toggle now that we ship 16 locales
- * (en, zh, zh-hant, ja, de, es, fr, tr, uk, af, ko, it, ga, pt, ru, hu).
+ * Replaces the older two-state toggle now that we ship 14 locales
+ * (en, ja, de, es, fr, tr, uk, af, ko, it, ga, pt, ru, hu).
  *
  * No country flags by design — languages aren't countries, and flag pairings
  * inevitably create political mismappings (e.g. Mandarin variants ≠ any single
