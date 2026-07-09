@@ -13,7 +13,7 @@
  *          ▼                                                              .
  *     FastAPI pty_ws  (thoth_cli/web_server.py)                          .
  *          ▼                                                              .
- *     POSIX PTY → `node ui-tui/dist/entry.js` → tui_gateway + AIAgent     .
+ *     POSIX PTY → `python -m thoth_cli.main chat` (classic REPL) → AIAgent.
  */
 
 import { FitAddon } from "@xterm/addon-fit";
@@ -23,17 +23,12 @@ import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { Button } from "@nous-research/ui/ui/components/button";
-import { Typography } from "@/components/NouiTypography";
 import { THOTH_BASE_PATH } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { Copy, PanelRight, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { Copy } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import { ChatSidebar } from "@/components/ChatSidebar";
-import { usePageHeader } from "@/contexts/usePageHeader";
-import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
 import { PluginSlot } from "@/plugins";
 
@@ -48,10 +43,9 @@ function buildWsUrl(
   return `${proto}//${window.location.host}${THOTH_BASE_PATH}/api/pty?${qs.toString()}`;
 }
 
-// Channel id ties this chat tab's PTY child (publisher) to its sidebar
-// (subscriber).  Generated once per mount so a tab refresh starts a fresh
-// channel — the previous PTY child terminates with the old WS, and its
-// channel auto-evicts when no subscribers remain.
+// Channel id scopes this chat tab's PTY child on the server side. Generated
+// once per mount so a tab refresh starts a fresh channel — the previous PTY
+// child terminates with the old WS.
 function generateChannelId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -123,31 +117,6 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
   );
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
   const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Raw state for the mobile side-sheet + a derived value that force-
-  // closes whenever the chat tab isn't active.  The *derived* value is
-  // what side-effects (body-scroll lock, keydown listener, portal render)
-  // key on — that way switching to another tab triggers the effect's
-  // cleanup, releasing the scroll-lock on /sessions etc.  Returning to
-  // /chat re-runs the effect (derived flips back to true) and re-locks.
-  // Keying on the raw state would leak the body.overflow="hidden" across
-  // tabs because the dep wouldn't change on tab switch.
-  const [mobilePanelOpenRaw, setMobilePanelOpenRaw] = useState(false);
-  const mobilePanelOpen = isActive && mobilePanelOpenRaw;
-  const { setEnd } = usePageHeader();
-  const { t } = useI18n();
-  const closeMobilePanel = useCallback(() => setMobilePanelOpenRaw(false), []);
-  const modelToolsLabel = useMemo(
-    () => `${t.app.modelToolsSheetTitle} ${t.app.modelToolsSheetSubtitle}`,
-    [t.app.modelToolsSheetSubtitle, t.app.modelToolsSheetTitle],
-  );
-  const [portalRoot] = useState<HTMLElement | null>(() =>
-    typeof document !== "undefined" ? document.body : null,
-  );
-  const [narrow, setNarrow] = useState(() =>
-    typeof window !== "undefined"
-      ? window.matchMedia("(max-width: 1023px)").matches
-      : false,
-  );
 
   // The dashboard keeps ChatPage mounted persistently so the PTY survives tab
   // switches. That is great for ordinary /chat navigation, but it means query
@@ -182,69 +151,6 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
       cancelled = true;
     };
   }, [resumeParam, searchParams, setSearchParams]);
-
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 1023px)");
-    const sync = () => setNarrow(mql.matches);
-    sync();
-    mql.addEventListener("change", sync);
-    return () => mql.removeEventListener("change", sync);
-  }, []);
-
-  useEffect(() => {
-    if (!mobilePanelOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeMobilePanel();
-    };
-    document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [mobilePanelOpen, closeMobilePanel]);
-
-  useEffect(() => {
-    const mql = window.matchMedia("(min-width: 1024px)");
-    const onChange = (e: MediaQueryListEvent) => {
-      if (e.matches) setMobilePanelOpenRaw(false);
-    };
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
-
-  useEffect(() => {
-    // When hidden (non-chat tab) we must not register the header button —
-    // another page owns the header's end slot at that point.
-    if (!isActive) {
-      setEnd(null);
-      return;
-    }
-    if (!narrow) {
-      setEnd(null);
-      return;
-    }
-    setEnd(
-      <Button
-        ghost
-        onClick={() => setMobilePanelOpenRaw(true)}
-        aria-expanded={mobilePanelOpen}
-        aria-controls="chat-side-panel"
-        className={cn(
-          "shrink-0 rounded border border-current/20",
-          "px-2 py-1 text-[0.65rem] font-medium tracking-wide normal-case",
-          "text-midground/80 hover:text-midground hover:bg-midground/5",
-        )}
-      >
-        <span className="inline-flex items-center gap-1.5">
-          <PanelRight className="h-3 w-3 shrink-0" />
-          {modelToolsLabel}
-        </span>
-      </Button>,
-    );
-    return () => setEnd(null);
-  }, [isActive, narrow, mobilePanelOpen, modelToolsLabel, setEnd]);
 
   const handleCopyLast = () => {
     const ws = wsRef.current;
@@ -699,99 +605,16 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
 
   // Layout:
   //   outer flex column — sits inside the dashboard's content area
-  //   row split — terminal pane (flex-1) + sidebar (fixed width, lg+)
   //   terminal wrapper — rounded, dark, padded — the "terminal window"
   //   floating copy button — bottom-right corner, transparent with a
   //     subtle border; stays out of the way until hovered.  Sends
   //     `/copy\n` to Ink, which emits OSC 52 → our clipboard handler.
-  //   sidebar — ChatSidebar opens its own JSON-RPC sidecar; renders
-  //     model badge, tool-call list, model picker. Best-effort: if the
-  //     sidecar fails to connect the terminal pane keeps working.
   //
   // `normal-case` opts out of the dashboard's global `uppercase` rule on
   // the root `<div>` in App.tsx — terminal output must preserve case.
-  //
-  // Mobile model/tools sheet is portaled to `document.body` so it stacks
-  // above the app sidebar (`z-50`) and mobile chrome (`z-40`).  The main
-  // dashboard column uses `relative z-2`, which traps `position:fixed`
-  // descendants below those layers (see Toast.tsx).
-  const mobileModelToolsPortal =
-    isActive &&
-    narrow &&
-    portalRoot &&
-    createPortal(
-      <>
-        {mobilePanelOpen && (
-          <Button
-            ghost
-            aria-label={t.app.closeModelTools}
-            onClick={closeMobilePanel}
-            className={cn(
-              "fixed inset-0 z-[55] p-0 block",
-              "bg-black/60 backdrop-blur-sm",
-            )}
-          />
-        )}
-
-        <div
-          id="chat-side-panel"
-          role="complementary"
-          aria-label={modelToolsLabel}
-          className={cn(
-            "font-mondwest fixed top-0 right-0 z-[60] flex h-dvh max-h-dvh w-64 min-w-0 flex-col antialiased",
-            "border-l border-current/20 text-midground",
-            "bg-background-base/95 backdrop-blur-sm",
-            "transition-transform duration-200 ease-out",
-            "[background:var(--component-sidebar-background)]",
-            "[clip-path:var(--component-sidebar-clip-path)]",
-            "[border-image:var(--component-sidebar-border-image)]",
-            mobilePanelOpen
-              ? "translate-x-0"
-              : "pointer-events-none translate-x-full",
-          )}
-        >
-          <div
-            className={cn(
-              "flex h-14 shrink-0 items-center justify-between gap-2 border-b border-current/20 px-5",
-            )}
-          >
-            <Typography
-              className="font-bold text-[1.125rem] leading-[0.95] tracking-[0.0525rem] text-midground"
-              style={{ mixBlendMode: "plus-lighter" }}
-            >
-              {t.app.modelToolsSheetTitle}
-              <br />
-              {t.app.modelToolsSheetSubtitle}
-            </Typography>
-
-            <Button
-              ghost
-              size="icon"
-              onClick={closeMobilePanel}
-              aria-label={t.app.closeModelTools}
-              className="text-midground/70 hover:text-midground"
-            >
-              <X />
-            </Button>
-          </div>
-
-          <div
-            className={cn(
-              "min-h-0 flex-1 overflow-y-auto overflow-x-hidden",
-              "border-t border-current/10",
-            )}
-          >
-            <ChatSidebar channel={channel} />
-          </div>
-        </div>
-      </>,
-      portalRoot,
-    );
-
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 normal-case">
       <PluginSlot name="chat:top" />
-      {mobileModelToolsPortal}
 
       {banner && (
         <div className="border border-warning/50 bg-warning/10 text-warning px-3 py-2 text-xs tracking-wide">
@@ -799,7 +622,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row lg:gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-2">
         <div
           className={cn(
             "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg",
@@ -839,19 +662,6 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
             </span>
           </Button>
         </div>
-
-        {!narrow && (
-          <div
-            id="chat-side-panel"
-            role="complementary"
-            aria-label={modelToolsLabel}
-            className="flex min-h-0 shrink-0 flex-col overflow-hidden lg:h-full lg:w-80"
-          >
-            <div className="min-h-0 flex-1 overflow-hidden">
-              <ChatSidebar channel={channel} />
-            </div>
-          </div>
-        )}
       </div>
       <PluginSlot name="chat:bottom" />
     </div>

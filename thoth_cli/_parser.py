@@ -130,7 +130,7 @@ def build_top_level_parser():
         default=None,
         help=(
             "Model override for this invocation (e.g. anthropic/claude-sonnet-4.6). "
-            "Applies to -z/--oneshot and --tui. Also settable via THOTH_INFERENCE_MODEL env var."
+            "Applies to -z/--oneshot. Also settable via THOTH_INFERENCE_MODEL env var."
         ),
     )
     _inherited_flag(
@@ -139,14 +139,14 @@ def build_top_level_parser():
         default=None,
         help=(
             "Provider override for this invocation (e.g. openrouter, anthropic). "
-            "Applies to -z/--oneshot and --tui. Also settable via THOTH_INFERENCE_PROVIDER env var."
+            "Applies to -z/--oneshot. Also settable via THOTH_INFERENCE_PROVIDER env var."
         ),
     )
     parser.add_argument(
         "-t",
         "--toolsets",
         default=None,
-        help="Comma-separated toolsets to enable for this invocation. Applies to -z/--oneshot and --tui.",
+        help="Comma-separated toolsets to enable for this invocation. Applies to -z/--oneshot.",
     )
     parser.add_argument(
         "--resume",
@@ -220,22 +220,6 @@ def build_top_level_parser():
         default=False,
         help="Skip auto-injection of AGENTS.md, SOUL.md, .cursorrules, memory, and preloaded skills",
     )
-    _inherited_flag(
-        parser,
-        "--tui",
-        action="store_true",
-        default=False,
-        help="Launch the modern TUI instead of the classic REPL",
-    )
-    _inherited_flag(
-        parser,
-        "--dev",
-        dest="tui_dev",
-        action="store_true",
-        default=False,
-        help="With --tui: run TypeScript sources via tsx (skip dist build)",
-    )
-
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
     # =========================================================================
@@ -367,20 +351,4 @@ def build_top_level_parser():
         default=None,
         help="Session source tag for filtering (default: cli). Use 'tool' for third-party integrations that should not appear in user session lists.",
     )
-    _inherited_flag(
-        chat_parser,
-        "--tui",
-        action="store_true",
-        default=False,
-        help="Launch the modern TUI instead of the classic REPL",
-    )
-    _inherited_flag(
-        chat_parser,
-        "--dev",
-        dest="tui_dev",
-        action="store_true",
-        default=False,
-        help="With --tui: run TypeScript sources via tsx (skip dist build)",
-    )
-
     return parser, subparsers, chat_parser

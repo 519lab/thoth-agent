@@ -910,10 +910,9 @@ DEFAULT_CONFIG = {
         "personality": "kawaii",
         "resume_display": "full",
         "busy_input_mode": "interrupt",  # interrupt | queue | steer
-        # When true, `thoth --tui` auto-resumes the most recent human-
-        # facing session on launch instead of forging a fresh one.
-        # Mirrors `thoth -c` muscle memory.  Default off so existing
-        # users aren't surprised.  THOTH_TUI_RESUME=<id> always wins.
+        # When true, auto-resumes the most recent human-facing session on
+        # launch instead of forging a fresh one.  Mirrors `thoth -c` muscle
+        # memory.  Default off so existing users aren't surprised.
         "tui_auto_resume_recent": False,
         "bell_on_complete": False,
         "show_reasoning": False,
@@ -1341,8 +1340,7 @@ DEFAULT_CONFIG = {
         # through tools.slash_confirm — native yes/no buttons on Telegram,
         # Discord, and Slack; text fallback elsewhere.  Users click "Always
         # Approve" to silence the prompt permanently; that flips this key to
-        # false.  TUI has its own modal overlay (THOTH_TUI_NO_CONFIRM=1 to
-        # opt out there).
+        # false.
         "destructive_slash_confirm": True,
         # When true, file writes / patches and shell commands that operate
         # outside the agent's active workspace root (THOTH_ACTIVE_ROOT) require

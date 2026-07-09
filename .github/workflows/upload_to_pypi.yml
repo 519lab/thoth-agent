@@ -64,18 +64,9 @@ jobs:
       - name: Build web dashboard
         run: cd web && npm ci && npm run build
 
-      - name: Build TUI bundle
-        run: cd ui-tui && npm ci && npm run build
-
-      - name: Bundle TUI into thoth_cli
-        run: |
-          mkdir -p thoth_cli/tui_dist
-          cp ui-tui/dist/entry.js thoth_cli/tui_dist/entry.js
-
       - name: Verify frontend assets exist
         run: |
           test -f thoth_cli/web_dist/index.html || { echo "ERROR: web_dist not built"; exit 1; }
-          test -f thoth_cli/tui_dist/entry.js || { echo "ERROR: tui_dist not built"; exit 1; }
 
       - name: Bundle install scripts into wheel
         run: |

@@ -48,7 +48,7 @@ uv run alembic -c migrations/alembic.ini upgrade head
 
 **Gateway** (`gateway/`) — one process serving many messaging platforms (`gateway/platforms/`), with session routing, cron dispatch, and background-process watchers. **Kanban** (`thoth_cli/kanban.py` + `tools/kanban_tools.py` + `plugins/kanban/`) — a durable multi-worker task board backed by the same Postgres pool (a stale docstring still calls it "SQLite-backed"; it is not); the dispatcher runs inside the gateway by default and spawns worker profiles. Board is a hard isolation boundary; tenant is a soft namespace within it.
 
-**Other surfaces:** `cli.py` (Rich + prompt_toolkit TUI, data-driven skin/theme engine), `ui-tui/` + `tui_gateway/` (Ink/React TUI over a Python JSON-RPC backend), `acp_adapter/` (VS Code/Zed/JetBrains), `plugins/` (memory providers, model providers, context engines, observability, image-gen, kanban).
+**Other surfaces:** `cli.py` (Rich + prompt_toolkit TUI, data-driven skin/theme engine), `acp_adapter/` (VS Code/Zed/JetBrains), `plugins/` (memory providers, model providers, context engines, observability, image-gen, kanban).
 
 ## Non-obvious rules
 

@@ -576,41 +576,6 @@ class TestSubprocessCompatHelpers:
 
 
 # ---------------------------------------------------------------------------
-# tui_gateway/entry.py signal installation survives absent POSIX signals
-# ---------------------------------------------------------------------------
-
-
-class TestTuiGatewayEntrySignalGuards:
-    """Importing tui_gateway.entry must not crash when SIGPIPE/SIGHUP absent.
-
-    Linux has both signals, so this is mostly a source-level invariant check
-    (no bare ``signal.SIGPIPE`` at module level without a ``hasattr`` guard).
-    On Windows the import would have raised AttributeError before this fix.
-    """
-
-    def test_source_guards_each_signal_installation(self):
-        root = Path(__file__).resolve().parents[2]
-        source = (root / "tui_gateway" / "entry.py").read_text(encoding="utf-8")
-        # Every signal.signal(...) at module scope must be preceded by a
-        # hasattr check.  We look at the text: no bare "signal.signal("
-        # call should appear outside a function body without a guard.
-        # Simpler heuristic: all SIGPIPE / SIGHUP references outside the
-        # dict-building loop must be wrapped in hasattr.
-        assert 'hasattr(signal, "SIGPIPE")' in source
-        assert 'hasattr(signal, "SIGHUP")' in source
-        assert 'hasattr(signal, "SIGTERM")' in source
-        assert 'hasattr(signal, "SIGINT")' in source
-
-    def test_module_imports_cleanly(self):
-        """Importing the module must not raise — verifies the guards work."""
-        # Drop any cached import so the module re-initialises
-        for mod in list(sys.modules):
-            if mod.startswith("tui_gateway"):
-                del sys.modules[mod]
-        import tui_gateway.entry  # noqa: F401  # must not raise
-
-
-# ---------------------------------------------------------------------------
 # thoth_cli/kanban_db.py waitpid guard
 # ---------------------------------------------------------------------------
 

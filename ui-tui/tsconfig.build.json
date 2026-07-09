@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@thoth/ink": ["src/types/thoth-ink.d.ts"]
-    }
-  }
-}

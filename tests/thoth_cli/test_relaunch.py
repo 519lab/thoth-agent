@@ -39,9 +39,12 @@ class TestResolveThothBin:
 
 
 class TestExtractInheritedFlags:
-    def test_extracts_tui_and_dev(self):
-        argv = ["--tui", "--dev", "chat"]
-        assert relaunch_mod._extract_inherited_flags(argv) == ["--tui", "--dev"]
+    def test_extracts_yolo_and_pass_session_id(self):
+        argv = ["--yolo", "--pass-session-id", "chat"]
+        assert relaunch_mod._extract_inherited_flags(argv) == [
+            "--yolo",
+            "--pass-session-id",
+        ]
 
     def test_extracts_profile_with_value(self):
         argv = ["--profile", "work", "chat"]
@@ -59,16 +62,16 @@ class TestExtractInheritedFlags:
         ]
 
     def test_skips_unknown_flags(self):
-        argv = ["--foo", "bar", "--tui"]
-        assert relaunch_mod._extract_inherited_flags(argv) == ["--tui"]
+        argv = ["--foo", "bar", "--yolo"]
+        assert relaunch_mod._extract_inherited_flags(argv) == ["--yolo"]
 
     def test_does_not_consume_flag_like_value(self):
-        argv = ["--tui", "--resume", "abc123"]
-        assert relaunch_mod._extract_inherited_flags(argv) == ["--tui"]
+        argv = ["--yolo", "--resume", "abc123"]
+        assert relaunch_mod._extract_inherited_flags(argv) == ["--yolo"]
 
     def test_preserves_multiple_skills(self):
-        argv = ["-s", "foo", "-s", "bar", "--tui"]
-        assert relaunch_mod._extract_inherited_flags(argv) == ["-s", "foo", "-s", "bar", "--tui"]
+        argv = ["-s", "foo", "-s", "bar", "--yolo"]
+        assert relaunch_mod._extract_inherited_flags(argv) == ["-s", "foo", "-s", "bar", "--yolo"]
 
 
 class TestInheritedFlagTable:
@@ -86,7 +89,7 @@ class TestInheritedFlagTable:
 
     def test_store_true_flags_do_not_take_value(self):
         table = dict(relaunch_mod._INHERITED_FLAGS_TABLE)
-        for flag in ["--tui", "--dev", "--yolo", "--ignore-user-config", "--ignore-rules"]:
+        for flag in ["--yolo", "--ignore-user-config", "--ignore-rules"]:
             assert table[flag] is False, f"{flag} should not take a value"
 
     def test_value_flags_take_value(self):
@@ -118,10 +121,10 @@ class TestBuildRelaunchArgv:
 
     def test_preserves_inherited_flags(self, monkeypatch):
         monkeypatch.setattr(relaunch_mod, "resolve_thoth_bin", lambda: "/usr/bin/thoth")
-        original = ["--tui", "--dev", "--profile", "work", "sessions", "browse"]
+        original = ["--yolo", "--pass-session-id", "--profile", "work", "sessions", "browse"]
         argv = relaunch_mod.build_relaunch_argv(["--resume", "abc"], original_argv=original)
-        assert "--tui" in argv
-        assert "--dev" in argv
+        assert "--yolo" in argv
+        assert "--pass-session-id" in argv
         assert "--profile" in argv
         assert "work" in argv
         assert "--resume" in argv
@@ -132,11 +135,11 @@ class TestBuildRelaunchArgv:
 
     def test_can_disable_preserve(self, monkeypatch):
         monkeypatch.setattr(relaunch_mod, "resolve_thoth_bin", lambda: "/usr/bin/thoth")
-        original = ["--tui", "chat"]
+        original = ["--yolo", "chat"]
         argv = relaunch_mod.build_relaunch_argv(
             ["--resume", "abc"], preserve_inherited=False, original_argv=original
         )
-        assert "--tui" not in argv
+        assert "--yolo" not in argv
         assert argv == ["/usr/bin/thoth", "--resume", "abc"]
 
 

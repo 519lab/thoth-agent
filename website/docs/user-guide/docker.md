@@ -80,7 +80,7 @@ The entrypoint starts `thoth dashboard` in the background (running as the non-ro
 | `THOTH_DASHBOARD` | Set to `1` (or `true` / `yes`) to launch the dashboard alongside the main command | *(unset — dashboard not started)* |
 | `THOTH_DASHBOARD_HOST` | Bind address for the dashboard HTTP server | `0.0.0.0` |
 | `THOTH_DASHBOARD_PORT` | Port for the dashboard HTTP server | `9119` |
-| `THOTH_DASHBOARD_TUI` | Set to `1` to expose the in-browser Chat tab (embedded `thoth --tui` via PTY/WebSocket) | *(unset)* |
+| `THOTH_DASHBOARD_TUI` | Set to `1` to expose the in-browser Chat tab (embeds a browser terminal running the classic REPL via PTY/WebSocket) | *(unset)* |
 
 The default `THOTH_DASHBOARD_HOST=0.0.0.0` is required for the host to reach the dashboard through the published port; the entrypoint automatically passes `--insecure` to `thoth dashboard` in that case. Override to `127.0.0.1` if you want to restrict the dashboard to in-container access only (e.g. behind a reverse proxy in a sidecar).
 

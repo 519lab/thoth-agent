@@ -396,7 +396,7 @@ If you find a bug, [open an issue](https://github.com/519lab/thoth-agent/issues)
 ## Architecture
 
 ```
-                ┌─── Thoth shell (CLI / TUI / gateway) ───┐
+                ┌────── Thoth shell (CLI / gateway) ───────┐
                 │  sessions DB · slash commands · memory   │
                 │  & skill review · cron · session pickers │
                 └──┬──────────────────────────────────────┬┘

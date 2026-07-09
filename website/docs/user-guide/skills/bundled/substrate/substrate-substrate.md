@@ -33,7 +33,7 @@ The following is the complete skill definition that Thoth loads when this skill 
 
 Operator and power-user playbook for the substrate layer — the PostgreSQL-backed
 perception/memory infrastructure that sits underneath the conversation loop in
-this fork of Hermes (`519lab/thoth-agent`, the Substrate Edition). Use this
+this fork of Thoth (`519lab/thoth-agent`, the Substrate Edition). Use this
 when you want to see what the agent is perceiving, why recall returned (or did
 not return) a given slice, whether the background sub-agents are keeping up,
 or what to do when substrate boot fails.
@@ -53,7 +53,7 @@ common workflows, troubleshooting.
 - "Pause / resume a sub-agent" or "the curator is too aggressive"
 
 If the user is asking about persistent memory (`thoth memory`), Honcho, the
-skills registry, or session search FTS — those are upstream Hermes features
+skills registry, or session search FTS — those are upstream Thoth features
 covered by the `thoth-agent` skill, not this one. The substrate is additive
 infrastructure beneath them.
 

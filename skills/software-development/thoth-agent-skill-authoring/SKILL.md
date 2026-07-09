@@ -78,7 +78,7 @@ One or two paragraphs: what and why.
 ## <Topic sections specific to the skill>
 - Quick-reference tables are common
 - Code blocks with exact commands
-- Thoth-specific recipes (tests via scripts/run_tests.sh, ui-tui paths, etc.)
+- Thoth-specific recipes (tests via scripts/run_tests.sh, gateway/CLI paths, etc.)
 
 ## Common Pitfalls
 Numbered list of mistakes and their fixes.

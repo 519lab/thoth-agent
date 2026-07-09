@@ -1045,8 +1045,8 @@ def get_model_info():
 
 # ---------------------------------------------------------------------------
 # Model assignment — pick provider+model for main slot or auxiliary slots.
-# Mirrors the model.options JSON-RPC from tui_gateway but uses REST so the
-# Models page (which has no chat PTY open) can drive it.
+# Exposes the model.options selection as REST so the Models page (which has
+# no chat PTY open) can drive it.
 # ---------------------------------------------------------------------------
 
 # Canonical auxiliary task slots. Keep in sync with DEFAULT_CONFIG["auxiliary"]
@@ -1070,8 +1070,8 @@ _AUX_TASK_SLOTS: Tuple[str, ...] = (
 def get_model_options():
     """Return authenticated providers + their curated model lists.
 
-    REST equivalent of the ``model.options`` JSON-RPC on tui_gateway, so the
-    dashboard Models page can render the picker without a live chat session.
+    Backs the dashboard Models-page picker as a REST call, so the page can
+    render the picker without a live chat session.
     The response shape matches ``model.options`` 1:1 so ``ModelPickerDialog``
     can share the same types.
     """
@@ -3618,7 +3618,6 @@ except ImportError as _pty_import_err:  # pragma: no cover - Windows-only path
 
 _RESIZE_RE = re.compile(rb"\x1b\[RESIZE:(\d+);(\d+)\]")
 _PTY_READ_CHUNK_TIMEOUT = 0.2
-_VALID_CHANNEL_RE = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
 # Starlette's TestClient reports the peer as "testclient"; treat it as
 # loopback so tests don't need to rewrite request scope.
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
@@ -3642,92 +3641,31 @@ def _ws_client_is_allowed(ws: "WebSocket") -> bool:
         return True
     return client_host in _LOOPBACK_HOSTS
 
-# Per-channel subscriber registry used by /api/pub (PTY-side gateway → dashboard)
-# and /api/events (dashboard → browser sidebar).  Keyed by an opaque channel id
-# the chat tab generates on mount; entries auto-evict when the last subscriber
-# drops AND the publisher has disconnected.
-_event_channels: dict[str, set] = {}
-_event_lock = asyncio.Lock()
-
-
 def _resolve_chat_argv(
     resume: Optional[str] = None,
-    sidecar_url: Optional[str] = None,
 ) -> tuple[list[str], Optional[str], Optional[dict]]:
     """Resolve the argv + cwd + env for the chat PTY.
 
-    Default: whatever ``thoth --tui`` would run.  Tests monkeypatch this
-    function to inject a tiny fake command (``cat``, ``sh -c 'printf …'``)
-    so nothing has to build Node or the TUI bundle.
+    Spawns the classic Thoth REPL (``thoth chat``) inside the browser
+    terminal — the same interface ``thoth`` runs from a shell. Tests
+    monkeypatch this function to inject a tiny fake command (``cat``,
+    ``sh -c 'printf …'``) so nothing has to spawn a real agent.
 
-    Session resume is propagated via the ``THOTH_TUI_RESUME`` env var —
-    matching what ``thoth_cli.main._launch_tui`` does for the CLI path.
-    Appending ``--resume <id>`` to argv doesn't work because ``ui-tui`` does
-    not parse its argv.
-
-    `sidecar_url` (when set) is forwarded as ``THOTH_TUI_SIDECAR_URL`` so
-    the spawned ``tui_gateway.entry`` can mirror dispatcher emits to the
-    dashboard's ``/api/pub`` endpoint (see :func:`pub_ws`).
+    Session resume is passed as a normal ``--resume <id>`` argv flag (the
+    classic REPL parses its argv).
     """
-    from thoth_cli.main import PROJECT_ROOT, _make_tui_argv
+    from thoth_cli.main import PROJECT_ROOT
 
-    argv, cwd = _make_tui_argv(PROJECT_ROOT / "ui-tui", tui_dev=False)
+    argv = [sys.executable, "-m", "thoth_cli.main", "chat"]
     env = os.environ.copy()
-    env.setdefault("NODE_ENV", "production")
-    # Browser-embedded chat should prefer stable wheel-based scrollback over
-    # native terminal mouse tracking. When mouse tracking is enabled, wheel
-    # events are consumed by the TUI and forwarded as terminal input, which
-    # makes browser-side transcript scrolling feel broken. Keep the terminal
-    # build unchanged for native CLI usage; only disable mouse tracking for
-    # the dashboard PTY path.
-    env.setdefault("THOTH_TUI_DISABLE_MOUSE", "1")
-    env.setdefault("THOTH_TUI_INLINE", "1")
 
     if resume:
         latest_resume, _latest_path = _session_latest_descendant(resume)
         if latest_resume:
             resume = latest_resume
-        env["THOTH_TUI_RESUME"] = resume
+        argv += ["--resume", resume]
 
-    if sidecar_url:
-        env["THOTH_TUI_SIDECAR_URL"] = sidecar_url
-
-    return list(argv), str(cwd) if cwd else None, env
-
-
-def _build_sidecar_url(channel: str) -> Optional[str]:
-    """ws:// URL the PTY child should publish events to, or None when unbound."""
-    host = getattr(app.state, "bound_host", None)
-    port = getattr(app.state, "bound_port", None)
-
-    if not host or not port:
-        return None
-
-    netloc = f"[{host}]:{port}" if ":" in host and not host.startswith("[") else f"{host}:{port}"
-    qs = urllib.parse.urlencode({"token": _SESSION_TOKEN, "channel": channel})
-
-    return f"ws://{netloc}/api/pub?{qs}"
-
-
-async def _broadcast_event(channel: str, payload: str) -> None:
-    """Fan out one publisher frame to every subscriber on `channel`."""
-    async with _event_lock:
-        subs = list(_event_channels.get(channel, ()))
-
-    for sub in subs:
-        try:
-            await sub.send_text(payload)
-        except Exception:
-            # Subscriber went away mid-send; the /api/events finally clause
-            # will remove it from the registry on its next iteration.
-            pass
-
-
-def _channel_or_close_code(ws: WebSocket) -> Optional[str]:
-    """Return the channel id from the query string or None if invalid."""
-    channel = ws.query_params.get("channel", "")
-
-    return channel if _VALID_CHANNEL_RE.match(channel) else None
+    return argv, str(PROJECT_ROOT), env
 
 
 @app.websocket("/api/pty")
@@ -3763,16 +3701,8 @@ async def pty_ws(ws: WebSocket) -> None:
 
     # --- spawn PTY ------------------------------------------------------
     resume = ws.query_params.get("resume") or None
-    channel = _channel_or_close_code(ws)
-    sidecar_url = _build_sidecar_url(channel) if channel else None
 
-    try:
-        argv, cwd, env = _resolve_chat_argv(resume=resume, sidecar_url=sidecar_url)
-    except SystemExit as exc:
-        # _make_tui_argv calls sys.exit(1) when node/npm is missing.
-        await ws.send_text(f"\r\n\x1b[31mChat unavailable: {exc}\x1b[0m\r\n")
-        await ws.close(code=1011)
-        return
+    argv, cwd, env = _resolve_chat_argv(resume=resume)
 
 
     try:
@@ -3838,122 +3768,6 @@ async def pty_ws(ws: WebSocket) -> None:
         except (asyncio.CancelledError, Exception):
             pass
         bridge.close()
-
-
-# ---------------------------------------------------------------------------
-# /api/ws — JSON-RPC WebSocket sidecar for the dashboard "Chat" tab.
-#
-# Drives the same `tui_gateway.dispatch` surface Ink uses over stdio, so the
-# dashboard can render structured metadata (model badge, tool-call sidebar,
-# slash launcher, session info) alongside the xterm.js terminal that PTY
-# already paints. Both transports bind to the same session id when one is
-# active, so a tool.start emitted by the agent fans out to both sinks.
-# ---------------------------------------------------------------------------
-
-
-@app.websocket("/api/ws")
-async def gateway_ws(ws: WebSocket) -> None:
-    if not _DASHBOARD_EMBEDDED_CHAT_ENABLED:
-        await ws.close(code=4403)
-        return
-
-    token = ws.query_params.get("token", "")
-    if not hmac.compare_digest(token.encode(), _SESSION_TOKEN.encode()):
-        await ws.close(code=4401)
-        return
-
-    if not _ws_client_is_allowed(ws):
-        await ws.close(code=4403)
-        return
-
-    from tui_gateway.ws import handle_ws
-
-    await handle_ws(ws)
-
-
-# ---------------------------------------------------------------------------
-# /api/pub + /api/events — chat-tab event broadcast.
-#
-# The PTY-side ``tui_gateway.entry`` opens /api/pub at startup (driven by
-# THOTH_TUI_SIDECAR_URL set in /api/pty's PTY env) and writes every
-# dispatcher emit through it.  The dashboard fans those frames out to any
-# subscriber that opened /api/events on the same channel id.  This is what
-# gives the React sidebar its tool-call feed without breaking the PTY
-# child's stdio handshake with Ink.
-# ---------------------------------------------------------------------------
-
-
-@app.websocket("/api/pub")
-async def pub_ws(ws: WebSocket) -> None:
-    if not _DASHBOARD_EMBEDDED_CHAT_ENABLED:
-        await ws.close(code=4403)
-        return
-
-    token = ws.query_params.get("token", "")
-    if not hmac.compare_digest(token.encode(), _SESSION_TOKEN.encode()):
-        await ws.close(code=4401)
-        return
-
-    if not _ws_client_is_allowed(ws):
-        await ws.close(code=4403)
-        return
-
-    channel = _channel_or_close_code(ws)
-    if not channel:
-        await ws.close(code=4400)
-        return
-
-    await ws.accept()
-
-    try:
-        while True:
-            await _broadcast_event(channel, await ws.receive_text())
-    except WebSocketDisconnect:
-        pass
-
-
-@app.websocket("/api/events")
-async def events_ws(ws: WebSocket) -> None:
-    if not _DASHBOARD_EMBEDDED_CHAT_ENABLED:
-        await ws.close(code=4403)
-        return
-
-    token = ws.query_params.get("token", "")
-    if not hmac.compare_digest(token.encode(), _SESSION_TOKEN.encode()):
-        await ws.close(code=4401)
-        return
-
-    if not _ws_client_is_allowed(ws):
-        await ws.close(code=4403)
-        return
-
-    channel = _channel_or_close_code(ws)
-    if not channel:
-        await ws.close(code=4400)
-        return
-
-    await ws.accept()
-
-    async with _event_lock:
-        _event_channels.setdefault(channel, set()).add(ws)
-
-    try:
-        while True:
-            # Subscribers don't speak — the receive() just blocks until
-            # disconnect so the connection stays open as long as the
-            # browser holds it.
-            await ws.receive_text()
-    except WebSocketDisconnect:
-        pass
-    finally:
-        async with _event_lock:
-            subs = _event_channels.get(channel)
-
-            if subs is not None:
-                subs.discard(ws)
-
-                if not subs:
-                    _event_channels.pop(channel, None)
 
 
 def _normalise_prefix(raw: Optional[str]) -> str:

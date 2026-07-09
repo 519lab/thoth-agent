@@ -48,31 +48,20 @@ This means pasted macOS screenshot temp paths and `file://...` image URIs can at
 If your clipboard has **only an image** (no text), terminals still cannot send binary image bytes directly. Use `/paste` as the explicit image-attach fallback.
 :::
 
-### `/terminal-setup` for VS Code / Cursor / Windsurf
-
-If you run the TUI inside a local VS Code-family integrated terminal on macOS, Thoth can install the recommended `workbench.action.terminal.sendSequence` bindings for better multiline and undo/redo parity:
-
-```text
-/terminal-setup
-```
-
-This is especially useful when `Cmd+Enter`, `Cmd+Z`, or `Shift+Cmd+Z` are being intercepted by the IDE. Run it on the local machine only — not inside an SSH session.
-
 ## Platform Compatibility
 
-| Environment | `/paste` | Cmd/Ctrl+V | `/terminal-setup` | Notes |
-|---|:---:|:---:|:---:|---|
-| **macOS Terminal / iTerm2** | ✅ | ✅ | n/a | Best experience — native clipboard + screenshot-path recovery |
-| **Apple Terminal** | ✅ | ✅ | n/a | If Cmd+←/→/⌫ gets rewritten, use Ctrl+A / Ctrl+E / Ctrl+U fallbacks |
-| **Linux X11 desktop** | ✅ | ✅ | n/a | Requires `xclip` (`apt install xclip`) |
-| **Linux Wayland desktop** | ✅ | ✅ | n/a | Requires `wl-paste` (`apt install wl-clipboard`) |
-| **WSL2 (Windows Terminal)** | ✅ | ✅ | n/a | Uses `powershell.exe` — no extra install needed |
-| **VS Code / Cursor / Windsurf (local)** | ✅ | ✅ | ✅ | Recommended for better Cmd+Enter / undo / redo parity |
-| **VS Code / Cursor / Windsurf (SSH)** | ❌² | ❌² | ❌³ | Run `/terminal-setup` on the local machine instead |
-| **SSH terminal (any)** | ❌² | ❌² | n/a | Remote clipboard not accessible |
+| Environment | `/paste` | Cmd/Ctrl+V | Notes |
+|---|:---:|:---:|---|
+| **macOS Terminal / iTerm2** | ✅ | ✅ | Best experience — native clipboard + screenshot-path recovery |
+| **Apple Terminal** | ✅ | ✅ | If Cmd+←/→/⌫ gets rewritten, use Ctrl+A / Ctrl+E / Ctrl+U fallbacks |
+| **Linux X11 desktop** | ✅ | ✅ | Requires `xclip` (`apt install xclip`) |
+| **Linux Wayland desktop** | ✅ | ✅ | Requires `wl-paste` (`apt install wl-clipboard`) |
+| **WSL2 (Windows Terminal)** | ✅ | ✅ | Uses `powershell.exe` — no extra install needed |
+| **VS Code / Cursor / Windsurf (local)** | ✅ | ✅ | |
+| **VS Code / Cursor / Windsurf (SSH)** | ❌² | ❌² | |
+| **SSH terminal (any)** | ❌² | ❌² | Remote clipboard not accessible |
 
 ² See [SSH & Remote Sessions](#ssh--remote-sessions) below
-³ The command writes local IDE keybindings and should not be run from the remote host
 
 ## Platform-Specific Setup
 

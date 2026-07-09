@@ -8,7 +8,7 @@ platforms: [linux, macos]
 metadata:
   thoth:
     tags: [debugging, python, pdb, debugpy, breakpoints, dap, post-mortem]
-    related_skills: [systematic-debugging, node-inspect-debugger, debugging-thoth-tui-commands]
+    related_skills: [systematic-debugging, node-inspect-debugger]
 ---
 
 # Python Debugger (pdb + debugpy)
@@ -29,9 +29,9 @@ Three tools, picked by situation:
 
 - A test fails and the traceback doesn't reveal why a value is wrong
 - You need to step through a function and watch a collection mutate
-- A long-running process (thoth gateway, tui_gateway) misbehaves and you can't restart it
+- A long-running process (thoth gateway, a daemon) misbehaves and you can't restart it
 - Post-mortem: an exception fired in prod-ish code and you want to inspect locals at the crash site
-- A subprocess / child (Python `_SlashWorker`, PTY bridge worker) is the actual bug site
+- A subprocess / child (PTY bridge worker, background task worker) is the actual bug site
 
 **Don't use for:** things `print()` / `logging.debug` solve in under a minute, or things `pytest -vv --tb=long --showlocals` already reveals.
 
@@ -146,7 +146,7 @@ sys.excepthook = excepthook
 
 ## Recipe 5: Remote debug with debugpy (attach to running process)
 
-For long-lived processes: Thoth gateway, tui_gateway, a daemon, a process that's already misbehaving and can't be restarted clean.
+For long-lived processes: Thoth gateway, a daemon, a process that's already misbehaving and can't be restarted clean.
 
 ### Setup
 
@@ -281,27 +281,24 @@ See Recipe 3. Always add `-p no:xdist` or run single tests without xdist.
 ### `run_agent.py` / CLI — one-shot
 Easiest: add `breakpoint()` near the suspect line, then run `thoth` normally. Control returns to your terminal at the pause point.
 
-### `tui_gateway` subprocess (spawned by `thoth --tui`)
-The gateway runs as a child of the Node TUI. Options:
+### A long-lived Python subprocess spawned by another process
+Options for a subprocess whose stdio isn't a normal TTY (e.g. spawned and supervised by a parent process):
 
-**A. Source-edit the gateway:**
+**A. Source-edit the subprocess entry point:**
 ```python
-# tui_gateway/server.py near the top of serve()
+# near the top of the subprocess's main()/serve()
 import debugpy
 debugpy.listen(("127.0.0.1", 5678))
 debugpy.wait_for_client()
 ```
-Start `thoth --tui`. The TUI will appear frozen (its backend is waiting). Attach a client; execution resumes when you `continue`.
+Start the parent process normally; the child subprocess blocks waiting for a debugger. Attach a client; execution resumes when you `continue`.
 
 **B. Use `remote-pdb` at a specific handler:**
 ```python
 from remote_pdb import set_trace
-set_trace(host="127.0.0.1", port=4444)   # in the RPC handler you want to trap
+set_trace(host="127.0.0.1", port=4444)   # in the handler you want to trap
 ```
-Trigger the matching slash command from the TUI, then `nc 127.0.0.1 4444` in another terminal.
-
-### `_SlashWorker` subprocess
-Same pattern — `remote-pdb` with `set_trace()` inside the worker's `exec` path. The worker is persistent across slash commands, so the first trigger blocks until you connect; subsequent slash commands pass through normally unless you re-arm.
+Trigger the code path from the parent process, then `nc 127.0.0.1 4444` in another terminal. This also works for a persistent worker subprocess that handles repeated requests — the first trigger blocks until you connect; subsequent requests pass through normally unless you re-arm.
 
 ### Gateway (`gateway/run.py`)
 Long-lived. Use `remote-pdb` at a handler, or `debugpy` with `--wait-for-client` if you're restarting the gateway anyway.

@@ -1,8 +1,7 @@
 """Behavior tests for thoth_cli.inventory.
 
-Locks the invariants the three migrated consumers (web_server.py
-/api/model/options, tui_gateway model.options, tui_gateway model.save_key)
-depend on:
+Locks the invariants the migrated consumer (web_server.py
+/api/model/options) depends on:
 
 - load_picker_context() reproduces the inline 17-LOC config-slice exactly.
 - with_overrides() is truthy-only (empty agent attrs must not clobber).
@@ -14,7 +13,7 @@ depend on:
   canonical slugs in the providers: dict, and that flag must NOT demote
   them to the tail.
 - picker_hints adds authenticated/auth_type/key_env/warning per row,
-  matching the TUI ModelPickerDialog shape.
+  matching the dashboard ModelPickerDialog shape.
 """
 
 from __future__ import annotations
@@ -106,8 +105,9 @@ def _empty_ctx(provider="orig", model="orig-model", base_url="orig-url"):
 
 
 def test_with_overrides_truthy_only_strings():
-    """Empty strings must NOT clobber disk config — TUI calls this with
-    empty getattr(agent, 'provider', '') when no agent is spawned yet."""
+    """Empty strings must NOT clobber disk config — the classic CLI calls
+    this with empty getattr(agent, 'provider', '') when no agent is spawned
+    yet."""
     ctx = _empty_ctx()
     overlaid = ctx.with_overrides(
         current_provider="",

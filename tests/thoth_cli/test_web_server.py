@@ -2010,7 +2010,7 @@ class TestDashboardPluginManifestExtensions:
 # /api/pty WebSocket — terminal bridge for the dashboard "Chat" tab.
 #
 # These tests drive the endpoint with a tiny fake command (typically ``cat``
-# or ``sh -c 'printf …'``) instead of the real ``thoth --tui`` binary.  The
+# or ``sh -c 'printf …'``) instead of the real classic-REPL command. The
 # endpoint resolves its argv through ``_resolve_chat_argv``, so tests
 # monkeypatch that hook.
 # ---------------------------------------------------------------------------
@@ -2031,8 +2031,8 @@ class TestPtyWebSocket:
 
         import thoth_cli.web_server as ws
 
-        # Avoid exec'ing the actual TUI in tests: every test below installs
-        # its own fake argv via ``ws._resolve_chat_argv``.
+        # Avoid exec'ing the real classic REPL in tests: every test below
+        # installs its own fake argv via ``ws._resolve_chat_argv``.
         self.ws_module = ws
         monkeypatch.setattr(ws, "_DASHBOARD_EMBEDDED_CHAT_ENABLED", True)
         self.token = ws._SESSION_TOKEN
@@ -2047,20 +2047,27 @@ class TestPtyWebSocket:
         q = {"token": tok, **params}
         return f"/api/pty?{urlencode(q)}"
 
-    def test_resolve_chat_argv_uses_dashboard_scroll_env(self, monkeypatch):
-        """Dashboard chat runs the TUI in browser-scrollback mode."""
-        import thoth_cli.main as main_mod
+    def test_resolve_chat_argv_spawns_classic_repl(self):
+        """Dashboard chat spawns the classic REPL (``thoth chat``) inside
+        the browser terminal, not the removed Ink TUI."""
+        argv, _cwd, env = self.ws_module._resolve_chat_argv()
 
+        assert argv == [sys.executable, "-m", "thoth_cli.main", "chat"]
+        assert "THOTH_TUI_INLINE" not in env
+        assert "THOTH_TUI_DISABLE_MOUSE" not in env
+
+    def test_resolve_chat_argv_appends_resume_flag(self, monkeypatch):
+        """Session resume is a normal ``--resume <id>`` argv flag — no
+        THOTH_TUI_RESUME env hand-off (that was the removed Ink TUI's
+        mechanism)."""
         monkeypatch.setattr(
-            main_mod,
-            "_make_tui_argv",
-            lambda project_root, tui_dev=False: (["node", "dist/entry.js"], "/tmp/ui-tui"),
+            self.ws_module, "_session_latest_descendant", lambda sid: (None, None)
         )
 
-        _argv, _cwd, env = self.ws_module._resolve_chat_argv()
+        argv, _cwd, env = self.ws_module._resolve_chat_argv(resume="sess-1")
 
-        assert env["THOTH_TUI_INLINE"] == "1"
-        assert env["THOTH_TUI_DISABLE_MOUSE"] == "1"
+        assert argv == [sys.executable, "-m", "thoth_cli.main", "chat", "--resume", "sess-1"]
+        assert "THOTH_TUI_RESUME" not in env
 
     def test_rejects_when_embedded_chat_disabled(self, monkeypatch):
         monkeypatch.setattr(self.ws_module, "_DASHBOARD_EMBEDDED_CHAT_ENABLED", False)
@@ -2075,7 +2082,7 @@ class TestPtyWebSocket:
         monkeypatch.setattr(
             self.ws_module,
             "_resolve_chat_argv",
-            lambda resume=None, sidecar_url=None: (["/bin/cat"], None, None),
+            lambda resume=None: (["/bin/cat"], None, None),
         )
         from starlette.websockets import WebSocketDisconnect
 
@@ -2088,7 +2095,7 @@ class TestPtyWebSocket:
         monkeypatch.setattr(
             self.ws_module,
             "_resolve_chat_argv",
-            lambda resume=None, sidecar_url=None: (["/bin/cat"], None, None),
+            lambda resume=None: (["/bin/cat"], None, None),
         )
         from starlette.websockets import WebSocketDisconnect
 
@@ -2101,7 +2108,7 @@ class TestPtyWebSocket:
         monkeypatch.setattr(
             self.ws_module,
             "_resolve_chat_argv",
-            lambda resume=None, sidecar_url=None: (
+            lambda resume=None: (
                 ["/bin/sh", "-c", "printf thoth-ws-ok"],
                 None,
                 None,
@@ -2131,7 +2138,7 @@ class TestPtyWebSocket:
         monkeypatch.setattr(
             self.ws_module,
             "_resolve_chat_argv",
-            lambda resume=None, sidecar_url=None: (["/bin/cat"], None, None),
+            lambda resume=None: (["/bin/cat"], None, None),
         )
         with self.client.websocket_connect(self._url()) as conn:
             conn.send_bytes(b"round-trip-payload\n")
@@ -2164,7 +2171,7 @@ class TestPtyWebSocket:
             self.ws_module,
             "_resolve_chat_argv",
             # sleep gives the test time to push the resize before the child reads the ioctl.
-            lambda resume=None, sidecar_url=None: (
+            lambda resume=None: (
                 [sys.executable, "-c", winsize_script],
                 None,
                 None,
@@ -2193,7 +2200,7 @@ class TestPtyWebSocket:
         monkeypatch.setattr(
             self.ws_module,
             "_resolve_chat_argv",
-            lambda resume=None, sidecar_url=None: (["/bin/cat"], None, None),
+            lambda resume=None: (["/bin/cat"], None, None),
         )
         # Patch PtyBridge.spawn at the web_server module's binding.
         import thoth_cli.web_server as ws_mod
@@ -2208,7 +2215,7 @@ class TestPtyWebSocket:
     def test_resume_parameter_is_forwarded_to_argv(self, monkeypatch):
         captured: dict = {}
 
-        def fake_resolve(resume=None, sidecar_url=None):
+        def fake_resolve(resume=None):
             captured["resume"] = resume
             return (["/bin/sh", "-c", "printf resume-arg-ok"], None, None)
 
@@ -2222,94 +2229,3 @@ class TestPtyWebSocket:
                 pass
         assert captured.get("resume") == "sess-42"
 
-    def test_channel_param_propagates_sidecar_url(self, monkeypatch):
-        """When /api/pty is opened with ?channel=, the PTY child gets a
-        THOTH_TUI_SIDECAR_URL env var pointing back at /api/pub on the
-        same channel — which is how tool events reach the dashboard sidebar."""
-        captured: dict = {}
-
-        def fake_resolve(resume=None, sidecar_url=None):
-            captured["sidecar_url"] = sidecar_url
-            return (["/bin/sh", "-c", "printf sidecar-ok"], None, None)
-
-        monkeypatch.setattr(self.ws_module, "_resolve_chat_argv", fake_resolve)
-        monkeypatch.setattr(
-            self.ws_module.app.state, "bound_host", "127.0.0.1", raising=False
-        )
-        monkeypatch.setattr(
-            self.ws_module.app.state, "bound_port", 9119, raising=False
-        )
-
-        with self.client.websocket_connect(self._url(channel="abc-123")) as conn:
-            try:
-                conn.receive_bytes()
-            except Exception:
-                pass
-
-        url = captured.get("sidecar_url") or ""
-        assert url.startswith("ws://127.0.0.1:9119/api/pub?")
-        assert "channel=abc-123" in url
-        assert "token=" in url
-
-    @pytest.mark.skip(
-        reason=(
-            "starlette TestClient limitation with concurrent WebSocket "
-            "sessions. The test opens two WS connections on the same "
-            "TestClient (a subscriber on /api/events and a publisher on "
-            "/api/pub), publishes, and expects the subscriber to receive "
-            "the broadcast. Reproduces deterministically (every CI run) "
-            "as a 30s pytest-timeout. Probed the server with debug prints: "
-            "_broadcast_event finds the subscriber and ``await sub.send_text"
-            "(payload)`` returns successfully — but the message never "
-            "drains into the TestClient's receive queue for the second "
-            "WS session. Bumping deadlines (PR #45) and retrying the "
-            "publish with an explicit thread+timeout (this PR's first "
-            "attempt) both surfaced the same hang, just earlier and with "
-            "clearer diagnostics. Production broadcast works (verified "
-            "via debug instrumentation); the bug is in the test harness, "
-            "not in ``_broadcast_event``. A proper fix requires running "
-            "the test against a real uvicorn subprocess instead of "
-            "TestClient — bigger lift than this Phase-0 sweep warrants. "
-            "Production broadcast path is structurally exercised by the "
-            "dashboard-chat manual smoke (TUI → /api/pub → browser "
-            "/api/events) which works."
-        )
-    )
-    def test_pub_broadcasts_to_events_subscribers(self, monkeypatch):
-        """Frame written to /api/pub is rebroadcast verbatim to every
-        /api/events subscriber on the same channel."""
-        import time
-        from urllib.parse import urlencode
-        from thoth_cli import web_server as ws_mod
-
-        qs = urlencode({"token": self.token, "channel": "broadcast-test"})
-        pub_path = f"/api/pub?{qs}"
-        sub_path = f"/api/events?{qs}"
-
-        with self.client.websocket_connect(sub_path) as sub:
-            deadline = time.monotonic() + 15.0
-            while time.monotonic() < deadline:
-                if ws_mod._event_channels.get("broadcast-test"):
-                    break
-                time.sleep(0.01)
-            else:
-                raise AssertionError(
-                    "subscriber did not register on channel within 15s"
-                )
-
-            with self.client.websocket_connect(pub_path) as pub:
-                pub.send_text('{"type":"tool.start","payload":{"tool_id":"t1"}}')
-                received = sub.receive_text()
-
-        assert "tool.start" in received
-        assert '"tool_id":"t1"' in received
-
-    def test_events_rejects_missing_channel(self):
-        from starlette.websockets import WebSocketDisconnect
-
-        with pytest.raises(WebSocketDisconnect) as exc:
-            with self.client.websocket_connect(
-                f"/api/events?token={self.token}"
-            ):
-                pass
-        assert exc.value.code == 4400
