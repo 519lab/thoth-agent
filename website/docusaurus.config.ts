@@ -25,22 +25,18 @@ const config: Config = {
   i18n: {
     defaultLocale: 'en',
     // English-only until the docs are substantially translated — building all
-    // locales shipped ~650 untranslated English pages under /zh-Hans/ and /ko/
-    // (duplicate content + "pick 中文 → get English" UX). Re-add 'zh-Hans','ko'
-    // here (and the localeDropdown below) once website/i18n/ is populated; the
-    // localeConfigs are kept ready for that.
+    // locales shipped ~650 untranslated English pages under /ko/ (duplicate
+    // content + "pick language → get English" UX). Re-add 'ko' here (and the
+    // localeDropdown below) once website/i18n/ is populated; the localeConfigs
+    // are kept ready for that.
     locales: ['en'],
     localeConfigs: {
       // htmlLang is region-qualified so og:locale (language_TERRITORY) and the
       // hreflang alternates are valid; the locale *key* still drives the URL
-      // path (/docs/zh-Hans/), so URLs are unchanged.
+      // path (/docs/ko/), so URLs are unchanged.
       en: {
         label: 'English',
         htmlLang: 'en-US',
-      },
-      'zh-Hans': {
-        label: '简体中文',
-        htmlLang: 'zh-CN',
       },
       ko: {
         label: '한국어',
@@ -76,9 +72,8 @@ const config: Config = {
       /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
       ({
         hashed: true,
-        // English-only site → only the English tokenizer is needed. Dropping
-        // 'zh' also removes the @node-rs/jieba native dependency. Re-add 'zh'
-        // alongside the locale when Chinese docs are translated.
+        // English-only site → only the English tokenizer is needed (no
+        // @node-rs/jieba native dependency).
         language: ['en'],
         indexBlog: false,
         docsRouteBasePath: '/',

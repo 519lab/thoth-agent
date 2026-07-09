@@ -17,7 +17,7 @@ Usage::
     from agent.i18n import t
     print(t("approval.choose_long"))                       # current lang
     print(t("gateway.draining", count=3))                  # {count} formatted
-    print(t("approval.choose_long", lang="zh"))            # explicit override
+    print(t("approval.choose_long", lang="ja"))            # explicit override
 
 Language resolution order:
     1. Explicit ``lang=`` argument passed to :func:`t`
@@ -25,7 +25,7 @@ Language resolution order:
     3. ``display.language`` from config.yaml
     4. ``"en"`` (baseline)
 
-Supported languages: en, zh, ja, de, es, fr, tr, uk.  Unknown values fall back to en.
+Supported languages: en, ja, de, es, fr, tr, uk.  Unknown values fall back to en.
 """
 
 from __future__ import annotations
@@ -40,22 +40,15 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 SUPPORTED_LANGUAGES: tuple[str, ...] = (
-    "en", "zh", "zh-hant", "ja", "de", "es", "fr", "tr", "uk",
+    "en", "ja", "de", "es", "fr", "tr", "uk",
     "af", "ko", "it", "ga", "pt", "ru", "hu",
 )
 DEFAULT_LANGUAGE = "en"
 
-# Accept a few natural aliases so users who type "chinese" / "zh-CN" / "jp"
+# Accept a few natural aliases so users who type "japanese" / "jp" / "de-DE"
 # get the right catalog instead of silently falling back to English.
 _LANGUAGE_ALIASES: dict[str, str] = {
     "english": "en", "en-us": "en", "en-gb": "en",
-    # Simplified Chinese — explicit codes route here; bare "chinese" / "mandarin"
-    # also default to Simplified since that's the larger user base.
-    "chinese": "zh", "mandarin": "zh", "zh-cn": "zh", "zh-hans": "zh", "zh-sg": "zh",
-    # Traditional Chinese — distinct catalog.  Cover Taiwan / Hong Kong / Macau
-    # locale tags plus the common "traditional" alias.
-    "traditional-chinese": "zh-hant", "traditional_chinese": "zh-hant",
-    "zh-tw": "zh-hant", "zh-hk": "zh-hant", "zh-mo": "zh-hant",
     "japanese": "ja", "jp": "ja", "ja-jp": "ja",
     "german": "de", "deutsch": "de", "de-de": "de", "de-at": "de", "de-ch": "de",
     "spanish": "es", "español": "es", "espanol": "es", "es-es": "es", "es-mx": "es", "es-ar": "es",
@@ -97,8 +90,8 @@ def _locales_dir() -> Path:
 def _normalize_lang(value: Any) -> str:
     """Normalize a user-supplied language value to a supported code.
 
-    Accepts supported codes directly, common aliases (``chinese`` -> ``zh``),
-    and case-insensitive regional tags (``zh-CN`` -> ``zh``).  Returns the
+    Accepts supported codes directly, common aliases (``japanese`` -> ``ja``),
+    and case-insensitive regional tags (``ja-JP`` -> ``ja``).  Returns the
     default language for unknown values.
     """
     if not isinstance(value, str):
@@ -110,8 +103,7 @@ def _normalize_lang(value: Any) -> str:
         return key
     if key in _LANGUAGE_ALIASES:
         return _LANGUAGE_ALIASES[key]
-    # Try stripping a region suffix (e.g. "pt-br" -> "pt" won't be supported,
-    # but "zh-CN" -> "zh" will).
+    # Try stripping a region suffix (e.g. "de-CH" -> "de", "ja-JP" -> "ja").
     base = key.split("-", 1)[0]
     if base in SUPPORTED_LANGUAGES:
         return base

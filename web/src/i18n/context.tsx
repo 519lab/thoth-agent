@@ -1,8 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import type { Locale, Translations } from "./types";
 import { en } from "./en";
-import { zh } from "./zh";
-import { zhHant } from "./zh-hant";
 import { ja } from "./ja";
 import { de } from "./de";
 import { es } from "./es";
@@ -19,8 +17,6 @@ import { hu } from "./hu";
 
 const TRANSLATIONS: Record<Locale, Translations> = {
   en,
-  zh,
-  "zh-hant": zhHant,
   ja,
   de,
   es,
@@ -42,13 +38,11 @@ const TRANSLATIONS: Record<Locale, Translations> = {
 // can share the same list.
 //
 // We intentionally do NOT pair locales with country flags. Languages are not
-// countries (English ≠ GB, Portuguese ≠ PT, Spanish ≠ ES, Chinese variants ≠
-// any single jurisdiction). Endonyms are unambiguous and avoid the political
-// mismapping that flag pairings inevitably create.
+// countries (English ≠ GB, Portuguese ≠ PT, Spanish ≠ ES). Endonyms are
+// unambiguous and avoid the political mismapping that flag pairings
+// inevitably create.
 export const LOCALE_META: Record<Locale, { name: string }> = {
   en: { name: "English" },
-  zh: { name: "简体中文" },
-  "zh-hant": { name: "繁體中文" },
   ja: { name: "日本語" },
   de: { name: "Deutsch" },
   es: { name: "Español" },
