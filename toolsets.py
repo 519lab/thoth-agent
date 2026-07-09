@@ -270,33 +270,6 @@ TOOLSETS = {
         "includes": [],
     },
 
-    "yuanbao": {
-        "description": "Yuanbao platform tools - group info, member queries, DM, stickers",
-        "tools": [
-            "yb_query_group_info",
-            "yb_query_group_members",
-            "yb_send_dm",
-            "yb_search_sticker",
-            "yb_send_sticker",
-        ],
-        "includes": []
-    },
-
-    "feishu_doc": {
-        "description": "Read Feishu/Lark document content",
-        "tools": ["feishu_doc_read"],
-        "includes": []
-    },
-
-    "feishu_drive": {
-        "description": "Feishu/Lark document comment operations (list, reply, add)",
-        "tools": [
-            "feishu_drive_list_comments", "feishu_drive_list_comment_replies",
-            "feishu_drive_reply_comment", "feishu_drive_add_comment",
-        ],
-        "includes": []
-    },
-
     "spotify": {
         "description": "Native Spotify playback, search, playlist, album, and library tools",
         "tools": [
@@ -460,55 +433,6 @@ TOOLSETS = {
         "includes": []
     },
 
-    "thoth-feishu": {
-        "description": "Feishu/Lark bot toolset - enterprise messaging via Feishu/Lark (full access)",
-        "tools": _THOTH_CORE_TOOLS + [
-            "feishu_doc_read",
-            "feishu_drive_list_comments",
-            "feishu_drive_list_comment_replies",
-            "feishu_drive_reply_comment",
-            "feishu_drive_add_comment",
-        ],
-        "includes": []
-    },
-
-    "thoth-weixin": {
-        "description": "Weixin bot toolset - personal WeChat messaging via iLink (full access)",
-        "tools": _THOTH_CORE_TOOLS,
-        "includes": []
-    },
-
-    "thoth-qqbot": {
-        "description": "QQBot toolset - QQ messaging via Official Bot API v2 (full access)",
-        "tools": _THOTH_CORE_TOOLS,
-        "includes": []
-    },
-
-    "thoth-wecom": {
-        "description": "WeCom bot toolset - enterprise WeChat messaging (full access)",
-        "tools": _THOTH_CORE_TOOLS,
-        "includes": []
-    },
-
-    "thoth-wecom-callback": {
-        "description": "WeCom callback toolset - enterprise self-built app messaging (full access)",
-        "tools": _THOTH_CORE_TOOLS,
-        "includes": []
-    },
-
-    "thoth-yuanbao": {
-        "description": "Yuanbao Bot 元宝消息平台工具集 - 群信息、成员查询、私聊、贴纸表情",
-        "tools": _THOTH_CORE_TOOLS + [
-            "yb_query_group_info",
-            "yb_query_group_members",
-            "yb_send_dm",
-            "yb_search_sticker",
-            "yb_send_sticker",
-        ],
-        "module": "tools.yuanbao_tools",
-        "includes": []
-    },
-
     "thoth-sms": {
         "description": "SMS bot toolset - interact with Thoth via SMS (Twilio)",
         "tools": _THOTH_CORE_TOOLS,
@@ -524,7 +448,7 @@ TOOLSETS = {
     "thoth-gateway": {
         "description": "Gateway toolset - union of all messaging platform tools",
         "tools": [],
-        "includes": ["thoth-telegram", "thoth-discord", "thoth-whatsapp", "thoth-slack", "thoth-signal", "thoth-bluebubbles", "thoth-homeassistant", "thoth-email", "thoth-sms", "thoth-mattermost", "thoth-matrix", "thoth-feishu", "thoth-wecom", "thoth-wecom-callback", "thoth-weixin", "thoth-qqbot", "thoth-webhook", "thoth-yuanbao"]
+        "includes": ["thoth-telegram", "thoth-discord", "thoth-whatsapp", "thoth-slack", "thoth-signal", "thoth-bluebubbles", "thoth-homeassistant", "thoth-email", "thoth-sms", "thoth-mattermost", "thoth-matrix", "thoth-webhook"]
     }
 }
 

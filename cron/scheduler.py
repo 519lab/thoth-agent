@@ -91,9 +91,8 @@ def _resolve_cron_enabled_toolsets(job: dict, cfg: dict) -> list[str] | None:
 # in cron delivery targets, preventing env var enumeration via crafted names.
 _KNOWN_DELIVERY_PLATFORMS = frozenset({
     "telegram", "discord", "slack", "whatsapp", "signal",
-    "matrix", "mattermost", "homeassistant", "feishu",
-    "wecom", "wecom_callback", "weixin", "sms", "email", "webhook", "bluebubbles",
-    "qqbot", "yuanbao",
+    "matrix", "mattermost", "homeassistant",
+    "sms", "email", "webhook", "bluebubbles",
 })
 
 # Platforms that support a configured cron/notification home target, mapped to
@@ -107,21 +106,16 @@ _HOME_TARGET_ENV_VARS = {
     "mattermost": "MATTERMOST_HOME_CHANNEL",
     "sms": "SMS_HOME_CHANNEL",
     "email": "EMAIL_HOME_ADDRESS",
-    "feishu": "FEISHU_HOME_CHANNEL",
-    "wecom": "WECOM_HOME_CHANNEL",
-    "weixin": "WEIXIN_HOME_CHANNEL",
     "bluebubbles": "BLUEBUBBLES_HOME_CHANNEL",
-    "qqbot": "QQBOT_HOME_CHANNEL",
     "whatsapp": "WHATSAPP_HOME_CHANNEL",
 }
 
 # Legacy env var names kept for back-compat.  Each entry is the current
 # primary env var → the previous name.  _get_home_target_chat_id falls
 # back to the legacy name if the primary is unset, so users who set the
-# old name before the rename keep working until they migrate.
-_LEGACY_HOME_TARGET_ENV_VARS = {
-    "QQBOT_HOME_CHANNEL": "QQ_HOME_CHANNEL",
-}
+# old name before the rename keep working until they migrate.  Currently
+# empty — no active legacy aliases.
+_LEGACY_HOME_TARGET_ENV_VARS: dict[str, str] = {}
 
 from cron.jobs import get_due_jobs, mark_job_run, save_job_output, advance_next_run
 

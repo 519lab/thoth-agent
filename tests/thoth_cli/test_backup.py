@@ -1211,10 +1211,6 @@ class TestQuickSnapshot:
         (thoth_home / "pairing" / "matrix-approved.json").write_text(
             '{"@charlie:server": {"user_name": "charlie"}}'
         )
-        # Feishu's separate JSON
-        (thoth_home / "feishu_comment_pairing.json").write_text(
-            '{"doc_abc": {"allow_from": ["user_xyz"]}}'
-        )
 
         snap_id = create_quick_snapshot(thoth_home=thoth_home)
         assert snap_id is not None
@@ -1223,7 +1219,6 @@ class TestQuickSnapshot:
         assert (snap_dir / "platforms" / "pairing" / "telegram-approved.json").exists()
         assert (snap_dir / "platforms" / "pairing" / "discord-approved.json").exists()
         assert (snap_dir / "pairing" / "matrix-approved.json").exists()
-        assert (snap_dir / "feishu_comment_pairing.json").exists()
 
         with open(snap_dir / "manifest.json") as f:
             meta = json.load(f)
@@ -1231,7 +1226,6 @@ class TestQuickSnapshot:
         assert "platforms/pairing/telegram-approved.json" in files
         assert "platforms/pairing/discord-approved.json" in files
         assert "pairing/matrix-approved.json" in files
-        assert "feishu_comment_pairing.json" in files
 
     def test_restore_recovers_pairing_data(self, thoth_home):
         """After restore, deleted pairing files reappear with original content."""
@@ -1241,23 +1235,17 @@ class TestQuickSnapshot:
         pairing_dir.mkdir(parents=True)
         approved = pairing_dir / "telegram-approved.json"
         approved.write_text('{"12345": {"user_name": "alice"}}')
-        feishu = thoth_home / "feishu_comment_pairing.json"
-        feishu.write_text('{"doc_abc": {"allow_from": ["user_xyz"]}}')
 
         snap_id = create_quick_snapshot(thoth_home=thoth_home)
         assert snap_id is not None
 
-        # Simulate the disaster — user loses both pairing files.
+        # Simulate the disaster — user loses the pairing file.
         approved.unlink()
-        feishu.unlink()
         assert not approved.exists()
-        assert not feishu.exists()
 
         assert restore_quick_snapshot(snap_id, thoth_home=thoth_home) is True
         assert approved.exists()
         assert '"alice"' in approved.read_text()
-        assert feishu.exists()
-        assert '"user_xyz"' in feishu.read_text()
 
     def test_empty_pairing_dir_does_not_fail(self, thoth_home):
         """An empty pairing directory should be silently skipped."""

@@ -490,7 +490,6 @@ _QUICK_STATE_FILES = (
     # Pairing stores (generic + per-platform JSONs outside state.db)
     "pairing",                          # legacy location (gateway/pairing.py)
     "platforms/pairing",                # new location (gateway/pairing.py)
-    "feishu_comment_pairing.json",      # Feishu comment subscription pairings
 )
 
 _QUICK_SNAPSHOTS_DIR = "state-snapshots"

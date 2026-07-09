@@ -1,7 +1,6 @@
 """Shared HTTP client factory for long-lived platform adapters.
 
-Gateway messaging platforms (QQ Bot, Feishu, WeCom, DingTalk, Signal,
-BlueBubbles, WeCom-callback) keep a persistent ``httpx.AsyncClient``
+Gateway messaging platforms (Signal, BlueBubbles) keep a persistent ``httpx.AsyncClient``
 alive for the adapter's lifetime.  That amortises TLS/connection setup
 across many API calls, but it also means the process's file-descriptor
 pressure is sensitive to how aggressively the pool recycles idle keep-

@@ -267,12 +267,7 @@ When scheduling jobs, you specify where the output goes:
 | `"email"` | Email | |
 | `"sms"` | SMS via Twilio | |
 | `"homeassistant"` | Home Assistant | |
-| `"dingtalk"` | DingTalk | |
-| `"feishu"` | Feishu/Lark | |
-| `"wecom"` | WeCom | |
-| `"weixin"` | Weixin (WeChat) | |
 | `"bluebubbles"` | BlueBubbles (iMessage) | |
-| `"qqbot"` | QQ Bot (Tencent QQ) | |
 | `"all"` | Fan out to every connected home channel | Resolved at fire time |
 | `"telegram,discord"` | Fan out to a specific set of channels | Comma-separated list |
 | `"origin,all"` | Deliver to the origin **plus** every other connected channel | Combine any tokens |

@@ -139,10 +139,6 @@ LAZY_DEPS: dict[str, tuple[str, ...]] = {
         "asyncpg==0.31.0",
         "aiohttp-socks==0.11.0",
     ),
-    "platform.feishu": (
-        "lark-oapi==1.5.3",
-        "qrcode==7.4.2",
-    ),
 
     # ─── Terminal backends ─────────────────────────────────────────────────
     "terminal.modal": ("modal==1.3.4",),

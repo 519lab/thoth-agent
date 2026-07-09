@@ -78,8 +78,7 @@ thoth send --list telegram
 
 Any platform Thoth ships adapters for works as a target:
 `telegram`, `discord`, `slack`, `signal`, `sms`, `whatsapp`, `matrix`,
-`mattermost`, `feishu`, `dingtalk`, `wecom`, `weixin`, `email`, and
-others.
+`mattermost`, `email`, and others.
 
 ### Exit Codes
 

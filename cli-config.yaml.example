@@ -644,7 +644,7 @@ agent:
 #   - A preset like "thoth-cli" or "thoth-telegram" (curated tool set)
 #   - A list of individual toolsets to compose your own (see list below)
 #
-# Supported platform keys: cli, telegram, discord, whatsapp, slack, qqbot, teams, google_chat
+# Supported platform keys: cli, telegram, discord, whatsapp, slack, teams, google_chat
 #
 # Examples:
 #
@@ -673,7 +673,6 @@ agent:
 #   slack:         thoth-slack          (same as telegram)
 #   signal:        thoth-signal         (same as telegram)
 #   homeassistant: thoth-homeassistant  (same as telegram)
-#   qqbot:            thoth-qqbot            (same as telegram)
 #   teams:            thoth-teams            (same as telegram)
 #   google_chat:      thoth-google_chat      (same as telegram)
 #
@@ -685,8 +684,6 @@ platform_toolsets:
   slack: [thoth-slack]
   signal: [thoth-signal]
   homeassistant: [thoth-homeassistant]
-  qqbot: [thoth-qqbot]
-  yuanbao: [thoth-yuanbao]
   teams: [thoth-teams]
   google_chat: [thoth-google_chat]
 

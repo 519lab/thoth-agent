@@ -416,26 +416,17 @@ def show_status(args):
         "Slack": ("SLACK_BOT_TOKEN", None),
         "Email": ("EMAIL_ADDRESS", "EMAIL_HOME_ADDRESS"),
         "SMS": ("TWILIO_ACCOUNT_SID", "SMS_HOME_CHANNEL"),
-        "Feishu": ("FEISHU_APP_ID", "FEISHU_HOME_CHANNEL"),
-        "WeCom": ("WECOM_BOT_ID", "WECOM_HOME_CHANNEL"),
-        "WeCom Callback": ("WECOM_CALLBACK_CORP_ID", None),
-        "Weixin": ("WEIXIN_ACCOUNT_ID", "WEIXIN_HOME_CHANNEL"),
         "BlueBubbles": ("BLUEBUBBLES_SERVER_URL", "BLUEBUBBLES_HOME_CHANNEL"),
-        "QQBot": ("QQ_APP_ID", "QQ_HOME_CHANNEL"),
-        "Yuanbao": ("YUANBAO_APP_ID", "YUANBAO_HOME_CHANNEL"),
     }
 
     for name, (token_var, home_var) in platforms.items():
         token = os.getenv(token_var, "")
         has_token = bool(token)
-        
+
         home_channel = ""
         if home_var:
             home_channel = os.getenv(home_var, "")
-        # Back-compat: QQBot home channel was renamed from QQ_HOME_CHANNEL to QQBOT_HOME_CHANNEL
-        if not home_channel and home_var == "QQBOT_HOME_CHANNEL":
-            home_channel = os.getenv("QQ_HOME_CHANNEL", "")
-        
+
         status = "configured" if has_token else "not configured"
         if home_channel:
             status += f" (home: {home_channel})"

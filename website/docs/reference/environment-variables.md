@@ -330,41 +330,6 @@ For cloud sandbox backends, persistence is filesystem-oriented. `TERMINAL_LIFETI
 | `EMAIL_HOME_ADDRESS_NAME` | Display name for the email home target |
 | `EMAIL_POLL_INTERVAL` | Email polling interval in seconds |
 | `EMAIL_ALLOW_ALL_USERS` | Allow all inbound email senders |
-| `FEISHU_APP_ID` | Feishu/Lark bot App ID from [open.feishu.cn](https://open.feishu.cn/) |
-| `FEISHU_APP_SECRET` | Feishu/Lark bot App Secret |
-| `FEISHU_DOMAIN` | `feishu` (China) or `lark` (international). Default: `feishu` |
-| `FEISHU_CONNECTION_MODE` | `websocket` (recommended) or `webhook`. Default: `websocket` |
-| `FEISHU_ENCRYPT_KEY` | Optional encryption key for webhook mode |
-| `FEISHU_VERIFICATION_TOKEN` | Optional verification token for webhook mode |
-| `FEISHU_ALLOWED_USERS` | Comma-separated Feishu user IDs allowed to message the bot |
-| `FEISHU_ALLOW_BOTS` | `none` (default) / `mentions` / `all` — accept inbound messages from other bots. See [bot-to-bot messaging](../user-guide/messaging/feishu.md#bot-to-bot-messaging) |
-| `FEISHU_REQUIRE_MENTION` | `true` (default) / `false` — whether group messages must @mention the bot. Override per-chat via `group_rules.<chat_id>.require_mention`. |
-| `FEISHU_HOME_CHANNEL` | Feishu chat ID for cron delivery and notifications |
-| `WECOM_BOT_ID` | WeCom AI Bot ID from admin console |
-| `WECOM_SECRET` | WeCom AI Bot secret |
-| `WECOM_WEBSOCKET_URL` | Custom WebSocket URL (default: `wss://openws.work.weixin.qq.com`) |
-| `WECOM_ALLOWED_USERS` | Comma-separated WeCom user IDs allowed to message the bot |
-| `WECOM_HOME_CHANNEL` | WeCom chat ID for cron delivery and notifications |
-| `WECOM_CALLBACK_CORP_ID` | WeCom enterprise Corp ID for callback self-built app |
-| `WECOM_CALLBACK_CORP_SECRET` | Corp secret for the self-built app |
-| `WECOM_CALLBACK_AGENT_ID` | Agent ID of the self-built app |
-| `WECOM_CALLBACK_TOKEN` | Callback verification token |
-| `WECOM_CALLBACK_ENCODING_AES_KEY` | AES key for callback encryption |
-| `WECOM_CALLBACK_HOST` | Callback server bind address (default: `0.0.0.0`) |
-| `WECOM_CALLBACK_PORT` | Callback server port (default: `8645`) |
-| `WECOM_CALLBACK_ALLOWED_USERS` | Comma-separated user IDs for allowlist |
-| `WECOM_CALLBACK_ALLOW_ALL_USERS` | Set `true` to allow all users without an allowlist |
-| `WEIXIN_ACCOUNT_ID` | Weixin account ID obtained via QR login through iLink Bot API |
-| `WEIXIN_TOKEN` | Weixin authentication token obtained via QR login through iLink Bot API |
-| `WEIXIN_BASE_URL` | Override Weixin iLink Bot API base URL (default: `https://ilinkai.weixin.qq.com`) |
-| `WEIXIN_CDN_BASE_URL` | Override Weixin CDN base URL for media (default: `https://novac2c.cdn.weixin.qq.com/c2c`) |
-| `WEIXIN_DM_POLICY` | Direct message policy: `open`, `allowlist`, `pairing`, `disabled` (default: `open`) |
-| `WEIXIN_GROUP_POLICY` | Group message policy: `open`, `allowlist`, `disabled` (default: `disabled`) |
-| `WEIXIN_ALLOWED_USERS` | Comma-separated Weixin user IDs allowed to DM the bot |
-| `WEIXIN_GROUP_ALLOWED_USERS` | Comma-separated Weixin **group chat IDs** (not member user IDs) allowed to interact with the bot. The variable name is legacy — it expects group IDs. Only takes effect when iLink actually delivers group events; QR-login iLink bot identities (`...@im.bot`) typically don't receive ordinary WeChat group messages. |
-| `WEIXIN_HOME_CHANNEL` | Weixin chat ID for cron delivery and notifications |
-| `WEIXIN_HOME_CHANNEL_NAME` | Display name for the Weixin home channel |
-| `WEIXIN_ALLOW_ALL_USERS` | Allow all Weixin users without an allowlist (`true`/`false`) |
 | `BLUEBUBBLES_SERVER_URL` | BlueBubbles server URL (e.g. `http://192.168.1.10:1234`) |
 | `BLUEBUBBLES_PASSWORD` | BlueBubbles server password |
 | `BLUEBUBBLES_WEBHOOK_HOST` | Webhook listener bind address (default: `127.0.0.1`) |
@@ -372,17 +337,6 @@ For cloud sandbox backends, persistence is filesystem-oriented. `TERMINAL_LIFETI
 | `BLUEBUBBLES_HOME_CHANNEL` | Phone/email for cron/notification delivery |
 | `BLUEBUBBLES_ALLOWED_USERS` | Comma-separated authorized users |
 | `BLUEBUBBLES_ALLOW_ALL_USERS` | Allow all users (`true`/`false`) |
-| `QQ_APP_ID` | QQ Bot App ID from [q.qq.com](https://q.qq.com) |
-| `QQ_CLIENT_SECRET` | QQ Bot App Secret from [q.qq.com](https://q.qq.com) |
-| `QQ_STT_API_KEY` | API key for external STT fallback provider (optional, used when QQ built-in ASR returns no text) |
-| `QQ_STT_BASE_URL` | Base URL for external STT provider (optional) |
-| `QQ_STT_MODEL` | Model name for external STT provider (optional) |
-| `QQ_ALLOWED_USERS` | Comma-separated QQ user openIDs allowed to message the bot |
-| `QQ_GROUP_ALLOWED_USERS` | Comma-separated QQ group IDs for group @-message access |
-| `QQ_ALLOW_ALL_USERS` | Allow all users (`true`/`false`, overrides `QQ_ALLOWED_USERS`) |
-| `QQBOT_HOME_CHANNEL` | QQ user/group openID for cron delivery and notifications |
-| `QQBOT_HOME_CHANNEL_NAME` | Display name for the QQ home channel |
-| `QQ_PORTAL_HOST` | Override the QQ portal host (set to `sandbox.q.qq.com` to route through the sandbox gateway; default: `q.qq.com`). |
 | `MATTERMOST_URL` | Mattermost server URL (e.g. `https://mm.example.com`) |
 | `MATTERMOST_TOKEN` | Bot token or personal access token for Mattermost |
 | `MATTERMOST_ALLOWED_USERS` | Comma-separated Mattermost user IDs allowed to message the bot |
@@ -496,10 +450,6 @@ Advanced per-platform knobs for throttling the outbound message batcher. Most us
 | `THOTH_DISCORD_TEXT_BATCH_DELAY_SECONDS` | Grace window before flushing a queued Discord text chunk (default: `0.6`). |
 | `THOTH_DISCORD_TEXT_BATCH_SPLIT_DELAY_SECONDS` | Delay between split chunks when a Discord message exceeds the length limit (default: `2.0`). |
 | `THOTH_MATRIX_TEXT_BATCH_DELAY_SECONDS` / `_SPLIT_DELAY_SECONDS` | Matrix equivalents of the Telegram batch knobs. |
-| `THOTH_FEISHU_TEXT_BATCH_DELAY_SECONDS` / `_SPLIT_DELAY_SECONDS` / `_MAX_CHARS` / `_MAX_MESSAGES` | Feishu batcher tuning — delay, split delay, max chars per message, max messages per batch. |
-| `THOTH_FEISHU_MEDIA_BATCH_DELAY_SECONDS` | Feishu media flush delay. |
-| `THOTH_FEISHU_DEDUP_CACHE_SIZE` | Size of the Feishu webhook dedup cache (default: `1024`). |
-| `THOTH_WECOM_TEXT_BATCH_DELAY_SECONDS` / `_SPLIT_DELAY_SECONDS` | WeCom batcher tuning. |
 | `THOTH_VISION_DOWNLOAD_TIMEOUT` | Timeout in seconds for downloading an image before handing it to vision models (default: `30`). |
 | `THOTH_RESTART_DRAIN_TIMEOUT` | Gateway: seconds to wait for active runs to drain on `/restart` before forcing the restart (default: `900`). |
 | `THOTH_GATEWAY_PLATFORM_CONNECT_TIMEOUT` | Per-platform connect timeout during gateway startup (seconds). |

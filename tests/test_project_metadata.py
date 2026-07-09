@@ -71,7 +71,7 @@ def test_lazy_installable_extras_excluded_from_all():
         "edge-tts", "tts-premium",
         "voice",  # faster-whisper / sounddevice / numpy
         "modal", "daytona", "vercel",
-        "messaging", "slack", "matrix", "feishu",
+        "messaging", "slack", "matrix",
         "honcho", "hindsight",
     }
     all_extra_specs = optional_dependencies["all"]
@@ -85,23 +85,6 @@ def test_lazy_installable_extras_excluded_from_all():
             f"Remove it from [all] in pyproject.toml — it lazy-installs "
             f"at first use. Found in [all]: {offending}"
         )
-
-
-def test_messaging_extra_includes_qrcode_for_weixin_setup():
-    optional_dependencies = _load_optional_dependencies()
-
-    messaging_extra = optional_dependencies["messaging"]
-    assert any(dep.startswith("qrcode") for dep in messaging_extra)
-
-
-
-def test_feishu_extra_includes_qrcode_for_qr_login():
-    """Feishu's QR login flow (gateway/platforms/feishu.py) needs the
-    qrcode package."""
-    optional_dependencies = _load_optional_dependencies()
-
-    feishu_extra = optional_dependencies["feishu"]
-    assert any(dep.startswith("qrcode") for dep in feishu_extra)
 
 
 def test_dashboard_plugin_manifests_and_assets_are_packaged():

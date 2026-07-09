@@ -2409,12 +2409,6 @@ def _setup_bluebubbles():
     print_info("   Install: https://docs.bluebubbles.app/helper-bundle/installation")
 
 
-def _setup_qqbot():
-    """Configure QQ Bot (Official API v2) via gateway setup."""
-    from thoth_cli.gateway import _setup_qqbot as _gateway_setup_qqbot
-    _gateway_setup_qqbot()
-
-
 def _setup_webhooks():
     """Configure webhook integration."""
     print_header("Webhooks")
@@ -2525,10 +2519,6 @@ def setup_gateway(config: dict):
             missing_home.append("Slack")
         if get_env_value("BLUEBUBBLES_SERVER_URL") and not get_env_value("BLUEBUBBLES_HOME_CHANNEL"):
             missing_home.append("BlueBubbles")
-        if get_env_value("QQ_APP_ID") and not (
-            get_env_value("QQBOT_HOME_CHANNEL") or get_env_value("QQ_HOME_CHANNEL")
-        ):
-            missing_home.append("QQBot")
 
         if missing_home:
             print()

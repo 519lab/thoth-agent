@@ -149,7 +149,7 @@ thoth gateway status       Check status
 thoth gateway setup        Configure platforms
 ```
 
-Supported platforms: Telegram, Discord, Slack, WhatsApp, Signal, Email, SMS, Matrix, Mattermost, Home Assistant, DingTalk, Feishu, WeCom, BlueBubbles (iMessage), Weixin (WeChat), API Server, Webhooks. Open WebUI connects via the API Server adapter.
+Supported platforms: Telegram, Discord, Slack, WhatsApp, Signal, Email, SMS, Matrix, Mattermost, Home Assistant, BlueBubbles (iMessage), API Server, Webhooks. Open WebUI connects via the API Server adapter.
 
 Platform docs: https://thoth.519lab.com/docs/user-guide/messaging/
 
@@ -434,9 +434,6 @@ Enable/disable via `thoth tools` (interactive) or `thoth tools enable/disable NA
 | `homeassistant` | Smart home control (off by default) |
 | `discord` | Discord integration tools |
 | `discord_admin` | Discord admin/moderation tools |
-| `feishu_doc` | Feishu (Lark) document tools |
-| `feishu_drive` | Feishu (Lark) drive tools |
-| `yuanbao` | Yuanbao integration tools |
 | `rl` | Reinforcement learning tools (off by default) |
 | `moa` | Mixture of Agents (off by default) |
 

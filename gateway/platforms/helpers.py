@@ -28,8 +28,7 @@ class MessageDeduplicator:
     """TTL-based message deduplication cache.
 
     Replaces the identical ``_seen_messages`` / ``_is_duplicate()`` pattern
-    previously duplicated in discord, slack, dingtalk, wecom, weixin,
-    mattermost, and feishu adapters.
+    previously duplicated in discord, slack, and mattermost adapters.
 
     Usage::
 
@@ -82,7 +81,7 @@ class TextBatchAggregator:
     """Aggregates rapid-fire text events into single messages.
 
     Replaces the ``_enqueue_text_event`` / ``_flush_text_batch`` pattern
-    previously duplicated in telegram, discord, matrix, wecom, and feishu.
+    previously duplicated in telegram, discord, and matrix.
 
     Usage::
 
@@ -181,7 +180,7 @@ def strip_markdown(text: str) -> str:
     """Strip markdown formatting for plain-text platforms (SMS, iMessage, etc.).
 
     Replaces the identical ``_strip_markdown()`` functions previously
-    duplicated in sms.py, bluebubbles.py, and feishu.py.
+    duplicated in sms.py and bluebubbles.py.
     """
     text = _RE_BOLD.sub(r"\1", text)
     text = _RE_ITALIC_STAR.sub(r"\1", text)

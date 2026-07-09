@@ -60,8 +60,6 @@ Or in-session:
 | `delegation` | `delegate_task` | Spawn isolated subagent instances for parallel work. |
 | `discord` | `discord` | Core Discord text/embed/DM actions (gateway-only). Active on the `thoth-discord` toolset. |
 | `discord_admin` | `discord_admin` | Discord moderation (bans, role changes, channel management). Active on the `thoth-discord` toolset; requires the bot to hold the relevant Discord permissions. |
-| `feishu_doc` | `feishu_doc_read` | Read Feishu/Lark document content. Used by the Feishu document-comment intelligent-reply handler. |
-| `feishu_drive` | `feishu_drive_add_comment`, `feishu_drive_list_comments`, `feishu_drive_list_comment_replies`, `feishu_drive_reply_comment` | Feishu/Lark drive comment operations. Scoped to the comment agent; not exposed on `thoth-cli` or other messaging toolsets. |
 | `file` | `patch`, `read_file`, `search_files`, `write_file` | File reading, writing, searching, and editing. |
 | `homeassistant` | `ha_call_service`, `ha_get_state`, `ha_list_entities`, `ha_list_services` | Smart home control via Home Assistant. Only available when `HASS_TOKEN` is set. |
 | `computer_use` | `computer_use` | Background macOS desktop control via cua-driver — does not steal cursor/focus. Works with any tool-capable model. macOS only; requires `cua-driver` on `$PATH`. |
@@ -83,7 +81,6 @@ Or in-session:
 | `video` | `video_analyze` | Video analysis and understanding tools (opt-in, not in the default toolset — add explicitly via `--toolsets`). |
 | `web` | `web_extract`, `web_search` | Web search and page content extraction. |
 | `x_search` | `x_search` | Search X (Twitter) posts and threads via xAI's built-in `x_search` Responses tool. Off by default; opt in via `thoth tools`. Schema only registered when xAI credentials (SuperGrok OAuth or `XAI_API_KEY`) are configured. |
-| `yuanbao` | `yb_query_group_info`, `yb_query_group_members`, `yb_search_sticker`, `yb_send_dm`, `yb_send_sticker` | Yuanbao DM/group actions and sticker search. Registered only on `thoth-yuanbao`. |
 
 ## Platform Toolsets
 
@@ -105,12 +102,6 @@ Platform toolsets define the complete tool configuration for a deployment target
 | `thoth-email` | Same as `thoth-cli`. |
 | `thoth-sms` | Same as `thoth-cli`. |
 | `thoth-bluebubbles` | Same as `thoth-cli`. |
-| `thoth-feishu` | Adds the five `feishu_doc_*` / `feishu_drive_*` tools (only used by the document-comment handler, not the regular chat adapter). |
-| `thoth-qqbot` | Same as `thoth-cli`. |
-| `thoth-wecom` | Same as `thoth-cli`. |
-| `thoth-wecom-callback` | Same as `thoth-cli`. |
-| `thoth-weixin` | Same as `thoth-cli`. |
-| `thoth-yuanbao` | Adds the five `yb_*` tools (DM/group/sticker) on top of `thoth-cli`. |
 | `thoth-homeassistant` | Same as `thoth-cli` (the Home Assistant tools are already present by default and activate when `HASS_TOKEN` is set). |
 | `thoth-webhook` | Same as `thoth-cli`. |
 | `thoth-gateway` | Internal gateway orchestrator toolset — union of every `thoth-<platform>` toolset; used when the gateway needs to accept any message source. |

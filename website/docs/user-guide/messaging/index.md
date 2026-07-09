@@ -1,12 +1,12 @@
 ---
 sidebar_position: 1
 title: "Messaging Gateway"
-description: "Chat with Thoth from Telegram, Discord, Slack, WhatsApp, Signal, SMS, Email, Home Assistant, Mattermost, Matrix, Yuanbao, Microsoft Teams, LINE, Webhooks, or any OpenAI-compatible frontend via the API server — architecture and setup overview"
+description: "Chat with Thoth from Telegram, Discord, Slack, WhatsApp, Signal, SMS, Email, Home Assistant, Mattermost, Matrix, Microsoft Teams, LINE, Webhooks, or any OpenAI-compatible frontend via the API server — architecture and setup overview"
 ---
 
 # Messaging Gateway
 
-Chat with Thoth from Telegram, Discord, Slack, WhatsApp, Signal, SMS, Email, Home Assistant, Mattermost, Matrix, Feishu/Lark, WeCom, Weixin, BlueBubbles (iMessage), QQ, Yuanbao, Microsoft Teams, LINE, or your browser. The gateway is a single background process that connects to all your configured platforms, handles sessions, runs cron jobs, and delivers voice messages.
+Chat with Thoth from Telegram, Discord, Slack, WhatsApp, Signal, SMS, Email, Home Assistant, Mattermost, Matrix, BlueBubbles (iMessage), Microsoft Teams, LINE, or your browser. The gateway is a single background process that connects to all your configured platforms, handles sessions, runs cron jobs, and delivers voice messages.
 
 For the full voice feature set — including CLI microphone mode, spoken replies in messaging, and Discord voice-channel conversations — see [Voice Mode](/docs/user-guide/features/voice-mode) and [Use Voice Mode with Thoth](/docs/guides/use-voice-mode-with-thoth).
 
@@ -25,13 +25,7 @@ For the full voice feature set — including CLI microphone mode, spoken replies
 | Home Assistant | — | — | — | — | — | — | — |
 | Mattermost | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ |
 | Matrix | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Feishu/Lark | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| WeCom | ✅ | ✅ | ✅ | — | — | ✅ | ✅ |
-| WeCom Callback | — | — | — | — | — | — | — |
-| Weixin | ✅ | ✅ | ✅ | — | — | ✅ | ✅ |
 | BlueBubbles | — | ✅ | ✅ | — | ✅ | ✅ | — |
-| QQ | ✅ | ✅ | ✅ | — | — | ✅ | — |
-| Yuanbao | ✅ | ✅ | ✅ | — | — | ✅ | ✅ |
 | Microsoft Teams | — | ✅ | — | ✅ | — | ✅ | — |
 | LINE | — | ✅ | ✅ | — | — | ✅ | — |
 
@@ -54,13 +48,7 @@ flowchart TB
             ha[Home Assistant]
             mm[Mattermost]
             mx[Matrix]
-    fs[Feishu/Lark]
-    wc[WeCom]
-    wcb[WeCom Callback]
-    wx[Weixin]
     bb[BlueBubbles]
-    qq[QQ]
-    yb[Yuanbao]
     ms[Microsoft Teams]
     api["API Server<br/>(OpenAI-compatible)"]
     wh[Webhooks]
@@ -82,13 +70,7 @@ flowchart TB
     ha --> store
     mm --> store
     mx --> store
-    fs --> store
-    wc --> store
-    wcb --> store
-    wx --> store
     bb --> store
-    qq --> store
-    yb --> store
     ms --> store
     api --> store
     wh --> store
@@ -190,9 +172,6 @@ SMS_ALLOWED_USERS=+155****4567,+155****6543
 EMAIL_ALLOWED_USERS=trusted@example.com,colleague@work.com
 MATTERMOST_ALLOWED_USERS=3uo8dkh1p7g1mfk49ear5fzs5c
 MATRIX_ALLOWED_USERS=@alice:matrix.org
-FEISHU_ALLOWED_USERS=ou_xxxxxxxx,ou_yyyyyyyy
-WECOM_ALLOWED_USERS=user-id-1,user-id-2
-WECOM_CALLBACK_ALLOWED_USERS=user-id-1,user-id-2
 TEAMS_ALLOWED_USERS=aad-object-id-1,aad-object-id-2
 
 # Or allow
@@ -427,13 +406,7 @@ Each platform has its own toolset:
 | Home Assistant | `thoth-homeassistant` | Full tools + HA device control (ha_list_entities, ha_get_state, ha_call_service, ha_list_services) |
 | Mattermost | `thoth-mattermost` | Full tools including terminal |
 | Matrix | `thoth-matrix` | Full tools including terminal |
-| Feishu/Lark | `thoth-feishu` | Full tools including terminal |
-| WeCom | `thoth-wecom` | Full tools including terminal |
-| WeCom Callback | `thoth-wecom-callback` | Full tools including terminal |
-| Weixin | `thoth-weixin` | Full tools including terminal |
 | BlueBubbles | `thoth-bluebubbles` | Full tools including terminal |
-| QQBot | `thoth-qqbot` | Full tools including terminal |
-| Yuanbao | `thoth-yuanbao` | Full tools including terminal |
 | Microsoft Teams | `thoth-teams` | Full tools including terminal |
 | API Server | `thoth-api-server` | Full tools (drops `clarify`, `send_message`, `text_to_speech` — programmatic access doesn't have an interactive user) |
 | Webhooks | `thoth-webhook` | Full tools including terminal |
@@ -529,13 +502,7 @@ Defaults to `false`. Only platforms whose adapter implements `delete_message` ho
 - [Home Assistant Integration](homeassistant.md)
 - [Mattermost Setup](mattermost.md)
 - [Matrix Setup](matrix.md)
-- [Feishu/Lark Setup](feishu.md)
-- [WeCom Setup](wecom.md)
-- [WeCom Callback Setup](wecom-callback.md)
-- [Weixin Setup (WeChat)](weixin.md)
 - [BlueBubbles Setup (iMessage)](bluebubbles.md)
-- [QQBot Setup](qqbot.md)
-- [Yuanbao Setup](yuanbao.md)
 - [Microsoft Teams Setup](teams.md)
 - [Teams Meetings Pipeline](teams-meetings.md)
 - [Open WebUI + API Server](open-webui.md)

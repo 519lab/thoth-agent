@@ -8,7 +8,7 @@ description: "Authoritative reference for Thoth built-in tools, grouped by tools
 
 This page documents Thoth's built-in tools, grouped by toolset. Availability varies by platform, credentials, and enabled toolsets.
 
-**Quick counts (current registry):** ~70 tools — 10 browser tools (core) + 2 CDP-gated browser tools, 4 file tools, 10 RL tools, 4 Home Assistant tools, 2 terminal tools, 2 web tools, 5 Feishu tools, 7 Spotify tools (registered by the bundled `spotify` plugin), 5 Yuanbao tools, 7 kanban tools (registered when the kanban dispatcher spawns the agent), 2 Discord tools, and a handful of standalone tools (`memory`, `clarify`, `delegate_task`, `execute_code`, `cronjob`, `session_search`, `skill_view`/`skill_manage`/`skills_list`, `text_to_speech`, `image_generate`, `video_generate`, `vision_analyze`, `video_analyze`, `mixture_of_agents`, `send_message`, `todo`, `computer_use`, `process`).
+**Quick counts (current registry):** ~60 tools — 10 browser tools (core) + 2 CDP-gated browser tools, 4 file tools, 10 RL tools, 4 Home Assistant tools, 2 terminal tools, 2 web tools, 7 Spotify tools (registered by the bundled `spotify` plugin), 7 kanban tools (registered when the kanban dispatcher spawns the agent), 2 Discord tools, and a handful of standalone tools (`memory`, `clarify`, `delegate_task`, `execute_code`, `cronjob`, `session_search`, `skill_view`/`skill_manage`/`skills_list`, `text_to_speech`, `image_generate`, `video_generate`, `vision_analyze`, `video_analyze`, `mixture_of_agents`, `send_message`, `todo`, `computer_use`, `process`).
 
 :::tip MCP Tools
 In addition to built-in tools, Thoth can load tools dynamically from MCP servers. MCP tools appear with the prefix `mcp_<server>_` (e.g., `mcp_github_create_issue` for the `github` MCP server). See [MCP Integration](/docs/user-guide/features/mcp) for configuration.
@@ -61,25 +61,6 @@ These two tools live in the `browser` toolset but only register when a Chrome De
 | Tool | Description | Requires environment |
 |------|-------------|----------------------|
 | `delegate_task` | Spawn one or more subagents to work on tasks in isolated contexts. Each subagent gets its own conversation, terminal session, and toolset. Only the final summary is returned -- intermediate tool results never enter your context window. TWO… | — |
-
-## `feishu_doc` toolset
-
-Scoped to the Feishu document-comment intelligent-reply handler (`gateway/platforms/feishu_comment.py`). Not exposed on `thoth-cli` or the regular Feishu chat adapter.
-
-| Tool | Description | Requires environment |
-|------|-------------|----------------------|
-| `feishu_doc_read` | Read the full text content of a Feishu/Lark document (Docx, Doc, or Sheet) given its file_type and token. | Feishu app credentials |
-
-## `feishu_drive` toolset
-
-Scoped to the Feishu document-comment handler. Drives comment read/write operations on drive files.
-
-| Tool | Description | Requires environment |
-|------|-------------|----------------------|
-| `feishu_drive_add_comment` | Add a top-level comment on a Feishu/Lark document or file. | Feishu app credentials |
-| `feishu_drive_list_comments` | List whole-document comments on a Feishu/Lark file, most recent first. | Feishu app credentials |
-| `feishu_drive_list_comment_replies` | List replies on a specific Feishu comment thread (whole-doc or local-selection). | Feishu app credentials |
-| `feishu_drive_reply_comment` | Post a reply on a Feishu comment thread, with optional `@`-mention. | Feishu app credentials |
 
 ## `file` toolset
 
@@ -254,17 +235,5 @@ Registered by the bundled `spotify` plugin. Requires an OAuth token — run `tho
 | `spotify_playlists` | List, inspect, create, update, and modify Spotify playlists. | Spotify OAuth |
 | `spotify_albums` | Fetch Spotify album metadata or album tracks. | Spotify OAuth |
 | `spotify_library` | List, save, or remove the user's saved Spotify tracks or albums. | Spotify OAuth |
-
-## `thoth-yuanbao` toolset
-
-Registered only on the `thoth-yuanbao` platform toolset. Yuanbao is Tencent's chat app; these tools drive its DM/group/sticker APIs.
-
-| Tool | Description | Requires environment |
-|------|-------------|----------------------|
-| `yb_query_group_info` | Query basic info about a group (called "派/Pai" in the app): name, owner, member count. | Yuanbao credentials |
-| `yb_query_group_members` | Query members of a group (for `@`-mentions, finding a user by name, listing bots). | Yuanbao credentials |
-| `yb_send_dm` | Send a private/direct message to a user in a group, with optional media files. | Yuanbao credentials |
-| `yb_search_sticker` | Search the built-in Yuanbao sticker (TIM face) catalogue by keyword. | Yuanbao credentials |
-| `yb_send_sticker` | Send a built-in sticker to the current Yuanbao chat. | Yuanbao credentials |
 
 

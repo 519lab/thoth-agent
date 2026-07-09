@@ -77,7 +77,7 @@ An alternative to disabling privacy mode: promote the bot to **group admin**. Ad
 
 ### Observe group chatter without auto-replying
 
-For OpenClaw/Yuanbao-style group behavior, configure Telegram so the bot can **see** ordinary group messages but only **responds** when directly triggered:
+For OpenClaw-style group behavior, configure Telegram so the bot can **see** ordinary group messages but only **responds** when directly triggered:
 
 ```yaml
 telegram:
@@ -184,7 +184,7 @@ The gateway extracts `MEDIA:/path/to/file` tags from agent replies and ships the
 | **Archives** | `zip`, `rar`, `7z`, `tar`, `gz`, `bz2` |
 | **Books / packages** | `epub`, `apk`, `ipa` |
 
-Anything on this list delivered as a native attachment on platforms that support it (Telegram, Discord, Signal, Slack, WhatsApp, Feishu, Matrix, etc.); on platforms without native support it falls back to a link or plain-text indicator. The **bold** categories were added in the last few releases — if you were relying on the model saying `here is the file: /path/to/report.docx` instead, swap to `MEDIA:/path/to/report.docx` for native delivery.
+Anything on this list delivered as a native attachment on platforms that support it (Telegram, Discord, Signal, Slack, WhatsApp, Matrix, etc.); on platforms without native support it falls back to a link or plain-text indicator. The **bold** categories were added in the last few releases — if you were relying on the model saying `here is the file: /path/to/report.docx` instead, swap to `MEDIA:/path/to/report.docx` for native delivery.
 
 ## Webhook Mode
 

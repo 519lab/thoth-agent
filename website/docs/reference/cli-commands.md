@@ -1244,7 +1244,7 @@ Pulls the latest `thoth-agent` code and reinstalls dependencies in your venv, th
 
 Additional behavior:
 
-- **Pairing data snapshot.** Even when `--backup` is off, `thoth update` takes a lightweight snapshot of `~/.thoth/pairing/` and the Feishu comment rules before `git pull`. You can roll it back with `thoth backup restore --state pre-update` if a pull rewrites a file you were editing.
+- **Pairing data snapshot.** Even when `--backup` is off, `thoth update` takes a lightweight snapshot of `~/.thoth/pairing/` before `git pull`. You can roll it back with `thoth backup restore --state pre-update` if a pull rewrites a file you were editing.
 - **Legacy `hermes.service` warning.** If Thoth detects a pre-rename `hermes.service` systemd unit (instead of the current `thoth-gateway.service`), it prints a one-time migration hint so you can avoid flap-loop issues.
 - **Exit codes.** `0` on success, `1` on pull/install/post-install errors, `2` on unexpected working-tree changes that block `git pull`.
 
