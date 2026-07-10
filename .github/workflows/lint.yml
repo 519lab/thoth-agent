@@ -108,8 +108,12 @@ jobs:
           echo "base ty:   $(wc -c < .lint-reports/base/ty.json) bytes"
 
       - name: Generate diff summary
+        # `uv run --no-project python` (not bare `python`): this job sets up uv but
+        # not setup-python, and the self-hosted 519lab runner has no `python` on
+        # PATH (only inside venvs). uv provides the interpreter; the script is
+        # stdlib-only so --no-project skips any project sync.
         run: |
-          python scripts/lint_diff.py \
+          uv run --no-project python scripts/lint_diff.py \
             --base-ruff .lint-reports/base/ruff.json \
             --head-ruff .lint-reports/head/ruff.json \
             --base-ty   .lint-reports/base/ty.json \
