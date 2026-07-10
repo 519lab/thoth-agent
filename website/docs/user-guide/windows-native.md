@@ -60,7 +60,7 @@ On first launch (and on demand when a missing tool is detected), Thoth runs a sm
 | Dependency | Why Thoth needs it |
 |---|---|
 | **PortableGit** | Provides `bash.exe` for the terminal tool and `git` for in-session clones. Provisioned at install time, not by `dep_ensure`. |
-| **Node.js 22** | Required for the browser tool (`agent-browser`), the TUI's web bridge, and the WhatsApp bridge. |
+| **Node.js 22** | Required for the browser tool (`agent-browser`) and the WhatsApp bridge. |
 | **ffmpeg** | Audio format conversion for TTS / voice messages. |
 | **ripgrep** | Fast file search — falls back to `grep` if unavailable. |
 | **npm packages** | `agent-browser`, Playwright Chromium, and any per-toolset Node deps are installed once at first browser-tool use. |
@@ -89,7 +89,6 @@ Everything except the dashboard's embedded terminal pane runs natively on Window
 | Feature | Native Windows | WSL2 |
 |---|---|---|
 | CLI (`thoth chat`, `thoth setup`, `thoth gateway`, …) | ✓ | ✓ |
-| Interactive TUI (`thoth --tui`) | ✓ | ✓ |
 | Messaging gateway (Telegram, Discord, Slack, WhatsApp, 15+ platforms) | ✓ | ✓ |
 | Cron scheduler | ✓ | ✓ |
 | Browser tool (Chromium via Node) | ✓ | ✓ |

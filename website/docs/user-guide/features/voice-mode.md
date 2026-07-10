@@ -105,7 +105,7 @@ If `faster-whisper` is installed, voice mode works with **zero API keys** for ST
 
 ## CLI Voice Mode
 
-Voice mode is available in both the **classic CLI** (`thoth chat`) and the **TUI** (`thoth --tui`). Behavior is identical across both — same slash commands, same VAD silence detection, same streaming TTS, same hallucination filter. The TUI additionally forwards crash-forensic logs to `~/.thoth/logs/` so push-to-talk failures on exotic audio backends can be reported with a full stack trace rather than disappearing silently.
+Voice mode is available in the **classic CLI** (`thoth chat`) — same slash commands, same VAD silence detection, same streaming TTS, same hallucination filter.
 
 ### Quick Start
 

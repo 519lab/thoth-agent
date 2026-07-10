@@ -132,15 +132,10 @@ The right value goes to the right file automatically.
 ## 3. Run Your First Chat
 
 ```bash
-thoth            # classic CLI
-thoth --tui      # modern TUI (recommended)
+thoth            # interactive chat
 ```
 
 You'll see a welcome banner with your model, available tools, and skills. Use a prompt that's specific and easy to verify:
-
-:::tip Pick your interface
-Thoth ships with two terminal interfaces: the classic `prompt_toolkit` CLI and a newer [TUI](../user-guide/tui.md) with modal overlays, mouse selection, and non-blocking input. Both share the same sessions, slash commands, and config — try each with `thoth` vs `thoth --tui`.
-:::
 
 ```
 Summarize this repo in 5 bullets and tell me what the main entrypoint is.

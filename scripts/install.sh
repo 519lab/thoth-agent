@@ -109,7 +109,7 @@ RUN_SETUP=true
 SKIP_BROWSER=false
 SKIP_POSTGRES=false        # NEW: skip docker compose up + alembic upgrade
 RESET_DB=false             # NEW: drop the postgres data volume before compose-up
-SKIP_NODE=false            # NEW: skip ui-tui/web npm installs
+SKIP_NODE=false            # NEW: skip web dashboard npm install
 # Force-rewrite preserves nothing: THOTH_PG_DSN, browser env, etc. get
 # rewritten even if the user customized them. Existing values are backed
 # up to ``$THOTH_HOME/.install-backup/`` first. Off by default — the
@@ -149,7 +149,7 @@ Options:
   --no-venv           Don't create virtual environment
   --skip-setup        Skip interactive setup wizard
   --skip-browser      Skip Playwright/Chromium install
-  --skip-node         Skip ui-tui/web npm installs (no TUI / no dashboard)
+  --skip-node         Skip web dashboard npm install (no dashboard)
   --skip-postgres     Skip docker compose up + Alembic migrations
                         Use this if you have your own PostgreSQL and will
                         set THOTH_PG_DSN + run 'alembic upgrade head' yourself
@@ -605,10 +605,10 @@ check_node() {
         HAS_NODE=false
         return 0
     fi
-    log_info "Checking Node.js (for TUI + dashboard + browser tools)..."
+    log_info "Checking Node.js (for dashboard + browser tools)..."
     if command -v node &> /dev/null; then
         # Gate on the major version: package.json engines require >=20, and an
-        # old distro node otherwise breaks browser tools / TUI silently (#218).
+        # old distro node otherwise breaks browser tools silently (#218).
         local node_major
         node_major="$(node --version 2>/dev/null | sed 's/^v//' | cut -d. -f1)"
         if [ -n "$node_major" ] && [ "$node_major" -ge "$NODE_MIN_MAJOR" ] 2>/dev/null; then
@@ -1536,7 +1536,7 @@ install_node_deps() {
         return 0
     fi
     if [ "$DISTRO" = "termux" ]; then
-        log_info "Termux: skipping ui-tui/web npm installs (not part of tested Termux path)"
+        log_info "Termux: skipping web dashboard npm install (not part of tested Termux path)"
         return 0
     fi
 
@@ -1585,11 +1585,6 @@ install_node_deps() {
         fi
     fi
 
-    if [ -f "$INSTALL_DIR/ui-tui/package.json" ]; then
-        log_info "Installing TUI dependencies..."
-        cd "$INSTALL_DIR/ui-tui"
-        npm install --silent 2>/dev/null || log_warn "TUI npm install failed ($CLI_NAME --tui may not work)"
-    fi
     log_success "Node dependencies installed"
 }
 

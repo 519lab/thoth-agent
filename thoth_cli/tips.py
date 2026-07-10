@@ -370,12 +370,11 @@ TIPS = [
     'provider_routing.require_parameters: true only routes to providers that support every param in your request.',
 
     # --- TUI & Dashboard ---
-    'THOTH_TUI_RESUME=1 auto-re-attaches to the most recent TUI session on launch — handy after SSH drops.',
     "THOTH_TUI_THEME=light|dark|<hex> forces the TUI theme on terminals that don't set COLORFGBG.",
     'Ctrl+G or Ctrl+X Ctrl+E in the TUI opens the input buffer in $EDITOR for long multi-line prompts.',
     'The TUI renders LaTeX inline — $E=mc^2$ becomes Unicode math instead of raw TeX.',
     'thoth dashboard launches a local web UI at 127.0.0.1:9119 — zero data leaves localhost.',
-    'thoth dashboard --tui embeds the full Thoth TUI in your browser via xterm.js and a WebSocket PTY.',
+    'thoth dashboard --tui embeds a browser terminal running the classic REPL via xterm.js and a WebSocket PTY.',
     'Drop a YAML in ~/.thoth/dashboard-themes/ with two palette colors to reskin the entire dashboard.',
     'Dashboard plugins are drop-in: manifest.json + JS bundle in ~/.thoth/dashboard-plugins/ — no npm build required.',
     'layoutVariant: cockpit in a dashboard theme adds a 260px left rail that plugins can populate via the sidebar slot.',

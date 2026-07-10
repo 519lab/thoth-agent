@@ -189,7 +189,6 @@ discover_builtin_tools()
 # Each entry point now runs discovery explicitly at its own startup:
 #   - gateway/run.py            -> start_gateway() uses run_in_executor
 #   - cli.py, thoth_cli/*      -> inline on startup (no event loop)
-#   - tui_gateway/server.py     -> inline on startup (no event loop)
 #   - acp_adapter/server.py     -> asyncio.to_thread on session init
 
 # Plugin tool discovery (user/project/pip plugins)

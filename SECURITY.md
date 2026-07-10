@@ -185,8 +185,6 @@ authorization model, but the rules below apply uniformly.
 - **Editor / IDE adapters.** The ACP adapter (`acp_adapter/`) and
   equivalent integrations that accept requests from a local client
   process.
-- **The TUI gateway (`tui_gateway/`).** JSON-RPC backend for the
-  Ink terminal UI, reached over local IPC.
 
 **Uniform rules:**
 
@@ -194,7 +192,7 @@ authorization model, but the rules below apply uniformly.
    trust boundary.** For messaging and network HTTP surfaces, the
    boundary is the network: authorization means an operator-
    configured caller allowlist. For editor and local-IPC surfaces
-   (ACP, TUI gateway), the boundary is the host's user account:
+   (ACP), the boundary is the host's user account:
    authorization means relying on OS-level access control (file
    permissions, loopback-only binds) and not exposing the surface
    beyond the local user without an explicit network auth layer.

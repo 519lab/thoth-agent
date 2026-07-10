@@ -8,10 +8,6 @@ description: "Master the Thoth Agent terminal interface — commands, keybinding
 
 Thoth Agent's CLI is a full terminal user interface (TUI) — not a web UI. It features multiline editing, slash-command autocomplete, conversation history, interrupt-and-redirect, and streaming tool output. Built for people who live in the terminal.
 
-:::tip
-Thoth also ships a modern TUI with modal overlays, mouse selection, and non-blocking input. Launch it with `thoth --tui` — see the [TUI](tui.md) guide.
-:::
-
 ## Running the CLI
 
 ```bash
@@ -129,7 +125,7 @@ Common examples:
 | `/reasoning high` | Increase reasoning effort |
 | `/title My Session` | Name the current session |
 | `/status` | Show session info — model/profile/tokens/duration — followed by a local **Session recap** block (recent turn counts, top tools used, files touched, latest user prompt + assistant reply). Pure local compute; no LLM call. |
-| `/sessions` | Open an interactive session picker right inside the classic CLI (same surface the TUI uses). Type to filter, arrow keys to navigate, Enter to resume. |
+| `/sessions` | Open an interactive session picker right inside the classic CLI. Type to filter, arrow keys to navigate, Enter to resume. |
 
 For the full built-in CLI and messaging lists, see [Slash Commands Reference](../reference/slash-commands.md).
 

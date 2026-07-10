@@ -24,7 +24,7 @@ This starts a local web server and opens `http://127.0.0.1:9119` in your browser
 | `--host` | `127.0.0.1` | Bind address |
 | `--no-open` | — | Don't auto-open the browser |
 | `--insecure` | off | Allow binding to non-localhost hosts (**DANGEROUS** — exposes API keys on the network; pair with a firewall and strong auth) |
-| `--tui` | off | Expose the in-browser Chat tab (embedded `thoth --tui` via PTY/WebSocket). Alternatively set `THOTH_DASHBOARD_TUI=1`. |
+| `--tui` | off | Expose the in-browser Chat tab — embeds a browser terminal running the classic REPL via PTY/WebSocket. Alternatively set `THOTH_DASHBOARD_TUI=1`. |
 
 ```bash
 # Custom port
@@ -42,13 +42,13 @@ thoth dashboard --tui
 
 ## Prerequisites
 
-The default `thoth-agent` install does not ship the HTTP stack or PTY helper — those are optional extras. The **web dashboard** needs FastAPI and Uvicorn (`web` extra). The **Chat** tab also needs `ptyprocess` to spawn the embedded TUI behind a pseudo-terminal (`pty` extra on POSIX). Install both with:
+The default `thoth-agent` install does not ship the HTTP stack or PTY helper — those are optional extras. The **web dashboard** needs FastAPI and Uvicorn (`web` extra). The **Chat** tab also needs `ptyprocess` to spawn the classic REPL behind a pseudo-terminal (`pty` extra on POSIX). Install both with:
 
 ```bash
 pip install 'thoth-agent[web,pty]'
 ```
 
-The `web` extra pulls in FastAPI/Uvicorn; `pty` pulls in `ptyprocess` (POSIX) or `pywinpty` (native Windows — note that the embedded TUI itself still requires WSL). `pip install thoth-agent[all]` includes both extras and is the easiest path if you also want messaging/voice/etc.
+The `web` extra pulls in FastAPI/Uvicorn; `pty` pulls in `ptyprocess` (POSIX) or `pywinpty` (native Windows — note that the embedded terminal itself still requires WSL). `pip install thoth-agent[all]` includes both extras and is the easiest path if you also want messaging/voice/etc.
 
 When you run `thoth dashboard` without the dependencies, it will tell you what to install. If the frontend hasn't been built yet and `npm` is available, it builds automatically on first launch.
 
@@ -69,21 +69,20 @@ The status page auto-refreshes every 5 seconds.
 
 ### Chat
 
-The **Chat** tab embeds the full Thoth TUI (the same interface you get from `thoth --tui`) directly in the browser. Everything you can do in the terminal TUI — slash commands, model picker, tool-call cards, markdown streaming, clarify/sudo/approval prompts, skin theming — works identically here, because the dashboard is running the real TUI binary and rendering its ANSI output through [xterm.js](https://xtermjs.org/) with its WebGL renderer for pixel-perfect cell layout.
+The **Chat** tab embeds a browser terminal running the classic REPL (the same interface you get from `thoth chat`) directly in the browser. Everything you can do in the terminal — slash commands, model picker, tool-call cards, markdown streaming, clarify/sudo/approval prompts, skin theming — works identically here, because the dashboard is running the real `thoth chat` process and rendering its ANSI output through [xterm.js](https://xtermjs.org/) with its WebGL renderer for pixel-perfect cell layout.
 
 **How it works:**
 
 - `/api/pty` opens a WebSocket authenticated with the dashboard's session token
-- The server spawns `thoth --tui` behind a POSIX pseudo-terminal
+- The server spawns the classic REPL (`thoth chat`) behind a POSIX pseudo-terminal
 - Keystrokes travel to the PTY; ANSI output streams back to the browser
 - xterm.js's WebGL renderer paints each cell to an integer-pixel grid; mouse tracking (SGR 1006), wide characters (Unicode 11), and box-drawing glyphs all render natively
-- Resizing the browser window resizes the TUI via the `@xterm/addon-fit` addon
+- Resizing the browser window resizes the REPL via the `@xterm/addon-fit` addon
 
-**Resume an existing session:** from the **Sessions** tab, click the play icon (▶) next to any session. That jumps to `/chat?resume=<id>` and launches the TUI with `--resume`, loading the full history.
+**Resume an existing session:** from the **Sessions** tab, click the play icon (▶) next to any session. That jumps to `/chat?resume=<id>` and launches the classic REPL with `--resume`, loading the full history.
 
 **Prerequisites:**
 
-- Node.js (same requirement as `thoth --tui`; the TUI bundle is built on first launch)
 - `ptyprocess` — installed by the `pty` extra (`pip install 'thoth-agent[web,pty]'`, or `[all]` covers both)
 - POSIX kernel (Linux, macOS, or WSL2).  The `/chat` terminal pane specifically needs a POSIX PTY — native Windows Python has no equivalent, so on a native Windows install the rest of the dashboard (sessions, jobs, metrics, config editor) works but the `/chat` tab will show a banner telling you to use WSL2 for that feature.
 

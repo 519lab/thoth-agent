@@ -29,30 +29,12 @@ WORKDIR /opt/thoth
 # Copy only package manifests first so npm install + Playwright are cached
 # unless the lockfiles themselves change.
 #
-# ui-tui/packages/thoth-ink/ is copied IN FULL (not just its manifests)
-# because it is referenced as a `file:` workspace dependency from
-# ui-tui/package.json.  Copying the tree up front lets npm resolve the
-# workspace to real content instead of stopping at a bare package.json.
 COPY package.json package-lock.json ./
 COPY web/package.json web/package-lock.json web/
-COPY ui-tui/package.json ui-tui/package-lock.json ui-tui/
-COPY ui-tui/packages/thoth-ink/ ui-tui/packages/thoth-ink/
-
-# `npm_config_install_links=false` forces npm to install `file:` deps as
-# symlinks (the npm 10+ default) even on Debian's older bundled npm 9.x,
-# which defaults to `install-links=true` and installs file deps as *copies*.
-# The host-side package-lock.json is generated with a newer npm that uses
-# symlinks, so an install-as-copy produces a hidden node_modules/.package-lock.json
-# that permanently disagrees with the root lock on the @thoth/ink entry.
-# That disagreement trips the TUI launcher's `_tui_need_npm_install()`
-# check on every startup and triggers a runtime `npm install` that then
-# fails with EACCES (node_modules/ is root-owned from build time).
-ENV npm_config_install_links=false
 
 RUN npm install --prefer-offline --no-audit && \
     npx playwright install --with-deps chromium --only-shell && \
     (cd web && npm install --prefer-offline --no-audit) && \
-    (cd ui-tui && npm install --prefer-offline --no-audit) && \
     npm cache clean --force
 
 # ---------- Layer-cached Python dependency install ----------
@@ -85,8 +67,7 @@ RUN uv sync --frozen --no-install-project --extra all --extra messaging
 COPY --chown=thoth:thoth . .
 
 # Build browser dashboard and terminal UI assets.
-RUN cd web && npm run build && \
-    cd ../ui-tui && npm run build
+RUN cd web && npm run build
 
 # ---------- Permissions ----------
 # Make install dir world-readable so any THOTH_UID can read it at runtime.
@@ -102,7 +83,7 @@ RUN cd web && npm run build && \
 # fail to load.  See tools/lazy_deps.py.
 USER root
 RUN chmod -R a+rX /opt/thoth && \
-    chown -R thoth:thoth /opt/thoth/.venv /opt/thoth/ui-tui /opt/thoth/node_modules
+    chown -R thoth:thoth /opt/thoth/.venv /opt/thoth/node_modules
 # Start as root so the entrypoint can usermod/groupmod + gosu.
 # If THOTH_UID is unset, the entrypoint drops to the default thoth user (10000).
 

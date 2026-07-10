@@ -333,7 +333,7 @@ From inside a chat session, `/bundles` lists every installed bundle and its skil
 
 - **Bundles take precedence over individual skills** when slugs collide. If you name a bundle `research` and you also have a skill called `research`, `/research` invokes the bundle. This is intentional — you opted into the bundle by naming it.
 - **Missing skills are skipped, not fatal.** If a bundle lists `skill-foo` and you haven't installed it, the bundle still loads the skills that do resolve, and the agent gets a note listing what was skipped.
-- **Bundles work in every surface** — interactive CLI, TUI, dashboard chat, and every gateway platform (Telegram, Discord, Slack, …) — because dispatch is centralized in the same place as individual skill commands.
+- **Bundles work in every surface** — interactive CLI, dashboard chat, and every gateway platform (Telegram, Discord, Slack, …) — because dispatch is centralized in the same place as individual skill commands.
 - **Bundles do not invalidate the prompt cache.** They generate a fresh user message at invocation time, the same way `/<skill-name>` does — no system prompt mutation.
 
 ### When bundles beat installing each skill manually
@@ -537,7 +537,7 @@ Name resolution, in order:
 1. `name:` field in the SKILL.md YAML frontmatter (recommended — every well-formed skill has one).
 2. Parent directory name from the URL path (e.g. `.../my-skill/SKILL.md` → `my-skill`, or `.../my-skill.md` → `my-skill`), when it's a valid identifier (`^[a-z][a-z0-9_-]*$`).
 3. Interactive prompt on a terminal with a TTY.
-4. On non-interactive surfaces (the `/skills install` slash command inside the TUI, gateway platforms, scripts), a clean error pointing at the `--name` override.
+4. On non-interactive surfaces (the `/skills install` slash command in chat, gateway platforms, scripts), a clean error pointing at the `--name` override.
 
 ```bash
 # Frontmatter has no name and the URL slug is unhelpful — supply one:
@@ -732,7 +732,7 @@ thoth skills reset google-workspace
 # version. Use this when you want the pristine upstream skill back.
 thoth skills reset google-workspace --restore
 
-# Non-interactive (e.g. in scripts or TUI mode) — skip the --restore confirmation.
+# Non-interactive (e.g. in scripts) — skip the --restore confirmation.
 thoth skills reset google-workspace --restore --yes
 ```
 

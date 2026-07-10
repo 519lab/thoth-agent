@@ -78,10 +78,10 @@ def _live_subcommand_names() -> set[str]:
         (["thoth", "-w"], None),
         # -p / --profile is stripped from sys.argv by
         # _apply_profile_override() at import time, so it never reaches
-        # _first_positional_argv. We test with just -w / --tui here.
-        (["thoth", "-w", "--tui"], None),
+        # _first_positional_argv. We test with just -w / --yolo here.
+        (["thoth", "-w", "--yolo"], None),
         (["thoth", "version"], "version"),
-        (["thoth", "--tui", "chat"], "chat"),
+        (["thoth", "--yolo", "chat"], "chat"),
         (["thoth", "-w", "logs"], "logs"),
         (["thoth", "chat", "hello world"], "chat"),
         (["thoth", "gateway", "run"], "gateway"),
@@ -116,8 +116,8 @@ def test_first_positional_argv(argv, expected):
         ["thoth", "version"],               # known built-in
         ["thoth", "logs"],
         ["thoth", "gateway", "run"],
-        ["thoth", "--tui"],
-        ["thoth", "-w", "--tui"],
+        ["thoth", "--yolo"],
+        ["thoth", "-w", "--yolo"],
         ["thoth", "chat", "hi"],
         ["thoth", "help"],                  # accepted built-in-ish
         ["thoth", "-m", "gpt5", "chat"],    # flag-value-skipping

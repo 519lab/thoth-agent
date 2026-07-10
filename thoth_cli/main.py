@@ -850,599 +850,6 @@ def _resolve_session_by_name_or_id(name_or_id: str) -> Optional[str]:
     return None
 
 
-def _read_tui_active_session_file(path: Optional[str]) -> Optional[str]:
-    if not path:
-        return None
-    try:
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
-        sid = str(data.get("session_id") or "").strip()
-        return sid or None
-    except Exception:
-        return None
-
-
-def _print_tui_exit_summary(
-    session_id: Optional[str], active_session_file: Optional[str] = None
-) -> None:
-    """Print a shell-visible epilogue after TUI exits."""
-    target = (
-        _read_tui_active_session_file(active_session_file)
-        or session_id
-        or _resolve_last_session(source="tui")
-    )
-    if not target:
-        return
-
-    db = None
-    try:
-        from thoth_state import SessionDB
-        import thoth_db as _thoth_db
-
-        db = SessionDB()
-        session = _thoth_db.run_sync(db.get_session(target))
-        if not session:
-            return
-
-        title = _thoth_db.run_sync(db.get_session_title(target))
-        message_count = int(session.get("message_count") or 0)
-        if message_count == 0:
-            return  # No real conversation — don't show resume info
-        input_tokens = int(session.get("input_tokens") or 0)
-        output_tokens = int(session.get("output_tokens") or 0)
-        cache_read_tokens = int(session.get("cache_read_tokens") or 0)
-        cache_write_tokens = int(session.get("cache_write_tokens") or 0)
-        reasoning_tokens = int(session.get("reasoning_tokens") or 0)
-        total_tokens = (
-            input_tokens
-            + output_tokens
-            + cache_read_tokens
-            + cache_write_tokens
-            + reasoning_tokens
-        )
-    except Exception:
-        return
-    finally:
-        if db is not None:
-            db.close()
-
-    print()
-    print("Resume this session with:")
-    print(f"  {cli_name()} --tui --resume {target}")
-    if title:
-        print(f'  {cli_name()} --tui -c "{title}"')
-    print()
-    print(f"Session:        {target}")
-    if title:
-        print(f"Title:          {title}")
-    print(f"Messages:       {message_count}")
-    print(
-        "Tokens:         "
-        f"{total_tokens} (in {input_tokens}, out {output_tokens}, "
-        f"cache {cache_read_tokens + cache_write_tokens}, reasoning {reasoning_tokens})"
-    )
-
-
-_NPM_LOCK_RUNTIME_KEYS = frozenset({"ideallyInert", "peer"})
-"""Lockfile fields npm writes non-deterministically at install time.
-
-``ideallyInert`` is npm's runtime annotation for packages it skipped installing
-(per-platform opt-outs).  ``peer`` is dropped from the hidden ``.package-lock.json``
-on dev-dependencies that are *also* declared as peers — the canonical
-``package-lock.json`` records the dual role, but npm 9's actualized tree strips
-it.  Neither key represents a real skew between what was declared and what was
-installed, so we exclude them from the comparison in :func:`_tui_need_npm_install`
-to avoid false-positive reinstalls on every launch.
-"""
-
-
-def _tui_need_npm_install(root: Path) -> bool:
-    """True when @thoth/ink is missing or node_modules is behind package-lock.json.
-
-    Prebuilt bundle mode: when ``dist/entry.js`` exists and there is no
-    ``package-lock.json`` (a prebuilt bundle layout only ships ``dist/`` +
-    ``package.json``), skip reinstall entirely — the bundle is self-contained
-    and there is nothing to install.
-
-    Compares ``package-lock.json`` against ``node_modules/.package-lock.json``
-    (npm's hidden lockfile) by **content**, not mtime: git checkouts and npm
-    rewrites can bump the root lockfile's timestamp even when installed deps
-    already match, which used to trigger a spurious "Installing TUI
-    dependencies" on every launch.
-
-    For each entry in the root lock's ``packages`` map:
-      - missing from hidden lock → reinstall (unless the entry is marked
-        ``optional`` or ``peer``, which npm may intentionally skip per platform)
-      - present but with differing fields (excluding npm-written runtime
-        annotations like ``ideallyInert``) → reinstall
-
-    Extra entries that exist only in the hidden lock are ignored — stale
-    transitives left over from a removed dependency don't break runtime and
-    we'd rather not force a reinstall for them. Falls back to mtime
-    comparison if either lockfile is unparseable.
-    """
-    lock = root / "package-lock.json"
-    entry = root / "dist" / "entry.js"
-    # Prebuilt self-contained bundle (packaged release): no lockfile
-    # shipped, dist/entry.js is the single runtime artefact.
-    if entry.is_file() and not lock.is_file():
-        return False
-
-    ink = root / "node_modules" / "@thoth" / "ink" / "package.json"
-    if not ink.is_file():
-        return True
-    if not lock.is_file():
-        return False
-    marker = root / "node_modules" / ".package-lock.json"
-    if not marker.is_file():
-        return True
-
-    # Compare lockfile contents, not mtimes: git checkouts and npm rewrites
-    # can bump the root lockfile timestamp even when installed deps already
-    # match. Fall back to mtime when either file is unparseable.
-    try:
-        wanted = json.loads(lock.read_text(encoding="utf-8")).get("packages") or {}
-        installed = json.loads(marker.read_text(encoding="utf-8")).get("packages") or {}
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return lock.stat().st_mtime > marker.stat().st_mtime
-
-    def comparable(pkg: dict) -> dict:
-        return {k: v for k, v in pkg.items() if k not in _NPM_LOCK_RUNTIME_KEYS}
-
-    for name, pkg in wanted.items():
-        if not name:
-            continue
-
-        if not isinstance(pkg, dict):
-            continue
-
-        if name not in installed:
-            if pkg.get("optional") or pkg.get("peer"):
-                continue
-            return True
-
-        if isinstance(installed[name], dict) and comparable(pkg) != comparable(
-            installed[name]
-        ):
-            return True
-
-    return False
-
-
-_TUI_BUILD_INPUT_DIRS = (
-    "src",
-    "packages/thoth-ink/src",
-)
-
-_TUI_BUILD_INPUT_FILES = (
-    "package.json",
-    "package-lock.json",
-    "tsconfig.json",
-    "tsconfig.build.json",
-    "babel.compiler.config.cjs",
-    "scripts/build.mjs",
-    "packages/thoth-ink/package.json",
-    "packages/thoth-ink/package-lock.json",
-    "packages/thoth-ink/index.js",
-    "packages/thoth-ink/text-input.js",
-)
-
-_TUI_BUILD_INPUT_SUFFIXES = frozenset(
-    {".cjs", ".js", ".jsx", ".json", ".mjs", ".ts", ".tsx"}
-)
-
-
-def _iter_tui_build_inputs(root: Path):
-    """Yield source/config files that affect ``ui-tui/dist/entry.js``."""
-    for rel in _TUI_BUILD_INPUT_FILES:
-        path = root / rel
-        if path.is_file():
-            yield path
-
-    for rel in _TUI_BUILD_INPUT_DIRS:
-        base = root / rel
-        if not base.is_dir():
-            continue
-        for path in base.rglob("*"):
-            if path.is_file() and path.suffix in _TUI_BUILD_INPUT_SUFFIXES:
-                yield path
-
-
-def _tui_need_rebuild(root: Path) -> bool:
-    """True when ``dist/entry.js`` is missing or older than TUI inputs.
-
-    The TUI bundle is self-contained. Rebuilding it on every launch adds a
-    visible cold-start tax on slow Termux CPUs, while a simple mtime freshness
-    check still rebuilds immediately after source updates, dependency updates,
-    or local edits. Set ``THOTH_TUI_FORCE_BUILD=1`` to force the old behaviour.
-    """
-    force = (os.environ.get("THOTH_TUI_FORCE_BUILD") or "").strip().lower()
-    if force in {"1", "true", "yes", "on"}:
-        return True
-
-    entry = root / "dist" / "entry.js"
-    try:
-        output_mtime = entry.stat().st_mtime
-    except OSError:
-        return True
-
-    for path in _iter_tui_build_inputs(root):
-        try:
-            if path.stat().st_mtime > output_mtime:
-                return True
-        except OSError:
-            return True
-    return False
-
-
-def _ensure_tui_node() -> None:
-    """Make sure `node` + `npm` are on PATH for the TUI.
-
-    If either is missing and scripts/lib/node-bootstrap.sh is available, source
-    it and call `ensure_node` (fnm/nvm/proto/brew/bundled cascade). After
-    install, capture the resolved node binary path from the bash subprocess
-    and prepend its directory to os.environ["PATH"] so shutil.which finds the
-    new binaries in this Python process — regardless of which version manager
-    was used (nvm, fnm, proto, brew, or the bundled fallback).
-
-    Idempotent no-op when node+npm are already discoverable. Set
-    ``THOTH_SKIP_NODE_BOOTSTRAP=1`` to disable auto-install.
-    """
-    if shutil.which("node") and shutil.which("npm"):
-        return
-    if os.environ.get("THOTH_SKIP_NODE_BOOTSTRAP"):
-        return
-
-    helper = PROJECT_ROOT / "scripts" / "lib" / "node-bootstrap.sh"
-    if not helper.is_file():
-        return
-
-    from thoth_constants import get_thoth_home
-
-    thoth_home = str(get_thoth_home())
-    try:
-        # Helper writes logs to stderr; we ask bash to print `command -v node`
-        # on stdout once ensure_node succeeds. Subshell PATH edits don't leak
-        # back into Python, so the stdout capture is the bridge.
-        result = subprocess.run(
-            [
-                "bash",
-                "-c",
-                f'source "{helper}" >&2 && ensure_node >&2 && command -v node',
-            ],
-            env={**os.environ, "THOTH_HOME": thoth_home},
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return
-
-    parts = os.environ.get("PATH", "").split(os.pathsep)
-    extras: list[Path] = []
-
-    resolved = (result.stdout or "").strip()
-    if resolved:
-        extras.append(Path(resolved).resolve().parent)
-
-    extras.extend([Path(thoth_home) / "node" / "bin", Path.home() / ".local" / "bin"])
-
-    for extra in extras:
-        s = str(extra)
-        if extra.is_dir() and s not in parts:
-            parts.insert(0, s)
-    os.environ["PATH"] = os.pathsep.join(parts)
-
-
-def _find_bundled_tui(thoth_cli_dir: Path | None = None) -> Path | None:
-    """Find a pre-built TUI entry.js bundled in the wheel."""
-    if thoth_cli_dir is None:
-        thoth_cli_dir = Path(__file__).parent
-    bundled = thoth_cli_dir / "tui_dist" / "entry.js"
-    return bundled if bundled.is_file() else None
-
-
-def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
-    """TUI: --dev → tsx src; else node dist (THOTH_TUI_DIR prebuilt or esbuild)."""
-    _ensure_tui_node()
-
-    def _node_bin(bin: str) -> str:
-        if bin == "node":
-            env_node = os.environ.get("THOTH_NODE")
-            if env_node and os.path.isfile(env_node) and os.access(env_node, os.X_OK):
-                return env_node
-        path = shutil.which(bin)
-        if not path and bin == "node":
-            try:
-                from thoth_cli.dep_ensure import ensure_dependency
-                if ensure_dependency("node"):
-                    path = shutil.which("node")
-            except Exception:
-                pass
-        if not path:
-            print(f"{bin} not found — install Node.js to use the TUI.")
-            sys.exit(1)
-        return path
-
-    # Footgun: --dev against a prebuilt bundle that has no source/node_modules.
-    ext_dir = os.environ.get("THOTH_TUI_DIR")
-    if tui_dev and ext_dir:
-        print(
-            f"Error: --dev is incompatible with THOTH_TUI_DIR={ext_dir}\n"
-            f"The prebuilt TUI has no source code to hot-reload.\n"
-            f"Unset THOTH_TUI_DIR (e.g. `unset THOTH_TUI_DIR`) to use --dev from a checkout.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    # 1. Prebuilt bundle (packaged release): just run it.
-    if not tui_dev:
-        if ext_dir:
-            p = Path(ext_dir)
-            if (p / "dist" / "entry.js").is_file():
-                node = _node_bin("node")
-                return [node, "--expose-gc", str(p / "dist" / "entry.js")], p
-
-        # 1b. Bundled in wheel (pip install)
-        bundled = _find_bundled_tui()
-        if bundled is not None:
-            node = _node_bin("node")
-            return [node, "--expose-gc", str(bundled)], bundled.parent
-
-    # 2. Normal flow: npm install if needed, always esbuild, then node dist/entry.js.
-    #    --dev flow: npm install if needed, then tsx src/entry.tsx.
-    did_install = False
-    if _tui_need_npm_install(tui_dir):
-        npm = _node_bin("npm")
-        if not os.environ.get("THOTH_QUIET"):
-            print("Installing TUI dependencies…")
-        result = subprocess.run(
-            [npm, "install", "--silent", "--no-fund", "--no-audit", "--progress=false"],
-            cwd=str(tui_dir),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            env={**os.environ, "CI": "1"},
-        )
-        if result.returncode != 0:
-            combined = f"{result.stdout or ''}\n{result.stderr or ''}".strip()
-            preview = "\n".join(combined.splitlines()[-30:])
-            print("npm install failed.")
-            if preview:
-                print(preview)
-            sys.exit(1)
-        did_install = True
-
-    if tui_dev:
-        # Keep the local @thoth/ink package exports in sync with source.
-        # --dev runs src/entry.tsx directly, but @thoth/ink resolves through
-        # packages/thoth-ink/dist/entry-exports.js. If that dist bundle is
-        # stale after a pull, newer hooks/components can exist in src while
-        # being missing at runtime (e.g. useCursorAdvance). Prebuild it here.
-        npm = _node_bin("npm")
-        ink_dir = tui_dir / "packages" / "thoth-ink"
-        result = subprocess.run(
-            [npm, "run", "build"],
-            cwd=str(ink_dir),
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            combined = f"{result.stdout or ''}{result.stderr or ''}".strip()
-            preview = "\n".join(combined.splitlines()[-30:])
-            print("TUI dev prebuild failed.")
-            if preview:
-                print(preview)
-            sys.exit(1)
-
-        tsx = tui_dir / "node_modules" / ".bin" / "tsx"
-        if tsx.exists():
-            return [str(tsx), "src/entry.tsx"], tui_dir
-        return [npm, "start"], tui_dir
-
-    # Desktop/dev launches retain the historical "always rebuild" behaviour.
-    # Termux cold starts use the freshness check because esbuild startup is
-    # expensive on old mobile CPUs.
-    should_build = True
-    if _is_termux_startup_environment():
-        should_build = did_install or _tui_need_rebuild(tui_dir)
-
-    if should_build:
-        npm = _node_bin("npm")
-        result = subprocess.run(
-            [npm, "run", "build"],
-            cwd=str(tui_dir),
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            combined = f"{result.stdout or ''}{result.stderr or ''}".strip()
-            preview = "\n".join(combined.splitlines()[-30:])
-            print("TUI build failed.")
-            if preview:
-                print(preview)
-            sys.exit(1)
-
-    node = _node_bin("node")
-    return [node, "--expose-gc", str(tui_dir / "dist" / "entry.js")], tui_dir
-
-
-def _normalize_tui_toolsets(toolsets: object) -> list[str]:
-    """Normalize argparse/Fire-style toolset input for the TUI subprocess."""
-    try:
-        from thoth_cli.oneshot import _normalize_toolsets
-
-        return _normalize_toolsets(toolsets) or []
-    except (AttributeError, ImportError):
-        if not toolsets:
-            return []
-
-        raw_items = [toolsets] if isinstance(toolsets, str) else toolsets
-        if not isinstance(raw_items, (list, tuple)):
-            raw_items = [raw_items]
-
-        normalized: list[str] = []
-        for item in raw_items:
-            if isinstance(item, str):
-                normalized.extend(part.strip() for part in item.split(","))
-            else:
-                normalized.append(str(item).strip())
-
-        return [item for item in normalized if item]
-
-
-def _launch_tui(
-    resume_session_id: Optional[str] = None,
-    tui_dev: bool = False,
-    model: Optional[str] = None,
-    provider: Optional[str] = None,
-    toolsets: object = None,
-    skills: object = None,
-    verbose: bool = False,
-    quiet: bool = False,
-    query: Optional[str] = None,
-    image: Optional[str] = None,
-    worktree: bool = False,
-    checkpoints: bool = False,
-    pass_session_id: bool = False,
-    max_turns: Optional[int] = None,
-    accept_hooks: bool = False,
-):
-    """Replace current process with the TUI."""
-    tui_dir = PROJECT_ROOT / "ui-tui"
-
-    import tempfile
-
-    env = os.environ.copy()
-    active_session_fd, active_session_file = tempfile.mkstemp(
-        prefix="thoth-tui-active-session-", suffix=".json"
-    )
-    os.close(active_session_fd)
-    env["THOTH_TUI_ACTIVE_SESSION_FILE"] = active_session_file
-    env["THOTH_PYTHON_SRC_ROOT"] = os.environ.get(
-        "THOTH_PYTHON_SRC_ROOT", str(PROJECT_ROOT)
-    )
-    env.setdefault("THOTH_PYTHON", sys.executable)
-    env.setdefault("THOTH_CWD", os.getcwd())
-    env.setdefault("NODE_ENV", "development" if tui_dev else "production")
-
-    wt_info = None
-    if worktree:
-        try:
-            from cli import (
-                _cleanup_worktree,
-                _git_repo_root,
-                _prune_stale_worktrees,
-                _setup_worktree,
-            )
-
-            repo = _git_repo_root()
-            if repo:
-                _prune_stale_worktrees(repo)
-            wt_info = _setup_worktree()
-        except Exception as exc:
-            print(f"✗ Failed to create TUI worktree: {exc}", file=sys.stderr)
-            wt_info = None
-        if not wt_info:
-            sys.exit(1)
-        env["THOTH_CWD"] = wt_info["path"]
-        env["TERMINAL_CWD"] = wt_info["path"]
-
-    if model:
-        env["THOTH_MODEL"] = model
-        env["THOTH_INFERENCE_MODEL"] = model
-    if provider:
-        env["THOTH_TUI_PROVIDER"] = provider
-        env["THOTH_INFERENCE_PROVIDER"] = provider
-    tui_toolsets = _normalize_tui_toolsets(toolsets)
-    if tui_toolsets:
-        env["THOTH_TUI_TOOLSETS"] = ",".join(tui_toolsets)
-    if skills:
-        if isinstance(skills, (list, tuple)):
-            flattened = []
-            for item in skills:
-                flattened.extend(
-                    part.strip() for part in str(item).split(",") if part.strip()
-                )
-            if flattened:
-                env["THOTH_TUI_SKILLS"] = ",".join(flattened)
-        else:
-            value = str(skills).strip()
-            if value:
-                env["THOTH_TUI_SKILLS"] = value
-    if query:
-        env["THOTH_TUI_QUERY"] = query
-    if image:
-        env["THOTH_TUI_IMAGE"] = image
-    if checkpoints:
-        env["THOTH_TUI_CHECKPOINTS"] = "1"
-    if pass_session_id:
-        env["THOTH_TUI_PASS_SESSION_ID"] = "1"
-    if max_turns is not None:
-        env["THOTH_TUI_MAX_TURNS"] = str(max_turns)
-    if verbose:
-        env["THOTH_TUI_TOOL_PROGRESS"] = "verbose"
-    elif quiet:
-        env["THOTH_TUI_TOOL_PROGRESS"] = "off"
-    if accept_hooks:
-        env["THOTH_ACCEPT_HOOKS"] = "1"
-    # Guarantee an 8GB V8 heap for the TUI. Default node cap is ~1.5–4GB
-    # depending on version and can fatal-OOM on long sessions with large
-    # transcripts / reasoning blobs. Token-level merge: respect any
-    # user-supplied --max-old-space-size (they may have set it higher).
-    # --expose-gc is *not* added here: Node rejects it in NODE_OPTIONS
-    # ("--expose-gc is not allowed in NODE_OPTIONS") and refuses to start.
-    # It is passed as a direct argv flag in _make_tui_argv() instead.
-    _tokens = env.get("NODE_OPTIONS", "").split()
-    if not any(t.startswith("--max-old-space-size=") for t in _tokens):
-        _tokens.append("--max-old-space-size=8192")
-    env["NODE_OPTIONS"] = " ".join(_tokens)
-    # THOTH_TUI_RESUME is an internal hand-off from the Python wrapper to the
-    # Ink app.  Because we start from os.environ.copy(), an exported/stale value
-    # in the user's shell would otherwise make a plain `thoth --tui` try to
-    # resume a non-existent session and leave the UI at "error: session not
-    # found" with no live session.  Only forward a resume id that argparse
-    # resolved for this invocation; direct `node ui-tui/dist/entry.js` users can
-    # still set THOTH_TUI_RESUME themselves.
-    env.pop("THOTH_TUI_RESUME", None)
-    if resume_session_id:
-        env["THOTH_TUI_RESUME"] = resume_session_id
-
-    argv, cwd = _make_tui_argv(tui_dir, tui_dev)
-    code: Optional[int] = None
-    try:
-        try:
-            code = subprocess.call(argv, cwd=str(cwd), env=env)
-        except KeyboardInterrupt:
-            code = 130
-
-        if code in {0, 130}:
-            _print_tui_exit_summary(resume_session_id, active_session_file)
-    finally:
-        try:
-            os.unlink(active_session_file)
-        except OSError:
-            pass
-        if wt_info:
-            try:
-                _cleanup_worktree(wt_info)
-            except Exception:
-                pass
-
-    # Exit code 42 = TUI requested an update. Relaunch as `thoth update` so
-    # the user sees update output directly and gets the new version.
-    # preserve_inherited=False ensures --tui and other flags are NOT carried
-    # into the update subcommand.
-    if code == 42:
-        from thoth_cli.relaunch import relaunch
-
-        print()
-        print("⚕ Launching update...")
-        print()
-        relaunch(["update"], preserve_inherited=False)
-
-    sys.exit(code)
-
-
 def _pin_kanban_board_env() -> None:
     """Pin the active kanban board into ``THOTH_KANBAN_BOARD`` for the chat session.
 
@@ -1466,7 +873,6 @@ def _pin_kanban_board_env() -> None:
 
 def cmd_chat(args):
     """Run interactive chat CLI."""
-    use_tui = getattr(args, "tui", False) or os.environ.get("THOTH_TUI") == "1"
 
     # Resolve --continue into --resume with the latest session or by name
     continue_val = getattr(args, "continue_last", None)
@@ -1482,15 +888,11 @@ def cmd_chat(args):
                 sys.exit(1)
         else:
             # -c with no argument — continue the most recent session
-            source = "tui" if use_tui else "cli"
-            last_id = _resolve_last_session(source=source)
-            if not last_id and source == "tui":
-                last_id = _resolve_last_session(source="cli")
+            last_id = _resolve_last_session(source="cli")
             if last_id:
                 args.resume = last_id
             else:
-                kind = "TUI" if use_tui else "CLI"
-                print(f"No previous {kind} session found to continue.")
+                print("No previous CLI session found to continue.")
                 sys.exit(1)
 
     # Resolve --resume by title if it's not a direct session ID
@@ -1597,25 +999,6 @@ def cmd_chat(args):
         os.environ["THOTH_SESSION_SOURCE"] = args.source
 
     _pin_kanban_board_env()
-
-    if use_tui:
-        _launch_tui(
-            getattr(args, "resume", None),
-            tui_dev=getattr(args, "tui_dev", False),
-            model=getattr(args, "model", None),
-            provider=getattr(args, "provider", None),
-            toolsets=getattr(args, "toolsets", None),
-            skills=getattr(args, "skills", None),
-            verbose=getattr(args, "verbose", False),
-            quiet=getattr(args, "quiet", False),
-            query=getattr(args, "query", None),
-            image=getattr(args, "image", None),
-            worktree=getattr(args, "worktree", False),
-            checkpoints=getattr(args, "checkpoints", False),
-            pass_session_id=getattr(args, "pass_session_id", False),
-            max_turns=getattr(args, "max_turns", None),
-            accept_hooks=getattr(args, "accept_hooks", False),
-        )
 
     # Import and run the CLI
     from cli import main as cli_main
@@ -4367,8 +3750,8 @@ def _model_flow_named_custom(config, provider_info):
 
 
 # Keep the historical eager model catalog import on desktop/CI. Termux defers
-# it to the model-selection handlers so plain `thoth --tui` does not pay for
-# requests/models.dev catalog imports before the Node TUI starts.
+# it to the model-selection handlers so a plain `thoth` launch does not pay for
+# requests/models.dev catalog imports before the chat REPL starts.
 if not _is_termux_startup_environment():
     from thoth_cli.models import _PROVIDER_MODELS
 
@@ -7915,7 +7298,6 @@ def _update_node_dependencies() -> None:
 
     paths = (
         ("repo root", PROJECT_ROOT),
-        ("ui-tui", PROJECT_ROOT / "ui-tui"),
     )
     if not any((path / "package.json").exists() for _, path in paths):
         return
@@ -11004,8 +10386,6 @@ def _try_termux_fast_cli_launch() -> bool:
     argv = sys.argv[1:]
     if "-h" in argv or "--help" in argv:
         return False
-    if os.environ.get("THOTH_TUI") == "1" or "--tui" in argv:
-        return False
 
     if _is_termux_fast_version_argv(argv):
         _print_version_info(check_updates=False)
@@ -11054,47 +10434,6 @@ def _try_termux_fast_cli_launch() -> bool:
     return False
 
 
-def _try_termux_fast_tui_launch() -> bool:
-    """Launch obvious Termux TUI invocations before building every subparser.
-
-    `thoth --tui` is the hot path on phones. The full parser setup imports
-    command modules for model, fallback, migrate, kanban, bundles, plugins,
-    etc. even though the TUI immediately execs Node. On Termux only, parse the
-    lightweight top-level/chat parser and hand off to ``cmd_chat`` when the
-    invocation is unambiguously the built-in TUI/chat path.
-    """
-    if not _is_termux_startup_environment():
-        return False
-
-    if "-h" in sys.argv[1:] or "--help" in sys.argv[1:]:
-        return False
-
-    wants_tui = os.environ.get("THOTH_TUI") == "1" or "--tui" in sys.argv[1:]
-    if not wants_tui:
-        return False
-
-    first = _first_positional_argv()
-    if first not in {None, "chat"}:
-        return False
-
-    from thoth_cli._parser import build_top_level_parser
-
-    parser, _subparsers, chat_parser = build_top_level_parser()
-    chat_parser.set_defaults(func=cmd_chat)
-    args = parser.parse_args(_coalesce_session_name_args(sys.argv[1:]))
-
-    # Preserve top-level behaviours whose semantics are not "launch chat/TUI".
-    if getattr(args, "version", False) or getattr(args, "oneshot", None):
-        return False
-    if getattr(args, "command", None) not in {None, "chat"}:
-        return False
-    if not (getattr(args, "tui", False) or os.environ.get("THOTH_TUI") == "1"):
-        return False
-
-    cmd_chat(args)
-    return True
-
-
 def main():
     """Main entry point for thoth CLI."""
     # PG pool initialisation: eager when ``THOTH_PG_DSN`` is set, no-op
@@ -11131,8 +10470,6 @@ def main():
     except Exception:
         pass
 
-    if _try_termux_fast_tui_launch():
-        return
     if _try_termux_fast_cli_launch():
         return
 
@@ -13775,8 +13112,8 @@ Examples:
         "--tui",
         action="store_true",
         help=(
-            "Expose the in-browser Chat tab (embedded `thoth --tui` via PTY/WebSocket). "
-            "Alternatively set THOTH_DASHBOARD_TUI=1."
+            "Expose the in-browser Chat tab (a browser terminal running the classic "
+            "Thoth REPL via PTY/WebSocket). Alternatively set THOTH_DASHBOARD_TUI=1."
         ),
     )
     dashboard_parser.add_argument(

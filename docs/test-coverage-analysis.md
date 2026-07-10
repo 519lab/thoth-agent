@@ -56,17 +56,17 @@ proxies; the `--coverage` run above gives exact line/branch numbers.
    (the shared traversal guard used by `skill_manager_tool`, `skills_tool`,
    `cronjob_tools`, `credential_files`) and `agent/message_sanitization.py`
    had zero tests. A regression in the former is a sandbox escape.
-4. **`tui_gateway` is the weakest area** (test/source LOC ratio **0.21**).
-   `server.py` is a 6,782-line monolith with only protocol-level tests;
-   `transport.py`, `ws.py`, `event_publisher.py`, `slash_worker.py` have no
-   direct tests.
-5. **Large top-level modules with thin tests:** `mini_swe_runner.py` (735
+4. **Large top-level modules with thin tests:** `mini_swe_runner.py` (735
    LOC, ~60 LOC of tests), `batch_runner.py` (1,321 / 2 importers),
    `trajectory_compressor.py` (1,508 / 4 importers).
 
 Per-area test/source LOC ratios: `cron` 2.12, `gateway` 1.32, `tools`
 1.22, `acp_adapter` 1.10, `thoth_cli` 0.86, `substrate` 0.78, `agent`
-0.75, **`tui_gateway` 0.21**.
+0.75.
+
+(The Ink TUI's JSON-RPC backend module — formerly the weakest area at a
+0.21 test/source LOC ratio — was removed along with the Ink TUI it
+served; see the "remove Ink TUI" changeset.)
 
 ## Prioritized roadmap
 
@@ -76,8 +76,6 @@ Per-area test/source LOC ratios: `cron` 2.12, `gateway` 1.32, `tools`
    concrete slice.
 3. **Core execution path:** direct tests for `agent/tool_executor.py` and
    `agent/conversation_compression.py`.
-4. **`tui_gateway` transport layer:** cover `transport.py` / `ws.py` /
-   `event_publisher.py`; begin decomposing/testing `server.py`.
-5. **Backfill thin monoliths:** `mini_swe_runner.py`, `batch_runner.py`,
+4. **Backfill thin monoliths:** `mini_swe_runner.py`, `batch_runner.py`,
    `trajectory_compressor.py`.
-6. **Agree a `fail_under` floor** and flip the coverage job to required.
+5. **Agree a `fail_under` floor** and flip the coverage job to required.
