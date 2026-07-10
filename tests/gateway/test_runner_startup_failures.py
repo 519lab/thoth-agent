@@ -207,6 +207,12 @@ async def test_start_gateway_replace_force_uses_terminate_pid(monkeypatch, tmp_p
         lambda **kwargs: 0,
     )
     monkeypatch.setattr("gateway.status.terminate_pid", lambda pid, force=False: calls.append((pid, force)))
+    # The graceful-then-force path polls gateway.status._pid_exists() to decide
+    # whether the old process survived SIGTERM. Without mocking it, the check
+    # runs for real against PID 42 and its result depends on whether that PID
+    # happens to be alive on the host — making this test pass or fail at random.
+    # Pin it True so the process always "survives" and the SIGKILL branch runs.
+    monkeypatch.setattr("gateway.status._pid_exists", lambda pid: True)
     monkeypatch.setattr("gateway.run.os.getpid", lambda: 100)
     monkeypatch.setattr("gateway.run.os.kill", lambda pid, sig: None)
     monkeypatch.setattr("time.sleep", lambda _: None)
