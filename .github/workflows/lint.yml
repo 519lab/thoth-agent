@@ -48,9 +48,11 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install ruff + ty
+        # --force: the self-hosted 519lab runner has a persistent tool dir, so a
+        # bare `uv tool install` errors with "Executable already exists" on reruns.
         run: |
-          uv tool install ruff
-          uv tool install ty
+          uv tool install ruff --force
+          uv tool install ty --force
 
       - name: Determine base ref
         id: base
@@ -179,7 +181,9 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install ruff
-        run: uv tool install ruff
+        # --force: the persistent self-hosted tool dir makes a bare install fail
+        # with "Executable already exists" on reruns.
+        run: uv tool install ruff --force
 
       - name: ruff check .
         # No --exit-zero, no || true. Exit code propagates to the job,
