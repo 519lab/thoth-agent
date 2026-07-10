@@ -367,6 +367,24 @@ class TestBlockingApprovalE2E:
         os.environ.pop("THOTH_GATEWAY_SESSION", None)
         os.environ.pop("THOTH_EXEC_ASK", None)
         os.environ.pop("THOTH_SESSION_KEY", None)
+        # Disable tirith for these E2E tests. They exercise the gateway
+        # notify → block → resolve flow, which is driven by the dangerous-
+        # *pattern* matcher, not tirith. Tirith runs an external binary as a
+        # subprocess (5s spawn timeout) and, on a fresh temp ~/.thoth, may
+        # attempt a network install (10s urllib timeouts). That cold-start
+        # cost — paid by the first guard call in this file — intermittently
+        # exceeds the 2.5s notify-poll window on loaded CI runners, so
+        # ``notified`` was still empty when the assertion ran (issue #326).
+        # Turning tirith off removes that orthogonal nondeterminism without
+        # changing what these tests verify.
+        self._prev_tirith = os.environ.get("TIRITH_ENABLED")
+        os.environ["TIRITH_ENABLED"] = "0"
+
+    def teardown_method(self):
+        if self._prev_tirith is None:
+            os.environ.pop("TIRITH_ENABLED", None)
+        else:
+            os.environ["TIRITH_ENABLED"] = self._prev_tirith
 
     def test_blocking_approval_approve_once(self):
         """check_all_command_guards blocks until resolve_gateway_approval is called."""
