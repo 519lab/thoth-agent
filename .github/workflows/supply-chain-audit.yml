@@ -29,7 +29,7 @@ permissions:
 jobs:
   scan:
     name: Scan PR for critical supply chain risks
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # light job on the 519lab runner (heavy `test` stays GitHub-hosted)
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
@@ -146,7 +146,7 @@ jobs:
 
   dep-bounds:
     name: Check PyPI dependency upper bounds
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # light job on the 519lab runner (heavy `test` stays GitHub-hosted)
     if: contains(github.event.pull_request.changed_files_url, 'pyproject.toml') || true
     steps:
       - name: Checkout

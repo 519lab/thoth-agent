@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   docs-site-checks:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # light job on the 519lab runner (heavy `test` stays GitHub-hosted)
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
 
