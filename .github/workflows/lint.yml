@@ -33,7 +33,7 @@ concurrency:
 jobs:
   lint-diff:
     name: ruff + ty diff
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # light job on the 519lab runner (heavy `test` stays GitHub-hosted)
     timeout-minutes: 10
     steps:
       - name: Checkout code
@@ -48,9 +48,11 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install ruff + ty
+        # --force: the self-hosted 519lab runner has a persistent tool dir, so a
+        # bare `uv tool install` errors with "Executable already exists" on reruns.
         run: |
-          uv tool install ruff
-          uv tool install ty
+          uv tool install ruff --force
+          uv tool install ty --force
 
       - name: Determine base ref
         id: base
@@ -106,8 +108,12 @@ jobs:
           echo "base ty:   $(wc -c < .lint-reports/base/ty.json) bytes"
 
       - name: Generate diff summary
+        # `uv run --no-project python` (not bare `python`): this job sets up uv but
+        # not setup-python, and the self-hosted 519lab runner has no `python` on
+        # PATH (only inside venvs). uv provides the interpreter; the script is
+        # stdlib-only so --no-project skips any project sync.
         run: |
-          python scripts/lint_diff.py \
+          uv run --no-project python scripts/lint_diff.py \
             --base-ruff .lint-reports/base/ruff.json \
             --head-ruff .lint-reports/head/ruff.json \
             --base-ty   .lint-reports/base/ty.json \
@@ -166,7 +172,7 @@ jobs:
     # ``lint-diff`` job above runs independently so reviewers still get
     # the diff comment even when enforcement fails.
     name: ruff enforcement (blocking)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # light job on the 519lab runner (heavy `test` stays GitHub-hosted)
     timeout-minutes: 5
     steps:
       - name: Checkout code
@@ -179,7 +185,9 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install ruff
-        run: uv tool install ruff
+        # --force: the persistent self-hosted tool dir makes a bare install fail
+        # with "Executable already exists" on reruns.
+        run: uv tool install ruff --force
 
       - name: ruff check .
         # No --exit-zero, no || true. Exit code propagates to the job,
@@ -193,7 +201,7 @@ jobs:
     # shebang scripts via subprocess, bare open() without encoding=, etc.
     # See scripts/check-windows-footguns.py for the full rule list.
     name: Windows footguns (blocking)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # light job on the 519lab runner (heavy `test` stays GitHub-hosted)
     timeout-minutes: 5
     steps:
       - name: Checkout code
