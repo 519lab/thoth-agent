@@ -22,7 +22,11 @@ concurrency:
 
 jobs:
   test:
-    runs-on: self-hosted
+    # The full suite runs on a GitHub-hosted runner. The self-hosted 519lab
+    # box is only 2 vCPUs, so the per-file parallel suite there ran ~57-71 min
+    # and was guillotined at the 60-min cap (issue #327). GitHub-hosted runners
+    # are larger/faster, so the heavy suite belongs here.
+    runs-on: ubuntu-latest
     timeout-minutes: 60
 
     services:
