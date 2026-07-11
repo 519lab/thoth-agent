@@ -38,7 +38,14 @@ jobs:
           POSTGRES_DB: thoth
         ports:
           - 5432:5432
+        # tmpfs over the data dir: the image declares VOLUME
+        # /var/lib/postgresql/data, and the Actions runner removes service
+        # containers without `-v`, so without this every run orphans an
+        # anonymous docker volume — unbounded disk growth on self-hosted
+        # runners (issue #330). Covering the path with a tmpfs mount stops
+        # the volume from being created and gives PG in-memory I/O.
         options: >-
+          --tmpfs /var/lib/postgresql/data
           --health-cmd "pg_isready -U thoth -d thoth"
           --health-interval 2s
           --health-timeout 2s

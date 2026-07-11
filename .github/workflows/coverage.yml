@@ -47,7 +47,11 @@ jobs:
           POSTGRES_DB: thoth
         ports:
           - 5432:5432
+        # tmpfs over the data dir — prevents the per-run orphaned anonymous
+        # docker volume from the image's VOLUME declaration (issue #330);
+        # see tests.yml for the full rationale.
         options: >-
+          --tmpfs /var/lib/postgresql/data
           --health-cmd "pg_isready -U thoth -d thoth"
           --health-interval 2s
           --health-timeout 2s
