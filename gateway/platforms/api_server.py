@@ -711,6 +711,8 @@ class APIServerAdapter(BasePlatformAdapter):
         # in-flight run by run_id.
         self._run_approval_sessions: Dict[str, str] = {}
         self._session_db: Optional[Any] = None  # Lazy-init SessionDB for session continuity
+        # Adapter start time for the /metrics uptime gauge.
+        self._started_monotonic: float = time.monotonic()
 
     @staticmethod
     def _parse_cors_origins(value: Any) -> tuple[str, ...]:
@@ -966,8 +968,16 @@ class APIServerAdapter(BasePlatformAdapter):
 
         Returns gateway state, connected platforms, PID, and uptime so the
         dashboard can display full status without needing a shared PID file or
-        /proc access.  No authentication required.
+        /proc access.  Honours the API key when one is configured (the
+        platform/agent inventory is operational detail an unauthenticated LAN
+        peer has no business reading); with no key configured it stays open,
+        matching every other endpoint. The plain /health liveness probe
+        remains unauthenticated — callers that can't auth fall back to it.
         """
+        auth_err = self._check_auth(request)
+        if auth_err:
+            return auth_err
+
         from gateway.status import read_runtime_status
 
         runtime = read_runtime_status() or {}
@@ -981,6 +991,90 @@ class APIServerAdapter(BasePlatformAdapter):
             "updated_at": runtime.get("updated_at"),
             "pid": os.getpid(),
         })
+
+    async def _handle_metrics(self, request: "web.Request") -> "web.Response":
+        """GET /metrics — Prometheus text exposition of cost/latency rollups.
+
+        Windowed gauges (trailing 24h) computed from ``agent_turn_cost`` and
+        ``substrate_agent_cost`` at scrape time, not lifetime counters:
+        both tables are append-only and unbounded, so an all-time SUM per
+        scrape would degrade as they grow. No new dependencies — plain text
+        exposition format. Honours the API key when configured (spend data
+        is operational detail).
+
+        DB access bridges to the pool loop via ``run_on_pool_loop`` — this
+        handler runs on the gateway's I/O loop, and the asyncpg pool is bound
+        to the dedicated DB loop (docs/architecture/database-event-loop.md).
+        """
+        auth_err = self._check_auth(request)
+        if auth_err:
+            return auth_err
+
+        lines: list[str] = []
+
+        def gauge(name: str, value: Any, help_text: str, labels: str = "") -> None:
+            if value is None:
+                return
+            if not any(line.startswith(f"# HELP {name} ") for line in lines):
+                lines.append(f"# HELP {name} {help_text}")
+                lines.append(f"# TYPE {name} gauge")
+            label_part = f"{{{labels}}}" if labels else ""
+            lines.append(f"{name}{label_part} {float(value):g}")
+
+        gauge(
+            "thoth_api_server_uptime_seconds",
+            time.monotonic() - self._started_monotonic,
+            "Seconds since the API server adapter started.",
+        )
+
+        scrape_error = 0
+        try:
+            import thoth_db
+            from agent.turn_cost import fetch_substrate_summary, fetch_turn_summary
+
+            turn = await thoth_db.run_on_pool_loop(fetch_turn_summary(hours=24.0))
+            crew = await thoth_db.run_on_pool_loop(fetch_substrate_summary(hours=24.0))
+
+            gauge("thoth_turns_24h", turn.get("turns", 0),
+                  "Main-agent turns completed in the trailing 24h.")
+            gauge("thoth_api_calls_24h", turn.get("api_calls", 0),
+                  "Main-agent LLM API calls in the trailing 24h.")
+            _tok_help = "Main-agent tokens by kind in the trailing 24h."
+            for kind in ("input", "output", "cache_read", "cache_write", "reasoning"):
+                gauge("thoth_tokens_24h", turn.get(f"{kind}_tokens", 0),
+                      _tok_help, labels=f'kind="{kind}"')
+            gauge("thoth_cost_usd_24h", turn.get("cost_usd"),
+                  "Estimated main-agent spend (USD) in the trailing 24h; "
+                  "absent when no turn in the window had a priced route.")
+            gauge("thoth_unpriced_turns_24h", turn.get("unpriced_turns", 0),
+                  "Turns in the trailing 24h with no cost estimate "
+                  "(unknown pricing route).")
+            _dur_help = "Main-agent turn wall-clock duration quantiles over the trailing 24h."
+            gauge("thoth_turn_duration_ms", turn.get("p50_duration_ms"),
+                  _dur_help, labels='quantile="0.5"')
+            gauge("thoth_turn_duration_ms", turn.get("p95_duration_ms"),
+                  _dur_help, labels='quantile="0.95"')
+
+            gauge("thoth_substrate_llm_calls_24h", crew.get("calls", 0),
+                  "Substrate sub-agent LLM calls in the trailing 24h.")
+            gauge("thoth_substrate_tokens_24h", crew.get("total_tokens", 0),
+                  "Substrate sub-agent total tokens in the trailing 24h.")
+            gauge("thoth_substrate_llm_latency_ms", crew.get("p95_latency_ms"),
+                  "Substrate sub-agent LLM call latency over the trailing 24h.",
+                  labels='quantile="0.95"')
+        except Exception as exc:
+            # A missing table (pre-0027 DB) or pool hiccup must not turn the
+            # scrape into a 500 — expose the failure as a metric instead.
+            logger.debug("metrics rollup failed: %s", exc)
+            scrape_error = 1
+        gauge("thoth_metrics_scrape_errors", scrape_error,
+              "1 when the cost/latency rollup query failed this scrape.")
+
+        return web.Response(
+            text="\n".join(lines) + "\n",
+            content_type="text/plain",
+            charset="utf-8",
+        )
 
     async def _handle_models(self, request: "web.Request") -> "web.Response":
         """GET /v1/models — return thoth-agent as an available model."""
@@ -1051,6 +1145,7 @@ class APIServerAdapter(BasePlatformAdapter):
             "endpoints": {
                 "health": {"method": "GET", "path": "/health"},
                 "health_detailed": {"method": "GET", "path": "/health/detailed"},
+                "metrics": {"method": "GET", "path": "/metrics"},
                 "models": {"method": "GET", "path": "/v1/models"},
                 "chat_completions": {"method": "POST", "path": "/v1/chat/completions"},
                 "responses": {"method": "POST", "path": "/v1/responses"},
@@ -3441,6 +3536,7 @@ class APIServerAdapter(BasePlatformAdapter):
             self._app["api_server_adapter"] = self
             self._app.router.add_get("/health", self._handle_health)
             self._app.router.add_get("/health/detailed", self._handle_health_detailed)
+            self._app.router.add_get("/metrics", self._handle_metrics)
             self._app.router.add_get("/v1/health", self._handle_health)
             self._app.router.add_get("/v1/models", self._handle_models)
             self._app.router.add_get("/v1/capabilities", self._handle_capabilities)

@@ -114,6 +114,18 @@ thoth substrate recall     # recall coverage + recent calls
 
 If your DB is on an older Alembic revision when Thoth starts, boot raises a `RuntimeError` with the upgrade command to run; set `THOTH_AUTO_MIGRATE=1` to upgrade automatically on first boot. For the full design — the L0–L4 layer stack, the sub-agents, and the recall pipeline — see [`docs/architecture/substrate.md`](docs/architecture/substrate.md). Procedural operator docs ship as a bundled skill — load with `/substrate`.
 
+## Cost & latency visibility
+
+Every turn records its token usage, estimated cost, and wall-clock duration to the `agent_turn_cost` table (always on; disable with `THOTH_TURN_COST=0`). The substrate crew's own LLM spend lands in the sibling `substrate_agent_cost` table. Two surfaces read them:
+
+```bash
+thoth cost               # 24h / 7d / 30d rollup + per-model breakdown + crew spend
+thoth cost --hours 6     # custom trailing window
+thoth cost --json        # machine-readable
+```
+
+The gateway's API server also exposes `GET /metrics` (Prometheus text format, trailing-24h gauges: turns, tokens by kind, estimated USD, p50/p95 turn duration, substrate crew spend) — see the [API server docs](https://thoth.519lab.com/docs/user-guide/features/api-server). Costs are estimates from the local price catalog, never billing truth; turns on routes with unknown pricing are counted separately so the blind spot is visible.
+
 ---
 
 ## Getting Started

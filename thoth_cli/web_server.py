@@ -550,9 +550,15 @@ def _probe_gateway_health() -> tuple[bool, dict | None]:
     elif base.endswith("/health"):
         base = base[: -len("/health")]
 
+    # /health/detailed honours API_SERVER_KEY when the gateway has one
+    # configured; send the bearer when the dashboard knows it, otherwise the
+    # probe degrades gracefully to the unauthenticated /health fallback.
+    api_key = os.getenv("API_SERVER_KEY", "")
     for path in (f"{base}/health/detailed", f"{base}/health"):
         try:
             req = urllib.request.Request(path, method="GET")
+            if api_key:
+                req.add_header("Authorization", f"Bearer {api_key}")
             with urllib.request.urlopen(req, timeout=_GATEWAY_HEALTH_TIMEOUT) as resp:
                 if resp.status == 200:
                     body = json.loads(resp.read())

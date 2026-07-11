@@ -223,7 +223,30 @@ Health check. Returns `{"status": "ok"}`. Also available at **GET /v1/health** f
 
 ### GET /health/detailed
 
-Extended health check that also reports active sessions, running agents, and resource usage. Useful for monitoring/observability tooling.
+Extended health check that also reports gateway state, connected platforms, and active agents. Useful for monitoring/observability tooling.
+
+When an API key is configured, this endpoint requires the same bearer auth as the rest of the API (the platform/agent inventory is operational detail). The plain `/health` liveness probe stays unauthenticated, and callers that can't authenticate — like a dashboard without the key — fall back to it automatically. With no key configured, both remain open for local use.
+
+### GET /metrics
+
+Prometheus text-exposition metrics for cost and latency, computed from the per-turn records the agent writes on every turn (`agent_turn_cost`) plus the substrate crew's own spend (`substrate_agent_cost`). Requires the bearer token when an API key is configured.
+
+All values are **trailing-24h window gauges** recomputed at scrape time (the tables are append-only, so lifetime counters would degrade as they grow):
+
+| Metric | Meaning |
+|--------|---------|
+| `thoth_turns_24h` | Main-agent turns completed |
+| `thoth_api_calls_24h` | LLM API calls made by those turns |
+| `thoth_tokens_24h{kind=...}` | Tokens by kind: `input`, `output`, `cache_read`, `cache_write`, `reasoning` |
+| `thoth_cost_usd_24h` | Estimated spend (USD); absent when no turn in the window had a priced route |
+| `thoth_unpriced_turns_24h` | Turns with no cost estimate (unknown pricing route) |
+| `thoth_turn_duration_ms{quantile=...}` | Turn wall-clock duration, p50 and p95 |
+| `thoth_substrate_llm_calls_24h` / `thoth_substrate_tokens_24h` | Substrate crew LLM calls / tokens |
+| `thoth_substrate_llm_latency_ms{quantile="0.95"}` | Substrate crew LLM call latency |
+| `thoth_api_server_uptime_seconds` | Seconds since the API server started |
+| `thoth_metrics_scrape_errors` | `1` when the rollup query failed this scrape (e.g. migrations not applied) |
+
+Costs are estimates from the local price catalog, never billing truth. The same rollups are available from the terminal via `thoth cost` — no API server required.
 
 ## Runs API (streaming-friendly alternative)
 
