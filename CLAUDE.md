@@ -62,6 +62,7 @@ uv run alembic -c migrations/alembic.ini upgrade head
 - **No change-detector tests.** Don't assert on model-catalog contents, config version literals, or enumeration counts — they break on every routine data update. Test behavior and invariants instead.
 - **`ruff` runs only `PLW1514`** (require explicit `encoding=` on text I/O). Bare `open()`/`read_text()`/`write_text()` defaults to the locale encoding and silently corrupts non-ASCII on Windows. Cross-platform correctness is load-bearing across this codebase.
 - **Dependencies are exact-pinned** (`==X.Y.Z`, no ranges) as supply-chain hardening; only every-session packages go in `dependencies`, provider-specific ones live in extras and lazy-install via `tools/lazy_deps.py`. When bumping, change the pin AND regenerate `uv.lock`.
+- **Every new alembic migration needs a matching entry in `substrate/facade.py`'s known-revisions set** (`_KNOWN_ALEMBIC_REVISIONS`-style allowlist near the top). `substrate.boot` refuses to boot on an unrecognized alembic head, so a migration without its allowlist entry fails every substrate-booting test in CI — and none of the non-substrate suites will catch it locally.
 
 ## Workflow
 
