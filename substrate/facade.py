@@ -224,6 +224,11 @@ _EXPECTED_REVISIONS = frozenset(
         #   recall weight sets (learned-recall-weights innovation). The tuner's
         #   --apply target; the live recall path prefers the active row.
         "20260701_0026",
+        # - ``20260711_0027`` — agent_turn_cost: the MAIN agent's per-turn
+        #   cost/latency sink (always-on visibility innovation). Written by the
+        #   conversation loop, not the substrate; read by ``thoth cost`` and
+        #   the gateway /metrics endpoint. Never read by the awareness loop.
+        "20260711_0027",
     }
 )
 
