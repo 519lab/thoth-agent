@@ -23,8 +23,8 @@ Console entry points (`pyproject.toml [project.scripts]`): `thoth` → `thoth_cl
 ```bash
 scripts/run_tests.sh                                  # full suite, CI-parity
 scripts/run_tests.sh tests/agent/                     # one directory
-scripts/run_tests.sh tests/agent/test_foo.py::test_x  # single test
-scripts/run_tests.sh --no-isolate tests/foo/          # faster, for interactive debugging
+scripts/run_tests.sh tests/agent/test_foo.py          # single file
+scripts/run_tests.sh tests/agent/test_foo.py -- -k test_x  # single test (pytest args after --)
 ```
 
 The wrapper enforces hermetic CI parity: blanks all `*_API_KEY`/`*_TOKEN` vars, `TZ=UTC`, `LANG=C.UTF-8`, `PYTHONHASHSEED=0`, a temp `~/.thoth`, and per-file subprocess isolation (each test file gets a fresh interpreter, so module-level dicts/sets/ContextVars can't leak — there is no autouse state-reset fixture). `tests/conftest.py` re-enforces the hermetic env for any stray direct invocation. **In this WSL environment bare `pytest` on PATH is broken** — if you can't use the wrapper, run `uv run python -m pytest ...` from the activated venv.
@@ -33,7 +33,7 @@ The wrapper enforces hermetic CI parity: blanks all `*_API_KEY`/`*_TOKEN` vars, 
 
 ```bash
 ruff check .                            # only PLW1514 (unspecified-encoding) is enabled — see gotchas
-ty check                                # type checking (astral `ty`; configured for py3.13)
+ty check                                # ADVISORY ONLY — astral `ty` 0.0.21 panics on tools/checkpoint_manager.py and emits ~7000 diagnostics; not a passing gate, don't treat failures as blocking
 docker compose up -d postgres          # local PG 17 (vector + pg_trgm), port 5432, db `thoth`
 uv run alembic -c migrations/alembic.ini upgrade head
 ```
@@ -52,7 +52,7 @@ uv run alembic -c migrations/alembic.ini upgrade head
 
 ## Non-obvious rules
 
-- **PostgreSQL only — there is no SQLite anywhere.** Sessions (`thoth_state.SessionDB`), kanban, and substrate all live in PG via `thoth_db`'s asyncpg pool.
+- **Core persistence is PostgreSQL-only.** Sessions (`thoth_state.SessionDB`), kanban, and substrate all live in PG via `thoth_db`'s asyncpg pool — never add SQLite to those. (Kanban's `sqlite3.Connection` type hints are the `_PgConnection` compat shim over PG, not real SQLite.) SQLite *does* still exist in three non-core, opt-in places — the gateway Responses-API `ResponseStore` (`gateway/platforms/api_server.py`) and the `holographic`/`retaindb` memory plugins — so don't read this rule as "no SQLite anywhere in the tree."
 - **The asyncpg pool is bound to ONE event loop.** `thoth_db` runs a single "DB loop" on a daemon thread. Sync code bridges via `thoth_db.run_sync(coro)` (`thoth_db.py:396`); async code on another loop (e.g. the gateway's I/O loop) via `await thoth_db.run_on_pool_loop(coro)` (`thoth_db.py:429`). Awaiting a pooled connection from the wrong loop is real mis-wiring, never log noise — see `docs/architecture/database-event-loop.md`.
 - **Never touch the live DB from tests or dev runs.** LIVE Postgres is port **5432** (container `thoth-postgres-1`); the TEST instance is port **5433** (`thoth-postgres-test-1`). The suite runs against a snapshot-seeded TEST DB only, never live. Before *any* manual DB command, verify the target host/port/db name explicitly — and note that the `thoth` CLI loads `~/.thoth/.env`, whose DSN **overrides inline env vars and points at LIVE**, so an inline `THOTH_PG_DSN=...` will not protect you. Give destructive/live DB commands to Greg to run; don't run them yourself.
 - **Never break prompt caching.** Do not alter past context, change toolsets, or reload memories/rebuild the system prompt mid-conversation (the sole exception is context compression). Slash commands that mutate system-prompt state must be cache-aware: default to deferred invalidation, opt-in `--now` for immediate. Corollary: **tool-call message IDs must be deterministic across replay** — a fresh/random id changes the message prefix and silently invalidates the cache. See `_deterministic_call_id()` in `agent/transports/codex_event_projector.py` for the pattern (reuse the upstream item id; fall back to a content hash, never a random uuid).
