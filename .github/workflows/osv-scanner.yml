@@ -49,8 +49,12 @@ on:
       - 'pyproject.toml'
       - 'package.json'
       - 'package-lock.json'
+      - 'web/package.json'
+      - 'web/package-lock.json'
       - 'website/package.json'
       - 'website/package-lock.json'
+      - 'scripts/whatsapp-bridge/package.json'
+      - 'scripts/whatsapp-bridge/package-lock.json'
       - '.github/workflows/osv-scanner.yml'
   push:
     branches: [main]
@@ -59,7 +63,9 @@ on:
       - 'pyproject.toml'
       - 'package.json'
       - 'package-lock.json'
+      - 'web/package-lock.json'
       - 'website/package-lock.json'
+      - 'scripts/whatsapp-bridge/package-lock.json'
   workflow_dispatch:
 
 permissions:
@@ -88,13 +94,19 @@ jobs:
         env:
           GOTOOLCHAIN: auto
         with:
-          # Scan explicit lockfiles rather than recursing, so we only look at
-          # the two sources of truth and skip vendored / test / worktree dirs.
+          # Scan explicit lockfiles rather than recursing, so we skip
+          # vendored / test / worktree dirs. All four in-repo lockfiles are
+          # listed: web/ ships inside the PyPI wheel, website/ is the docs
+          # site build, and scripts/whatsapp-bridge/ is a runtime bridge.
+          # Add any new lockfile here AND to the trigger paths above.
           scan-args: |-
             --output=results.json
             --format=json
             --lockfile=uv.lock
+            --lockfile=package-lock.json
+            --lockfile=web/package-lock.json
             --lockfile=website/package-lock.json
+            --lockfile=scripts/whatsapp-bridge/package-lock.json
         # Upstream does the same: a non-zero exit here means "vulns found",
         # which must not stop us from producing and uploading the report.
         continue-on-error: true
