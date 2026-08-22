@@ -98,7 +98,7 @@ dev = [
   # on Windows where no system libpq is installed. Pin matches the psycopg version
   # already pulled in transitively by pytest-postgresql (3.3.4).
   "psycopg-binary==3.3.4",
-  "mcp==1.26.0",
+  "mcp==1.28.1",
   "ty==0.0.21",
   "ruff==0.15.10",
   # Coverage measurement. Enabled opt-in by scripts/run_tests_parallel.py
@@ -107,9 +107,9 @@ dev = [
   # ``[toml]`` extra lets coverage read its config from pyproject.toml.
   "coverage[toml]==7.6.10",
 ]
-messaging = ["python-telegram-bot[webhooks]==22.6", "discord.py[voice]==2.7.1", "aiohttp==3.14.1", "brotlicffi==1.2.0.1", "slack-bolt==1.27.0", "slack-sdk==3.40.1"]
+messaging = ["python-telegram-bot[webhooks]==22.6", "discord.py[voice]==2.7.1", "aiohttp==3.14.3", "brotlicffi==1.2.0.1", "slack-bolt==1.27.0", "slack-sdk==3.40.1"]
 cron = []  # croniter is now a core dependency; this extra kept for back-compat
-slack = ["slack-bolt==1.27.0", "slack-sdk==3.40.1", "aiohttp==3.14.1"]
+slack = ["slack-bolt==1.27.0", "slack-sdk==3.40.1", "aiohttp==3.14.3"]
 matrix = ["mautrix[encryption]==0.21.0", "Markdown==3.10.2", "aiosqlite==0.22.1", "asyncpg==0.31.0", "aiohttp-socks==0.11.0"]
 cli = ["simple-term-menu==1.6.6"]
 tts-premium = ["elevenlabs==1.59.0"]
@@ -125,14 +125,14 @@ pty = [
   "pywinpty==2.0.15; sys_platform == 'win32'",
 ]
 honcho = ["honcho-ai==2.0.1"]
-mcp = ["mcp==1.26.0"]
-homeassistant = ["aiohttp==3.14.1"]
-sms = ["aiohttp==3.14.1"]
+mcp = ["mcp==1.28.1"]
+homeassistant = ["aiohttp==3.14.3"]
+sms = ["aiohttp==3.14.3"]
 # Computer use — macOS background desktop control via cua-driver (MCP stdio).
 # The cua-driver binary itself is installed via `thoth tools` post-setup
 # (curl install script); this extra just pins the MCP client used to talk
 # to it, which is already provided by the `mcp` extra.
-computer-use = ["mcp==1.26.0"]
+computer-use = ["mcp==1.28.1"]
 acp = ["agent-client-protocol==0.9.0"]
 # mistral: extra REMOVED 2026-05-12 — `mistralai` PyPI project quarantined
 # after malicious 2.4.6 release (Mini Shai-Hulud worm). Every version of
