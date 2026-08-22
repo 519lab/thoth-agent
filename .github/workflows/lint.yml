@@ -94,15 +94,27 @@ jobs:
             echo '[]' > .lint-reports/base/ruff.json
             echo '[]' > .lint-reports/base/ty.json
           else
-            git worktree add --detach /tmp/lint-base "$BASE_SHA"
+            # Unique path per run. /tmp is shared by every runner process on
+            # the 519lab box, so a hardcoded /tmp/lint-base makes two lint jobs
+            # running at once collide -- the loser dies with
+            # `fatal: '/tmp/lint-base' already exists` (exit 128) having linted
+            # nothing. A job killed between add and remove used to leave the
+            # directory behind and poison every later run the same way.
+            # $RUNNER_TEMP is per-runner; run id + attempt disambiguate within
+            # one runner. `prune` clears worktree registrations whose
+            # directories are already gone.
+            BASE_DIR="${RUNNER_TEMP}/lint-base-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            git worktree prune
+            rm -rf "$BASE_DIR"
+            git worktree add --detach "$BASE_DIR" "$BASE_SHA"
             (
-              cd /tmp/lint-base
+              cd "$BASE_DIR"
               ruff check --output-format json --exit-zero \
                 > "$GITHUB_WORKSPACE/.lint-reports/base/ruff.json" || true
               ty check --output-format gitlab --exit-zero \
                 > "$GITHUB_WORKSPACE/.lint-reports/base/ty.json" || true
             )
-            git worktree remove --force /tmp/lint-base
+            git worktree remove --force "$BASE_DIR" || rm -rf "$BASE_DIR"
           fi
           echo "base ruff: $(wc -c < .lint-reports/base/ruff.json) bytes"
           echo "base ty:   $(wc -c < .lint-reports/base/ty.json) bytes"
