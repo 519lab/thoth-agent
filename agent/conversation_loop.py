@@ -665,6 +665,16 @@ def run_conversation(
     from datetime import datetime as _dt, timezone as _tz
     _turn_started_at = _dt.now(_tz.utc)
 
+    # Per-turn cost/latency baseline (innovation #4). The session_* token and
+    # cost counters are cumulative across turns; snapshot them (plus a
+    # monotonic clock) so the post-turn block can persist THIS turn's deltas
+    # to agent_turn_cost.
+    try:
+        from agent.turn_cost import snapshot_turn_cost
+        _turn_cost_snapshot = snapshot_turn_cost(agent)
+    except Exception:
+        _turn_cost_snapshot = None
+
     # Per-turn skill-load tracking (innovation #2). The counter-bump helpers
     # (bump_use/bump_view) record loaded skills into a thread-local set on this
     # turn's execution thread; we reset it here and drain it in the post-turn
@@ -4324,6 +4334,18 @@ def run_conversation(
                 )
     except Exception as exc:
         logger.debug("recall outcome label failed: %s", exc)
+
+    # Per-turn cost/latency record (innovation #4) — persist this turn's
+    # token/cost/duration deltas to agent_turn_cost so `thoth cost` and the
+    # gateway /metrics endpoint work on a default install. Best-effort: a
+    # failure here must never affect the response we just produced.
+    # Kill-switch: THOTH_TURN_COST=0.
+    try:
+        if _turn_cost_snapshot is not None:
+            from agent.turn_cost import record_turn_cost
+            record_turn_cost(agent, _turn_cost_snapshot, api_calls=api_call_count)
+    except Exception as exc:
+        logger.debug("turn cost record failed: %s", exc)
 
     # Skill-efficacy attribution (innovation #2) — fold this turn's outcome
     # score into the efficacy EMA of every skill loaded this turn. Independent

@@ -10209,7 +10209,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
     {
         "acp", "auth", "backup", "bundles", "checkpoints", "claw", "completion",
         "computer-use",
-        "config", "cron", "curator", "dashboard", "db", "debug", "doctor",
+        "config", "cost", "cron", "curator", "dashboard", "db", "debug", "doctor",
         "dump", "embed", "fallback", "gateway", "hooks", "import", "insights",
         "kanban", "login", "logout", "logs", "lsp", "mcp", "memory", "migrate",
         "model", "pairing", "plugins", "postinstall", "profile", "proxy",
@@ -10870,6 +10870,11 @@ def main():
         _embed_register(subparsers)
     except Exception as _embed_err:  # noqa: BLE001
         logger.debug("Embed CLI registration failed: %s", _embed_err)
+    try:
+        from thoth_cli.cost_cmd import register_subparser as _cost_register
+        _cost_register(subparsers)
+    except Exception as _cost_err:  # noqa: BLE001
+        logger.debug("Cost CLI registration failed: %s", _cost_err)
 
     # =========================================================================
     # setup command
