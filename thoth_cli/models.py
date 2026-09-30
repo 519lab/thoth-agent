@@ -1025,10 +1025,6 @@ _PROVIDER_ALIASES = {
     "kilo": "kilocode",
     "kilo-code": "kilocode",
     "kilo-gateway": "kilocode",
-    "evolink-ai": "evolink",
-    "evolinkai": "evolink",
-    "evo-link": "evolink",
-    "evo_link": "evolink",
     "dashscope": "alibaba",
     "aliyun": "alibaba",
     "qwen": "alibaba",
@@ -1068,6 +1064,15 @@ _PROVIDER_ALIASES = {
     "ollama": "custom",  # bare "ollama" = local; use "ollama-cloud" for cloud
     "ollama_cloud": "ollama-cloud",
 }
+
+# Plugin profiles are the source of truth for new aliases. Existing keys
+# above stay authoritative; this only fills aliases that map does not name.
+try:
+    from providers import apply_profile_aliases as _apply_profile_aliases
+
+    _apply_profile_aliases(_PROVIDER_ALIASES)
+except Exception:
+    pass
 
 
 def get_default_model_for_provider(provider: str) -> str:

@@ -55,6 +55,17 @@ def test_evolink_provider_module_aliases_resolve():
     assert provider_normalize_provider("evolinkai") == "evolink"
 
 
+def test_plugin_alias_fills_gap_without_overriding_hardcoded_map():
+    """Profile aliases fill holes. A hand-maintained key still wins."""
+    from thoth_cli.models import _PROVIDER_ALIASES
+    from thoth_cli.providers import ALIASES
+
+    assert _PROVIDER_ALIASES["evolink-ai"] == "evolink"
+    assert _PROVIDER_ALIASES["qwen"] == "alibaba"
+    assert ALIASES["evo-link"] == "evolink"
+    assert ALIASES["qwen"] == "alibaba"
+
+
 def test_evolink_model_picker_auto_extended():
     slugs = [p.slug for p in CANONICAL_PROVIDERS]
 

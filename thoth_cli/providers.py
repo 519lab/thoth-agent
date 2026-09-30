@@ -353,12 +353,6 @@ ALIASES: Dict[str, str] = {
     "gmi-cloud": "gmi",
     "gmicloud": "gmi",
 
-    # evolink
-    "evolink-ai": "evolink",
-    "evolinkai": "evolink",
-    "evo-link": "evolink",
-    "evo_link": "evolink",
-
     # Local server aliases → virtual "local" concept (resolved via user config)
     "lmstudio": "lmstudio",
     "lm-studio": "lmstudio",
@@ -369,6 +363,14 @@ ALIASES: Dict[str, str] = {
     "llama.cpp": "local",
     "llama-cpp": "local",
 }
+
+# Same rule as thoth_cli.models: plugin aliases fill gaps, hardcoded keys win.
+try:
+    from providers import apply_profile_aliases as _apply_profile_aliases
+
+    _apply_profile_aliases(ALIASES)
+except Exception:
+    pass
 
 
 # -- Display labels -----------------------------------------------------------

@@ -46,14 +46,17 @@ def test_bundled_plugins_discovered():
         assert (child / "plugin.yaml").exists(), f"{child.name} missing plugin.yaml"
 
 
-def test_all_35_profiles_register():
-    """After discovery, the registry must contain exactly 35 distinct profiles."""
+def test_bundled_profiles_include_expected_providers():
+    """Discovery registers the bundled profiles callers actually depend on.
+
+    The set grows whenever a plugin is added, so this checks membership
+    rather than a fixed count.
+    """
     _clear_provider_caches()
     from providers import list_providers
 
     profiles = list_providers()
     names = sorted(p.name for p in profiles)
-    assert len(names) == 35, f"Expected 35 profiles, got {len(names)}: {names}"
 
     # Spot-check representative providers from different categories
     for required in (
