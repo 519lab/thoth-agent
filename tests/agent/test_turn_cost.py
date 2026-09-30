@@ -53,7 +53,11 @@ def captured_write(monkeypatch):
         captured.append(kwargs)
 
     monkeypatch.setattr(tc, "write_turn_cost", _fake_write)
-    monkeypatch.setattr("thoth_db.run_sync", lambda coro: asyncio.run(coro))
+
+    def _run(coro, timeout=None):
+        return asyncio.run(coro)
+
+    monkeypatch.setattr("thoth_db.run_sync", _run)
     return captured
 
 
@@ -119,14 +123,41 @@ class TestRecordTurnCost:
         tc.record_turn_cost(agent, snap, api_calls=0)
         assert captured_write == []
 
-    def test_zero_token_turn_with_api_call_still_recorded(self, captured_write):
-        # The codex app-server path doesn't feed token counters but the
-        # turn row (duration) must still land.
+    def test_no_usage_skips_even_when_api_calls_reported(self, captured_write):
+        # The codex app-server path reports one logical call but does not
+        # feed token counters or pricing notes. Writing that row would
+        # count as an unpriced turn.
         agent = _agent()
         snap = tc.snapshot_turn_cost(agent)
         tc.record_turn_cost(agent, snap, api_calls=1)
-        assert len(captured_write) == 1
-        assert captured_write[0]["total_tokens"] == 0
+        assert captured_write == []
+
+    def test_mixed_turn_keeps_priced_dollars_when_last_call_is_unknown(self, captured_write):
+        agent = _agent(session_cost_status="unknown")
+        snap = tc.snapshot_turn_cost(agent)
+        agent.session_total_tokens = 100
+        agent.session_estimated_cost_usd = 0.10
+        agent.session_cost_status = "unknown"
+        tc.note_turn_pricing(agent, status="estimated", amount_usd=0.10)
+        tc.note_turn_pricing(agent, status="unknown", amount_usd=None)
+
+        tc.record_turn_cost(agent, snap, api_calls=2)
+
+        assert captured_write[0]["cost_usd"] == pytest.approx(0.10)
+        assert captured_write[0]["cost_status"] == "estimated"
+        assert captured_write[0]["total_tokens"] == 100
+
+    def test_all_unpriced_notes_store_null_cost(self, captured_write):
+        agent = _agent()
+        snap = tc.snapshot_turn_cost(agent)
+        agent.session_total_tokens = 40
+        tc.note_turn_pricing(agent, status="unknown", amount_usd=None)
+        tc.note_turn_pricing(agent, status="estimated", amount_usd=None)
+
+        tc.record_turn_cost(agent, snap, api_calls=2)
+
+        assert captured_write[0]["cost_usd"] is None
+        assert captured_write[0]["cost_status"] == "unknown"
 
     def test_unknown_pricing_records_null_cost(self, captured_write):
         agent = _agent(session_cost_status="unknown")
@@ -135,6 +166,20 @@ class TestRecordTurnCost:
         tc.record_turn_cost(agent, snap, api_calls=1)
         assert captured_write[0]["cost_usd"] is None
         assert captured_write[0]["cost_status"] == "unknown"
+
+    def test_record_bounds_the_db_wait(self, monkeypatch):
+        seen = {}
+
+        def _run(coro, timeout=None):
+            seen["timeout"] = timeout
+            coro.close()
+
+        monkeypatch.setattr("thoth_db.run_sync", _run)
+        agent = _agent()
+        snap = tc.snapshot_turn_cost(agent)
+        agent.session_total_tokens = 10
+        tc.record_turn_cost(agent, snap, api_calls=1)
+        assert seen["timeout"] == tc._RECORD_TIMEOUT_S
 
     def test_kill_switch_disables_recording(self, captured_write, monkeypatch):
         monkeypatch.setenv("THOTH_TURN_COST", "0")
@@ -147,7 +192,10 @@ class TestRecordTurnCost:
     def test_never_raises_even_when_bridge_explodes(self, monkeypatch):
         monkeypatch.setattr(
             "thoth_db.run_sync",
-            lambda coro: (coro.close(), (_ for _ in ()).throw(RuntimeError("pool down")))[1],
+            lambda coro, timeout=None: (
+                coro.close(),
+                (_ for _ in ()).throw(RuntimeError("pool down")),
+            )[1],
         )
         agent = _agent(session_total_tokens=100)
         snap = tc.snapshot_turn_cost(agent)

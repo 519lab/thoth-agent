@@ -225,8 +225,6 @@ Health check. Returns `{"status": "ok"}`. Also available at **GET /v1/health** f
 
 Extended health check that also reports gateway state, connected platforms, and active agents. Useful for monitoring/observability tooling.
 
-When an API key is configured, this endpoint requires the same bearer auth as the rest of the API (the platform/agent inventory is operational detail). The plain `/health` liveness probe stays unauthenticated, and callers that can't authenticate — like a dashboard without the key — fall back to it automatically. With no key configured, both remain open for local use.
-
 ### GET /metrics
 
 Prometheus text-exposition metrics for cost and latency, computed from the per-turn records the agent writes on every turn (`agent_turn_cost`) plus the substrate crew's own spend (`substrate_agent_cost`). Requires the bearer token when an API key is configured.

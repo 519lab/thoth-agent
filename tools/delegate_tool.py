@@ -2407,6 +2407,12 @@ def delegate_task(
                 parent_agent.session_cost_source = "subagent"
             if getattr(parent_agent, "session_cost_status", "unknown") in {None, "", "unknown"}:
                 parent_agent.session_cost_status = "estimated"
+            from agent.turn_cost import note_turn_pricing
+            note_turn_pricing(
+                parent_agent,
+                status="estimated",
+                amount_usd=_children_cost_total,
+            )
         except Exception:
             logger.debug("Subagent cost rollup failed", exc_info=True)
 

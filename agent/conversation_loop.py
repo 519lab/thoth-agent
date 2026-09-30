@@ -1750,6 +1750,15 @@ def run_conversation(
                         agent.session_estimated_cost_usd += float(cost_result.amount_usd)
                     agent.session_cost_status = cost_result.status
                     agent.session_cost_source = cost_result.source
+                    # Per-turn tally. session_cost_status is last-write-wins
+                    # and would drop this turn's priced dollars if a later
+                    # call is unpriced.
+                    from agent.turn_cost import note_turn_pricing
+                    note_turn_pricing(
+                        agent,
+                        status=str(cost_result.status),
+                        amount_usd=cost_result.amount_usd,
+                    )
 
                     # Persist token counts to session DB for /insights.
                     # Do this for every platform with a session_id so non-CLI

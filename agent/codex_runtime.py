@@ -52,10 +52,9 @@ def run_codex_app_server_turn(
     _turn_started_at = _dt.now(_tz.utc)
 
     # Per-turn cost/latency baseline (innovation #4) — mirror of the
-    # chat_completions loop's snapshot. The app-server path doesn't feed the
-    # session token counters today, so the recorded deltas are zero, but the
-    # wall-clock duration (and the turn row itself) still lands in
-    # agent_turn_cost for latency visibility.
+    # chat_completions loop's snapshot. The app-server path doesn't feed
+    # usage counters today, so record_turn_cost skips the row. Writing a
+    # zero-token row would count the turn as unpriced.
     try:
         from agent.turn_cost import snapshot_turn_cost
         _turn_cost_snapshot = snapshot_turn_cost(agent)
@@ -242,9 +241,9 @@ def run_codex_app_server_turn(
     except Exception as exc:
         logger.debug("skill efficacy attribution failed: %s", exc)
 
-    # Per-turn cost/latency record (innovation #4) — mirror the
-    # chat_completions post-turn block. One app-server turn maps to one
-    # logical API call. Best-effort; kill-switch THOTH_TURN_COST=0.
+    # Per-turn cost/latency record (innovation #4). No usage notes on this
+    # path, so a turn that did not move the token counters is not written.
+    # Best-effort; kill-switch THOTH_TURN_COST=0.
     try:
         if _turn_cost_snapshot is not None:
             from agent.turn_cost import record_turn_cost

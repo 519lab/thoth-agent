@@ -519,37 +519,13 @@ class TestHealthDetailedEndpoint:
                 assert data["platforms"] == {}
 
     @pytest.mark.asyncio
-    async def test_health_detailed_open_when_no_key_configured(self, adapter):
-        """Without a configured API key, /health/detailed stays open (local use)."""
-        app = _create_app(adapter)
-        with patch("gateway.status.read_runtime_status", return_value=None):
-            async with TestClient(TestServer(app)) as cli:
-                resp = await cli.get("/health/detailed")
-                assert resp.status == 200
-
-    @pytest.mark.asyncio
-    async def test_health_detailed_requires_auth_when_key_configured(self, auth_adapter):
-        """With an API key configured, /health/detailed returns 401 without the
-        bearer — the platform/agent inventory is operational detail. Callers
-        that can't auth (dashboard without the key) fall back to /health."""
+    async def test_health_detailed_does_not_require_auth(self, auth_adapter):
+        """Health detailed endpoint should be accessible without auth, like /health."""
         app = _create_app(auth_adapter)
         with patch("gateway.status.read_runtime_status", return_value=None):
             async with TestClient(TestServer(app)) as cli:
                 resp = await cli.get("/health/detailed")
-                assert resp.status == 401
-                resp = await cli.get(
-                    "/health/detailed",
-                    headers={"Authorization": "Bearer sk-secret"},
-                )
                 assert resp.status == 200
-
-    @pytest.mark.asyncio
-    async def test_plain_health_stays_unauthenticated(self, auth_adapter):
-        """/health is the liveness probe — never behind auth."""
-        app = _create_app(auth_adapter)
-        async with TestClient(TestServer(app)) as cli:
-            resp = await cli.get("/health")
-            assert resp.status == 200
 
 
 # ---------------------------------------------------------------------------
