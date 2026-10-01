@@ -966,8 +966,16 @@ class APIServerAdapter(BasePlatformAdapter):
 
         Returns gateway state, connected platforms, PID, and uptime so the
         dashboard can display full status without needing a shared PID file or
-        /proc access.  No authentication required.
+        /proc access.  Honours the API key when one is configured (the
+        platform/agent inventory is operational detail an unauthenticated LAN
+        peer has no business reading); with no key configured it stays open,
+        matching every other endpoint. The plain /health liveness probe
+        remains unauthenticated — callers that can't auth fall back to it.
         """
+        auth_err = self._check_auth(request)
+        if auth_err:
+            return auth_err
+
         from gateway.status import read_runtime_status
 
         runtime = read_runtime_status() or {}

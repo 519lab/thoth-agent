@@ -1375,6 +1375,57 @@ class TestProbeGatewayHealth:
         assert body["status"] == "ok"
         assert call_count[0] == 2
 
+    def test_sends_bearer_when_api_key_is_set(self, monkeypatch):
+        """The probe attaches the dashboard's API key to both health paths."""
+        import io
+        import urllib.error
+
+        import thoth_cli.web_server as ws
+
+        monkeypatch.setattr(ws, "_GATEWAY_HEALTH_URL", "http://gw:8642")
+        monkeypatch.setattr(ws, "_GATEWAY_HEALTH_TIMEOUT", 1)
+        monkeypatch.setenv("API_SERVER_KEY", "sk-secret")
+        seen = []
+
+        def mock_urlopen(req, **kwargs):
+            seen.append((req.full_url, req.get_header("Authorization")))
+            if req.full_url.endswith("/health/detailed"):
+                raise urllib.error.HTTPError(
+                    req.full_url, 401, "Unauthorized", None, io.BytesIO(b"")
+                )
+            mock_resp = MagicMock()
+            mock_resp.status = 200
+            mock_resp.read.return_value = json.dumps({"status": "ok"}).encode()
+            mock_resp.__enter__ = MagicMock(return_value=mock_resp)
+            mock_resp.__exit__ = MagicMock(return_value=False)
+            return mock_resp
+
+        monkeypatch.setattr(ws.urllib.request, "urlopen", mock_urlopen)
+        alive, body = ws._probe_gateway_health()
+        assert alive is True
+        assert body["status"] == "ok"
+        assert seen == [
+            ("http://gw:8642/health/detailed", "Bearer sk-secret"),
+            ("http://gw:8642/health", "Bearer sk-secret"),
+        ]
+
+    def test_omits_bearer_when_api_key_is_unset(self, monkeypatch):
+        import thoth_cli.web_server as ws
+
+        monkeypatch.setattr(ws, "_GATEWAY_HEALTH_URL", "http://gw:8642")
+        monkeypatch.setattr(ws, "_GATEWAY_HEALTH_TIMEOUT", 1)
+        monkeypatch.delenv("API_SERVER_KEY", raising=False)
+        headers = []
+
+        def mock_urlopen(req, **kwargs):
+            headers.append(req.get_header("Authorization"))
+            raise ConnectionError("mock")
+
+        monkeypatch.setattr(ws.urllib.request, "urlopen", mock_urlopen)
+        alive, _body = ws._probe_gateway_health()
+        assert alive is False
+        assert headers == [None, None]
+
 
 class TestStatusRemoteGateway:
     """Tests for /api/status with remote gateway health fallback."""
