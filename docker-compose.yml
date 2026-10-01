@@ -69,6 +69,15 @@ services:
     #   - "127.0.0.1:8642:8642"   # API_SERVER (uncomment with API_SERVER_*)
     #   - "127.0.0.1:3978:3978"   # Teams webhook (uncomment with TEAMS_PORT)
     command: ["gateway", "run"]
+    # The gateway publishes no HTTP port by default, so health is probed via
+    # its pid file (written to /opt/data/gateway.pid on startup) rather than
+    # an endpoint. start_period covers first-boot dependency installs.
+    healthcheck:
+      test: ["CMD", "python3", "/opt/thoth/docker/healthcheck.py"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
 
   dashboard:
     image: thoth-agent
