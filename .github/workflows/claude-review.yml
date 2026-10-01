@@ -1,6 +1,6 @@
 name: Claude Review
 
-# Auto-review every non-draft PR against main. The review step runs the
+# Auto-review every non-draft PR against main or develop. The review step runs the
 # `/code-review --comment` skill, which posts findings as inline PR comments
 # directly — no label/tag-mode dance needed (that only existed to force the
 # now-removed sticky-comment path).
@@ -10,7 +10,7 @@ name: Claude Review
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-    branches: [main]
+    branches: [main, develop]
     paths-ignore:
       - "**/*.md"
       - "docs/**"

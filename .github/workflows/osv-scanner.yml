@@ -43,7 +43,7 @@ name: OSV-Scanner
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'uv.lock'
       - 'pyproject.toml'
@@ -57,7 +57,7 @@ on:
       - 'scripts/whatsapp-bridge/package-lock.json'
       - '.github/workflows/osv-scanner.yml'
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'uv.lock'
       - 'pyproject.toml'
