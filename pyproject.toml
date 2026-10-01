@@ -95,8 +95,12 @@ dev = [
   "pytest-timeout==2.4.0",
   "pytest-postgresql==8.1.0",
   # psycopg-binary ships libpq as a bundled wheel — required by pytest-postgresql
-  # on Windows where no system libpq is installed. Pin matches the psycopg version
-  # already pulled in transitively by pytest-postgresql (3.3.4).
+  # on Windows where no system libpq is installed. CI installs with
+  # `uv pip install`, which floats unpinned transitive deps, so psycopg itself
+  # must be pinned to the same version as the binary. 3.3.6's Connection.wait()
+  # passes timeout= into wait_c; the 3.3.4 binary rejects that keyword and
+  # every Postgres fixture errors.
+  "psycopg==3.3.4",
   "psycopg-binary==3.3.4",
   "mcp==1.28.1",
   "ty==0.0.21",

@@ -15,7 +15,7 @@ name: History Check
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -34,6 +34,9 @@ jobs:
           # commits share no ancestor.  We check both conditions explicitly
           # so the failure message is clear regardless of which signal fires
           # first.
+          # PRs into develop do not check out main. Fetch it so the
+          # ancestor check still compares against the blessed branch.
+          git fetch origin main
           if ! BASE=$(git merge-base origin/main HEAD 2>/dev/null) || [ -z "$BASE" ]; then
             echo ""
             echo "::error::This PR has no common ancestor with main."

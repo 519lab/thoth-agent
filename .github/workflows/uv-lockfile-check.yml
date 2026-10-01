@@ -12,46 +12,49 @@ name: uv.lock check
 #
 # For `pull_request` events, GitHub checks out `refs/pull/<N>/merge` by
 # default — a synthetic commit that merges your PR branch into the CURRENT
-# state of `main`.  That means the pyproject.toml evaluated here is
-# `main's pyproject.toml + your PR's changes to pyproject.toml`, not just
+# state of the base branch (`develop` for feature PRs, `main` for a
+# promotion).  That means the pyproject.toml evaluated here is
+# `the base's pyproject.toml + your PR's changes to pyproject.toml`, not just
 # what's on your branch.
 #
-# Failure mode this creates: if `main` has advanced since you branched
-# (e.g. someone merged a PR that added a dep to pyproject.toml + its
-# corresponding uv.lock entries), your branch's uv.lock is missing those
-# new entries.  `uv lock --check` resolves against the merged pyproject
-# and sees a lockfile that doesn't cover all the current deps → fails
-# with "The lockfile at uv.lock needs to be updated."
+# Failure mode this creates: if the base branch has advanced since you
+# branched (e.g. someone merged a PR that added a dep to pyproject.toml +
+# its corresponding uv.lock entries), your branch's uv.lock is missing
+# those new entries.  `uv lock --check` resolves against the merged
+# pyproject and sees a lockfile that doesn't cover all the current deps →
+# fails with "The lockfile at uv.lock needs to be updated."
 #
 # This can be confusing: `uv lock --check` passes locally (your branch
 # is internally consistent) but fails in CI (merged state isn't).
 #
-# Fix is to sync your branch with main and regenerate the lockfile:
+# Fix is to merge the base (`develop`, or `main` for a promotion) and
+# regenerate the lockfile:
 #
-#     git fetch origin main
-#     git rebase origin/main      # or merge, whatever the repo prefers
+#     git fetch origin develop
+#     git merge origin/develop
 #     uv lock                     # regenerates uv.lock against new pyproject.toml
 #     git add uv.lock
-#     git commit -m "chore: refresh uv.lock after rebase onto main"
-#     git push --force-with-lease # if you rebased
+#     git commit -m "chore: refresh uv.lock after merging develop"
+#     git push
 #
 # If you also changed pyproject.toml in your PR, `uv lock` handles that
 # at the same time — one regeneration covers both your changes and the
-# drift from main.
+# drift from the base.
 #
-# This is the correct behavior!  The check is protecting main's Docker
-# build: a post-merge build would see the same merged state and fail
-# the same way.  Better to catch it here than after merge.
+# This is the correct behavior!  The check is protecting the lock that
+# Docker builds with `uv sync --frozen`: a post-merge build would see
+# the same merged state and fail the same way.  Better to catch it here
+# than after merge.
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'pyproject.toml'
       - 'uv.lock'
       - '.github/workflows/uv-lockfile-check.yml'
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'pyproject.toml'
       - 'uv.lock'
