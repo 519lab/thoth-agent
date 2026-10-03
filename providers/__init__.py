@@ -88,6 +88,19 @@ def list_providers() -> list[ProviderProfile]:
     return result
 
 
+def apply_profile_aliases(target: dict[str, str]) -> None:
+    """Copy plugin aliases into ``target``.
+
+    Keys already in ``target`` stay put, so a hand-maintained map can
+    override a plugin. A new provider declares its aliases on
+    ``ProviderProfile`` and does not need a copy in the CLI maps.
+    """
+    if not _discovered:
+        _discover_providers()
+    for alias, canonical in _ALIASES.items():
+        target.setdefault(alias, canonical)
+
+
 def _user_plugins_dir() -> Path | None:
     """Return ``$THOTH_HOME/plugins/model-providers/`` if it exists."""
     try:
