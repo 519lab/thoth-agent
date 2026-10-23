@@ -128,7 +128,7 @@ jobs:
           NOUS_API_KEY: ""
 
   e2e:
-    runs-on: self-hosted  # light job on the 519lab runner (heavy `test` above stays GitHub-hosted)
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout code
