@@ -393,12 +393,14 @@ def _as_coroutine(awaitable: Awaitable[T]):
     return _await_it()
 
 
-def run_sync(coro: Awaitable[T]) -> T:
+def run_sync(coro: Awaitable[T], *, timeout: Optional[float] = None) -> T:
     """Bridge a sync caller to an async DB call.
 
     Submits ``coro`` to the always-running DB loop (``_get_sync_loop``) via
     ``asyncio.run_coroutine_threadsafe`` and blocks the calling thread until
-    it completes. Works uniformly from any thread and from inside any *other*
+    it completes. ``timeout`` is seconds; when it expires this raises
+    ``TimeoutError`` and the coroutine keeps running on the DB loop.
+    Works uniformly from any thread and from inside any *other*
     running loop (the gateway's main loop, pytest-asyncio test bodies, ACP
     server callbacks): the coroutine always runs on the DB loop, where the
     asyncpg pool is bound, so there is never a cross-loop operation.
@@ -423,7 +425,7 @@ def run_sync(coro: Awaitable[T]) -> T:
             "thoth_db.run_sync called from inside the DB loop thread; "
             "await the coroutine directly instead."
         )
-    return asyncio.run_coroutine_threadsafe(_as_coroutine(coro), loop).result()
+    return asyncio.run_coroutine_threadsafe(_as_coroutine(coro), loop).result(timeout)
 
 
 async def run_on_pool_loop(coro: Awaitable[T]) -> T:
