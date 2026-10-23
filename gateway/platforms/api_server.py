@@ -711,6 +711,8 @@ class APIServerAdapter(BasePlatformAdapter):
         # in-flight run by run_id.
         self._run_approval_sessions: Dict[str, str] = {}
         self._session_db: Optional[Any] = None  # Lazy-init SessionDB for session continuity
+        # Adapter start time for the /metrics uptime gauge.
+        self._started_monotonic: float = time.monotonic()
 
     @staticmethod
     def _parse_cors_origins(value: Any) -> tuple[str, ...]:
@@ -990,6 +992,55 @@ class APIServerAdapter(BasePlatformAdapter):
             "pid": os.getpid(),
         })
 
+    async def _handle_metrics(self, request: "web.Request") -> "web.Response":
+        """GET /metrics — Prometheus text exposition of cost/latency rollups.
+
+        Windowed gauges (trailing 24h) computed from ``agent_turn_cost`` and
+        ``substrate_agent_cost`` at scrape time, not lifetime counters:
+        both tables are append-only and unbounded, so an all-time SUM per
+        scrape would degrade as they grow. No new dependencies — plain text
+        exposition format. Honours the API key when configured (spend data
+        is operational detail).
+
+        DB access bridges to the pool loop via ``run_on_pool_loop`` — this
+        handler runs on the gateway's I/O loop, and the asyncpg pool is bound
+        to the dedicated DB loop (docs/architecture/database-event-loop.md).
+        """
+        auth_err = self._check_auth(request)
+        if auth_err:
+            return auth_err
+
+        uptime_s = time.monotonic() - self._started_monotonic
+        turn = None
+        crew = None
+        scrape_error = 0
+        try:
+            import thoth_db
+            from agent.turn_cost import fetch_substrate_summary, fetch_turn_summary
+
+            turn = await thoth_db.run_on_pool_loop(fetch_turn_summary(hours=24.0))
+            crew = await thoth_db.run_on_pool_loop(fetch_substrate_summary(hours=24.0))
+        except Exception as exc:
+            # A missing table (pre-0027 DB) or pool hiccup must not turn the
+            # scrape into a 500 — expose the failure as a metric instead.
+            logger.debug("metrics rollup failed: %s", exc)
+            scrape_error = 1
+            turn = None
+            crew = None
+
+        from agent.turn_cost import render_turn_metrics
+
+        return web.Response(
+            text=render_turn_metrics(
+                uptime_s=uptime_s,
+                turn=turn,
+                crew=crew,
+                scrape_error=scrape_error,
+            ),
+            content_type="text/plain",
+            charset="utf-8",
+        )
+
     async def _handle_models(self, request: "web.Request") -> "web.Response":
         """GET /v1/models — return thoth-agent as an available model."""
         auth_err = self._check_auth(request)
@@ -1059,6 +1110,7 @@ class APIServerAdapter(BasePlatformAdapter):
             "endpoints": {
                 "health": {"method": "GET", "path": "/health"},
                 "health_detailed": {"method": "GET", "path": "/health/detailed"},
+                "metrics": {"method": "GET", "path": "/metrics"},
                 "models": {"method": "GET", "path": "/v1/models"},
                 "chat_completions": {"method": "POST", "path": "/v1/chat/completions"},
                 "responses": {"method": "POST", "path": "/v1/responses"},
@@ -3449,6 +3501,7 @@ class APIServerAdapter(BasePlatformAdapter):
             self._app["api_server_adapter"] = self
             self._app.router.add_get("/health", self._handle_health)
             self._app.router.add_get("/health/detailed", self._handle_health_detailed)
+            self._app.router.add_get("/metrics", self._handle_metrics)
             self._app.router.add_get("/v1/health", self._handle_health)
             self._app.router.add_get("/v1/models", self._handle_models)
             self._app.router.add_get("/v1/capabilities", self._handle_capabilities)
