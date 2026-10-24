@@ -55,9 +55,9 @@
     "dompurify": "^3.4.9",
     "http-proxy-middleware": "^2.0.10",
     "joi": "^17.13.4",
-    "launch-editor": "^2.14.1",
+    "launch-editor": "^2.14.2",
     "shell-quote": "^1.8.4",
-    "undici": "^7.28.0",
+    "undici": "^7.30.0",
     "webpack-dev-server": "^5.2.5",
     "ws": "^8.18.3"
   }
