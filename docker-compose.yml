@@ -95,6 +95,11 @@ services:
       - THOTH_GID=${THOTH_GID:-10000}
       # Same as the gateway: talk to Postgres by service name, not localhost.
       - THOTH_PG_DSN=postgresql://${POSTGRES_USER:-thoth}:${POSTGRES_PASSWORD:-thoth}@postgres:5432/${POSTGRES_DB:-thoth}
+      # To probe the gateway's API server for full status, uncomment BOTH.
+      # Without the key, /health/detailed returns 401 once the gateway has
+      # API_SERVER_KEY set, and the dashboard falls back to plain /health.
+      # - GATEWAY_HEALTH_URL=http://gateway:8642
+      # - API_SERVER_KEY=${API_SERVER_KEY}
     # Published only to the host loopback — unreachable from the LAN. For
     # remote access, tunnel via `ssh -L 9119:localhost:9119`.
     ports:
