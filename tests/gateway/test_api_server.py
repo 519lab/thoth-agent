@@ -528,25 +528,26 @@ class TestHealthDetailedEndpoint:
                 assert resp.status == 200
 
     @pytest.mark.asyncio
-    async def test_health_detailed_requires_auth_when_key_configured(self, auth_adapter):
-        """With an API key configured, /health/detailed returns 401 without the
-        bearer — the platform/agent inventory is operational detail. Callers
-        that can't auth (dashboard without the key) fall back to /health."""
+    @pytest.mark.parametrize(
+        "headers, expected",
+        [
+            ({}, 401),
+            ({"Authorization": "Bearer wrong"}, 401),
+            ({"Authorization": "Bearer sk-secret"}, 200),
+        ],
+        ids=["no-bearer", "wrong-bearer", "right-bearer"],
+    )
+    async def test_health_detailed_requires_auth_when_key_configured(
+        self, auth_adapter, headers, expected
+    ):
+        """With an API key configured, /health/detailed needs the bearer — the
+        platform/agent inventory is operational detail. Callers that can't
+        auth (dashboard without the key) fall back to /health."""
         app = _create_app(auth_adapter)
         with patch("gateway.status.read_runtime_status", return_value=None):
             async with TestClient(TestServer(app)) as cli:
-                resp = await cli.get("/health/detailed")
-                assert resp.status == 401
-                resp = await cli.get(
-                    "/health/detailed",
-                    headers={"Authorization": "Bearer wrong"},
-                )
-                assert resp.status == 401
-                resp = await cli.get(
-                    "/health/detailed",
-                    headers={"Authorization": "Bearer sk-secret"},
-                )
-                assert resp.status == 200
+                resp = await cli.get("/health/detailed", headers=headers)
+                assert resp.status == expected
 
     @pytest.mark.asyncio
     async def test_plain_health_stays_unauthenticated(self, auth_adapter):
