@@ -364,6 +364,14 @@ ALIASES: Dict[str, str] = {
     "llama-cpp": "local",
 }
 
+# Same rule as thoth_cli.models: plugin aliases fill gaps, hardcoded keys win.
+try:
+    from providers import apply_profile_aliases as _apply_profile_aliases
+
+    _apply_profile_aliases(ALIASES)
+except Exception:
+    pass
+
 
 # -- Display labels -----------------------------------------------------------
 # Built dynamically from models.dev + overlays.  Fallback for providers
