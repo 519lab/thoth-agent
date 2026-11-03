@@ -34,6 +34,16 @@ version heading that matches the release tag.
 
 ### Infrastructure
 
+- **Website, docs, and markdown-only pull requests can be merged again.** The
+  lint and test workflows skipped such PRs with a path filter, so the required
+  `ruff enforcement (blocking)`, `Windows footguns (blocking)`, and `test`
+  checks never reported and the PR stayed pending forever (#407). The lint
+  checks now always run on PRs (they take seconds). The test workflow still
+  skips the full suite for docs/markdown-only PRs, but now via a skipped job,
+  which satisfies the required check.
+- The lint workflow no longer interpolates the PR branch name directly into a
+  shell script, closing a script-injection vector through crafted branch
+  names.
 - **Fixed a random CI failure in the interrupt tests.** The test suite's
   live-system guard could mistake the test's own just-exited child for a
   foreign process and block a harmless liveness probe, failing
