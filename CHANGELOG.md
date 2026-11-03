@@ -41,6 +41,9 @@ version heading that matches the release tag.
   checks now always run on PRs (they take seconds). The test workflow still
   skips the full suite for docs/markdown-only PRs, but now via a skipped job,
   which satisfies the required check.
+- The lint workflow no longer interpolates the PR branch name directly into a
+  shell script, closing a script-injection vector through crafted branch
+  names.
 - CI (tests, lint, lockfile, OSV scanning, history and contributor checks,
   Claude review) now runs on pull requests and pushes to `develop`, not only
   `main`.
