@@ -575,6 +575,13 @@ def _live_system_guard(request, monkeypatch):
             for parent in walker.parents():
                 if parent.pid == test_pid:
                     return True
+        except _psutil.NoSuchProcess:
+            # The target can be reaped between the lookup above and this
+            # walk — e.g. a concurrent ``Popen.poll()`` in a drain thread
+            # while ``_kill_process`` probes ``killpg(pgid, 0)`` (#408).
+            # A target that is gone now is the same stale case as above;
+            # a broken walk on a still-running target stays foreign.
+            return not walker.is_running()
         except Exception:
             return False
         return False

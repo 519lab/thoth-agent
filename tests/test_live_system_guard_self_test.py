@@ -20,6 +20,7 @@ from __future__ import annotations
 import os
 import signal
 import subprocess
+import time
 
 import pytest
 
@@ -260,6 +261,58 @@ def test_kill_own_subtree_passes_through():
         p.wait(timeout=2)
     # SIGTERM = 15; subprocess returncode is -15 on POSIX.
     assert p.returncode in {-signal.SIGTERM, 128 + int(signal.SIGTERM)}
+
+
+def _spawn_zombie_group_leader() -> subprocess.Popen:
+    """Spawn a session leader (PGID == PID) and let it exit unreaped."""
+    import psutil
+
+    p = subprocess.Popen(["true"], start_new_session=True)
+    proc = psutil.Process(p.pid)
+    for _ in range(200):
+        if proc.status() == psutil.STATUS_ZOMBIE:
+            return p
+        time.sleep(0.01)
+    p.wait(timeout=2)
+    pytest.fail("child never became a zombie")
+
+
+@pytest.mark.skipif(not hasattr(os, "killpg"), reason="killpg POSIX-only")
+def test_killpg_own_group_reaped_mid_walk_is_not_blocked(monkeypatch):
+    """Own group leader reaped while the guard walks its parents (#408).
+
+    ``LocalEnvironment``'s drain thread calls ``proc.poll()`` concurrently
+    with ``_kill_process``'s ``os.killpg(pgid, 0)`` probe. If the reap lands
+    between the guard's ``psutil.Process(pid)`` and ``.parents()``, the walk
+    raises ``NoSuchProcess``. That PID is our own (now stale) child, not a
+    foreign process, so the guard must defer to the real ``killpg``.
+    """
+    import psutil
+
+    p = _spawn_zombie_group_leader()
+    real_parents = psutil.Process.parents
+
+    def _parents_racing_reap(self):
+        if self.pid == p.pid and p.returncode is None:
+            p.wait(timeout=2)  # the concurrent reap
+        return real_parents(self)
+
+    monkeypatch.setattr(psutil.Process, "parents", _parents_racing_reap)
+    with pytest.raises(ProcessLookupError):
+        os.killpg(p.pid, 0)
+
+
+@pytest.mark.skipif(not hasattr(os, "killpg"), reason="killpg POSIX-only")
+def test_killpg_broken_walk_on_live_foreign_pid_still_blocked(monkeypatch):
+    """A walk failure on a process that is still running stays foreign."""
+    import psutil
+
+    def _parents_broken(self):
+        raise psutil.NoSuchProcess(self.pid)
+
+    monkeypatch.setattr(psutil.Process, "parents", _parents_broken)
+    with pytest.raises(RuntimeError, match="live-system guard"):
+        os.killpg(FOREIGN_PID, signal.SIGTERM)
 
 
 def test_subprocess_pkill_with_unrelated_pattern_passes_through():
