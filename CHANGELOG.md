@@ -34,6 +34,13 @@ version heading that matches the release tag.
 
 ### Infrastructure
 
+- **Website, docs, and markdown-only pull requests can be merged again.** The
+  lint and test workflows skipped such PRs with a path filter, so the required
+  `ruff enforcement (blocking)`, `Windows footguns (blocking)`, and `test`
+  checks never reported and the PR stayed pending forever (#407). The lint
+  checks now always run on PRs (they take seconds). The test workflow still
+  skips the full suite for docs/markdown-only PRs, but now via a skipped job,
+  which satisfies the required check.
 - CI (tests, lint, lockfile, OSV scanning, history and contributor checks,
   Claude review) now runs on pull requests and pushes to `develop`, not only
   `main`.

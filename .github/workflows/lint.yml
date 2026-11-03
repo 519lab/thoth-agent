@@ -15,12 +15,12 @@ on:
       - "**/*.md"
       - "docs/**"
       - "website/**"
+  # No paths-ignore on pull_request: `ruff enforcement (blocking)` and
+  # `Windows footguns (blocking)` are required checks, and a path-filtered
+  # workflow never reports, leaving website/docs-only PRs pending forever
+  # (#407). Both blocking jobs take seconds, so they simply always run.
   pull_request:
     branches: [main, develop]
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "website/**"
 
 permissions:
   contents: read
