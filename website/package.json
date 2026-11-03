@@ -18,9 +18,9 @@
     "lint:diagrams": "ascii-guard lint --exclude-code-blocks docs"
   },
   "dependencies": {
-    "@docusaurus/core": "3.10.1",
-    "@docusaurus/preset-classic": "3.10.1",
-    "@docusaurus/theme-mermaid": "^3.9.2",
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@docusaurus/theme-mermaid": "3.10.2",
     "@easyops-cn/docusaurus-search-local": "^0.55.1",
     "@mdx-js/react": "^3.0.0",
     "clsx": "^2.0.0",
@@ -29,9 +29,9 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.10.1",
-    "@docusaurus/tsconfig": "3.10.1",
-    "@docusaurus/types": "3.10.1",
+    "@docusaurus/module-type-aliases": "3.10.2",
+    "@docusaurus/tsconfig": "3.10.2",
+    "@docusaurus/types": "3.10.2",
     "typescript": "~5.6.2"
   },
   "browserslist": {
@@ -50,15 +50,16 @@
     "node": ">=20.0"
   },
   "overrides": {
-    "serialize-javascript": "^7.0.5",
+    "serialize-javascript": "^7.1.3",
     "uuid": "^11.1.1",
     "dompurify": "^3.4.9",
     "http-proxy-middleware": "^2.0.10",
     "joi": "^17.13.9",
     "launch-editor": "^2.14.2",
     "shell-quote": "^1.8.4",
+    "tinypool": "^2.1.2",
     "undici": "^7.30.1",
-    "webpack-dev-server": "^5.2.5",
+    "webpack-dev-server": "^5.2.6",
     "ws": "^8.18.3"
   }
 }
