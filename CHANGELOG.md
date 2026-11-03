@@ -41,6 +41,9 @@ version heading that matches the release tag.
   checks now always run on PRs (they take seconds). The test workflow still
   skips the full suite for docs/markdown-only PRs, but now via a skipped job,
   which satisfies the required check.
+- The docs-only check that gates the test suite now reads the PR's file list
+  from the GitHub API instead of cloning full history, removing ~2.5 minutes
+  it had added before every PR's required `test` check could start (#412).
 - The lint workflow no longer interpolates the PR branch name directly into a
   shell script, closing a script-injection vector through crafted branch
   names.
