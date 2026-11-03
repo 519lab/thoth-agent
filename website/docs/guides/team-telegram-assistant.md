@@ -375,7 +375,7 @@ On a shared team bot, use Docker as the terminal backend so agent commands run i
 ```bash
 # In ~/.thoth/.env
 TERMINAL_BACKEND=docker
-TERMINAL_DOCKER_IMAGE=nikolaik/python-nodejs:python3.11-nodejs20
+TERMINAL_DOCKER_IMAGE=nikolaik/python-nodejs:python3.11-nodejs22
 ```
 
 Or in `~/.thoth/config.yaml`:
