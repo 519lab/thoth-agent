@@ -6,11 +6,12 @@ on:
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
+  # No paths-ignore on pull_request: `test` is a required check, and a
+  # path-filtered workflow never reports, leaving docs-only PRs pending
+  # forever (#407). The `changes` job below skips the heavy jobs instead —
+  # a job skipped via `if:` reports success to the required-check gate.
   pull_request:
     branches: [main, develop]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
 
 permissions:
   contents: read
@@ -21,7 +22,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    # Decides whether this PR touches anything besides markdown/docs.
+    # Pushes are already filtered by the push trigger's paths-ignore.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Checkout code
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Detect non-doc changes
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "$BASE_SHA...$HEAD_SHA")
+          echo "Changed files:"; echo "$changed"
+          if echo "$changed" | grep -qvE '(\.md$|^docs/)'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   test:
+    needs: changes
+    # Fail closed: only an explicit 'false' skips. If `changes` itself fails,
+    # its output is empty and the suite still runs (a skipped required job
+    # would otherwise report success and waive the gate).
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     # The full suite runs on a GitHub-hosted runner. The self-hosted 519lab
     # box is only 2 vCPUs, so the per-file parallel suite there ran ~57-71 min
     # and was guillotined at the 60-min cap (issue #327). GitHub-hosted runners
@@ -128,6 +167,11 @@ jobs:
           NOUS_API_KEY: ""
 
   e2e:
+    needs: changes
+    # Fail closed: only an explicit 'false' skips. If `changes` itself fails,
+    # its output is empty and the suite still runs (a skipped required job
+    # would otherwise report success and waive the gate).
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

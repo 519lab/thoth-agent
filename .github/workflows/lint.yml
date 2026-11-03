@@ -15,12 +15,12 @@ on:
       - "**/*.md"
       - "docs/**"
       - "website/**"
+  # No paths-ignore on pull_request: `ruff enforcement (blocking)` and
+  # `Windows footguns (blocking)` are required checks, and a path-filtered
+  # workflow never reports, leaving website/docs-only PRs pending forever
+  # (#407). Both blocking jobs take seconds, so they simply always run.
   pull_request:
     branches: [main, develop]
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "website/**"
 
 permissions:
   contents: read
@@ -124,6 +124,10 @@ jobs:
         # not setup-python, and the self-hosted 519lab runner has no `python` on
         # PATH (only inside venvs). uv provides the interpreter; the script is
         # stdlib-only so --no-project skips any project sync.
+        env:
+          # Via env, not inline ${{ }}: PR branch names are attacker-controlled
+          # and inline interpolation into `run:` is a script-injection vector.
+          HEAD_REF: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
         run: |
           uv run --no-project python scripts/lint_diff.py \
             --base-ruff .lint-reports/base/ruff.json \
@@ -131,7 +135,7 @@ jobs:
             --base-ty   .lint-reports/base/ty.json \
             --head-ty   .lint-reports/head/ty.json \
             --base-ref  "${{ steps.base.outputs.ref }}" \
-            --head-ref  "${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}" \
+            --head-ref  "$HEAD_REF" \
             --output    .lint-reports/summary.md
           cat .lint-reports/summary.md >> "$GITHUB_STEP_SUMMARY"
 
