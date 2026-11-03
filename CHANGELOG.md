@@ -34,6 +34,11 @@ version heading that matches the release tag.
 
 ### Infrastructure
 
+- **Fixed a random CI failure in the interrupt tests.** The test suite's
+  live-system guard could mistake the test's own just-exited child for a
+  foreign process and block a harmless liveness probe, failing
+  `test_sigterm_trap_killed_within_2s` at random and blocking unrelated PRs
+  on the required `test` check (#408).
 - CI (tests, lint, lockfile, OSV scanning, history and contributor checks,
   Claude review) now runs on pull requests and pushes to `develop`, not only
   `main`.
