@@ -155,3 +155,24 @@ def test_lmstudio_replace_empty_does_not_overwrite_with_placeholder(profile_env)
     assert key == "my-real-lmstudio-key"
     assert abort is False
     assert get_env_value("LM_API_KEY") == "my-real-lmstudio-key"
+
+
+# Key display masking ─────────────────────────────────────────────────────────
+
+def test_existing_key_display_is_masked(profile_env, capsys):
+    """The "already configured" banner must show a masked key, never a raw
+    prefix slice that leaks most (or, for short keys, all) of the secret."""
+    long_key = "sk-abcdefghijklmnopqrstuvwxyz0123"
+    _run_prompt(existing_key=long_key, choice="k")
+    out = capsys.readouterr().out
+    assert long_key not in out
+    assert long_key[:8] not in out
+    assert "sk-a...0123" in out
+
+
+def test_short_existing_key_display_is_fully_masked(profile_env, capsys):
+    short_key = "sk-short"
+    _run_prompt(existing_key=short_key, choice="k")
+    out = capsys.readouterr().out
+    assert short_key not in out
+    assert "API key: *** " in out

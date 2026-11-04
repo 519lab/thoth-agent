@@ -16,6 +16,12 @@ version heading that matches the release tag.
   The plain `/health` liveness probe stays unauthenticated, and with no key
   configured both endpoints remain open. The dashboard sends the key when it
   has `API_SERVER_KEY` and otherwise falls back to `/health`.
+- **API keys in CLI messages are masked consistently.** Setup prompts and
+  auth diagnostics printed the first 8–12 characters of keys. A short key
+  could show in full. They now use the same `sk-a...7890` / `***` masking as
+  the rest of Thoth. Separately, the OpenClaw migration's
+  `MIGRATION_JSON_OUTPUT` dump printed tokens found in migrated approval
+  patterns unredacted. It is now redacted like `--json` (#438).
 
 ### Added
 
