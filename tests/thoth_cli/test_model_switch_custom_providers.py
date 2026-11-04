@@ -5,9 +5,23 @@ shared slash-command pipeline (`/model` in CLI/gateway/Telegram) historically
 only looked at `providers:`.
 """
 
+import pytest
+
 import thoth_cli.providers as providers_mod
 from thoth_cli.model_switch import list_authenticated_providers, switch_model
 from thoth_cli.providers import resolve_provider_full
+
+
+@pytest.fixture(autouse=True)
+def _no_live_model_probe(monkeypatch):
+    """Keep custom-endpoint discovery off the network.
+
+    list_authenticated_providers() probes each custom endpoint's /models.
+    These tests use http://localhost:11434 (Ollama's default port), so on a
+    machine running Ollama the real catalog leaked into the results. Tests
+    that need live models override this with their own fake.
+    """
+    monkeypatch.setattr("thoth_cli.models.fetch_api_models", lambda api_key, base_url: [])
 
 
 _MOCK_VALIDATION = {
