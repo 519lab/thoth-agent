@@ -4350,8 +4350,9 @@ def _model_flow_kimi(config, current_model=""):
 
 def _infer_stepfun_region(base_url: str) -> str:
     """Infer the current StepFun region from the configured endpoint."""
-    normalized = (base_url or "").strip().lower()
-    if "api.stepfun.com" in normalized:
+    from utils import base_url_host_matches
+
+    if base_url_host_matches(base_url or "", "api.stepfun.com"):
         return "china"
     return "international"
 

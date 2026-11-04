@@ -1320,3 +1320,17 @@ class TestMinimaxOAuthProvider:
         from agent.auxiliary_client import _API_KEY_PROVIDER_AUX_MODELS
         assert "minimax-oauth" in _API_KEY_PROVIDER_AUX_MODELS
         assert _API_KEY_PROVIDER_AUX_MODELS["minimax-oauth"]  # non-empty
+
+
+class TestInferStepfunRegion:
+    def test_china_host_is_china(self):
+        from thoth_cli.main import _infer_stepfun_region
+
+        assert _infer_stepfun_region("https://api.stepfun.com/v1") == "china"
+
+    def test_international_and_lookalike_hosts_are_international(self):
+        from thoth_cli.main import _infer_stepfun_region
+
+        assert _infer_stepfun_region("https://api.stepfun.ai/v1") == "international"
+        assert _infer_stepfun_region("https://api.stepfun.com.evil.net/v1") == "international"
+        assert _infer_stepfun_region("") == "international"
