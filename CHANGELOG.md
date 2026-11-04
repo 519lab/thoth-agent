@@ -56,6 +56,11 @@ version heading that matches the release tag.
 
 ### Infrastructure
 
+- **Automated Claude PR reviews now post their findings.** The review workflow
+  ran and found issues but never posted them. The action only starts its
+  inline-comment server when the tool allow-list names it, and ours did not,
+  so every review finished green and said nothing (#419). The workflow now
+  allows the inline-comment tool and read-only `gh pr` commands.
 - **Website, docs, and markdown-only pull requests can be merged again.** The
   lint and test workflows skipped such PRs with a path filter, so the required
   `ruff enforcement (blocking)`, `Windows footguns (blocking)`, and `test`
@@ -63,6 +68,9 @@ version heading that matches the release tag.
   checks now always run on PRs (they take seconds). The test workflow still
   skips the full suite for docs/markdown-only PRs, but now via a skipped job,
   which satisfies the required check.
+- The docs-only check that gates the test suite now reads the PR's file list
+  from the GitHub API instead of cloning full history, removing ~2.5 minutes
+  it had added before every PR's required `test` check could start (#412).
 - The lint workflow no longer interpolates the PR branch name directly into a
   shell script, closing a script-injection vector through crafted branch
   names.

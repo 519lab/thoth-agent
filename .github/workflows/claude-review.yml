@@ -52,7 +52,16 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # Pin Opus — the action defaults to Sonnet otherwise.
-          claude_args: --model claude-opus-4-8
+          #
+          # --allowedTools is load-bearing: the action only starts its
+          # github_inline_comment MCP server when the allow-list names an
+          # mcp__github_inline_comment__* tool (src/mcp/install-mcp-server.ts).
+          # Without it the review runs, finds issues, and has no way to post
+          # them ("No buffered inline comments"). The gh entries match the
+          # upstream examples/pr-review-comprehensive.yml.
+          claude_args: |
+            --model claude-opus-4-8
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
           # The `/code-review --comment` skill posts findings as inline PR
           # comments itself, so we no longer need the track_progress /
           # use_sticky_comment workaround (anthropics/claude-code-action#1108)

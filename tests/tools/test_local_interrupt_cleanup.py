@@ -14,6 +14,7 @@ died.  See commit message for full context.
 import os
 import signal
 import subprocess
+import sys
 import threading
 import time
 from types import SimpleNamespace
@@ -56,6 +57,30 @@ def _wait_for_pgid_exit(pgid: int, timeout: float = 30.0) -> bool:
             return True
         time.sleep(0.1)
     return not _pgid_still_alive(pgid)
+
+
+def _wait_for_poll_loop(thread_ident: int, timeout: float = 15.0) -> bool:
+    """Wait until a thread is inside ``_wait_for_process``'s guarded poll loop.
+
+    Its own frame is the innermost one for the whole function, including
+    the setup before ``drain_thread.start()`` and before the ``try`` whose
+    ``except (KeyboardInterrupt, SystemExit)`` kills the process group.  An
+    interrupt in that setup span skips the cleanup, so the frame name alone
+    is not enough.  ``_poll_sleep`` is the first local bound *inside* the
+    ``try``, so its presence proves the drain thread is started and the
+    cleanup handler is armed.
+    """
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        frame = sys._current_frames().get(thread_ident)
+        if (
+            frame is not None
+            and frame.f_code.co_name == "_wait_for_process"
+            and "_poll_sleep" in frame.f_locals
+        ):
+            return True
+        time.sleep(0.01)
+    return False
 
 
 def test_kill_process_uses_cached_pgid_if_wrapper_already_exited(monkeypatch):
@@ -151,11 +176,23 @@ def test_wait_for_process_kills_subprocess_on_keyboardinterrupt():
         pgid = os.getpgid(target_pid)
         assert _pgid_still_alive(pgid), "sanity: subprocess should be alive"
 
+        # The subprocess being visible is not enough: right after Popen the
+        # worker is still inside drain_thread.start().  On CPython 3.11 a
+        # thread being started carries its *parent's* thread id until it
+        # binds, and sits at the head of the thread-state list, so
+        # PyThreadState_SetAsyncExc(worker_ident) delivers the exception to
+        # the half-started drain thread instead.  The drain thread then dies
+        # before signalling it started and the worker blocks in
+        # Thread.start() forever.  Inject only once the worker is parked in
+        # the guarded poll loop (see _wait_for_poll_loop).
+        assert _wait_for_poll_loop(t.ident), (
+            "test setup: worker never reached the _wait_for_process poll loop"
+        )
+
         # Now inject a KeyboardInterrupt into the worker thread the same
         # way CPython's signal machinery would.  We use ctypes.PyThreadState_SetAsyncExc
         # which is how signal delivery to non-main threads is simulated.
         import ctypes
-        import sys as _sys
         # py-thread-state exception targets need the ident, not the Thread
         tid = t.ident
         assert tid is not None

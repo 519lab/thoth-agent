@@ -25,31 +25,35 @@ jobs:
   changes:
     # Decides whether this PR touches anything besides markdown/docs.
     # Pushes are already filtered by the push trigger's paths-ignore.
+    # Lists files via the REST API instead of a full-history checkout, which
+    # cost ~2.5 min on the critical path of every PR (#412).
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      pull-requests: read
     outputs:
       code: ${{ steps.filter.outputs.code }}
     steps:
-      - name: Checkout code
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          fetch-depth: 0
-
       - name: Detect non-doc changes
         id: filter
         env:
           EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           if [ "$EVENT_NAME" != "pull_request" ]; then
             echo "code=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          changed=$(git diff --name-only "$BASE_SHA...$HEAD_SHA")
-          echo "Changed files:"; echo "$changed"
-          if echo "$changed" | grep -qvE '(\.md$|^docs/)'; then
+          # Any API failure aborts this step (bash -e), leaving `code` empty,
+          # so the fail-closed gate on `test`/`e2e` still runs the suite.
+          changed=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq '.[].filename')
+          count=$(printf '%s\n' "$changed" | grep -c . || true)
+          echo "Changed files ($count):"; echo "$changed"
+          # The endpoint caps at 3000 files; a truncated list could hide code
+          # changes, so treat it as code.
+          if [ "$count" -ge 3000 ] || echo "$changed" | grep -qvE '(\.md$|^docs/)'; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           else
             echo "code=false" >> "$GITHUB_OUTPUT"
