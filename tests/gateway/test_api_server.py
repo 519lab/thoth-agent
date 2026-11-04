@@ -3214,6 +3214,48 @@ class TestSessionIdHeader:
             assert call_kwargs["session_id"] == "my-session-123"
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("bad_id", [
+        "../../etc/passwd", "..", "a/../b", "a/b", "a\\b", ".hidden", "x" * 129,
+    ])
+    async def test_unsafe_session_id_is_rejected(self, auth_adapter, bad_id):
+        """The id becomes a transcript filename and a later delete target, so
+        anything but a single safe path segment must be refused up front."""
+        mock_db = MagicMock()
+        auth_adapter._session_db = mock_db
+        app = _create_app(auth_adapter)
+        async with TestClient(TestServer(app)) as cli:
+            with patch.object(auth_adapter, "_run_agent", new_callable=AsyncMock) as mock_run:
+                resp = await cli.post(
+                    "/v1/chat/completions",
+                    headers={"X-Thoth-Session-Id": bad_id, "Authorization": "Bearer sk-secret"},
+                    json={"model": "thoth-agent", "messages": [{"role": "user", "content": "Hi"}]},
+                )
+            assert resp.status == 400
+            mock_run.assert_not_called()
+            mock_db.get_messages_as_conversation.assert_not_called()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("good_id", [
+        "20250101_120000_ab12cd34", "3f2b8c1e-9a4d-4e2f-8b1a-0c9d8e7f6a5b", "chat:42", "v1.2_run",
+    ])
+    async def test_real_world_session_ids_are_accepted(self, auth_adapter, good_id):
+        mock_result = {"final_response": "OK", "messages": [], "api_calls": 1}
+        mock_db = MagicMock()
+        mock_db.get_messages_as_conversation.return_value = []
+        auth_adapter._session_db = mock_db
+        app = _create_app(auth_adapter)
+        async with TestClient(TestServer(app)) as cli:
+            with patch.object(auth_adapter, "_run_agent", new_callable=AsyncMock) as mock_run:
+                mock_run.return_value = (mock_result, {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0})
+                resp = await cli.post(
+                    "/v1/chat/completions",
+                    headers={"X-Thoth-Session-Id": good_id, "Authorization": "Bearer sk-secret"},
+                    json={"model": "thoth-agent", "messages": [{"role": "user", "content": "Hi"}]},
+                )
+            assert resp.status == 200
+            assert resp.headers.get("X-Thoth-Session-Id") == good_id
+
+    @pytest.mark.asyncio
     async def test_provided_session_id_loads_history_from_db(self, auth_adapter):
         """When X-Thoth-Session-Id is provided, history comes from SessionDB not request body."""
         mock_result = {"final_response": "OK", "messages": [], "api_calls": 1}

@@ -27,6 +27,11 @@ version heading that matches the release tag.
 
 ### Fixed
 
+- **The API server rejects session ids that could act as file paths.**
+  `X-Thoth-Session-Id` accepted `..` and `/`, and session ids later become
+  transcript filenames and delete targets (#435). Ids must now be a single safe
+  segment of up to 128 letters, digits, and `._:-`. Generated ids and UUIDs are
+  unaffected, and anything else gets a 400.
 - **Postgres-backed tests errored in CI** because `psycopg` floated to 3.3.6
   while `psycopg-binary` stayed pinned at 3.3.4, and the mismatched pair
   rejected a keyword argument on every connection wait. `psycopg` is now
