@@ -43,7 +43,8 @@ from typing import Any, Dict, List
 from agent.memory_provider import MemoryProvider
 from thoth_constants import get_thoth_home
 from tools.registry import tool_error
-from thoth_cli.config import cfg_get
+from thoth_cli.config import _secure_file, cfg_get
+from utils import atomic_text_write
 
 logger = logging.getLogger(__name__)
 
@@ -450,12 +451,11 @@ def _materialize_embedded_profile_env(config: dict[str, Any], *, llm_api_key: st
     profile_env = _embedded_profile_env_path(config)
     profile_env.parent.mkdir(parents=True, exist_ok=True)
     env_values = _build_embedded_profile_env(config, llm_api_key=llm_api_key)
-    profile_env.write_text(
+    # Carries HINDSIGHT_API_LLM_API_KEY: created 0600, tightened if it existed.
+    atomic_text_write(
+        profile_env,
         "".join(f"{key}={value}\n" for key, value in env_values.items()),
-        encoding="utf-8",
     )
-    # Carries HINDSIGHT_API_LLM_API_KEY; keep it owner-only.
-    from thoth_cli.config import _secure_file
     _secure_file(profile_env)
     return profile_env
 
@@ -628,8 +628,7 @@ class HindsightMemoryProvider(MemoryProvider):
             except Exception:
                 pass
         existing.update(values)
-        config_path.write_text(json.dumps(existing, indent=2), encoding="utf-8")
-        from thoth_cli.config import _secure_file
+        atomic_text_write(config_path, json.dumps(existing, indent=2))
         _secure_file(config_path)
 
     def post_setup(self, thoth_home: str, config: dict) -> None:
@@ -805,10 +804,9 @@ class HindsightMemoryProvider(MemoryProvider):
             for k, v in env_writes.items():
                 if k not in updated_keys:
                     new_lines.append(f"{k}={v}")
-            env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-            # .env holds HINDSIGHT_API_KEY / HINDSIGHT_LLM_API_KEY; keep it
-            # owner-only like thoth_cli.config.save_env_value does.
-            from thoth_cli.config import _secure_file
+            # .env holds HINDSIGHT_API_KEY / HINDSIGHT_LLM_API_KEY: write it
+            # 0600 from creation, like thoth_cli.config.save_env_value.
+            atomic_text_write(env_path, "\n".join(new_lines) + "\n")
             _secure_file(env_path)
 
         if mode == "local_embedded":

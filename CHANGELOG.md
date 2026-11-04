@@ -30,8 +30,8 @@ version heading that matches the release tag.
 - **Hindsight and Honcho API keys are no longer readable by other local users.**
   Both memory plugins wrote their credential files (`.env`,
   `hindsight/config.json`, `~/.hindsight/profiles/*.env`, `honcho.json`) with
-  default permissions, which is usually 0644 (#427). They are now owner-only (0600),
-  the same as Thoth's own `.env`. Files written before this fix keep their old
+  default permissions, which is usually 0644 (#427). They are now created owner-only
+  (0600) from the first byte, the same as Thoth's own `.env`. Files written before this fix keep their old
   permissions until the plugin's setup runs again.
 - **Postgres-backed tests errored in CI** because `psycopg` floated to 3.3.6
   while `psycopg-binary` stayed pinned at 3.3.4, and the mismatched pair

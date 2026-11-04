@@ -24,7 +24,9 @@ from typing import Any, Dict, List, Optional
 
 from agent.memory_manager import sanitize_context
 from agent.memory_provider import MemoryProvider
+from thoth_cli.config import _secure_file
 from tools.registry import tool_error
+from utils import atomic_text_write
 
 logger = logging.getLogger(__name__)
 
@@ -254,11 +256,13 @@ class HonchoMemoryProvider(MemoryProvider):
         existing = {}
         if config_path.exists():
             try:
-                existing = json.loads(config_path.read_text())
+                existing = json.loads(config_path.read_text(encoding="utf-8"))
             except Exception:
                 pass
         existing.update(values)
-        config_path.write_text(json.dumps(existing, indent=2))
+        # Same file cli._write_config secures; it carries apiKey.
+        atomic_text_write(config_path, json.dumps(existing, indent=2))
+        _secure_file(config_path)
 
     def get_config_schema(self):
         return [
