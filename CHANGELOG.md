@@ -27,6 +27,13 @@ version heading that matches the release tag.
 
 ### Fixed
 
+- **The GitNexus explorer skill no longer exposes your files.** Its web proxy
+  served any path, including `../` traversal outside the UI build, and listened
+  on every network interface. While it ran, any host on the network, or anyone
+  with the optional Cloudflare tunnel URL, could read any file the user could,
+  including SSH keys (#421). The proxy now serves only files inside the build
+  directory, binds to `127.0.0.1` by default (`HOST` overrides), and the skill
+  copies the bundled script instead of writing its own copy.
 - **Postgres-backed tests errored in CI** because `psycopg` floated to 3.3.6
   while `psycopg-binary` stayed pinned at 3.3.4, and the mismatched pair
   rejected a keyword argument on every connection wait. `psycopg` is now
