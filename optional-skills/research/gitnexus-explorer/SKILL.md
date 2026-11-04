@@ -92,56 +92,18 @@ The index lives in `.gitnexus/` inside the repo (auto-gitignored).
 
 ### 4. Create the Proxy Script
 
-Write this to a file (e.g., `$GITNEXUS_DIR/proxy.mjs`). It serves the production
-web UI and proxies `/api/*` to the GitNexus backend — same origin, no CORS issues,
-no sudo, no nginx.
+Copy the bundled proxy next to the build. It serves the production web UI and
+proxies `/api/*` to the GitNexus backend — same origin, no CORS issues, no sudo,
+no nginx:
 
-```javascript
-import http from 'node:http';
-import fs from 'node:fs';
-import path from 'node:path';
-
-const API_PORT = parseInt(process.env.API_PORT || '4747');
-const DIST_DIR = process.argv[2] || './dist';
-const PORT = parseInt(process.argv[3] || '8888');
-
-const MIME = {
-  '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css',
-  '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.woff': 'font/woff',
-  '.wasm': 'application/wasm',
-};
-
-function proxyToApi(req, res) {
-  const opts = {
-    hostname: '127.0.0.1', port: API_PORT,
-    path: req.url, method: req.method, headers: req.headers,
-  };
-  const proxy = http.request(opts, (upstream) => {
-    res.writeHead(upstream.statusCode, upstream.headers);
-    upstream.pipe(res, { end: true });
-  });
-  proxy.on('error', () => { res.writeHead(502); res.end('Backend unavailable'); });
-  req.pipe(proxy, { end: true });
-}
-
-function serveStatic(req, res) {
-  let filePath = path.join(DIST_DIR, req.url === '/' ? 'index.html' : req.url.split('?')[0]);
-  if (!fs.existsSync(filePath)) filePath = path.join(DIST_DIR, 'index.html');
-  const ext = path.extname(filePath);
-  const mime = MIME[ext] || 'application/octet-stream';
-  try {
-    const data = fs.readFileSync(filePath);
-    res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'public, max-age=3600' });
-    res.end(data);
-  } catch { res.writeHead(404); res.end('Not found'); }
-}
-
-http.createServer((req, res) => {
-  if (req.url.startsWith('/api')) proxyToApi(req, res);
-  else serveStatic(req, res);
-}).listen(PORT, () => console.log(`GitNexus proxy on http://localhost:${PORT}`));
+```bash
+cp "${THOTH_SKILL_DIR}/scripts/proxy.mjs" "$GITNEXUS_DIR/proxy.mjs"
 ```
+
+Use the bundled script rather than writing your own: it confines static file
+requests to the dist directory (no `../` traversal) and binds to `127.0.0.1`
+by default. Set `HOST=0.0.0.0` only to share the UI on a trusted network —
+anyone who can reach the port can browse the indexed repository.
 
 ### 5. Start the Services
 
