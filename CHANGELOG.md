@@ -32,10 +32,39 @@ version heading that matches the release tag.
   file path quoted only by `JSON.stringify`. A file named `a$(cmd).mp3` passed
   to `/send-media` ran `cmd` as the bridge user (#423). ffmpeg is now called
   directly with an argument list.
+- **The GitNexus explorer skill no longer exposes your files.** Its web proxy
+  served any path, including `../` traversal outside the UI build, and listened
+  on every network interface. While it ran, any host on the network, or anyone
+  with the optional Cloudflare tunnel URL, could read any file the user could,
+  including SSH keys (#421). The proxy now serves only files inside the build
+  directory, binds to `127.0.0.1` by default (`HOST` overrides), and the skill
+  copies the bundled script instead of writing its own copy.
 - **Postgres-backed tests errored in CI** because `psycopg` floated to 3.3.6
   while `psycopg-binary` stayed pinned at 3.3.4, and the mismatched pair
   rejected a keyword argument on every connection wait. `psycopg` is now
   pinned to match.
+
+### Security
+
+- **Fixed every critical and high Dependabot alert (60 open; 3 expected to
+  remain once Dependabot rescans `develop`).** PyJWT
+  moves from 2.13.0 to 2.15.1, fixing 17 advisories that include HMAC
+  key-confusion token forgery, an empty-HMAC-key bypass, and unauthenticated
+  `RecursionError` DoS. anyio moves to 4.14.2 (TLS hostname spoofing) and
+  setuptools to 84.2.1. In the website, web dashboard, and WhatsApp bridge
+  lockfiles, transitive npm packages (tinypool RCE, websocket-driver, js-yaml,
+  nanoid, postcss, svgo, image-size, browserslist, qs, and others) are updated,
+  and the website now overrides tinypool to the patched 2.x line and
+  webpack-dev-middleware to 7.4.6 (path traversal on the docs dev server). Docusaurus
+  loads tinypool only when `future.faster.ssgWorkerThreads` is on. The three
+  alerts still open are moderate or low and have no upstream fix that our
+  dependents can take: minimatch below 11.0.1 (no 3.x or 10.x backport) and
+  deepmerge (no patched release).
+- **The website build no longer breaks when its lockfile is refreshed.**
+  `@docusaurus/theme-mermaid` was a caret range while every other Docusaurus
+  package was pinned, so any lockfile update moved it past core and Docusaurus
+  refused to build ("Invalid name=docusaurus-theme-mermaid version"). All
+  `@docusaurus/*` packages are now pinned to the same exact version (3.10.2).
 
 ### Infrastructure
 
