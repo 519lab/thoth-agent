@@ -1216,7 +1216,6 @@ class TestSystemUnitThothHome:
         # Simulate sudo: Path.home() returns /root, target user is alice
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
         monkeypatch.delenv("THOTH_HOME", raising=False)
-        monkeypatch.delenv("THOTH_HOME", raising=False)
         monkeypatch.setattr(
             gateway_cli, "_system_service_identity",
             lambda run_as_user=None: ("alice", "alice", "/home/alice"),
@@ -1282,7 +1281,6 @@ class TestThothHomeForTargetUser:
     def test_remaps_default_home(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
         monkeypatch.delenv("THOTH_HOME", raising=False)
-        monkeypatch.delenv("THOTH_HOME", raising=False)
 
         result = gateway_cli._thoth_home_for_target_user("/home/alice")
         assert result == "/home/alice/.thoth"
@@ -1303,7 +1301,6 @@ class TestThothHomeForTargetUser:
 
     def test_noop_when_same_user(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/home/alice")))
-        monkeypatch.delenv("THOTH_HOME", raising=False)
         monkeypatch.delenv("THOTH_HOME", raising=False)
 
         result = gateway_cli._thoth_home_for_target_user("/home/alice")

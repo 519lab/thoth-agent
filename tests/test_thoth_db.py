@@ -79,7 +79,6 @@ def test_pool_raises_before_init(monkeypatch):
     # DSN is in the environment (otherwise lazy init kicks in and returns a
     # real pool).
     monkeypatch.delenv("THOTH_PG_DSN", raising=False)
-    monkeypatch.delenv("THOTH_PG_DSN", raising=False)
     with pytest.raises(RuntimeError, match="thoth_db.init"):
         thoth_db.pool()
 
@@ -109,7 +108,6 @@ def test_ensure_pool_sync_returns_false_when_no_dsn(monkeypatch):
     """When no DSN is configured, ``ensure_pool_sync`` is a no-op that
     returns False — sync entry points use this to gracefully degrade.
     """
-    monkeypatch.delenv("THOTH_PG_DSN", raising=False)
     monkeypatch.delenv("THOTH_PG_DSN", raising=False)
     # Don't close an existing pool (would interfere with later tests
     # that share the module-level singleton); just verify the no-DSN
