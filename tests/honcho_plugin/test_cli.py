@@ -154,3 +154,28 @@ class TestCmdStatus:
         out = capsys.readouterr().out
         assert "FAILED (Invalid API key)" in out
         assert "Connection... OK" not in out
+
+class TestWriteConfigPermissions:
+    """honcho.json carries apiKey, so it must be written owner-only."""
+
+    def test_write_config_is_owner_only(self, tmp_path, monkeypatch):
+        import os
+        import stat
+        import sys
+
+        import pytest
+
+        if sys.platform == "win32":
+            pytest.skip("POSIX permission bits")
+        import plugins.memory.honcho.cli as honcho_cli
+
+        monkeypatch.setattr("thoth_cli.config.is_managed", lambda: False)
+        monkeypatch.setattr("thoth_cli.config._is_container", lambda: False)
+        path = tmp_path / "honcho.json"
+        old_umask = os.umask(0o022)
+        try:
+            honcho_cli._write_config({"apiKey": "hk-test"}, path)
+        finally:
+            os.umask(old_umask)
+
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600

@@ -454,6 +454,9 @@ def _materialize_embedded_profile_env(config: dict[str, Any], *, llm_api_key: st
         "".join(f"{key}={value}\n" for key, value in env_values.items()),
         encoding="utf-8",
     )
+    # Carries HINDSIGHT_API_LLM_API_KEY; keep it owner-only.
+    from thoth_cli.config import _secure_file
+    _secure_file(profile_env)
     return profile_env
 
 def _sanitize_bank_segment(value: str) -> str:
@@ -621,11 +624,13 @@ class HindsightMemoryProvider(MemoryProvider):
         existing = {}
         if config_path.exists():
             try:
-                existing = json.loads(config_path.read_text())
+                existing = json.loads(config_path.read_text(encoding="utf-8"))
             except Exception:
                 pass
         existing.update(values)
-        config_path.write_text(json.dumps(existing, indent=2))
+        config_path.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+        from thoth_cli.config import _secure_file
+        _secure_file(config_path)
 
     def post_setup(self, thoth_home: str, config: dict) -> None:
         """Custom setup wizard — installs only the deps needed for the selected mode."""
@@ -757,7 +762,7 @@ class HindsightMemoryProvider(MemoryProvider):
                 env_path = Path(thoth_home) / ".env"
                 existing_llm_key = ""
                 if env_path.exists():
-                    for line in env_path.read_text().splitlines():
+                    for line in env_path.read_text(encoding="utf-8").splitlines():
                         if line.startswith("HINDSIGHT_LLM_API_KEY="):
                             existing_llm_key = line.split("=", 1)[1]
                             break
@@ -787,7 +792,7 @@ class HindsightMemoryProvider(MemoryProvider):
             env_path.parent.mkdir(parents=True, exist_ok=True)
             existing_lines = []
             if env_path.exists():
-                existing_lines = env_path.read_text().splitlines()
+                existing_lines = env_path.read_text(encoding="utf-8").splitlines()
             updated_keys = set()
             new_lines = []
             for line in existing_lines:
@@ -800,7 +805,11 @@ class HindsightMemoryProvider(MemoryProvider):
             for k, v in env_writes.items():
                 if k not in updated_keys:
                     new_lines.append(f"{k}={v}")
-            env_path.write_text("\n".join(new_lines) + "\n")
+            env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+            # .env holds HINDSIGHT_API_KEY / HINDSIGHT_LLM_API_KEY; keep it
+            # owner-only like thoth_cli.config.save_env_value does.
+            from thoth_cli.config import _secure_file
+            _secure_file(env_path)
 
         if mode == "local_embedded":
             materialized_config = dict(provider_config)

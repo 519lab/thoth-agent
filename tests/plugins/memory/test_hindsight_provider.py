@@ -6,7 +6,9 @@ turn counting, tags), and schema completeness.
 """
 
 import json
+import os
 import re
+import stat
 import sys
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -301,6 +303,38 @@ class TestConfig:
 
 
 class TestPostSetup:
+    @pytest.mark.skipif(sys.platform == "win32", reason="POSIX permission bits")
+    def test_setup_writes_credential_files_owner_only(self, tmp_path, monkeypatch):
+        """.env, hindsight/config.json and the embedded profile env carry API
+        keys, so they must be created 0600 regardless of the umask."""
+        thoth_home = tmp_path / "thoth-home"
+        user_home = tmp_path / "user-home"
+        user_home.mkdir()
+        monkeypatch.setenv("HOME", str(user_home))
+        monkeypatch.setattr("thoth_cli.config.is_managed", lambda: False)
+        monkeypatch.setattr("thoth_cli.config._is_container", lambda: False)
+        old_umask = os.umask(0o022)
+        try:
+            selections = iter([1, 0])  # local_embedded, openai
+            monkeypatch.setattr("thoth_cli.memory_setup._curses_select", lambda *args, **kwargs: next(selections))
+            monkeypatch.setattr("shutil.which", lambda name: None)
+            monkeypatch.setattr("builtins.input", lambda prompt="": "")
+            monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+            monkeypatch.setattr("getpass.getpass", lambda prompt="": "sk-local-test")
+            monkeypatch.setattr("thoth_cli.config.save_config", lambda cfg: None)
+
+            HindsightMemoryProvider().post_setup(str(thoth_home), {"memory": {}})
+        finally:
+            os.umask(old_umask)
+
+        for path in (
+            thoth_home / ".env",
+            thoth_home / "hindsight" / "config.json",
+            user_home / ".hindsight" / "profiles" / "thoth.env",
+        ):
+            assert path.exists(), path
+            assert stat.S_IMODE(path.stat().st_mode) == 0o600, path
+
     def test_local_embedded_setup_materializes_profile_env(self, tmp_path, monkeypatch):
         thoth_home = tmp_path / "thoth-home"
         user_home = tmp_path / "user-home"

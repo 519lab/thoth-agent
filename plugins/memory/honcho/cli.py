@@ -271,6 +271,9 @@ def _write_config(cfg: dict, path: Path | None = None) -> None:
         json.dumps(cfg, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
+    # honcho.json holds apiKey; keep it owner-only like the .env store.
+    from thoth_cli.config import _secure_file
+    _secure_file(path)
 
 
 def _resolve_api_key(cfg: dict) -> str:
