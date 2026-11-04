@@ -27,6 +27,10 @@ version heading that matches the release tag.
 
 ### Fixed
 
+- **The ComfyUI skill no longer writes your Comfy Cloud API key into transcripts.**
+  Its websocket monitor logged the full connection URL, including
+  `&token=<key>`, and skill output is saved to session history (#425). The log
+  line now shows `token=<redacted>`.
 - **Postgres-backed tests errored in CI** because `psycopg` floated to 3.3.6
   while `psycopg-binary` stayed pinned at 3.3.4, and the mismatched pair
   rejected a keyword argument on every connection wait. `psycopg` is now
