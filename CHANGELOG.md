@@ -37,8 +37,11 @@ version heading that matches the release tag.
 - **Automated Claude PR reviews now post their findings.** The review workflow
   ran and found issues but never posted them. The action only starts its
   inline-comment server when the tool allow-list names it, and ours did not,
-  so every review finished green and said nothing (#419). The workflow now
-  allows the inline-comment tool and read-only `gh pr` commands.
+  so every review finished green and said nothing (#419). Once that was
+  fixed, the review still couldn't tell which PR it was on, so it printed its
+  findings to the job log instead of posting them (#431). The workflow now
+  allows the inline-comment tool and read-only `gh pr` commands, and passes
+  the PR number to the review.
 - **Website, docs, and markdown-only pull requests can be merged again.** The
   lint and test workflows skipped such PRs with a path filter, so the required
   `ruff enforcement (blocking)`, `Windows footguns (blocking)`, and `test`

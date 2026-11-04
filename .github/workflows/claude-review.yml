@@ -66,7 +66,12 @@ jobs:
           # comments itself, so we no longer need the track_progress /
           # use_sticky_comment workaround (anthropics/claude-code-action#1108)
           # that previously left reviews silent.
-          prompt: /code-review --comment
+          #
+          # Pass the PR number as the review target. The checkout is a
+          # detached HEAD, so without it the skill tries to discover the PR
+          # with `gh pr list`, which isn't allow-listed. It then can't resolve
+          # a target and prints its findings to the log instead of posting.
+          prompt: /code-review --comment ${{ github.event.pull_request.number }}
           # TEMP debug aid while validating the OAuth/comment path — drop
           # once reviews are confirmed posting.
           show_full_output: true
