@@ -27,6 +27,11 @@ version heading that matches the release tag.
 
 ### Fixed
 
+- **The one-time cleanup of empty TUI sessions now deletes their files too.**
+  It removed the database rows but passed every session id to the file
+  cleaner as one string, so no transcript or request-dump file was ever
+  matched and they were left in `sessions/` (#433). Files already left behind
+  by earlier runs are not removed retroactively.
 - **Postgres-backed tests errored in CI** because `psycopg` floated to 3.3.6
   while `psycopg-binary` stayed pinned at 3.3.4, and the mismatched pair
   rejected a keyword argument on every connection wait. `psycopg` is now

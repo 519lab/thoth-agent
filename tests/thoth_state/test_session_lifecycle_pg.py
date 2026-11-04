@@ -127,6 +127,34 @@ async def test_prune_empty_ghost_removes_old_unnamed_ended_tui_session(db):
 
 
 @pytest.mark.asyncio
+async def test_prune_empty_ghost_removes_transcript_files(db, tmp_path):
+    """Pruned ghosts' on-disk files go too, one session id at a time.
+
+    Regression: the whole id list was passed as a single session_id, so the
+    paths became "['a', 'b'].json" and nothing was ever deleted.
+    """
+    import thoth_db
+    sessions_dir = tmp_path / "sessions"
+    sessions_dir.mkdir()
+    for sid in ("ghost_a", "ghost_b"):
+        await db.create_session(session_id=sid, source="tui", model="m", model_config={}, system_prompt="")
+        await db.end_session(sid, "x")
+        for name in (f"{sid}.json", f"{sid}.jsonl", f"request_dump_{sid}_1.json"):
+            (sessions_dir / name).write_text("{}", encoding="utf-8")
+    async with thoth_db.connection() as c:
+        await c.execute(
+            "UPDATE sessions SET started_at = now() - interval '25 hours' "
+            "WHERE id IN ('ghost_a', 'ghost_b')"
+        )
+    (sessions_dir / "keep_me.json").write_text("{}", encoding="utf-8")
+
+    n = await db.prune_empty_ghost_sessions(sessions_dir=sessions_dir)
+
+    assert n == 2
+    assert sorted(p.name for p in sessions_dir.iterdir()) == ["keep_me.json"]
+
+
+@pytest.mark.asyncio
 async def test_prune_empty_ghost_keeps_cli_sessions(db):
     """source != 'tui' should never be pruned even if otherwise empty/old/ended."""
     await db.create_session(session_id="cli_old", source="cli", model="m", model_config={}, system_prompt="")
