@@ -34,6 +34,11 @@ version heading that matches the release tag.
 
 ### Infrastructure
 
+- **Automated Claude PR reviews now post their findings.** The review workflow
+  ran and found issues but never posted them. The action only starts its
+  inline-comment server when the tool allow-list names it, and ours did not,
+  so every review finished green and said nothing (#419). The workflow now
+  allows the inline-comment tool and read-only `gh pr` commands.
 - **Website, docs, and markdown-only pull requests can be merged again.** The
   lint and test workflows skipped such PRs with a path filter, so the required
   `ruff enforcement (blocking)`, `Windows footguns (blocking)`, and `test`
