@@ -60,16 +60,24 @@ def _wait_for_pgid_exit(pgid: int, timeout: float = 30.0) -> bool:
 
 
 def _wait_for_poll_loop(thread_ident: int, timeout: float = 15.0) -> bool:
-    """Wait until a thread's innermost Python frame is ``_wait_for_process``.
+    """Wait until a thread is inside ``_wait_for_process``'s guarded poll loop.
 
-    The poll loop blocks in C (``time.sleep``/``proc.poll``), so the
-    innermost Python frame is ``_wait_for_process`` itself only once
-    ``drain_thread.start()`` has returned.
+    Its own frame is the innermost one for the whole function, including
+    the setup before ``drain_thread.start()`` and before the ``try`` whose
+    ``except (KeyboardInterrupt, SystemExit)`` kills the process group.  An
+    interrupt in that setup span skips the cleanup, so the frame name alone
+    is not enough.  ``_poll_sleep`` is the first local bound *inside* the
+    ``try``, so its presence proves the drain thread is started and the
+    cleanup handler is armed.
     """
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         frame = sys._current_frames().get(thread_ident)
-        if frame is not None and frame.f_code.co_name == "_wait_for_process":
+        if (
+            frame is not None
+            and frame.f_code.co_name == "_wait_for_process"
+            and "_poll_sleep" in frame.f_locals
+        ):
             return True
         time.sleep(0.01)
     return False
@@ -176,7 +184,7 @@ def test_wait_for_process_kills_subprocess_on_keyboardinterrupt():
         # the half-started drain thread instead.  The drain thread then dies
         # before signalling it started and the worker blocks in
         # Thread.start() forever.  Inject only once the worker is parked in
-        # the poll loop (its innermost Python frame is _wait_for_process).
+        # the guarded poll loop (see _wait_for_poll_loop).
         assert _wait_for_poll_loop(t.ident), (
             "test setup: worker never reached the _wait_for_process poll loop"
         )
