@@ -42,7 +42,8 @@ version heading that matches the release tag.
   setuptools to 84.2.1. In the website, web dashboard, and WhatsApp bridge
   lockfiles, transitive npm packages (tinypool RCE, websocket-driver, js-yaml,
   nanoid, postcss, svgo, image-size, browserslist, qs, and others) are updated,
-  and the website now overrides tinypool to the patched 2.x line. Docusaurus
+  and the website now overrides tinypool to the patched 2.x line and
+  webpack-dev-middleware to 7.4.6 (path traversal on the docs dev server). Docusaurus
   loads tinypool only when `future.faster.ssgWorkerThreads` is on. The three
   alerts still open are moderate or low and have no upstream fix that our
   dependents can take: minimatch below 11.0.1 (no 3.x or 10.x backport) and
