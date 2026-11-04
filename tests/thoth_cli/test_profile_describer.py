@@ -166,3 +166,14 @@ def test_describer_returns_false_when_profile_missing(profile_env, monkeypatch):
     outcome = describer.describe_profile("ghost")
     assert outcome.ok is False
     assert "not found" in outcome.reason
+
+
+@pytest.mark.parametrize("name", ["..", "."])
+def test_describe_profile_rejects_traversal_names(profile_env, name):
+    """'..' and '.' must not resolve to THOTH_HOME or its profiles dir."""
+    (profile_env / "profiles").mkdir()
+    outcome = describer.describe_profile(name)
+    assert outcome.ok is False
+    assert "not found" in outcome.reason
+    assert not (profile_env / "profile.yaml").exists()
+    assert not (profile_env / "profiles" / "profile.yaml").exists()

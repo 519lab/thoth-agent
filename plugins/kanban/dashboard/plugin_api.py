@@ -1920,7 +1920,10 @@ def update_profile_description(profile_name: str, payload: DescribeBody):
             from pathlib import Path as _Path
             profile_dir = _Path(get_thoth_home())
         else:
-            profile_dir = profiles_mod.get_profile_dir(canon)
+            try:
+                profile_dir = profiles_mod.get_profile_dir(canon)
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc))
         if not profile_dir.is_dir():
             raise HTTPException(status_code=404, detail=f"profile '{profile_name}' not found")
         text = (payload.description or "").strip()

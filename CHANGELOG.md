@@ -27,6 +27,12 @@ version heading that matches the release tag.
 
 ### Fixed
 
+- **Profile names like `..` are rejected everywhere.** Two dashboard paths
+  (the kanban profile-description endpoint and the profile auto-describer)
+  normalised profile names but never validated them. `..` or `.` then
+  resolved to `~/.thoth` itself, and a `profile.yaml` could be written there (#429).
+  `get_profile_dir()` now rejects any name that isn't a valid profile id, and
+  the endpoint returns 400.
 - **Postgres-backed tests errored in CI** because `psycopg` floated to 3.3.6
   while `psycopg-binary` stayed pinned at 3.3.4, and the mismatched pair
   rejected a keyword argument on every connection wait. `psycopg` is now
