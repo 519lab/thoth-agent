@@ -1065,6 +1065,15 @@ _PROVIDER_ALIASES = {
     "ollama_cloud": "ollama-cloud",
 }
 
+# Plugin profiles are the source of truth for new aliases. Existing keys
+# above stay authoritative; this only fills aliases that map does not name.
+try:
+    from providers import apply_profile_aliases as _apply_profile_aliases
+
+    _apply_profile_aliases(_PROVIDER_ALIASES)
+except Exception:
+    pass
+
 
 def get_default_model_for_provider(provider: str) -> str:
     """Return the default model for a provider, or empty string if unknown.
