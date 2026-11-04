@@ -27,6 +27,11 @@ version heading that matches the release tag.
 
 ### Fixed
 
+- **The WhatsApp bridge can no longer be made to run shell commands.** When it
+  converted voice replies to ogg, it ran ffmpeg through the shell with the
+  file path quoted only by `JSON.stringify`. A file named `a$(cmd).mp3` passed
+  to `/send-media` ran `cmd` as the bridge user (#423). ffmpeg is now called
+  directly with an argument list.
 - **Postgres-backed tests errored in CI** because `psycopg` floated to 3.3.6
   while `psycopg-binary` stayed pinned at 3.3.4, and the mismatched pair
   rejected a keyword argument on every connection wait. `psycopg` is now
