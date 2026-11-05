@@ -301,19 +301,38 @@ def validate_profile_name(name: str) -> None:
 
 
 def get_profile_dir(name: str) -> Path:
-    """Resolve a profile name to its THOTH_HOME directory."""
+    """Resolve a profile name to its THOTH_HOME directory.
+
+    Raises ``ValueError`` if the name is not a safe single path segment.
+    Every caller turns the result into filesystem paths, so names like
+    ``..`` must never reach ``_get_profiles_root() / canon``. Reserved-name
+    policy stays in :func:`validate_profile_name`; this only enforces the
+    on-disk id shape.
+    """
     canon = normalize_profile_name(name)
     if canon == "default":
         return _get_default_thoth_home()
+    if not _PROFILE_ID_RE.match(canon):
+        raise ValueError(
+            f"Invalid profile name {name!r}. Must match "
+            f"[a-z0-9][a-z0-9_-]{{0,63}}"
+        )
     return _get_profiles_root() / canon
 
 
 def profile_exists(name: str) -> bool:
-    """Check whether a profile directory exists."""
+    """Check whether a profile directory exists.
+
+    A name that isn't a valid profile id cannot exist, so it returns False
+    rather than raising.
+    """
     canon = normalize_profile_name(name)
     if canon == "default":
         return True
-    return get_profile_dir(canon).is_dir()
+    try:
+        return get_profile_dir(canon).is_dir()
+    except ValueError:
+        return False
 
 
 # ---------------------------------------------------------------------------
