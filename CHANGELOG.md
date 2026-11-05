@@ -41,6 +41,11 @@ version heading that matches the release tag.
 
 ### Security
 
+- **The WhatsApp bridge can no longer be made to run shell commands.** When it
+  converted voice replies to ogg, it ran ffmpeg through the shell with the
+  file path quoted only by `JSON.stringify`. A file named `a$(cmd).mp3` passed
+  to `/send-media` ran `cmd` as the bridge user (#423). ffmpeg is now called
+  directly with an argument list.
 - **Fixed every critical and high Dependabot alert (60 open; 3 expected to
   remain once Dependabot rescans `develop`).** PyJWT
   moves from 2.13.0 to 2.15.1, fixing 17 advisories that include HMAC
