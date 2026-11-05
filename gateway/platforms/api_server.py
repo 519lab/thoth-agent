@@ -58,6 +58,16 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8642
 MAX_STORED_RESPONSES = 100
 MAX_REQUEST_BYTES = 10_000_000  # 10 MB — accommodates long agent conversations with tool calls
+
+# Caller-supplied session ids end up in transcript filenames
+# (sessions/<id>.json, session_<id>.json) and in later deletes, so they must
+# be a single safe path segment: no separators, no "..", no control chars.
+# Covers generated ids (20250101_120000_ab12cd34) and client ids (uuids).
+_SAFE_SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+
+
+def _is_safe_session_id(session_id: str) -> bool:
+    return bool(_SAFE_SESSION_ID_RE.match(session_id)) and ".." not in session_id
 CHAT_COMPLETIONS_SSE_KEEPALIVE_SECONDS = 30.0
 MAX_NORMALIZED_TEXT_LENGTH = 65_536  # 64 KB cap for normalized content parts
 MAX_CONTENT_LIST_SIZE = 1_000  # Max items when content is an array
@@ -1209,8 +1219,10 @@ class APIServerAdapter(BasePlatformAdapter):
                     ),
                     status=403,
                 )
-            # Sanitize: reject control characters that could enable header injection.
-            if re.search(r'[\r\n\x00]', provided_session_id):
+            # Sanitize: the id becomes a filename component, so reject anything
+            # but a single safe path segment (this also excludes the control
+            # characters that could enable header injection).
+            if not _is_safe_session_id(provided_session_id):
                 return web.json_response(
                     {"error": {"message": "Invalid session ID", "type": "invalid_request_error"}},
                     status=400,
