@@ -154,3 +154,56 @@ class TestCmdStatus:
         out = capsys.readouterr().out
         assert "FAILED (Invalid API key)" in out
         assert "Connection... OK" not in out
+
+class TestWriteConfigPermissions:
+    """honcho.json carries apiKey, so it must be written owner-only."""
+
+    def test_write_config_is_owner_only(self, tmp_path, monkeypatch):
+        import os
+        import stat
+        import sys
+
+        import pytest
+
+        if sys.platform == "win32":
+            pytest.skip("POSIX permission bits")
+        import plugins.memory.honcho.cli as honcho_cli
+
+        monkeypatch.setattr("thoth_cli.config.is_managed", lambda: False)
+        monkeypatch.setattr("thoth_cli.config._is_container", lambda: False)
+        path = tmp_path / "honcho.json"
+        old_umask = os.umask(0o022)
+        try:
+            honcho_cli._write_config({"apiKey": "hk-test"}, path)
+        finally:
+            os.umask(old_umask)
+
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
+
+    def test_provider_save_config_keeps_api_key_owner_only(self, tmp_path, monkeypatch):
+        """HonchoMemoryProvider.save_config rewrites the same honcho.json
+        (the generic memory wizard calls it), so it must not re-expose apiKey."""
+        import json
+        import os
+        import stat
+        import sys
+
+        import pytest
+
+        if sys.platform == "win32":
+            pytest.skip("POSIX permission bits")
+        from plugins.memory.honcho import HonchoMemoryProvider
+
+        monkeypatch.setattr("thoth_cli.config.is_managed", lambda: False)
+        monkeypatch.setattr("thoth_cli.config._is_container", lambda: False)
+        path = tmp_path / "honcho.json"
+        path.write_text(json.dumps({"apiKey": "hk-test"}), encoding="utf-8")
+        os.chmod(path, 0o644)  # as written before the fix
+        old_umask = os.umask(0o022)
+        try:
+            HonchoMemoryProvider().save_config({"workspace": "w"}, str(tmp_path))
+        finally:
+            os.umask(old_umask)
+
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
+        assert json.loads(path.read_text(encoding="utf-8")) == {"apiKey": "hk-test", "workspace": "w"}

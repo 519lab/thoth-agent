@@ -65,6 +65,12 @@ version heading that matches the release tag.
   package was pinned, so any lockfile update moved it past core and Docusaurus
   refused to build ("Invalid name=docusaurus-theme-mermaid version"). All
   `@docusaurus/*` packages are now pinned to the same exact version (3.10.2).
+- **Hindsight and Honcho API keys are no longer readable by other local users.**
+  Both memory plugins wrote their credential files (`.env`,
+  `hindsight/config.json`, `~/.hindsight/profiles/*.env`, `honcho.json`) with
+  default permissions, which is usually 0644 (#427). They are now created owner-only
+  (0600) from the first byte, the same as Thoth's own `.env`. Files written before this fix keep their old
+  permissions until the plugin's setup runs again.
 
 ### Infrastructure
 
