@@ -3,8 +3,7 @@
 A Substrate fork installed side-by-side under a different launcher name
 (e.g. ``thoth-substrate``) must echo that name back in resume/setup hints,
 not the hardcoded default ``thoth`` (which may point at another install).
-``THOTH_CLI_NAME`` is the canonical env var; ``THOTH_CLI_NAME`` is honored
-as a legacy fallback for back-compat.
+``THOTH_CLI_NAME`` (exported by the launcher shim) carries that name.
 """
 
 import sys
@@ -20,23 +19,6 @@ class TestCliName:
         console script (named "thoth"), so argv[0] can't be trusted to carry
         the name the user actually typed."""
         monkeypatch.setattr(sys, "argv", ["/opt/venv/bin/thoth", "--resume", "x"])
-        monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
-        monkeypatch.setenv("THOTH_CLI_NAME", "thoth-substrate")
-        assert cli_name() == "thoth-substrate"
-
-    def test_thoth_env_var_fallback(self, monkeypatch):
-        """Legacy THOTH_CLI_NAME is still honored as a fallback (back-compat)
-        when THOTH_CLI_NAME is unset — older shims export only THOTH_CLI_NAME."""
-        monkeypatch.setattr(sys, "argv", ["/opt/venv/bin/thoth", "--resume", "x"])
-        monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
-        monkeypatch.setenv("THOTH_CLI_NAME", "thoth-substrate")
-        assert cli_name() == "thoth-substrate"
-
-    def test_thoth_env_wins_when_both_set(self, monkeypatch):
-        """When both are exported (current shim), the canonical THOTH_CLI_NAME
-        takes precedence over the legacy THOTH_CLI_NAME."""
-        monkeypatch.setattr(sys, "argv", ["/opt/venv/bin/thoth", "--resume", "x"])
-        monkeypatch.setenv("THOTH_CLI_NAME", "thoth-legacy")
         monkeypatch.setenv("THOTH_CLI_NAME", "thoth-substrate")
         assert cli_name() == "thoth-substrate"
 
@@ -45,12 +27,10 @@ class TestCliName:
         back to argv[0]."""
         monkeypatch.setattr(sys, "argv", ["/usr/local/bin/thoth-substrate", "--resume", "x"])
         monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
-        monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
         assert cli_name() == "thoth-substrate"
 
     def test_plain_thoth(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["/home/u/.local/bin/thoth"])
-        monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
         monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
         assert cli_name() == "thoth"
 
@@ -58,7 +38,6 @@ class TestCliName:
         # Bare basename keeps the test platform-independent (os.path.basename
         # only splits on backslash under ntpath, not posixpath).
         monkeypatch.setattr(sys, "argv", ["thoth-substrate.exe"])
-        monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
         monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
         assert cli_name() == "thoth-substrate"
 
@@ -76,13 +55,11 @@ class TestCliName:
         """Module/interpreter launches don't reflect a command name, so the
         launcher-provided env var is consulted."""
         monkeypatch.setattr(sys, "argv", [argv0])
-        monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
         monkeypatch.setenv("THOTH_CLI_NAME", "thoth-substrate")
         assert cli_name() == "thoth-substrate"
 
     def test_default_when_nothing_resolvable(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["__main__.py"])
-        monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
         monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
         # sys.executable is a python interpreter → also skipped → default.
         monkeypatch.setattr(sys, "executable", "/usr/bin/python3.11")
@@ -91,13 +68,11 @@ class TestCliName:
     def test_env_basename_only(self, monkeypatch):
         """A path in THOTH_CLI_NAME is reduced to its basename."""
         monkeypatch.setattr(sys, "argv", ["python"])
-        monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
         monkeypatch.setenv("THOTH_CLI_NAME", "/opt/bin/thoth-substrate")
         assert cli_name() == "thoth-substrate"
 
     def test_blank_env_falls_through_to_argv0(self, monkeypatch):
         """An empty/whitespace env var is ignored in favor of argv[0]."""
         monkeypatch.setattr(sys, "argv", ["/usr/local/bin/thoth-fork"])
-        monkeypatch.delenv("THOTH_CLI_NAME", raising=False)
         monkeypatch.setenv("THOTH_CLI_NAME", "   ")
         assert cli_name() == "thoth-fork"

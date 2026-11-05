@@ -26,7 +26,6 @@ def fresh_constants(monkeypatch, tmp_path):
     importlib.reload(thoth_constants)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     monkeypatch.delenv("THOTH_HOME", raising=False)
-    monkeypatch.delenv("THOTH_HOME", raising=False)
     return thoth_constants
 
 

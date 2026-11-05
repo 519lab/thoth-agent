@@ -27,7 +27,6 @@ class TestGetThothHome:
     def test_default_path(self):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("THOTH_HOME", None)
-            os.environ.pop("THOTH_HOME", None)
             home = get_thoth_home()
             assert home == Path.home() / ".thoth"
 

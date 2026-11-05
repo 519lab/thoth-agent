@@ -64,7 +64,7 @@ def _sanitize(base: str) -> str | None:
 
 def cli_name() -> str:
     """Best-effort name the user invoked this CLI with (e.g. ``thoth``)."""
-    env_name = os.environ.get("THOTH_CLI_NAME", "").strip() or os.environ.get("THOTH_CLI_NAME", "").strip()
+    env_name = os.environ.get("THOTH_CLI_NAME", "").strip()
     if env_name:
         sanitized = _sanitize(os.path.basename(env_name))
         if sanitized:

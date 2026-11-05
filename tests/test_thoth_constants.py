@@ -22,7 +22,6 @@ class TestGetDefaultThothRoot:
     def test_no_thoth_home_returns_native(self, tmp_path, monkeypatch):
         """When no home env vars are set, returns ~/.thoth (new-install default)."""
         monkeypatch.delenv("THOTH_HOME", raising=False)
-        monkeypatch.delenv("THOTH_HOME", raising=False)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         assert get_default_thoth_root() == tmp_path / ".thoth"
