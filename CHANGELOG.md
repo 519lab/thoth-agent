@@ -77,6 +77,10 @@ version heading that matches the release tag.
   alerts still open are moderate or low and have no upstream fix that our
   dependents can take: minimatch below 11.0.1 (no 3.x or 10.x backport) and
   deepmerge (no patched release).
+- **The ComfyUI skill no longer writes your Comfy Cloud API key into transcripts.**
+  Its websocket monitor logged the full connection URL, including
+  `&token=<key>`, and skill output is saved to session history (#425). The log
+  line now shows `token=<redacted>`.
 - **The website build no longer breaks when its lockfile is refreshed.**
   `@docusaurus/theme-mermaid` was a caret range while every other Docusaurus
   package was pinned, so any lockfile update moved it past core and Docusaurus
