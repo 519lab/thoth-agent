@@ -1987,3 +1987,47 @@ class TestConvertToolsToAnthropicDedup:
 
     def test_none_tools_returns_empty(self):
         assert convert_tools_to_anthropic(None) == []
+
+
+class TestEndpointHostMatching:
+    """Endpoint classification is decided on the parsed hostname.
+
+    Substring checks treated lookalike hosts such as
+    ``api.anthropic.com.evil.net`` as the real provider.
+    """
+
+    @pytest.mark.parametrize(
+        "url",
+        ["https://api.anthropic.com", "https://api.anthropic.com/v1", "https://anthropic.com"],
+    )
+    def test_direct_anthropic_hosts_are_first_party(self, url):
+        from agent.anthropic_adapter import _is_third_party_anthropic_endpoint
+
+        assert _is_third_party_anthropic_endpoint(url) is False
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "https://api.anthropic.com.evil.net/v1",
+            "https://proxy.example/api.anthropic.com/v1",
+            "https://my-anthropic.com.example",
+        ],
+    )
+    def test_anthropic_lookalikes_are_third_party(self, url):
+        from agent.anthropic_adapter import _is_third_party_anthropic_endpoint
+
+        assert _is_third_party_anthropic_endpoint(url) is True
+
+    def test_azure_host_requires_bearer_and_1m_beta(self):
+        from agent.anthropic_adapter import _base_url_needs_context_1m_beta, _requires_bearer_auth
+
+        url = "https://my-resource.services.ai.azure.com/anthropic"
+        assert _requires_bearer_auth(url) is True
+        assert _base_url_needs_context_1m_beta(url) is True
+
+    def test_azure_lookalike_host_is_not_azure(self):
+        from agent.anthropic_adapter import _base_url_needs_context_1m_beta, _requires_bearer_auth
+
+        url = "https://my-resource.azure.com.evil.net/anthropic"
+        assert _requires_bearer_auth(url) is False
+        assert _base_url_needs_context_1m_beta(url) is False

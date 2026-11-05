@@ -500,7 +500,7 @@ def _to_openai_base_url(base_url: str) -> str:
         rewritten = url[: -len("/anthropic")] + "/v1"
         logger.debug("Auxiliary client: rewrote base URL %s → %s", url, rewritten)
         return rewritten
-    if "api.kimi.com" in url and url.endswith("/coding"):
+    if base_url_host_matches(url, "api.kimi.com") and url.endswith("/coding"):
         # Kimi Code uses /coding/v1/messages for Anthropic SDK (appends /v1/messages)
         # but /coding/v1/chat/completions for OpenAI SDK (appends /chat/completions)
         # Without /v1 here, OpenAI SDK hits /coding/chat/completions — a 404.

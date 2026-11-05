@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
 from thoth_cli import __version__ as _THOTH_VERSION
+from utils import base_url_hostname
 
 # Identify ourselves so endpoints fronted by Cloudflare's Browser Integrity
 # Check (error 1010) don't reject the default ``Python-urllib/*`` signature.
@@ -2522,10 +2523,11 @@ def get_copilot_model_context(model_id: str, api_key: Optional[str] = None) -> O
 
 def _is_github_models_base_url(base_url: Optional[str]) -> bool:
     normalized = (base_url or "").strip().rstrip("/").lower()
+    hostname = base_url_hostname(normalized)
     return (
-        normalized.startswith(COPILOT_BASE_URL)
+        hostname == base_url_hostname(COPILOT_BASE_URL)
         or normalized.startswith("https://models.github.ai/inference")
-        or normalized.startswith("https://models.inference.ai.azure.com")
+        or hostname == "models.inference.ai.azure.com"
     )
 
 

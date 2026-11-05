@@ -18,6 +18,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+from urllib.parse import urlparse
 
 try:
     import yaml
@@ -301,6 +302,22 @@ def resolve_selected_options(
         selected.clear()
     selected -= (set(exclude_values) - {"all"})
     return selected
+
+
+def _url_host_matches(url: str, domain: str) -> bool:
+    """Return True when ``url``'s hostname is ``domain`` or a subdomain of it.
+
+    Hostname-based, so lookalikes such as ``https://openai.com.example`` or
+    ``https://proxy.example/openai.com`` do not match. Standalone copy of the
+    agent's ``utils.base_url_host_matches`` (this script runs outside the
+    agent's environment and imports only the standard library and PyYAML).
+    """
+    raw = (url or "").strip()
+    if not raw:
+        return False
+    hostname = (urlparse(raw if "://" in raw else f"//{raw}").hostname or "").lower().rstrip(".")
+    domain = domain.strip().lower().rstrip(".")
+    return bool(hostname and domain) and (hostname == domain or hostname.endswith("." + domain))
 
 
 def sha256_file(path: Path) -> str:
@@ -1545,7 +1562,7 @@ class Migrator:
                 if isinstance(base_url, str):
                     if "openrouter" in base_url.lower():
                         env_var = "OPENROUTER_API_KEY"
-                    elif "openai.com" in base_url.lower():
+                    elif _url_host_matches(base_url, "openai.com"):
                         env_var = "OPENAI_API_KEY"
                     elif "anthropic" in base_url.lower():
                         env_var = "ANTHROPIC_API_KEY"

@@ -40,3 +40,12 @@ class TestToOpenaiBaseUrl:
 
     def test_none(self):
         assert _to_openai_base_url(None) == ""
+
+
+class TestKimiCodingRewriteHostMatch:
+    def test_kimi_coding_gets_v1_suffix(self):
+        assert _to_openai_base_url("https://api.kimi.com/coding") == "https://api.kimi.com/coding/v1"
+
+    def test_kimi_lookalike_host_is_not_rewritten(self):
+        url = "https://api.kimi.com.evil.net/coding"
+        assert _to_openai_base_url(url) == url

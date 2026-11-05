@@ -41,3 +41,33 @@ class TestAnthropicHostHardening:
         # proxies) expose the Anthropic protocol under a ``/anthropic`` suffix.
         # That convention must still resolve to anthropic_messages.
         assert determine_api_mode("", "https://api.minimax.io/anthropic") == "anthropic_messages"
+
+
+class TestKnownProviderUrlHeuristics:
+    """The known-provider branch applies the same hostname rules.
+
+    ``determine_api_mode`` re-checks the URL even when ``provider`` resolves to
+    a registered definition (e.g. a kimi ``/coding`` endpoint configured under
+    another provider). Those checks must look at the parsed host, not a raw
+    substring.
+    """
+
+    PROVIDER = "kimi-coding"
+
+    def test_native_openai_host_is_codex_responses(self):
+        assert determine_api_mode(self.PROVIDER, "https://api.openai.com/v1") == "codex_responses"
+
+    def test_openai_lookalike_host_is_not_codex(self):
+        assert determine_api_mode(self.PROVIDER, "https://api.openai.com.evil.net/v1") != "codex_responses"
+
+    def test_native_anthropic_host_is_anthropic_messages(self):
+        assert determine_api_mode(self.PROVIDER, "https://api.anthropic.com") == "anthropic_messages"
+
+    def test_anthropic_lookalike_host_is_not_anthropic_messages(self):
+        assert determine_api_mode("openrouter", "https://api.anthropic.com.evil.net/v1") != "anthropic_messages"
+
+    def test_kimi_coding_endpoint_is_anthropic_messages(self):
+        assert determine_api_mode("openrouter", "https://api.kimi.com/coding/v1") == "anthropic_messages"
+
+    def test_kimi_coding_lookalike_host_is_not_anthropic_messages(self):
+        assert determine_api_mode("openrouter", "https://api.kimi.com.evil.net/coding/v1") != "anthropic_messages"
