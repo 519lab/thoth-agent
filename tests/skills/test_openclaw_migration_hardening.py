@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -363,6 +364,41 @@ def test_json_mode_redacts_secrets_in_output(tmp_path):
     assert result.returncode == 0, result.stderr
     # The raw key value must never appear in the JSON output.
     assert "sk-or-v1-abcdef1234567890abcdef" not in result.stdout
+
+
+def test_env_json_dump_redacts_secrets_in_output(tmp_path):
+    """The MIGRATION_JSON_OUTPUT dump after the human-readable recap must be
+    redacted like --json — allowlist patterns can embed bearer tokens."""
+    source = tmp_path / "openclaw"
+    source.mkdir()
+    (source / "openclaw.json").write_text("{}", encoding="utf-8")
+    planted = "curl -H 'Authorization: Bearer sk-live-PLANTEDsecret123456'"
+    (source / "exec-approvals.json").write_text(
+        json.dumps({"agents": {"main": {"allowlist": [{"pattern": planted}]}}}),
+        encoding="utf-8",
+    )
+    target = tmp_path / "thoth"
+    target.mkdir()
+    (target / "config.yaml").write_text("model: x\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--source", str(source),
+            "--target", str(target),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        env={**os.environ, "MIGRATION_JSON_OUTPUT": "1"},
+    )
+    assert result.returncode == 0, result.stderr
+    # The pattern did reach the dumped report (proves the path is exercised)...
+    assert "added_patterns" in result.stdout
+    # ...but the embedded token is redacted.
+    assert "PLANTEDsecret123456" not in result.stdout
+    assert "[redacted]" in result.stdout
 
 
 # ───────────────────────────────────────────────────────────────────────

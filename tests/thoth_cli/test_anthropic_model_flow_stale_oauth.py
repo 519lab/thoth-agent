@@ -103,6 +103,10 @@ class TestStaleOAuthTokenDetection:
         output = capsys.readouterr().out
         # Should show "Use existing credentials" menu, NOT auth method choice
         assert "Use existing" in output or "credentials" in output.lower()
+        # The detected key is shown masked, never as a raw prefix slice.
+        assert "sk-ant-api03-RegularPayPerTokenKey" not in output
+        assert "sk-ant-api03" not in output
+        assert "sk-a...nKey" in output
 
     def test_valid_oauth_token_with_refresh_available_skips_reauth(self, tmp_path, monkeypatch, capsys):
         """
