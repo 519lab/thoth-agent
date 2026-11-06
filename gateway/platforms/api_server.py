@@ -65,13 +65,14 @@ MAX_REQUEST_BYTES = 10_000_000  # 10 MB — accommodates long agent conversation
 # Covers generated ids (20250101_120000_ab12cd34) and client ids (uuids).
 # ":" is excluded because on Windows "session_a:b.json" names an NTFS
 # alternate data stream of "session_a", not a file of its own.
-_SAFE_SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+# fullmatch, not match: "$" also matches before a trailing "\n".
+_SAFE_SESSION_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 
 
 def _is_safe_session_id(session_id: Any) -> bool:
     return (
         isinstance(session_id, str)
-        and bool(_SAFE_SESSION_ID_RE.match(session_id))
+        and bool(_SAFE_SESSION_ID_RE.fullmatch(session_id))
         and ".." not in session_id
     )
 CHAT_COMPLETIONS_SSE_KEEPALIVE_SECONDS = 30.0

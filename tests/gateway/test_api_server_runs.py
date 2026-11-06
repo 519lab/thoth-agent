@@ -260,6 +260,7 @@ class TestRunStatus:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("bad_id", [
         "../../etc/passwd", "..", "a/b", "a\\b", ".hidden", "x" * 129, "chat:42", 42,
+        "abc\n", "abc\r\n",
     ])
     async def test_unsafe_session_id_is_rejected(self, adapter, bad_id):
         """The run's session id becomes a transcript filename, so it gets the
