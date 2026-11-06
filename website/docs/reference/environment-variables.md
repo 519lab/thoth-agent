@@ -195,7 +195,7 @@ These variables configure the [Tool Gateway](/docs/user-guide/features/tool-gate
 |----------|-------------|
 | `TERMINAL_ENV` | Backend: `local`, `docker`, `ssh`, `singularity`, `modal`, `daytona`, `vercel_sandbox` |
 | `THOTH_DOCKER_BINARY` | Override the container binary Thoth shells out to (e.g. `podman`, `/usr/local/bin/docker`). When unset, Thoth auto-discovers `docker` or `podman` on `PATH`. Needed when both are installed and you want the non-default, or when the binary lives outside `PATH`. |
-| `TERMINAL_DOCKER_IMAGE` | Docker image (default: `nikolaik/python-nodejs:python3.11-nodejs20`) |
+| `TERMINAL_DOCKER_IMAGE` | Docker image (default: `nikolaik/python-nodejs:python3.11-nodejs22`) |
 | `TERMINAL_DOCKER_FORWARD_ENV` | JSON array of env var names to explicitly forward into Docker terminal sessions. Note: skill-declared `required_environment_variables` are forwarded automatically — you only need this for vars not declared by any skill. |
 | `TERMINAL_DOCKER_VOLUMES` | Additional Docker volume mounts (comma-separated `host:container` pairs) |
 | `TERMINAL_DOCKER_MOUNT_CWD_TO_WORKSPACE` | Advanced opt-in: mount the launch cwd into Docker `/workspace` (`true`/`false`, default: `false`) |
@@ -477,6 +477,7 @@ Advanced per-platform knobs for throttling the outbound message batcher. Most us
 | `THOTH_HUMAN_DELAY_MIN_MS` | Custom delay range minimum (ms) |
 | `THOTH_HUMAN_DELAY_MAX_MS` | Custom delay range maximum (ms) |
 | `THOTH_QUIET` | Suppress non-essential output (`true`/`false`) |
+| `THOTH_TURN_COST` | Set to `0` to disable the always-on per-turn cost/latency recording (`agent_turn_cost`) that feeds `thoth cost` and the gateway `/metrics` endpoint. Default: on. |
 | `CODEX_HOME` | When [Codex app-server runtime](../user-guide/features/codex-app-server-runtime) is enabled, override the directory Codex CLI reads its config + auth from (default: `~/.codex`). Thoth's migration writes the managed block to `<CODEX_HOME>/config.toml`. |
 | `THOTH_KANBAN_TASK` | Set by the kanban dispatcher when spawning a worker (task UUID). Workers and the spawned `thoth-tools` MCP subprocess inherit it so kanban tools gate correctly. Don't set manually. |
 | `THOTH_API_TIMEOUT` | LLM API call timeout in seconds (default: `1800`) |

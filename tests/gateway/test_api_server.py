@@ -377,6 +377,7 @@ def _create_app(adapter: APIServerAdapter) -> web.Application:
     app["api_server_adapter"] = adapter
     app.router.add_get("/health", adapter._handle_health)
     app.router.add_get("/health/detailed", adapter._handle_health_detailed)
+    app.router.add_get("/metrics", adapter._handle_metrics)
     app.router.add_get("/v1/health", adapter._handle_health)
     app.router.add_get("/v1/models", adapter._handle_models)
     app.router.add_get("/v1/capabilities", adapter._handle_capabilities)
@@ -518,13 +519,153 @@ class TestHealthDetailedEndpoint:
                 assert data["platforms"] == {}
 
     @pytest.mark.asyncio
-    async def test_health_detailed_does_not_require_auth(self, auth_adapter):
-        """Health detailed endpoint should be accessible without auth, like /health."""
-        app = _create_app(auth_adapter)
+    async def test_health_detailed_open_when_no_key_configured(self, adapter):
+        """Without a configured API key, /health/detailed stays open (local use)."""
+        app = _create_app(adapter)
         with patch("gateway.status.read_runtime_status", return_value=None):
             async with TestClient(TestServer(app)) as cli:
                 resp = await cli.get("/health/detailed")
                 assert resp.status == 200
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "headers, expected",
+        [
+            ({}, 401),
+            ({"Authorization": "Bearer wrong"}, 401),
+            ({"Authorization": "Bearer sk-secret"}, 200),
+        ],
+        ids=["no-bearer", "wrong-bearer", "right-bearer"],
+    )
+    async def test_health_detailed_requires_auth_when_key_configured(
+        self, auth_adapter, headers, expected
+    ):
+        """With an API key configured, /health/detailed needs the bearer — the
+        platform/agent inventory is operational detail. Callers that can't
+        auth (dashboard without the key) fall back to /health."""
+        app = _create_app(auth_adapter)
+        with patch("gateway.status.read_runtime_status", return_value=None):
+            async with TestClient(TestServer(app)) as cli:
+                resp = await cli.get("/health/detailed", headers=headers)
+                assert resp.status == expected
+
+    @pytest.mark.asyncio
+    async def test_plain_health_stays_unauthenticated(self, auth_adapter):
+        """/health is the liveness probe — never behind auth."""
+        app = _create_app(auth_adapter)
+        async with TestClient(TestServer(app)) as cli:
+            resp = await cli.get("/health")
+            assert resp.status == 200
+
+
+# ---------------------------------------------------------------------------
+# /metrics endpoint
+# ---------------------------------------------------------------------------
+
+
+async def _passthrough_pool_loop(coro):
+    return await coro
+
+
+class TestMetricsEndpoint:
+    @pytest.mark.asyncio
+    async def test_metrics_exposes_rollups(self, adapter):
+        """Happy path: rollup queries feed Prometheus text gauges."""
+        app = _create_app(adapter)
+
+        async def fake_turn_summary(*, hours):
+            return {
+                "turns": 5,
+                "api_calls": 12,
+                "input_tokens": 1000,
+                "output_tokens": 200,
+                "cache_read_tokens": 300,
+                "cache_write_tokens": 40,
+                "reasoning_tokens": 8,
+                "total_tokens": 1548,
+                "cost_usd": 1.25,
+                "unpriced_turns": 1,
+                "p50_duration_ms": 800.0,
+                "p95_duration_ms": 9000.0,
+            }
+
+        async def fake_substrate_summary(*, hours):
+            return {"calls": 30, "total_tokens": 60000, "p95_latency_ms": 2500.0}
+
+        with patch("thoth_db.run_on_pool_loop", _passthrough_pool_loop), \
+             patch("agent.turn_cost.fetch_turn_summary", fake_turn_summary), \
+             patch("agent.turn_cost.fetch_substrate_summary", fake_substrate_summary):
+            async with TestClient(TestServer(app)) as cli:
+                resp = await cli.get("/metrics")
+                assert resp.status == 200
+                assert resp.headers["Content-Type"].startswith("text/plain")
+                body = await resp.text()
+
+        assert "thoth_turns_24h 5" in body
+        assert 'thoth_tokens_24h{kind="input"} 1000' in body
+        assert 'thoth_tokens_24h{kind="cache_read"} 300' in body
+        assert "thoth_cost_usd_24h 1.25" in body
+        assert 'thoth_turn_duration_ms{quantile="0.95"} 9000' in body
+        assert "thoth_substrate_llm_calls_24h 30" in body
+        assert "thoth_substrate_tokens_24h 60000" in body
+        assert "thoth_metrics_scrape_errors 0" in body
+        assert "thoth_api_server_uptime_seconds" in body
+        assert "# HELP thoth_turns_24h" in body
+        assert "# TYPE thoth_turns_24h gauge" in body
+
+    @pytest.mark.asyncio
+    async def test_metrics_db_failure_degrades_not_500(self, adapter):
+        """A missing table / dead pool becomes a scrape-error gauge, not a 500."""
+        app = _create_app(adapter)
+
+        async def boom(coro):
+            coro.close()
+            raise RuntimeError("relation agent_turn_cost does not exist")
+
+        with patch("thoth_db.run_on_pool_loop", boom):
+            async with TestClient(TestServer(app)) as cli:
+                resp = await cli.get("/metrics")
+                assert resp.status == 200
+                body = await resp.text()
+
+        assert "thoth_metrics_scrape_errors 1" in body
+        assert "thoth_api_server_uptime_seconds" in body
+        assert "thoth_turns_24h" not in body
+
+    @pytest.mark.asyncio
+    async def test_metrics_requires_auth_when_key_configured(self, auth_adapter):
+        """Spend data is operational detail — same auth posture as the API."""
+        app = _create_app(auth_adapter)
+        async with TestClient(TestServer(app)) as cli:
+            resp = await cli.get("/metrics")
+            assert resp.status == 401
+            with patch("thoth_db.run_on_pool_loop", _passthrough_pool_loop), \
+                 patch("agent.turn_cost.fetch_turn_summary", side_effect=RuntimeError("x")):
+                resp = await cli.get(
+                    "/metrics", headers={"Authorization": "Bearer sk-secret"}
+                )
+                assert resp.status == 200
+
+    @pytest.mark.asyncio
+    async def test_metrics_none_cost_omits_gauge(self, adapter):
+        """No priced turn in the window → the cost gauge is absent, not 0."""
+        app = _create_app(adapter)
+
+        async def fake_turn_summary(*, hours):
+            return {"turns": 2, "cost_usd": None, "unpriced_turns": 2}
+
+        async def fake_substrate_summary(*, hours):
+            return {"calls": 0, "total_tokens": 0, "p95_latency_ms": None}
+
+        with patch("thoth_db.run_on_pool_loop", _passthrough_pool_loop), \
+             patch("agent.turn_cost.fetch_turn_summary", fake_turn_summary), \
+             patch("agent.turn_cost.fetch_substrate_summary", fake_substrate_summary):
+            async with TestClient(TestServer(app)) as cli:
+                resp = await cli.get("/metrics")
+                body = await resp.text()
+
+        assert "thoth_cost_usd_24h" not in body
+        assert "thoth_unpriced_turns_24h 2" in body
 
 
 # ---------------------------------------------------------------------------
@@ -3071,6 +3212,48 @@ class TestSessionIdHeader:
             assert resp.headers.get("X-Thoth-Session-Id") == "my-session-123"
             call_kwargs = mock_run.call_args.kwargs
             assert call_kwargs["session_id"] == "my-session-123"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("bad_id", [
+        "../../etc/passwd", "..", "a/../b", "a/b", "a\\b", ".hidden", "x" * 129,
+    ])
+    async def test_unsafe_session_id_is_rejected(self, auth_adapter, bad_id):
+        """The id becomes a transcript filename and a later delete target, so
+        anything but a single safe path segment must be refused up front."""
+        mock_db = MagicMock()
+        auth_adapter._session_db = mock_db
+        app = _create_app(auth_adapter)
+        async with TestClient(TestServer(app)) as cli:
+            with patch.object(auth_adapter, "_run_agent", new_callable=AsyncMock) as mock_run:
+                resp = await cli.post(
+                    "/v1/chat/completions",
+                    headers={"X-Thoth-Session-Id": bad_id, "Authorization": "Bearer sk-secret"},
+                    json={"model": "thoth-agent", "messages": [{"role": "user", "content": "Hi"}]},
+                )
+            assert resp.status == 400
+            mock_run.assert_not_called()
+            mock_db.get_messages_as_conversation.assert_not_called()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("good_id", [
+        "20250101_120000_ab12cd34", "3f2b8c1e-9a4d-4e2f-8b1a-0c9d8e7f6a5b", "chat:42", "v1.2_run",
+    ])
+    async def test_real_world_session_ids_are_accepted(self, auth_adapter, good_id):
+        mock_result = {"final_response": "OK", "messages": [], "api_calls": 1}
+        mock_db = MagicMock()
+        mock_db.get_messages_as_conversation.return_value = []
+        auth_adapter._session_db = mock_db
+        app = _create_app(auth_adapter)
+        async with TestClient(TestServer(app)) as cli:
+            with patch.object(auth_adapter, "_run_agent", new_callable=AsyncMock) as mock_run:
+                mock_run.return_value = (mock_result, {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0})
+                resp = await cli.post(
+                    "/v1/chat/completions",
+                    headers={"X-Thoth-Session-Id": good_id, "Authorization": "Bearer sk-secret"},
+                    json={"model": "thoth-agent", "messages": [{"role": "user", "content": "Hi"}]},
+                )
+            assert resp.status == 200
+            assert resp.headers.get("X-Thoth-Session-Id") == good_id
 
     @pytest.mark.asyncio
     async def test_provided_session_id_loads_history_from_db(self, auth_adapter):

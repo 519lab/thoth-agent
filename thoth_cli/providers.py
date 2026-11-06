@@ -22,6 +22,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 
 from utils import base_url_host_matches, base_url_hostname
 
@@ -514,11 +515,13 @@ def determine_api_mode(provider: str, base_url: str = "") -> str:
         # (e.g. kimi /coding endpoint needs anthropic_messages even on 'custom')
         if base_url:
             url_lower = base_url.rstrip("/").lower()
-            if "api.kimi.com/coding" in url_lower:
+            if base_url_host_matches(url_lower, "api.kimi.com") and urlparse(
+                url_lower if "://" in url_lower else f"//{url_lower}"
+            ).path.startswith("/coding"):
                 return "anthropic_messages"
-            if url_lower.endswith("/anthropic") or "api.anthropic.com" in url_lower:
+            if url_lower.endswith("/anthropic") or base_url_host_matches(url_lower, "api.anthropic.com"):
                 return "anthropic_messages"
-            if "api.openai.com" in url_lower:
+            if base_url_host_matches(url_lower, "api.openai.com"):
                 return "codex_responses"
         return TRANSPORT_TO_API_MODE.get(pdef.transport, "chat_completions")
 

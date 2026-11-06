@@ -58,6 +58,16 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8642
 MAX_STORED_RESPONSES = 100
 MAX_REQUEST_BYTES = 10_000_000  # 10 MB — accommodates long agent conversations with tool calls
+
+# Caller-supplied session ids end up in transcript filenames
+# (sessions/<id>.json, session_<id>.json) and in later deletes, so they must
+# be a single safe path segment: no separators, no "..", no control chars.
+# Covers generated ids (20250101_120000_ab12cd34) and client ids (uuids).
+_SAFE_SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+
+
+def _is_safe_session_id(session_id: str) -> bool:
+    return bool(_SAFE_SESSION_ID_RE.match(session_id)) and ".." not in session_id
 CHAT_COMPLETIONS_SSE_KEEPALIVE_SECONDS = 30.0
 MAX_NORMALIZED_TEXT_LENGTH = 65_536  # 64 KB cap for normalized content parts
 MAX_CONTENT_LIST_SIZE = 1_000  # Max items when content is an array
@@ -711,6 +721,8 @@ class APIServerAdapter(BasePlatformAdapter):
         # in-flight run by run_id.
         self._run_approval_sessions: Dict[str, str] = {}
         self._session_db: Optional[Any] = None  # Lazy-init SessionDB for session continuity
+        # Adapter start time for the /metrics uptime gauge.
+        self._started_monotonic: float = time.monotonic()
 
     @staticmethod
     def _parse_cors_origins(value: Any) -> tuple[str, ...]:
@@ -966,8 +978,16 @@ class APIServerAdapter(BasePlatformAdapter):
 
         Returns gateway state, connected platforms, PID, and uptime so the
         dashboard can display full status without needing a shared PID file or
-        /proc access.  No authentication required.
+        /proc access.  Honours the API key when one is configured (the
+        platform/agent inventory is operational detail an unauthenticated LAN
+        peer has no business reading); with no key configured it stays open,
+        matching every other endpoint. The plain /health liveness probe
+        remains unauthenticated — callers that can't auth fall back to it.
         """
+        auth_err = self._check_auth(request)
+        if auth_err:
+            return auth_err
+
         from gateway.status import read_runtime_status
 
         runtime = read_runtime_status() or {}
@@ -981,6 +1001,55 @@ class APIServerAdapter(BasePlatformAdapter):
             "updated_at": runtime.get("updated_at"),
             "pid": os.getpid(),
         })
+
+    async def _handle_metrics(self, request: "web.Request") -> "web.Response":
+        """GET /metrics — Prometheus text exposition of cost/latency rollups.
+
+        Windowed gauges (trailing 24h) computed from ``agent_turn_cost`` and
+        ``substrate_agent_cost`` at scrape time, not lifetime counters:
+        both tables are append-only and unbounded, so an all-time SUM per
+        scrape would degrade as they grow. No new dependencies — plain text
+        exposition format. Honours the API key when configured (spend data
+        is operational detail).
+
+        DB access bridges to the pool loop via ``run_on_pool_loop`` — this
+        handler runs on the gateway's I/O loop, and the asyncpg pool is bound
+        to the dedicated DB loop (docs/architecture/database-event-loop.md).
+        """
+        auth_err = self._check_auth(request)
+        if auth_err:
+            return auth_err
+
+        uptime_s = time.monotonic() - self._started_monotonic
+        turn = None
+        crew = None
+        scrape_error = 0
+        try:
+            import thoth_db
+            from agent.turn_cost import fetch_substrate_summary, fetch_turn_summary
+
+            turn = await thoth_db.run_on_pool_loop(fetch_turn_summary(hours=24.0))
+            crew = await thoth_db.run_on_pool_loop(fetch_substrate_summary(hours=24.0))
+        except Exception as exc:
+            # A missing table (pre-0027 DB) or pool hiccup must not turn the
+            # scrape into a 500 — expose the failure as a metric instead.
+            logger.debug("metrics rollup failed: %s", exc)
+            scrape_error = 1
+            turn = None
+            crew = None
+
+        from agent.turn_cost import render_turn_metrics
+
+        return web.Response(
+            text=render_turn_metrics(
+                uptime_s=uptime_s,
+                turn=turn,
+                crew=crew,
+                scrape_error=scrape_error,
+            ),
+            content_type="text/plain",
+            charset="utf-8",
+        )
 
     async def _handle_models(self, request: "web.Request") -> "web.Response":
         """GET /v1/models — return thoth-agent as an available model."""
@@ -1051,6 +1120,7 @@ class APIServerAdapter(BasePlatformAdapter):
             "endpoints": {
                 "health": {"method": "GET", "path": "/health"},
                 "health_detailed": {"method": "GET", "path": "/health/detailed"},
+                "metrics": {"method": "GET", "path": "/metrics"},
                 "models": {"method": "GET", "path": "/v1/models"},
                 "chat_completions": {"method": "POST", "path": "/v1/chat/completions"},
                 "responses": {"method": "POST", "path": "/v1/responses"},
@@ -1149,8 +1219,10 @@ class APIServerAdapter(BasePlatformAdapter):
                     ),
                     status=403,
                 )
-            # Sanitize: reject control characters that could enable header injection.
-            if re.search(r'[\r\n\x00]', provided_session_id):
+            # Sanitize: the id becomes a filename component, so reject anything
+            # but a single safe path segment (this also excludes the control
+            # characters that could enable header injection).
+            if not _is_safe_session_id(provided_session_id):
                 return web.json_response(
                     {"error": {"message": "Invalid session ID", "type": "invalid_request_error"}},
                     status=400,
@@ -3441,6 +3513,7 @@ class APIServerAdapter(BasePlatformAdapter):
             self._app["api_server_adapter"] = self
             self._app.router.add_get("/health", self._handle_health)
             self._app.router.add_get("/health/detailed", self._handle_health_detailed)
+            self._app.router.add_get("/metrics", self._handle_metrics)
             self._app.router.add_get("/v1/health", self._handle_health)
             self._app.router.add_get("/v1/models", self._handle_models)
             self._app.router.add_get("/v1/capabilities", self._handle_capabilities)

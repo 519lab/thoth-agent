@@ -126,9 +126,15 @@ def _run_switch(raw_input: str, **extra):
         # For other providers, return empty so tests don't depend on them.
         return []
 
+    # validate_requested_model() also lists the provider's models over HTTP
+    # (fetch_api_models -> opencode.ai /v1/models) and auto-corrects to the
+    # closest live name, so stub that too or the test tracks upstream's catalog.
     with patch(
         "thoth_cli.model_switch.list_provider_models",
         side_effect=fake_list_provider_models,
+    ), patch(
+        "thoth_cli.models.fetch_api_models",
+        return_value=list(_OPENCODE_GO_LIVE),
     ):
         return switch_model(raw_input=raw_input, **defaults)
 

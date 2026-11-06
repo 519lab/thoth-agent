@@ -931,6 +931,11 @@ class TestProfileRestoration:
         # Mock the wrapper dir to be inside tmp_path
         wrapper_dir = tmp_path / ".local" / "bin"
         wrapper_dir.mkdir(parents=True)
+        # check_alias_collision() asks `which` about the real PATH, so a host
+        # with e.g. the Coder CLI at /usr/local/bin/coder would skip the
+        # wrapper. This test is about restoring wrappers, not collision
+        # detection, so make the host PATH irrelevant.
+        monkeypatch.setattr("thoth_cli.profiles.check_alias_collision", lambda name: None)
 
         zip_path = tmp_path / "backup.zip"
         self._make_backup_zip(zip_path, {

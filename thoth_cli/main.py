@@ -2763,11 +2763,13 @@ def _model_flow_custom(config):
     current_url = get_env_value("OPENAI_BASE_URL") or ""
     current_key = get_env_value("OPENAI_API_KEY") or ""
 
+    from agent.redact import mask_secret
+
     print("Custom OpenAI-compatible endpoint configuration:")
     if current_url:
         print(f"  Current URL: {current_url}")
     if current_key:
-        print(f"  Current key: {current_key[:8]}...")
+        print(f"  Current key: {mask_secret(current_key)}")
     print()
 
     try:
@@ -2777,7 +2779,7 @@ def _model_flow_custom(config):
         import getpass
 
         api_key = getpass.getpass(
-            f"API key [{current_key[:8] + '...' if current_key else 'optional'}]: "
+            f"API key [{mask_secret(current_key, empty='optional')}]: "
         ).strip()
     except (KeyboardInterrupt, EOFError):
         print("\nCancelled.")
@@ -3225,10 +3227,12 @@ def _model_flow_azure_foundry(config, current_model=""):
             else "Anthropic-style"
         )
         print(f"  Current API mode:  {_lbl}")
+    from agent.redact import mask_secret
+
     if current_auth_mode == "entra_id":
         print(f"  Current auth mode: Microsoft Entra ID (keyless)")
     elif current_api_key:
-        print(f"  Current auth mode: API key ({current_api_key[:8]}...)")
+        print(f"  Current auth mode: API key ({mask_secret(current_api_key)})")
     print()
 
     # ── Step 1: endpoint URL ─────────────────────────────────────────
@@ -3353,7 +3357,7 @@ def _model_flow_azure_foundry(config, current_model=""):
         print()
         try:
             api_key = getpass.getpass(
-                f"API key [{current_api_key[:8] + '...' if current_api_key else 'required'}]: "
+                f"API key [{mask_secret(current_api_key, empty='required')}]: "
             ).strip()
         except (KeyboardInterrupt, EOFError):
             print("\nCancelled.")
@@ -3956,8 +3960,10 @@ def _model_flow_copilot(config, current_model=""):
     else:
         if source in {"GITHUB_TOKEN", "GH_TOKEN"}:
             from thoth_cli.env_loader import format_secret_source_suffix
+            from agent.redact import mask_secret
+
             bw_suffix = format_secret_source_suffix(source)
-            print(f"  GitHub token: {api_key[:8]}... ✓ ({source}{bw_suffix})")
+            print(f"  GitHub token: {mask_secret(api_key)} ✓ ({source}{bw_suffix})")
         elif source == "gh auth token":
             print("  GitHub token: ✓ (from `gh auth token`)")
         else:
@@ -4214,10 +4220,11 @@ def _prompt_api_key(pconfig, existing_key: str, provider_id: str = "") -> tuple:
         return new_key, False
 
     # Already configured — offer K / R / C ────────────────────────────────
+    from agent.redact import mask_secret
     from thoth_cli.env_loader import format_secret_source_suffix
 
     source_suffix = format_secret_source_suffix(key_env) if key_env else ""
-    print(f"  {pconfig.name} API key: {existing_key[:8]}... ✓{source_suffix}")
+    print(f"  {pconfig.name} API key: {mask_secret(existing_key)} ✓{source_suffix}")
     if not key_env:
         # Nothing we can rewrite; just acknowledge and move on.
         print()
@@ -4350,8 +4357,9 @@ def _model_flow_kimi(config, current_model=""):
 
 def _infer_stepfun_region(base_url: str) -> str:
     """Infer the current StepFun region from the configured endpoint."""
-    normalized = (base_url or "").strip().lower()
-    if "api.stepfun.com" in normalized:
+    from utils import base_url_host_matches
+
+    if base_url_host_matches(base_url or "", "api.stepfun.com"):
         return "china"
     return "international"
 
@@ -4500,9 +4508,10 @@ def _model_flow_bedrock_api_key(config, region, current_model=""):
     # Prompt for API key
     existing_key = get_env_value("AWS_BEARER_TOKEN_BEDROCK") or ""
     if existing_key:
+        from agent.redact import mask_secret
         from thoth_cli.env_loader import format_secret_source_suffix
         source_suffix = format_secret_source_suffix("AWS_BEARER_TOKEN_BEDROCK")
-        print(f"  Bedrock API Key: {existing_key[:12]}... ✓{source_suffix}")
+        print(f"  Bedrock API Key: {mask_secret(existing_key)} ✓{source_suffix}")
     else:
         print(f"  Endpoint: {mantle_base_url}")
         print()
@@ -5173,6 +5182,7 @@ def _model_flow_anthropic(config, current_model=""):
     if has_creds:
         # Show what we found
         if existing_key:
+            from agent.redact import mask_secret
             from thoth_cli.env_loader import format_secret_source_suffix
             from thoth_cli.auth import PROVIDER_REGISTRY
 
@@ -5187,7 +5197,7 @@ def _model_flow_anthropic(config, current_model=""):
                     if source_suffix:
                         break
             print(
-                f"  Anthropic credentials: {existing_key[:12]}... ✓{source_suffix}"
+                f"  Anthropic credentials: {mask_secret(existing_key)} ✓{source_suffix}"
             )
         elif cc_available:
             print("  Claude Code credentials: ✓ (auto-detected)")
@@ -10209,7 +10219,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
     {
         "acp", "auth", "backup", "bundles", "checkpoints", "claw", "completion",
         "computer-use",
-        "config", "cron", "curator", "dashboard", "db", "debug", "doctor",
+        "config", "cost", "cron", "curator", "dashboard", "db", "debug", "doctor",
         "dump", "embed", "fallback", "gateway", "hooks", "import", "insights",
         "kanban", "login", "logout", "logs", "lsp", "mcp", "memory", "migrate",
         "model", "pairing", "plugins", "postinstall", "profile", "proxy",
@@ -10870,6 +10880,11 @@ def main():
         _embed_register(subparsers)
     except Exception as _embed_err:  # noqa: BLE001
         logger.debug("Embed CLI registration failed: %s", _embed_err)
+    try:
+        from thoth_cli.cost_cmd import register_subparser as _cost_register
+        _cost_register(subparsers)
+    except Exception as _cost_err:  # noqa: BLE001
+        logger.debug("Cost CLI registration failed: %s", _cost_err)
 
     # =========================================================================
     # setup command

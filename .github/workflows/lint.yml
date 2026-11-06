@@ -10,17 +10,17 @@ name: Lint (ruff + ty)
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths-ignore:
       - "**/*.md"
       - "docs/**"
       - "website/**"
+  # No paths-ignore on pull_request: `ruff enforcement (blocking)` and
+  # `Windows footguns (blocking)` are required checks, and a path-filtered
+  # workflow never reports, leaving website/docs-only PRs pending forever
+  # (#407). Both blocking jobs take seconds, so they simply always run.
   pull_request:
-    branches: [main]
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "website/**"
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -33,7 +33,7 @@ concurrency:
 jobs:
   lint-diff:
     name: ruff + ty diff
-    runs-on: self-hosted  # light job on the 519lab runner (heavy `test` stays GitHub-hosted)
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout code
@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 0 # need full history for merge-base + worktree
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -124,6 +124,10 @@ jobs:
         # not setup-python, and the self-hosted 519lab runner has no `python` on
         # PATH (only inside venvs). uv provides the interpreter; the script is
         # stdlib-only so --no-project skips any project sync.
+        env:
+          # Via env, not inline ${{ }}: PR branch names are attacker-controlled
+          # and inline interpolation into `run:` is a script-injection vector.
+          HEAD_REF: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
         run: |
           uv run --no-project python scripts/lint_diff.py \
             --base-ruff .lint-reports/base/ruff.json \
@@ -131,12 +135,12 @@ jobs:
             --base-ty   .lint-reports/base/ty.json \
             --head-ty   .lint-reports/head/ty.json \
             --base-ref  "${{ steps.base.outputs.ref }}" \
-            --head-ref  "${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}" \
+            --head-ref  "$HEAD_REF" \
             --output    .lint-reports/summary.md
           cat .lint-reports/summary.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload reports as artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: lint-reports
           path: .lint-reports/
@@ -184,14 +188,14 @@ jobs:
     # ``lint-diff`` job above runs independently so reviewers still get
     # the diff comment even when enforcement fails.
     name: ruff enforcement (blocking)
-    runs-on: self-hosted  # light job on the 519lab runner (heavy `test` stays GitHub-hosted)
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -213,14 +217,14 @@ jobs:
     # shebang scripts via subprocess, bare open() without encoding=, etc.
     # See scripts/check-windows-footguns.py for the full rule list.
     name: Windows footguns (blocking)
-    runs-on: self-hosted  # light job on the 519lab runner (heavy `test` stays GitHub-hosted)
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.11"
 

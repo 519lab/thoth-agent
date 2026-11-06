@@ -8,6 +8,7 @@
  *
  * Environment:
  *   API_PORT: GitNexus serve backend port (default: 4747)
+ *   HOST: interface to bind (default: 127.0.0.1)
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -51,13 +52,37 @@ function proxyToApi(req, res) {
   req.pipe(proxy, { end: true });
 }
 
+const ROOT = path.resolve(DIST_DIR);
+
+// Map a request path to a file inside ROOT, or null if it would escape it.
+// Decoding first means %2e%2e is caught too; resolving and then comparing
+// against ROOT + separator rejects both `..` and sibling-prefix dirs
+// (e.g. /srv/dist-secret when ROOT is /srv/dist).
+function resolveInRoot(urlPath) {
+  let decoded;
+  try {
+    decoded = decodeURIComponent(urlPath);
+  } catch {
+    return null;
+  }
+  if (decoded.includes('\0')) return null;
+  const resolved = path.resolve(ROOT, '.' + path.posix.normalize('/' + decoded));
+  if (resolved !== ROOT && !resolved.startsWith(ROOT + path.sep)) return null;
+  return resolved;
+}
+
 function serveStatic(req, res) {
   const urlPath = req.url.split('?')[0];
-  let filePath = path.join(DIST_DIR, urlPath === '/' ? 'index.html' : urlPath);
+  let filePath = resolveInRoot(urlPath === '/' ? '/index.html' : urlPath);
+  if (filePath === null) {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not found');
+    return;
+  }
 
   // SPA fallback: if file doesn't exist and isn't a static asset, serve index.html
   if (!fs.existsSync(filePath) && !path.extname(filePath)) {
-    filePath = path.join(DIST_DIR, 'index.html');
+    filePath = path.join(ROOT, 'index.html');
   }
 
   const ext = path.extname(filePath);
@@ -84,7 +109,11 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(PORT, () => {
+// Loopback only: the UI and API expose the indexed repository's contents.
+// Set HOST=0.0.0.0 to share it on a trusted network.
+const HOST = process.env.HOST || '127.0.0.1';
+
+server.listen(PORT, HOST, () => {
   console.log(`GitNexus proxy listening on http://localhost:${PORT}`);
   console.log(`  Web UI: http://localhost:${PORT}/`);
   console.log(`  API:    http://localhost:${PORT}/api/repos`);

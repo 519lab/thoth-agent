@@ -12,7 +12,8 @@ from pathlib import Path
 
 from thoth_constants import get_thoth_home
 from plugins.memory.honcho.client import resolve_active_host, resolve_config_path, HOST
-from thoth_cli.config import cfg_get
+from thoth_cli.config import _secure_file, cfg_get
+from utils import atomic_text_write
 
 
 def clone_honcho_for_profile(profile_name: str) -> bool:
@@ -267,10 +268,9 @@ def _read_config() -> dict:
 def _write_config(cfg: dict, path: Path | None = None) -> None:
     path = path or _local_config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(cfg, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    # honcho.json holds apiKey: created 0600, tightened if it existed.
+    atomic_text_write(path, json.dumps(cfg, indent=2, ensure_ascii=False) + "\n")
+    _secure_file(path)
 
 
 def _resolve_api_key(cfg: dict) -> str:

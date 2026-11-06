@@ -144,6 +144,20 @@ class TestGetProfileDir:
         tmp_path = profile_env
         assert get_profile_dir("Coder") == tmp_path / ".thoth" / "profiles" / "coder"
 
+    @pytest.mark.parametrize("name", ["..", ".", "../x", "a/b", "a\\b", ".hidden", "x" * 65])
+    def test_rejects_names_that_are_not_a_safe_path_segment(self, profile_env, name):
+        # Dashboard routes pass URL params straight in; ".." used to resolve
+        # to ~/.thoth itself and "." to ~/.thoth/profiles.
+        with pytest.raises(ValueError):
+            get_profile_dir(name)
+
+    def test_profile_exists_is_false_for_unsafe_names(self, profile_env):
+        from thoth_cli.profiles import profile_exists
+        # With the profiles root present, profiles/.. is a real directory.
+        (profile_env / ".thoth" / "profiles").mkdir(parents=True, exist_ok=True)
+        assert profile_exists("..") is False
+        assert profile_exists(".") is False
+
 
 # ===================================================================
 # TestCreateProfile

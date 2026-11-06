@@ -48,7 +48,8 @@ POST /v1/runs/{id}/approval      Resolve a pending approval
 POST /v1/runs/{id}/stop          Interrupt the run
 GET  /v1/capabilities            Machine-readable feature flags
 GET  /v1/models                  Lists thoth-agent
-GET  /health, /health/detailed
+GET  /health                     Liveness probe. Stays unauthenticated
+GET  /health/detailed            Gateway inventory. Bearer required when API_SERVER_KEY is set
 ```
 
 Setup, headers (`X-Thoth-Session-Id`, `X-Thoth-Session-Key`), and frontend wiring: [API Server](../user-guide/features/api-server).

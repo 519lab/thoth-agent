@@ -70,6 +70,7 @@ thoth [global-options] <command> [subcommand/options]
 | `thoth computer-use` | Install or check the cua-driver backend (macOS Computer Use). |
 | `thoth sessions` | Browse, export, prune, rename, and delete sessions. |
 | `thoth insights` | Show token/cost/activity analytics. |
+| `thoth cost` | Cost & latency rollups from the per-turn records — tokens, estimated spend, p50/p95 turn duration, substrate crew spend. |
 | `thoth claw` | OpenClaw migration helpers. |
 | `thoth dashboard` | Launch the web dashboard for managing config, API keys, and sessions. |
 | `thoth profile` | Manage profiles — multiple isolated Thoth instances. |
@@ -351,6 +352,21 @@ thoth status [--all] [--deep]
 |--------|-------------|
 | `--all` | Show all details in a shareable redacted format. |
 | `--deep` | Run deeper checks that may take longer. |
+
+## `thoth cost`
+
+```bash
+thoth cost [--hours N] [--json]
+```
+
+Windowed cost & latency rollups from the per-turn records the agent writes on every turn (`agent_turn_cost`), plus the substrate crew's own spend (`substrate_agent_cost`). Default report covers trailing 24h / 7d / 30d windows with a per-model breakdown; costs are estimates from the local price catalog, never billing truth — turns on routes with unknown pricing are counted separately.
+
+| Option | Description |
+|--------|-------------|
+| `--hours N` | Report a single trailing window of N hours instead of 24h/7d/30d. |
+| `--json` | Emit the raw rollup as JSON. |
+
+Recording is always on; set `THOTH_TURN_COST=0` to disable. The same rollups are exposed to Prometheus via the gateway API server's [`GET /metrics`](../user-guide/features/api-server.md) endpoint. For per-session token analytics, see `thoth insights`.
 
 ## `thoth cron`
 

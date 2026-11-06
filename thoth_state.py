@@ -469,7 +469,9 @@ class _AsyncSessionDB:
             )
         removed_ids = [r["id"] for r in rows]
         if sessions_dir and removed_ids:
-            self._remove_session_files(sessions_dir, removed_ids)
+            sessions_dir = Path(sessions_dir)
+            for session_id in removed_ids:
+                self._remove_session_files(sessions_dir, session_id)
         return len(removed_ids)
 
     async def finalize_orphaned_compression_sessions(self) -> int:

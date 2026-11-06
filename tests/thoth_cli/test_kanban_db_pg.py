@@ -27,7 +27,6 @@ import pytest_asyncio
 def _set_pg_dsn(thoth_db_initialized_sync, monkeypatch):
     """Make kanban_db use PG for the duration of each test."""
     monkeypatch.setenv("THOTH_PG_DSN", thoth_db_initialized_sync)
-    monkeypatch.setenv("THOTH_PG_DSN", thoth_db_initialized_sync)
 
 
 @pytest.fixture

@@ -19,6 +19,18 @@ import pytest
 from thoth_cli import model_switch
 
 
+@pytest.fixture(autouse=True)
+def _no_live_model_probe(monkeypatch):
+    """Keep custom-endpoint discovery off the network.
+
+    list_authenticated_providers() probes each custom endpoint's /models.
+    These tests use http://localhost:11434 (Ollama's default port), so on a
+    machine running Ollama the real catalog leaked into the results. Tests
+    that need live models override this with their own fake.
+    """
+    monkeypatch.setattr("thoth_cli.models.fetch_api_models", lambda api_key, base_url: [])
+
+
 def _make_provider(slug, name=None, models=None, *, is_current=False,
                    is_user_defined=False, source="built-in", api_url=None):
     """Build a dict shaped like ``list_authenticated_providers`` output."""

@@ -575,6 +575,13 @@ def _live_system_guard(request, monkeypatch):
             for parent in walker.parents():
                 if parent.pid == test_pid:
                     return True
+        except _psutil.NoSuchProcess:
+            # The target can be reaped between the lookup above and this
+            # walk — e.g. a concurrent ``Popen.poll()`` in a drain thread
+            # while ``_kill_process`` probes ``killpg(pgid, 0)`` (#408).
+            # A target that is gone now is the same stale case as above;
+            # a broken walk on a still-running target stays foreign.
+            return not walker.is_running()
         except Exception:
             return False
         return False
@@ -858,12 +865,10 @@ from alembic.config import Config
 # (port 5433), NOT the real `postgres` service the developer's Thoth
 # install runs against (port 5432). The override env var honours
 # THOTH_TEST_POSTGRES_PORT first (matches the compose variable name),
-# then the THOTH_TEST_POSTGRES_PORT legacy fallback, then POSTGRES_PORT,
-# then falls back to 5433. Overriding to 5432 is only safe in CI where
+# then POSTGRES_PORT, then falls back to 5433. Overriding to 5432 is only safe in CI where
 # there is no real install to collide with.
 _TEST_PG_PORT = int(
     os.environ.get("THOTH_TEST_POSTGRES_PORT")
-    or os.environ.get("THOTH_TEST_POSTGRES_PORT")
     or os.environ.get("POSTGRES_PORT")
     or "5433"
 )
@@ -873,7 +878,6 @@ _TEST_PG_PORT = int(
 # override env vars route to the ``postgres-test`` compose service.
 _TEST_PG_HOST = (
     os.environ.get("THOTH_TEST_POSTGRES_HOST")
-    or os.environ.get("THOTH_TEST_POSTGRES_HOST")
     or os.environ.get("POSTGRES_HOST")
     or "localhost"
 )
@@ -908,12 +912,10 @@ def thoth_db_dsn(postgresql):
     password_part = f":{info.password}@" if info.password else "@"
     dsn = f"postgresql://{info.user}{password_part}{info.host}:{info.port}/{info.dbname}"
     cfg = Config("migrations/alembic.ini")
-    # Runtime (thoth_db sync-pool, substrate) + alembic env.py read THOTH_PG_DSN
-    # (canonical, post-cutover) with THOTH_PG_DSN legacy fallback. The P2 env
-    # bridge only mirrors at startup, and this fixture sets the DSN at test time
-    # (after bootstrap), so set BOTH spellings explicitly.
-    _prev = {k: os.environ.get(k) for k in ("THOTH_PG_DSN", "THOTH_PG_DSN")}
-    os.environ["THOTH_PG_DSN"] = dsn
+    # Runtime (thoth_db sync-pool, substrate) and alembic env.py read
+    # THOTH_PG_DSN. The P2 env bridge only mirrors at startup, and this fixture
+    # sets the DSN at test time (after bootstrap), so set it explicitly.
+    _prev = {"THOTH_PG_DSN": os.environ.get("THOTH_PG_DSN")}
     os.environ["THOTH_PG_DSN"] = dsn
     try:
         command.upgrade(cfg, "head")

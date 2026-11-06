@@ -636,7 +636,9 @@ def init_agent(
                 if is_token_provider(effective_key):
                     print("🔑 Using credentials: Microsoft Entra ID")
                 elif isinstance(effective_key, str) and len(effective_key) > 12:
-                    print(f"🔑 Using token: {effective_key[:8]}...{effective_key[-4:]}")
+                    from agent.redact import mask_secret
+
+                    print(f"🔑 Using token: {mask_secret(effective_key)}")
     elif agent.api_mode == "bedrock_converse":
         # AWS Bedrock — uses boto3 directly, no OpenAI client needed.
         # Region is extracted from the base_url or defaults to us-east-1.
@@ -849,7 +851,9 @@ def init_agent(
                 if is_token_provider(key_used):
                     print("🔑 Using credentials: Microsoft Entra ID")
                 elif isinstance(key_used, str) and key_used and key_used != "dummy-key" and len(key_used) > 12:
-                    print(f"🔑 Using API key: {key_used[:8]}...{key_used[-4:]}")
+                    from agent.redact import mask_secret
+
+                    print(f"🔑 Using API key: {mask_secret(key_used)}")
                 else:
                     print("⚠️  Warning: API key appears invalid or missing")
         except Exception as e:

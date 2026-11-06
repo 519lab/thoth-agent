@@ -2,15 +2,16 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
+  # No paths-ignore on pull_request: `test` is a required check, and a
+  # path-filtered workflow never reports, leaving docs-only PRs pending
+  # forever (#407). The `changes` job below skips the heavy jobs instead —
+  # a job skipped via `if:` reports success to the required-check gate.
   pull_request:
-    branches: [main]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -21,7 +22,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    # Decides whether this PR touches anything besides markdown/docs.
+    # Pushes are already filtered by the push trigger's paths-ignore.
+    # Lists files via the REST API instead of a full-history checkout, which
+    # cost ~2.5 min on the critical path of every PR (#412).
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Detect non-doc changes
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Any API failure aborts this step (bash -e), leaving `code` empty,
+          # so the fail-closed gate on `test`/`e2e` still runs the suite.
+          changed=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq '.[].filename')
+          count=$(printf '%s\n' "$changed" | grep -c . || true)
+          echo "Changed files ($count):"; echo "$changed"
+          # The endpoint caps at 3000 files; a truncated list could hide code
+          # changes, so treat it as code.
+          if [ "$count" -ge 3000 ] || echo "$changed" | grep -qvE '(\.md$|^docs/)'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   test:
+    needs: changes
+    # Fail closed: only an explicit 'false' skips. If `changes` itself fails,
+    # its output is empty and the suite still runs (a skipped required job
+    # would otherwise report success and waive the gate).
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     # The full suite runs on a GitHub-hosted runner. The self-hosted 519lab
     # box is only 2 vCPUs, so the per-file parallel suite there ran ~57-71 min
     # and was guillotined at the 60-min cap (issue #327). GitHub-hosted runners
@@ -70,7 +113,7 @@ jobs:
           rg --version
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -128,7 +171,12 @@ jobs:
           NOUS_API_KEY: ""
 
   e2e:
-    runs-on: self-hosted  # light job on the 519lab runner (heavy `test` above stays GitHub-hosted)
+    needs: changes
+    # Fail closed: only an explicit 'false' skips. If `changes` itself fails,
+    # its output is empty and the suite still runs (a skipped required job
+    # would otherwise report success and waive the gate).
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout code
@@ -149,7 +197,7 @@ jobs:
           rg --version
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"

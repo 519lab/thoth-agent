@@ -1107,3 +1107,13 @@ def test_migrate_model_config_no_catalog_leaves_value_alone(tmp_path: Path):
         {"agents": {"defaults": {"model": "some-model-id"}}},
     )
     assert _extract_model(parsed) == "some-model-id"
+
+
+def test_url_host_matches_uses_parsed_hostname():
+    mod = load_module()
+    assert mod._url_host_matches("https://api.openai.com/v1", "openai.com")
+    assert mod._url_host_matches("https://openai.com", "openai.com")
+    assert mod._url_host_matches("api.openai.com", "openai.com")
+    assert not mod._url_host_matches("https://api.openai.com.evil.net/v1", "openai.com")
+    assert not mod._url_host_matches("https://proxy.example/openai.com/v1", "openai.com")
+    assert not mod._url_host_matches("", "openai.com")

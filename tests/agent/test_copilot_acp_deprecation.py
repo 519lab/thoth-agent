@@ -75,3 +75,10 @@ class TestGitHubModelsAzureUrl:
         from thoth_cli.models import _is_github_models_base_url
 
         assert _is_github_models_base_url("https://models.github.ai/inference")
+
+    def test_is_github_models_base_url_rejects_lookalike_hosts(self):
+        from thoth_cli.models import _is_github_models_base_url
+
+        assert _is_github_models_base_url("https://api.githubcopilot.com/chat")
+        assert not _is_github_models_base_url("https://api.githubcopilot.com.evil.net/v1")
+        assert not _is_github_models_base_url("https://models.inference.ai.azure.com.evil.net")

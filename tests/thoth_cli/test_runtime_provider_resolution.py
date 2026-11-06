@@ -2155,6 +2155,26 @@ class TestAzureAnthropicEnvVarHint:
         assert called["resolve_anthropic_token"] is True
         assert resolved["api_key"] == "token-from-resolver"
 
+    def test_azure_lookalike_host_is_not_treated_as_azure(self, monkeypatch):
+        """A host that merely contains ``azure.com`` (``*.azure.com.evil.net``)
+        must not take the Azure key path."""
+        monkeypatch.setenv("MY_KEY", "custom-key-value")
+        monkeypatch.setattr(rp, "resolve_provider", lambda *a, **k: "anthropic")
+        monkeypatch.setattr(rp, "_get_model_config", lambda: {
+            "provider": "anthropic",
+            "base_url": "https://my-resource.azure.com.evil.net/anthropic",
+            "key_env": "MY_KEY",
+        })
+        monkeypatch.setattr(rp, "load_pool", lambda provider: None)
+        monkeypatch.setattr(
+            "agent.anthropic_adapter.resolve_anthropic_token",
+            lambda: "token-from-resolver",
+        )
+
+        resolved = rp.resolve_runtime_provider(requested="anthropic")
+
+        assert resolved["api_key"] == "token-from-resolver"
+
 
 # ──────────────────────────────────────────────────────────────────────────
 # custom_providers / providers normalizer — api_key_env alias for key_env

@@ -43,7 +43,7 @@ name: OSV-Scanner
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'uv.lock'
       - 'pyproject.toml'
@@ -57,7 +57,7 @@ on:
       - 'scripts/whatsapp-bridge/package-lock.json'
       - '.github/workflows/osv-scanner.yml'
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'uv.lock'
       - 'pyproject.toml'
@@ -90,7 +90,7 @@ jobs:
           persist-credentials: false
 
       - name: Run scanner
-        uses: google/osv-scanner-action/osv-scanner-action@ffa0a5f39214d80778c9b494822d94d0d9668458  # v2.5.0
+        uses: google/osv-scanner-action/osv-scanner-action@9a96bc4d2b09685b6142bcfe25a3dc17cb2d7347  # v2.5.0
         env:
           GOTOOLCHAIN: auto
         with:
@@ -112,7 +112,7 @@ jobs:
         continue-on-error: true
 
       - name: Generate SARIF report
-        uses: google/osv-scanner-action/osv-reporter-action@06b2ab4348248b456ee06c9e953637f55e03504f  # v2.5.0
+        uses: google/osv-scanner-action/osv-reporter-action@9a96bc4d2b09685b6142bcfe25a3dc17cb2d7347  # v2.5.0
         with:
           scan-args: |-
             --output=results.sarif
@@ -123,7 +123,7 @@ jobs:
       - name: Upload SARIF artifact
         id: upload_artifact
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: OSV Scanner SARIF file
           path: results.sarif
@@ -131,7 +131,7 @@ jobs:
 
       - name: Upload to code-scanning
         if: ${{ !cancelled() }}
-        uses: github/codeql-action/upload-sarif@cdefb33c0f6224e58673d9004f47f7cb3e328b89  # v4.31.10
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
         with:
           sarif_file: results.sarif
 
