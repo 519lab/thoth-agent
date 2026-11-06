@@ -3061,7 +3061,10 @@ class APIServerAdapter(BasePlatformAdapter):
         # A caller-supplied session id becomes a transcript filename
         # (session_<id>.json) just like X-Thoth-Session-Id, so it gets the
         # same single-safe-segment check.
+        # Strip like the header path does, so the same id is accepted on both.
         requested_session_id = body.get("session_id")
+        if isinstance(requested_session_id, str):
+            requested_session_id = requested_session_id.strip()
         if requested_session_id and not _is_safe_session_id(requested_session_id):
             return web.json_response(
                 _openai_error("Invalid session ID", param="session_id"),
