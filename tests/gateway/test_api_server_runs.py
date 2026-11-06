@@ -21,6 +21,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from gateway.config import PlatformConfig
 from gateway.platforms.api_server import (
     APIServerAdapter,
+    _is_safe_session_id,
     cors_middleware,
     security_headers_middleware,
 )
@@ -241,7 +242,7 @@ class TestRunStatus:
 
                 resp = await cli.post(
                     "/v1/runs",
-                    json={"input": "hello", "session_id": "space-session"},
+                    json={"input": "hello", "session_id": " space-session "},
                 )
                 data = await resp.json()
                 run_id = data["run_id"]
@@ -256,6 +257,32 @@ class TestRunStatus:
                 mock_agent.run_conversation.assert_called_once()
                 assert mock_agent.run_conversation.call_args.kwargs["task_id"] == "space-session"
                 assert status["session_id"] == "space-session"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("bad_id", [
+        "../../etc/passwd", "..", "a/b", "a\\b", ".hidden", "x" * 129, "chat:42", 42,
+        "a\nb", "a\rb",
+    ])
+    async def test_unsafe_session_id_is_rejected(self, adapter, bad_id):
+        """The run's session id becomes a transcript filename, so it gets the
+        same single-safe-segment check as X-Thoth-Session-Id."""
+        app = _create_runs_app(adapter)
+        async with TestClient(TestServer(app)) as cli:
+            with patch.object(adapter, "_create_agent") as mock_create:
+                resp = await cli.post(
+                    "/v1/runs",
+                    json={"input": "hello", "session_id": bad_id},
+                )
+                assert resp.status == 400
+                data = await resp.json()
+                assert data["error"]["param"] == "session_id"
+                mock_create.assert_not_called()
+
+    @pytest.mark.parametrize("bad_id", ["abc\n", "abc\r\n", "abc\r"])
+    def test_trailing_newline_is_not_a_safe_session_id(self, bad_id):
+        """The body value is stripped first, but the check itself must not
+        let "$" match before a trailing newline."""
+        assert not _is_safe_session_id(bad_id)
 
     @pytest.mark.asyncio
     async def test_status_not_found_returns_404(self, adapter):

@@ -63,11 +63,18 @@ MAX_REQUEST_BYTES = 10_000_000  # 10 MB — accommodates long agent conversation
 # (sessions/<id>.json, session_<id>.json) and in later deletes, so they must
 # be a single safe path segment: no separators, no "..", no control chars.
 # Covers generated ids (20250101_120000_ab12cd34) and client ids (uuids).
-_SAFE_SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+# ":" is excluded because on Windows "session_a:b.json" names an NTFS
+# alternate data stream of "session_a", not a file of its own.
+# fullmatch, not match: "$" also matches before a trailing "\n".
+_SAFE_SESSION_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 
 
-def _is_safe_session_id(session_id: str) -> bool:
-    return bool(_SAFE_SESSION_ID_RE.match(session_id)) and ".." not in session_id
+def _is_safe_session_id(session_id: Any) -> bool:
+    return (
+        isinstance(session_id, str)
+        and bool(_SAFE_SESSION_ID_RE.fullmatch(session_id))
+        and ".." not in session_id
+    )
 CHAT_COMPLETIONS_SSE_KEEPALIVE_SECONDS = 30.0
 MAX_NORMALIZED_TEXT_LENGTH = 65_536  # 64 KB cap for normalized content parts
 MAX_CONTENT_LIST_SIZE = 1_000  # Max items when content is an array
@@ -3051,8 +3058,21 @@ class APIServerAdapter(BasePlatformAdapter):
                         )
                     conversation_history.append({"role": msg["role"], "content": str(content)})
 
+        # A caller-supplied session id becomes a transcript filename
+        # (session_<id>.json) just like X-Thoth-Session-Id, so it gets the
+        # same single-safe-segment check.
+        # Strip like the header path does, so the same id is accepted on both.
+        requested_session_id = body.get("session_id")
+        if isinstance(requested_session_id, str):
+            requested_session_id = requested_session_id.strip()
+        if requested_session_id and not _is_safe_session_id(requested_session_id):
+            return web.json_response(
+                _openai_error("Invalid session ID", param="session_id"),
+                status=400,
+            )
+
         run_id = f"run_{uuid.uuid4().hex}"
-        session_id = body.get("session_id") or stored_session_id or run_id
+        session_id = requested_session_id or stored_session_id or run_id
         approval_session_key = gateway_session_key or session_id or run_id
         ephemeral_system_prompt = instructions
         loop = asyncio.get_running_loop()

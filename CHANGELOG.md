@@ -51,6 +51,15 @@ version heading that matches the release tag.
   transcript filenames and delete targets (#435). Ids must now be a single safe
   segment of up to 128 letters, digits, and `._:-`. Generated ids and UUIDs are
   unaffected, and anything else gets a 400.
+- **`POST /v1/runs` now checks the `session_id` in its body, and session ids
+  can no longer contain `:`.** The run's `session_id` becomes a transcript
+  filename the same way `X-Thoth-Session-Id` does, but it skipped the safe
+  segment check, so `../` and `/` still reached the filesystem through this
+  endpoint. It now gets the same check and returns 400 for anything else, a
+  non-string included. `:` is dropped from the allowed characters on both
+  endpoints because on Windows `session_a:b.json` writes an NTFS alternate data
+  stream of `session_a` instead of a file of its own. Generated ids and UUIDs
+  never contain `:`.
 - **Postgres-backed tests errored in CI** because `psycopg` floated to 3.3.6
   while `psycopg-binary` stayed pinned at 3.3.4, and the mismatched pair
   rejected a keyword argument on every connection wait. `psycopg` is now

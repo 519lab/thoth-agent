@@ -3216,6 +3216,7 @@ class TestSessionIdHeader:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("bad_id", [
         "../../etc/passwd", "..", "a/../b", "a/b", "a\\b", ".hidden", "x" * 129,
+        "chat:42", "C:evil",
     ])
     async def test_unsafe_session_id_is_rejected(self, auth_adapter, bad_id):
         """The id becomes a transcript filename and a later delete target, so
@@ -3236,7 +3237,7 @@ class TestSessionIdHeader:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("good_id", [
-        "20250101_120000_ab12cd34", "3f2b8c1e-9a4d-4e2f-8b1a-0c9d8e7f6a5b", "chat:42", "v1.2_run",
+        "20250101_120000_ab12cd34", "3f2b8c1e-9a4d-4e2f-8b1a-0c9d8e7f6a5b", "chat-42", "v1.2_run",
     ])
     async def test_real_world_session_ids_are_accepted(self, auth_adapter, good_id):
         mock_result = {"final_response": "OK", "messages": [], "api_calls": 1}
